@@ -1,0 +1,18 @@
+/privacy*
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate
+/terms*
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate
+/delete-account*
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-store
+/support*
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate
+/apple-app-site-association
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600

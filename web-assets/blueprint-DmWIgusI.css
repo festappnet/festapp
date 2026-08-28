@@ -1,0 +1,217 @@
+/* Blueprint Modal Container */
+.blueprint-modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--background-color, #ffffff);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    color: var(--text-color, #000);
+    animation: blueprintSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    backdrop-filter: blur(2px); /* nice glass feel if background allows */
+    touch-action: none; /* Prevent browser gestures */
+}
+
+@keyframes blueprintSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1.0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Content Area */
+.blueprint-content {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Loading / Error States */
+.blueprint-loading, .blueprint-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.blueprint-loading {
+    font-size: 1.2rem;
+    color: #666;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.blueprint-error {
+    color: red;
+}
+
+/* Confirm / Continue Button */
+.blueprint-btn-confirm {
+    margin: 16px auto;
+    z-index: 3010;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    min-width: 200px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+}
+
+/* Close Button (Optional/Hidden in current code but good to have) */
+.blueprint-btn-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 3010;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+}
+
+/* Renderer Container */
+.blueprint-renderer-container {
+    overflow: hidden;
+    position: relative;
+    background-color: #f0f0f0;
+    touch-action: none;
+    width: 100%;
+    height: 100%;
+}
+
+.blueprint-transform-container {
+    transform-origin: 0 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Background */
+.blueprint-bg-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.blueprint-bg-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.blueprint-bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Seat Container */
+.blueprint-seat-container {
+    position: absolute;
+    z-index: 1;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    touch-action: none !important;
+}
+
+/* Add to content as well */
+.blueprint-content {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    touch-action: none !important;
+}
+
+/* Seat Visuals */
+.blueprint-seat-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    /* dynamic properties: width, height, margin, background-color, border-radius, cursor */
+}
+
+.blueprint-seat-visual-inner {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: #fff;
+    text-shadow: 0 0 2px #000;
+}
+
+/* Tooltip */
+.blueprint-tooltip {
+    position: fixed;
+    z-index: 3100;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    color: black;
+    pointer-events: none;
+    display: none;
+    white-space: pre-wrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 300px;
+}
+
+/* Global Overrides when Blueprint is Active */
+html.blueprint-active,
+body.blueprint-active {
+    overflow: hidden;
+    touch-action: none !important; /* Global lock for Android */
+    overscroll-behavior: none !important; /* Prevent pull-to-refresh/bounce effects */
+}
+
+body.blueprint-active * {
+    touch-action: none !important; /* Force all children to respect this */
+}
+
+body.blueprint-active #form-page-container {
+    transform: none !important;
+}
+
+body.blueprint-active #floating-price-widget {
+    z-index: 3000 !important;
+    position: fixed !important;
+    top: 16px !important;
+    right: 16px !important;
+    left: auto !important;
+    margin: 0 !important;
+}

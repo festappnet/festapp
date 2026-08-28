@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Festapp - Vstupenky.online</title>
+    <meta name="description" content="Rychlé a jednoduché založení události, prodej vstupenek a registrace. Ideální pro akce, plesy a festivaly. Vstupenky.online (Festapp.net) - nástroj pro správu vaší akce.">
+    <meta name="keywords" content="založení události, prodej vstupenek, registrace, akce, plesy, festivaly, festapp, vstupenky.online">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://vstupenky.online/">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Festapp - Vstupenky.online",
+      "url": "https://vstupenky.online/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://vstupenky.online/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://live.festapp.net/">
+    <meta property="og:title" content="Festapp - Vstupenky.online">
+    <meta property="og:description" content="Rychlé a jednoduché založení události, prodej vstupenek a registrace. Ideální pro akce, plesy a festivaly. Vstupenky.online (Festapp.net) - nástroj pro správu vaší akce.">
+    <meta property="og:image" content="https://live.festapp.net/web-app-manifest-512x512.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://live.festapp.net/">
+    <meta property="twitter:title" content="Festapp - Vstupenky.online">
+    <meta property="twitter:description" content="Rychlé a jednoduché založení události, prodej vstupenek a registrace. Ideální pro akce, plesy a festivaly. Vstupenky.online (Festapp.net) - nástroj pro správu vaší akce.">
+    <meta property="twitter:image" content="https://live.festapp.net/web-app-manifest-512x512.png">
+
+    <!-- Used font stylesheets and their binaries are persisted by the Festapp
+         service worker after their first real use. -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/web-assets/favicon-D3FZdTM-.ico">
+    <link rel="manifest" href="/site.webmanifest">
+
+
+    
+    <!-- Main Style (Inject via JS) -->
+    
+    <script>
+        // Simple console logger for development; could be replaced by a proper service
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('Global Error:', msg, url, line, col, error);
+            return false;
+        };
+    </script>
+  <script type="module" crossorigin src="/web-assets/index-BxGoqAKg.js"></script>
+  <link rel="stylesheet" crossorigin href="/web-assets/index-OsApwSkH.css">
+</head>
+<body>
+    <div id="app" style="display: none;">
+        <!-- Header -->
+        <user-header id="universal-header"></user-header>
+
+        <main>
+            <!-- Search -->
+            <div id="search-container" class="search-container">
+                <i class="material-icons search-icon">search</i>
+                <input type="text" id="event-search" class="search-input" placeholder="Hledat události...">
+                <i class="material-icons clear-icon" id="clear-search">close</i>
+            </div>
+
+            <!-- Content -->
+            <div id="events-grid"></div>
+        </main>
+
+        <!-- FAB -->
+        <div id="feedback-fab"></div>
+        
+        <!-- Loading overlay for Flutter transition -->
+        <div id="flutter-loader">
+             <div class="sp-loader"></div>
+        </div>
+    </div>
+
+    <div id="form-page-container" style="display: none;"></div>
+
+    <!-- Application Entry (Module) -->
+</body>
+</html>

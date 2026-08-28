@@ -1,0 +1,14 @@
+# Web Client SPA Routes
+# Explicitly match specific Web Client routes to ensure they hit the Web Client index
+/form/*  /index.html  200
+/        /index.html  200
+
+# Flutter SPA Routes (Explicit)
+# Redirect specific Flutter routes to the renamed Flutter entry point
+/login   /flutter.html  200
+/admin   /flutter.html  200
+/transfer /flutter.html 200
+
+# Fallback (Flutter)
+# Any other route not matched above falls back to Flutter
+/*       /flutter.html  200

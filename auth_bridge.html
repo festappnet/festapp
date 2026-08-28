@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to App...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: center;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="loader"></div>
+        <p>Opening App...</p>
+        <p style="font-size: 0.8em; color: #666; margin-top: 10px;">If the app doesn't open automatically, <a id="manual-link" href="#">click here</a>.</p>
+    </div>
+
+    <script>
+        // Configuration
+        // In production we hand off to Flutter's TransferPage via the /transfer route — it consumes
+        // the sessionStorage handoff and replaces the URL with the actual redirect target, so the
+        // address bar never shows /flutter or /flutter.html.
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const FLUTTER_HOST = 'http://127.0.0.1:5000';
+        const CALLBACK_Path = isLocal ? `${FLUTTER_HOST}/transfer` : '/transfer';
+        const SUPABASE_KEY = 'sb-kjdpmixlnhntmxjedpxh-auth-token';
+
+        function getTokens() {
+            // 1. Priority: Hash fragment (from RouterService)
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+                const params = new URLSearchParams(window.location.hash.substring(1));
+                const tokens = {};
+                for (const [key, value] of params) {
+                    tokens[key] = value;
+                }
+                return tokens;
+            }
+            // 2. Fallback: localStorage (Supabase session)
+            const sessionStr = localStorage.getItem(SUPABASE_KEY);
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session && session.access_token && session.refresh_token) {
+                        return {
+                            access_token: session.access_token,
+                            refresh_token: session.refresh_token,
+                            token_type: 'bearer',
+                            type: 'recovery'
+                        };
+                    }
+                } catch (e) {
+                    console.error("Error parsing session", e);
+                }
+            }
+            return null;
+        }
+
+        function redirect() {
+            // Store tokens in sessionStorage (same-origin, single-tab, never in URL)
+            const tokens = getTokens();
+            if (tokens) {
+                sessionStorage.setItem('_auth_handoff', JSON.stringify(tokens));
+            }
+
+            // Build redirect URL with only the redirect path (no tokens)
+            let queryParams = '';
+            // Check hash for redirect param
+            if (window.location.hash) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const hashRedirect = hashParams.get('redirect');
+                if (hashRedirect) {
+                    queryParams = `?redirect=${encodeURIComponent(hashRedirect)}`;
+                }
+            }
+            // Check query params for redirect param (overrides hash if present)
+            const currentUrlParams = new URLSearchParams(window.location.search);
+            const redirectPath = currentUrlParams.get('redirect');
+            if (redirectPath) {
+                queryParams = `?redirect=${encodeURIComponent(redirectPath)}`;
+            }
+
+            const url = `${CALLBACK_Path}${queryParams}`;
+            document.getElementById('manual-link').href = url;
+
+            // Use replace() so auth_bridge doesn't stay in browser history
+            setTimeout(() => {
+                window.location.replace(url);
+            }, 500);
+        }
+
+        redirect();
+    </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+/* Order Preview UI - Matching Flutter Design */
+
+/* Overlay Container */
+.order-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Barrier color */
+    display: none; /* Hidden by default */
+    z-index: 2000;
+    justify-content: center; /* Horizontally centered */
+    align-items: flex-end; /* Always at bottom */
+    font-family: var(--font-family-base, sans-serif);
+}
+
+.order-preview-overlay.visible {
+    display: flex;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Content Container - Bottom Sheet Style */
+.order-preview-content {
+    background-color: var(--background-color, #ffffff);
+    width: 100%;
+    max-width: 600px; /* StylesConfig.formMaxWidth */
+    max-height: 90vh; /* Don't cover full screen */
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    
+    /* Slide Up Animation */
+    transform: translateY(100%);
+    animation: slideUp 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.0) forwards;
+}
+
+/* On Desktop, we still keep it at the bottom but constrained width (already handled by max-width + justify-content: center) */
+@media (min-width: 768px) {
+    /* No change needed to force center modal, user requested Bottom Sheet behavior everywhere */
+}
+
+/* Drag Handle */
+.order-preview-handle-bar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 4px;
+    /* Ensure it's touch-friendly */
+    cursor: grab;
+    touch-action: none; /* Prevent browser scroll/zoom */
+}
+
+.order-preview-handle {
+    width: 40px;
+    height: 4px;
+    background-color: var(--divider-color, rgba(0,0,0,0.2));
+    border-radius: 2px;
+}
+
+/* Header */
+.order-preview-header {
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    touch-action: none; /* Prevent browser scroll */
+    /* Optional: border-bottom? Flutter doesn't seem to have one explicit, but useful for web. */
+}
+
+/* ... existing header styles ... */
+
+.order-preview-header h2 {
+    margin: 0;
+    font-size: 1.35rem; /* 18 * 1.2 */
+    font-weight: bold;
+    color: #000000; /* Force Black */
+}
+
+
+body.dark-mode .order-preview-header h2 {
+    color: var(--text-color, #bdbdbd);
+}
+
+.btn-close-preview {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color, #000);
+    padding: 8px;
+}
+
+.btn-close-preview .material-icons {
+    font-size: 28.8px; /* 24 * 1.2 */
+}
+
+/* Scrollable Body */
+.order-preview-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 32px;
+    
+    /* Styled Scrollbar */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgba(0,0,0,0.2) transparent;
+    
+    /* Prevent Pull-to-Refresh/Rubber-banding on the body */
+    overscroll-behavior-y: contain; 
+}
+
+.order-preview-body::-webkit-scrollbar {
+    width: 6px;
+}
+.order-preview-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.order-preview-body::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+.order-preview-body::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0,0,0,0.4);
+}
+
+/* Common Info Row */
+/* Common Info Row */
+/* Common Info Row */
+.preview-info-row {
+    padding: 8px 0; /* Increased padding for better separation */
+    display: flex;
+    flex-direction: column; /* Stack vertically: Label on top, Value Row below */
+    align-items: stretch; /* Stretch to full width */
+    font-size: 1rem;
+    color: var(--text-color, #000);
+    line-height: 1.4;
+}
+
+.preview-label {
+    margin-right: 0;
+    margin-bottom: 2px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #000000 !important; /* Force Black for visibility in Light Mode */
+    opacity: 1; /* Removed opacity */
+}
+
+/* Ensure dark mode adjustment for hardcoded grey fallback */
+body.dark-mode .preview-label {
+    color: rgba(255, 255, 255, 0.7) !important; /* Explicit dark mode class support */
+}
+
+.preview-value-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline; /* Align text baselines */
+    width: 100%;
+}
+
+.preview-value {
+    font-weight: 600; /* Slightly bolder */
+    font-size: 1.1rem;
+    flex: 1; /* Take available space */
+}
+
+.preview-price {
+    font-weight: 600;
+    color: var(--primary-color, #000); /* Highlight price slightly? Or keep standard text */
+    white-space: nowrap;
+    margin-left: 8px;
+    font-size: 1.0rem; /* Same or slightly smaller */
+}
+
+body.dark-mode .preview-price {
+    color: var(--text-color, #fff); 
+}
+
+/* Divider */
+.preview-divider {
+    height: 1px;
+    background-color: var(--divider-color, rgba(0,0,0,0.1));
+    margin: 4px 0;
+}
+
+/* Section Spacing */
+.preview-section {
+    margin-bottom: 24px;
+}
+
+/* Tickets Section */
+.ticket-card {
+    background-color: var(--card-bg, #fff); /* ThemeConfig.whiteColor */
+    border: 2px solid var(--primary-color, #000);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.ticket-header-title {
+    font-size: 1.2rem; /* 16 * 1.2 */
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #000000; /* Force Black for visibility */
+}
+
+
+body.dark-mode .ticket-header-title {
+     color: var(--text-color, #bdbdbd);
+}
+
+/* Total Price */
+.preview-total-price {
+    text-align: center;
+    font-size: 1.2rem; /* 16 * 1.2 */
+    font-weight: 600 !important;
+    margin: 24px 0;
+    color: var(--text-color, #000);
+}
+
+.preview-total-meta-surcharge {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-top: 6px;
+    color: var(--text-color, #000);
+}
+
+/* Actions */
+.preview-actions {
+    padding: 16px;
+    /* Safe Area for Mobile Bottom */
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)); 
+    display: flex;
+    justify-content: center;
+    background-color: var(--background-color, #fff);
+    border-top: 1px solid var(--divider-color, rgba(0,0,0,0.05));
+    gap: 16px;
+}
+
+.preview-actions button {
+    /* Match form component .btn style exactly */
+    padding: calc(12px * var(--font-scale, 1)) calc(32px * var(--font-scale, 1));
+    width: 100%;
+    max-width: 400px;
+    border-radius: 8px; /* Match form button radius */
+    font-family: var(--font-family-base, inherit);
+    font-size: calc(16px * var(--font-scale, 1));
+    font-weight: 600 !important;
+    cursor: pointer;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 0.2s, filter 0.2s;
+}
+
+/* Deposit Section */
+.deposit-section {
+    margin: 20px 0;
+    padding: 16px 20px;
+    background-color: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+}
+
+body.dark-mode .deposit-section {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.deposit-section-title {
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+
+.deposit-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    cursor: pointer;
+}
+
+.deposit-option input[type="radio"] {
+    accent-color: var(--primary-color, #007bff);
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.deposit-option span {
+    font-size: 14px;
+}
+
+.deposit-info-text {
+    width: 100%;
+    padding-left: 28px;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--text-color-secondary, #666);
+    margin-top: 2px;
+}
+
+body.dark-mode .deposit-info-text {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+body.dark-mode .deposit-section-title {
+    color: var(--text-color, #bdbdbd);
+}
+
+body.dark-mode .deposit-option span {
+    color: var(--text-color, #bdbdbd);
+}
+
+.btn-submit-order {
+    background-color: var(--primary-color, #007bff);
+    color: var(--btn-text-color, #fff); /* Use calculated button text color */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-submit-order:hover {
+    filter: brightness(1.1); /* Match form hover */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+}
+
+/* Closing Animations */
+.order-preview-overlay.closing {
+    animation: fadeOut 0.25s ease-in forwards;
+}
+
+.order-preview-overlay.closing .order-preview-content {
+    animation: slideDown 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.0) forwards;
+}

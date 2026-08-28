@@ -1,0 +1,27 @@
+{
+  "applinks": {
+    "apps": [
+      "8WKBB6L8LT.festapp.festapp"
+    ],
+    "details": [
+      {
+        "appIDs": [
+          "8WKBB6L8LT.festapp.festapp"
+        ],
+        "components": [
+          {
+            "/": "/delete-account*"
+          },
+          {
+            "/": "/*"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "8WKBB6L8LT.festapp.festapp"
+    ]
+  }
+}

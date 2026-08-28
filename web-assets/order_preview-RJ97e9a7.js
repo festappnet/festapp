@@ -1,0 +1,58 @@
+import{L,F as _,D as q,d as B}from"./index-BxGoqAKg.js";import{f as T,F as j,O as P,a as D}from"./form_page-DcnKdX9k.js";import{P as F}from"./public_order_strings-DgqgOWWe.js";class I{format(e,a,s){if(e==null)return{value:"",price:null};if(typeof e=="object"&&e.id_document_number){console.warn("[FieldPreviewFactory] ID Document caught in BaseStrategy via sniffing");let r=e.id_document_number;return e.id_document_expiry_date&&(r+=` (${e.id_document_expiry_date})`),{value:r,price:null}}return this._resolveValue(e,a,s)}_getOptions(e){return e.options||e.data&&e.data.options}_resolveValue(e,a,s){const n=this._getOptions(a),r=String(e);if(r.includes(" | ")){const p=r.split(" | ").map(i=>this._findOption(i,n,s)),t=p.map(i=>i.value).join(", "),u=p.map(i=>i.metaSurcharge).filter(Boolean),f=u.length>0?u.join(`
+`):null;return{value:t,price:null,metaSurcharge:f}}return n&&n.length>0?this._findOption(e,n,s):typeof e=="object"?{value:JSON.stringify(e),price:null}:{value:r,price:null}}_findOption(e,a,s){const n=a.find(r=>r.id!=null&&String(r.id)===String(e));if(n){let r=n.title,l=null;const p=L.currentLocale;n.price&&s&&s.currency&&(l=T(n.price,s.currency,0,p));const t=N(n,s);return{value:r,price:l,metaSurcharge:t}}return{value:e,price:null}}}function N(b,e){const a=e&&e.features;if(!_.isFeatureEnabled(_.FeatureConstants.deposit,a))return null;const s=_.getMetaSurchargeDescription(a),n=b&&b.data&&b.data.meta_surcharge,r=n?typeof n.amount=="number"?n.amount:parseFloat(n.amount):null,l=Number.isFinite(r)&&r!==0?r:null;if(l===null)return null;const p=n&&n.currency||q,t=L.currentLocale,f=`${l<0?"− ":"+ "}${T(Math.abs(l),p,0,t)}`;return s?`${f} — ${s}`:f}class U extends I{_getOptions(e){return e.data&&e.data.product_type_data&&e.data.product_type_data.products?e.data.product_type_data.products:super._getOptions(e)}}class Z extends I{format(e,a,s){if(!e)return{value:"",price:null};let n,r;if(typeof e=="object"?(n=e.id_document_number,r=e.id_document_expiry_date):n=e,!n)return{value:"",price:null};let l=n;if(r){const p=this._formatDate(r);l+=` (${p})`}return{value:l,price:null}}_formatDate(e){if(!e)return"";try{const a=new Date(e);if(isNaN(a.getTime()))return e;const s=L.currentLocale==="cs"?"cs-CZ":"en-US";return new Intl.DateTimeFormat(s,{year:"numeric",month:"numeric",day:"numeric"}).format(a)}catch{return e}}}class C{static _strategies={default:new I,product_type:new U,id_document:new Z};static getStrategy(e){return this._strategies[e.type]||this._strategies.default}static format(e,a,s){const r=this.getStrategy(e).format(a,e,s);return typeof r=="string"?{value:r,price:null}:r}}if(typeof document<"u"){const b=new URL("/web-assets/order_preview-BySuSmvr.css",import.meta.url).href;if(!document.querySelector(`link[href="${b}"]`)){const e=document.createElement("link");e.rel="stylesheet",e.href=b,document.head.appendChild(e)}}class k{static show(e,a,s,n,r,l=null){const p=k._prepareData(e,a,s,l);let t=document.getElementById("order-preview-overlay");t||(t=document.createElement("div"),t.id="order-preview-overlay",t.className="order-preview-overlay",document.body.appendChild(t)),t.innerHTML=k._render(p);let u=!1;const f=()=>{if(!u){if(u=!0,t.dataset.closedByDrag!=="true")t.classList.add("closing");else{const m=t.querySelector(".order-preview-content");m&&(m.style.animation="none"),t.classList.add("closing")}document.removeEventListener("keydown",y),t.removeEventListener("click",o),setTimeout(()=>{t.style.display="none",t.classList.remove("visible","closing"),delete t.dataset.closedByDrag,t.innerHTML="",document.body.style.overflow="",r&&r()},250)}},i=t.querySelector(".btn-close-preview"),c=()=>{B.goBackProgrammatically()};i&&(i.onclick=c);const y=m=>{m.key==="Escape"&&c()};document.addEventListener("keydown",y);const o=m=>{m.target===t&&c()};t.addEventListener("click",o);const v=t.querySelector(".btn-submit-order");v&&(v.onclick=()=>{const m=t.querySelector('input[name="payment_type"]:checked'),$=m?m.value:null;n&&n(t,$)}),t.classList.remove("closing"),t.style.display="flex",t.offsetHeight,t.classList.add("visible");const d=t.querySelector(".order-preview-content"),w=t.querySelector(".order-preview-body");let S=0,h=0,g=!1,E=!1;const x=m=>{if(!(m.target.closest(".order-preview-header")||m.target.closest(".order-preview-handle-bar"))){E=!0;return}E=!1,S=m.touches[0].clientY,g=!1,d.style.transition="none"},Y=m=>{if(E)return;h=m.touches[0].clientY;const $=h-S;if($>0){m.cancelable&&m.preventDefault(),g=!0,d.style.transform=`translateY(${$}px)`;const O=d.clientHeight||500,R=.5*(1-Math.min($/O,1));t.style.backgroundColor=`rgba(0, 0, 0, ${R})`}},A=m=>{if(E||!g)return;h-S>150?(d.style.transition="transform 0.2s ease-out",d.style.transform="translateY(100%)",t.dataset.closedByDrag="true",c()):(d.style.transition="transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.0)",d.style.transform="",t.style.backgroundColor="",setTimeout(()=>{!g&&d&&(d.style.transition="")},250)),g=!1};d&&(d.addEventListener("touchstart",x,{passive:!1}),d.addEventListener("touchmove",Y,{passive:!1}),d.addEventListener("touchend",A)),setTimeout(()=>{w&&k._animateScrollToBottom(w,700)},150),document.body.style.overflow="hidden",B.pushOverlayState("order-preview");const H=()=>{f(),window.removeEventListener("popstate",H)};window.addEventListener("popstate",H,{once:!0})}static _animateScrollToBottom(e,a){const s=e.scrollTop,n=e.scrollHeight-e.clientHeight;if(s>=n)return;const r=n-s,l=+new Date,p=(u,f,i,c)=>(u/=c/2,u<1?i/2*u*u+f:(u--,-i/2*(u*(u-2)-1)+f)),t=()=>{const f=+new Date-l;e.scrollTop=parseInt(p(f,s,r,a)),f<a?requestAnimationFrame(t):e.scrollTop=n};t()}static _prepareData(e,a,s,n){const r=n||j.getPayload(e,a),l=s,p=[],t=new Map;r.fields&&r.fields.forEach(o=>{Object.keys(o).forEach(v=>t.set(v,o[v]))}),a.visibleFields&&a.visibleFields.forEach(o=>{if(o.type!=="ticket"&&t.has(String(o.id))){const v=t.get(String(o.id));if(o.id==="currency_code")return;const d=C.format(o,v,{currency:l.currency});p.push({label:o.title,value:d.value,price:d.price})}});const u=[],f=r.ticket||[],i=[];a.visibleFields&&a.visibleFields.forEach(o=>{if(o.type==="ticket"){const v=o.subFields||o.fields||o.data&&o.data.fields||[];i.push(...v)}}),f.forEach((o,v)=>{const d={index:v+1,rows:[],hasSpot:!1};if(o.spot!==void 0){d.hasSpot=!0;let w=o.spotName||`Spot #${o.spot}`,S=null;o.spotPrice&&(S=T(o.spotPrice,l.currency,0,"cs-CZ")),d.rows.push({label:P.gridSpot||"Spot",value:w,price:S,isSpot:!0})}o.fields&&i.forEach(w=>{const S=o.fields.find(h=>h._subFieldId?String(h._subFieldId)===String(w.id):h.hasOwnProperty(w.type));if(S){let h=S[w.type];if(h===void 0){const g=Object.keys(S).find(E=>E!=="_subFieldId"&&E!=="currency_code");g&&(h=S[g])}if(h!==void 0){const g=C.format(w,h,{currency:l.currency,features:a.occasionFeatures});d.rows.push({label:w.title,value:g.value,price:g.price,metaSurcharge:g.metaSurcharge})}}}),u.push(d)});const c=k._getDepositInfo(r,a,l.currency),y=D.calculateMetaSurchargeSums(r,a);return{personalInfo:p,tickets:u,totalPrice:l.totalPrice,currency:l.currency,hasTickets:_.isFeatureEnabled(_.FeatureConstants.ticket,a.occasionFeatures),tone:a.communicationTone,deposit:c,metaSurchargeSums:y}}static _getAutoTitle(e){return""}static _getDepositInfo(e,a,s){const n=a.occasionFeatures;if(!_.isFeatureEnabled(_.FeatureConstants.deposit,n)||!_.isDepositChoiceAvailable(n,a.occasionStartTime))return null;const r=new Map,l=[];if(a.relatedFields&&a.relatedFields.forEach(i=>{const c=i.subFields||[];l.push(...c)}),l.forEach(i=>{i.type==="product_type"&&i.options&&i.options.forEach(c=>{c.data&&c.data.deposit&&c.data.deposit.amount>0&&r.set(String(c.id),c.data.deposit.amount)})}),r.size===0)return null;let p=0,t=!1;if((e.ticket||[]).forEach(i=>{i.fields&&i.fields.forEach(c=>{const y=c.product_type;y&&String(y).split(" | ").forEach(o=>{const v=r.get(String(o));v&&(p+=v,t=!0)})})}),!t)return null;const f=_.getDepositFeature(n);return{hasDeposit:t,depositTotal:p,depositFeature:f,currency:s}}static _render(e){const a=e.hasTickets?P.ticket||"Ticket":P.application||"Application";let s=`
+            <div class="order-preview-content">
+                <div class="order-preview-handle-bar">
+                    <div class="order-preview-handle"></div>
+                </div>
+                <div class="order-preview-header">
+                    <h2>${F.summary}</h2>
+                    <button class="btn-close-preview"><i class="material-icons">close</i></button>
+                </div>
+                <div class="order-preview-body">
+        `;if(e.personalInfo.length>0&&(s+='<div class="preview-section">',e.personalInfo.forEach((i,c)=>{const y=i.price?`<span class="preview-price">+ ${i.price}</span>`:"";s+=`
+                    <div class="preview-info-row">
+                        <span class="preview-label">${i.label}:</span>
+                        <div class="preview-value-row">
+                             <span class="preview-value">${i.value}</span>
+                             ${y}
+                        </div>
+                    </div>
+                `,c<e.personalInfo.length-1&&(s+='<div class="preview-divider"></div>')}),s+="</div>"),e.tickets.length>0&&e.tickets.forEach(i=>{s+=`
+                    <div class="ticket-card">
+                        <div class="ticket-header-title">${a}${e.tickets.length>1?" "+i.index:""}</div>
+                  `,i.rows.forEach((c,y)=>{const o=c.price?`<span class="preview-price">+ ${c.price}</span>`:"",v=c.metaSurcharge?`<div class="preview-meta-surcharge">${String(c.metaSurcharge).replace(/\n/g,"<br>")}</div>`:"";s+=`
+                        <div class="preview-info-row">
+                             <span class="preview-label">${c.label}:</span>
+                             <div class="preview-value-row">
+                                  <span class="preview-value">${c.value}</span>
+                                  ${o}
+                             </div>
+                             ${v}
+                        </div>
+                      `,y<i.rows.length-1&&(s+='<div class="preview-divider"></div>')}),s+="</div>"}),e.deposit){const i=e.deposit,c=T(i.depositTotal,i.currency,0,"cs-CZ"),y=T(e.totalPrice,e.currency,0,"cs-CZ"),v=i.depositFeature&&i.depositFeature.deposit_deadline==="on_site"?F.depositInfoOnSite:F.depositInfoDaysBefore(i.depositFeature?.deposit_deadline_days||0);s+=`
+                <div class="preview-section deposit-section">
+                    <div class="deposit-section-title">${F.paymentMethod}</div>
+                    <label class="deposit-option">
+                        <input type="radio" name="payment_type" value="deposit" checked />
+                        <span>${F.payWithDeposit} (${c})</span>
+                        <div class="deposit-info-text">${v}</div>
+                    </label>
+                    <label class="deposit-option">
+                        <input type="radio" name="payment_type" value="full" />
+                        <span>${F.payFullAmount} (${y})</span>
+                    </label>
+                </div>
+            `}const n=T(e.totalPrice,e.currency,0,"cs-CZ"),r=F.totalPrice(n),l=D.formatMetaSurchargeSumLines(e.metaSurchargeSums,L.currentLocale),p=l.length>0?`<div class="preview-total-meta-surcharge">
+                 ${l.map(i=>`<div>${i}</div>`).join("")}
+               </div>`:"";s+=`
+             <div class="preview-total-price">
+                 ${r}
+                 ${p}
+             </div>
+        `,s+="</div>";const t=e.tone,u=e.hasTickets,f=F.getSubmitButton(u,t);return s+=`
+             <div class="preview-actions">
+                 <button class="btn-submit-order">
+                     ${f}
+                 </button>
+             </div>
+        `,s+="</div>",s}}export{k as OrderPreview};
