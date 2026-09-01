@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "doobiscup",
-  "baseMainSha": "1beb50e3c92daf904b8e235484d9003aa78845be",
+  "baseMainSha": "9ab5777eeae47996156a214ac1ef6413116ce319",
   "release": {
-    "version": "0.19.93+472",
+    "version": "0.19.94+472",
     "note": "Canonical Cloudflare transition client; legacy Supabase remains active until the signed activation document switches organization 2 to 5."
   }
 }
