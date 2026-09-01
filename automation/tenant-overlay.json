@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festivalslunovrat",
-  "baseMainSha": "1beb50e3c92daf904b8e235484d9003aa78845be",
+  "baseMainSha": "9ab5777eeae47996156a214ac1ef6413116ce319",
   "release": {
     "version": "0.19.94+478",
     "note": "Stage the Slunovrat transition web release on Cloudflare while external DNS remains pending"
