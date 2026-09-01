@@ -20,6 +20,7 @@ import 'package:fstapp/components/users/companion/companion_visibility.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
+import 'package:fstapp/components/users/profile_load_recovery.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/schedule/event_page.dart';
@@ -38,6 +39,7 @@ import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
+import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/widgets/buttons_helper.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
@@ -767,18 +769,33 @@ class _UserPageState extends State<UserPage> {
   }
 
   Future<void> loadData() async {
-    UserInfoModel? userInfo;
-    if (ConnectivityService.isOfflineNotifier.value) {
-      userInfo = await OfflineDataService.getUserInfo();
-    } else {
-      try {
-        userInfo = await AuthService.getFullUserInfo();
-        await OfflineDataService.saveUserInfo(userInfo);
-      } catch (_) {
-        userInfo = await OfflineDataService.getUserInfo();
-        if (userInfo == null) rethrow;
-      }
+    final bootstrapUser = RightsService.currentUser();
+    if (mounted && userData == null && bootstrapUser != null) {
+      setState(() => userData = bootstrapUser);
     }
+    final userInfo = ConnectivityService.isOfflineNotifier.value
+        ? await loadProfileWithFallback<UserInfoModel>(
+            loadFresh: () async => null,
+            loadCached: OfflineDataService.getUserInfo,
+            loadBootstrap: () => bootstrapUser,
+          )
+        : await loadProfileWithFallback<UserInfoModel>(
+            loadFresh: () async {
+              final fresh = await AuthService.getFullUserInfo();
+              await OfflineDataService.saveUserInfo(fresh);
+              return fresh;
+            },
+            loadCached: OfflineDataService.getUserInfo,
+            loadBootstrap: () => bootstrapUser,
+            onFreshError: (error, stackTrace) => AppLogger.error(
+              'Profile enrichment failed; using available identity: '
+              '$error\n$stackTrace',
+            ),
+            onCacheError: (error, stackTrace) => AppLogger.error(
+              'Cached profile load failed; using bootstrap identity: '
+              '$error\n$stackTrace',
+            ),
+          );
     await addOfflineEventsToCompanions(userInfo);
     if (!mounted) return;
     setState(() {
