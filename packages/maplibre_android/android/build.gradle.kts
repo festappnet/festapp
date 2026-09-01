@@ -1,6 +1,6 @@
 plugins {
     id("com.android.library")
-    id("org.jlleitschuh.gradle.ktlint")
+    id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
 }
 
 group = "com.github.josxha.maplibre"
