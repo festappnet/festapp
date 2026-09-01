@@ -13,6 +13,11 @@ verify_jwt = false
 [functions.confirm-account-deletion]
 verify_jwt = false
 
+# This function authorizes either a current user token or the backend request
+# secret itself, so the gateway must pass both request forms to the handler.
+[functions.generate-order-agreement]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.
