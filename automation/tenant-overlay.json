@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "1beb50e3c92daf904b8e235484d9003aa78845be",
+  "baseMainSha": "d1766d0aebd219207a2a289c5ddb101f20d3c3c9",
   "release": {
-    "version": "0.19.93+467",
-    "note": "Refresh Hvezda transition client from canonical main"
+    "version": "0.19.93+468",
+    "note": "Restore contract downloads and order row deletion"
   }
 }
