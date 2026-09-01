@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "csmostrava2026",
-  "baseMainSha": "9ab5777eeae47996156a214ac1ef6413116ce319",
+  "baseMainSha": "e88082b9b754657e3a03b095c570a907981b004f",
   "release": {
     "version": "0.19.94+466",
     "note": "Refresh CSM Ostrava transition client from canonical main"
