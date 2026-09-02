@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/map/offline_mbtiles_vector_tile_provider.dart';
 import 'package:mbtiles/mbtiles.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart' as vmt;
+import 'package:vector_map_tiles_mbtiles/vector_map_tiles_mbtiles.dart';
 
 void main() {
   late MbTiles mbtiles;
@@ -26,7 +26,7 @@ void main() {
   test('reads an XYZ request from the TMS MBTiles row', () async {
     final expected = Uint8List.fromList([1, 2, 3]);
     mbtiles.putTile(z: 2, x: 1, y: 2, bytes: expected);
-    final provider = OfflineMbTilesVectorTileProvider(mbtiles: mbtiles);
+    final provider = MbTilesVectorTileProvider(mbtiles: mbtiles);
 
     expect(await provider.provide(vmt.TileIdentity(2, 1, 1)), expected);
     expect(provider.minimumZoom, 1);
@@ -35,7 +35,7 @@ void main() {
   });
 
   test('reports a missing tile as a non-retryable provider error', () async {
-    final provider = OfflineMbTilesVectorTileProvider(mbtiles: mbtiles);
+    final provider = MbTilesVectorTileProvider(mbtiles: mbtiles);
 
     await expectLater(
       provider.provide(vmt.TileIdentity(2, 1, 1)),

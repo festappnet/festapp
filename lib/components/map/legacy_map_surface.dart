@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -15,14 +12,11 @@ import 'package:fstapp/components/map/map_scene.dart';
 import 'package:fstapp/components/map/map_strings.dart';
 import 'package:fstapp/components/map/map_surface_model.dart';
 import 'package:fstapp/components/map/map_viewport_controller.dart';
-import 'package:fstapp/components/map/offline_map_bundle_manager.dart';
-import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
-import 'package:fstapp/components/map/offline_mbtiles_vector_tile_provider.dart';
+import 'package:fstapp/components/map/legacy_map_resources.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mbtiles/mbtiles.dart';
 import 'package:fstapp/services/launch_url_service.dart';
-import 'package:vector_map_tiles/vector_map_tiles.dart' as vmt;
-import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
+
+export 'package:fstapp/components/map/legacy_map_resources.dart';
 
 /// All flutter_map knowledge is localized in this adapter. It consumes the
 /// same immutable [MapSurfaceModel] as the MapLibre adapter.
@@ -162,18 +156,13 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
   }
 
   Widget _buildOfflineBaseLayer() {
-    final style = widget.offlineResources?.style;
-    final mbtiles = widget.offlineResources?.mbtiles;
+    final resources = widget.offlineResources;
     final sourceName = widget.offlineSourceName;
-    if (style == null || mbtiles == null || sourceName == null) {
+    if (resources == null || sourceName == null) {
       return const SizedBox.shrink();
     }
-    return vmt.VectorTileLayer(
-      theme: style.theme,
-      sprites: style.sprites,
-      tileProviders: vmt.TileProviders({
-        sourceName: OfflineMbTilesVectorTileProvider(mbtiles: mbtiles),
-      }),
+    return resources.buildBaseLayer(
+      sourceName: sourceName,
       maximumZoom: MapZoomLimits.interactionMaximum,
     );
   }
@@ -310,58 +299,6 @@ class _CurrentLocationMarker extends StatelessWidget {
           ),
         ),
       );
-}
-
-class LegacyMapResources {
-  final vmt.Style style;
-  final MbTiles mbtiles;
-
-  LegacyMapResources._({required this.style, required this.mbtiles});
-
-  static Future<LegacyMapResources> open({
-    required String styleUri,
-    required String mbtilesPath,
-  }) async {
-    final style = await vmt.StyleReader(uri: styleUri).read();
-    final mbtiles = MbTiles(path: mbtilesPath, gzip: true);
-    return LegacyMapResources._(style: style, mbtiles: mbtiles);
-  }
-
-  static Future<LegacyMapResources> openBundle(
-    OfflineMapBundleInstallation installation,
-  ) async {
-    final manifest = installation.manifest;
-    File assetFile(OfflineMapAssetRole role) {
-      final asset = manifest.assetFor(role);
-      return File('${installation.directory.path}/${asset.path}');
-    }
-
-    final styleJson = Map<String, dynamic>.from(
-      jsonDecode(await assetFile(OfflineMapAssetRole.style).readAsString())
-          as Map,
-    );
-    final spriteJson = jsonDecode(
-      await assetFile(OfflineMapAssetRole.spriteJson2x).readAsString(),
-    );
-    final spritePng = assetFile(OfflineMapAssetRole.spritePng2x);
-    final style = vmt.Style(
-      name: styleJson['name'] as String?,
-      theme: vtr.ThemeReader().read(styleJson),
-      providers: vmt.TileProviders({}),
-      sprites: vmt.SpriteStyle(
-        atlasProvider: spritePng.readAsBytes,
-        index: vtr.SpriteIndexReader().read(spriteJson),
-      ),
-    );
-    final mbtilesAsset = manifest.assetFor(OfflineMapAssetRole.mbtiles);
-    final mbtiles = MbTiles(
-      path: '${installation.directory.path}/${mbtilesAsset.path}',
-      gzip: true,
-    );
-    return LegacyMapResources._(style: style, mbtiles: mbtiles);
-  }
-
-  void dispose() => mbtiles.close();
 }
 
 class _LegacyPlaceMarker extends StatelessWidget {
