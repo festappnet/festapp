@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/map_feature.dart';
 import 'package:fstapp/components/map/legacy_map_surface.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
@@ -212,7 +213,7 @@ void main() {
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
     expect(
       layers.single.tileProvider.headers['User-Agent'],
-      'Festapp/Flutter (+https://vstupenky.online/support/)',
+      'Festapp/Flutter (+${AppConfig.supportUrl})',
     );
 
     await tester.pumpWidget(const SizedBox.shrink());
