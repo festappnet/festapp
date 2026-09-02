@@ -212,6 +212,11 @@ void main() {
     expect(layers.single.fallbackUrl,
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
     expect(
+      (layers.single.tileProvider as fm.NetworkTileProvider)
+          .attemptDecodeOfHttpErrorResponses,
+      isFalse,
+    );
+    expect(
       layers.single.tileProvider.headers['User-Agent'],
       'Festapp/Flutter (+${AppConfig.supportUrl})',
     );
