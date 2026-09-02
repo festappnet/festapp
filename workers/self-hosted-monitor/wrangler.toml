@@ -1,0 +1,15 @@
+name = "festapp-self-hosted-monitor"
+main = "src/index.mjs"
+compatibility_date = "2026-09-02"
+workers_dev = false
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[r2_buckets]]
+binding = "EVIDENCE_BUCKET"
+bucket_name = "festapp-supabase-backups"
+
+[triggers]
+crons = ["*/5 * * * *"]
