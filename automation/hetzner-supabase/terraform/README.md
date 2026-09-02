@@ -19,7 +19,7 @@ Encrypted off-host PostgreSQL/Storage backups remain mandatory for production.
 
 ## Prerequisites
 
-1. Terraform `1.16.0` and hcloud provider `1.68.0`.
+1. Terraform `1.16.1` and hcloud provider `1.68.0`.
 2. A least-privilege Hetzner project token exported as `HCLOUD_TOKEN`.
 3. Existing Hetzner SSH key IDs and explicit administrator `/32` or `/128`
    source CIDRs in a private `.tfvars` file outside Git.

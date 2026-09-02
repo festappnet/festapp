@@ -16,7 +16,11 @@ import {
   classifyStorageCollisions,
 } from '../hetzner-supabase/merge/collision-lib.mjs';
 import { buildIdentityDecisions } from '../hetzner-supabase/merge/resolve-auth-collisions.mjs';
-import { scanWriteSignals } from '../hetzner-supabase/merge/write-authority-inventory.mjs';
+import {
+  buildWriteInventory,
+  classifyWriteEntry,
+  scanWriteSignals,
+} from '../hetzner-supabase/merge/write-authority-inventory.mjs';
 import {
   auditLegacyAdapters,
   buildHybridReadiness,
@@ -24,6 +28,7 @@ import {
 } from '../hetzner-supabase/merge/hybrid-readiness.mjs';
 import {
   buildTenantConfigInventory,
+  loadTenantCutoverPolicy,
   parseTenantConfig,
 } from '../hetzner-supabase/merge/tenant-config-inventory.mjs';
 import {
@@ -38,6 +43,33 @@ import {
 } from '../hetzner-supabase/merge/export-source.mjs';
 import { buildPageQuery } from '../hetzner-supabase/merge/export-managed-schemas.mjs';
 import { csvField } from '../hetzner-supabase/merge/stage-managed-export.mjs';
+import {
+  evaluateRepositoryCutoverReadiness,
+} from '../hetzner-supabase/merge/repository-cutover-preflight.mjs';
+import {
+  evaluateRuntimeWriterPolicy,
+  loadRuntimeWriterPolicy,
+} from '../hetzner-supabase/merge/runtime-writer-policy.mjs';
+
+test('every Edge Function and Worker entrypoint has a fail-closed cutover classification', () => {
+  const policy = loadRuntimeWriterPolicy();
+  const report = evaluateRuntimeWriterPolicy(policy);
+  assert.equal(report.status, 'pass');
+  assert.deepEqual(report.blockers, []);
+  assert.equal(report.edge_functions, 20);
+  assert.equal(report.worker_entrypoints, 3);
+  assert.equal(report.mutating_surfaces, 18);
+  assert.equal(report.canonical_security_blockers.length, 0);
+  assert.match(report.canonical_exclusions[0], /instance-install/);
+  assert.equal(report.activation_requirements.length, 3);
+
+  const incomplete = structuredClone(policy);
+  delete incomplete.edge_functions.notify;
+  assert.match(
+    evaluateRuntimeWriterPolicy(incomplete).blockers.join('\n'),
+    /unclassified edge function: notify/,
+  );
+});
 
 test('source aliases are pinned to the approved cloud projects', () => {
   assert.deepEqual(SOURCES, {
@@ -409,21 +441,74 @@ function simpleEmailAuthState() {
   };
 }
 
-test('write-authority scanner distinguishes RPC, DML, Storage and side effects', () => {
+test('write-authority scanner includes auth, operator and object-storage writers', () => {
   const signals = scanWriteSignals(`
     await supabase.from('orders').insert(payload);
     await supabase.rpc('create_order', payload);
     await supabase.storage.from('public-files').remove(['a']);
+    await supabase.auth.refreshSession();
+    await env.IMAGES.put(key, body);
     SELECT cron.schedule('job', '* * * * *', $$ SELECT net.http_post(url := 'x') $$);
-    await sendEmail();
+    await managementQuery({ query: 'select 1' });
+    supabase functions deploy send-email
+    await deliverEmail();
+    await fetch('https://fioapi.fio.cz/v1/rest/last/token/transactions.json');
+    await fetch('https://app.fakturoid.cz/api/v3/oauth/token');
+    await fetch('https://api.onesignal.com/apps/id/users/user');
+    const SNS_TYPE_CONFIRMATION = 'SubscriptionConfirmation';
   `);
   assert.deepEqual(signals, [
+    'auth-mutation',
+    'bank-api-side-effect',
     'database-webhook',
+    'deployment-mutation',
     'direct-dml',
+    'direct-sql-client',
     'email-side-effect',
+    'invoicing-side-effect',
+    'object-storage-mutation',
+    'provider-callback',
+    'push-side-effect',
     'rpc',
     'sql-cron',
     'storage-mutation',
+  ]);
+});
+
+test('write-authority classification maps entrypoints onto full-freeze controls', () => {
+  assert.deepEqual(
+    classifyWriteEntry('lib/data_services/auth_service.dart', ['auth-mutation', 'rpc']),
+    {
+      write_owner: 'flutter-client',
+      freeze_lanes: ['application', 'auth-refresh'],
+      required_controls: [
+        'maintenance-mode-and-source-database-role-revocation',
+        'source-auth-refresh-deny-and-active-session-drain',
+      ],
+      status: 'classified',
+    },
+  );
+  assert.equal(
+    classifyWriteEntry('unknown/runtime.js', ['direct-dml']).status,
+    'unreviewed',
+  );
+});
+
+test('repository writer inventory has no unclassified discovered entrypoint', () => {
+  const inventory = buildWriteInventory();
+  assert.ok(inventory.entries.length >= 100);
+  assert.equal(inventory.validation.status, 'pass');
+  assert.equal(inventory.validation.inventory_status, 'complete');
+  assert.equal(inventory.validation.unknown_writers, 0);
+  assert.ok(inventory.validation.direct_dml_candidates > 0);
+  assert.deepEqual(Object.keys(inventory.freeze_lane_counts).sort(), [
+    'application',
+    'auth-refresh',
+    'cron',
+    'edge-functions',
+    'manual',
+    'storage',
+    'webhooks',
   ]);
 });
 
@@ -540,8 +625,84 @@ test('tenant config inventory excludes keys and exposes broad non-default reacha
   assert.equal(JSON.stringify(entry).includes('must-not-escape'), false);
   const report = buildTenantConfigInventory([{ ...entry, status: 'discovered' }]);
   assert.equal(report.counts.non_default_broad_reachability, 1);
+  assert.equal(report.validation.status, 'fail');
+  assert.match(report.validation.blockers[0], /no approved cutover disposition/);
+});
+
+test('tenant cutover policy classifies legacy refs and keeps external gates blocked', () => {
+  const policy = loadTenantCutoverPolicy();
+  const report = buildTenantConfigInventory([
+    { branch: 'origin/prod/avapp', status: 'missing-project-conf' },
+    { branch: 'origin/prod/ticketonline', status: 'missing-project-conf' },
+    {
+      ...parseTenantConfig(`
+        SUPABASE_URL=https://${SOURCES.a}.supabase.co
+        ORGANIZATION_ID=4
+      `, 'origin/prod/hvezdamorska'),
+      status: 'discovered',
+    },
+  ], policy);
+  assert.equal(report.counts.unknown, 0);
+  assert.equal(report.counts.pending_legacy_retirements, 2);
   assert.equal(report.validation.status, 'blocked');
-  assert.match(report.validation.blockers[0], /all visible occasions/);
+  assert.match(report.validation.blockers.join('\n'), /avapp.*retirement evidence/);
+  assert.match(report.validation.blockers.join('\n'), /hvezdamorska.*live application freeze/);
+  assert.equal(
+    report.entries.find((entry) => entry.branch.endsWith('ticketonline'))
+      .cutover_disposition.closure,
+    'closed',
+  );
+});
+
+test('repository cutover preflight separates local readiness from live blockers', () => {
+  const base = {
+    gitState: {
+      branch: 'main',
+      head: 'a'.repeat(40),
+      origin_main: 'a'.repeat(40),
+      dirty_paths: [],
+      active_branches_behind_main: [],
+    },
+    tenantInventory: {
+      counts: {
+        production_configs: 14,
+        unknown: 0,
+        pending_legacy_retirements: 2,
+        live_freeze_required: 5,
+      },
+      validation: {
+        status: 'blocked',
+        blockers: ['origin/prod/avapp: external retirement evidence pending'],
+      },
+    },
+    writerInventory: {
+      entries: Array.from({ length: 137 }),
+      validation: { status: 'pass', unknown_writers: 0, direct_dml_candidates: 12 },
+    },
+    runtimePins: {
+      release: 'self-hosted/v0.8.0',
+      offline_verifier_passed: true,
+      missing_compose_images: [],
+    },
+    tenantPolicy: { valid: true, blockers: [] },
+    runtimeWriterPolicy: {
+      status: 'pass', blockers: [], edge_functions: 20,
+      worker_entrypoints: 3, mutating_surfaces: 18,
+      canonical_security_blockers: [], canonical_exclusions: [],
+      activation_requirements: [],
+    },
+  };
+  const ready = evaluateRepositoryCutoverReadiness(base);
+  assert.equal(ready.repository_ready, true);
+  assert.deepEqual(ready.blockers, []);
+  assert.equal(ready.operational_blockers.length, 1);
+
+  const dirty = evaluateRepositoryCutoverReadiness({
+    ...base,
+    gitState: { ...base.gitState, dirty_paths: ['lib/app_config.dart'] },
+  });
+  assert.equal(dirty.repository_ready, false);
+  assert.match(dirty.blockers[0], /working tree/);
 });
 
 test('RPC search-path hardening is exhaustive, fail-closed and non-destructive', () => {
@@ -561,4 +722,20 @@ test('RPC search-path hardening is exhaustive, fail-closed and non-destructive',
   assert.match(migration, /non-canonical client_sync RPC overload remains/);
   assert.doesNotMatch(migration, /\b(?:DELETE|DROP|REVOKE|TRUNCATE)\b/i);
   assert.doesNotMatch(migration, /CREATE\s+(?:OR\s+REPLACE\s+)?TRIGGER/i);
+});
+
+test('canonical notification webhook is secret-authenticated and starts disabled', () => {
+  const migration = fs.readFileSync(path.join(
+    REPOSITORY_ROOT,
+    'supabase/migrations/20260902190000_authenticate_notification_webhook.sql',
+  ), 'utf8');
+  assert.match(migration, /SECURITY DEFINER/);
+  assert.match(migration, /SET search_path = ''/);
+  assert.match(migration, /festapp_notify_webhook_token_v1/);
+  assert.match(migration, /'Authorization', 'Bearer ' \|\| webhook_token/);
+  assert.match(migration, /DROP TRIGGER IF EXISTS push_log_notifications/);
+  assert.match(migration, /CREATE OR REPLACE FUNCTION public\.setup_triggers/);
+  assert.match(migration, /deliver_log_notification_v1\(%L\)/);
+  assert.doesNotMatch(migration, /supabase_functions\.http_request/);
+  assert.doesNotMatch(migration, /Bearer [A-Za-z0-9_-]{32}/);
 });
