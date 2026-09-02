@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly Festapp encrypted off-host runtime log upload
+
+[Timer]
+OnCalendar=*:12
+RandomizedDelaySec=5min
+Persistent=true
+Unit=festapp-runtime-log-upload.service
+
+[Install]
+WantedBy=timers.target

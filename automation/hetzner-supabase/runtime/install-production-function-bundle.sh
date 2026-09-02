@@ -14,16 +14,19 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
 [[ "$MANIFEST" == /* && -f "$MANIFEST" && "$(stat -c '%a' "$MANIFEST")" == "600" ]] ||
   fail "FESTAPP_FUNCTION_BUNDLE_MANIFEST must be an absolute mode-0600 file"
 readonly ARTIFACT="$(dirname "$MANIFEST")/$(jq -r .archive.file "$MANIFEST")"
-[[ "$(jq -r '[.version,(.source_sha|test("^[0-9a-f]{40}$")),.host_router_directory,
-  (.excluded_directories|sort|join(","))]|join("|")' "$MANIFEST")" ==
-  "1|true|main|hello,instance-install" ]] || fail "Function bundle manifest contract is invalid"
-[[ -f "$ARTIFACT" && "$(sha256sum "$ARTIFACT" | awk '{print $1}')" ==
+jq -e '
+  .version == 1 and
+  (.source_sha | test("^[0-9a-f]{40}$")) and
+  .host_router_directory == "main" and
+  (.excluded_directories | sort) == ["hello", "instance-install"]
+' "$MANIFEST" >/dev/null || fail "Function bundle manifest contract is invalid"
+[[ -f "$ARTIFACT" && "$(sha256sum "$ARTIFACT" | awk '{print $1}')" == \
   "$(jq -r .archive.sha256 "$MANIFEST")" ]] || fail "Function bundle artifact digest mismatch"
 
 cd "$COMPOSE_DIR"
 exec 9>".festapp-runtime-upgrade.lock"
 flock -n 9 || fail "another runtime upgrade, promotion or bundle install is active"
-[[ -f festapp-runtime-writer-policy.json && "$(sha256sum festapp-runtime-writer-policy.json | awk '{print $1}')" ==
+[[ -f festapp-runtime-writer-policy.json && "$(sha256sum festapp-runtime-writer-policy.json | awk '{print $1}')" == \
   "$(jq -r .runtime_writer_policy_sha256 "$MANIFEST")" ]] || fail "installed writer policy mismatch"
 [[ -d volumes/functions/main && -f volumes/functions/main/index.ts ]] || fail "upstream Function router is missing"
 if tar -tzf "$ARTIFACT" | awk '/^\// || /(^|\/)\.\.($|\/)/ {unsafe=1} END {exit !unsafe}'; then
