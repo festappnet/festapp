@@ -284,7 +284,9 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(barrier, /pg_terminate_backend/);
   assert.match(bundleBuilder, /clean synchronized main/);
   assert.match(bundleBuilder, /instance-install/);
+  assert.match(bundleBuilder, /tar --no-xattrs/);
   assert.match(bundleInstaller, /unsafe path/);
+  assert.match(bundleInstaller, /tar --no-xattrs --no-same-owner/);
   assert.match(bundleInstaller, /staged Function directory set is not canonical/);
   assert.match(bundleInstaller, /runtime_restarted:false/);
   assert.doesNotMatch(bundleInstaller, /docker compose (?:up|restart)/);
