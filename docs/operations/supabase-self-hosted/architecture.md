@@ -7,20 +7,19 @@ Storage authority and one public endpoint: `https://api.festapp.net`.
 (`lwfpdjxsdmkfyrzqbrlk`) is imported only through staging and versioned mapping
 rules. An organization is identified by `(source_project, organization_id)`.
 
-During a bounded hybrid phase, `default` tenants write only to the canonical
-target and uncut `a` tenants write only to cloud `a`. Every `a` mutation must use
-an explicit RPC that appends to the same-transaction journal. A host-local
-forwarder may replay durable state into effect-free, idempotent target RPCs.
-Client dual-write, reverse sync and persistent application triggers are forbidden.
+Production cutover uses one coordinated full freeze across `default`, `a` and
+`slunovrat`. Application, Auth refresh, Storage, Functions, cron, webhook,
+worker and operator writes stop before the fresh snapshots and remain stopped
+until either canonical activation or rollback. Journal hybrid is not authorized
+and is not a production fallback. Client dual-write, reverse sync and persistent
+application migration triggers are forbidden.
 
-The proposed write seam is the existing typed `client_sync_v1` command module.
-A Flutter call reaches one explicit domain RPC. Before hybrid activation, that
-RPC seam must perform authorization, durable business DML, idempotency receipt,
-audit commit and the temporary migration journal append in one PostgreSQL
-transaction. Compared with the legacy direct PostgREST sequences this normally
-removes round trips and partial-write states.
-The migration still requires a rehearsal load test before enabling hybrid mode;
-the architecture decision is not a substitute for measured p95/p99 latency.
+The canonical application write seam is the existing typed `client_sync_v1`
+command module. A Flutter call reaches one explicit domain RPC that owns
+authorization, durable business DML, idempotency and audit evidence in one
+PostgreSQL transaction. This seam improves normal operation but is not treated
+as proof that every already-released client write is journaled; the full freeze
+is therefore mandatory.
 
 Cloudflare does not own relational writes. It fronts the public endpoint and
 continues to own the existing image/R2 adapter, where globally distributed

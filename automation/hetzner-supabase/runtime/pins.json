@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "checkedAt": "2026-08-27T00:00:00Z",
+  "checkedAt": "2026-09-02T15:00:00Z",
   "architecture": "linux/arm64",
   "policy": "latest-stable-compatible-bundle",
   "host": {
@@ -8,7 +8,7 @@
     "dockerEngine": "29.7.2",
     "dockerCompose": "5.5.0",
     "caddy": "2.11.4",
-    "terraform": "1.16.0",
+    "terraform": "1.16.1",
     "hcloudProvider": "1.68.0"
   },
   "supabase": {
@@ -45,7 +45,7 @@
     "dockerEngine": "https://docs.docker.com/engine/release-notes/29/",
     "dockerCompose": "https://github.com/docker/compose/releases/tag/v5.5.0",
     "caddy": "https://github.com/caddyserver/caddy/releases/tag/v2.11.4",
-    "terraform": "https://github.com/hashicorp/terraform/releases/tag/v1.16.0",
+    "terraform": "https://github.com/hashicorp/terraform/releases/tag/v1.16.1",
     "hcloudProvider": "https://github.com/hetznercloud/terraform-provider-hcloud/releases/tag/v1.68.0"
   }
 }
