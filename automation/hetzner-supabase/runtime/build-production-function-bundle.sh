@@ -33,10 +33,11 @@ mapfile_compat < <(jq -r '(.canonical_function_security.excluded|keys) as $exclu
 FUNCTION_NAMES+=("_shared")
 for name in "${FUNCTION_NAMES[@]}"; do [[ -d "$SOURCE_ROOT/$name" ]] || fail "missing source Function: $name"; done
 
-COPYFILE_DISABLE=1 tar -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" | tar -C "$STAGE" -xf -
+COPYFILE_DISABLE=1 tar --no-xattrs -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" |
+  tar --no-xattrs -C "$STAGE" -xf -
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle must not contain symlinks"
 readonly ARCHIVE="$RUN_DIR/functions.tar.gz"
-COPYFILE_DISABLE=1 tar -C "$STAGE" -czf "$ARCHIVE" .
+COPYFILE_DISABLE=1 tar --no-xattrs -C "$STAGE" -czf "$ARCHIVE" .
 chmod 0600 "$ARCHIVE"
 readonly ARCHIVE_SHA256="$(shasum -a 256 "$ARCHIVE" | awk '{print $1}')"
 readonly POLICY_SHA256="$(shasum -a 256 "$POLICY" | awk '{print $1}')"
