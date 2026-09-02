@@ -31,6 +31,9 @@ I have created a script to automate the resource creation.
    - You will be asked for your **Edge Function URL**.
    - Deploy your functions first:
      `supabase functions deploy bank-mail-parser --no-verify-jwt`.
+   - Set `AWS_SNS_TOPIC_ARN` on the Function and require SNS Signature Version
+     2 before pointing the subscription at canonical production:
+     `aws sns set-topic-attributes --topic-arn <ARN> --attribute-name SignatureVersion --attribute-value 2`.
    - URL format:
      `https://<project-ref>.supabase.co/functions/v1/bank-mail-parser`.
 
@@ -46,6 +49,7 @@ If you prefer using the web interface:
 2. Type: **Standard**.
 3. Name: `festapp-bank-emails`.
 4. Click **Create topic**.
+5. Set the topic message signature version to `2` (SHA-256).
 
 ### 2. Subscribe Edge Function
 

@@ -24,7 +24,10 @@ and writes.
 
 ## Overview
 
-Deno-based edge functions for privileged operations, external API calls, and email delivery. All deployed with `--no-verify-jwt`; each function handles its own authorization.
+Deno-based edge functions for privileged operations, external API calls, and
+email delivery. Functions deployed with `--no-verify-jwt` must enforce their
+own user, system-secret or verified-provider boundary. `instance-install` is a
+bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 
 ## Function Inventory
 
@@ -42,7 +45,7 @@ Deno-based edge functions for privileged operations, external API calls, and ema
 | `fetch-transactions` | Syncs bank transactions from FIO API for an occasion. |
 | `synchronize-orders` | Batch-syncs transactions across all fetchable accounts (cron). Matches to orders and triggers confirmation emails. |
 | `instance-install` | Runs SQL scripts from GitHub for setup/migrations (tables, functions, policies, seeds). |
-| `fetch-http-data` | Proxies HTTP requests, returns Base64. Used to bypass CORS. |
+| `fetch-http-data` | Authenticated occasion-editor image fetch. Rejects private/local DNS and redirect targets, non-images and responses over 10 MiB. |
 | `bank-mail-parser` | Receives AWS SNS bank confirmation emails, parses transaction details, inserts into DB. |
 | `generate-order-agreement` | Generates the tenant-configured PDF order agreement using `pdf-lib`; tenant identity is supplied through the canonical configuration boundary. |
 
@@ -82,6 +85,12 @@ Path 2: User Token + Editor Check
 ```bash
 supabase functions deploy <function-name> --no-verify-jwt --project-ref <ref>
 ```
+
+This command is not a blanket production allowlist. Canonical
+`bank-mail-parser` requires the exact `AWS_SNS_TOPIC_ARN` and Signature Version
+2. Canonical `notify` requires `NOTIFY_WEBHOOK_TOKEN` matching the
+`festapp_notify_webhook_token_v1` Vault value. Both require live ingress
+canaries before side effects are enabled.
 
 Cron-invoked functions (`synchronize-orders`, `send-email` with `processQueue`) use `requestSecret` auth. The secret is generated via `generate_request_secret` RPC with a TTL.
 

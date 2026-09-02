@@ -1,0 +1,19 @@
+name = "festapp-sync-worker"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+workers_dev = false
+
+[[r2_buckets]]
+binding = "PUBLIC_SYNC"
+bucket_name = "festapp-public"
+
+[[routes]]
+pattern = "sync.festapp.net"
+custom_domain = true
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[placement]
+mode = "smart"
