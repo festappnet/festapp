@@ -23,6 +23,7 @@ export const REQUIRED_FREEZE_LANES = Object.freeze([
 
 const MAX_EVIDENCE_AGE_MS = 15 * 60 * 1000;
 const MAX_CLOCK_SKEW_MS = 60 * 1000;
+const MAX_PROMOTION_WINDOW_MS = 4 * 60 * 60 * 1000;
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -56,6 +57,12 @@ function commonGate(evidence, now) {
   invariant(evidence.writer_inventory?.direct_dml_bypasses === 0,
     'direct DML bypasses remain');
   invariant(evidence.target?.writes === 'closed', 'target writes must remain closed');
+  invariant(evidence.target?.database &&
+    /^festapp_rehearsal_[0-9]{14}$/.test(evidence.target.database),
+  'target database must be the exact timestamped promotion candidate');
+  invariant(evidence.target?.write_barrier === 'database-default-read-only' &&
+    evidence.target?.default_transaction_read_only === true,
+  'target database write barrier is not proven closed');
   invariant(evidence.target?.external_side_effects === 'disabled',
     'target external side effects must remain disabled');
   return observedAt;
@@ -93,6 +100,18 @@ function fullFreezeGate({ evidence, phase, now }) {
       invariant(typeof evidence.sources?.[alias]?.final_marker === 'string' &&
         evidence.sources[alias].final_marker.length > 0,
       `${alias} final marker is missing`);
+      const imported = evidence.sources[alias].import;
+      invariant(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        .test(imported?.run_id ?? ''), `${alias} import run ID is invalid`);
+      invariant(/^[0-9a-f]{64}$/.test(imported?.source_schema_fingerprint ?? ''),
+        `${alias} source schema fingerprint is invalid`);
+      invariant(typeof imported?.transformation_version === 'string' &&
+        imported.transformation_version.length > 0,
+      `${alias} transformation version is missing`);
+      const importedAt = timestamp(imported?.snapshot_at, `${alias}.import.snapshot_at`);
+      invariant(importedAt >= activatedAt && importedAt >= authActivatedAt &&
+        importedAt <= observedAt,
+      `${alias} imported snapshot is outside the frozen evidence window`);
     }
     invariant(evidence.validation?.status === 'pass', 'final data validation is not passing');
     invariant(evidence.validation?.unresolved_conflicts === 0,
@@ -153,13 +172,22 @@ export function evaluateCutoverMode({ mode, phase, evidence, now = Date.now() })
   const decision = mode === 'full-freeze'
     ? fullFreezeGate({ evidence, phase, now })
     : hybridGate({ evidence, phase, now });
-  return {
+  const result = {
     decision_version: 1,
     ...decision,
     source_projects: evidence.source_projects,
     evidence_observed_at: evidence.observed_at,
     gate_mutations_performed: false,
+    target_database: evidence.target.database,
   };
+  if (phase === 'final-marker' && mode === 'full-freeze') {
+    result.authorized_until = new Date(now + MAX_PROMOTION_WINDOW_MS).toISOString();
+    result.source_imports = Object.fromEntries(SOURCE_ALIASES.map((alias) => [alias, {
+      final_marker: evidence.sources[alias].final_marker,
+      ...evidence.sources[alias].import,
+    }]));
+  }
+  return result;
 }
 
 function argument(name) {
