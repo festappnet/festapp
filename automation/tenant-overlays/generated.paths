@@ -2,6 +2,7 @@
 .fvmrc
 .fvm/fvm_config.json
 .fvm/release
+.vscode/settings.json
 android/app/build.gradle
 android/app/src/main/AndroidManifest.xml
 android/app/src/main/kotlin/fstapp/MainActivity.kt

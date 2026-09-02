@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "6cf0384d6aa552d6215356c8345813cbaa35d7ab",
+  "baseMainSha": "4a1565547ea2a2c00fd8ca65ccb870e1ccd7aaa2",
   "release": {
-    "version": "0.19.93+476",
+    "version": "0.19.95+477",
     "note": "Current main with a pinned legacy-to-canonical backend resolver"
   }
 }

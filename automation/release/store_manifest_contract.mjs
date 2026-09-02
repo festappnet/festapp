@@ -16,6 +16,11 @@ export function storeManifestShapeErrors(manifest) {
       }
     }
   }
+  if (requireObject('apple')) {
+    if (typeof manifest.apple.storeName !== 'string' || !manifest.apple.storeName.trim()) {
+      errors.push('app-store manifest apple.storeName is missing');
+    }
+  }
   if (requireObject('urls')) {
     for (const field of ['marketing', 'privacy', 'privacyChoices', 'support']) {
       try {
