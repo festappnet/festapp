@@ -9,6 +9,10 @@ The Android map state also maps `MapLibreMap.active` to the native
 `onStart/onResume` and `onPause/onStop` lifecycle. This keeps cached map
 resources in memory without rendering an offstage tab continuously.
 
+The embedded Android build pins its external ktlint Gradle plugin because
+Flutter evaluates this vendored module inside the application build, outside
+the upstream repository's plugin-version management.
+
 Remove this package and the root `dependency_overrides` entry once upstream
 supports an explicit pixel ratio for style images and pausing a retained map.
 Validate removal by checking downloaded custom pins and background CPU after

@@ -104,6 +104,8 @@ grep -qE 'static const bool isAllUnit = true;' "$TMP_ROOT/hvezdamorska/lib/app_c
 grep -qE "supportedLanguages = \['cs', 'en'\]" "$TMP_ROOT/hvezdamorska/web_client/src/app_config.js"
 grep -qE 'CSM Fixture' "$TMP_ROOT/csmostrava2026/web/delete-account/index.html"
 grep -qE 'fixturecsm.supabase.co/functions/v1/confirm-account-deletion' "$TMP_ROOT/csmostrava2026/web/delete-account/index.html"
+grep -qE '"flutter": "3\.47\.2"' "$TMP_ROOT/csmostrava2026/.fvmrc"
+grep -qE '"dart\.flutterSdkPath": "\.fvm/versions/3\.47\.2"' "$TMP_ROOT/hvezdamorska/.vscode/settings.json"
 grep -qE 'HM Fixture' "$TMP_ROOT/hvezdamorska/web/delete-account/index.html"
 grep -qE 'fixturehm.supabase.co/functions/v1/confirm-account-deletion' "$TMP_ROOT/hvezdamorska/web/delete-account/index.html"
 ! grep -qE 'fixturecsm|csmostrava2026|fixture_csm|CSM Fixture' "$TMP_ROOT/hvezdamorska/lib/app_config.dart" "$TMP_ROOT/hvezdamorska/web_client/src/app_config.js" "$TMP_ROOT/hvezdamorska/web/index.html" "$TMP_ROOT/hvezdamorska/web/delete-account/index.html"

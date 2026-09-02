@@ -1,6 +1,7 @@
 require 'json'
 require 'spaceship'
 require 'fileutils'
+require 'digest'
 require 'open3'
 require 'tmpdir'
 
@@ -363,6 +364,41 @@ platform :ios do
     )
   end
 
+  desc 'Upload an exact build to internal TestFlight without changing an App Store version'
+  lane :upload_testflight_build do
+    app = target_app!('UPLOAD_TESTFLIGHT_BUILD_ONLY')
+    ipa = ENV.fetch('IPA_PATH')
+    UI.user_error!("IPA not found: #{ipa}") unless File.file?(ipa)
+    digest = Digest::SHA256.file(ipa).hexdigest
+    expected = "#{APPLE_ID}|#{BUNDLE_ID}|#{TARGET_VERSION}|#{TARGET_BUILD}|#{digest}|UPLOAD_TESTFLIGHT_BUILD"
+    UI.user_error!("Set CUTOVER_CONFIRMATION exactly to #{expected}") unless ENV['CUTOVER_CONFIRMATION'] == expected
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ipa,
+      app_identifier: BUNDLE_ID,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      notify_external_testers: false
+    )
+    UI.success("Uploaded exact internal TestFlight candidate #{TARGET_VERSION} (#{TARGET_BUILD}); App Store version unchanged")
+  end
+
+  desc 'Read-only editable-version inventory without canonical metadata assertions'
+  lane :editable_version_check do
+    app = target_app!('READ_ONLY_EDITABLE_VERSION_CHECK')
+    editable = app.get_edit_app_store_version
+    if editable
+      selected = begin
+        editable.get_build
+      rescue
+        nil
+      end
+      UI.message("EDITABLE VERSION=#{editable.version_string} STATE=#{editable.app_store_state} SELECTED_BUILD=#{selected&.version || 'none'}")
+    else
+      UI.message('EDITABLE VERSION=none')
+    end
+  end
+
   desc 'Upload canonical metadata only; never submit or release'
   lane :upload_metadata do
     app = target_app!('UPLOAD_METADATA_ONLY')
@@ -494,7 +530,7 @@ platform :ios do
       UI.user_error!("#{name} URL mismatch: #{actual.inspect}") unless actual == expected
       UI.message("URL #{name}=#{actual}")
     end
-    UI.user_error!('Store name mismatch') unless info_localization.name == MANIFEST.fetch('target').fetch('name')
+    UI.user_error!('Store name mismatch') unless info_localization.name == MANIFEST.fetch('apple').fetch('storeName')
     UI.user_error!('Localized description is empty') if version_localization.description.to_s.strip.empty?
 
     sets = version_localization.get_app_screenshot_sets
@@ -578,27 +614,30 @@ platform :ios do
     UI.success("Removed only exact retry duplicates; App Store counts now match #{expected_counts}")
   end
 
-  desc 'Upload canonical screenshots only; never submit or release'
-  lane :upload_screenshots do
-    app = target_app!('UPLOAD_SCREENSHOTS_ONLY')
+  desc 'Replace all screenshots for the exact editable target version; never submit or release'
+  lane :replace_screenshots do
+    exact_gate!('REPLACE_SCREENSHOTS')
+    app = target_app!('REPLACE_SCREENSHOTS_ONLY')
     editable = app.get_edit_app_store_version
     UI.user_error!("No editable target version") unless editable&.version_string == TARGET_VERSION
     ENV['FASTLANE_ENABLE_BETA_DELIVER_SYNC_SCREENSHOTS'] = '1'
     Dir.mktmpdir('apple-screenshots') do |staging|
+      locale_staging = File.join(staging, MANIFEST.fetch('target').fetch('locale'))
+      FileUtils.mkdir_p(locale_staging)
       MANIFEST.fetch('screenshots').transform_values do |rule|
         File.expand_path(rule.fetch('sourceDirectory'), RELEASE_ROOT)
       end.each do |prefix, source_dir|
         UI.user_error!("Screenshot path escapes the release listing: #{source_dir}") unless source_dir.start_with?("#{RELEASE_ROOT}#{File::SEPARATOR}")
         UI.user_error!("Missing internal screenshot set: #{source_dir}") unless Dir.exist?(source_dir)
         Dir.glob(File.join(source_dir, '*.png')).sort.each do |source|
-          FileUtils.cp(source, File.join(staging, "#{prefix}-#{File.basename(source)}"))
+          FileUtils.cp(source, File.join(locale_staging, "#{prefix}-#{File.basename(source)}"))
         end
       end
       deliver(
         api_key: api_key, app_identifier: BUNDLE_ID,
         screenshots_path: staging, metadata_path: staging,
         skip_binary_upload: true, skip_metadata: true, skip_screenshots: false,
-        overwrite_screenshots: false, sync_screenshots: true, submit_for_review: false,
+        overwrite_screenshots: true, sync_screenshots: true, submit_for_review: false,
         automatic_release: false, run_precheck_before_submit: false, force: true
       )
     end
@@ -706,7 +745,17 @@ platform :ios do
   desc 'Explicitly gated submission with automatic release after Apple approval'
   lane :submit_for_review do
     exact_gate!('SUBMIT')
-    target_app!('SUBMIT_FOR_REVIEW')
+    app = target_app!('SUBMIT_FOR_REVIEW')
+    editable = app.get_edit_app_store_version
+    UI.user_error!("No editable target version") unless editable&.version_string == TARGET_VERSION
+    editable.update(attributes: {
+      release_type: Spaceship::ConnectAPI::AppStoreVersion::ReleaseType::AFTER_APPROVAL,
+      earliest_release_date: nil
+    })
+    configured = Spaceship::ConnectAPI::AppStoreVersion.get(app_store_version_id: editable.id)
+    UI.user_error!("Automatic release configuration did not persist") unless
+      configured&.release_type == Spaceship::ConnectAPI::AppStoreVersion::ReleaseType::AFTER_APPROVAL &&
+      configured.earliest_release_date.nil?
     deliver(
       api_key: api_key, app_identifier: BUNDLE_ID,
       submit_for_review: true, skip_binary_upload: true,
@@ -715,5 +764,9 @@ platform :ios do
       automatic_release: true, run_precheck_before_submit: true,
       precheck_include_in_app_purchases: false, force: true
     )
+    submitted = Spaceship::ConnectAPI::AppStoreVersion.get(app_store_version_id: editable.id)
+    UI.user_error!("Submission changed release mode away from automatic") unless
+      submitted&.release_type == Spaceship::ConnectAPI::AppStoreVersion::ReleaseType::AFTER_APPROVAL &&
+      submitted.earliest_release_date.nil?
   end
 end

@@ -30,6 +30,12 @@ class OrdersContent extends StatefulWidget {
   _OrdersContentState createState() => _OrdersContentState();
 }
 
+bool canSaveOrderGridChanges({
+  required bool isOrderEditor,
+  required bool isUnitManager,
+}) =>
+    isOrderEditor || isUnitManager;
+
 // The state class has been renamed accordingly
 class _OrdersContentState extends State<OrdersContent> {
   String? occasionLink;
@@ -129,7 +135,10 @@ class _OrdersContentState extends State<OrdersContent> {
           : DataGridFirstColumn.check,
       idColumn: TbEshop.orders.id,
       actionsExtended: DataGridActionsController(
-        areAllActionsEnabled: RightsService.isEditorOrder,
+        areAllActionsEnabled: () => canSaveOrderGridChanges(
+          isOrderEditor: RightsService.isEditorOrder(),
+          isUnitManager: RightsService.isUnitManager(),
+        ),
         isAddActionPossible: () => false,
       ),
       headerChildren: [

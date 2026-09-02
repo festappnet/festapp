@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
-import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/map_feature.dart';
 import 'package:fstapp/components/map/legacy_map_surface.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
+import 'package:fstapp/components/map/map_strings.dart';
 import 'package:fstapp/components/map/map_place_model.dart';
 import 'package:fstapp/components/map/map_scene.dart';
 import 'package:fstapp/components/map/map_viewport_controller.dart';
@@ -104,16 +105,17 @@ void main() {
       ),
     ));
 
-    expect(find.byType(DefaultLocationMarker), findsOneWidget);
+    const locationMarkerKey = Key('legacy-current-location-marker');
+    expect(find.byKey(locationMarkerKey), findsOneWidget);
     final locationLayer = tester
         .widgetList<fm.MarkerLayer>(find.byType(fm.MarkerLayer))
         .singleWhere(
           (layer) => layer.markers.any(
-            (marker) => marker.child is DefaultLocationMarker,
+            (marker) => marker.child.key == locationMarkerKey,
           ),
         );
     final locationMarker = locationLayer.markers.singleWhere(
-      (marker) => marker.child is DefaultLocationMarker,
+      (marker) => marker.child.key == locationMarkerKey,
     );
     expect(locationMarker.width, 20);
     expect(locationMarker.height, 20);
@@ -134,7 +136,10 @@ void main() {
       ),
     ));
 
-    expect(find.byType(DefaultLocationMarker), findsNothing);
+    expect(
+      find.byKey(const Key('legacy-current-location-marker')),
+      findsNothing,
+    );
   });
 
   testWidgets('does not silently fall back when MapLibre is unavailable',
@@ -188,7 +193,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('configured online provider keeps an independent OSM base layer',
+  testWidgets(
+      'configured provider failure switches layer and attribution to OSM',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
@@ -196,20 +202,55 @@ void main() {
         isOffline: false,
         model: model(),
         legacy: LegacyMapConfiguration.online(
-          MapLayer(layerLink: 'https://primary.example/{z}/{x}/{y}.png'),
+          MapLayer(
+            layerLink: 'https://primary.example/{z}/{x}/{y}.png',
+            text: 'Primary maps',
+          ),
         ),
       ),
     ));
 
-    final layers = tester.widgetList<fm.TileLayer>(find.byType(fm.TileLayer));
-    expect(layers, hasLength(2));
+    var layers = tester.widgetList<fm.TileLayer>(find.byType(fm.TileLayer));
     expect(
-      layers.first.urlTemplate,
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        layers.single.urlTemplate, 'https://primary.example/{z}/{x}/{y}.png');
+    expect(layers.single.fallbackUrl, isNull);
+    expect(layers.single.errorTileCallback, isNotNull);
+    expect(
+      tester
+          .widgetList<fm.TextSourceAttribution>(
+              find.byType(fm.TextSourceAttribution))
+          .map((attribution) => attribution.text),
+      ['Primary maps'],
     );
-    expect(layers.last.urlTemplate, 'https://primary.example/{z}/{x}/{y}.png');
-    expect(layers.last.fallbackUrl,
+    expect(
+      (layers.single.tileProvider as fm.NetworkTileProvider)
+          .attemptDecodeOfHttpErrorResponses,
+      isFalse,
+    );
+    expect(
+      layers.single.tileProvider.headers['User-Agent'],
+      'Festapp/Flutter (+${AppConfig.supportUrl})',
+    );
+
+    layers.single.errorTileCallback!(
+      _FakeTileImage(),
+      StateError('HTTP 403'),
+      null,
+    );
+    await tester.pump();
+
+    layers = tester.widgetList<fm.TileLayer>(find.byType(fm.TileLayer));
+    expect(layers.single.urlTemplate,
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+    expect(layers.single.errorTileCallback, isNull);
+    expect(find.byType(fm.LogoSourceAttribution), findsNothing);
+    expect(
+      tester
+          .widgetList<fm.TextSourceAttribution>(
+              find.byType(fm.TextSourceAttribution))
+          .map((attribution) => attribution.text),
+      [MapStrings.openStreetMapAttribution],
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
@@ -262,4 +303,9 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
   });
+}
+
+class _FakeTileImage implements fm.TileImage {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
