@@ -69,10 +69,8 @@ void main() {
     );
   });
 
-  test('legacy command falls back to the RLS store only when RPC is absent',
-      () async {
+  test('legacy cohort command uses only the atomic RPC', () async {
     final calls = <String>[];
-    final mutations = <(List<int>, SavedProgramMode)>[];
     final commands = LegacySavedProgramCommands.withAdapters(
       occasionId: 6,
       invoke: (name, params) async {
@@ -82,55 +80,24 @@ void main() {
           'p_event_ids': [707],
           'p_mode': 'join',
         });
-        throw const PostgrestException(
-          message: 'function missing',
-          code: 'PGRST202',
-        );
+        return [701, 707];
       },
-      mutate: (eventIds, mode) async => mutations.add((eventIds, mode)),
-      read: () async => [701, 707],
     );
 
     expect(await commands.update([707], SavedProgramMode.join), [701, 707]);
     expect(calls, ['set_saved_program']);
-    expect(mutations, hasLength(1));
-    expect(mutations.single.$1, [707]);
-    expect(mutations.single.$2, SavedProgramMode.join);
   });
 
-  test('legacy command preserves non-capability RPC failures', () async {
-    var directMutationCalled = false;
+  test('legacy cohort exposes a missing RPC instead of direct DML', () async {
     final commands = LegacySavedProgramCommands.withAdapters(
       occasionId: 6,
       invoke: (_, __) async => throw const PostgrestException(
-        message: 'permission denied',
-        code: '42501',
-      ),
-      mutate: (_, __) async => directMutationCalled = true,
-      read: () async => const <int>[],
+          message: 'function missing', code: 'PGRST202'),
     );
 
     await expectLater(
       commands.update([707], SavedProgramMode.join),
       throwsA(isA<PostgrestException>()),
-    );
-    expect(directMutationCalled, isFalse);
-  });
-
-  test('legacy direct fallback rejects non-atomic replace', () async {
-    final commands = LegacySavedProgramCommands.withAdapters(
-      occasionId: 6,
-      invoke: (_, __) async => throw const PostgrestException(
-        message: 'function missing',
-        code: 'PGRST202',
-      ),
-      mutate: (_, __) async {},
-      read: () async => const <int>[],
-    );
-
-    await expectLater(
-      commands.update([707], SavedProgramMode.replace),
-      throwsA(isA<UnsupportedError>()),
     );
   });
 }

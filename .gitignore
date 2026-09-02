@@ -156,6 +156,8 @@ supabase/.env
 
 # Local Env Files
 **/.env.local
+# Canonical publisher scope IDs are fixed from private final-merge evidence.
+workers/sync-publisher/wrangler.toml
 # Local development environment (generated from supabase status)
 .env.development
 

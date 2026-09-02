@@ -1,9 +1,25 @@
 import { buildNotificationPayload } from "./notificationPayload.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { loadOrganizationNotificationConfig } from "../_shared/organizationNotificationConfig.ts";
+import { webhookTokenMatches } from "./webhookAuth.ts";
 
 Deno.serve(async (req) => {
+  const expectedToken = Deno.env.get("NOTIFY_WEBHOOK_TOKEN") ?? "";
+  if (req.method !== "POST" || Number(req.headers.get("content-length") ?? 0) > 64 * 1024 ||
+      !await webhookTokenMatches(req.headers.get("Authorization"), expectedToken)) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
   const { record } = await req.json();
+  if (!record || typeof record !== "object" || !Number.isSafeInteger(record.organization) ||
+      !Number.isSafeInteger(record.occasion)) {
+    return new Response(JSON.stringify({ error: "invalid_payload" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const organizationId = record.organization; // assuming `organization` is passed in `record`
   const url = "https://onesignal.com/api/v1/notifications";
 

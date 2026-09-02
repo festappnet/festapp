@@ -76,6 +76,10 @@ function validateRuntimeConfig(config, sourceRegistrySha256, referenceRegistrySh
   invariant(config.supabase_public_url === 'https://api.festapp.net' &&
     config.api_external_url === 'https://api.festapp.net',
   'production external URLs must be canonical and equal');
+  invariant(/^arn:aws:sns:[a-z0-9-]+:\d{12}:[A-Za-z0-9_-]+$/.test(config.aws_sns_topic_arn ?? ''),
+    'production AWS SNS topic ARN is invalid');
+  invariant(/^[0-9a-f]{64}$/.test(config.notify_webhook_token_sha256 ?? ''),
+    'notification webhook token digest is invalid');
   const siteUrl = normalizedOrigin(config.site_url, 'site_url');
   const origins = exactUniqueStrings(config.allowed_web_origins, 'allowed_web_origins')
     .map((origin, index) => normalizedOrigin(origin, `allowed_web_origins[${index}]`));
