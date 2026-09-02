@@ -49,6 +49,7 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
       AnimatedMapController(vsync: this);
   late final LegacyMapViewportController _viewportAdapter =
       LegacyMapViewportController(_animatedController);
+  bool _usingOpenStreetMapFallback = false;
 
   @override
   void initState() {
@@ -59,6 +60,10 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
   @override
   void didUpdateWidget(covariant LegacyMapSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.offline != widget.offline ||
+        oldWidget.layer.layerLink != widget.layer.layerLink) {
+      _usingOpenStreetMapFallback = false;
+    }
     if (!identical(oldWidget.model.viewport, widget.model.viewport)) {
       oldWidget.model.viewport.detach(_viewportAdapter);
       widget.model.viewport.attach(_viewportAdapter);
@@ -129,11 +134,14 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
 
   List<Widget> _buildOnlineBaseLayers() {
     final configured = widget.layer.layerLink?.trim();
-    final primary = configured == null || configured.isEmpty
+    final configuredPrimary = configured == null || configured.isEmpty
         ? _openStreetMapTiles
         : configured;
+    final primary =
+        _usingOpenStreetMapFallback ? _openStreetMapTiles : configuredPrimary;
 
-    fm.TileLayer tiles(String url, {String? fallbackUrl}) => fm.TileLayer(
+    fm.TileLayer tiles(String url) => fm.TileLayer(
+          key: ValueKey(url),
           tileProvider: fm.NetworkTileProvider(
             headers: {'User-Agent': _tileUserAgent},
             // Providers such as Mapy.com return a branded PNG together with
@@ -144,19 +152,17 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
           maxZoom: MapZoomLimits.interactionMaximum,
           maxNativeZoom: MapZoomLimits.onlineRasterNativeMaximum,
           urlTemplate: url,
-          fallbackUrl: fallbackUrl,
+          errorTileCallback: primary == _openStreetMapTiles
+              ? null
+              : (_, __, ___) => _activateOpenStreetMapFallback(),
         );
 
-    // Load only the configured provider. Rendering a complete OSM layer below
-    // it doubles every viewport request; fallback is sufficient for transport
-    // failures and keeps OSM traffic both identified and demand-driven.
-    return [
-      tiles(
-        primary,
-        fallbackUrl:
-            primary == _openStreetMapTiles ? null : _openStreetMapTiles,
-      ),
-    ];
+    return [tiles(primary)];
+  }
+
+  void _activateOpenStreetMapFallback() {
+    if (_usingOpenStreetMapFallback || !mounted) return;
+    setState(() => _usingOpenStreetMapFallback = true);
   }
 
   Widget _buildOfflineBaseLayer() {
@@ -181,10 +187,22 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
         attributions: [fm.TextSourceAttribution(text)],
       );
     }
+    final configured = widget.layer.layerLink?.trim();
+    final usesOpenStreetMap = _usingOpenStreetMapFallback ||
+        configured == null ||
+        configured.isEmpty ||
+        configured == _openStreetMapTiles;
+    if (usesOpenStreetMap) {
+      return fm.RichAttributionWidget(
+        showFlutterMapAttribution: false,
+        animationConfig: const fm.ScaleRAWA(),
+        attributions: const [
+          fm.TextSourceAttribution(MapStrings.openStreetMapAttribution),
+        ],
+      );
+    }
     if ((widget.layer.logo?.isNotEmpty ?? false) ||
         (widget.layer.text?.isNotEmpty ?? false)) {
-      final usesOpenStreetMap =
-          widget.layer.layerLink?.trim() == _openStreetMapTiles;
       return fm.RichAttributionWidget(
         showFlutterMapAttribution: false,
         animationConfig: const fm.ScaleRAWA(),
@@ -207,8 +225,6 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
                       )
                   : null,
             ),
-          if (!usesOpenStreetMap)
-            fm.TextSourceAttribution(MapStrings.openStreetMapAttribution),
         ],
       );
     }
