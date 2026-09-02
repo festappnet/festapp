@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "f53705798e974357d286a2e66990875b43a8c8da",
+  "baseMainSha": "4a1565547ea2a2c00fd8ca65ccb870e1ccd7aaa2",
   "release": {
-    "version": "0.19.95+479",
+    "version": "0.19.95+480",
     "note": "Current main with the Flutter web map renderer and canonical 0.19.95 release"
   }
 }
