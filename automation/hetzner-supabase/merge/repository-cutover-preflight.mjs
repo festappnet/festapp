@@ -20,6 +20,7 @@ import {
   evaluateRuntimeWriterPolicy,
   loadRuntimeWriterPolicy,
 } from './runtime-writer-policy.mjs';
+import { evaluateEdgeFunctionTestCoverage } from './edge-function-test-coverage.mjs';
 
 const RUNTIME_DIR = path.join(REPOSITORY_ROOT, 'automation/hetzner-supabase/runtime');
 const CORE_OPERATIONAL_REQUIREMENTS = Object.freeze([
@@ -124,6 +125,7 @@ export function evaluateRepositoryCutoverReadiness({
   runtimePins,
   tenantPolicy,
   runtimeWriterPolicy,
+  edgeFunctionTestCoverage,
 }) {
   const blockers = [];
   if (gitState.branch !== 'main') blockers.push(`repository branch is ${gitState.branch || 'detached'}, expected main`);
@@ -141,6 +143,10 @@ export function evaluateRepositoryCutoverReadiness({
   }
   if (!tenantPolicy.valid) blockers.push(...tenantPolicy.blockers);
   if (runtimeWriterPolicy.status !== 'pass') blockers.push(...runtimeWriterPolicy.blockers);
+  if (edgeFunctionTestCoverage.status !== 'pass') {
+    blockers.push(...edgeFunctionTestCoverage.blockers.map((item) =>
+      `Edge Function test coverage: ${item}`));
+  }
   for (const blocker of runtimeWriterPolicy.canonical_security_blockers) {
     blockers.push(`canonical Function security is unresolved: ${blocker}`);
   }
@@ -174,6 +180,9 @@ export function evaluateRepositoryCutoverReadiness({
         runtimeWriterPolicy.canonical_security_blockers.length,
       canonical_function_exclusions: runtimeWriterPolicy.canonical_exclusions.length,
       runtime_activation_requirements: runtimeWriterPolicy.activation_requirements.length,
+      tested_production_edge_functions: edgeFunctionTestCoverage.productionFunctions,
+      excluded_edge_functions: edgeFunctionTestCoverage.excludedFunctions,
+      discovered_deno_test_files: edgeFunctionTestCoverage.discoveredTests,
     },
   };
 }
@@ -189,6 +198,7 @@ async function main() {
     runtimePins: runtimePinState(),
     tenantPolicy: tenantPolicyState(policy),
     runtimeWriterPolicy: evaluateRuntimeWriterPolicy(loadRuntimeWriterPolicy()),
+    edgeFunctionTestCoverage: evaluateEdgeFunctionTestCoverage(),
   });
   result.generated_at = new Date().toISOString();
   result.report_sha256 = sha256(stableJson(result));

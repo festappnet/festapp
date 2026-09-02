@@ -23,6 +23,26 @@ Deno.serve(async (req) => {
     if (req.method === "OPTIONS") {
       return new Response("ok", { headers: corsHeaders });
     }
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 405,
+      });
+    }
+
+    const reqData = await req.json();
+    const userId = reqData.usr; // ID of the user to invite
+    const occasionId = reqData.oc; // ID of the occasion
+    if (
+      typeof userId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId) ||
+      !Number.isSafeInteger(occasionId) || occasionId <= 0
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid input parameters" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
 
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -33,10 +53,6 @@ Deno.serve(async (req) => {
         },
       },
     );
-
-    const reqData = await req.json();
-    const userId = reqData.usr; // ID of the user to invite
-    const occasionId = reqData.oc; // ID of the occasion
 
     // Generate a 6-digit sign in code.
     const code = Math.floor(100000 + Math.random() * 900000).toString();
