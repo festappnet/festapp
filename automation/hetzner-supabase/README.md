@@ -30,6 +30,9 @@ node automation/hetzner-supabase/merge/resolve-auth-collisions.mjs \
   --output "$FESTAPP_MIGRATION_OUTPUT/identity-decisions.json"
 node automation/hetzner-supabase/merge/write-authority-inventory.mjs \
   --output "$FESTAPP_MIGRATION_OUTPUT/write-authority.json"
+node automation/hetzner-supabase/runtime/validate-operational-readiness.mjs \
+  --evidence="$FESTAPP_MIGRATION_OUTPUT/operational-readiness.json" \
+  --output="$FESTAPP_MIGRATION_OUTPUT/operational-readiness-decision.json"
 node automation/hetzner-supabase/merge/hybrid-readiness.mjs \
   --output "$FESTAPP_MIGRATION_OUTPUT/hybrid-readiness.json"
 node automation/hetzner-supabase/merge/tenant-config-inventory.mjs \
@@ -43,6 +46,9 @@ deliberately remains `blocked` and unsigned until all Wave 0 evidence is
 attached and signed by the approved evidence process. The collision,
 write-authority, hybrid-readiness and tenant-config passes are immutable
 supporting evidence files rather than source snapshot manifests.
+The operational readiness decision is also append-only private evidence. It
+expires after 30 minutes and is required in addition to repository readiness;
+it performs no production mutation.
 
 The collision pass reads Auth e-mails and Storage object keys only in memory.
 Its evidence file contains source UUIDs plus one-run HMAC identifiers; the HMAC

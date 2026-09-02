@@ -42,6 +42,35 @@ that `main`, coherent immutable runtime pins, zero unknown tenant refs and zero
 unclassified repository writer entrypoints. Its `repository_ready` result does
 not close the separately listed operational blockers or authorize a freeze,
 snapshot, promotion or activation.
+The report always leaves `production_cutover_authorized: false`; only the
+separate operational, freeze, recovery, promotion and final go/no-go receipts
+can close that boundary.
+
+Immediately before requesting the freeze window, run the independent private
+operational gate:
+
+```bash
+node automation/hetzner-supabase/runtime/validate-operational-readiness.mjs \
+  --evidence=/private/evidence/operational-readiness.json \
+  --output=/private/evidence/operational-readiness-decision.json
+```
+
+It binds the exact timestamped promotion target, expires after 30 minutes and
+requires closed client/store dispositions,
+rehearsed owners for all seven freeze lanes, 50% disk headroom, an encrypted
+off-host backup plus restore proof, settled low DNS TTL, sufficient TLS
+lifetime, Cloudflare-only origin ingress, external Auth/REST/Storage/Realtime
+probes, off-host logs, tested alert delivery, fresh integration canaries, a
+named maintenance/on-call owner and the irreversible post-write rollback rule.
+A single-node production topology must be explicitly accepted as
+`single-node-recovery`; otherwise the evidence must describe a replicated
+topology. The current repository does not silently treat one healthy host as
+high availability.
+A repository gate cannot substitute for this operational evidence. Refresh the
+decision during the approved maintenance window whenever it would otherwise
+expire; the validator refuses evidence after that window ends. Production
+promotion requires the fresh mode-`0600` decision through
+`FESTAPP_OPERATIONAL_READINESS_DECISION` and rejects a different target.
 
 The exact runtime surface contract is
 `automation/hetzner-supabase/merge/runtime-writer-policy.json`. It covers every
@@ -303,6 +332,11 @@ For this migration, `full-freeze` is the selected production mode unless a new
 global writer inventory later proves the stricter hybrid contract. The final
 marker cannot be generated honestly before the real production freeze; passing
 the synthetic gate tests is tooling proof, not cutover authorization.
+The final-marker decision preserves the exact import run ID, snapshot time,
+schema fingerprint and transformation version for every source and binds them
+to one timestamped target database. Promotion authorization expires after four
+hours; a delayed operation must create a fresh marker while the freeze remains
+active.
 
 ## 3. Activation order
 
@@ -340,10 +374,17 @@ node automation/hetzner-supabase/runtime/validate-production-promotion.mjs \
   --digest-json=/opt/festapp-supabase/docker/festapp-source-registry.json
 node automation/hetzner-supabase/runtime/validate-production-promotion.mjs \
   --digest-json=/opt/festapp-supabase/docker/festapp-reference-registry.json
+node automation/hetzner-supabase/runtime/validate-production-promotion.mjs \
+  --digest-json=/opt/festapp-supabase/docker/festapp-runtime-writer-policy.json
 ```
 
 The mode-`0600` production runtime config must define the canonical
 `api.festapp.net` external URLs, Auth site/origin/redirect allowlists, and
+the installed runtime-writer-policy digest plus the normalized SHA-256 of the
+complete deployed Function tree. The deployed directory set must be exactly
+`main`, `_shared` and the policy functions not marked `excluded`; sample
+`hello`, `instance-install` and any unclassified directory are hard blockers.
+It must also define
 exactly one canary for every tenant in the source registry. Each tenant canary
 pins its canonical organization and occasion plus the SHA-256 of the still-
 legacy `backend-activation.json`. Promotion recreates only DB/API-facing
@@ -352,6 +393,46 @@ every tenant web/activation/occasion canary, and records a timestamped rollback
 `.env`. It never publishes a canonical activation document, changes DNS, grants
 database rights or opens external side effects. Those remain later, separately
 approved steps in the activation order below.
+
+Build the Function artifact only from clean synchronized `main`, transfer the
+resulting private directory to the host, then stage it without restarting the
+runtime:
+
+```bash
+FESTAPP_FUNCTION_BUNDLE_OUTPUT_DIR=/private/evidence/functions \
+FESTAPP_FUNCTION_BUNDLE_ACK=build-reviewed-production-function-bundle \
+  automation/hetzner-supabase/runtime/build-production-function-bundle.sh
+
+FESTAPP_FUNCTION_BUNDLE_MANIFEST=/private/evidence/functions/RUN/manifest.json \
+FESTAPP_FUNCTION_BUNDLE_INSTALL_ACK=stage-verified-function-bundle-without-restarting-runtime \
+  /opt/festapp-supabase/docker/install-production-function-bundle.sh
+```
+
+The installer verifies the archive and policy digests, rejects traversal and
+symlinks, retains only the pinned upstream `main` router, atomically stages the
+canonical directories and preserves the previous tree. The running runtime is
+not restarted; promotion is the first process that consumes the staged tree.
+
+Before promotion, close the target's database-level default write barrier:
+
+```bash
+FESTAPP_RUNTIME_DATABASE=festapp_rehearsal_YYYYMMDDHHMMSS \
+FESTAPP_WRITE_BARRIER_ACK=close-target-writes-before-production-promotion \
+  /opt/festapp-supabase/docker/set-production-target-write-barrier.sh close
+```
+
+Promotion refuses a target unless a fresh connection reports
+`default_transaction_read_only=on`. Its recovery backup manifest is version 3
+and carries the normalized, hashed import inventory; the isolated restore and
+promotion validator must reproduce the same inventory. This prevents a valid
+freeze decision, backup or restore receipt from being replayed against a
+different import candidate.
+
+Opening the barrier is a separate final go/no-go action. It requires the exact
+mode-0600 promotion result and unexpired final marker, verifies that the runtime
+already targets the same database, resets the barrier and recreates all writer
+service sessions. Do not run it until the source freeze and activation operator
+are both ready.
 
 1. Keep target side effects disabled during import and replay.
 2. Verify Auth, rights, orders/tickets/QR, finance, Storage, Realtime, Functions,
