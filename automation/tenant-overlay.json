@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "csmostrava2026",
-  "baseMainSha": "7791447618fcf886b38909750f35e33141e1407e",
+  "baseMainSha": "4a1565547ea2a2c00fd8ca65ccb870e1ccd7aaa2",
   "release": {
-    "version": "0.19.94+467",
+    "version": "0.19.95+467",
     "note": "Prevent MapLibre scene decoration from blocking the base map"
   }
 }
