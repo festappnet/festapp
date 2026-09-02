@@ -91,6 +91,16 @@ readonly DB_JSON="${REMOTE_STATE%%|*}"
 readonly STORAGE_FILE_COUNT="$(cut -d'|' -f2 <<<"$REMOTE_STATE")"
 readonly STORAGE_BYTES="$(cut -d'|' -f3 <<<"$REMOTE_STATE")"
 readonly STORAGE_TREE_SHA256="$(cut -d'|' -f4 <<<"$REMOTE_STATE")"
+readonly IMPORT_INVENTORY="$(ssh -o BatchMode=yes "$SSH_TARGET" "cd $COMPOSE_DIR &&
+  docker compose exec -T db psql -X -U postgres -d $SOURCE_DATABASE -Atqc \"SELECT coalesce(jsonb_agg(jsonb_build_object(
+    'source_alias',source_alias,'source_project_ref',source_project_ref,'run_id',run_id::text,
+    'snapshot_at',to_char(snapshot_at AT TIME ZONE 'UTC','YYYY-MM-DD\\\"T\\\"HH24:MI:SS.US\\\"Z\\\"'),
+    'source_schema_fingerprint',source_schema_fingerprint,'transformation_version',transformation_version,
+    'status',status) ORDER BY source_alias),'[]'::jsonb) FROM festapp_merge.import_runs\"")"
+readonly IMPORT_INVENTORY_CANONICAL="$(jq -cS . <<<"$IMPORT_INVENTORY")"
+readonly IMPORT_INVENTORY_SHA256="$(printf '%s' "$IMPORT_INVENTORY_CANONICAL" | shasum -a 256 | awk '{print $1}')"
+[[ "$(jq 'length' <<<"$IMPORT_INVENTORY")" == "3" && "$IMPORT_INVENTORY_SHA256" =~ ^[0-9a-f]{64}$ ]] ||
+  fail "final import inventory is incomplete or invalid"
 
 readonly SECURITY_STATE="$(ssh -o BatchMode=yes "$SSH_TARGET" "cd $COMPOSE_DIR &&
   docker compose exec -T db psql -X -U postgres -d $SOURCE_DATABASE -Atqc \"SELECT concat_ws('|',
@@ -136,15 +146,17 @@ jq -n \
   --argjson database "$DB_JSON" --argjson storageFiles "$STORAGE_FILE_COUNT" --argjson storageBytes "$STORAGE_BYTES" \
   --arg storageTreeSha "$STORAGE_TREE_SHA256" \
   --arg roleSecuritySha "$ROLE_SECURITY_SHA256" --arg objectSecuritySha "$OBJECT_SECURITY_SHA256" \
+  --argjson importInventory "$IMPORT_INVENTORY" --arg importInventorySha "$IMPORT_INVENTORY_SHA256" \
   --argjson durationSeconds "$(( $(date +%s) - BACKUP_STARTED_EPOCH ))" \
   --arg postgresSha "$(shasum -a 256 "$RUN_DIR/postgres.dump.age" | awk '{print $1}')" \
   --arg globalsSha "$(shasum -a 256 "$RUN_DIR/globals.sql.age" | awk '{print $1}')" \
   --arg storageSha "$(shasum -a 256 "$RUN_DIR/storage.tar.age" | awk '{print $1}')" \
   --arg runtimeSha "$(shasum -a 256 "$RUN_DIR/runtime.tar.age" | awk '{print $1}')" \
-  '{version:2,run_id:$runId,created_at:$createdAt,source_host:$sourceHost,source_database:$sourceDatabase,
+  '{version:3,run_id:$runId,created_at:$createdAt,source_host:$sourceHost,source_database:$sourceDatabase,
     encrypted:true,plaintext_artifacts_written:false,cloud_sources_mutated:false,writes_frozen:true,
     consistency_check:"runtime-stopped-zero-client-sessions-and-before-after-state-stable",rpo_seconds:0,backup_duration_seconds:$durationSeconds,
     role_security_sha256:$roleSecuritySha,object_security_sha256:$objectSecuritySha,database:$database,
+    import_inventory:$importInventory,import_inventory_sha256:$importInventorySha,
     storage:{files:$storageFiles,bytes:$storageBytes,tree_sha256:$storageTreeSha},
     artifacts:{postgres_dump:{file:"postgres.dump.age",sha256:$postgresSha},globals:{file:"globals.sql.age",sha256:$globalsSha},storage:{file:"storage.tar.age",sha256:$storageSha},runtime:{file:"runtime.tar.age",sha256:$runtimeSha}}}' \
   >"$RUN_DIR/manifest.json"

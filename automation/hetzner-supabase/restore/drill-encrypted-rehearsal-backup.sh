@@ -17,7 +17,7 @@ command -v jq >/dev/null || fail "jq is required"
 
 readonly MANIFEST="$FESTAPP_BACKUP_RUN_DIR/manifest.json"
 [[ -f "$MANIFEST" ]] || fail "backup manifest is missing"
-[[ "$(jq -r '[.version,.writes_frozen,.consistency_check,(.storage.tree_sha256|test("^[0-9a-f]{64}$")),(.role_security_sha256|test("^[0-9a-f]{64}$")),(.object_security_sha256|test("^[0-9a-f]{64}$"))]|join("|")' "$MANIFEST")" == "2|true|runtime-stopped-zero-client-sessions-and-before-after-state-stable|true|true|true" ]] ||
+[[ "$(jq -r '[.version,.writes_frozen,.consistency_check,(.storage.tree_sha256|test("^[0-9a-f]{64}$")),(.role_security_sha256|test("^[0-9a-f]{64}$")),(.object_security_sha256|test("^[0-9a-f]{64}$")),(.import_inventory_sha256|test("^[0-9a-f]{64}$"))]|join("|")' "$MANIFEST")" == "3|true|runtime-stopped-zero-client-sessions-and-before-after-state-stable|true|true|true|true" ]] ||
   fail "backup manifest does not satisfy the coordinated recovery-point contract"
 for artifact in postgres.dump.age globals.sql.age storage.tar.age runtime.tar.age; do
   [[ -f "$FESTAPP_BACKUP_RUN_DIR/$artifact" ]] || fail "missing $artifact"
@@ -100,6 +100,13 @@ readonly OBSERVED_DB="${OBSERVED%%|*}"
 readonly OBSERVED_FILES="$(cut -d'|' -f2 <<<"$OBSERVED")"
 readonly OBSERVED_BYTES="$(cut -d'|' -f3 <<<"$OBSERVED")"
 readonly OBSERVED_TREE_SHA256="$(cut -d'|' -f4 <<<"$OBSERVED")"
+readonly OBSERVED_IMPORT_INVENTORY="$(ssh -o BatchMode=yes "$SSH_TARGET" "docker exec '$CLEAN_CONTAINER' psql -X -U postgres -d '$TARGET_DB' -Atqc \"SELECT coalesce(jsonb_agg(jsonb_build_object(
+  'source_alias',source_alias,'source_project_ref',source_project_ref,'run_id',run_id::text,
+  'snapshot_at',to_char(snapshot_at AT TIME ZONE 'UTC','YYYY-MM-DD\\\"T\\\"HH24:MI:SS.US\\\"Z\\\"'),
+  'source_schema_fingerprint',source_schema_fingerprint,'transformation_version',transformation_version,
+  'status',status) ORDER BY source_alias),'[]'::jsonb) FROM festapp_merge.import_runs\"")"
+readonly OBSERVED_IMPORT_CANONICAL="$(jq -cS . <<<"$OBSERVED_IMPORT_INVENTORY")"
+readonly OBSERVED_IMPORT_SHA256="$(printf '%s' "$OBSERVED_IMPORT_CANONICAL" | shasum -a 256 | awk '{print $1}')"
 
 readonly OBSERVED_SECURITY="$(ssh -o BatchMode=yes "$SSH_TARGET" "docker exec '$CLEAN_CONTAINER' psql -X -U postgres -d '$TARGET_DB' -Atqc \"SELECT concat_ws('|',
     encode(extensions.digest(coalesce((SELECT string_agg(entry,E'\\n' ORDER BY entry) FROM (
@@ -138,6 +145,9 @@ done
 [[ "$OBSERVED_TREE_SHA256" == "$(jq -r .storage.tree_sha256 "$MANIFEST")" ]] || fail "restored Storage tree checksum mismatch"
 [[ "$OBSERVED_ROLE_SECURITY_SHA256" == "$(jq -r .role_security_sha256 "$MANIFEST")" ]] || fail "restored role security inventory mismatch"
 [[ "$OBSERVED_OBJECT_SECURITY_SHA256" == "$(jq -r .object_security_sha256 "$MANIFEST")" ]] || fail "restored object ownership/ACL inventory mismatch"
+[[ "$OBSERVED_IMPORT_CANONICAL" == "$(jq -cS .import_inventory "$MANIFEST")" &&
+   "$OBSERVED_IMPORT_SHA256" == "$(jq -r .import_inventory_sha256 "$MANIFEST")" ]] ||
+  fail "restored import inventory differs from the promotion backup"
 
 stop_clean_cluster
 trap - EXIT
@@ -145,10 +155,12 @@ trap - EXIT
 jq -n --arg runId "$RUN_ID" --arg attemptId "$ATTEMPT_ID" --arg targetDatabase "$TARGET_DB" --arg storagePath "$REMOTE_ROOT/storage" \
   --argjson database "$OBSERVED_DB" --argjson storageFiles "$OBSERVED_FILES" --argjson storageBytes "$OBSERVED_BYTES" --arg storageTreeSha "$OBSERVED_TREE_SHA256" \
   --arg roleSecuritySha "$OBSERVED_ROLE_SECURITY_SHA256" --arg objectSecuritySha "$OBSERVED_OBJECT_SECURITY_SHA256" \
+  --argjson importInventory "$OBSERVED_IMPORT_INVENTORY" --arg importInventorySha "$OBSERVED_IMPORT_SHA256" \
   --argjson restoreDurationSeconds "$RESTORE_DURATION_SECONDS" --arg cleanContainer "$CLEAN_CONTAINER" \
   '{version:1,run_id:$runId,attempt_id:$attemptId,status:"pass",target_database:$targetDatabase,storage_path:$storagePath,
     database:$database,storage:{files:$storageFiles,bytes:$storageBytes,tree_sha256:$storageTreeSha},
     role_security_sha256:$roleSecuritySha,object_security_sha256:$objectSecuritySha,
+    import_inventory:$importInventory,import_inventory_sha256:$importInventorySha,
     rpo_seconds:0,rto_seconds:$restoreDurationSeconds,clean_cluster_container:$cleanContainer,clean_cluster_stopped:true,
     globals_restored:true,runtime_config_validated:true,
     ownership_acl_equivalence:true,production_target_mutated:false,
