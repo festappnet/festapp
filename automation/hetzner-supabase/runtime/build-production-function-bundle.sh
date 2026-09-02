@@ -33,7 +33,9 @@ mapfile_compat < <(jq -r '(.canonical_function_security.excluded|keys) as $exclu
 FUNCTION_NAMES+=("_shared")
 for name in "${FUNCTION_NAMES[@]}"; do [[ -d "$SOURCE_ROOT/$name" ]] || fail "missing source Function: $name"; done
 
-COPYFILE_DISABLE=1 tar --no-xattrs -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" |
+COPYFILE_DISABLE=1 tar --no-xattrs \
+  --exclude='*/test_*.ts' --exclude='*/*_test.ts' \
+  -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" |
   tar --no-xattrs -C "$STAGE" -xf -
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle must not contain symlinks"
 readonly ARCHIVE="$RUN_DIR/functions.tar.gz"
