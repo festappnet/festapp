@@ -9,6 +9,7 @@ readonly FINAL_MARKER="${FESTAPP_FINAL_MARKER_DECISION:-}"
 readonly BACKUP_MANIFEST="${FESTAPP_PROMOTION_BACKUP_MANIFEST:-}"
 readonly RESTORE_RESULT="${FESTAPP_PROMOTION_RESTORE_RESULT:-}"
 readonly RUNTIME_CONFIG="${FESTAPP_PRODUCTION_RUNTIME_CONFIG:-}"
+readonly OPERATIONAL_READINESS="${FESTAPP_OPERATIONAL_READINESS_DECISION:-}"
 readonly SERVICES=(caddy api-gw auth rest realtime storage meta functions studio)
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
@@ -18,7 +19,7 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
   fail "FESTAPP_RUNTIME_DATABASE must be the exact timestamped promotion target"
 [[ "$(id -u)" == "0" && "$(hostname -s)" == "$EXPECTED_HOSTNAME" ]] ||
   fail "run as root on the approved Festapp host"
-for evidence in "$FINAL_MARKER" "$BACKUP_MANIFEST" "$RESTORE_RESULT" "$RUNTIME_CONFIG"; do
+for evidence in "$FINAL_MARKER" "$BACKUP_MANIFEST" "$RESTORE_RESULT" "$RUNTIME_CONFIG" "$OPERATIONAL_READINESS"; do
   [[ "$evidence" == /* && -f "$evidence" && "$(stat -c '%a' "$evidence")" == "600" ]] ||
     fail "promotion inputs must be absolute existing files with mode 0600"
 done
@@ -33,9 +34,13 @@ for installed in festapp-source-registry.json festapp-reference-registry.json; d
   [[ -f "$installed" && "$(stat -c '%U:%G|%a' "$installed")" == "root:root|444" ]] ||
     fail "$installed is not an immutable installed registry"
 done
+[[ -f festapp-runtime-writer-policy.json && "$(stat -c '%U:%G|%a' festapp-runtime-writer-policy.json)" == "root:root|444" ]] ||
+  fail "installed runtime writer policy is not immutable"
 for installed in validate-production-promotion.mjs docker-compose.database-target.yml; do
   [[ -f "$installed" ]] || fail "$installed is not installed"
 done
+[[ ! -e "$COMPOSE_DIR/volumes/functions/instance-install" ]] ||
+  fail "instance-install must not be present in the production Function bundle"
 docker compose config -q
 
 install -d -o root -g root -m 0700 "$EVIDENCE_ROOT"
@@ -44,19 +49,53 @@ readonly RUN_DIR="$EVIDENCE_ROOT/production-runtime-promotion-$SWITCH_ID"
 readonly ENV_BACKUP="$COMPOSE_DIR/.env.pre-production-promotion-$SWITCH_ID"
 install -d -o root -g root -m 0700 "$RUN_DIR"
 
+readonly TARGET_IMPORTS="$RUN_DIR/target-imports.json"
+docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres \
+  -d "$TARGET_DATABASE" -Atqc "SELECT coalesce(jsonb_agg(jsonb_build_object(
+    'source_alias',source_alias,
+    'source_project_ref',source_project_ref,
+    'run_id',run_id::text,
+    'snapshot_at',to_char(snapshot_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"'),
+    'source_schema_fingerprint',source_schema_fingerprint,
+    'transformation_version',transformation_version,
+    'status',status
+  ) ORDER BY source_alias),'[]'::jsonb) FROM festapp_merge.import_runs" >"$TARGET_IMPORTS"
+chmod 0600 "$TARGET_IMPORTS"
+jq -e 'type=="array" and length==3' "$TARGET_IMPORTS" >/dev/null ||
+  fail "target import inventory is incomplete"
+
+readonly TARGET_WRITE_BARRIER="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 \
+  -U postgres -d "$TARGET_DATABASE" -Atqc 'SHOW default_transaction_read_only')"
+[[ "$TARGET_WRITE_BARRIER" == "on" ]] ||
+  fail "target database default_transaction_read_only barrier is not closed"
+
 node "$COMPOSE_DIR/validate-production-promotion.mjs" \
   --target-database="$TARGET_DATABASE" \
+  --target-imports="$TARGET_IMPORTS" \
   --source-registry="$COMPOSE_DIR/festapp-source-registry.json" \
   --reference-registry="$COMPOSE_DIR/festapp-reference-registry.json" \
+  --runtime-writer-policy="$COMPOSE_DIR/festapp-runtime-writer-policy.json" \
+  --operational-readiness="$OPERATIONAL_READINESS" \
   --final-marker="$FINAL_MARKER" --backup-manifest="$BACKUP_MANIFEST" \
   --restore-result="$RESTORE_RESULT" --runtime-config="$RUNTIME_CONFIG" \
   --output="$RUN_DIR/preflight.json"
 
 mapfile -t EXPECTED_IMPORTS < <(jq -r '.sources[]|[.alias,.project_ref]|@tsv' festapp-source-registry.json | sort)
-mapfile -t ACTUAL_IMPORTS < <(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres \
-  -d "$TARGET_DATABASE" -AtF $'\t' -c \
-  "SELECT source_alias,source_project_ref FROM festapp_merge.import_runs WHERE status='validated' ORDER BY source_alias")
+mapfile -t ACTUAL_IMPORTS < <(jq -r '.[]|select(.status=="validated")|[.source_alias,.source_project_ref]|@tsv' \
+  "$TARGET_IMPORTS")
 [[ "${EXPECTED_IMPORTS[*]}" == "${ACTUAL_IMPORTS[*]}" ]] || fail "target import registry mismatch"
+
+mapfile -t EXPECTED_FUNCTIONS < <({ printf '%s\n' _shared main; jq -r '
+  (.canonical_function_security.excluded|keys) as $excluded |
+  .edge_functions|keys[]|select(. as $name | ($excluded|index($name)|not))
+' festapp-runtime-writer-policy.json; } | sort)
+mapfile -t ACTUAL_FUNCTIONS < <(find volumes/functions -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+[[ "${EXPECTED_FUNCTIONS[*]}" == "${ACTUAL_FUNCTIONS[*]}" ]] ||
+  fail "deployed Edge Function directory set does not match the canonical policy"
+readonly FUNCTION_BUNDLE_SHA256="$(cd volumes/functions &&
+  find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')"
+[[ "$FUNCTION_BUNDLE_SHA256" == "$(jq -r .function_bundle_sha256 "$RUNTIME_CONFIG")" ]] ||
+  fail "deployed Edge Function bundle digest does not match the runtime contract"
 readonly REFERENCE_VERSION="$(jq -r .version festapp-reference-registry.json)"
 mapfile -t MERGE_SOURCE_ALIASES < <(jq -er '.sources[]|select(.role=="merge-source")|.alias' festapp-source-registry.json | sort)
 readonly EXPECTED_REFERENCE_PASSES="${#MERGE_SOURCE_ALIASES[@]}"
@@ -77,8 +116,9 @@ readonly TARGET_STATE="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U
         AND v.check_name=r.source_alias||'-reference-registry-completeness'
         AND v.observed->>'registry_version'='$REFERENCE_VERSION' AND v.status='pass'),
     (SELECT count(*)>0 FROM auth.users),(SELECT count(*)>0 FROM storage.objects),
-    (SELECT count(*)>0 FROM realtime.schema_migrations)")"
-[[ "$TARGET_STATE" == "3|0|$EXPECTED_REFERENCE_PASSES|$EXPECTED_REFERENCE_PASSES|t|t|t" ]] ||
+    (SELECT count(*)>0 FROM realtime.schema_migrations),
+    (SELECT count(*) FROM pg_trigger WHERE tgname='push_log_notifications' AND NOT tgisinternal))")"
+[[ "$TARGET_STATE" == "3|0|$EXPECTED_REFERENCE_PASSES|$EXPECTED_REFERENCE_PASSES|t|t|t|0" ]] ||
   fail "target database is not promotion-ready ($TARGET_STATE)"
 
 readonly CURRENT_DATABASE="$(sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' .env)"
@@ -128,6 +168,7 @@ set_env_value API_EXTERNAL_URL "$(jq -r .api_external_url "$RUNTIME_CONFIG")"
 set_env_value SITE_URL "$(jq -r .site_url "$RUNTIME_CONFIG")"
 set_env_value ADDITIONAL_REDIRECT_URLS "$(jq -r '.auth_redirect_urls|join(",")' "$RUNTIME_CONFIG")"
 set_env_value FESTAPP_ALLOWED_WEB_ORIGINS "$(jq -r '.allowed_web_origins|join(",")' "$RUNTIME_CONFIG")"
+set_env_value AWS_SNS_TOPIC_ARN "$(jq -r .aws_sns_topic_arn "$RUNTIME_CONFIG")"
 docker compose config -q
 docker compose up -d --force-recreate "${SERVICES[@]}" >/dev/null
 wait_for_services
@@ -151,12 +192,18 @@ container_env() {
 readonly EXPECTED_SITE_URL="$(jq -r .site_url "$RUNTIME_CONFIG")"
 readonly EXPECTED_REDIRECTS="$(jq -r '.auth_redirect_urls|join(",")' "$RUNTIME_CONFIG")"
 readonly EXPECTED_ORIGINS="$(jq -r '.allowed_web_origins|join(",")' "$RUNTIME_CONFIG")"
+readonly EXPECTED_SNS_TOPIC="$(container_env functions AWS_SNS_TOPIC_ARN)"
+readonly EXPECTED_NOTIFY_TOKEN="$(container_env functions NOTIFY_WEBHOOK_TOKEN)"
+readonly EXPECTED_NOTIFY_TOKEN_SHA="$(printf '%s' "$EXPECTED_NOTIFY_TOKEN" | sha256sum | awk '{print $1}')"
 [[ "$(container_env caddy FESTAPP_SUPABASE_HOSTNAME)" == "api.festapp.net" &&
    "$(container_env caddy FESTAPP_SUPABASE_SITE_ADDRESSES)" == "api.festapp.net" &&
    "$(container_env auth API_EXTERNAL_URL)" == "https://api.festapp.net" &&
    "$(container_env auth GOTRUE_SITE_URL)" == "$EXPECTED_SITE_URL" &&
    "$(container_env auth GOTRUE_URI_ALLOW_LIST)" == "$EXPECTED_REDIRECTS" &&
    "$(container_env functions FESTAPP_ALLOWED_WEB_ORIGINS)" == "$EXPECTED_ORIGINS" &&
+   "$EXPECTED_SNS_TOPIC" =~ ^arn:aws:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]+$ &&
+   "${#EXPECTED_NOTIFY_TOKEN}" -ge 32 &&
+   "$EXPECTED_NOTIFY_TOKEN_SHA" == "$(jq -r .notify_webhook_token_sha256 "$RUNTIME_CONFIG")" &&
    "$(container_env studio SUPABASE_PUBLIC_URL)" == "https://api.festapp.net" ]] ||
   fail "runtime external URL, Auth redirect or CORS configuration is incoherent"
 
@@ -202,10 +249,13 @@ jq -n --arg promoted_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg rollback_env "$ENV_BACKUP" --argjson tenant_canaries "$CANARY_COUNT" \
   --arg auth "$AUTH_STATUS" --arg rest "$REST_STATUS" --arg storage "$STORAGE_STATUS" \
   --arg realtime "$REALTIME_STATUS" \
+  --arg function_bundle_sha256 "$FUNCTION_BUNDLE_SHA256" \
   '{promoted_at:$promoted_at,previous_database:$previous_database,target_database:$target_database,
     rollback_env:$rollback_env,canonical_api_canary:{auth:$auth,rest:$rest,storage:$storage,realtime:$realtime},
     tenant_canaries:$tenant_canaries,client_activation_documents_published:false,
-    external_write_authority_opened:false,production_dns_mutated:false,
+    external_write_authority_opened:false,target_write_barrier:"database-default-read-only",
+    function_bundle_sha256:$function_bundle_sha256,
+    production_dns_mutated:false,
     deleted_databases:[],deleted_paths:[]}' >"$RUN_DIR/result.json"
 chmod 0600 "$RUN_DIR/result.json"
 echo "Canonical runtime promotion passed without publishing client activation or opening write authority."

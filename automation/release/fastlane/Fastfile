@@ -693,6 +693,42 @@ platform :ios do
     end
   end
 
+  desc 'Read-only release status across editable, review and live states'
+  lane :release_status do
+    app = target_app!('READ_ONLY_RELEASE_STATUS')
+    status_version = ENV.fetch('READ_ONLY_TARGET_VERSION', TARGET_VERSION)
+    UI.user_error!('READ_ONLY_TARGET_VERSION must be semantic x.y.z') unless
+      status_version.match?(/^\d+\.\d+\.\d+$/)
+    matching = app.get_app_store_versions(
+      filter: {
+        versionString: status_version,
+        platform: Spaceship::ConnectAPI::Platform::IOS
+      }
+    )
+    UI.user_error!("Expected at most one App Store version #{status_version}, found #{matching.size}") if matching.size > 1
+    matching.each do |version|
+      selected = begin
+        version.get_build
+      rescue RuntimeError => error
+        raise unless error.message == 'No data'
+        nil
+      end
+      UI.message(
+        "APP_STORE_VERSION=#{version.version_string} STATE=#{version.app_store_state} " \
+        "SELECTED_BUILD=#{selected&.version || 'none'}"
+      )
+    end
+
+    builds = Spaceship::ConnectAPI::Build.all(
+      app_id: app.id, version: status_version,
+      platform: Spaceship::ConnectAPI::Platform::IOS
+    )
+    build_numbers = builds.map { |build| build.version.to_s }.sort_by(&:to_i)
+    UI.message("TARGET_VERSION_BUILDS=#{build_numbers.empty? ? 'none' : build_numbers.join(',')}")
+    UI.message("TARGET_VERSION_STATE=NOT_FOUND") if matching.empty?
+    UI.important('This lane is read-only and does not submit or release.')
+  end
+
   desc 'Cancel only the in-progress review submission for the exact target version'
   lane :cancel_review_submission do
     exact_gate!('CANCEL_REVIEW_SUBMISSION')

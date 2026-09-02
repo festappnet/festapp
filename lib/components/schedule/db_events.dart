@@ -54,7 +54,6 @@ class DbEvents {
       LegacySavedProgramCommands(
         _supabase,
         RightsService.currentOccasionId()!,
-        AuthService.currentUserId(),
       );
   static ExclusiveGroupCommands get _exclusiveGroupCommands =>
       SupabaseExclusiveGroupCommands(_supabase);
