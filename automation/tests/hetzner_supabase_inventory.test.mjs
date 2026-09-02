@@ -676,7 +676,7 @@ test('repository cutover preflight separates local readiness from live blockers'
       },
       validation: {
         status: 'blocked',
-        blockers: ['origin/prod/avapp: external retirement evidence pending'],
+        blockers: ['origin/prod/hvezdamorska: live application freeze evidence pending'],
       },
     },
     writerInventory: {
