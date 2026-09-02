@@ -629,7 +629,7 @@ test('tenant config inventory excludes keys and exposes broad non-default reacha
   assert.match(report.validation.blockers[0], /no approved cutover disposition/);
 });
 
-test('tenant cutover policy classifies legacy refs and keeps external gates blocked', () => {
+test('tenant cutover policy closes evidenced retirements and keeps live freeze blocked', () => {
   const policy = loadTenantCutoverPolicy();
   const report = buildTenantConfigInventory([
     { branch: 'origin/prod/avapp', status: 'missing-project-conf' },
@@ -643,10 +643,14 @@ test('tenant cutover policy classifies legacy refs and keeps external gates bloc
     },
   ], policy);
   assert.equal(report.counts.unknown, 0);
-  assert.equal(report.counts.pending_legacy_retirements, 2);
+  assert.equal(report.counts.pending_legacy_retirements, 0);
   assert.equal(report.validation.status, 'blocked');
-  assert.match(report.validation.blockers.join('\n'), /avapp.*retirement evidence/);
   assert.match(report.validation.blockers.join('\n'), /hvezdamorska.*live application freeze/);
+  assert.equal(
+    report.entries.find((entry) => entry.branch.endsWith('avapp'))
+      .cutover_disposition.closure,
+    'closed',
+  );
   assert.equal(
     report.entries.find((entry) => entry.branch.endsWith('ticketonline'))
       .cutover_disposition.closure,

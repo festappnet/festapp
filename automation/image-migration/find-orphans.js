@@ -21,13 +21,13 @@ import fs from 'node:fs';
 import { config } from 'dotenv';
 import { createPool, closePool } from './lib/db.js';
 import { createR2Client } from './lib/r2-client.js';
-import { R2_PREFIX } from './lib/url-rewriter.js';
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 
 config();
 
-// Derive SQL LIKE pattern from R2_PREFIX so it stays in sync with url-rewriter.js
-const R2_HOST = new URL(R2_PREFIX).host;
+// Orphan detection reads only the canonical public delivery host. Importing the
+// migration URL rewriter here would incorrectly require a source project ref.
+const R2_HOST = 'img.festapp.net';
 const R2_LIKE_PATTERN = `%${R2_HOST}%`;
 
 // ─── CLI Flags ──────────────────────────────────────────────────

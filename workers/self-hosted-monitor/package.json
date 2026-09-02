@@ -1,0 +1,12 @@
+{
+  "name": "festapp-self-hosted-monitor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "wrangler": "^4.128.0"
+  }
+}
