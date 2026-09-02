@@ -70,18 +70,24 @@ path/query-preserving retirement surface without another application build.
 This is the pre-canonical Absolventský Velehrad client, version `0.7.4+45`.
 Its old Supabase hostname `jyghacisbuntbrshhhey.supabase.co` no longer resolves,
 and the modern tenant is already owned by `prod/absolventskyvelehrad` at
-`app.absolventskyvelehrad.cz`. The old Android identity `vkhcr.avapp` therefore
-needs store retirement/readback rather than a second AV web deployment. Its
-historical iOS identity collides with the current Festapp lane and must not be
-uploaded independently.
+`app.absolventskyvelehrad.cz`. Public Google Play readback on 2 September 2026
+returns 404 for the old Android identity `vkhcr.avapp`. Together with the dead
+historical backend and the active replacement tenant, this closes the retirement
+boundary without creating or uploading another application. Its historical iOS
+identity collides with the current Festapp lane and must not be uploaded
+independently.
 
 ## `prod/slunovratopava`
 
 This is an obsolete duplicate of `prod/festivalslunovrat`, last updated in
 2024. The canonical Slunovrat source, web origin and mobile identities are now
 owned by `prod/festivalslunovrat`; the old branch must not generate a second
-release. Remaining work is limited to legacy-origin and store-listing
-retirement evidence.
+release. On 2 September 2026, `slunovrat.netlify.app` returned a
+path/query-preserving HTTP 301 to `app.festivalslunovrat.cz`, its historical
+worker paths contained only retirement payloads, and the canonical destination
+returned 200. The Android package `fstapp.slunovratopava` is the existing
+canonical Slunovrat listing rather than a second legacy lane. This closes the
+legacy branch's external retirement boundary.
 
 ## `prod/ticketonline` / `vstupenka.online`
 
