@@ -99,9 +99,13 @@ function tenantPolicyState(policy) {
       blockers.push(`${ref} evidence document is missing or outside the repository`);
     }
     if (disposition.closure === 'closed') {
-      if (!/^[0-9a-f]{40}$/.test(disposition.evidence_commit ?? '') ||
-          git(['merge-base', '--is-ancestor', disposition.evidence_commit, ref]).status !== 0) {
-        blockers.push(`${ref} closed disposition is not backed by an ancestor evidence commit`);
+      const evidenceCommit = disposition.evidence_commit ?? '';
+      const evidenceRefs = [ref, disposition.replacement].filter(Boolean);
+      const evidenceIsAncestral = /^[0-9a-f]{40}$/.test(evidenceCommit) &&
+        evidenceRefs.some((evidenceRef) =>
+          git(['merge-base', '--is-ancestor', evidenceCommit, evidenceRef]).status === 0);
+      if (!evidenceIsAncestral) {
+        blockers.push(`${ref} closed disposition is not backed by an ancestor evidence commit on the legacy or replacement ref`);
       }
     }
   }
