@@ -1,117 +1,35 @@
-CREATE OR REPLACE FUNCTION public.setup_triggers(p_project_url TEXT)
-RETURNS VOID
+CREATE OR REPLACE FUNCTION public.setup_triggers(p_project_url text)
+RETURNS void
 LANGUAGE plpgsql
-AS $func$
+SET search_path = ''
+AS $function$
+DECLARE
+  relation_name text;
 BEGIN
-  -- Security Check
   IF auth.role() <> 'service_role' AND session_user <> 'postgres' THEN
-      RAISE EXCEPTION 'Access Denied: Service role required.';
+    RAISE EXCEPTION 'Access Denied: Service role required.';
+  END IF;
+  IF p_project_url !~ '^https://[^/]+$' THEN
+    RAISE EXCEPTION 'Project URL must be an HTTPS origin';
   END IF;
 
-  -- events
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON events';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON events
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
+  FOREACH relation_name IN ARRAY ARRAY[
+    'events', 'icons', 'information', 'news', 'occasions', 'places',
+    'user_info', 'speakers', 'speaker_topics', 'cleaning_reports'
+  ] LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS handle_updated_at ON public.%I', relation_name);
+    EXECUTE format(
+      'CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.%I '
+      'FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(''updated_at'')',
+      relation_name
+    );
+  END LOOP;
 
-  -- icons
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON icons';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON icons
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- information
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON information';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON information
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- news
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON news';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON news
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- occasions
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON occasions';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON occasions
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- places
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON places';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON places
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- user_info
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON user_info';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON user_info
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- speakers
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON speakers';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON speakers
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- speaker_topics
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON speaker_topics';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON speaker_topics
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- cleaning_reports
-  EXECUTE 'DROP TRIGGER IF EXISTS handle_updated_at ON cleaning_reports';
-  EXECUTE '
-    CREATE TRIGGER handle_updated_at
-    BEFORE UPDATE ON cleaning_reports
-    FOR EACH ROW
-    EXECUTE FUNCTION moddatetime(''updated_at'')
-  ';
-
-  -- log_notifications HTTP trigger
-  EXECUTE 'DROP TRIGGER IF EXISTS push_log_notifications ON log_notifications';
-  EXECUTE format($trg$
-    CREATE TRIGGER push_log_notifications
-    AFTER INSERT ON log_notifications
-    FOR EACH ROW
-    EXECUTE FUNCTION supabase_functions.http_request(
-      '%s/functions/v1/notify',
-      'POST',
-      '{"Content-type": "application/json"}',
-      '{}',
-      '1000'
-    )
-  $trg$, p_project_url);
-
-END;
-$func$;
+  DROP TRIGGER IF EXISTS push_log_notifications ON public.log_notifications;
+  EXECUTE format(
+    'CREATE TRIGGER push_log_notifications AFTER INSERT ON public.log_notifications '
+    'FOR EACH ROW EXECUTE FUNCTION public.deliver_log_notification_v1(%L)',
+    p_project_url || '/functions/v1/notify'
+  );
+END
+$function$;

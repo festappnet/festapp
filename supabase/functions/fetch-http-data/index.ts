@@ -1,4 +1,6 @@
 import { encode as base64Encode } from "https://deno.land/std@0.170.0/encoding/base64.ts";
+import { AuthError, authorizeRequest } from "../_shared/auth.ts";
+import { fetchPublicImage, UnsafeTargetError } from "./safeFetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,48 +13,40 @@ Deno.serve(async (req: Request) => {
       return new Response("ok", { headers: corsHeaders });
     }
 
-    const { targetUrl } = await req.json();
+    const body = await req.json();
+    const { targetUrl, occasionId } = body ?? {};
 
-    if (!targetUrl) {
-      return new Response(JSON.stringify({ error: "Missing targetUrl" }), {
+    if (!targetUrl || !Number.isSafeInteger(occasionId) || occasionId <= 0) {
+      return new Response(JSON.stringify({ error: "Invalid request" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
+    await authorizeRequest({
+      authorizationHeader: req.headers.get("Authorization"),
+      occasionId,
+    });
 
-    // Fetch the image from the target URL.
-    const apiResponse = await fetch(targetUrl);
-    if (!apiResponse.ok) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch data", status: apiResponse.status }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: apiResponse.status,
-        }
-      );
-    }
-
-    const contentType = apiResponse.headers.get("content-type") || "application/octet-stream";
-    const imageData = await apiResponse.arrayBuffer();
-
-    // Encode the binary image data as a base64 string.
-    const base64Data = base64Encode(new Uint8Array(imageData));
+    const image = await fetchPublicImage(targetUrl);
+    const base64Data = base64Encode(Uint8Array.from(image.bytes).buffer);
 
     // Return the data as JSON.
     return new Response(
-      JSON.stringify({ data: base64Data, contentType }),
+      JSON.stringify({ data: base64Data, contentType: image.contentType }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
         status: 200,
       }
     );
   } catch (error) {
-    console.error("Unexpected error:", error);
+    const status = error instanceof AuthError ? error.status
+      : error instanceof UnsafeTargetError ? 400 : 500;
+    console.error("fetch_http_data_failed", { status });
     return new Response(
-      JSON.stringify({ error: "Unexpected error occurred" }),
+      JSON.stringify({ error: status === 500 ? "Unexpected error occurred" : "Request rejected" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status,
       }
     );
   }

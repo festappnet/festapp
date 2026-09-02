@@ -66,7 +66,7 @@ test("required environment names are derived from their consumers", () => {
   const ignoredNonPrivateRuntimeNames = new Set([
     "PATH", "NODE_PATH", "VERSION", "IPA_PATH", "PLAY_AAB_PATH",
     "PLAY_CONFIRMATION", "PLAY_TARGET_TRACK", "CUTOVER_CONFIRMATION",
-    "FASTLANE_ENABLE_BETA_DELIVER_SYNC_SCREENSHOTS",
+    "FASTLANE_ENABLE_BETA_DELIVER_SYNC_SCREENSHOTS", "READ_ONLY_TARGET_VERSION",
   ]);
   for (const name of referenced) {
     if (!ignoredNonPrivateRuntimeNames.has(name)) {

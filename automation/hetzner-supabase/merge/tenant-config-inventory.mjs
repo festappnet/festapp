@@ -20,6 +20,15 @@ const PUBLIC_FIELDS = Object.freeze([
   'ORGANIZATION_ID',
   'SUPABASE_URL',
 ]);
+const POLICY_PATH = path.join(import.meta.dirname, 'tenant-cutover-policy.json');
+
+export function loadTenantCutoverPolicy() {
+  const policy = JSON.parse(fs.readFileSync(POLICY_PATH, 'utf8'));
+  if (policy.policy_version !== 1 || !policy.legacy_refs || !policy.broad_source_refs) {
+    throw new Error('unsupported tenant cutover policy');
+  }
+  return policy;
+}
 
 export function parseTenantConfig(text, branch) {
   const values = new Map();
@@ -81,34 +90,66 @@ export function discoverProductionTenantConfigs() {
   return entries;
 }
 
-export function buildTenantConfigInventory(entries) {
+export function buildTenantConfigInventory(entries, policy = null) {
+  const legacyRefs = policy?.legacy_refs ?? {};
+  const broadSourceRefs = policy?.broad_source_refs ?? {};
+  const classifiedEntries = entries.map((entry) => {
+    const legacyPolicy = legacyRefs[entry.branch];
+    const broadFreezeLane = broadSourceRefs[entry.branch];
+    return {
+      ...entry,
+      ...(legacyPolicy ? { cutover_disposition: legacyPolicy } : {}),
+      ...(broadFreezeLane ? {
+        cutover_disposition: {
+          disposition: 'full-freeze',
+          closure: 'requires-live-evidence',
+          freeze_lane: broadFreezeLane,
+        },
+      } : {}),
+    };
+  });
   const unknown = entries.filter((entry) =>
-    entry.status !== 'discovered' || entry.source_alias === null || entry.organization_id === null);
+    (entry.status !== 'discovered' || entry.source_alias === null || entry.organization_id === null) &&
+    !legacyRefs[entry.branch]);
   const sourceCounts = Object.fromEntries(Object.keys(SOURCES).map((alias) => [
     alias,
     entries.filter((entry) => entry.source_alias === alias).length,
   ]));
   const broadNonDefault = entries.filter((entry) => entry.source_alias !== 'default' &&
     entry.source_alias !== null && entry.reachability === 'all-visible-occasions');
+  const unclassifiedBroad = broadNonDefault.filter((entry) => !broadSourceRefs[entry.branch]);
+  const pendingLegacy = Object.entries(legacyRefs).filter(([, disposition]) =>
+    disposition.closure !== 'closed');
+  const liveFreeze = broadNonDefault.filter((entry) => broadSourceRefs[entry.branch]);
+  const blockers = [
+    ...unknown.map((entry) => `${entry.branch}: invalid or unknown project configuration`),
+    ...unclassifiedBroad.map((entry) =>
+      `${entry.branch}: dynamic ${entry.source_alias} entrypoint has no approved cutover disposition`),
+    ...pendingLegacy.map(([branch, disposition]) =>
+      `${branch}: ${disposition.disposition} requires external retirement evidence`),
+    ...liveFreeze.map((entry) =>
+      `${entry.branch}: requires live ${broadSourceRefs[entry.branch]} freeze evidence before snapshot`),
+  ];
   return {
     inventory_version: 1,
-    entries,
+    entries: classifiedEntries,
     counts: {
       production_configs: entries.length,
       ...sourceCounts,
       unknown: unknown.length,
       non_default_broad_reachability: broadNonDefault.length,
+      pending_legacy_retirements: pendingLegacy.length,
+      live_freeze_required: liveFreeze.length,
     },
     validation: {
-      status: unknown.length === 0 ? 'blocked' : 'fail',
-      blockers: [
-        ...unknown.map((entry) => `${entry.branch}: invalid or unknown project configuration`),
-        ...broadNonDefault.map((entry) =>
-          `${entry.branch}: dynamic ${entry.source_alias} entrypoint requires all visible occasions to adopt RPC writes or be proven unreachable`),
-      ],
+      status: unknown.length > 0 || unclassifiedBroad.length > 0
+        ? 'fail'
+        : blockers.length > 0 ? 'blocked' : 'pass',
+      blockers,
       notes: [
         'branch configuration proves configured reachability, not deployed version or traffic',
         'secrets and anon keys are deliberately excluded',
+        'checked-in dispositions classify intent; external retirement and live freeze evidence remain separate gates',
       ],
     },
   };
@@ -121,7 +162,10 @@ async function main() {
   }
   const output = assertPrivateOutput(process.argv[outputIndex + 1]);
   assertNewEvidencePaths([output]);
-  const report = buildTenantConfigInventory(discoverProductionTenantConfigs());
+  const report = buildTenantConfigInventory(
+    discoverProductionTenantConfigs(),
+    loadTenantCutoverPolicy(),
+  );
   report.generated_at = new Date().toISOString();
   report.inventory_sha256 = sha256(stableJson(report));
   fs.mkdirSync(path.dirname(output), { recursive: true, mode: 0o700 });
