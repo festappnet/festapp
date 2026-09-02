@@ -285,6 +285,8 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(bundleBuilder, /clean synchronized main/);
   assert.match(bundleBuilder, /instance-install/);
   assert.match(bundleBuilder, /tar --no-xattrs/);
+  assert.match(bundleBuilder, /--exclude=.*test_\*\.ts/);
+  assert.match(bundleBuilder, /--exclude=.*\*_test\.ts/);
   assert.match(bundleInstaller, /unsafe path/);
   assert.match(bundleInstaller, /tar --no-xattrs --no-same-owner/);
   assert.match(bundleInstaller, /staged Function directory set is not canonical/);
