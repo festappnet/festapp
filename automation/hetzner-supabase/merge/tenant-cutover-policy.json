@@ -3,14 +3,16 @@
   "legacy_refs": {
     "origin/prod/avapp": {
       "disposition": "retire",
-      "closure": "pending-external-evidence",
+      "closure": "closed",
       "replacement": "origin/prod/absolventskyvelehrad",
+      "evidence": "public Google Play readback returned 404 for vkhcr.avapp on 2026-09-02; the historical backend is dead and the replacement tenant is active",
       "evidence_doc": "docs/operations/supabase-self-hosted/legacy-client-inventory-2026-08-30.md"
     },
     "origin/prod/slunovratopava": {
-      "disposition": "retire",
-      "closure": "pending-external-evidence",
+      "disposition": "retired-boundary",
+      "closure": "closed",
       "replacement": "origin/prod/festivalslunovrat",
+      "evidence": "the legacy Netlify origin preserves path/query with HTTP 301 to app.festivalslunovrat.cz and serves only retirement workers; fstapp.slunovratopava is the canonical replacement's existing Android identity",
       "evidence_doc": "docs/operations/supabase-self-hosted/legacy-client-inventory-2026-08-30.md"
     },
     "origin/prod/ticketonline": {
