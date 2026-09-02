@@ -30,9 +30,10 @@ upstreams. Before production cutover, authenticate to Docker Hub and run
 `node runtime/verify-pins.mjs --online --registry` to re-resolve every declared
 container digest for `linux/arm64` without relying on anonymous pull quotas.
 
-Terraform is pinned to stable `1.16.0`, published on 2026-08-26 and verified as
-non-prerelease through GitHub Releases plus the official HashiCorp checksum
-artifact. The Hetzner provider remains pinned to stable `1.68.0`.
+Terraform is pinned to stable `1.16.1`, published on 2026-09-02 and verified as
+non-prerelease through GitHub Releases. It is a patch release containing CLI,
+test, import and state bug fixes; `required_version = "~> 1.16.0"` already
+accepts it. The Hetzner provider remains pinned to stable `1.68.0`.
 
 No update workflow may invoke Supabase `reset.sh`, `docker compose down -v`,
 volume pruning or any equivalent deletion command. Cloud sources remain intact
