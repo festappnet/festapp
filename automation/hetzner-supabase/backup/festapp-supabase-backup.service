@@ -1,0 +1,16 @@
+[Unit]
+Description=Festapp encrypted off-host Supabase backup
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/festapp-backup/create-online-encrypted-backup.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/backups/festapp-supabase /var/lib/festapp-rehearsal-evidence /run

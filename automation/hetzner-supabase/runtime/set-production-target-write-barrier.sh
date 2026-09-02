@@ -58,7 +58,7 @@ case "$ACTION" in
       [[ "$evidence" == /* && -f "$evidence" && "$(stat -c '%a' "$evidence")" == "600" ]] ||
         fail "open requires absolute mode-0600 promotion and final-marker evidence"
     done
-    [[ "$(jq -r '[.target_database,.external_write_authority_opened,.target_write_barrier]|join("|")' "$PROMOTION_RESULT")" ==
+    [[ "$(jq -r '[.target_database,.external_write_authority_opened,.target_write_barrier]|join("|")' "$PROMOTION_RESULT")" == \
       "$TARGET_DATABASE|false|database-default-read-only" ]] || fail "promotion result does not authorize this target"
     [[ "$(jq -r .target_database "$FINAL_MARKER")" == "$TARGET_DATABASE" ]] ||
       fail "final marker does not bind this target"

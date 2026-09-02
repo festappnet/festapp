@@ -288,6 +288,10 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(bundleInstaller, /staged Function directory set is not canonical/);
   assert.match(bundleInstaller, /runtime_restarted:false/);
   assert.doesNotMatch(bundleInstaller, /docker compose (?:up|restart)/);
+  for (const script of [promotion, upgrade, barrier, bundleBuilder, bundleInstaller]) {
+    const syntax = spawnSync('bash', ['-n'], { input: script, encoding: 'utf8' });
+    assert.equal(syntax.status, 0, syntax.stderr);
+  }
 });
 
 test('host provisioning installs the runtime dependencies used by promotion tooling', () => {
