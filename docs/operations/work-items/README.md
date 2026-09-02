@@ -35,6 +35,7 @@ proven when they are part of the outcome.
 
 | Work item | Status | Fixed point | Next action |
 |---|---|---|---|
+| [Canonical self-hosted Supabase cutover](open/canonical-self-hosted-cutover-2026-09-02.md) | in-progress | Festapp `4a1565547`, Supabase `self-hosted/v0.8.0` | Restore Windows polling and complete read-only Play inventory for all seven active packages. |
 | [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | image source `cbb3fa742`, current release `4eb1d556c`, version `0.19.91+441` | Wake the production Windows workstation and let command `1028` produce the signed Android AAB without a Play mutation. |
 | [Store publishing data cutover](open/store-publishing-data-cutover-2026-08-24.md) | blocked | FestappSeed `ae91a9c`, public main `056740617` | Wait for Android command `1027` before advancing the production branch. |
 | [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | `feature/eur-payment-cutover` at `a903ea681` | Authorize and run the production preflight against the configured CSM project before any migration. |

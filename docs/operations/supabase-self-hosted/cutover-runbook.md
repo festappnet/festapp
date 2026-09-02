@@ -31,6 +31,36 @@ Before cutover:
 - any unknown writer, unsupported active build or direct-DML bypass is a hard
   no-go. Choose a full maintenance freeze if journal coverage cannot be proven.
 
+Run the repository-only gate before requesting any production window:
+
+```bash
+node automation/hetzner-supabase/merge/repository-cutover-preflight.mjs
+```
+
+It requires clean synchronized `main`, every active production ref containing
+that `main`, coherent immutable runtime pins, zero unknown tenant refs and zero
+unclassified repository writer entrypoints. Its `repository_ready` result does
+not close the separately listed operational blockers or authorize a freeze,
+snapshot, promotion or activation.
+
+The exact runtime surface contract is
+`automation/hetzner-supabase/merge/runtime-writer-policy.json`. It covers every
+Edge Function and Worker entrypoint and fails closed when source adds an
+unclassified one. `sync-worker` has a checked-in deploy manifest. The mutating
+`sync-publisher` uses `wrangler.example.toml`; create its ignored
+`wrangler.toml` only from fresh final-merge evidence, replace the scope
+placeholder with final canonical occasion IDs, and verify its canonical URL
+before deployment. Never reuse the historical cloud-`a` scope `643`.
+
+Do not carry the historical blanket `--no-verify-jwt` deployment practice into
+canonical production. `bank-mail-parser` now requires an exact-topic AWS SNS
+Signature Version 2 proof and constrains certificate/confirmation URLs;
+`notify` requires a constant-time bearer proof shared with a Vault-backed
+database trigger; `fetch-http-data` requires an occasion editor and constrains
+DNS, redirects, content type and response size. Live provider/Vault canaries
+remain activation gates. `instance-install` is an operator bootstrap surface
+that executes remote SQL and is explicitly excluded from canonical production.
+
 Auth continuity is a separate hard gate. Every imported user UUID and
 `encrypted_password` value must match the fresh source snapshot exactly; hashes
 must never be re-created or replaced with temporary passwords. Provider

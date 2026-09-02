@@ -449,7 +449,9 @@ done
 for required in 'promote-validated-runtime-without-opening-write-authority' \
   'festapp-source-registry.json' 'festapp-reference-registry.json' \
   'target import registry mismatch' 'client_activation_documents_published:false' \
-  'external_write_authority_opened:false' '.env.pre-production-promotion-'; do
+  'external_write_authority_opened:false' '.env.pre-production-promotion-' \
+  'instance-install must not be present' "tgname='push_log_notifications'" \
+  'AWS_SNS_TOPIC_ARN' 'NOTIFY_WEBHOOK_TOKEN'; do
   rg -Fq "$required" "$RUNTIME_PROMOTION_SCRIPT" || { echo "missing production promotion contract: $required" >&2; exit 1; }
 done
 for required in 'upgrade-installed-production-runtime-additively' \

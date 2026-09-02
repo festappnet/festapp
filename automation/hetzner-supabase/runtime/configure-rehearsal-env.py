@@ -95,6 +95,9 @@ updates = {
     # Stable secret used only to hash reception QR rate-limit identifiers. Keep
     # the existing value on repeat runs and never commit it to the repository.
     "QR_RATE_SALT": existing_value("QR_RATE_SALT") or secrets.token_urlsafe(32),
+    "AWS_SNS_TOPIC_ARN": existing_value("AWS_SNS_TOPIC_ARN") or
+        "arn:aws:sns:eu-central-1:000000000000:festapp-rehearsal-disabled",
+    "NOTIFY_WEBHOOK_TOKEN": existing_value("NOTIFY_WEBHOOK_TOKEN") or secrets.token_urlsafe(48),
     "DISABLE_SIGNUP": "true",
     "ENABLE_PHONE_SIGNUP": "false",
     "ENABLE_PHONE_AUTOCONFIRM": "false",

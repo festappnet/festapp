@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "canonical_origin": "https://api.festapp.net",
+  "edge_functions": {
+    "bank-mail-parser": { "trigger": "aws-sns-callback", "effects": ["database-rpc", "aws-sns-subscription-confirmation"], "mutates_authority": true },
+    "cancel-reception-registration": { "trigger": "client-http", "effects": ["database-rpc", "auth-session-revocation"], "mutates_authority": true },
+    "confirm-account-deletion": { "trigger": "client-http", "effects": ["database-rpc", "auth-delete", "storage-delete", "onesignal-delete", "smtp"], "mutates_authority": true },
+    "download-ticket": { "trigger": "client-http", "effects": ["database-read", "remote-asset-read"], "mutates_authority": false },
+    "exchange-login-qr": { "trigger": "client-http", "effects": ["database-rpc", "auth-session-create"], "mutates_authority": true },
+    "fetch-http-data": { "trigger": "client-http", "effects": ["remote-http-read"], "mutates_authority": false },
+    "fetch-transactions": { "trigger": "client-http", "effects": ["database-rpc", "fio-api"], "mutates_authority": true },
+    "generate-order-agreement": { "trigger": "client-http", "effects": ["database-read", "remote-asset-read"], "mutates_authority": false },
+    "instance-install": { "trigger": "operator-http", "effects": ["direct-sql", "github-api"], "mutates_authority": true },
+    "notify": { "trigger": "database-webhook", "effects": ["database-read", "onesignal-notification"], "mutates_authority": false },
+    "register": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
+    "request-account-deletion": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
+    "send-app-links": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
+    "send-custom-email": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
+    "send-email": { "trigger": "database-cron-or-client-http", "effects": ["database-rpc", "fakturoid-api", "smtp"], "mutates_authority": true },
+    "send-reset-password-link": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
+    "send-sign-in-code": { "trigger": "client-http", "effects": ["database-rpc", "auth-update", "smtp"], "mutates_authority": true },
+    "send-ticket-order": { "trigger": "client-http", "effects": ["database-rpc"], "mutates_authority": true },
+    "send-tickets": { "trigger": "edge-function-http", "effects": ["database-rpc", "remote-asset-read", "smtp"], "mutates_authority": true },
+    "synchronize-orders": { "trigger": "database-cron-or-client-http", "effects": ["database-rpc", "fio-api", "edge-function-http"], "mutates_authority": true }
+  },
+  "workers": {
+    "image-worker": { "entrypoint": "workers/image-worker/src/index.ts", "deployment_contract": "workers/image-worker/wrangler.toml", "trigger": "public-http", "effects": ["database-rpc", "r2-write", "cloudflare-cache-purge"], "mutates_authority": true },
+    "sync-publisher": { "entrypoint": "workers/sync-publisher/src/worker.ts", "deployment_contract": "workers/sync-publisher/wrangler.example.toml", "trigger": "cloudflare-cron-or-internal-http", "effects": ["database-rpc", "r2-write"], "mutates_authority": true },
+    "sync-worker": { "entrypoint": "workers/sync-worker/src/index.ts", "deployment_contract": "workers/sync-worker/wrangler.toml", "trigger": "public-http", "effects": ["r2-read", "cloudflare-cache-write"], "mutates_authority": false }
+  },
+  "canonical_function_security": {
+    "blocked": {},
+    "resolved": {
+      "bank-mail-parser": "signature-v2-exact-topic-aws-certificate-and-confirmation-url-verification",
+      "fetch-http-data": "occasion-editor-auth-public-dns-and-redirect-validation-image-only-bounded-response",
+      "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled"
+    },
+    "excluded": {
+      "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"
+    }
+  },
+  "activation_requirements": [
+    "AWS SNS topic uses SignatureVersion 2 and a signed canonical endpoint canary passes",
+    "festapp_notify_webhook_token_v1 in target Vault matches NOTIFY_WEBHOOK_TOKEN and setup_triggers installs only the canonical HTTPS endpoint",
+    "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin"
+  ],
+  "controls": {
+    "mutating_edge_function": "deploy-canonical-disable-source-function-and-revoke-source-service-role",
+    "read_only_edge_function": "deploy-canonical-and-remove-source-routing",
+    "mutating_worker": "pause-trigger-drain-and-pin-canonical-bindings-before-resume",
+    "read_only_worker": "pin-canonical-bindings-and-routes"
+  }
+}
