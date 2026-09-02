@@ -22,6 +22,15 @@ import {
 } from './runtime-writer-policy.mjs';
 
 const RUNTIME_DIR = path.join(REPOSITORY_ROOT, 'automation/hetzner-supabase/runtime');
+const CORE_OPERATIONAL_REQUIREMENTS = Object.freeze([
+  'all active web/iOS/Android lanes are adopted, technically read-only, or retired with fresh evidence',
+  'the private operational readiness gate passes with independent backup, monitoring, alert, DNS/TLS, capacity, integration and rollback evidence',
+  'installed host tooling and runtime inputs match the approved repository and private runtime contract',
+  'a named maintenance window and all seven rehearsed freeze-lane owners are active',
+  'fresh pre-snapshot and final-marker decisions bind the exact frozen source snapshots to the promotion target',
+  'an encrypted off-host promotion backup and isolated restore reproduce the exact final import inventory',
+  'the target database write barrier remains closed until a separate final activation go/no-go',
+]);
 
 function git(args, options = {}) {
   return spawnSync('git', args, {
@@ -138,8 +147,10 @@ export function evaluateRepositoryCutoverReadiness({
     source_projects: SOURCES,
     selected_cutover_mode: 'full-freeze',
     repository_ready: blockers.length === 0,
+    production_cutover_authorized: false,
     blockers,
     operational_blockers: [
+      ...CORE_OPERATIONAL_REQUIREMENTS,
       ...tenantInventory.validation.blockers,
       ...runtimeWriterPolicy.activation_requirements,
     ],

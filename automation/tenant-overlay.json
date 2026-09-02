@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "aksmcz",
-  "baseMainSha": "98d204e0f21d2fa66556d37c43aa30ad318a5039",
+  "baseMainSha": "556fdfa3014f2f596579f9df6da1392caf15b32b",
   "release": {
     "version": "0.19.95+476",
     "note": "Web-only CSA 2024 Cloudflare transition client without OneSignal. No Android or iOS release belongs to this lane; legacy source-a remains active until signed backend activation."

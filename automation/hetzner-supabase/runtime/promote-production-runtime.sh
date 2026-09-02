@@ -9,6 +9,7 @@ readonly FINAL_MARKER="${FESTAPP_FINAL_MARKER_DECISION:-}"
 readonly BACKUP_MANIFEST="${FESTAPP_PROMOTION_BACKUP_MANIFEST:-}"
 readonly RESTORE_RESULT="${FESTAPP_PROMOTION_RESTORE_RESULT:-}"
 readonly RUNTIME_CONFIG="${FESTAPP_PRODUCTION_RUNTIME_CONFIG:-}"
+readonly OPERATIONAL_READINESS="${FESTAPP_OPERATIONAL_READINESS_DECISION:-}"
 readonly SERVICES=(caddy api-gw auth rest realtime storage meta functions studio)
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
@@ -18,7 +19,7 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
   fail "FESTAPP_RUNTIME_DATABASE must be the exact timestamped promotion target"
 [[ "$(id -u)" == "0" && "$(hostname -s)" == "$EXPECTED_HOSTNAME" ]] ||
   fail "run as root on the approved Festapp host"
-for evidence in "$FINAL_MARKER" "$BACKUP_MANIFEST" "$RESTORE_RESULT" "$RUNTIME_CONFIG"; do
+for evidence in "$FINAL_MARKER" "$BACKUP_MANIFEST" "$RESTORE_RESULT" "$RUNTIME_CONFIG" "$OPERATIONAL_READINESS"; do
   [[ "$evidence" == /* && -f "$evidence" && "$(stat -c '%a' "$evidence")" == "600" ]] ||
     fail "promotion inputs must be absolute existing files with mode 0600"
 done
@@ -33,6 +34,8 @@ for installed in festapp-source-registry.json festapp-reference-registry.json; d
   [[ -f "$installed" && "$(stat -c '%U:%G|%a' "$installed")" == "root:root|444" ]] ||
     fail "$installed is not an immutable installed registry"
 done
+[[ -f festapp-runtime-writer-policy.json && "$(stat -c '%U:%G|%a' festapp-runtime-writer-policy.json)" == "root:root|444" ]] ||
+  fail "installed runtime writer policy is not immutable"
 for installed in validate-production-promotion.mjs docker-compose.database-target.yml; do
   [[ -f "$installed" ]] || fail "$installed is not installed"
 done
@@ -46,19 +49,53 @@ readonly RUN_DIR="$EVIDENCE_ROOT/production-runtime-promotion-$SWITCH_ID"
 readonly ENV_BACKUP="$COMPOSE_DIR/.env.pre-production-promotion-$SWITCH_ID"
 install -d -o root -g root -m 0700 "$RUN_DIR"
 
+readonly TARGET_IMPORTS="$RUN_DIR/target-imports.json"
+docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres \
+  -d "$TARGET_DATABASE" -Atqc "SELECT coalesce(jsonb_agg(jsonb_build_object(
+    'source_alias',source_alias,
+    'source_project_ref',source_project_ref,
+    'run_id',run_id::text,
+    'snapshot_at',to_char(snapshot_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"'),
+    'source_schema_fingerprint',source_schema_fingerprint,
+    'transformation_version',transformation_version,
+    'status',status
+  ) ORDER BY source_alias),'[]'::jsonb) FROM festapp_merge.import_runs" >"$TARGET_IMPORTS"
+chmod 0600 "$TARGET_IMPORTS"
+jq -e 'type=="array" and length==3' "$TARGET_IMPORTS" >/dev/null ||
+  fail "target import inventory is incomplete"
+
+readonly TARGET_WRITE_BARRIER="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 \
+  -U postgres -d "$TARGET_DATABASE" -Atqc 'SHOW default_transaction_read_only')"
+[[ "$TARGET_WRITE_BARRIER" == "on" ]] ||
+  fail "target database default_transaction_read_only barrier is not closed"
+
 node "$COMPOSE_DIR/validate-production-promotion.mjs" \
   --target-database="$TARGET_DATABASE" \
+  --target-imports="$TARGET_IMPORTS" \
   --source-registry="$COMPOSE_DIR/festapp-source-registry.json" \
   --reference-registry="$COMPOSE_DIR/festapp-reference-registry.json" \
+  --runtime-writer-policy="$COMPOSE_DIR/festapp-runtime-writer-policy.json" \
+  --operational-readiness="$OPERATIONAL_READINESS" \
   --final-marker="$FINAL_MARKER" --backup-manifest="$BACKUP_MANIFEST" \
   --restore-result="$RESTORE_RESULT" --runtime-config="$RUNTIME_CONFIG" \
   --output="$RUN_DIR/preflight.json"
 
 mapfile -t EXPECTED_IMPORTS < <(jq -r '.sources[]|[.alias,.project_ref]|@tsv' festapp-source-registry.json | sort)
-mapfile -t ACTUAL_IMPORTS < <(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres \
-  -d "$TARGET_DATABASE" -AtF $'\t' -c \
-  "SELECT source_alias,source_project_ref FROM festapp_merge.import_runs WHERE status='validated' ORDER BY source_alias")
+mapfile -t ACTUAL_IMPORTS < <(jq -r '.[]|select(.status=="validated")|[.source_alias,.source_project_ref]|@tsv' \
+  "$TARGET_IMPORTS")
 [[ "${EXPECTED_IMPORTS[*]}" == "${ACTUAL_IMPORTS[*]}" ]] || fail "target import registry mismatch"
+
+mapfile -t EXPECTED_FUNCTIONS < <({ printf '%s\n' _shared main; jq -r '
+  (.canonical_function_security.excluded|keys) as $excluded |
+  .edge_functions|keys[]|select(. as $name | ($excluded|index($name)|not))
+' festapp-runtime-writer-policy.json; } | sort)
+mapfile -t ACTUAL_FUNCTIONS < <(find volumes/functions -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+[[ "${EXPECTED_FUNCTIONS[*]}" == "${ACTUAL_FUNCTIONS[*]}" ]] ||
+  fail "deployed Edge Function directory set does not match the canonical policy"
+readonly FUNCTION_BUNDLE_SHA256="$(cd volumes/functions &&
+  find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')"
+[[ "$FUNCTION_BUNDLE_SHA256" == "$(jq -r .function_bundle_sha256 "$RUNTIME_CONFIG")" ]] ||
+  fail "deployed Edge Function bundle digest does not match the runtime contract"
 readonly REFERENCE_VERSION="$(jq -r .version festapp-reference-registry.json)"
 mapfile -t MERGE_SOURCE_ALIASES < <(jq -er '.sources[]|select(.role=="merge-source")|.alias' festapp-source-registry.json | sort)
 readonly EXPECTED_REFERENCE_PASSES="${#MERGE_SOURCE_ALIASES[@]}"
@@ -212,10 +249,13 @@ jq -n --arg promoted_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg rollback_env "$ENV_BACKUP" --argjson tenant_canaries "$CANARY_COUNT" \
   --arg auth "$AUTH_STATUS" --arg rest "$REST_STATUS" --arg storage "$STORAGE_STATUS" \
   --arg realtime "$REALTIME_STATUS" \
+  --arg function_bundle_sha256 "$FUNCTION_BUNDLE_SHA256" \
   '{promoted_at:$promoted_at,previous_database:$previous_database,target_database:$target_database,
     rollback_env:$rollback_env,canonical_api_canary:{auth:$auth,rest:$rest,storage:$storage,realtime:$realtime},
     tenant_canaries:$tenant_canaries,client_activation_documents_published:false,
-    external_write_authority_opened:false,production_dns_mutated:false,
+    external_write_authority_opened:false,target_write_barrier:"database-default-read-only",
+    function_bundle_sha256:$function_bundle_sha256,
+    production_dns_mutated:false,
     deleted_databases:[],deleted_paths:[]}' >"$RUN_DIR/result.json"
 chmod 0600 "$RUN_DIR/result.json"
 echo "Canonical runtime promotion passed without publishing client activation or opening write authority."
