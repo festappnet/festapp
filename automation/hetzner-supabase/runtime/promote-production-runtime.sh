@@ -36,6 +36,8 @@ done
 for installed in validate-production-promotion.mjs docker-compose.database-target.yml; do
   [[ -f "$installed" ]] || fail "$installed is not installed"
 done
+[[ ! -e "$COMPOSE_DIR/volumes/functions/instance-install" ]] ||
+  fail "instance-install must not be present in the production Function bundle"
 docker compose config -q
 
 install -d -o root -g root -m 0700 "$EVIDENCE_ROOT"
@@ -77,8 +79,9 @@ readonly TARGET_STATE="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U
         AND v.check_name=r.source_alias||'-reference-registry-completeness'
         AND v.observed->>'registry_version'='$REFERENCE_VERSION' AND v.status='pass'),
     (SELECT count(*)>0 FROM auth.users),(SELECT count(*)>0 FROM storage.objects),
-    (SELECT count(*)>0 FROM realtime.schema_migrations)")"
-[[ "$TARGET_STATE" == "3|0|$EXPECTED_REFERENCE_PASSES|$EXPECTED_REFERENCE_PASSES|t|t|t" ]] ||
+    (SELECT count(*)>0 FROM realtime.schema_migrations),
+    (SELECT count(*) FROM pg_trigger WHERE tgname='push_log_notifications' AND NOT tgisinternal))")"
+[[ "$TARGET_STATE" == "3|0|$EXPECTED_REFERENCE_PASSES|$EXPECTED_REFERENCE_PASSES|t|t|t|0" ]] ||
   fail "target database is not promotion-ready ($TARGET_STATE)"
 
 readonly CURRENT_DATABASE="$(sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' .env)"
@@ -128,6 +131,7 @@ set_env_value API_EXTERNAL_URL "$(jq -r .api_external_url "$RUNTIME_CONFIG")"
 set_env_value SITE_URL "$(jq -r .site_url "$RUNTIME_CONFIG")"
 set_env_value ADDITIONAL_REDIRECT_URLS "$(jq -r '.auth_redirect_urls|join(",")' "$RUNTIME_CONFIG")"
 set_env_value FESTAPP_ALLOWED_WEB_ORIGINS "$(jq -r '.allowed_web_origins|join(",")' "$RUNTIME_CONFIG")"
+set_env_value AWS_SNS_TOPIC_ARN "$(jq -r .aws_sns_topic_arn "$RUNTIME_CONFIG")"
 docker compose config -q
 docker compose up -d --force-recreate "${SERVICES[@]}" >/dev/null
 wait_for_services
@@ -151,12 +155,18 @@ container_env() {
 readonly EXPECTED_SITE_URL="$(jq -r .site_url "$RUNTIME_CONFIG")"
 readonly EXPECTED_REDIRECTS="$(jq -r '.auth_redirect_urls|join(",")' "$RUNTIME_CONFIG")"
 readonly EXPECTED_ORIGINS="$(jq -r '.allowed_web_origins|join(",")' "$RUNTIME_CONFIG")"
+readonly EXPECTED_SNS_TOPIC="$(container_env functions AWS_SNS_TOPIC_ARN)"
+readonly EXPECTED_NOTIFY_TOKEN="$(container_env functions NOTIFY_WEBHOOK_TOKEN)"
+readonly EXPECTED_NOTIFY_TOKEN_SHA="$(printf '%s' "$EXPECTED_NOTIFY_TOKEN" | sha256sum | awk '{print $1}')"
 [[ "$(container_env caddy FESTAPP_SUPABASE_HOSTNAME)" == "api.festapp.net" &&
    "$(container_env caddy FESTAPP_SUPABASE_SITE_ADDRESSES)" == "api.festapp.net" &&
    "$(container_env auth API_EXTERNAL_URL)" == "https://api.festapp.net" &&
    "$(container_env auth GOTRUE_SITE_URL)" == "$EXPECTED_SITE_URL" &&
    "$(container_env auth GOTRUE_URI_ALLOW_LIST)" == "$EXPECTED_REDIRECTS" &&
    "$(container_env functions FESTAPP_ALLOWED_WEB_ORIGINS)" == "$EXPECTED_ORIGINS" &&
+   "$EXPECTED_SNS_TOPIC" =~ ^arn:aws:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]+$ &&
+   "${#EXPECTED_NOTIFY_TOKEN}" -ge 32 &&
+   "$EXPECTED_NOTIFY_TOKEN_SHA" == "$(jq -r .notify_webhook_token_sha256 "$RUNTIME_CONFIG")" &&
    "$(container_env studio SUPABASE_PUBLIC_URL)" == "https://api.festapp.net" ]] ||
   fail "runtime external URL, Auth redirect or CORS configuration is incoherent"
 

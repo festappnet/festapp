@@ -1,0 +1,31 @@
+{
+  "policy_version": 1,
+  "legacy_refs": {
+    "origin/prod/avapp": {
+      "disposition": "retire",
+      "closure": "pending-external-evidence",
+      "replacement": "origin/prod/absolventskyvelehrad",
+      "evidence_doc": "docs/operations/supabase-self-hosted/legacy-client-inventory-2026-08-30.md"
+    },
+    "origin/prod/slunovratopava": {
+      "disposition": "retire",
+      "closure": "pending-external-evidence",
+      "replacement": "origin/prod/festivalslunovrat",
+      "evidence_doc": "docs/operations/supabase-self-hosted/legacy-client-inventory-2026-08-30.md"
+    },
+    "origin/prod/ticketonline": {
+      "disposition": "retired-boundary",
+      "closure": "closed",
+      "replacement": "origin/prod/festapptickets",
+      "evidence_commit": "f4ab1601e2f5bb8d93a0249e2f6f4cdc5c8c558b",
+      "evidence_doc": "docs/operations/supabase-self-hosted/legacy-client-inventory-2026-08-30.md"
+    }
+  },
+  "broad_source_refs": {
+    "origin/prod/absolventskyvelehrad": "application",
+    "origin/prod/cavfotofest": "application",
+    "origin/prod/doobiscup": "application",
+    "origin/prod/farnostopava": "application",
+    "origin/prod/hvezdamorska": "application"
+  }
+}

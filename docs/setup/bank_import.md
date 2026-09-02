@@ -83,6 +83,15 @@ Run the helper script for the subdomain:
 supabase functions deploy bank-mail-parser --project-ref <PROJECT_REF> --no-verify-jwt
 ```
 
+The runtime must define the exact `AWS_SNS_TOPIC_ARN`. Before canonical
+subscription, set the topic to Signature Version 2 and retain the resulting AWS
+receipt as cutover evidence:
+
+```bash
+aws sns set-topic-attributes --topic-arn <TOPIC_ARN> \
+  --attribute-name SignatureVersion --attribute-value 2
+```
+
 ### 4. Verification Check (Critical)
 
 New SNS subscriptions start in **PendingConfirmation**. They must be confirmed
@@ -95,10 +104,9 @@ before AWS sends any emails.
 2. **If "PendingConfirmation"**:
    - Go to **AWS Console > SNS > Subscriptions**.
    - Select the subscription and click **Request confirmation**.
-   - Check **Supabase Edge Function Logs**. The function auto-confirms if it
-     receives the request.
-   - If it stays pending: Copy the URL from the logs
-     (`Confirming subscription: ...`) and visit it in your browser.
+   - Check **Supabase Edge Function Logs**. The function auto-confirms only
+     after the exact-topic Signature Version 2 proof passes; it never logs the
+     confirmation URL or token.
 
 ## Testing
 
