@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
-import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/map_feature.dart';
 import 'package:fstapp/components/map/legacy_map_surface.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
@@ -104,16 +104,17 @@ void main() {
       ),
     ));
 
-    expect(find.byType(DefaultLocationMarker), findsOneWidget);
+    const locationMarkerKey = Key('legacy-current-location-marker');
+    expect(find.byKey(locationMarkerKey), findsOneWidget);
     final locationLayer = tester
         .widgetList<fm.MarkerLayer>(find.byType(fm.MarkerLayer))
         .singleWhere(
           (layer) => layer.markers.any(
-            (marker) => marker.child is DefaultLocationMarker,
+            (marker) => marker.child.key == locationMarkerKey,
           ),
         );
     final locationMarker = locationLayer.markers.singleWhere(
-      (marker) => marker.child is DefaultLocationMarker,
+      (marker) => marker.child.key == locationMarkerKey,
     );
     expect(locationMarker.width, 20);
     expect(locationMarker.height, 20);
@@ -134,7 +135,10 @@ void main() {
       ),
     ));
 
-    expect(find.byType(DefaultLocationMarker), findsNothing);
+    expect(
+      find.byKey(const Key('legacy-current-location-marker')),
+      findsNothing,
+    );
   });
 
   testWidgets('does not silently fall back when MapLibre is unavailable',
@@ -188,7 +192,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('configured online provider keeps an independent OSM base layer',
+  testWidgets('configured online provider uses one identified fallback layer',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
@@ -202,14 +206,15 @@ void main() {
     ));
 
     final layers = tester.widgetList<fm.TileLayer>(find.byType(fm.TileLayer));
-    expect(layers, hasLength(2));
+    expect(layers, hasLength(1));
     expect(
-      layers.first.urlTemplate,
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    );
-    expect(layers.last.urlTemplate, 'https://primary.example/{z}/{x}/{y}.png');
-    expect(layers.last.fallbackUrl,
+        layers.single.urlTemplate, 'https://primary.example/{z}/{x}/{y}.png');
+    expect(layers.single.fallbackUrl,
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+    expect(
+      layers.single.tileProvider.headers['User-Agent'],
+      'Festapp/Flutter (+${AppConfig.supportUrl})',
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
