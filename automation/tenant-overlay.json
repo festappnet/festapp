@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festivalslunovrat",
-  "baseMainSha": "556fdfa3014f2f596579f9df6da1392caf15b32b",
+  "baseMainSha": "cd4e07bdc1dd191e70215a334a201f7ed993e28c",
   "release": {
     "version": "0.19.95+479",
     "note": "Keep the profile usable when optional enrichment stalls"
