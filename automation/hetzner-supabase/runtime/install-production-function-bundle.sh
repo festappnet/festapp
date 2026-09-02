@@ -41,7 +41,7 @@ readonly STAGE="volumes/functions.stage-$INSTALL_ID"
 readonly PREVIOUS="volumes/functions.pre-production-$INSTALL_ID"
 [[ ! -e "$STAGE" && ! -e "$PREVIOUS" ]] || fail "Function staging path already exists"
 install -d -o root -g root -m 0755 "$STAGE"
-tar --no-same-owner --no-same-permissions -C "$STAGE" -xzf "$ARTIFACT"
+tar --no-xattrs --no-same-owner --no-same-permissions -C "$STAGE" -xzf "$ARTIFACT"
 cp -a volumes/functions/main "$STAGE/main"
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle contains symlinks"
 
