@@ -2195,6 +2195,15 @@ packages:
       url: "https://github.com/miakh/flutter-vector-map-tiles.git"
     source: git
     version: "9.0.0-beta.13"
+  vector_map_tiles_mbtiles:
+    dependency: "direct main"
+    description:
+      path: vector_map_tiles_mbtiles
+      ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
+      resolved-ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
+      url: "https://github.com/miakh/flutter_map_plugins.git"
+    source: git
+    version: "1.2.2"
   vector_math:
     dependency: transitive
     description:
