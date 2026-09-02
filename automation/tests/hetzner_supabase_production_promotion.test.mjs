@@ -48,6 +48,8 @@ function fixture() {
     public_hostname: 'api.festapp.net',
     supabase_public_url: 'https://api.festapp.net',
     api_external_url: 'https://api.festapp.net',
+    aws_sns_topic_arn: 'arn:aws:sns:eu-central-1:274371802740:festapp-bank-emails',
+    notify_webhook_token_sha256: 'f'.repeat(64),
     site_url: origins[0],
     allowed_web_origins: origins,
     auth_redirect_urls: origins.flatMap((origin) => callbackPaths.map((item) => `${origin}${item}`)),
@@ -188,6 +190,10 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(promotion, /select\(\.role=="merge-source"\)/);
   assert.match(promotion, /count\(DISTINCT r\.source_alias\)/);
   assert.match(promotion, /EXPECTED_REFERENCE_PASSES/);
+  assert.match(promotion, /instance-install must not be present/);
+  assert.match(promotion, /tgname='push_log_notifications'/);
+  assert.match(promotion, /AWS_SNS_TOPIC_ARN/);
+  assert.match(promotion, /NOTIFY_WEBHOOK_TOKEN/);
   assert.doesNotMatch(promotion, /BACKEND_ACTIVATION_PHASE=canonical|GRANT\s|REVOKE\s|ALTER ROLE/);
   assert.match(upgrade, /upgrade-installed-production-runtime-additively/);
   assert.match(upgrade, /bootstrap-missing-production-runtime-registries/);
