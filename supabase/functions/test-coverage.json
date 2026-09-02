@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "production": {
+    "bank-mail-parser": {
+      "smokeTests": ["supabase/functions/bank-mail-parser/snsVerification_test.ts"],
+      "behaviorTests": ["supabase/functions/bank-mail-parser/test_parser_comprehensive.ts"]
+    },
+    "cancel-reception-registration": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/cancel-reception-registration/cancel_test.ts"]
+    },
+    "confirm-account-deletion": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/confirm-account-deletion/completionNotification_test.ts"]
+    },
+    "download-ticket": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    },
+    "exchange-login-qr": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/exchange-login-qr/exchange_test.ts"]
+    },
+    "fetch-http-data": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/fetch-http-data/safeFetch_test.ts"]
+    },
+    "fetch-transactions": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    },
+    "generate-order-agreement": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/generate-order-agreement/agreementConfig_test.ts"]
+    },
+    "notify": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/notify/webhookAuth_test.ts"]
+    },
+    "register": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/register/registrationFlow_test.ts"]
+    },
+    "request-account-deletion": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    },
+    "send-app-links": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/send-app-links/test_app_links_delivery.ts"]
+    },
+    "send-custom-email": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    },
+    "send-email": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/send-email/deposit_templates_test.ts"]
+    },
+    "send-reset-password-link": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    },
+    "send-sign-in-code": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    },
+    "send-ticket-order": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/send-ticket-order/commandIdentity_test.ts"]
+    },
+    "send-tickets": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    },
+    "synchronize-orders": {
+      "smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"],
+      "behaviorTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"]
+    }
+  },
+  "excluded": {
+    "instance-install": {
+      "reason": "Operator-only remote SQL installer is forbidden in the canonical production bundle.",
+      "evidenceTests": ["automation/tests/hetzner_supabase_production_promotion.test.mjs"]
+    }
+  }
+}
