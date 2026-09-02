@@ -5,6 +5,7 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/map_feature.dart';
 import 'package:fstapp/components/map/legacy_map_surface.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
+import 'package:fstapp/components/map/map_strings.dart';
 import 'package:fstapp/components/map/map_place_model.dart';
 import 'package:fstapp/components/map/map_scene.dart';
 import 'package:fstapp/components/map/map_viewport_controller.dart';
@@ -192,7 +193,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('configured online provider uses one identified fallback layer',
+  testWidgets(
+      'configured provider failure switches layer and attribution to OSM',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
@@ -200,17 +202,26 @@ void main() {
         isOffline: false,
         model: model(),
         legacy: LegacyMapConfiguration.online(
-          MapLayer(layerLink: 'https://primary.example/{z}/{x}/{y}.png'),
+          MapLayer(
+            layerLink: 'https://primary.example/{z}/{x}/{y}.png',
+            text: 'Primary maps',
+          ),
         ),
       ),
     ));
 
-    final layers = tester.widgetList<fm.TileLayer>(find.byType(fm.TileLayer));
-    expect(layers, hasLength(1));
+    var layers = tester.widgetList<fm.TileLayer>(find.byType(fm.TileLayer));
     expect(
         layers.single.urlTemplate, 'https://primary.example/{z}/{x}/{y}.png');
-    expect(layers.single.fallbackUrl,
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+    expect(layers.single.fallbackUrl, isNull);
+    expect(layers.single.errorTileCallback, isNotNull);
+    expect(
+      tester
+          .widgetList<fm.TextSourceAttribution>(
+              find.byType(fm.TextSourceAttribution))
+          .map((attribution) => attribution.text),
+      ['Primary maps'],
+    );
     expect(
       (layers.single.tileProvider as fm.NetworkTileProvider)
           .attemptDecodeOfHttpErrorResponses,
@@ -219,6 +230,26 @@ void main() {
     expect(
       layers.single.tileProvider.headers['User-Agent'],
       'Festapp/Flutter (+${AppConfig.supportUrl})',
+    );
+
+    layers.single.errorTileCallback!(
+      _FakeTileImage(),
+      StateError('HTTP 403'),
+      null,
+    );
+    await tester.pump();
+
+    layers = tester.widgetList<fm.TileLayer>(find.byType(fm.TileLayer));
+    expect(layers.single.urlTemplate,
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+    expect(layers.single.errorTileCallback, isNull);
+    expect(find.byType(fm.LogoSourceAttribution), findsNothing);
+    expect(
+      tester
+          .widgetList<fm.TextSourceAttribution>(
+              find.byType(fm.TextSourceAttribution))
+          .map((attribution) => attribution.text),
+      [MapStrings.openStreetMapAttribution],
     );
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -272,4 +303,9 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
   });
+}
+
+class _FakeTileImage implements fm.TileImage {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
