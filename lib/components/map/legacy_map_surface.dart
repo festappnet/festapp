@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_map_animations/flutter_map_animations.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
-import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/map_feature.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:fstapp/components/map/map_direction_marker.dart';
@@ -19,11 +17,11 @@ import 'package:fstapp/components/map/map_surface_model.dart';
 import 'package:fstapp/components/map/map_viewport_controller.dart';
 import 'package:fstapp/components/map/offline_map_bundle_manager.dart';
 import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
+import 'package:fstapp/components/map/offline_mbtiles_vector_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mbtiles/mbtiles.dart';
 import 'package:fstapp/services/launch_url_service.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart' as vmt;
-import 'package:vector_map_tiles_mbtiles/vector_map_tiles_mbtiles.dart' as vmtm;
 import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
 
 /// All flutter_map knowledge is localized in this adapter. It consumes the
@@ -52,6 +50,7 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
     with TickerProviderStateMixin {
   static const _openStreetMapTiles =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const _tileUserAgent = 'Festapp/Flutter (+${AppConfig.supportUrl})';
   late final AnimatedMapController _animatedController =
       AnimatedMapController(vsync: this);
   late final LegacyMapViewportController _viewportAdapter =
@@ -123,8 +122,8 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
                 point: widget.model.scene.currentLocation!,
                 width: MapLocationStyle.onMapMarkerSize,
                 height: MapLocationStyle.onMapMarkerSize,
-                child: const DefaultLocationMarker(
-                  color: MapLocationStyle.color,
+                child: const _CurrentLocationMarker(
+                  key: Key('legacy-current-location-marker'),
                 ),
               ),
             ],
@@ -141,21 +140,24 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
         : configured;
 
     fm.TileLayer tiles(String url, {String? fallbackUrl}) => fm.TileLayer(
-          tileProvider: CancellableNetworkTileProvider(),
+          tileProvider: fm.NetworkTileProvider(
+            headers: {'User-Agent': _tileUserAgent},
+          ),
           maxZoom: MapZoomLimits.interactionMaximum,
           maxNativeZoom: MapZoomLimits.onlineRasterNativeMaximum,
           urlTemplate: url,
           fallbackUrl: fallbackUrl,
         );
 
-    if (primary == _openStreetMapTiles) return [tiles(_openStreetMapTiles)];
-
-    // Keep a complete, independently rendered OSM layer under a configured
-    // provider. Tile-level fallback is not enough when a provider answers with
-    // an error image or becomes unavailable for an entire session.
+    // Load only the configured provider. Rendering a complete OSM layer below
+    // it doubles every viewport request; fallback is sufficient for transport
+    // failures and keeps OSM traffic both identified and demand-driven.
     return [
-      tiles(_openStreetMapTiles),
-      tiles(primary, fallbackUrl: _openStreetMapTiles),
+      tiles(
+        primary,
+        fallbackUrl:
+            primary == _openStreetMapTiles ? null : _openStreetMapTiles,
+      ),
     ];
   }
 
@@ -170,7 +172,7 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
       theme: style.theme,
       sprites: style.sprites,
       tileProviders: vmt.TileProviders({
-        sourceName: vmtm.MbTilesVectorTileProvider(mbtiles: mbtiles),
+        sourceName: OfflineMbTilesVectorTileProvider(mbtiles: mbtiles),
       }),
       maximumZoom: MapZoomLimits.interactionMaximum,
     );
@@ -289,6 +291,27 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
   }
 }
 
+class _CurrentLocationMarker extends StatelessWidget {
+  const _CurrentLocationMarker({super.key});
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(2),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: MapLocationStyle.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      );
+}
+
 class LegacyMapResources {
   final vmt.Style style;
   final MbTiles mbtiles;
@@ -300,7 +323,7 @@ class LegacyMapResources {
     required String mbtilesPath,
   }) async {
     final style = await vmt.StyleReader(uri: styleUri).read();
-    final mbtiles = MbTiles(mbtilesPath: mbtilesPath, gzip: true);
+    final mbtiles = MbTiles(path: mbtilesPath, gzip: true);
     return LegacyMapResources._(style: style, mbtiles: mbtiles);
   }
 
@@ -332,13 +355,13 @@ class LegacyMapResources {
     );
     final mbtilesAsset = manifest.assetFor(OfflineMapAssetRole.mbtiles);
     final mbtiles = MbTiles(
-      mbtilesPath: '${installation.directory.path}/${mbtilesAsset.path}',
+      path: '${installation.directory.path}/${mbtilesAsset.path}',
       gzip: true,
     );
     return LegacyMapResources._(style: style, mbtiles: mbtiles);
   }
 
-  void dispose() => mbtiles.dispose();
+  void dispose() => mbtiles.close();
 }
 
 class _LegacyPlaceMarker extends StatelessWidget {
@@ -477,14 +500,10 @@ class LegacyMapViewportController implements MapViewportController {
       );
 
   @override
-  Offset coordinateToScreenPoint(LatLng coordinate) {
-    final point =
-        controller.mapController.camera.latLngToScreenPoint(coordinate);
-    return Offset(point.x, point.y);
-  }
+  Offset coordinateToScreenPoint(LatLng coordinate) =>
+      controller.mapController.camera.latLngToScreenOffset(coordinate);
 
   @override
   LatLng screenPointToCoordinate(Offset point) =>
-      controller.mapController.camera
-          .pointToLatLng(Point<double>(point.dx, point.dy));
+      controller.mapController.camera.screenOffsetToLatLng(point);
 }
