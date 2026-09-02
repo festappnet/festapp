@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.0.0";
 import { detectProvider, parseEmail } from "./parser.ts";
+import { SnsVerificationError, trustedSnsUrl, verifySnsEnvelope } from "./snsVerification.ts";
 
 const SNS_TYPE_NOTIFICATION = "Notification";
 const SNS_TYPE_CONFIRMATION = "SubscriptionConfirmation";
@@ -10,34 +11,38 @@ serve(async (req) => {
   let bankAccount: any = null;
   let messageId: string | null = null;
   let pairingCode: string | null = null;
+  let verifiedSns = false;
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // 1. Parse Request
+    if (req.method !== "POST" || Number(req.headers.get("content-length") ?? 0) > 1024 * 1024) {
+      return new Response("Request rejected", { status: 400 });
+    }
     bodyText = await req.text();
-    if (!bodyText) {
+    if (!bodyText || bodyText.length > 1024 * 1024) {
       return new Response("No body", { status: 400 });
     }
 
     let payload;
     try {
       payload = JSON.parse(bodyText);
-    } catch (e) {
-      await supabase.rpc("log_transactions_parser_log", {
-        p_bank_account_id: null,
-        p_external_id: "unknown",
-        p_raw_data: bodyText,
-        p_message: "Invalid JSON input",
-      });
+    } catch {
       return new Response("Invalid JSON", { status: 400 });
     }
+    const expectedTopicArn = Deno.env.get("AWS_SNS_TOPIC_ARN");
+    if (!expectedTopicArn) throw new SnsVerificationError("topic_not_configured");
+    await verifySnsEnvelope(payload, req.headers, expectedTopicArn);
+    verifiedSns = true;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 2. Handle SNS Subscription Confirmation (Auto-confirm)
     if (payload.Type === SNS_TYPE_CONFIRMATION) {
-      const confirmRes = await fetch(payload.SubscribeURL);
+      const confirmRes = await fetch(trustedSnsUrl(payload.SubscribeURL, expectedTopicArn, true), {
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
+      });
       if (confirmRes.ok) {
         return new Response("Confirmed", { status: 200 });
       } else {
@@ -171,10 +176,12 @@ serve(async (req) => {
 
     return new Response("OK", { status: 200 });
   } catch (e) {
-    console.error("Unhandled Error:", e);
+    const rejected = e instanceof SnsVerificationError;
+    console.error("bank_mail_parser_failed", { status: rejected ? 403 : 500 });
 
     // Attempt to log to DB if possible
     try {
+      if (!verifiedSns) throw new Error("unverified request");
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
@@ -194,11 +201,8 @@ serve(async (req) => {
       console.error("Failed to log error to DB:", logErr);
     }
 
-    return new Response(
-      `Internal Server Error: ${
-        e instanceof Error ? e.message : JSON.stringify(e)
-      }`,
-      { status: 500 },
-    );
+    return new Response(rejected ? "Request rejected" : "Internal Server Error", {
+      status: rejected ? 403 : 500,
+    });
   }
 });

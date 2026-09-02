@@ -78,7 +78,10 @@ async function verifyOnline() {
     fetch('https://raw.githubusercontent.com/docker/docs/main/content/manuals/engine/release-notes/29.md').then(assertResponse).then((value) => value.text()),
     fetch('https://www.postgresql.org/docs/release/').then(assertResponse).then((value) => value.text()),
   ]);
-  const latestUbuntu = ubuntu.match(/Ubuntu (\d+\.\d+ LTS)/)?.[1];
+  // Canonical may publish a point-release heading (for example 26.04.1 LTS),
+  // while the provisioned host contract intentionally pins the LTS track.
+  const ubuntuTrack = ubuntu.match(/Ubuntu (\d+\.\d+)(?:\.\d+)? LTS/)?.[1];
+  const latestUbuntu = ubuntuTrack ? `${ubuntuTrack} LTS` : undefined;
   const latestDocker = dockerReleaseNotes.match(/^## (\d+\.\d+\.\d+)$/m)?.[1];
   const latestPostgres = postgres.match(/PostgreSQL (\d+\.\d+)/)?.[1];
   assert.equal(latestUbuntu, pins.host.ubuntu, 'Ubuntu pin is no longer the latest official LTS');
