@@ -310,7 +310,7 @@ class HtmlHelper {
         imageData = base64.decode(base64Data);
       } else {
         // For linked images, fetch the image data from the URL.
-        var fetched = await fetchImageData(src);
+        var fetched = await fetchImageData(src, occasionId);
         if (fetched == null) {
           continue;
         }
@@ -328,11 +328,11 @@ class HtmlHelper {
     return newDocument.outerHtml;
   }
 
-  static Future<Uint8List?> fetchImageData(String src) async {
+  static Future<Uint8List?> fetchImageData(String src, int occasionId) async {
     if (PlatformHelper.isWeb) {
       final response = await Supabase.instance.client.functions.invoke(
         "fetch-http-data",
-        body: {"targetUrl": src},
+        body: {"targetUrl": src, "occasionId": occasionId},
       );
       if (response.data != null && response.data is Map) {
         final mapData = response.data as Map;
