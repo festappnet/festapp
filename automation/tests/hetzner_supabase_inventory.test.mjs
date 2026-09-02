@@ -694,8 +694,10 @@ test('repository cutover preflight separates local readiness from live blockers'
   };
   const ready = evaluateRepositoryCutoverReadiness(base);
   assert.equal(ready.repository_ready, true);
+  assert.equal(ready.production_cutover_authorized, false);
   assert.deepEqual(ready.blockers, []);
-  assert.equal(ready.operational_blockers.length, 1);
+  assert.ok(ready.operational_blockers.length > 1);
+  assert.ok(ready.operational_blockers.some((item) => item.includes('operational readiness gate')));
 
   const dirty = evaluateRepositoryCutoverReadiness({
     ...base,
