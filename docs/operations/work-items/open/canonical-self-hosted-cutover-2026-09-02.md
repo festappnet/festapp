@@ -30,6 +30,7 @@ Function, cron, callback, worker or operator can write to them.
 - Three-target SQL parity closed on 2026-08-29.
 - Expanded repository writer discovery from 68 to 146 candidate files, including Auth, external side effects, Edge, Workers, SQL/operator and deployment paths; all are assigned to fail-closed full-freeze controls.
 - Added an exact fail-closed policy for all 20 Edge Functions and three Worker entrypoints; 18 can mutate persisted authority, while read-only and external-delivery routes are also classified.
+- Added a fail-closed test-coverage manifest for all 19 production Edge Functions; the repository runner now discovers both established Deno test naming conventions, while operator-only `instance-install` remains explicitly excluded with bundle evidence.
 - Restored the missing `sync-worker` deployment manifest and added a fail-closed canonical `sync-publisher` template; its final scope IDs must come from fresh private merge evidence, never historical cloud-`a` ID `643`.
 - Hardened `fetch-http-data`, AWS SNS bank ingress and the OneSignal database webhook. Live provider/Vault canaries remain activation gates; remote-SQL `instance-install` is excluded from production.
 - Classified all 14 production refs: zero unknown tenants, two pending legacy retirements, one closed retirement boundary and five broad source-`a` clients requiring live application-freeze evidence.
@@ -137,3 +138,4 @@ gate must re-evaluate all volatile checks immediately before the freeze.
 | 2026-09-02 | Off-host observability | R2 log archive plus external Worker/Healthchecks receipt | 6/6 probe checks and induced alert/recovery passed |
 | 2026-09-02 | App Store refresh | guarded read-only Fastlane lane for seven manifests | all seven identities serve live `0.19.95`; no editable version |
 | 2026-09-02 | Legacy retirement refresh | public Google Play, DNS and HTTP readback | AVApp listing 404; Slunovrat legacy origin is a retirement-only 301 boundary |
+| 2026-09-02 | Edge Function coverage closure | `./automation/test_all.sh` plus fail-closed coverage manifest | 19/19 production Functions mapped; 190 web, 650 Flutter, 115 Deno and 106 automation tests passed |
