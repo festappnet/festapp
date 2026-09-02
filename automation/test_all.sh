@@ -205,11 +205,15 @@ if [ "$RUN_DB" = true ] || [ "$RUN_INTEGRATION" = true ]; then
     # Tests business logic of server functions.
     echo ""
     echo ">>> Deno Edge Function Tests..."
+
+    node automation/hetzner-supabase/merge/edge-function-test-coverage.mjs >/dev/null
     
     if command -v deno &> /dev/null; then
-        # Find and run all test_*.ts files in supabase/functions
-        # We use explicit paths to avoid running unrelated stuff if any
-        DENO_TEST_FILES=$(find supabase/functions -name "test_*.ts" -not -path "*/node_modules/*")
+        # Both naming conventions are established in this repository. Keep the
+        # paths explicit so unrelated TypeScript files never become tests.
+        DENO_TEST_FILES=$(find supabase/functions -type f \
+          \( -name "test_*.ts" -o -name "*_test.ts" \) \
+          -not -path "*/node_modules/*" | sort)
         
         if [ -n "$DENO_TEST_FILES" ]; then
              echo "Found Deno tests: $DENO_TEST_FILES"
@@ -283,6 +287,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
       "$SCRIPT_DIR/tests/pwa_storage_bridge.test.mjs" \
       "$SCRIPT_DIR/tests/cloudflare_pages_project.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_infrastructure.test.mjs" \
+      "$SCRIPT_DIR/tests/edge_function_test_coverage.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_inventory.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_cutover_mode_gate.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_operational_readiness.test.mjs" \
