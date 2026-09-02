@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "farnostopava",
-  "baseMainSha": "98d204e0f21d2fa66556d37c43aa30ad318a5039",
+  "baseMainSha": "556fdfa3014f2f596579f9df6da1392caf15b32b",
   "release": {
     "version": "0.19.95+475",
     "note": "Web-only Cloudflare transition client without OneSignal; legacy source-a remains active until the signed activation document switches organization 8 to 11. No iOS or Android release belongs to this tenant lane."
