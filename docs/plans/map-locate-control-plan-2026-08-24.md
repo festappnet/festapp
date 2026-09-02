@@ -84,6 +84,7 @@ assertion that the tip has no artificial edge gap.
 
 ## Deliberate platform state
 
-The repository remains on Flutter 3.47.1 through FVM. The accompanying analyzer
+The repository remains on Flutter 3.47.2 through the canonical project config
+and its generated FVM pins. The accompanying analyzer
 and iOS dependency adjustments are part of that supported toolchain state and
 must not be reverted as part of this feature.

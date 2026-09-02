@@ -35,6 +35,8 @@ mkdir -p "$TMP_ROOT/automation" \
          "$TMP_ROOT/automation/hetzner-supabase/merge" \
          "$TMP_ROOT/automation/lib" \
          "$TMP_ROOT/automation/release" \
+         "$TMP_ROOT/.fvm" \
+         "$TMP_ROOT/.vscode" \
          "$TMP_ROOT/automation/release/legal" \
          "$TMP_ROOT/automation/templates/web/delete-account" \
          "$TMP_ROOT/android/app/src/main/kotlin/fstapp/example" \
@@ -61,6 +63,7 @@ cp "$PROJECT_ROOT/automation/release/render_legal_pages.mjs" "$TMP_ROOT/automati
 cp "$PROJECT_ROOT"/automation/release/legal/*.md "$TMP_ROOT/automation/release/legal/"
 cp "$PROJECT_ROOT/automation/templates/web/delete-account/index.html" "$TMP_ROOT/automation/templates/web/delete-account/index.html"
 cp "$FIXTURE_CONF" "$TMP_ROOT/automation/project.conf"
+cp "$PROJECT_ROOT/.vscode/settings.json" "$TMP_ROOT/.vscode/settings.json"
 
 # Snapshot real templates the script edits.
 cp "$PROJECT_ROOT/web/index.html"            "$TMP_ROOT/web/index.html"
@@ -141,6 +144,8 @@ echo "--- generated Flutter SDK adapters ---"
 assert_contains "$TMP_ROOT/.fvmrc" '"flutter": "9.9.9"'
 assert_contains "$TMP_ROOT/.fvm/fvm_config.json" '"flutterSdkVersion": "9.9.9"'
 assert_contains "$TMP_ROOT/.fvm/release" '9.9.9'
+assert_contains "$TMP_ROOT/.vscode/settings.json" '"dart.flutterSdkPath": ".fvm/versions/9.9.9"'
+assert_contains "$TMP_ROOT/.vscode/settings.json" '"java.configuration.updateBuildConfiguration": "interactive"'
 
 echo
 echo "--- web/index.html (Flutter template) ---"

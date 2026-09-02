@@ -1,7 +1,7 @@
 # Work item: complete image delivery cost cutover
 
 Opened: 2026-08-24
-Updated: 2026-08-24
+Updated: 2026-08-25
 Status: blocked
 Verification: release
 
@@ -29,12 +29,10 @@ authoritative for architecture, security, migration and validation.
 ## Fixed point
 
 - Canonical branch: `prod/csmostrava2026`.
-- Release source SHA: `cbb3fa7425b7c33b2cab1bba4e2ffe8765f5b6cc`.
-- Current branch/registry SHA: `4429055d1f11ae3f1abac05b7c71b631fd5946e1`.
-- Post-build canonical CSM candidate: `cutover/csm-after-1027` at
-  `d90d42a3d5551cf3871734d6f36cc3967d9025ed`; it preserves `4429055d1` as an
-  ancestor and must not become the production tip before command `1027` completes.
-- Target client version: `0.19.90+440`.
+- Image-cutover source SHA: `cbb3fa7425b7c33b2cab1bba4e2ffe8765f5b6cc`.
+- Current release source/branch SHA: `4eb1d556c74d63233af5bdc971f02bcbea0c7314`;
+  the image-cutover source is a verified ancestor.
+- Target client version: `0.19.91+441`.
 - Google Play production version: `438` at full distribution.
 - Submitted iOS build: `439`; it predates the image cutover.
 - Worker version: `4369e694-9b6b-4705-a67a-7397770ff21a`.
@@ -60,15 +58,19 @@ authoritative for architecture, security, migration and validation.
 - The post-build CSM overlay was regenerated from canonical `main`, passed its
   drift/config/legacy-absence gates and was published only as
   `cutover/csm-after-1027`; the production ref remains unchanged.
+- The production branch subsequently advanced to `0.19.91+441` at `4eb1d556c`.
+  Command `1027` is therefore superseded for promotion purposes. Read-only Play
+  inspection and a local signed build for the exact current source were queued
+  as command `1028`; Play mutation is explicitly forbidden.
 
 ## Next action
 
 Power on or wake the production Windows workstation and let its existing
-user-scoped Festapp Control Channel monitor process command `1027`. Accept only a
+user-scoped Festapp Control Channel monitor process through command `1028`. Accept only a
 matching `COMPLETE` or exact `BLOCKED` result. Do not enqueue a duplicate build.
 
-Expected result: a newly built signed `fstapp.jm2025` AAB with version code `440`,
-checkout SHA `4429055d1f11ae3f1abac05b7c71b631fd5946e1` containing release source
+Expected result: a newly built signed `fstapp.jm2025` AAB with version code `441`,
+checkout SHA `4eb1d556c74d63233af5bdc971f02bcbea0c7314` containing image-cutover source
 `cbb3fa7425b7c33b2cab1bba4e2ffe8765f5b6cc`, matching upload certificate,
 AAB SHA-256, non-secret provenance manifest and explicit proof that no Play edit
 was created.
@@ -76,7 +78,7 @@ was created.
 ## Remaining order
 
 1. Produce and independently inspect the Android AAB on Windows.
-2. Produce the iOS `0.19.90+440` archive from the same canonical source through
+2. Produce the iOS archive from the same canonical source through
    the established Apple release workflow; do not substitute build `439`.
 3. Present and obtain exact artifact-specific production authorizations for
    Google Play and App Store, release both clients, and read back store state.
@@ -95,9 +97,9 @@ was created.
 
 The Mac control-channel master is healthy (`health=200`, unauthorized queue
 access returns `401`, pairing exists), but the Windows result cursor has not
-advanced beyond command `1024`. Commands `1025`, `1026` and `1027` have no result. The
-required external action is only to wake the Windows workstation and allow its
-monitor to resume polling.
+advanced beyond command `1024`. Commands `1025` through `1028` have no result.
+The required external action is only to wake the Windows workstation and allow
+its monitor to resume polling.
 
 ## Authority gates
 
@@ -120,8 +122,8 @@ monitor to resume polling.
 
 ## Definition of complete
 
-- [ ] Android `0.19.90+440` is released and its exact artifact is verified.
-- [ ] iOS `0.19.90+440` is released and its exact artifact is verified.
+- [ ] Android `0.19.91+441` is released and its exact artifact is verified.
+- [ ] iOS is released from the same canonical image-cutover source and its exact artifact is verified.
 - [ ] The web client with the canonical image contract is deployed and verified.
 - [ ] The adoption/minimum-version gate excludes every legacy control client.
 - [ ] Both public image hosts serve directly from their project-specific R2
@@ -139,3 +141,4 @@ monitor to resume polling.
 | 2026-08-24 | Windows build request | control-channel command `1026` | queued; no result yet |
 | 2026-08-24 | Canonical replacement build request | control-channel command `1027` | queued for branch tip `4429055d1`; supersedes `1026` |
 | 2026-08-24 | Post-build tenant candidate | `d90d42a3d5551cf3871734d6f36cc3967d9025ed` | verified and published on `cutover/csm-after-1027`; production ref unchanged |
+| 2026-08-25 | Canonical replacement build request | control-channel command `1028` | queued for current production source `4eb1d556c`, version `0.19.91+441`; no Play mutation authorized |

@@ -64,6 +64,7 @@ test('mobile lane fails closed on wrong identities, branch and repository-local 
 test('store manifest fails closed before deep validation when structural sections are absent', () => {
   assert.deepEqual(storeManifestShapeErrors({ schemaVersion: 2 }), [
     'app-store manifest is missing object target',
+    'app-store manifest is missing object apple',
     'app-store manifest is missing object urls',
     'app-store manifest is missing object screenshots',
   ]);
@@ -72,11 +73,13 @@ test('store manifest fails closed before deep validation when structural section
 test('store manifest rejects empty or malformed structural sections', () => {
   assert.deepEqual(storeManifestShapeErrors({
     target: {},
+    apple: {},
     urls: { marketing: 'http://invalid', privacy: '', privacyChoices: null, support: '/support' },
     screenshots: {},
   }), [
     'app-store manifest target.name is missing',
     'app-store manifest target.locale is missing',
+    'app-store manifest apple.storeName is missing',
     'app-store manifest urls.marketing must be an absolute HTTPS URL',
     'app-store manifest urls.privacy must be an absolute HTTPS URL',
     'app-store manifest urls.privacyChoices must be an absolute HTTPS URL',

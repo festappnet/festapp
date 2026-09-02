@@ -83,11 +83,16 @@ import sys
 root = Path(sys.argv[1])
 version = sys.argv[2]
 (root / '.fvm').mkdir(exist_ok=True)
+(root / '.vscode').mkdir(exist_ok=True)
 (root / '.fvmrc').write_text(json.dumps({'flutter': version}, indent=2) + '\n')
 (root / '.fvm' / 'fvm_config.json').write_text(
     json.dumps({'flutterSdkVersion': version}, indent=2) + '\n'
 )
 (root / '.fvm' / 'release').write_text(version + '\n')
+settings_path = root / '.vscode' / 'settings.json'
+settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
+settings['dart.flutterSdkPath'] = f'.fvm/versions/{version}'
+settings_path.write_text(json.dumps(settings, indent=2) + '\n')
 PY
 [[ "$ANDROID_APPLICATION_ID" =~ ^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$ ]] || {
     echo "Error: invalid ANDROID_APPLICATION_ID"; exit 1;
