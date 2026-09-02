@@ -136,6 +136,10 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
     fm.TileLayer tiles(String url, {String? fallbackUrl}) => fm.TileLayer(
           tileProvider: fm.NetworkTileProvider(
             headers: {'User-Agent': _tileUserAgent},
+            // Providers such as Mapy.com return a branded PNG together with
+            // HTTP 403. Treat the status as an error so flutter_map requests
+            // the configured OpenStreetMap fallback instead of rendering it.
+            attemptDecodeOfHttpErrorResponses: false,
           ),
           maxZoom: MapZoomLimits.interactionMaximum,
           maxNativeZoom: MapZoomLimits.onlineRasterNativeMaximum,
