@@ -33,8 +33,13 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 
 | Function | Purpose |
 |----------|---------|
+| `cancel-reception-registration` | Cancels reception membership first, then revokes the user's refresh sessions. |
+| `confirm-account-deletion` | Inspects a deletion token and performs the confirmed Auth, Storage and notification cleanup. |
+| `exchange-login-qr` | Exchanges a bounded one-time reception QR/manual code for a normal user session. |
 | `notify` | Push notifications via OneSignal, triggered by DB webhook. Supports targeted and broadcast sends. |
 | `register` | User registration: creates user via RPC, sends welcome email with sign-in code and platform links. |
+| `request-account-deletion` | Creates an opaque deletion request and sends its confirmation link to the resolved delivery address. |
+| `send-app-links` | Sends CSM application links and records their delivery state idempotently. |
 | `send-email` | Transactional emails for ticket orders. Supports single sends and batch queue. Template codes: `TICKET_ORDER_STORNO`, `TICKET_ORDER_UPDATE`, `TICKET_ORDER_REMINDER`. Strategy Pattern for data gathering. |
 | `send-custom-email` | Editor-initiated custom email. Validates editor role, then sends with provided template/substitutions. |
 | `send-sign-in-code` | Resets password and sends sign-in code through the delivery resolver (`email_delivery`, otherwise `email_readonly`). Used by admins/editors to invite users. |
@@ -48,6 +53,23 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `fetch-http-data` | Authenticated occasion-editor image fetch. Rejects private/local DNS and redirect targets, non-images and responses over 10 MiB. |
 | `bank-mail-parser` | Receives AWS SNS bank confirmation emails, parses transaction details, inserts into DB. |
 | `generate-order-agreement` | Generates the tenant-configured PDF order agreement using `pdf-lib`; tenant identity is supplied through the canonical configuration boundary. |
+
+## Test coverage contract
+
+`supabase/functions/test-coverage.json` maps every Function in the production
+runtime policy to executable smoke and behavior tests. The sole excluded
+Function is operator-only `instance-install`; its exclusion is proven by the
+production bundle tests. The repository preflight fails when a Function is
+missing from the matrix, a mapped test does not exist, or runtime policy and
+test scope diverge.
+
+`automation/test_all.sh` runs both established Deno naming conventions,
+`test_*.ts` and `*_test.ts`. `_shared/edgeEntrypoints_test.ts` captures the real
+registered HTTP handlers and verifies that every production entrypoint is
+reachable and rejects invalid or unauthenticated input before privileged work.
+Deeper per-Function tests cover authorization, retry/idempotency, provider
+verification, bounded network access, templates, delivery and canonical data
+contracts.
 
 ## Auth Patterns
 

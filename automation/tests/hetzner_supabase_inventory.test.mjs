@@ -695,6 +695,10 @@ test('repository cutover preflight separates local readiness from live blockers'
       canonical_security_blockers: [], canonical_exclusions: [],
       activation_requirements: [],
     },
+    edgeFunctionTestCoverage: {
+      status: 'pass', productionFunctions: 19, excludedFunctions: 1,
+      discoveredTests: 25, blockers: [],
+    },
   };
   const ready = evaluateRepositoryCutoverReadiness(base);
   assert.equal(ready.repository_ready, true);
@@ -702,6 +706,17 @@ test('repository cutover preflight separates local readiness from live blockers'
   assert.deepEqual(ready.blockers, []);
   assert.ok(ready.operational_blockers.length > 1);
   assert.ok(ready.operational_blockers.some((item) => item.includes('operational readiness gate')));
+
+  const uncovered = evaluateRepositoryCutoverReadiness({
+    ...base,
+    edgeFunctionTestCoverage: {
+      ...base.edgeFunctionTestCoverage,
+      status: 'fail',
+      blockers: ['uncovered production Functions: notify'],
+    },
+  });
+  assert.equal(uncovered.repository_ready, false);
+  assert.match(uncovered.blockers.join('\n'), /Edge Function test coverage.*notify/);
 
   const dirty = evaluateRepositoryCutoverReadiness({
     ...base,
