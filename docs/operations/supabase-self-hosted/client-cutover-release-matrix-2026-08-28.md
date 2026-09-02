@@ -15,13 +15,13 @@ repository and must not be copied here.
 
 | Product / production refs | iOS bundle / observed lower bound | Android package / observed lower bound | Required disposition |
 | --- | --- | --- | --- |
-| Festapp (`prod/festapp`, `prod/festapptickets`) | `festapp.festapp` / `0.19.95 (478)` in review | `fstapp.fstapp` / `>388` | Complete Apple review and publish/prove the canonical transition release on Android. Resolve the duplicate web deployment owner separately. |
+| Festapp (`prod/festapp`, `prod/festapptickets`) | `festapp.festapp` / `0.19.95 (478)` live | `fstapp.fstapp` / `>388` | Publish/prove the canonical transition release on Android. Resolve the duplicate web deployment owner separately. |
 | CSM (`prod/csmostrava2026`) | `festapp.jm2025` / `0.19.95 (467)` ready for sale | `fstapp.jm2025` / `>450` | Apple release is live; complete Android release and adoption proof. The historical Jubilee ref remains web-only. |
-| Hvězda Mořská (`prod/hvezdamorska`) | `festapp.hvezdamorska` / `0.19.95 (468)` in review | `fstapp.hvezdamorska` / `>451` | Complete Apple review and Android release, then prove adoption. |
-| Festival Slunovrat (`prod/festivalslunovrat`, `prod/slunovratopava`) | `festapp.festivalslunovrat` / `0.19.95 (479)` in review | `fstapp.slunovratopava` / production `479` | Complete Apple review. Android needs a code strictly above `479` and remains deferred to the independent Windows workstation. |
-| Absolventský Velehrad (`prod/absolventskyvelehrad`) | `festapp.absolventskyvelehrad` / `0.19.95 (468)` in review | `fstapp.AV25` / `>243` | Complete Apple review, Android release and physical-device/adoption proof. |
-| Člověk a víra (`prod/cavfotofest`) | `festapp.cavfotofest` / `0.19.95 (466)` in review | `fstapp.cav` / `>243` | Complete Apple review, Android release and physical-device/adoption proof. |
-| Do O BiS Cup (`prod/doobiscup`) | `festapp.doobiscup` / `0.19.95 (473)` in review | `fstapp.diecezkodoo` / `>243` | Complete Apple review, Android release and physical-device/adoption proof. |
+| Hvězda Mořská (`prod/hvezdamorska`) | `festapp.hvezdamorska` / `0.19.95 (468)` live | `fstapp.hvezdamorska` / `>451` | Complete Android release, then prove adoption. |
+| Festival Slunovrat (`prod/festivalslunovrat`, `prod/slunovratopava`) | `festapp.festivalslunovrat` / `0.19.95 (479)` live | `fstapp.slunovratopava` / production `479` | Android needs a code strictly above `479` and remains deferred to the independent Windows workstation. |
+| Absolventský Velehrad (`prod/absolventskyvelehrad`) | `festapp.absolventskyvelehrad` / `0.19.95 (468)` live | `fstapp.AV25` / `>243` | Complete Android release and physical-device/adoption proof. |
+| Člověk a víra (`prod/cavfotofest`) | `festapp.cavfotofest` / `0.19.95 (466)` live | `fstapp.cav` / `>243` | Complete Android release and physical-device/adoption proof. |
+| Do O BiS Cup (`prod/doobiscup`) | `festapp.doobiscup` / `0.19.95 (473)` live | `fstapp.diecezkodoo` / `>243` | Complete Android release and physical-device/adoption proof. |
 | Celostátní setkání animátorů / CSA 2024 (`prod/aksmcz`) | listed historical version only; no new release | public listing 404; no new release | Web-only `0.19.93+475` is live at `csa2024.festapp.net`, without OneSignal; old Netlify redirects path/query. Canonical organization is `4`. App Store removal from sale remains a separate store operation. |
 | Farnost Opava (`prod/farnostopava`) | shared historical IDs; no new lane | shared historical IDs; no new lane | Proven web-only at `0.19.93+474`, with no OneSignal and no iOS/Android release. Cloudflare bundle is ready; the identical Netlify hybrid remains public only until the external WEDOS owner changes CNAME `rezervace` to `farnostopava.pages.dev`. |
 | AVApp (`prod/avapp`) | `festapp.festapp` / `>45` (collides with current Festapp identity) | `vkhcr.avapp` / `>45` | Old backend hostname is dead and the modern AV tenant is already canonical. Retire/read back the old Android listing; never create a second iOS upload under the Festapp identity. |
@@ -131,8 +131,9 @@ coverage, a published 28.4 MiB immutable offline-map v2 bundle and a signed,
 non-uploaded iOS build-only candidate whose production push/app-group/domain
 entitlements passed. Its custom domain, physical-device/native offline
 acceptance, Android Windows build and backend activation remain gated. The historic
-`prod/slunovratopava` ref is not a second release source and still needs an
-explicit archival/retirement disposition before cutover.
+`prod/slunovratopava` ref is not a second release source. Its path/query-
+preserving redirect, retirement workers and shared canonical Android identity
+close its retirement disposition without another build.
 
 Absolventsky Velehrad now has a canonical version-93 overlay on
 `prod/absolventskyvelehrad` and production web build `0.19.93+467` at
