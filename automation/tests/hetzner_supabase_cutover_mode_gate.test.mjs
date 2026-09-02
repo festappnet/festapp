@@ -28,8 +28,20 @@ function fullFreezeEvidence() {
     sources: Object.fromEntries(SOURCE_ALIASES.map((alias) => [alias, {
       active_mutating_sessions: 0,
       final_marker: `${alias}-final-marker`,
+      import: {
+        run_id: `${alias === 'default' ? '10000000' : alias === 'a' ? '20000000' : '30000000'}-0000-4000-8000-000000000000`,
+        snapshot_at: '2026-08-28T11:57:00Z',
+        source_schema_fingerprint: 'a'.repeat(64),
+        transformation_version: `${alias}-import-v1`,
+      },
     }])),
-    target: { writes: 'closed', external_side_effects: 'disabled' },
+    target: {
+      database: 'festapp_rehearsal_20260828115700',
+      writes: 'closed',
+      write_barrier: 'database-default-read-only',
+      default_transaction_read_only: true,
+      external_side_effects: 'disabled',
+    },
     snapshot: { started_at: null },
     validation: { status: 'pass', unresolved_conflicts: 0, orphan_foreign_keys: 0 },
   };
@@ -51,6 +63,9 @@ test('full-freeze final-marker gate proves freeze-before-snapshot and validated 
     mode: 'full-freeze', phase: 'final-marker', evidence, now,
   });
   assert.equal(decision.authorized, true);
+  assert.equal(decision.target_database, evidence.target.database);
+  assert.equal(decision.source_imports.a.final_marker, 'a-final-marker');
+  assert.equal(decision.authorized_until, '2026-08-28T16:00:00.000Z');
 });
 
 test('full-freeze rejects missing lanes, active writers, stale evidence and early snapshot', () => {
@@ -59,6 +74,9 @@ test('full-freeze rejects missing lanes, active writers, stale evidence and earl
     (value) => { value.sources.a.active_mutating_sessions = 1; },
     (value) => { value.observed_at = '2026-08-28T11:00:00Z'; },
     (value) => { value.snapshot.started_at = '2026-08-28T11:53:00Z'; },
+    (value) => { value.target.default_transaction_read_only = false; },
+    (value) => { value.sources.a.import.run_id = 'not-a-uuid'; },
+    (value) => { value.sources.a.import.snapshot_at = '2026-08-28T11:53:00Z'; },
   ]) {
     const evidence = fullFreezeEvidence();
     evidence.snapshot.started_at = '2026-08-28T11:56:00Z';
