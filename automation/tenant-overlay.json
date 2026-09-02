@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "jubileum2025",
-  "baseMainSha": "6cf0384d6aa552d6215356c8345813cbaa35d7ab",
+  "baseMainSha": "4a1565547ea2a2c00fd8ca65ccb870e1ccd7aaa2",
   "release": {
-    "version": "0.19.93+473",
+    "version": "0.19.95+474",
     "note": "Web-only Cloudflare transition client without OneSignal; legacy source-a remains active until the signed activation document switches organization 6 to 9. No iOS or Android release belongs to this tenant lane."
   }
 }

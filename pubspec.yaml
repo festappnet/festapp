@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.19.93+473
+version: 0.19.95+474
 
 environment:
   sdk: '>=3.0.0 <3.32.8'
@@ -41,19 +41,15 @@ dependencies:
   maplibre: 0.3.6
   crypto: ^3.0.6
   convert: ^3.1.2
-  flutter_map: ^7.0.2
-  latlong2: ^0.9.1
-  flutter_map_marker_popup: ^7.0.0
-#  flutter_map_marker_popup:
-#    path: ./pckgs/flutter_map_marker_popup-master
+  flutter_map: ^8.2.0
+  latlong2: ^0.10.1
   supabase_flutter: ^2.12.0
   flutter_secure_storage: ^10.0.0
   timelines_plus: ^1.0.8
   intl: ^0.20.2
   badges: ^3.1.1
   collection: ^1.18.0
-  flutter_map_location_marker: ^9.1.1
-  geolocator: ^13.0.4
+  geolocator: ^14.0.2
   flutter_widget_from_html: ^0.17.1
   quill_html_editor:
     git:
@@ -76,7 +72,6 @@ dependencies:
   package_info_plus: ^9.0.0
   flutter_animate: ^4.5.2
   easy_localization: ^3.0.8
-  flutter_map_cancellable_tile_provider: ^3.0.2
   simple_shadow: ^0.3.1
   pwa_install:
     git:
@@ -87,14 +82,23 @@ dependencies:
   qr_flutter: ^4.1.0
   screenshot: ^3.0.0
   mobile_scanner: ^7.1.4
-  flutter_map_animations: ^0.8.0
+  flutter_map_animations:
+    git:
+      url: https://github.com/TesteurManiak/flutter_map_animations.git
+      ref: 50188510c491f9b3636eda6359421ea1137dcbd4
   auto_route: ^11.1.0
   adaptive_theme: 3.7.2
   connectivity_plus: ^7.0.0
-  vector_map_tiles_mbtiles: ^1.2.0
-  vector_map_tiles: ^8.0.0
-  mbtiles: ^0.4.0
-  sqlite3_flutter_libs: ^0.5.32
+  vector_map_tiles:
+    git:
+      url: https://github.com/miakh/flutter-vector-map-tiles.git
+      ref: 429de4cda07a6dfa7141a9f044aa5f7576765c5b
+  vector_map_tiles_mbtiles:
+    git:
+      url: https://github.com/miakh/flutter_map_plugins.git
+      ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
+      path: vector_map_tiles_mbtiles
+  mbtiles: ^0.5.1
   file_saver: ^0.3.1
   youtube_player_flutter: ^10.0.1
   flutter_widget_from_html_core: ^0.17.0
@@ -137,6 +141,12 @@ dev_dependencies:
 # iOS. The iOS copy also exposes the plugin class during a clean Release build.
 # Each package documents its removal condition in FESTAPP_PATCH.md.
 dependency_overrides:
+  # Keep the adapter's hosted vector_map_tiles dependency on our verified 9.x
+  # fork until compatible upstream releases are available for both packages.
+  vector_map_tiles:
+    git:
+      url: https://github.com/miakh/flutter-vector-map-tiles.git
+      ref: 429de4cda07a6dfa7141a9f044aa5f7576765c5b
   # The Quill editor fork still declares Android WebView 3.x, but only uses
   # APIs retained by 4.x. Keep one WebView implementation for the current
   # YouTube player until the editor updates its dependency constraint.

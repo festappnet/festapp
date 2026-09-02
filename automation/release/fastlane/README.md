@@ -173,13 +173,14 @@ Upload canonical age-rating answers after preserving inherited classification fi
 
 Delete retry-created screenshot duplicates only
 
-### ios upload_screenshots
+### ios replace_screenshots
 
 ```sh
-[bundle exec] fastlane ios upload_screenshots
+[bundle exec] fastlane ios replace_screenshots
 ```
 
-Upload canonical screenshots only; never submit or release
+Exactly gated replacement of all screenshots for the editable target version;
+never submits or releases the app
 
 ### ios select_build
 

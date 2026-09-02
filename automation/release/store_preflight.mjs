@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseProjectVersion } from './project_version.mjs';
@@ -169,6 +170,7 @@ for (const configuration of ['Debug', 'Release', 'Profile']) {
 const fastfile = fs.readFileSync(path.join(root, 'automation/release/fastlane/Fastfile'), 'utf8');
 if (/produce\s*\(|lane\s+:publish_ipa/.test(fastfile)) fail('unsafe app creation or monolithic release path found');
 const submitLane = fastfile.match(/lane :submit_for_review do([\s\S]*?)^  end/m)?.[1] ?? '';
+const replaceScreenshotsLane = fastfile.match(/lane :replace_screenshots do([\s\S]*?)^  end/m)?.[1] ?? '';
 const selectBuildLane = fastfile.match(/lane :select_build do([\s\S]*?)^  end/m)?.[1] ?? '';
 const cancelReviewLane = fastfile.match(/lane :cancel_review_submission do([\s\S]*?)^  end/m)?.[1] ?? '';
 if (!/exact_gate!\('SELECT_BUILD'\)/.test(selectBuildLane) ||
@@ -181,7 +183,17 @@ if (!/exact_gate!\('CANCEL_REVIEW_SUBMISSION'\)/.test(cancelReviewLane) ||
     !/cancel_submission/.test(cancelReviewLane)) {
   fail('review cancellation must be an exact gated target operation');
 }
-if (!/automatic_release:\s*true/.test(submitLane) || /automatic_release:\s*false/.test(submitLane)) {
+if (/lane\s+:upload_screenshots/.test(fastfile) ||
+    !/exact_gate!\('REPLACE_SCREENSHOTS'\)/.test(replaceScreenshotsLane) ||
+    !/locale_staging\s*=\s*File\.join\(staging,\s*MANIFEST\.fetch\('target'\)\.fetch\('locale'\)\)/.test(replaceScreenshotsLane) ||
+    !/overwrite_screenshots:\s*true/.test(replaceScreenshotsLane) ||
+    !/sync_screenshots:\s*true/.test(replaceScreenshotsLane)) {
+  fail('screenshot replacement must use the exact gated locale-aware canonical lane');
+}
+if (!/automatic_release:\s*true/.test(submitLane) || /automatic_release:\s*false/.test(submitLane) ||
+    !/release_type:\s*Spaceship::ConnectAPI::AppStoreVersion::ReleaseType::AFTER_APPROVAL/.test(submitLane) ||
+    !/configured&?\.release_type\s*==\s*Spaceship::ConnectAPI::AppStoreVersion::ReleaseType::AFTER_APPROVAL/.test(submitLane) ||
+    !/submitted&?\.release_type\s*==\s*Spaceship::ConnectAPI::AppStoreVersion::ReleaseType::AFTER_APPROVAL/.test(submitLane)) {
   fail('Fastlane submission must use automatic release after Apple approval');
 }
 if (/release_approved_version|manual ASC action/.test(fastfile)) fail('obsolete manual release path found');
@@ -212,6 +224,10 @@ if (legal && !legal.productionDeploymentRequired &&
 
 const appleMetadataDirectory = manifest.apple?.metadataDirectory;
 if (!appleMetadataDirectory) fail('Apple metadata directory is missing');
+const appleStoreName = manifest.apple?.storeName;
+if (typeof appleStoreName !== 'string' || !appleStoreName.trim()) {
+  fail('Apple store name is missing');
+}
 const appleMetadataRoot = listingPath(appleMetadataDirectory ?? '.');
 const metadataDir = path.join(appleMetadataRoot, manifest.target.locale);
 const copyrightFile = path.join(appleMetadataRoot, 'copyright.txt');
@@ -224,6 +240,7 @@ for (const [name, limit] of Object.entries(limits)) {
   if (!fs.existsSync(file)) { fail(`missing metadata ${manifest.target.locale}/${name}.txt`); continue; }
   const content = fs.readFileSync(file, 'utf8').trim();
   if (!content || [...content].length > limit) fail(`metadata ${name} must be 1..${limit} characters`);
+  if (name === 'name' && content !== appleStoreName) fail('metadata name disagrees with apple.storeName');
 }
 for (const [field, expected] of [['privacy_url', manifest.urls.privacy], ['privacy_choices_url', manifest.urls.privacyChoices], ['support_url', manifest.urls.support], ['marketing_url', manifest.urls.marketing]]) {
   const value = fs.readFileSync(path.join(metadataDir, `${field}.txt`), 'utf8').trim();
@@ -256,6 +273,11 @@ const icon = path.join(root, 'ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon
 try {
   const info = pngInfo(icon);
   if (info.width !== 1024 || info.height !== 1024 || [4, 6].includes(info.colorType)) fail('App Store icon must be 1024x1024 without alpha');
+  const expectedIconSha256 = manifest.apple?.appIconSha256;
+  if (expectedIconSha256) {
+    const actualIconSha256 = crypto.createHash('sha256').update(fs.readFileSync(icon)).digest('hex');
+    if (actualIconSha256 !== expectedIconSha256) fail('App Store icon disagrees with the approved tenant artwork');
+  }
 } catch (error) { fail(`App Store icon: ${error.message}`); }
 
 warnings.push('Legal approval and production-deployment gates require external evidence.');

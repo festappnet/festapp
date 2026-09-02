@@ -9,6 +9,7 @@ import 'package:fstapp/components/map/map_surface_model.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_scene_controller.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_place_icon_rasterizer.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_viewport_controller.dart';
+import 'package:fstapp/components/map/maplibre/maplibre_style_load_guard.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:maplibre/maplibre.dart' as ml;
 import 'package:fstapp/services/app_logger.dart';
@@ -78,15 +79,29 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
   }
 
   Future<void> _onStyleLoaded(ml.StyleController style) async {
-    _registeredIconVersions.clear();
-    await _registerIcons(style);
-    final sceneController = MapLibreSceneController(style);
-    _sceneController = sceneController;
-    await sceneController.register(widget.model.scene);
-    await _enableLocationIfAllowed();
-    if (mounted) setState(() => _isStyleReady = true);
-    widget.model.onZoomChanged?.call(_controller?.getCamera().zoom ?? 0);
-    widget.model.onCameraReady?.call();
+    if (!mounted || !identical(_controller?.style, style)) return;
+    await completeMapLibreStyleLoad(
+      // The native style is already usable. Optional marker registration must
+      // never leave the whole map hidden behind an infinite loading overlay.
+      revealBaseMap: () => setState(() => _isStyleReady = true),
+      decorateStyle: () async {
+        _registeredIconVersions.clear();
+        await _registerIcons(style);
+        if (!mounted || !identical(_controller?.style, style)) return;
+        final sceneController = MapLibreSceneController(style);
+        _sceneController = sceneController;
+        await sceneController.register(widget.model.scene);
+        await _enableLocationIfAllowed();
+      },
+      onDecorationError: (error, stackTrace) => AppLogger.error(
+        'MapLibre scene decoration failed: $error\n$stackTrace',
+      ),
+      markCameraReady: () {
+        if (!mounted || !identical(_controller?.style, style)) return;
+        widget.model.onZoomChanged?.call(_controller?.getCamera().zoom ?? 0);
+        widget.model.onCameraReady?.call();
+      },
+    );
   }
 
   Future<void> _enableLocationIfAllowed() async {

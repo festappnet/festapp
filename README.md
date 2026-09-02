@@ -246,8 +246,9 @@ For more details on testing, deployment, and the security audit checklist, see
 
 ### Prerequisites
 
-- **FVM** (Flutter Version Management): This project adheres to a specific
-  Flutter version using FVM.
+- **FVM** (Flutter Version Management): `FLUTTER_VERSION` in
+  `automation/project.conf` is the canonical SDK pin; `apply_config.sh`
+  propagates it to FVM and editor configuration.
   - Install FVM: `dart pub global activate fvm`
   - Install project SDK: `fvm install`
 
