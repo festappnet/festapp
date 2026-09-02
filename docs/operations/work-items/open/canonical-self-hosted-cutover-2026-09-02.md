@@ -20,7 +20,7 @@ Function, cron, callback, worker or operator can write to them.
 
 ## Fixed point
 
-- Repository: `main` / `98d204e0f21d2fa66556d37c43aa30ad318a5039`
+- Cutover tooling: `main` / `556fdfa3014f2f596579f9df6da1392caf15b32b`
 - Runtime bundle: Supabase `self-hosted/v0.8.0`, PostgreSQL `17.6.1.136`, Terraform `1.16.1`
 - Last verified production state: CSM iOS `0.19.95 (467)` is ready for sale; the other six `0.19.95` iOS versions are in review. Slunovrat Android production is `0.19.94 (479)`.
 
@@ -35,7 +35,7 @@ Function, cron, callback, worker or operator can write to them.
 - Classified all 14 production refs: zero unknown tenants, two pending legacy retirements, one closed retirement boundary and five broad source-`a` clients requiring live application-freeze evidence.
 - Refreshed runtime versions against primary upstreams; Supabase remains `v0.8.0` and Terraform advanced to `1.16.1`.
 - Added a read-only App Store status lane covering editable, review and live states and read back all seven active iOS identities.
-- Synchronized `main` and all 11 active tenant overlays; repository preflight now reports `repository_ready: true` with no repository blockers.
+- Synchronized the hardened `main` tooling and all 11 active tenant overlays; repository preflight reports `repository_ready: true` with no repository blockers.
 - Audited the live host read-only: NTP, TLS, disk headroom and all 12 reported containers are healthy, but installed promotion/compose tooling is stale, AWS SNS and notification webhook inputs are absent, and no Festapp backup timer or off-host log/health agent is installed.
 - Bound final freeze markers to exact target import runs and made promotion authorization expire; recovery manifest v3 and isolated restore preserve the same normalized import inventory.
 - Added an explicit database-level target write barrier and a separate 30-minute operational readiness gate covering clients, freeze controls, recovery, DNS/TLS, monitoring, integrations, communications and rollback.
@@ -78,7 +78,7 @@ explicit acceptance of the measured restore-based RTO or a replicated design.
 
 | Gate | Current evidence | State |
 | --- | --- | --- |
-| Repository and tenant overlays | `main` plus all 11 active overlays contain `98d204e0f`; static writer inventory is complete | pass |
+| Repository and tenant overlays | `main` plus all 11 active overlays contain cutover tooling `556fdfa30`; static writer inventory is complete | pass |
 | Host baseline | NTP synchronized; 12/12 reported containers healthy; about 19.4 GB free; direct origin timed out outside Cloudflare | pass |
 | DNS/TLS | `api.festapp.net` and rehearsal origin use 300-second TTL; certificate remains valid through 2026-11-13 | pass now; recheck in window |
 | Installed runtime contract | promotion, compose and Function content differ from repository; `hello` and excluded `instance-install` remain deployed | blocked |
@@ -126,6 +126,6 @@ gate must re-evaluate all volatile checks immediately before the freeze.
 | 2026-09-02 | App Store readback | guarded read-only Fastlane lane | CSM ready for sale; six versions in review |
 | 2026-09-02 | Control-channel check | health 200, unauthenticated queue 401, paired client | commands 1045/1046 still have no result |
 | 2026-09-02 | Runtime surface reconciliation | checked-in exact Edge/Worker policy | 20 Functions and three Workers covered; Windows deferred |
-| 2026-09-02 | Repository/tenant synchronization | `main` `98d204e0f` plus 11 atomic overlay advances | repository preflight passes |
+| 2026-09-02 | Repository/tenant synchronization | cutover tooling `556fdfa30` plus 11 verified overlay advances | repository preflight passes |
 | 2026-09-02 | Read-only host readiness audit | NTP/disk/services/TLS/tool hashes/timers/input-name inventory | infrastructure healthy; operational observability, backup and provider-input gaps recorded |
 | 2026-09-02 | Local release verification | `./automation/test_all.sh` | web, Flutter and automation suites pass; DB and live integration suites skipped because local URLs were not supplied |
