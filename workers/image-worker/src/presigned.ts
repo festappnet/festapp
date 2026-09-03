@@ -42,6 +42,7 @@ export async function handlePresign(
       legacySupabaseUrl: url.searchParams.get('supabaseUrl'),
     });
     assertControlHost(project, request.url);
+    if (!project.supportsPrivate) throw new ProjectResolutionError('Private images are not supported for this project');
   } catch (error) {
     if (error instanceof ProjectResolutionError) return errorResponse(400, error.code, error.message);
     throw error;
