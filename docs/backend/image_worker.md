@@ -6,9 +6,10 @@ Public image bytes and authenticated image operations are separate contracts.
 |---|---|---|
 | Default public data | `img.festapp.net` | public-only R2 bucket `festapp-images` after P3 |
 | Project A public data | `a.img.festapp.net` | public-only R2 bucket `festapp-images-a` after P3 |
+| AKH public data | `akh.img.festapp.net` | R2 bucket `festapp-images-akhweb` |
 | Authenticated control | `image-api.festapp.net` | `festapp-image-worker` |
 
-The control request selects `projectId=default|a`. The Worker registry owns the
+The control request selects `projectId=default|a|akhweb`. The Worker registry owns the
 Supabase origins, anon keys, public/private bucket bindings, bucket names and
 public hostnames. Client-supplied credentials never select authority. During the
 measured P1-P4 adoption window only, an exact registered `supabaseUrl` can alias
@@ -21,12 +22,17 @@ source URL (which Cloudflare applies to varied images), then removes the record.
 Generic private delete accepts only a `private/` key and uses the selected private
 bucket plus the existing project-wide editor contract.
 
+AKH is a public-image-only registry entry. It validates the caller through the
+AKH project's authenticated-only `get_can_manage_images()` RPC, accepts only
+`images/`, `blog/` and `content/` keys, and deliberately skips Festapp's
+`images`-table persistence RPCs. Private routes fail closed for this project.
+
 ## Required bindings and secrets
 
-- R2: `IMAGES_BUCKET`, `IMAGES_BUCKET_A`, `IMAGES_PRIVATE_BUCKET`,
+- R2: `IMAGES_BUCKET`, `IMAGES_BUCKET_A`, `IMAGES_BUCKET_AKHWEB`, `IMAGES_PRIVATE_BUCKET`,
   `IMAGES_PRIVATE_BUCKET_A`.
 - Registry: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_URL_A`,
-  `SUPABASE_ANON_KEY_A`.
+  `SUPABASE_ANON_KEY_A`, `SUPABASE_URL_AKHWEB`, `SUPABASE_ANON_KEY_AKHWEB`.
 - Signing: `CF_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` scoped to
   the two private buckets.
 - Purge: `CF_ZONE_ID` and `CF_CACHE_PURGE_TOKEN`, with Cache Purge permission
