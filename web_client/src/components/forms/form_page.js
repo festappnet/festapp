@@ -28,6 +28,7 @@ import { PriceWidget } from './widgets/price_widget.js';
 import { CurrencySelectorWidget } from './widgets/currency_selector_widget.js';
 import { FormValidator } from './form_validator.js';
 import { FormNetwork } from './form_network.js';
+import { OrderResult } from './order_result.js';
 
 export class FormPage extends Component {
     // Keep internal session static for now if needed across hot-reloads, or instance?
@@ -664,12 +665,10 @@ export class FormPage extends Component {
         };
         window.addEventListener('popstate', popHandler, { once: true });
 
-        import('./order_result.js').then(({ OrderResult }) => {
-            OrderResult.render(container, success, resultData, formModel, () => {
-                // On Close (Button Click) -> Trigger History Back
-                // This will fire 'popstate', which calls cleanup()
-                RouterService.goBackProgrammatically();
-            });
+        OrderResult.render(container, success, resultData, formModel, () => {
+            // On Close (Button Click) -> Trigger History Back
+            // This will fire 'popstate', which calls cleanup()
+            RouterService.goBackProgrammatically();
         });
     }
 }
