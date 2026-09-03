@@ -37,7 +37,8 @@ void main() {
       data:
           '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5"/></svg>',
     ),
-    // icon 999 has no matching entry -> falls back to a generic pin icon.
+    // A matching legacy row without SVG still falls back to a generic pin.
+    IconModel(id: 999),
   ];
 
   Future<void> pumpBar(
@@ -395,6 +396,18 @@ void main() {
         icons,
       ),
       isTrue,
+    );
+    expect(
+      MapLocationPinHelper.hasCustomIcon(
+        MapPlaceModel(
+          id: 3,
+          title: 'Legacy icon without SVG',
+          icon: 999,
+          latLng: const LatLng(49.82, 18.26),
+        ),
+        icons,
+      ),
+      isFalse,
     );
   });
 }

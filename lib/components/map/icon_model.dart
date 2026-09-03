@@ -1,6 +1,8 @@
 import 'package:fstapp/database_tables/tb.dart';
 
 class IconModel {
+  static const String missingLabel = '---';
+
   int? id;
   String? data;
   String? link;
@@ -12,6 +14,22 @@ class IconModel {
 
   /// Legacy icons (no owning unit) are read-only and cannot be deleted.
   bool get isLegacy => unit == null;
+
+  /// The only SVG payload that presentation code may render.
+  ///
+  /// Historical rows may legitimately have nullable or incomplete data even
+  /// though newly uploaded icons are validated before insertion.
+  String? get renderableSvgData {
+    final svg = data?.trim();
+    return svg != null && svg.isNotEmpty && svg.contains('<svg') ? svg : null;
+  }
+
+  String? get normalizedLink {
+    final label = link?.trim();
+    return label == null || label.isEmpty ? null : label;
+  }
+
+  String get displayLabel => normalizedLink ?? missingLabel;
 
   factory IconModel.fromJson(Map<String, dynamic> json) {
     return IconModel(
@@ -36,6 +54,6 @@ class IconModel {
 
   @override
   String toString() {
-    return link ?? "";
+    return displayLabel;
   }
 }
