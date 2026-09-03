@@ -7,6 +7,7 @@ compatibility_date = "2025-01-01"
 routes = [
   { pattern = "img.festapp.net", custom_domain = true },
   { pattern = "a.img.festapp.net", custom_domain = true },
+  { pattern = "akh.img.festapp.net", custom_domain = true },
   { pattern = "image-api.festapp.net", custom_domain = true }
 ]
 
@@ -20,6 +21,10 @@ bucket_name = "festapp-images"
 [[r2_buckets]]
 binding = "IMAGES_BUCKET_A"
 bucket_name = "festapp-images-a"
+
+[[r2_buckets]]
+binding = "IMAGES_BUCKET_AKHWEB"
+bucket_name = "festapp-images-akhweb"
 
 [[r2_buckets]]
 binding = "IMAGES_PRIVATE_BUCKET"
@@ -38,6 +43,8 @@ binding = "IMAGES"
 # SUPABASE_ANON_KEY
 # SUPABASE_URL_A
 # SUPABASE_ANON_KEY_A
+# SUPABASE_URL_AKHWEB
+# SUPABASE_ANON_KEY_AKHWEB
 # R2_ACCESS_KEY_ID
 # R2_SECRET_ACCESS_KEY
 # CF_ACCOUNT_ID
@@ -45,6 +52,6 @@ binding = "IMAGES"
 
 [vars]
 CF_ZONE_ID = "02fd6ca8f4652d62e9b05f24a5e9d84f"
-CONTROL_ALLOWED_ORIGINS = "https://csmostrava.festapp.net,https://vstupenky.online"
+CONTROL_ALLOWED_ORIGINS = "https://csmostrava.festapp.net,https://vstupenky.online,https://praha.akhcr.cz,https://akhweb.netlify.app"
 # P1-only: set to "enabled" during verified private-object copying, then remove.
 PRIVATE_MIGRATION_FALLBACK = "disabled"
