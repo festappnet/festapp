@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "262bfb988bdfeacb2d368371545040c6d3786f97",
+  "baseMainSha": "552015f11f812712abba478ca4eefd2754e08cd0",
   "release": {
-    "version": "0.19.96+469",
-    "note": "Keep the order confirmation visible after fast submissions"
+    "version": "0.19.97+470",
+    "note": "Render order confirmations reliably and open the Admin route"
   }
 }
