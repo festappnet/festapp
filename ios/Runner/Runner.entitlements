@@ -6,7 +6,7 @@
 	<string>development</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:app.festivalslunovrat.cz</string>
+		<string>applinks:slunovrat.festapp.net</string>
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
