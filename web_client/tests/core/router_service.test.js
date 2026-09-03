@@ -245,6 +245,15 @@ test('RouterService.handleInitialLoad', async (t) => {
     AppConfig.compatibleUrls = ["https://vstupenky.online"];
     AppConfig.flutterAppUrl = "https://vstupenky.online/flutter.html";
 
+    await t.test('should build an occasion-scoped Flutter admin URL', () => {
+        AppConfig.flutterAppUrl = '';
+        assert.strictEqual(
+            RouterService.getAdminUrl('/hvezdamorska/?preview=true'),
+            '/hvezdamorska/admin',
+        );
+        AppConfig.flutterAppUrl = "https://vstupenky.online/flutter.html";
+    });
+
     await t.test('should stay on Home / when isAppSupported=false (Web Client Only)', async () => {
         AppConfig.isAppSupported = false;
         global.window.location.pathname = '/';
