@@ -17,7 +17,7 @@ class AppConfig {
   );
   static const String supabaseAuthStorageKey = 'sb-lwfpdjxsdmkfyrzqbrlk-auth-token';
   static const String backendActivationTenantId = 'farnostopava';
-  static const String backendActivationManifestUrl = 'https://rezervace.farnostopava.cz/backend-activation.json';
+  static const String backendActivationManifestUrl = 'https://farnostopava.festapp.net/backend-activation.json';
   static const String backendActivationCanonicalManifestSha256 = 'a86d20d3fd185ccf0152db0f67a43dc09fe2752b3264c1a62efd5dcc64017fd8';
   static const String backendActivationCanonicalSupabaseUrl = 'https://api.festapp.net';
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
@@ -52,12 +52,12 @@ class AppConfig {
   static const bool isContractFeatureEnabled = false;
   static const bool showBankSupportRole = false;
 
-  static const String webLink = "https://rezervace.farnostopava.cz";
-  static const String privacyUrl = "https://rezervace.farnostopava.cz/privacy/";
-  static const String privacyChoicesUrl = "https://rezervace.farnostopava.cz/privacy/choices/";
-  static const String termsUrl = "https://rezervace.farnostopava.cz/terms/";
-  static const String supportUrl = "https://rezervace.farnostopava.cz/support/";
-  static const String deleteAccountUrl = "https://rezervace.farnostopava.cz/delete-account/";
+  static const String webLink = "https://farnostopava.festapp.net";
+  static const String privacyUrl = "https://farnostopava.festapp.net/privacy/";
+  static const String privacyChoicesUrl = "https://farnostopava.festapp.net/privacy/choices/";
+  static const String termsUrl = "https://farnostopava.festapp.net/terms/";
+  static const String supportUrl = "https://farnostopava.festapp.net/support/";
+  static const String deleteAccountUrl = "https://farnostopava.festapp.net/delete-account/";
   static const String syncHeadOrigin = "";
   static const String syncAssetOrigin = "";
   static const String imageApiUrl = 'https://image-api.festapp.net';

@@ -7,7 +7,7 @@ export class AppConfig {
     static supabaseUrl = 'https://lwfpdjxsdmkfyrzqbrlk.supabase.co';
     static anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZnBkanhzZG1rZnlyenFicmxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTEyMjgwNDksImV4cCI6MjAyNjgwNDA0OX0.440P3yf8ZqNjOHEQTn9uJhkKyObhD_7PZ2NwaE9e4J0';
     static backendActivationTenantId = 'farnostopava';
-    static backendActivationManifestUrl = 'https://rezervace.farnostopava.cz/backend-activation.json';
+    static backendActivationManifestUrl = 'https://farnostopava.festapp.net/backend-activation.json';
     static backendActivationCanonicalManifestSha256 = 'a86d20d3fd185ccf0152db0f67a43dc09fe2752b3264c1a62efd5dcc64017fd8';
     static backendActivationCanonicalSupabaseUrl = 'https://api.festapp.net';
     static backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
@@ -18,12 +18,12 @@ export class AppConfig {
     static isAllUnit = false;
     static isAppSupported = false;
     static flutterAppUrl = '';
-    static webLink = "https://rezervace.farnostopava.cz";
-    static privacyUrl = "https://rezervace.farnostopava.cz/privacy/";
-    static privacyChoicesUrl = "https://rezervace.farnostopava.cz/privacy/choices/";
-    static termsUrl = "https://rezervace.farnostopava.cz/terms/";
-    static supportUrl = "https://rezervace.farnostopava.cz/support/";
-    static deleteAccountUrl = "https://rezervace.farnostopava.cz/delete-account/";
+    static webLink = "https://farnostopava.festapp.net";
+    static privacyUrl = "https://farnostopava.festapp.net/privacy/";
+    static privacyChoicesUrl = "https://farnostopava.festapp.net/privacy/choices/";
+    static termsUrl = "https://farnostopava.festapp.net/terms/";
+    static supportUrl = "https://farnostopava.festapp.net/support/";
+    static deleteAccountUrl = "https://farnostopava.festapp.net/delete-account/";
     static imageApiUrl = 'https://image-api.festapp.net';
     static imageProjectId = 'a';
     static compatibleUrls = [AppConfig.webLink];

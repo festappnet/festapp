@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "farnostopava",
-  "baseMainSha": "119c84fbbebb48da53f80effb0715afc514fa73c",
+  "baseMainSha": "520d7f8a287d9efbcd735a05c1f8111361e09078",
   "release": {
-    "version": "0.19.99+483",
-    "note": "Canonical legacy icon rendering"
+    "version": "0.20.0+484",
+    "note": "Canonical festapp.net origin and Netlify retirement"
   }
 }
