@@ -147,7 +147,7 @@ export class UserHeader extends HTMLElement {
                  const adminBtn = document.createElement('button');
                  adminBtn.className = 'btn-admin';
                  adminBtn.innerHTML = `<i class="material-icons">admin_panel_settings</i><span class="admin-text">${CommonStrings.admin}</span>`;
-                 adminBtn.onclick = () => RouterService.navigateToHandover(); // Implicit handover to Flutter logic
+                 adminBtn.onclick = () => RouterService.navigateToAdmin();
                  actions.appendChild(adminBtn);
              }
 
