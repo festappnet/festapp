@@ -1,5 +1,11 @@
 import type { Env } from './types';
-import { extractBearerToken, checkEditorPermission, checkUnitEditorPermission, type SupabaseAuth } from './auth';
+import {
+  checkAkhEventManagerPermission,
+  checkEditorPermission,
+  checkUnitEditorPermission,
+  extractBearerToken,
+  type SupabaseAuth,
+} from './auth';
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
 
@@ -75,10 +81,6 @@ export async function handleUpload(
     return errorResponse(400, 'MISSING_FILE', 'Missing file field');
   }
 
-  if ((!occasionIdRaw && !unitIdRaw) || (occasionIdRaw && unitIdRaw)) {
-    return errorResponse(400, 'INVALID_OWNER', 'Exactly one of occasionId or unitId is required');
-  }
-
   const occasionId = occasionIdRaw ? parseInt(String(occasionIdRaw), 10) : null;
   const unitId = unitIdRaw ? parseInt(String(unitIdRaw), 10) : null;
 
@@ -106,9 +108,18 @@ export async function handleUpload(
   }
   const auth: SupabaseAuth = { supabaseUrl: project.supabaseUrl, anonKey: project.anonKey };
 
-  // Check editor permission via RPC using user's JWT
+  if (project.authContract === 'festapp' && ((!occasionIdRaw && !unitIdRaw) || (occasionIdRaw && unitIdRaw))) {
+    return errorResponse(400, 'INVALID_OWNER', 'Exactly one of occasionId or unitId is required');
+  }
+  if (project.authContract === 'akhweb' && (occasionIdRaw || unitIdRaw)) {
+    return errorResponse(400, 'INVALID_OWNER', 'AKH uploads do not accept Festapp owner identifiers');
+  }
+
+  // Check the selected project's permission contract using the user's JWT.
   let isEditor = false;
-  if (occasionId !== null) {
+  if (project.authContract === 'akhweb') {
+    isEditor = await checkAkhEventManagerPermission(userJwt, auth);
+  } else if (occasionId !== null) {
     isEditor = await checkEditorPermission(userJwt, occasionId, auth);
   } else if (unitId !== null) {
     isEditor = await checkUnitEditorPermission(userJwt, unitId, auth);
@@ -145,6 +156,21 @@ export async function handleUpload(
     key = explicitKey;
   } else if (explicitKey) {
     return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Explicit keys must be canonical private keys');
+  } else if (project.authContract === 'akhweb') {
+    let prefix: string;
+    let folder: string;
+    try {
+      prefix = normalizeAkhPath(formData.get('prefix'), 'images');
+      folder = normalizeAkhPath(formData.get('folder'), 'uploads');
+    } catch {
+      return errorResponse(400, 'INVALID_AKH_PATH', 'AKH storage path is invalid');
+    }
+    if (!project.publicKeyPrefixes.some((allowed) => `${prefix}/`.startsWith(allowed))) {
+      return errorResponse(400, 'INVALID_AKH_PATH', 'AKH upload prefix is not allowed');
+    }
+    const safeName = sanitizeFilename(file.name);
+    const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    key = `${prefix}/${folder}/${uid}-${safeName}`;
   } else {
     // Generate storage key — timestamp + random suffix guarantees uniqueness
     const safeName = sanitizeFilename(file.name);
@@ -209,7 +235,7 @@ export async function handleUpload(
     ? `https://image-api.festapp.net/${key}?projectId=${project.id}`
     : `https://${project.publicHostname}/${key}`;
 
-  if (!isPrivate) {
+  if (!isPrivate && project.persistsImageRecords) {
     try {
       await addImageRecord(userJwt, auth, objectUrl, occasionId, unitId);
     } catch (error) {
@@ -221,6 +247,16 @@ export async function handleUpload(
 
   console.log('image_operation', { operation: 'upload', status: 'success', projectId: project.id });
   return jsonResponse({ url: objectUrl, key, projectId: project.id });
+}
+
+function normalizeAkhPath(value: unknown, fallback: string): string {
+  if (typeof value !== 'string' || !value.trim()) return fallback;
+  const normalized = value.trim().replace(/^\/+|\/+$/g, '');
+  if (!normalized || normalized.length > 512 || !/^[A-Za-z0-9._/-]+$/.test(normalized) ||
+      normalized.split('/').some((part) => !part || part === '.' || part === '..')) {
+    throw new ProjectResolutionError('Invalid AKH storage path');
+  }
+  return normalized;
 }
 
 /**

@@ -9,6 +9,10 @@ export interface ProjectConfig {
   publicBucketName: string;
   privateBucketName: string;
   publicHostname: string;
+  authContract: 'festapp' | 'akhweb';
+  publicKeyPrefixes: readonly string[];
+  supportsPrivate: boolean;
+  persistsImageRecords: boolean;
 }
 
 export class ProjectResolutionError extends Error {
@@ -20,11 +24,19 @@ export function projectRegistry(env: Env): readonly ProjectConfig[] {
     { id: 'default', supabaseUrl: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY,
       publicBucket: env.IMAGES_BUCKET, privateBucket: env.IMAGES_PRIVATE_BUCKET,
       publicBucketName: 'festapp-images', privateBucketName: 'festapp-images-private',
-      publicHostname: 'img.festapp.net' },
+      publicHostname: 'img.festapp.net', authContract: 'festapp',
+      publicKeyPrefixes: ['images/'], supportsPrivate: true, persistsImageRecords: true },
     { id: 'a', supabaseUrl: env.SUPABASE_URL_A, anonKey: env.SUPABASE_ANON_KEY_A,
       publicBucket: env.IMAGES_BUCKET_A, privateBucket: env.IMAGES_PRIVATE_BUCKET_A,
       publicBucketName: 'festapp-images-a', privateBucketName: 'festapp-images-a-private',
-      publicHostname: 'a.img.festapp.net' },
+      publicHostname: 'a.img.festapp.net', authContract: 'festapp',
+      publicKeyPrefixes: ['images/'], supportsPrivate: true, persistsImageRecords: true },
+    { id: 'akhweb', supabaseUrl: env.SUPABASE_URL_AKHWEB, anonKey: env.SUPABASE_ANON_KEY_AKHWEB,
+      publicBucket: env.IMAGES_BUCKET_AKHWEB, privateBucket: env.IMAGES_BUCKET_AKHWEB,
+      publicBucketName: 'festapp-images-akhweb', privateBucketName: 'festapp-images-akhweb',
+      publicHostname: 'akh.img.festapp.net', authContract: 'akhweb',
+      publicKeyPrefixes: ['images/', 'blog/', 'content/'], supportsPrivate: false,
+      persistsImageRecords: false },
   ];
 }
 
