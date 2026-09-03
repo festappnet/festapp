@@ -3,6 +3,7 @@ import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/users/views/reset_password_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/occasion/admin_page.dart';
 
 void main() {
   test('occasion landing path targets the program route', () {
@@ -24,6 +25,17 @@ void main() {
         anyOf('ScheduleRoute', 'ScheduleLightRoute', 'ScheduleBasicRoute'),
       ]),
     );
+  });
+
+  test('matches an occasion admin deep link as the admin page', () {
+    final matches = AppRouter().matcher.match(
+          '/hvezdamorska/${AdminPage.ROUTE}',
+          includePrefixMatches: false,
+        );
+
+    expect(matches, isNotNull);
+    expect(matches, hasLength(1));
+    expect(matches!.single.name, 'AdminRoute');
   });
 
   test('matches the password-reset route with its token query', () {
