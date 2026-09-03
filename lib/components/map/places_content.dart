@@ -116,8 +116,8 @@ class _PlacesContentState extends State<PlacesContent> {
           field: Tb.places.icon,
           applyFormatterInEditing: true,
           formatter: (d) =>
-              svgIcons.firstWhereOrNull((i) => i.id == d)?.link ??
-              PlaceModel.WithoutValue,
+              svgIcons.firstWhereOrNull((i) => i.id == d)?.displayLabel ??
+              IconModel.missingLabel,
           type: TrinaColumnType.select(
             defaultValue: null,
             mapIcons,
