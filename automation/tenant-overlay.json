@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "fa9623390919d0bd25969753dc018104ea586eff",
+  "baseMainSha": "262bfb988bdfeacb2d368371545040c6d3786f97",
   "release": {
-    "version": "0.19.95+468",
-    "note": "Restore contract downloads and order deletion on canonical 0.19.94"
+    "version": "0.19.96+469",
+    "note": "Keep the order confirmation visible after fast submissions"
   }
 }
