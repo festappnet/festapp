@@ -14,7 +14,6 @@ import 'package:fstapp/widgets/custom_three_state_checkbox.dart';
 import 'package:fstapp/components/html/html_view.dart';
 import 'package:trina_grid/trina_grid.dart';
 
-import '../map/place_model.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class DataGridHelper {
@@ -364,16 +363,20 @@ class DataGridHelper {
 
   static Widget iconToRow(
       BuildContext context, int? id, List<IconModel> icons) {
-    var icon = icons.firstWhereOrNull((t) => t.id == id);
+    final icon = icons.firstWhereOrNull((candidate) => candidate.id == id);
+    final svgData = icon?.renderableSvgData;
+    final label = icon?.displayLabel ?? IconModel.missingLabel;
 
-    if (icon != null) {
+    if (svgData != null) {
       var svgIcon = SizedBox(
         width: 20,
         height: 20,
         child: SvgPicture.string(
-          icon.data!,
+          svgData,
           colorFilter: ColorFilter.mode(
               ThemeConfig.blackColor(context), BlendMode.srcIn),
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.image_not_supported),
         ),
       );
 
@@ -381,12 +384,12 @@ class DataGridHelper {
         children: [
           svgIcon,
           const SizedBox(width: 12),
-          Text(icon.link!),
+          Text(label),
         ],
       );
     }
 
-    return const Text(PlaceModel.WithoutValue);
+    return Text(label);
   }
 
   static Widget idRenderer(rendererContext) {
