@@ -28,6 +28,7 @@ import { PriceWidget } from './widgets/price_widget.js';
 import { CurrencySelectorWidget } from './widgets/currency_selector_widget.js';
 import { FormValidator } from './form_validator.js';
 import { FormNetwork } from './form_network.js';
+import { OrderResult } from './order_result.js';
 
 export class FormPage extends Component {
     // Keep internal session static for now if needed across hot-reloads, or instance?
@@ -489,9 +490,24 @@ export class FormPage extends Component {
     submitOrder(form, formModel, unusedContent) {
         // 1. Close Preview
         const previewOverlay = document.getElementById('order-preview-overlay');
+        let previewHistoryClosed = Promise.resolve();
         if (previewOverlay) {
              previewOverlay.remove();
-             RouterService.goBackProgrammatically();
+             previewHistoryClosed = new Promise(resolve => {
+                 let fallbackTimer = null;
+                 const handlePreviewClosed = () => {
+                     window.removeEventListener('popstate', handlePreviewClosed);
+                     if (fallbackTimer) clearTimeout(fallbackTimer);
+                     resolve();
+                 };
+
+                 window.addEventListener('popstate', handlePreviewClosed, { once: true });
+                 RouterService.goBackProgrammatically();
+
+                 // A direct invocation can have no preview history entry. Do not
+                 // leave submission completion blocked in that defensive case.
+                 fallbackTimer = setTimeout(handlePreviewClosed, 1000);
+             });
         } else {
              this.closePreview();
         }
@@ -509,7 +525,11 @@ export class FormPage extends Component {
         }
 
         // 4. Submit via Network
-        FormNetwork.submitOrder(payload).then(result => {
+        FormNetwork.submitOrder(payload).then(async result => {
+             // history.back() is asynchronous. Rendering the result before the
+             // preview popstate arrives lets that stale event close the result.
+             await previewHistoryClosed;
+
              loader.remove();
              document.body.style.overflow = ''; 
              
@@ -527,7 +547,9 @@ export class FormPage extends Component {
              
              this.showFullScreenResult(result.success, result.data, formModel);
              
-        }).catch(e => {
+        }).catch(async e => {
+             await previewHistoryClosed;
+
              console.error("Submit Error:", e);
              loader.remove();
              document.body.style.overflow = ''; 
@@ -643,12 +665,10 @@ export class FormPage extends Component {
         };
         window.addEventListener('popstate', popHandler, { once: true });
 
-        import('./order_result.js').then(({ OrderResult }) => {
-            OrderResult.render(container, success, resultData, formModel, () => {
-                // On Close (Button Click) -> Trigger History Back
-                // This will fire 'popstate', which calls cleanup()
-                RouterService.goBackProgrammatically();
-            });
+        OrderResult.render(container, success, resultData, formModel, () => {
+            // On Close (Button Click) -> Trigger History Back
+            // This will fire 'popstate', which calls cleanup()
+            RouterService.goBackProgrammatically();
         });
     }
 }
