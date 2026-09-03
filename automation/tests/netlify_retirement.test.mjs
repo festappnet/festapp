@@ -49,4 +49,17 @@ const farnostEdge = fs.readFileSync(
 assert.match(farnostEdge, /rezervace\.farnostopava\.cz/);
 assert.match(farnostEdge, /https:\/\/farnostopava\.festapp\.net/);
 
+const slunovratOutput = path.join(parent, 'slunovrat-bundle');
+execFileSync('node', [
+  path.join(root, 'automation/build_netlify_retirement.mjs'),
+  'festivalslunovrat-public',
+  slunovratOutput,
+]);
+const slunovratEdge = fs.readFileSync(
+  path.join(slunovratOutput, 'netlify/edge-functions/canonical-retirement.js'),
+  'utf8',
+);
+assert.match(slunovratEdge, /app\.festivalslunovrat\.cz/);
+assert.match(slunovratEdge, /https:\/\/slunovrat\.festapp\.net/);
+
 console.log('Netlify retirement contract passed');

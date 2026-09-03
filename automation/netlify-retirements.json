@@ -26,6 +26,12 @@
       "canonical_origin": "https://app.festivalslunovrat.cz"
     },
     {
+      "tenant_id": "festivalslunovrat-public",
+      "site_id": "44c018fa-feae-4aa7-b865-bd98954f3106",
+      "legacy_origin": "https://app.festivalslunovrat.cz",
+      "canonical_origin": "https://slunovrat.festapp.net"
+    },
+    {
       "tenant_id": "ticketonline",
       "site_id": "2d708348-0bf7-478e-8578-6b799adde2bb",
       "legacy_origin": "https://vstupenka.online",
