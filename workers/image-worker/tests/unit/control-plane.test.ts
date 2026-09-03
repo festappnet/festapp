@@ -12,9 +12,11 @@ function bucket() {
 function env(): Env {
   return {
     IMAGES_BUCKET: bucket(), IMAGES_BUCKET_A: bucket(),
+    IMAGES_BUCKET_AKHWEB: bucket(),
     IMAGES_PRIVATE_BUCKET: bucket(), IMAGES_PRIVATE_BUCKET_A: bucket(),
     SUPABASE_URL: 'https://default.supabase.co', SUPABASE_ANON_KEY: 'server-default',
     SUPABASE_URL_A: 'https://a.supabase.co', SUPABASE_ANON_KEY_A: 'server-a',
+    SUPABASE_URL_AKHWEB: 'https://akh.supabase.co', SUPABASE_ANON_KEY_AKHWEB: 'server-akh',
     R2_ACCESS_KEY_ID: 'id', R2_SECRET_ACCESS_KEY: 'secret', CF_ACCOUNT_ID: 'account',
     CF_ZONE_ID: 'zone', CF_CACHE_PURGE_TOKEN: 'purge-token',
     CONTROL_ALLOWED_ORIGINS: 'https://app.example',
@@ -80,6 +82,44 @@ describe('control plane', () => {
     expect(configured.IMAGES_BUCKET.put).toHaveBeenCalledOnce();
     expect(configured.IMAGES_BUCKET.delete).toHaveBeenCalledOnce();
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].headers.apikey).toBe('server-default');
+  });
+
+  it('uses the AKH role contract and skips Festapp image records', async () => {
+    const configured = env();
+    const mockedFetch = vi.fn().mockResolvedValueOnce(new Response('true', { status: 200 }));
+    vi.stubGlobal('fetch', mockedFetch);
+    const form = new FormData();
+    form.set('file', new File([new Uint8Array([1, 2, 3])], 'x.jpg', { type: 'image/jpeg' }));
+    form.set('projectId', 'akhweb');
+    form.set('prefix', 'content');
+    form.set('folder', 'gallery');
+    const response = await handleUpload(new Request('https://image-api.festapp.net/upload', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt' }, body: form,
+    }), configured);
+    const body = await response.json() as { url: string; key: string };
+    expect(response.status).toBe(200);
+    expect(body.url).toMatch(/^https:\/\/akh\.img\.festapp\.net\/content\/gallery\//);
+    expect(body.key).toMatch(/^content\/gallery\//);
+    expect(mockedFetch).toHaveBeenCalledOnce();
+    expect(mockedFetch.mock.calls[0][0]).toContain('/get_can_manage_images');
+    expect(configured.IMAGES_BUCKET_AKHWEB.put).toHaveBeenCalledOnce();
+  });
+
+  it('authorizes AKH delete without Festapp image-record RPCs', async () => {
+    const configured = env();
+    const mockedFetch = vi.fn()
+      .mockResolvedValueOnce(new Response('true', { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
+    vi.stubGlobal('fetch', mockedFetch);
+    const link = 'https://akh.img.festapp.net/content/gallery/x.jpg';
+    const response = await handleDelete(new Request('https://image-api.festapp.net/delete', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: 'akhweb', links: [link] }),
+    }), configured);
+    expect(response.status).toBe(200);
+    expect(configured.IMAGES_BUCKET_AKHWEB.delete).toHaveBeenCalledWith('content/gallery/x.jpg');
+    expect(mockedFetch).toHaveBeenCalledTimes(2);
+    expect(mockedFetch.mock.calls[0][0]).toContain('/get_can_manage_images');
   });
 
   it('rejects malformed key-only delete and cross-project stored URLs before mutation', async () => {

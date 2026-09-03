@@ -223,7 +223,7 @@ class _IconCardState extends State<_IconCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final icon = widget.icon;
-    final hasSvg = icon.data != null && icon.data!.contains('<svg');
+    final svgData = icon.renderableSvgData;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -259,18 +259,22 @@ class _IconCardState extends State<_IconCard> {
                   SizedBox(
                     width: 56,
                     height: 56,
-                    child: hasSvg
-                        ? SvgPicture.string(icon.data!,
+                    child: svgData != null
+                        ? SvgPicture.string(svgData,
                             fit: BoxFit.contain,
                             colorFilter: ColorFilter.mode(
                                 ThemeConfig.blackColor(context),
-                                BlendMode.srcIn))
+                                BlendMode.srcIn),
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.image_not_supported,
+                                size: 24,
+                                color: theme.colorScheme.outline))
                         : Icon(Icons.image_not_supported,
                             size: 24, color: theme.colorScheme.outline),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    icon.link ?? '',
+                    icon.displayLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -351,12 +355,13 @@ class _UploadIconDialogState extends State<UploadIconDialog> {
       return;
     }
     final svg = utf8.decode(bytes, allowMalformed: true);
-    if (!svg.contains('<svg')) {
+    final svgData = IconModel(data: svg).renderableSvgData;
+    if (svgData == null) {
       setState(() => _error = IconsStrings.invalidSvg);
       return;
     }
     setState(() {
-      _svg = svg;
+      _svg = svgData;
       if (_name.text.isEmpty) {
         _name.text = file.name.replaceAll(RegExp(r'\.svg$'), '');
       }
@@ -388,46 +393,46 @@ class _UploadIconDialogState extends State<UploadIconDialog> {
         width: 440,
         child: SingleChildScrollView(
           child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropFile(
-              onFilePathChanged: _onFile,
-              allowedExtensions: const ['svg'],
-              hint: IconsStrings.uploadHint,
-              height: 120,
-            ),
-            if (_svg != null) ...[
-              const SizedBox(height: 16),
-              Center(
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black26),
-                    borderRadius: BorderRadius.circular(6),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropFile(
+                onFilePathChanged: _onFile,
+                allowedExtensions: const ['svg'],
+                hint: IconsStrings.uploadHint,
+                height: 120,
+              ),
+              if (_svg != null) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black26),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    padding: const EdgeInsets.all(10),
+                    child: SvgPicture.string(_svg!,
+                        fit: BoxFit.contain,
+                        colorFilter: ColorFilter.mode(
+                            ThemeConfig.blackColor(context), BlendMode.srcIn)),
                   ),
-                  padding: const EdgeInsets.all(10),
-                  child: SvgPicture.string(_svg!,
-                      fit: BoxFit.contain,
-                      colorFilter: ColorFilter.mode(
-                          ThemeConfig.blackColor(context), BlendMode.srcIn)),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _name,
-                decoration: InputDecoration(
-                  labelText: IconsStrings.linkLabel,
-                  helperText: IconsStrings.linkHelper,
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _name,
+                  decoration: InputDecoration(
+                    labelText: IconsStrings.linkLabel,
+                    helperText: IconsStrings.linkHelper,
+                  ),
                 ),
-              ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+              ],
             ],
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
-            ],
-          ],
           ),
         ),
       ),

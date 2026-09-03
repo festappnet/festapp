@@ -13,12 +13,15 @@ class MapLocationPinHelper {
     List<IconModel> source,
   ) {
     if (place.icon != null) {
-      final data =
-          source.firstWhereOrNull((icon) => icon.id == place.icon)?.data;
+      final data = source
+          .firstWhereOrNull((icon) => icon.id == place.icon)
+          ?.renderableSvgData;
       if (data != null) return data;
     }
     if (place.type != null) {
-      return source.firstWhereOrNull((icon) => icon.link == place.type)?.data;
+      return source
+          .firstWhereOrNull((icon) => icon.normalizedLink == place.type)
+          ?.renderableSvgData;
     }
     return null;
   }
@@ -36,6 +39,7 @@ class MapLocationPinHelper {
       fill = SvgPicture.string(
         iconData,
         colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
       );
       return _locationPin(context, fill,
           top: 7.5,

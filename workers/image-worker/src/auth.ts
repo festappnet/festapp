@@ -92,6 +92,24 @@ export async function checkIsEditorOnAnyOccasion(
   return (await response.json()) === true;
 }
 
+/** Check the independent AKH role model through its authenticated-only RPC. */
+export async function checkAkhEventManagerPermission(
+  userJwt: string,
+  auth: SupabaseAuth,
+): Promise<boolean> {
+  const response = await fetch(`${auth.supabaseUrl}/rest/v1/rpc/get_can_manage_images`, {
+    method: 'POST',
+    headers: {
+      apikey: auth.anonKey,
+      Authorization: `Bearer ${userJwt}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  if (!response.ok) return false;
+  return (await response.json()) === true;
+}
+
 export async function authorizeImageDeletion(
   userJwt: string,
   links: string[],

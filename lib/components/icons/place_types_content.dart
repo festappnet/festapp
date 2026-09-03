@@ -103,7 +103,8 @@ class _PlaceTypesContentState extends State<PlaceTypesContent> {
           field: Tb.place_types.icon,
           applyFormatterInEditing: true,
           formatter: (d) =>
-              svgIcons.firstWhereOrNull((i) => i.id == d)?.link ?? "",
+              svgIcons.firstWhereOrNull((i) => i.id == d)?.displayLabel ??
+              IconModel.missingLabel,
           type: TrinaColumnType.select(
             mapIcons,
             menuItemBuilder: (icon) =>
