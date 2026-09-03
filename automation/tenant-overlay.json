@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "15ced520453f8194621bf83edfbfd7e95562a354",
+  "baseMainSha": "119c84fbbebb48da53f80effb0715afc514fa73c",
   "release": {
-    "version": "0.19.98+482",
-    "note": "Occasion-scoped Flutter Admin navigation from the web client"
+    "version": "0.19.99+483",
+    "note": "Canonical legacy icon rendering"
   }
 }
