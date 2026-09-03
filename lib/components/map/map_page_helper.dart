@@ -254,10 +254,17 @@ class MapPageHelper {
         ? Color(int.parse(g.color!.replaceFirst('#', '0x')))
         : Colors.blue;
     final bool isSelected = g.id == selectedGroupId;
-    final iconSvg = icons.firstWhereOrNull((i) => i.id == g.icon)?.data;
+    final iconSvg =
+        icons.firstWhereOrNull((i) => i.id == g.icon)?.renderableSvgData;
 
     Widget badge = (iconSvg != null)
-        ? SvgPicture.string(iconSvg, width: 24, height: 24)
+        ? SvgPicture.string(
+            iconSvg,
+            width: 24,
+            height: 24,
+            errorBuilder: (context, error, stackTrace) =>
+                Icon(Icons.route_outlined, size: 24, color: pathColor),
+          )
         : Icon(Icons.route_outlined, size: 24, color: pathColor);
 
     return GestureDetector(
@@ -423,7 +430,8 @@ class MapPageHelper {
   /// set), capped to [_chipIconSize] in both dimensions, falling back to a
   /// generic pin when no icon is configured.
   static Widget _placeTypeIcon(int? iconId, List<IconModel> icons) {
-    final svg = icons.firstWhereOrNull((i) => i.id == iconId)?.data;
+    final svg =
+        icons.firstWhereOrNull((i) => i.id == iconId)?.renderableSvgData;
     if (svg == null) {
       return const Icon(Icons.place, size: _chipIconSize, color: Colors.white);
     }
@@ -434,6 +442,8 @@ class MapPageHelper {
         svg,
         fit: BoxFit.contain,
         colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+        errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.place, size: _chipIconSize, color: Colors.white),
       ),
     );
   }

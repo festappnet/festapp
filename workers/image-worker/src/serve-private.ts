@@ -45,6 +45,7 @@ export async function handlePrivate(
       ? resolveControlProject(env, { projectId, legacySupabaseUrl })
       : resolveProjectByHostname(env, url.hostname);
     assertControlHost(project, request.url);
+    if (!project.supportsPrivate) throw new ProjectResolutionError('Private images are not supported for this project');
   } catch (error) {
     if (error instanceof ProjectResolutionError) return errorResponse(400, error.code, error.message);
     throw error;
