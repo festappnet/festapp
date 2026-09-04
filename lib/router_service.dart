@@ -220,6 +220,14 @@ class RouterService {
         context, "unit/${RightsService.currentUnit()!.id!}/edit");
   }
 
+  @visibleForTesting
+  static UnitModel? postLoginAdminUnit(List<UnitModel>? userUnits) {
+    if (userUnits != null && userUnits.isNotEmpty) {
+      return userUnits.first;
+    }
+    return null;
+  }
+
   static Future<void> navigateHome(BuildContext context) async {
     String targetHomePath = fixPath(""); // This resolves to "/"
 
@@ -403,16 +411,14 @@ class RouterService {
     await RightsService.updateAppData(
         unitId: unitId, link: linkToUse, force: true);
 
-    // 2. Check for Units (Admin flow priority)
-    // If the user has units (and isn't in Unit 1 context), they likely want their dashboard.
-    if (unitId == null) {
-      var userUnits = RightsService.currentUser()?.units;
-      if (userUnits != null && userUnits.isNotEmpty) {
-        AppLogger.debug(
-            "[RouterService] Post-Login: User has units. Navigating to UnitAdmin.");
-        await navigateToUnitAdmin(context, userUnits.first);
-        return;
-      }
+    // 2. Check for Units (Admin flow priority). A managed unit must win over
+    // the fallback even when a unit context is already loaded.
+    final adminUnit = postLoginAdminUnit(RightsService.currentUser()?.units);
+    if (adminUnit != null) {
+      AppLogger.debug(
+          "[RouterService] Post-Login: User has units. Navigating to UnitAdmin.");
+      await navigateToUnitAdmin(context, adminUnit);
+      return;
     }
 
     // 3. Fallback Navigation
