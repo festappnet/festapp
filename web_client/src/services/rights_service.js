@@ -85,10 +85,6 @@ export class RightsService {
         return this._context?.unit;
     }
 
-    static get administrationBaseUrl() {
-        return this._context?.organization?.DEFAULT_URL || '';
-    }
-
     // --- Rights Checks (Mirrors Flutter) ---
     static canSeeReservations() {
         return this.isUnitEditorView() || this.isEditorOrderView();
