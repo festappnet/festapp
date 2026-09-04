@@ -3,7 +3,7 @@
   "tenantId": "festivalslunovrat",
   "baseMainSha": "a736612e028064033a02e92fac09df1ae4c1b604",
   "release": {
-    "version": "0.20.0+484",
+    "version": "0.20.1+485",
     "note": "Canonical festapp.net origin staged for OneSignal cutover"
   }
 }
