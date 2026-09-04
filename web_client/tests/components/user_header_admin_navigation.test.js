@@ -28,16 +28,17 @@ test('the Admin header button opens the admin route', async () => {
   const originalNavigateToHandover = RouterService.navigateToHandover;
   const originalContext = RightsService._context;
   let adminNavigations = 0;
+  let adminNavigationArgs = null;
   let handoverNavigations = 0;
 
   try {
     RightsService.canSeeAdmin = () => true;
     RightsService.canSeeReservations = () => false;
     RightsService.getUserDisplayInfo = () => ({ initial: 'A', name: 'Admin' });
-    RightsService._context = { occasion: { link: 'stale-occasion' } };
+    RightsService._context = { occasion: { link: 'hvezdamorska' } };
     RouterService.navigateToAdmin = (...args) => {
       adminNavigations += 1;
-      assert.deepEqual(args, []);
+      adminNavigationArgs = args;
     };
     RouterService.navigateToHandover = () => { handoverNavigations += 1; };
 
@@ -48,6 +49,7 @@ test('the Admin header button opens the admin route', async () => {
     header.querySelector('.btn-admin').click();
 
     assert.equal(adminNavigations, 1);
+    assert.deepEqual(adminNavigationArgs, ['hvezdamorska']);
     assert.equal(handoverNavigations, 0);
   } finally {
     RightsService.canSeeAdmin = originalCanSeeAdmin;
