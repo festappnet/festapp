@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "aksmcz",
-  "baseMainSha": "427465faf791f72983ad06c9c3f1731694b50f56",
+  "baseMainSha": "b03145f0f96045cb030cd8d31e7e5943ec40ca43",
   "release": {
     "version": "0.20.1+485",
     "note": "Canonical legacy icon rendering"

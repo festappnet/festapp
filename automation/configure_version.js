@@ -1,18 +1,28 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
-// 1. Get Version from Args or Env
-const version = process.argv[2] || process.env.VERSION;
+const projectRoot = path.resolve(__dirname, '../');
+const projectVersionScript = path.resolve(__dirname, 'release/project_version.mjs');
+
+// 1. Get Version from Args or Env, otherwise read the canonical project config.
+let version = process.argv[2] || process.env.VERSION;
 
 if (!version) {
-    console.error('Error: No version provided. Usage: node configure_version.js <version>');
-    process.exit(1);
+    try {
+        version = execFileSync(process.execPath, [projectVersionScript, '--full'], {
+            cwd: projectRoot,
+            encoding: 'utf8',
+        }).trim();
+    } catch (error) {
+        console.error('Error: Could not read VERSION from automation/project.conf', error.message);
+        process.exit(1);
+    }
 }
 
 console.log(`Configuring Version: ${version}`);
 
-const projectRoot = path.resolve(__dirname, '../');
 const webClientRoot = path.resolve(projectRoot, 'web_client');
 
 // Paths
