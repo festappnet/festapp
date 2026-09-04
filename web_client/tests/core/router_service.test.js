@@ -248,8 +248,11 @@ test('RouterService.handleInitialLoad', async (t) => {
     await t.test('should build an occasion-scoped Flutter admin URL', () => {
         AppConfig.flutterAppUrl = '';
         assert.strictEqual(
-            RouterService.getAdminUrl('/hvezdamorska/?preview=true'),
-            '/hvezdamorska/admin',
+            RouterService.getAdminUrl(
+                '/hvezdamorska/?preview=true',
+                'https://live.festapp.net/',
+            ),
+            'https://live.festapp.net/hvezdamorska/admin',
         );
         AppConfig.flutterAppUrl = "https://vstupenky.online/flutter.html";
     });
