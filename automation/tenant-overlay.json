@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "119c84fbbebb48da53f80effb0715afc514fa73c",
+  "baseMainSha": "818bbcf59df0e63df8b5ffec8661ab8e38dac1fe",
   "release": {
     "version": "0.19.99+483",
-    "note": "Canonical legacy icon rendering"
+    "note": "Canonical admin application routing"
   }
 }
