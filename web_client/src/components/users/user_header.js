@@ -147,7 +147,9 @@ export class UserHeader extends HTMLElement {
                  const adminBtn = document.createElement('button');
                  adminBtn.className = 'btn-admin';
                  adminBtn.innerHTML = `<i class="material-icons">admin_panel_settings</i><span class="admin-text">${CommonStrings.admin}</span>`;
-                 adminBtn.onclick = () => RouterService.navigateToAdmin();
+                 adminBtn.onclick = () => RouterService.navigateToAdmin(
+                     RightsService.currentUnit?.id ?? this.user?.units?.[0]?.id,
+                 );
                  actions.appendChild(adminBtn);
              }
 
