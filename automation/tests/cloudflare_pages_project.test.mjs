@@ -45,6 +45,9 @@ test('creates a missing project, configures public worker env, and adds domain',
     config.runtimeSupabaseUrl);
   assert.equal(calls[2].body.deployment_configs.production.env_vars.ORGANIZATION_ID.value, '4');
   assert.equal(calls[4].body.name, config.domain);
+  assert.equal(new URL(calls[5].url).searchParams.get('name'), config.zone);
+  assert.equal(new URL(calls[5].url).searchParams.has('account.id'), false,
+    'DNS zone ownership must not be coupled to the Pages account');
   assert.deepEqual(calls[7].body, {
     type: 'CNAME', name: config.domain, content: 'hvezdamorska.pages.dev',
     proxied: true, ttl: 1,
