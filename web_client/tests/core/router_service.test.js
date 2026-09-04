@@ -245,12 +245,13 @@ test('RouterService.handleInitialLoad', async (t) => {
     AppConfig.compatibleUrls = ["https://vstupenky.online"];
     AppConfig.flutterAppUrl = "https://vstupenky.online/flutter.html";
 
-    await t.test('should build a same-origin occasion admin URL', () => {
+    await t.test('should build a same-origin unit administration URL', () => {
         AppConfig.flutterAppUrl = '';
         assert.strictEqual(
-            RouterService.getAdminUrl('/hvezdamorska/?preview=true'),
-            '/hvezdamorska/admin',
+            RouterService.getAdminUrl(5),
+            '/unit/5/edit',
         );
+        assert.strictEqual(RouterService.getAdminUrl('5/admin'), '/admin');
         AppConfig.flutterAppUrl = "https://vstupenky.online/flutter.html";
     });
 
