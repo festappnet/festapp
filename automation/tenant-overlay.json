@@ -3,7 +3,7 @@
   "tenantId": "festapp",
   "baseMainSha": "119c84fbbebb48da53f80effb0715afc514fa73c",
   "release": {
-    "version": "0.19.99+483",
+    "version": "0.20.1+485",
     "note": "Canonical legacy icon rendering"
   }
 }
