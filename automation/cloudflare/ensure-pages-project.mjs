@@ -159,7 +159,7 @@ export async function ensurePagesProject(config, fetchImpl = fetch) {
     const zoneLookup = requireSuccess('Cloudflare zone lookup', await zoneApi(
       fetchImpl,
       config.token,
-      `/zones?name=${encodeURIComponent(config.zone)}&account.id=${encodeURIComponent(config.accountId)}`,
+      `/zones?name=${encodeURIComponent(config.zone)}`,
     ));
     if (!Array.isArray(zoneLookup) || zoneLookup.length !== 1 || zoneLookup[0].name !== config.zone) {
       throw new Error(`Cloudflare zone lookup returned no unique ${config.zone} zone`);
