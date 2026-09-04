@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 
 const projectRoot = path.resolve(__dirname, '../');
 const projectConfPath = path.resolve(projectRoot, 'automation/project.conf');
@@ -57,11 +57,14 @@ console.log(`Auto-incrementing version: ${currentVersion} -> ${newVersion}`);
 const newProjectConfContent = projectConfContent.replace(/^VERSION=.+$/m, `VERSION=${newVersion}`);
 fs.writeFileSync(projectConfPath, newProjectConfContent);
 
-// 4. Run sync_version.js to propagate changes
+// 4. Run the canonical generator to propagate changes to every version leaf.
 try {
-    execSync('node web_client/scripts/sync_version.js', { cwd: projectRoot, stdio: 'inherit' });
+    execFileSync(process.execPath, ['automation/configure_version.js', newVersion], {
+        cwd: projectRoot,
+        stdio: 'inherit',
+    });
 } catch (e) {
-    console.error('Error running sync_version.js:', e);
+    console.error('Error running configure_version.js:', e);
     process.exit(1);
 }
 
@@ -70,7 +73,9 @@ const filesToStage = [
     'automation/project.conf',
     'pubspec.yaml',
     'web_client/package.json',
-    'web_client/src/version.js'
+    'web_client/package-lock.json',
+    'web_client/src/version.js',
+    'web/index.html'
 ];
 
 try {
