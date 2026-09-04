@@ -55,16 +55,12 @@ export class RouterService {
         return `${baseUrl}/login`;
     }
 
-    static getAdminUrl(occasionLink = '') {
-        let baseUrl = AppConfig.flutterAppUrl || '';
-        if (baseUrl.endsWith('/')) {
-            baseUrl = baseUrl.slice(0, -1);
+    static getAdminUrl(unitId = null) {
+        const normalizedUnitId = Number(unitId);
+        if (Number.isInteger(normalizedUnitId) && normalizedUnitId > 0) {
+            return `/unit/${normalizedUnitId}/edit`;
         }
-        const cleanLink = occasionLink
-            .split('?')[0]
-            .replace(/^\/+|\/+$/g, '');
-        const adminPath = cleanLink ? `/${cleanLink}/admin` : '/admin';
-        return `${baseUrl}${adminPath}`;
+        return '/admin';
     }
 
     static async navigateToLogin() {
@@ -72,8 +68,8 @@ export class RouterService {
         await RouterService.navigateToFlutterRoute(url);
     }
 
-    static async navigateToAdmin(occasionLink = '') {
-        const url = RouterService.getAdminUrl(occasionLink);
+    static async navigateToAdmin(unitId = null) {
+        const url = RouterService.getAdminUrl(unitId);
         await RouterService.navigateToFlutterRoute(url);
     }
     
