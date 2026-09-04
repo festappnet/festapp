@@ -35,7 +35,10 @@ test('the Admin header button opens the admin route', async () => {
     RightsService.canSeeAdmin = () => true;
     RightsService.canSeeReservations = () => false;
     RightsService.getUserDisplayInfo = () => ({ initial: 'A', name: 'Admin' });
-    RightsService._context = { occasion: { link: 'hvezdamorska' } };
+    RightsService._context = {
+      occasion: { link: 'hvezdamorska' },
+      unit: { id: 5 },
+    };
     RouterService.navigateToAdmin = (...args) => {
       adminNavigations += 1;
       adminNavigationArgs = args;
@@ -49,7 +52,7 @@ test('the Admin header button opens the admin route', async () => {
     header.querySelector('.btn-admin').click();
 
     assert.equal(adminNavigations, 1);
-    assert.deepEqual(adminNavigationArgs, ['hvezdamorska']);
+    assert.deepEqual(adminNavigationArgs, [5]);
     assert.equal(handoverNavigations, 0);
   } finally {
     RightsService.canSeeAdmin = originalCanSeeAdmin;
