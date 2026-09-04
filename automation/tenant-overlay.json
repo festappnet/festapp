@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "b2f14a698781bee763e5036a5e08fbc1b7c789f6",
+  "baseMainSha": "427465faf791f72983ad06c9c3f1731694b50f56",
   "release": {
     "version": "0.20.1+485",
     "note": "Redirect admins to their managed unit after login"
