@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION reset_password_via_scan(
+CREATE OR REPLACE FUNCTION public.reset_password_via_scan(
     ticket_id bigint,
     password text,
     scan_code text
@@ -14,7 +14,6 @@ DECLARE
     v_target_user_id uuid;
     v_target_email text;
     v_encrypted_pw text;
-    v_has_elevated_privileges boolean;
 BEGIN
     -- =================================================================
     -- 1. INPUT VALIDATION
@@ -72,35 +71,17 @@ BEGIN
     -- =================================================================
     -- 4. SECURITY CHECK: PREVENT RESET FOR PRIVILEGED USERS
     -- =================================================================
-    v_has_elevated_privileges := FALSE;
-
-    -- Check 4a: Is Organization Admin?
-    SELECT EXISTS (
-        SELECT 1 FROM public.organization_users
-        WHERE "user" = v_target_user_id AND is_admin = TRUE
-    ) INTO v_has_elevated_privileges;
-
-    -- Check 4b: Is Unit Manager/Editor?
-    IF NOT v_has_elevated_privileges THEN
-        SELECT EXISTS (
-            SELECT 1 FROM public.unit_users
-            WHERE "user" = v_target_user_id
-            AND (is_manager = TRUE OR is_editor = TRUE OR is_editor_view = TRUE)
-        ) INTO v_has_elevated_privileges;
-    END IF;
-
-    -- Check 4c: Is Occasion Manager/Editor?
-    IF NOT v_has_elevated_privileges THEN
-        SELECT EXISTS (
-            SELECT 1 FROM public.occasion_users
-            WHERE "user" = v_target_user_id
-            AND (is_manager = TRUE OR is_editor = TRUE OR is_editor_view = TRUE)
-        ) INTO v_has_elevated_privileges;
-    END IF;
-
-    IF v_has_elevated_privileges THEN
-        RETURN jsonb_build_object('code', 403, 'message', 'Security Restriction: Cannot reset password for users with administrative or management privileges via scan.');
-    END IF;
+    BEGIN
+        PERFORM public.check_is_scan_password_reset_target_allowed(
+            v_target_user_id
+        );
+    EXCEPTION
+        WHEN insufficient_privilege THEN
+            RETURN jsonb_build_object(
+                'code', 403,
+                'message', 'Security Restriction: Cannot reset password for privileged users via scan.'
+            );
+    END;
 
     -- =================================================================
     -- 5. PERFORM PASSWORD RESET
@@ -138,3 +119,8 @@ EXCEPTION
         );
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.reset_password_via_scan(bigint, text, text)
+  FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reset_password_via_scan(bigint, text, text)
+  TO anon, authenticated, service_role;
