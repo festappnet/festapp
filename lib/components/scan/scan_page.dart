@@ -382,8 +382,9 @@ class _ScanPageState extends State<ScanPage> {
     if (confirmed != true) return;
 
     try {
-      String? email = await DbTickets.resetPassword(
+      final result = await DbTickets.resetPassword(
           _scannedObject!.id!, _defaultResetPassword, widget.scanCode!);
+      final email = result.email;
 
       if (!mounted) return;
 
@@ -417,6 +418,12 @@ class _ScanPageState extends State<ScanPage> {
                 child: Text(CommonStrings.ok), // Use CommonStrings
               ),
             ],
+          ),
+        );
+      } else if (result.failure == PasswordResetFailure.privilegedTarget) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(OrdersStrings.errorResetPasswordPrivilegedUser),
           ),
         );
       } else {
