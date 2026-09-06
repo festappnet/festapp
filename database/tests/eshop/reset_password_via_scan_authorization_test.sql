@@ -123,6 +123,33 @@ BEGIN
     PERFORM set_config('request.jwt.claim.sub', '', true);
     PERFORM set_config('request.jwt.claim.role', 'anon', true);
 
+    SELECT encrypted_password
+      INTO v_password_before
+      FROM auth.users
+     WHERE id = v_target_user;
+
+    v_result := public.reset_password_via_scan(
+        v_ticket,
+        'null-scan-code-must-not-reset',
+        NULL
+    );
+
+    PERFORM assert_eq(
+        v_result->>'code',
+        '401',
+        'a NULL scan code is rejected'
+    );
+
+    SELECT encrypted_password
+      INTO v_password_after
+      FROM auth.users
+     WHERE id = v_target_user;
+
+    PERFORM assert_true(
+        v_password_after IS NOT DISTINCT FROM v_password_before,
+        'a NULL scan code leaves the ordinary target password unchanged'
+    );
+
     v_result := public.reset_password_via_scan(
         v_ticket,
         'ordinary-target-password',
