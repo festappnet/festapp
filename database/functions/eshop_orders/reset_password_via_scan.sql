@@ -11,7 +11,6 @@ AS $$
 DECLARE
     v_occasion_id bigint;
     v_expected_scan_code text;
-    v_unit_id bigint;
     v_target_user_id uuid;
     v_target_email text;
     v_encrypted_pw text;
@@ -42,7 +41,7 @@ BEGIN
     END IF;
 
     -- Get Expected Scan Code (Secret) from Occasions Hidden
-    SELECT oh.secret, o.unit INTO v_expected_scan_code, v_unit_id
+    SELECT oh.secret INTO v_expected_scan_code
     FROM public.occasions_hidden oh
     JOIN public.occasions o ON o.occasion_hidden = oh.id
     WHERE o.id = v_occasion_id
@@ -57,27 +56,16 @@ BEGIN
         RETURN jsonb_build_object('code', 401, 'message', 'Invalid scan code.');
     END IF;
 
-    -- Only authenticated occasion/unit editors and managers, organization
-    -- admins, or the service role may reset an attendee password. The shared
-    -- scan code alone is not an account-recovery credential.
-    IF auth.role() IS DISTINCT FROM 'service_role'
-       AND NOT (
-           public.get_is_editor_on_occasion(v_occasion_id)
-           OR public.get_is_manager_on_occasion(v_occasion_id)
-           OR public.get_is_admin_on_occasion(v_occasion_id)
-           OR (
-               v_unit_id IS NOT NULL
-               AND (
-                   public.get_is_editor_on_unit(v_unit_id)
-                   OR public.get_is_manager_on_unit(v_unit_id)
-               )
-           )
-       ) THEN
-        RETURN jsonb_build_object(
-            'code', 403,
-            'message', 'Only an editor or manager may reset a password.'
-        );
-    END IF;
+    -- The shared scan code alone is not an account-recovery credential.
+    BEGIN
+        PERFORM public.check_is_scan_password_reset_authorized(v_occasion_id);
+    EXCEPTION
+        WHEN insufficient_privilege THEN
+            RETURN jsonb_build_object(
+                'code', 403,
+                'message', 'Only an editor or manager may reset a password.'
+            );
+    END;
 
     -- =================================================================
     -- 3. IDENTIFY TARGET USER

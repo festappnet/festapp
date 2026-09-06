@@ -1,3 +1,56 @@
+CREATE OR REPLACE FUNCTION public.check_is_scan_password_reset_authorized(
+    p_occasion_id bigint
+)
+RETURNS void
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+BEGIN
+    IF auth.role() IS NOT DISTINCT FROM 'service_role' THEN
+        RETURN;
+    END IF;
+
+    IF auth.uid() IS NULL OR NOT EXISTS (
+        SELECT 1
+          FROM public.occasions o
+         WHERE o.id = p_occasion_id
+           AND (
+               EXISTS (
+                   SELECT 1
+                     FROM public.occasion_users ou
+                    WHERE ou.occasion = o.id
+                      AND ou."user" = auth.uid()
+                      AND (ou.is_editor IS TRUE OR ou.is_manager IS TRUE)
+               )
+               OR EXISTS (
+                   SELECT 1
+                     FROM public.unit_users uu
+                    WHERE uu.unit = o.unit
+                      AND uu."user" = auth.uid()
+                      AND (uu.is_editor IS TRUE OR uu.is_manager IS TRUE)
+               )
+               OR EXISTS (
+                   SELECT 1
+                     FROM public.organization_users org_u
+                    WHERE org_u.organization = o.organization
+                      AND org_u."user" = auth.uid()
+                      AND org_u.is_admin IS TRUE
+               )
+           )
+    ) THEN
+        RAISE EXCEPTION 'Only an editor or manager may reset a password.'
+          USING ERRCODE = '42501';
+    END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_is_scan_password_reset_authorized(bigint)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_is_scan_password_reset_authorized(bigint)
+  TO service_role;
+
 CREATE OR REPLACE FUNCTION public.reset_password_via_scan(
     ticket_id bigint,
     password text,
@@ -11,7 +64,6 @@ AS $$
 DECLARE
     v_occasion_id bigint;
     v_expected_scan_code text;
-    v_unit_id bigint;
     v_target_user_id uuid;
     v_target_email text;
     v_encrypted_pw text;
@@ -33,7 +85,7 @@ BEGIN
         RETURN jsonb_build_object('code', 404, 'message', 'Ticket not found or no occasion assigned.');
     END IF;
 
-    SELECT oh.secret, o.unit INTO v_expected_scan_code, v_unit_id
+    SELECT oh.secret INTO v_expected_scan_code
     FROM public.occasions_hidden oh
     JOIN public.occasions o ON o.occasion_hidden = oh.id
     WHERE o.id = v_occasion_id
@@ -47,24 +99,15 @@ BEGIN
         RETURN jsonb_build_object('code', 401, 'message', 'Invalid scan code.');
     END IF;
 
-    IF auth.role() IS DISTINCT FROM 'service_role'
-       AND NOT (
-           public.get_is_editor_on_occasion(v_occasion_id)
-           OR public.get_is_manager_on_occasion(v_occasion_id)
-           OR public.get_is_admin_on_occasion(v_occasion_id)
-           OR (
-               v_unit_id IS NOT NULL
-               AND (
-                   public.get_is_editor_on_unit(v_unit_id)
-                   OR public.get_is_manager_on_unit(v_unit_id)
-               )
-           )
-       ) THEN
-        RETURN jsonb_build_object(
-            'code', 403,
-            'message', 'Only an editor or manager may reset a password.'
-        );
-    END IF;
+    BEGIN
+        PERFORM public.check_is_scan_password_reset_authorized(v_occasion_id);
+    EXCEPTION
+        WHEN insufficient_privilege THEN
+            RETURN jsonb_build_object(
+                'code', 403,
+                'message', 'Only an editor or manager may reset a password.'
+            );
+    END;
 
     SELECT "user" INTO v_target_user_id
     FROM public.occasion_users
