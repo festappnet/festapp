@@ -17,9 +17,6 @@ DECLARE
     v_encrypted_pw text;
     v_has_elevated_privileges boolean;
 BEGIN
-    -- =================================================================
-    -- 1. INPUT VALIDATION
-    -- =================================================================
     IF ticket_id IS NULL THEN
          RETURN jsonb_build_object('code', 400, 'message', 'Ticket ID is missing.');
     END IF;
@@ -28,11 +25,6 @@ BEGIN
          RETURN jsonb_build_object('code', 400, 'message', 'Password cannot be empty.');
     END IF;
 
-    -- =================================================================
-    -- 2. VALIDATE TICKET AND SCAN CODE
-    -- =================================================================
-
-    -- Get Occasion ID from Ticket
     SELECT occasion INTO v_occasion_id
     FROM eshop.tickets
     WHERE id = ticket_id;
@@ -41,7 +33,6 @@ BEGIN
         RETURN jsonb_build_object('code', 404, 'message', 'Ticket not found or no occasion assigned.');
     END IF;
 
-    -- Get Expected Scan Code (Secret) from Occasions Hidden
     SELECT oh.secret, o.unit INTO v_expected_scan_code, v_unit_id
     FROM public.occasions_hidden oh
     JOIN public.occasions o ON o.occasion_hidden = oh.id
@@ -52,14 +43,10 @@ BEGIN
         RETURN jsonb_build_object('code', 400, 'message', 'Scan code not defined for this occasion.');
     END IF;
 
-    -- Verify Code Matches
     IF scan_code != v_expected_scan_code THEN
         RETURN jsonb_build_object('code', 401, 'message', 'Invalid scan code.');
     END IF;
 
-    -- Only authenticated occasion/unit editors and managers, organization
-    -- admins, or the service role may reset an attendee password. The shared
-    -- scan code alone is not an account-recovery credential.
     IF auth.role() IS DISTINCT FROM 'service_role'
        AND NOT (
            public.get_is_editor_on_occasion(v_occasion_id)
@@ -79,11 +66,6 @@ BEGIN
         );
     END IF;
 
-    -- =================================================================
-    -- 3. IDENTIFY TARGET USER
-    -- =================================================================
-
-    -- Find the user attached to this ticket via occasion_users
     SELECT "user" INTO v_target_user_id
     FROM public.occasion_users
     WHERE ticket = ticket_id;
@@ -92,18 +74,13 @@ BEGIN
         RETURN jsonb_build_object('code', 404, 'message', 'No user found associated with this ticket.');
     END IF;
 
-    -- =================================================================
-    -- 4. SECURITY CHECK: PREVENT RESET FOR PRIVILEGED USERS
-    -- =================================================================
     v_has_elevated_privileges := FALSE;
 
-    -- Check 4a: Is Organization Admin?
     SELECT EXISTS (
         SELECT 1 FROM public.organization_users
         WHERE "user" = v_target_user_id AND is_admin = TRUE
     ) INTO v_has_elevated_privileges;
 
-    -- Check 4b: Is Unit Manager/Editor?
     IF NOT v_has_elevated_privileges THEN
         SELECT EXISTS (
             SELECT 1 FROM public.unit_users
@@ -112,7 +89,6 @@ BEGIN
         ) INTO v_has_elevated_privileges;
     END IF;
 
-    -- Check 4c: Is Occasion Manager/Editor?
     IF NOT v_has_elevated_privileges THEN
         SELECT EXISTS (
             SELECT 1 FROM public.occasion_users
@@ -125,27 +101,17 @@ BEGIN
         RETURN jsonb_build_object('code', 403, 'message', 'Security Restriction: Cannot reset password for users with administrative or management privileges via scan.');
     END IF;
 
-    -- =================================================================
-    -- 5. PERFORM PASSWORD RESET
-    -- =================================================================
-
-    -- Generate encrypted password
     v_encrypted_pw := crypt(password, gen_salt('bf'));
 
-    -- Update auth.users
     UPDATE auth.users
     SET encrypted_password = v_encrypted_pw
     WHERE id = v_target_user_id
     RETURNING email INTO v_target_email;
 
     IF v_target_email IS NULL THEN
-         -- Fallback if email wasn't returned (unlikely if ID exists)
          RETURN jsonb_build_object('code', 500, 'message', 'Password updated, but failed to retrieve email.');
     END IF;
 
-    -- =================================================================
-    -- 6. SUCCESS RESPONSE
-    -- =================================================================
     RETURN jsonb_build_object(
         'code', 200,
         'message', 'Password successfully reset.',
