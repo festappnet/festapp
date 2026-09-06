@@ -497,6 +497,7 @@
     "searchPlaceholder": "Search (name, email)...",
     "newLoginCredentials": "New login credentials",
     "errorEmailNotReturned": "Error: Email was not returned.",
+    "errorResetPasswordPrivilegedUser": "The password cannot be changed because this account has higher privileges than an ordinary user.",
     "confirmTicketFailed": "Failed to confirm ticket.",
     "resetPasswordTo": "Reset password to '{password}'",
     "resetPasswordConfirmationContent": "Are you sure you want to change the password to '{password}'?",

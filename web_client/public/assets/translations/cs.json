@@ -497,6 +497,7 @@
     "searchPlaceholder": "Hledat (jméno, email)...",
     "newLoginCredentials": "Nové údaje pro přihlášení",
     "errorEmailNotReturned": "Chyba: E-mail nebyl vrácen.",
+    "errorResetPasswordPrivilegedUser": "Heslo nelze změnit, protože tento účet má vyšší oprávnění než běžný uživatel.",
     "confirmTicketFailed": "Nepodařilo se potvrdit vstupenku",
     "resetPasswordTo": "Resetovat heslo na '{password}'",
     "resetPasswordConfirmationContent": "Opravdu chcete změnit heslo na '{password}'?",
