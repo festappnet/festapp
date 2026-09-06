@@ -51,7 +51,7 @@ BEGIN
     END IF;
 
     -- Verify Code Matches
-    IF scan_code != v_expected_scan_code THEN
+    IF scan_code IS DISTINCT FROM v_expected_scan_code THEN
         RETURN jsonb_build_object('code', 401, 'message', 'Invalid scan code.');
     END IF;
 
