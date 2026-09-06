@@ -15,6 +15,32 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app_config.dart';
 
+enum PasswordResetFailure { privilegedTarget }
+
+class PasswordResetResult {
+  final String? email;
+  final PasswordResetFailure? failure;
+
+  const PasswordResetResult({this.email, this.failure});
+
+  factory PasswordResetResult.fromRpcResponse(dynamic response) {
+    if (response is Map && response['code'] == 200) {
+      return PasswordResetResult(email: response['email']?.toString());
+    }
+
+    if (response is Map &&
+        response['code'] == 403 &&
+        response['message'] ==
+            'Security Restriction: Cannot reset password for privileged users via scan.') {
+      return const PasswordResetResult(
+        failure: PasswordResetFailure.privilegedTarget,
+      );
+    }
+
+    return const PasswordResetResult();
+  }
+}
+
 class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
@@ -238,8 +264,8 @@ class DbTickets {
   }
 
   /// Resets the password for the user associated with the ticket.
-  /// Returns the user's email if successful, otherwise null.
-  static Future<String?> resetPassword(
+  /// Returns the user's email on success or the RPC failure reason.
+  static Future<PasswordResetResult> resetPassword(
       int ticketId, String password, String scannedCode) async {
     try {
       final response = await _supabase.rpc('reset_password_via_scan', params: {
@@ -248,13 +274,16 @@ class DbTickets {
         'scan_code': scannedCode,
       });
 
-      if (response["code"] == 200) {
-        return AppConfig.removeUserPrefix(response["email"] as String);
+      final result = PasswordResetResult.fromRpcResponse(response);
+      if (result.email != null) {
+        return PasswordResetResult(
+          email: AppConfig.removeUserPrefix(result.email!),
+        );
       }
+      return result;
     } catch (e) {
-      // Error in resetPassword
+      return const PasswordResetResult();
     }
-    return null;
   }
 
   static Future<void> swapSpotTickets(
