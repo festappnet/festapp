@@ -106,9 +106,8 @@ class OrdersStrings {
   static String get copyLink => 'FeatureOrders.copyLink'.tr(); // "Copy Link"
   static String get generateNewCode =>
       'FeatureOrders.generateNewCode'.tr(); // "Generate New Code"
-  static String get generateNewCodeWarning =>
-      'FeatureOrders.generateNewCodeWarning'
-          .tr(); // "By generating a new code, the old one will be replaced and will no longer work."
+  static String get generateNewCodeWarning => 'FeatureOrders.generateNewCodeWarning'
+      .tr(); // "By generating a new code, the old one will be replaced and will no longer work."
   static String get provideScanLinkInstruction =>
       'FeatureOrders.provideScanLinkInstruction'
           .tr(); // "Provide the following link or code to the people who will be checking the tickets."
@@ -198,6 +197,8 @@ class OrdersStrings {
   static String get errorEmailNotReturned =>
       'FeatureOrders.errorEmailNotReturned'
           .tr(); // "Error: Email was not returned."
+  static String get errorResetPasswordPrivilegedUser =>
+      'FeatureOrders.errorResetPasswordPrivilegedUser'.tr();
   static String get confirmTicketFailed =>
       'FeatureOrders.confirmTicketFailed'.tr(); // "Failed to confirm ticket"
 
