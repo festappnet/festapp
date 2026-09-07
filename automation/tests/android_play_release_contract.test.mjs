@@ -23,6 +23,23 @@ test('Android Play tooling pins Fastlane through Bundler', () => {
   assert.match(gemfile, /gem ['"]fastlane['"], ['"]2\.238\.0['"]/);
   assert.match(wrapper, /bundle exec fastlane android play_check/);
   assert.match(wrapper, /bundle exec fastlane android play_production/);
+  assert.match(
+    wrapper,
+    /bundle exec fastlane android play_check[\s\S]*?\$fastlaneExit = \$LASTEXITCODE[\s\S]*?throw "Read-only Google Play check failed/,
+  );
+  assert.match(
+    wrapper,
+    /bundle exec fastlane android play_production[\s\S]*?\$fastlaneExit = \$LASTEXITCODE[\s\S]*?throw "Google Play production upload failed/,
+  );
+});
+
+test('byte-exact backend activation documents are always checked out with LF', () => {
+  const attributes = fs.readFileSync(path.join(root, '.gitattributes'), 'utf8');
+  assert.match(attributes, /^\/web\/backend-activation\.json text eol=lf$/m);
+  assert.match(
+    attributes,
+    /^\/web_client\/public\/backend-activation\.json text eol=lf$/m,
+  );
 });
 
 test('Play track inspection always deletes its disposable edit', () => {

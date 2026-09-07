@@ -115,12 +115,17 @@ if ($Build) {
   if (-not $env:GOOGLE_PLAY_JSON_KEY) { throw 'BLOCKED: GOOGLE_PLAY_JSON_KEY is not set to a least-privilege credential outside Git' }
   Push-Location automation/release/fastlane
   try {
-    if ($PlayCheck) { bundle exec fastlane android play_check }
-    else {
+    if ($PlayCheck) {
+      bundle exec fastlane android play_check
+      $fastlaneExit = $LASTEXITCODE
+      if ($fastlaneExit -ne 0) { throw "Read-only Google Play check failed with exit code $fastlaneExit" }
+    } else {
       Assert-SigningConfig
       $env:PLAY_TARGET_TRACK = 'production'
       $env:PLAY_CONFIRMATION = $Confirmation
       bundle exec fastlane android play_production
+      $fastlaneExit = $LASTEXITCODE
+      if ($fastlaneExit -ne 0) { throw "Google Play production upload failed with exit code $fastlaneExit" }
     }
   } finally { Pop-Location }
 } else {
