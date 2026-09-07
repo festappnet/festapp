@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "cavfotofest",
-  "baseMainSha": "f40f605f101b3452485d90618b90898cd6d46200",
+  "baseMainSha": "e1bf889a3747ae6e2ca8867f5c54e95984cf60b0",
   "release": {
     "version": "0.20.1+485",
     "note": "Canonical legacy icon rendering"
