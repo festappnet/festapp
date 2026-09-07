@@ -10,6 +10,21 @@ const fastfile = fs.readFileSync(
   'utf8',
 );
 
+test('Android Play tooling pins Fastlane through Bundler', () => {
+  const gemfile = fs.readFileSync(
+    path.join(root, 'automation/release/fastlane/Gemfile'),
+    'utf8',
+  );
+  const wrapper = fs.readFileSync(
+    path.join(root, 'automation/release/android_release.ps1'),
+    'utf8',
+  );
+
+  assert.match(gemfile, /gem ['"]fastlane['"], ['"]2\.238\.0['"]/);
+  assert.match(wrapper, /bundle exec fastlane android play_check/);
+  assert.match(wrapper, /bundle exec fastlane android play_production/);
+});
+
 test('Play track inspection always deletes its disposable edit', () => {
   const helper = fastfile.match(
     /def relevant_play_version_codes(?<body>[\s\S]*?)\nend\n\ndef assert_new_play_version!/
