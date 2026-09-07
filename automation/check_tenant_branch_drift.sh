@@ -130,10 +130,13 @@ done < <(git diff --name-only -z "$BASE_MAIN_SHA" "$PROD_TIP")
 
 for path in "${GENERATED_PATHS[@]}"; do
   expected="$EXPECTED_TREE/$path"
-  actual="$TMP_ROOT/actual-generated"
   if [[ -e "$expected" ]] && git cat-file -e "${PROD_TIP}:${path}" 2>/dev/null; then
-    git show "${PROD_TIP}:${path}" > "$actual"
-    cmp -s "$expected" "$actual" || {
+    # Compare Git object IDs instead of redirecting `git show`. Native Git
+    # stdout can be CRLF-translated by the Windows shell, which made an exact
+    # LF blob (first observed at pubspec.yaml) look dirty on the build host.
+    expected_oid=$(git hash-object --no-filters "$expected")
+    actual_oid=$(git rev-parse "${PROD_TIP}:${path}")
+    [[ "$expected_oid" == "$actual_oid" ]] || {
       echo "Error: generated content drift: $path" >&2
       exit 71
     }
