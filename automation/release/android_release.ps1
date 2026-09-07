@@ -4,6 +4,8 @@ param(
   [Parameter(Mandatory, ParameterSetName='Build')][switch]$Build,
   [Parameter(Mandatory, ParameterSetName='PlayCheck')][switch]$PlayCheck,
   [Parameter(Mandatory, ParameterSetName='Production')][switch]$UploadProduction,
+  [Parameter(Mandatory, ParameterSetName='Production')]
+  [ValidatePattern('^[0-9A-Fa-f]{64}$')]
   [string]$ExpectedUploadSha256,
   [string]$Confirmation
 )
@@ -113,6 +115,21 @@ if ($Build) {
 } elseif ($PlayCheck -or $UploadProduction) {
   Require-Command bundle
   if (-not $env:GOOGLE_PLAY_JSON_KEY) { throw 'BLOCKED: GOOGLE_PLAY_JSON_KEY is not set to a least-privilege credential outside Git' }
+  if ($UploadProduction) {
+    $uploadPath = if ($env:PLAY_AAB_PATH) {
+      (Resolve-Path -LiteralPath $env:PLAY_AAB_PATH).Path
+    } else {
+      (Resolve-Path -LiteralPath (Join-Path $root 'build/app/outputs/bundle/release/app-release.aab')).Path
+    }
+    $expectedHash = $ExpectedUploadSha256.ToLowerInvariant()
+    $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $uploadPath).Hash.ToLowerInvariant()
+    if ($actualHash -ne $expectedHash) {
+      throw "Refusing AAB SHA-256 $actualHash; expected authorized hash $expectedHash"
+    }
+    # Fastlane must consume the exact file whose hash was authorized above.
+    $env:PLAY_AAB_PATH = $uploadPath
+    Write-Host "Authorized AAB SHA-256: $actualHash"
+  }
   Push-Location automation/release/fastlane
   try {
     if ($PlayCheck) {
