@@ -104,7 +104,9 @@ node -e '
 
 EXPECTED_TREE="$TMP_ROOT/expected"
 mkdir -p "$EXPECTED_TREE"
-git archive "$BASE_MAIN_SHA" | tar -x -C "$EXPECTED_TREE"
+# Keep the replay byte-identical to repository blobs even when Git for Windows
+# has core.autocrlf=true. Generated-file checks are intentionally byte-exact.
+git -c core.autocrlf=false archive "$BASE_MAIN_SHA" | tar -x -C "$EXPECTED_TREE"
 
 while IFS= read -r -d '' path; do
   if [[ "$path" == "$METADATA_PATH" ]]; then
@@ -119,8 +121,8 @@ while IFS= read -r -d '' path; do
   }
   target="$EXPECTED_TREE/$path"
   if git cat-file -e "${PROD_TIP}:${path}" 2>/dev/null; then
-    mkdir -p "$(dirname "$target")"
-    git show "${PROD_TIP}:${path}" > "$target"
+    git -c core.autocrlf=false archive "$PROD_TIP" -- "$path" |
+      tar -x -C "$EXPECTED_TREE"
   else
     rm -f "$target"
   fi
