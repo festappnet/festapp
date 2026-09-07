@@ -75,3 +75,22 @@ test('production upload remains a separately confirmed binary-only lane', () => 
   assert.match(lane, /skip_upload_images: true/);
   assert.match(lane, /skip_upload_screenshots: true/);
 });
+
+test('production wrapper enforces the authorized AAB hash on the Fastlane input', () => {
+  const wrapper = fs.readFileSync(
+    path.join(root, 'automation/release/android_release.ps1'),
+    'utf8',
+  );
+
+  assert.match(
+    wrapper,
+    /\[Parameter\(Mandatory, ParameterSetName='Production'\)\][\s\S]*?\$ExpectedUploadSha256/,
+  );
+  assert.match(wrapper, /Get-FileHash -Algorithm SHA256 -LiteralPath \$uploadPath/);
+  assert.match(wrapper, /\$actualHash -ne \$expectedHash/);
+  assert.match(wrapper, /\$env:PLAY_AAB_PATH = \$uploadPath/);
+  assert.match(
+    wrapper,
+    /Authorized AAB SHA-256[\s\S]*?bundle exec fastlane android play_production/,
+  );
+});
