@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "csmostrava2026",
-  "baseMainSha": "4112e855a6f2156ab4ba49438bffd89ddb745472",
+  "baseMainSha": "88249a868016be4187da784028cb087c6e21ec3d",
   "release": {
     "version": "0.20.1+485",
     "note": "Canonical legacy icon rendering"
