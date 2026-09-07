@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "doobiscup",
-  "baseMainSha": "e1bf889a3747ae6e2ca8867f5c54e95984cf60b0",
+  "baseMainSha": "4112e855a6f2156ab4ba49438bffd89ddb745472",
   "release": {
     "version": "0.20.1+485",
     "note": "Canonical legacy icon rendering"
