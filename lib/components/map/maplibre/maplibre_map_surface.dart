@@ -17,10 +17,14 @@ import 'package:fstapp/services/app_logger.dart';
 class MapLibreMapSurface extends StatefulWidget {
   final String style;
   final MapSurfaceModel model;
+  final VoidCallback? onStyleLoadTimeout;
+  final VoidCallback? onStyleLoadSuccess;
 
   const MapLibreMapSurface({
     required this.style,
     required this.model,
+    this.onStyleLoadTimeout,
+    this.onStyleLoadSuccess,
     super.key,
   });
 
@@ -91,6 +95,7 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
   Future<void> _onStyleLoaded(ml.StyleController style) async {
     if (!mounted || !identical(_controller?.style, style)) return;
     _styleLoadWatchdog.cancel();
+    widget.onStyleLoadSuccess?.call();
     await completeMapLibreStyleLoad(
       // The native style is already usable. Optional marker registration must
       // never leave the whole map hidden behind an infinite loading overlay.
@@ -123,10 +128,12 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
   void _armStyleLoadWatchdog() {
     if (!mounted || _controller == null || _isStyleReady) return;
     _styleLoadWatchdog.arm(
-      onTimeout: () => AppLogger.warning(
-        'MapLibre style callback timed out; revealing the native map surface.',
-      ),
-      revealBaseMap: _revealBaseMap,
+      onTimeout: () {
+        AppLogger.warning(
+          'MapLibre style callback timed out; requesting offline bundle recovery.',
+        );
+        widget.onStyleLoadTimeout?.call();
+      },
     );
   }
 
