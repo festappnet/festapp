@@ -20,13 +20,15 @@ Function, cron, callback, worker or operator can write to them.
 
 ## Fixed point
 
-- Published cutover tooling: `main` / `01e4a7d1d9304d805b8ff153e67e07f59b3b4bdc`
+- Published cutover tooling: `main` / `c47f5dd81d306e466c71e7a27cb4cfff1a7fb3d6`
 - Runtime bundle: Supabase `self-hosted/v0.8.0`, PostgreSQL `17.6.1.136`, Terraform `1.16.1`
 - Last verified production state: all seven active iOS identities serve `0.19.95`; six authorized Android identities serve `0.20.1 (485)` at full rollout. `fstapp.fstapp` is excluded.
 
 ## Completed actions
 
-- Two complete three-source merge rehearsals, Auth/Storage canaries and clean restore drill passed with RPO 0 and measured RTO 790 seconds.
+- Two complete three-source merge rehearsals passed. The refreshed encrypted
+  three-source backup and isolated restore drill passed on 2026-09-08 with RPO
+  0 and measured RTO 308 seconds.
 - Three-target SQL parity was closed on 2026-08-29. The later
   `20260831220000_reconcile_invitation_delivery_status.sql` migration was
   rechecked on 2026-09-05: both canonical cloud targets contain its ledger row,
@@ -84,19 +86,19 @@ Function, cron, callback, worker or operator can write to them.
 
 ## Next action
 
-Collect fresh Android/iOS adoption evidence where the store accounts expose it,
-then close every residual mobile lane as adopted, technically read-only during
-the freeze, or retired. A passing operational-readiness decision can only be
-produced for the exact final target inside the maintenance window.
+Approve the single-node recovery disposition and name a maintenance window,
+owner and on-call. Every residual mobile lane already has an adoption-or-freeze
+read-only disposition. A passing operational-readiness decision can only be
+produced for the exact final target inside that maintenance window.
 
 ## Remaining order
 
-1. Collect adoption evidence for the six live Android transition releases and
-   close `fstapp.fstapp` separately as technically read-only or retired; do not
-   publish it.
-2. Close every iOS lane at cutover as adopted or technically read-only with
-   fresh evidence; current App Store versions are live, but older-version
-   telemetry is not a durable waiver.
+1. Record authoritative Android/iOS adoption evidence where available; all
+   other mobile lanes become technically read-only for the complete freeze.
+   `fstapp.fstapp` remains excluded and technically read-only.
+2. Approve `single-node-recovery` with measured RTO 308 seconds or provision a
+   separately designed replica, then name the maintenance owner/on-call and a
+   window of at least 60 minutes.
 3. Confirm the live AWS SNS subscription and callback, install the prepared
    notification token in the final target Vault, and exercise payment/bank,
    Edge Function, cron, worker and manual-credential canaries.
@@ -112,15 +114,15 @@ produced for the exact final target inside the maintenance window.
 
 ## Current blocker
 
-The authorized Android publication gate is complete. Mobile disposition remains
-open only for fresh Android/iOS adoption evidence (or the technically read-only
-source freeze) and the separate retirement/read-only decision for
-`fstapp.fstapp`. Final canonical publisher scope IDs cannot be fixed
-until the fresh production merge mapping exists. Repository readiness is
-not yet publishable because five active tenant refs do not contain current
-`origin/main`, and the staged six-Worker inventory/guard/keepalive evidence has
-not been committed. Installed runtime tooling, provider input preparation, scheduled
-independent backup and off-host monitoring/logging are closed. Operational
+The authorized Android publication gate is complete. Every residual mobile lane
+has a selected fail-closed disposition: authoritative adoption when available,
+otherwise technically read-only through the source freeze; `fstapp.fstapp`
+remains excluded from Play and uses the read-only disposition. The fresh freeze
+receipt remains a window gate. Final canonical publisher scope IDs cannot be fixed
+until the fresh production merge mapping exists. Repository readiness is closed:
+`main` `c47f5dd81` and all 11 active tenant refs passed the canonical drift gate;
+the clean remote preflight is blocker-free. Installed runtime tooling, provider
+input preparation, scheduled independent backup and off-host monitoring/logging are closed. Operational
 readiness still requires fresh AWS SNS/Vault/provider canaries and the evidence
 that can only be produced during the maintenance window.
 The current runtime is also a single-node topology; production requires an
@@ -130,17 +132,17 @@ explicit acceptance of the measured restore-based RTO or a replicated design.
 
 | Gate | Current evidence | State |
 | --- | --- | --- |
-| Repository and tenant overlays | clean `origin/main` preflight has 148 writers and zero unknowns, but `prod/aksmcz`, `prod/farnostopava`, `prod/festapp`, `prod/festapptickets` and `prod/jubileum2025` are behind it; staged policy expands the explicit Worker inventory to six | integrate current changes, then advance all 11 active overlays sequentially |
-| Host baseline | NTP synchronized; 12/12 reported containers healthy; about 19.4 GB free; direct origin timed out outside Cloudflare | pass |
+| Repository and tenant overlays | `main` `c47f5dd81` is published; all 11 active overlays contain it and passed canonical drift; clean remote preflight returns `repository_ready=true`, no blockers, report SHA-256 `a228b610eb42c8ae9be55aead3c58f4a979b31931630652f87bea077791de22d` | pass |
+| Host baseline | NTP synchronized; 12/12 containers running, zero unhealthy; 10,522,382,336 bytes free against a 2,416,741,010-byte measured peak; zero OOM events in 24 hours; direct origin is blocked outside Cloudflare | pass |
 | DNS/TLS | `api.festapp.net` and rehearsal origin use 300-second TTL; certificate remains valid through 2026-11-13 | pass now; recheck in window |
 | Installed runtime contract | current promotion/compose tooling and reviewed Function bundle staged without restart or write activation | pass now; refresh after final repository head |
-| Runtime provider inputs | pre-activation Function guard and legacy retention keepalive are deployed; exact SNS ARN and generated notification token are present; final Vault write and live callbacks require the final target | guard/retention pass; final-target activation is window-only |
-| Recovery failure domain | encrypted daily R2 backup passed with current restricted credential; the full isolated-restore receipt must be refreshed because the rehearsal proof exceeded the validator's seven-day maximum | refresh before/window; promotion RPO-0 backup remains a window gate |
-| Observability | hourly encrypted off-host logs, five-minute external probes and failure/recovery email delivery are verified | pass now; recheck in window |
+| Runtime provider inputs | pre-activation Function guard and legacy retention keepalive are deployed; exact SNS ARN, SMTP inputs and generated notification token are present in the root-only host env; Vault is installed on both databases; the final target-bound Vault write and live callbacks require the final target | pre-window inputs pass; final-target activation is window-only |
+| Recovery failure domain | encrypted complete three-source backup `20260908T042903Z` passed with manifest SHA-256 `280b8ff00aac9490bddef1650712c30dc1dccdd31a6b10d86cd49607b7c6dae5`; isolated restore SHA-256 `bc3340bc3f9335ec03c298927d8d5f25dca6e84038182fa1f861030f30033dcb`, RPO 0, RTO 308 seconds | pass for seven days; exact final-target promotion backup/restore remains window-only |
+| Observability | daily encrypted backup and hourly encrypted log timers are enabled and active; latest runs succeeded; five-minute Cloudflare monitor version `74d72d78-bc29-40b7-9bf3-52a168dc264e` has a Healthchecks secret and fresh external Auth/REST/Storage probes; direct Realtime WebSocket probes returned `101` on both origins | pass now; refresh integration/alert receipts in window |
 | Availability | one CAX11 node; no replica/failover target | decision required |
-| Client adoption | six Android `0.20.1 (485)` full rollouts and soft prompts are live; all seven Apple releases are live; 11 web transition deployments are live in pinned legacy phase | release pass for six Android lanes; adoption/read-only/retirement disposition and phase canaries remain |
+| Client adoption | six Android `0.20.1 (485)` full rollouts and soft prompts are live; all seven Apple releases are live; 11 web transition deployments are live in pinned legacy phase; every residual mobile lane has an adoption-or-source-freeze read-only disposition and `fstapp.fstapp` remains excluded | disposition pass; fresh freeze and phase-canary receipts remain window-only |
 | External writers | legacy retirements are closed; provider callbacks, workers, cron and manual credentials lack final live freeze evidence | blocked |
-| SQL parity | `default` and `a` both contain migrations `20260906120000`, `20260906130000`, `20260906140000` with identical final function definitions, ACL and `search_path` | self-hosted catalog readback pending because operator SSH timed out; public runtime remains healthy |
+| SQL parity | `default`, `a` and self-hosted contain migrations `20260906120000`, `20260906130000`, `20260906140000`; self-hosted helper SHA `281821babff4fc837c5747f0aeca7d24` and reset SHA `347b86e44782965df0a3ef3cd3b077cc` have the required ACL and `public, extensions` search path | pass |
 
 Passing rows are observations, not durable waivers. The 30-minute operational
 gate must re-evaluate all volatile checks immediately before the freeze.
@@ -197,8 +199,13 @@ gate must re-evaluate all volatile checks immediately before the freeze.
 | 2026-09-08 | Android transition publication | guarded Windows release channel and independent Play readback | six authorized packages serve `0.20.1 (485)` in production at full rollout; `fstapp.fstapp` untouched |
 | 2026-09-08 | Android update prompt | optimistic source-organization updates plus immediate semantic readback | all six matching `droid` entries advertise `0.20.1`; links and all other organization data preserved; prompt is dismissible, not a hard gate |
 | 2026-09-08 | Web activation refresh | public readback of all 11 active `backend-activation.json` documents | 11/11 return `backend=legacy`, `generation=0`, matching tenant ID and `no-store, max-age=0` |
-| 2026-09-08 | Post-September SQL parity | management catalog on `default` and `a` | all three 6 September migrations and final scan-reset function contract match; self-hosted readback blocked by SSH timeout |
+| 2026-09-08 | Post-September cloud SQL parity | management catalog on `default` and `a` | all three 6 September migrations and final scan-reset function contract match; later same-day self-hosted readback is recorded below |
 | 2026-09-08 | Canonical Function guard | Cloudflare deploy plus four public Function and three unaffected-service probes | guard version `e48e70db-3d19-4eed-8ee4-60b4f5c7f541`; Function routes fail closed with `503`; Auth/REST/Storage unchanged |
 | 2026-09-08 | Legacy retention keepalive | direct source probes, Worker tests and Cloudflare deploy | three source GETs pass; daily read-only cron version `f8ba3e28-2eb9-4cb7-81ea-e4992ca16467`; no public route |
 | 2026-09-08 | Worker toolchain refresh | npm install/audit and both Worker unit suites | Wrangler `4.129.1`; zero vulnerabilities; monitor 3/3 and keepalive 5/5 tests pass |
 | 2026-09-08 | Full pre-window release verification | `./automation/test_all.sh` | exit `0`; web, Flutter, Deno and automation suites pass, including 95/95 canonical storage/recovery contract tests; database integration tests skipped because local database endpoints were not supplied |
+| 2026-09-08 | Repository and tenant rollout closure | `main` `c47f5dd81`, 11 sequential tenant drift gates and clean remote preflight | all 11 active overlays contain the final main; `repository_ready=true`, no blockers, report SHA-256 `a228b610eb42c8ae9be55aead3c58f4a979b31931630652f87bea077791de22d`; obsolete local rollout worktrees/branches removed |
+| 2026-09-08 | Self-hosted SQL parity | temporary restricted SSH access plus exact catalog readback | all three September migrations applied transactionally; final helper/reset definitions, ACL and search paths match the canonical contract |
+| 2026-09-08 | Complete recovery drill | encrypted backup `20260908T042903Z` plus isolated no-network restore | three-source inventory, 9,648 Auth users, 1,453 Storage objects and 792 scopes reproduced exactly; RPO 0, RTO 308 seconds; production target/clouds unmodified |
+| 2026-09-08 | Host/observability refresh | systemd, R2 monitor receipt, external probes, TLS and Hetzner firewall readback | backup/log timers and latest runs pass; Auth/REST/Storage/Realtime pass on both origins; TLS valid through 2026-11-13; ports 80/443 are Cloudflare-only |
+| 2026-09-08 | Temporary SSH closure | Hetzner firewall UI readback | temporary operator `/32` removed after host work; original restricted administrator source retained; firewall fully applied |
