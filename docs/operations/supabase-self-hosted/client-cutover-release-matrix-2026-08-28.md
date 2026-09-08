@@ -1,4 +1,4 @@
-# Client cutover release matrix — updated 2026-09-02
+# Client cutover release matrix — updated 2026-09-08
 
 This is the authoritative client scope for the canonical Supabase cutover. It
 defines release lanes, not historic binaries: each active mobile identity needs
@@ -15,15 +15,15 @@ repository and must not be copied here.
 
 | Product / production refs | iOS bundle / observed lower bound | Android package / observed lower bound | Required disposition |
 | --- | --- | --- | --- |
-| Festapp (`prod/festapp`, `prod/festapptickets`) | `festapp.festapp` / `0.19.95 (478)` live | `fstapp.fstapp` / `>388` | Publish/prove the canonical transition release on Android. Resolve the duplicate web deployment owner separately. |
-| CSM (`prod/csmostrava2026`) | `festapp.jm2025` / `0.19.95 (467)` ready for sale | `fstapp.jm2025` / `>450` | Apple release is live; complete Android release and adoption proof. The historical Jubilee ref remains web-only. |
-| Hvězda Mořská (`prod/hvezdamorska`) | `festapp.hvezdamorska` / `0.19.95 (468)` live | `fstapp.hvezdamorska` / `>451` | Complete Android release, then prove adoption. |
-| Festival Slunovrat (`prod/festivalslunovrat`, `prod/slunovratopava`) | `festapp.festivalslunovrat` / `0.19.95 (479)` live | `fstapp.slunovratopava` / production `479` | Android needs a code strictly above `479` and remains deferred to the independent Windows workstation. |
-| Absolventský Velehrad (`prod/absolventskyvelehrad`) | `festapp.absolventskyvelehrad` / `0.19.95 (468)` live | `fstapp.AV25` / `>243` | Complete Android release and physical-device/adoption proof. |
-| Člověk a víra (`prod/cavfotofest`) | `festapp.cavfotofest` / `0.19.95 (466)` live | `fstapp.cav` / `>243` | Complete Android release and physical-device/adoption proof. |
-| Do O BiS Cup (`prod/doobiscup`) | `festapp.doobiscup` / `0.19.95 (473)` live | `fstapp.diecezkodoo` / `>243` | Complete Android release and physical-device/adoption proof. |
+| Festapp (`prod/festapp`, `prod/festapptickets`) | `festapp.festapp` / `0.19.95 (478)` live | `fstapp.fstapp` / `>388` | Android publication is explicitly excluded; close this identity as technically read-only or retired. Resolve the duplicate web deployment owner separately. |
+| CSM (`prod/csmostrava2026`) | `festapp.jm2025` / `0.19.95 (467)` live | `fstapp.jm2025` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; collect adoption or close the lane as technically read-only during the freeze. The historical Jubilee ref remains web-only. |
+| Hvězda Mořská (`prod/hvezdamorska`) | `festapp.hvezdamorska` / `0.19.95 (468)` live | `fstapp.hvezdamorska` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; adoption/read-only evidence remains. |
+| Festival Slunovrat (`prod/festivalslunovrat`, `prod/slunovratopava`) | `festapp.festivalslunovrat` / `0.19.95 (479)` live | `fstapp.slunovratopava` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; adoption/read-only evidence remains. |
+| Absolventský Velehrad (`prod/absolventskyvelehrad`) | `festapp.absolventskyvelehrad` / `0.19.95 (468)` live | `fstapp.AV25` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device and adoption/read-only evidence remain. |
+| Člověk a víra (`prod/cavfotofest`) | `festapp.cavfotofest` / `0.19.95 (466)` live | `fstapp.cav` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device and adoption/read-only evidence remain. |
+| Do O BiS Cup (`prod/doobiscup`) | `festapp.doobiscup` / `0.19.95 (473)` live | `fstapp.diecezkodoo` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device and adoption/read-only evidence remain. |
 | Celostátní setkání animátorů / CSA 2024 (`prod/aksmcz`) | listed historical version only; no new release | public listing 404; no new release | Web-only `0.19.93+475` is live at `csa2024.festapp.net`, without OneSignal; old Netlify redirects path/query. Canonical organization is `4`. App Store removal from sale remains a separate store operation. |
-| Farnost Opava (`prod/farnostopava`) | shared historical IDs; no new lane | shared historical IDs; no new lane | Proven web-only at `0.19.93+474`, with no OneSignal and no iOS/Android release. Cloudflare bundle is ready; the identical Netlify hybrid remains public only until the external WEDOS owner changes CNAME `rezervace` to `farnostopava.pages.dev`. |
+| Farnost Opava (`prod/farnostopava`) | shared historical IDs; no new lane | shared historical IDs; no new lane | Proven web-only at `farnostopava.festapp.net`, with no OneSignal and no iOS/Android release. `rezervace.farnostopava.cz` is now a path/query-preserving retirement redirect; no WEDOS handoff remains. |
 | AVApp (`prod/avapp`) | `festapp.festapp` / `>45` (collides with current Festapp identity) | `vkhcr.avapp` / `>45` | Old backend hostname is dead and the modern AV tenant is already canonical. Retire/read back the old Android listing; never create a second iOS upload under the Festapp identity. |
 | TicketOnline (`prod/ticketonline`) | `festapp.aksmcz` / `>236` (shared legacy identity) | `fstapp.fstapp` / `>236` (shared Festapp identity) | The singular `vstupenka.online` client is the same default organization `3` as canonical `vstupenky.online`; retire it as a path/query-preserving compatibility alias, with no new mobile build. |
 
@@ -37,6 +37,18 @@ success on one platform never closes the other. We do not republish every old
 version. We publish one compatible transition version per active identity and
 prove that an older cloud-writing version cannot remain an accepted writer at
 cutover.
+
+### Android transition release evidence — 2026-09-08
+
+The six authorized Android identities above were independently read back from
+Google Play production at version `0.20.1 (485)` with release status
+`completed` (full rollout). Their source organizations now advertise `0.20.1`
+through the existing `PLATFORMS.droid.prompt` and retain their matching Play
+Store links. This is a dismissible in-app update prompt, not a hard minimum
+version gate; it therefore improves migration pressure but does not by itself
+prove that older writers are absent. Store adoption telemetry or the
+technically enforced maintenance freeze must close that remaining condition.
+`fstapp.fstapp` was excluded from the release and prompt changes.
 
 Each mobile row closes only when its private evidence records all of:
 
@@ -60,129 +72,37 @@ accounts may require ordinary reauthentication.
 
 ## Web deployment lanes
 
-The following production refs have an identified generated configuration and
-must be regenerated from the shared transition source, deployed atomically and
-verified by completed-bundle inspection:
+All 11 active production refs were regenerated from current `main` and deployed
+successfully on 2026-09-04. Their public activation documents return `200`,
+`Cache-Control: no-store, max-age=0`, `backend=legacy` and `generation=0`.
+Every bundle therefore remains on its current cloud source while carrying one
+pinned canonical `api.festapp.net` profile for the final atomic activation.
 
-| Production ref | Public site | Source family |
+| Production ref | Public site | Source organization → canonical organization |
 | --- | --- | --- |
-| `prod/absolventskyvelehrad` | `app.absolventskyvelehrad.cz` | `a` |
-| `prod/cavfotofest` | `clovekavira.festapp.net` | `a`, organization `3→6` |
-| `prod/csmostrava2026` | `csmostrava.festapp.net` | `a`, organization `9→12` |
-| `prod/doobiscup` | `biscup.festapp.net` | `a`, organization `2→5` |
-| `prod/farnostopava` | `rezervace.farnostopava.cz` | `a` |
-| `prod/festapp` | `live.festapp.net` | `default` |
-| `prod/festapptickets` | `vstupenky.online` | `default`; canonical ticket-web deployment owner |
-| `prod/hvezdamorska` | `hvezdamorska.festapp.net` | `a`, organization `4→7` |
-| `prod/jubileum2025` | `jubileum2025.festapp.net` | `a`, organization `6→9`; web-only, with no iOS/Android release |
-| `prod/aksmcz` | `csa2024.festapp.net` | `a`, organization `1→4`; web-only, with no OneSignal or mobile release |
+| `prod/absolventskyvelehrad` | `app.absolventskyvelehrad.cz` | `a`: `5→8` |
+| `prod/aksmcz` | `csa2024.festapp.net` | `a`: `1→4`; web-only |
+| `prod/cavfotofest` | `clovekavira.festapp.net` | `a`: `3→6` |
+| `prod/csmostrava2026` | `csmostrava.festapp.net` | `a`: `9→12` |
+| `prod/doobiscup` | `biscup.festapp.net` | `a`: `2→5` |
+| `prod/farnostopava` | `farnostopava.festapp.net` | `a`: `8→11`; web-only |
+| `prod/festapp` | `live.festapp.net` | `default`: `1→1` |
+| `prod/festapptickets` | `vstupenky.online` | `default`: `3→3`; canonical ticket-web owner |
+| `prod/festivalslunovrat` | `slunovrat.festapp.net` | `slunovrat`: `1→19` |
+| `prod/hvezdamorska` | `hvezdamorska.festapp.net` | `a`: `4→7` |
+| `prod/jubileum2025` | `jubileum2025.festapp.net` | `a`: `6→9`; web-only |
 
-Three retired/duplicate legacy refs currently lack `automation/project.conf`:
-`prod/avapp`, `prod/slunovratopava`, and `prod/ticketonline`.
-Each must receive exactly one documented disposition before cutover: restore a
-canonical tenant overlay and deploy it, enforce read-only behavior, or prove
-from hosting/DNS/traffic/write telemetry that it is retired. Branch age is not
-retirement evidence.
+The three refs without `automation/project.conf` are closed, not pending:
+`prod/avapp` has a dead historical backend and removed Play listing;
+`prod/slunovratopava` redirects to the canonical Slunovrat owner; and
+`prod/ticketonline` redirects path/query to `vstupenky.online`. Farnost's former
+WEDOS-hosted application URL now redirects path/query to
+`farnostopava.festapp.net`, so a CNAME handoff is no longer required.
 
-The active Cloudflare web lanes use Flutter `3.47.2` and semantic version
-`0.19.93`. The current ticket web uses build `476` and `live.festapp.net` uses
-build `477`; other deployed tenant builds retain their independently monotonic
-build numbers. Build numbers are monotonic within each
-release lane and are not expected to be identical across unrelated store/web
-identities. The three source-a web overlays remain deliberately in `legacy`
-activation phase while carrying their mapped canonical organization and
-`api.festapp.net` configuration, so the final activation document can switch
-them after the full-freeze gate without rebuilding the bundle. Festapp `477`
-now carries the equivalent source-default transition profile for canonical
-organization `1`, while its public activation document remains in `legacy`.
-
-Jubilee is now deployed independently as web-only build `0.19.93+473` at
-`jubileum2025.festapp.net`, from overlay `77093978881186b9d25cedd88a5a355e05a60d36`.
-Its released bundle has no OneSignal configuration and creates no mobile/store
-lane. The historical dashboard naming/state was corrected without changing the
-active CSM client identity; tenant-specific provider evidence is retained in
-the private release repository. Its old Netlify origin is a pure
-301 compatibility surface, except for retirement worker responses that remove
-historical PWA/push registrations. The remaining Jubilee gate is therefore
-only the shared freeze, delta import, activation and retained-session/write
-canary.
-
-Farnost Opava is deployed as web-only build `0.19.93+474` from overlay
-`ea5e608410a84d24bb4bf7120347b24304243e05`. It starts on source-`a`
-organization `8`, pins canonical organization `11`, preserves the legacy Auth
-storage namespace, and intentionally has no OneSignal IDs. Cloudflare origin
-verification and public Netlify-hybrid browser QA pass. The application lane is
-complete; only the external WEDOS CNAME handoff remains before Cloudflare owns
-the public hostname and Netlify can become a redirect-only compatibility edge.
-
-The Festapp `477` production smoke passes the canonical root-to-program
-redirect, both legacy `get_events` reads, a program detail with its full HTML
-description, detail back-navigation to `/conference2024/event`, the public
-login route and the Flutter admin route. `backend-activation.json` is served as
-JSON with `no-store, max-age=0`; internal application links and the iOS
-associated-domain input now use `live.festapp.net`, not the separate
-`vstupenky.online` tenant. The stable legacy Auth storage namespace is retained,
-so installing this transition web build does not itself sign users out.
-
-Festival Slunovrat now has a canonical version-93 overlay on
-`prod/festivalslunovrat`, a successful Cloudflare candidate at
-`festivalslunovrat.pages.dev`, complete canonical client RPC/Edge/relation
-coverage, a published 28.4 MiB immutable offline-map v2 bundle and a signed,
-non-uploaded iOS build-only candidate whose production push/app-group/domain
-entitlements passed. Its custom domain, physical-device/native offline
-acceptance, Android Windows build and backend activation remain gated. The historic
-`prod/slunovratopava` ref is not a second release source. Its path/query-
-preserving redirect, retirement workers and shared canonical Android identity
-close its retirement disposition without another build.
-
-Absolventsky Velehrad now has a canonical version-93 overlay on
-`prod/absolventskyvelehrad` and production web build `0.19.93+467` at
-`app.absolventskyvelehrad.cz`. Its cold-load production smoke reached the
-program route with no browser console errors, initialized OneSignal, and served
-the legacy-phase activation document as JSON with `no-store`. Apple Developer
-now assigns the existing `group.festapp.festapp.onesignal` group to both the
-main bundle and notification extension. A signed, non-uploaded iOS candidate
-from source `73e3706d390d7291c557cb8b0b8c56feec311068` passed production push,
-shared app-group, associated-domain, extension-identity and prohibited-location-
-framework checks. Physical-device/native acceptance, the App Store release and
-the Android Windows build remain gated; the informational root
-`absolventskyvelehrad.cz` remains separate from the app subdomain.
-
-Clovek a vira now has a canonical version-93 overlay on `prod/cavfotofest`
-and production web build `0.19.93+465` at `clovekavira.festapp.net`. Apple
-Developer App Group assignments were reduced from three historical groups to
-the single tenant group `group.festapp.cavfotofest`, and the notification
-extension was assigned that same group. Regenerated profiles and a signed,
-non-uploaded iOS candidate from source
-`c10a33dfd0f1e147be6e8674942b4b2d65df0754` passed production push, app-group,
-associated-domain, extension-identity and prohibited-location-framework checks.
-Physical-device/native acceptance, App Store release and Android Windows build
-remain gated.
-
-BISCUP now has a canonical version-93 overlay on `prod/doobiscup` and
-production web build `0.19.93+472` at `biscup.festapp.net`. The old
-`biscup.netlify.app` origin preserves deep paths through HTTP 301 and retains
-only the retirement/PWA compatibility workers. OneSignal's saved web origin was
-changed to the canonical domain; a fresh browser session then initialized it
-without an origin error. Apple Developer now assigns only
-`group.vkhcr.doobiscup.onesignal` to both bundle IDs, and the regenerated
-profiles produced a signed, non-uploaded iOS candidate from source
-`72d5a399272b7ac2dcdada1f298a9d486a0d779e`. Direct IPA inspection passed
-production push, app-group, associated-domain, extension-identity and
-prohibited-location-framework checks. Physical-device/native acceptance, App
-Store release and Android Windows build remain gated.
-
-The Hvezda Morska `466` production smoke passes the all-unit catalogue root,
-occasion detail, reservation handoff to `/form/povyseni2026`, and the Flutter
-`/admin` handoff. The provider's saved web origin is canonical; its exact
-dashboard receipt is retained only in the private release repository. A cold
-production check completed OneSignal initialization without an origin error,
-and the custom
-`/push/OneSignalSDKWorker.js` returned JavaScript. The old Netlify root and a
-deep `/form/rijnovapout26` URL both return HTTP 301 to the same path on the new
-origin. This closes the Hvezda web-push origin gate. Browser subscriptions
-cannot be transferred between origins, so users must opt in on the new origin;
-that expected re-subscription does not require another bundle build.
+The web preparation lane is complete. During the maintenance window every site
+still needs a fresh legacy freeze observation followed by canonical activation,
+full reload, refresh/reauth, rights and idempotent-write canaries. A successful
+deployment is not itself canonical activation evidence.
 
 Each web row requires source SHA, generated config digest, deployed bundle
 digest, public activation document with `no-store`, cold-load legacy and
@@ -207,6 +127,6 @@ The cutover gate passes only when every lane is one of:
 3. proven unreachable/retired using deployment, DNS and write telemetry.
 
 “Uploaded”, “approved”, “probably unused” and “works on one platform” are not
-closed states. Android compilation/signing evidence is completed later through
-the approved Windows build workstation; all source, manifest and preflight
-inputs must be fixed before that command is sent.
+closed states. The six authorized Android transition releases have completed
+their build/signing/publication gate; their remaining gate is fresh adoption or
+technically enforced read-only evidence plus both cutover-phase canaries.
