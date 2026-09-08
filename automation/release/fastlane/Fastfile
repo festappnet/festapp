@@ -4,6 +4,8 @@ require 'fileutils'
 require 'digest'
 require 'open3'
 require 'tmpdir'
+require 'google/apis/androidpublisher_v3'
+require 'googleauth'
 
 default_platform(:ios)
 skip_docs
@@ -63,13 +65,25 @@ def expected_apple_screenshot_counts
 end
 
 def relevant_play_version_codes
-  %w[internal alpha beta production].to_h do |track|
-    codes = google_play_track_version_codes(
-      package_name: PLAY_PACKAGE,
-      track: track,
-      json_key: play_key_path!
-    ).map(&:to_i)
-    [track, codes]
+  service = Google::Apis::AndroidpublisherV3::AndroidPublisherService.new
+  service.authorization = File.open(play_key_path!) do |credential|
+    Google::Auth::ServiceAccountCredentials.make_creds(
+      json_key_io: credential,
+      scope: 'https://www.googleapis.com/auth/androidpublisher'
+    )
+  end
+
+  edit = service.insert_edit(PLAY_PACKAGE)
+  begin
+    %w[internal alpha beta production].to_h do |track|
+      result = service.get_edit_track(PLAY_PACKAGE, edit.id, track)
+      codes = Array(result.releases).flat_map do |release|
+        Array(release.version_codes)
+      end.map(&:to_i).uniq.sort
+      [track, codes]
+    end
+  ensure
+    service.delete_edit(PLAY_PACKAGE, edit.id) if edit&.id
   end
 end
 
@@ -198,6 +212,8 @@ def canonical_age_rating_attributes
     profanity_or_crude_humor: age.fetch('profanityOrCrudeHumor'),
     sexual_content_graphic_and_nudity: age.fetch('sexualContentGraphicAndNudity'),
     sexual_content_or_nudity: age.fetch('sexualContentOrNudity'),
+    social_media: age.fetch('socialMedia'),
+    social_media_age_restricted: age.fetch('socialMediaDisabledForUsersUnder13'),
     unrestricted_web_access: age.fetch('unrestrictedWebAccess'),
     user_generated_content: age.fetch('userGeneratedContent'),
     violence_cartoon_or_fantasy: age.fetch('violenceCartoonOrFantasy'),
