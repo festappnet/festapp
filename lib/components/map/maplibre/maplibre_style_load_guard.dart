@@ -11,14 +11,12 @@ class MapLibreStyleLoadWatchdog {
   Timer? _timer;
 
   void arm({
-    required void Function() revealBaseMap,
     required void Function() onTimeout,
   }) {
     cancel();
     _timer = Timer(timeout, () {
       _timer = null;
       onTimeout();
-      revealBaseMap();
     });
   }
 
@@ -28,6 +26,37 @@ class MapLibreStyleLoadWatchdog {
   }
 
   void dispose() => cancel();
+}
+
+enum MapLibreRecoveryDecision { refreshBundle, showFailure, ignore }
+
+/// Bounds automatic recovery so a broken native style can never produce an
+/// endless download/reload loop.
+class MapLibreStyleRecoveryCoordinator {
+  bool _recoveryInProgress = false;
+  bool _automaticRefreshAttempted = false;
+
+  MapLibreRecoveryDecision beginRecovery() {
+    if (_recoveryInProgress) return MapLibreRecoveryDecision.ignore;
+    if (_automaticRefreshAttempted) {
+      return MapLibreRecoveryDecision.showFailure;
+    }
+    _automaticRefreshAttempted = true;
+    _recoveryInProgress = true;
+    return MapLibreRecoveryDecision.refreshBundle;
+  }
+
+  void finishRecovery() => _recoveryInProgress = false;
+
+  void markStyleLoaded() {
+    _recoveryInProgress = false;
+    _automaticRefreshAttempted = false;
+  }
+
+  void resetForManualRetry() {
+    _recoveryInProgress = false;
+    _automaticRefreshAttempted = false;
+  }
 }
 
 /// Starts optional native setup without making style readiness depend on a
