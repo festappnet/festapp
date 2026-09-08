@@ -25,8 +25,19 @@ command -v jq >/dev/null || fail "jq is required"
 [[ "$(ssh -o BatchMode=yes "$SSH_TARGET" hostname -s)" == "$EXPECTED_HOSTNAME" ]] || fail "unexpected rehearsal host"
 
 readonly RUNTIME_DATABASE="$(ssh -o BatchMode=yes "$SSH_TARGET" "sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' '$COMPOSE_DIR/.env'")"
-[[ "$RUNTIME_DATABASE" == "$SOURCE_DATABASE" ]] ||
-  fail "active rehearsal runtime must target the backup database before write freeze"
+SOURCE_WAS_ACTIVE_RUNTIME=false
+if [[ "$RUNTIME_DATABASE" == "$SOURCE_DATABASE" ]]; then
+  SOURCE_WAS_ACTIVE_RUNTIME=true
+elif [[ "$SOURCE_DATABASE" =~ ^festapp_rehearsal_[0-9]{14}$ &&
+        "${FESTAPP_BACKUP_INACTIVE_TARGET_ACK:-}" == "backup-complete-inactive-rehearsal-target" ]]; then
+  # A completed timestamped rehearsal target may be recovery-tested without
+  # making it the public runtime. The shared writer stack is still stopped,
+  # and the zero-session plus before/after checks below remain mandatory.
+  SOURCE_WAS_ACTIVE_RUNTIME=false
+else
+  fail "backup database is not the active runtime; set the exact inactive-target acknowledgement only for a completed timestamped rehearsal target"
+fi
+readonly SOURCE_WAS_ACTIVE_RUNTIME
 
 thaw_runtime() {
   ssh -o BatchMode=yes "$SSH_TARGET" "cd '$COMPOSE_DIR' && docker compose up -d ${WRITER_SERVICES[*]} >/dev/null" || true
@@ -142,7 +153,8 @@ readonly UNHEALTHY_SERVICES="$(ssh -o BatchMode=yes "$SSH_TARGET" "cd '$COMPOSE_
 [[ "$UNHEALTHY_SERVICES" == "0" ]] || fail "runtime services did not recover after backup freeze"
 
 jq -n \
-  --arg runId "$RUN_ID" --arg sourceHost "$EXPECTED_HOSTNAME" --arg sourceDatabase "$SOURCE_DATABASE" --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg runId "$RUN_ID" --arg sourceHost "$EXPECTED_HOSTNAME" --arg sourceDatabase "$SOURCE_DATABASE" --arg runtimeDatabase "$RUNTIME_DATABASE" --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --argjson sourceWasActiveRuntime "$SOURCE_WAS_ACTIVE_RUNTIME" \
   --argjson database "$DB_JSON" --argjson storageFiles "$STORAGE_FILE_COUNT" --argjson storageBytes "$STORAGE_BYTES" \
   --arg storageTreeSha "$STORAGE_TREE_SHA256" \
   --arg roleSecuritySha "$ROLE_SECURITY_SHA256" --arg objectSecuritySha "$OBJECT_SECURITY_SHA256" \
@@ -153,6 +165,7 @@ jq -n \
   --arg storageSha "$(shasum -a 256 "$RUN_DIR/storage.tar.age" | awk '{print $1}')" \
   --arg runtimeSha "$(shasum -a 256 "$RUN_DIR/runtime.tar.age" | awk '{print $1}')" \
   '{version:3,run_id:$runId,created_at:$createdAt,source_host:$sourceHost,source_database:$sourceDatabase,
+    runtime_database:$runtimeDatabase,source_was_active_runtime:$sourceWasActiveRuntime,
     encrypted:true,plaintext_artifacts_written:false,cloud_sources_mutated:false,writes_frozen:true,
     consistency_check:"runtime-stopped-zero-client-sessions-and-before-after-state-stable",rpo_seconds:0,backup_duration_seconds:$durationSeconds,
     role_security_sha256:$roleSecuritySha,object_security_sha256:$objectSecuritySha,database:$database,
