@@ -15,13 +15,13 @@ repository and must not be copied here.
 
 | Product / production refs | iOS bundle / observed lower bound | Android package / observed lower bound | Required disposition |
 | --- | --- | --- | --- |
-| Festapp (`prod/festapp`, `prod/festapptickets`) | `festapp.festapp` / `0.19.95 (478)` live | `fstapp.fstapp` / `>388` | Android publication is explicitly excluded; close this identity as technically read-only or retired. Resolve the duplicate web deployment owner separately. |
-| CSM (`prod/csmostrava2026`) | `festapp.jm2025` / `0.19.95 (467)` live | `fstapp.jm2025` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; collect adoption or close the lane as technically read-only during the freeze. The historical Jubilee ref remains web-only. |
-| Hvězda Mořská (`prod/hvezdamorska`) | `festapp.hvezdamorska` / `0.19.95 (468)` live | `fstapp.hvezdamorska` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; adoption/read-only evidence remains. |
-| Festival Slunovrat (`prod/festivalslunovrat`, `prod/slunovratopava`) | `festapp.festivalslunovrat` / `0.19.95 (479)` live | `fstapp.slunovratopava` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; adoption/read-only evidence remains. |
-| Absolventský Velehrad (`prod/absolventskyvelehrad`) | `festapp.absolventskyvelehrad` / `0.19.95 (468)` live | `fstapp.AV25` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device and adoption/read-only evidence remain. |
-| Člověk a víra (`prod/cavfotofest`) | `festapp.cavfotofest` / `0.19.95 (466)` live | `fstapp.cav` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device and adoption/read-only evidence remain. |
-| Do O BiS Cup (`prod/doobiscup`) | `festapp.doobiscup` / `0.19.95 (473)` live | `fstapp.diecezkodoo` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device and adoption/read-only evidence remain. |
+| Festapp (`prod/festapp`, `prod/festapptickets`) | `festapp.festapp` / `0.19.95 (478)` live | `fstapp.fstapp` / `>388` | Android publication remains explicitly excluded. Selected disposition: technically read-only through the source freeze; no Play edit or replacement build. Resolve the duplicate web deployment owner separately. |
+| CSM (`prod/csmostrava2026`) | `festapp.jm2025` / `0.19.95 (467)` live | `fstapp.jm2025` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live. Use adoption when authoritative; otherwise technically read-only through the source freeze. The historical Jubilee ref remains web-only. |
+| Hvězda Mořská (`prod/hvezdamorska`) | `festapp.hvezdamorska` / `0.19.95 (468)` live | `fstapp.hvezdamorska` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; adoption or source-freeze read-only evidence closes the lane. |
+| Festival Slunovrat (`prod/festivalslunovrat`, `prod/slunovratopava`) | `festapp.festivalslunovrat` / `0.19.95 (479)` live | `fstapp.slunovratopava` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; adoption or source-freeze read-only evidence closes the lane. |
+| Absolventský Velehrad (`prod/absolventskyvelehrad`) | `festapp.absolventskyvelehrad` / `0.19.95 (468)` live | `fstapp.AV25` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device canary plus adoption or source-freeze read-only evidence remain. |
+| Člověk a víra (`prod/cavfotofest`) | `festapp.cavfotofest` / `0.19.95 (466)` live | `fstapp.cav` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device canary plus adoption or source-freeze read-only evidence remain. |
+| Do O BiS Cup (`prod/doobiscup`) | `festapp.doobiscup` / `0.19.95 (473)` live | `fstapp.diecezkodoo` / `0.20.1 (485)` live | Android full rollout and soft update prompt are live; physical-device canary plus adoption or source-freeze read-only evidence remain. |
 | Celostátní setkání animátorů / CSA 2024 (`prod/aksmcz`) | listed historical version only; no new release | public listing 404; no new release | Web-only `0.19.93+475` is live at `csa2024.festapp.net`, without OneSignal; old Netlify redirects path/query. Canonical organization is `4`. App Store removal from sale remains a separate store operation. |
 | Farnost Opava (`prod/farnostopava`) | shared historical IDs; no new lane | shared historical IDs; no new lane | Proven web-only at `farnostopava.festapp.net`, with no OneSignal and no iOS/Android release. `rezervace.farnostopava.cz` is now a path/query-preserving retirement redirect; no WEDOS handoff remains. |
 | AVApp (`prod/avapp`) | `festapp.festapp` / `>45` (collides with current Festapp identity) | `vkhcr.avapp` / `>45` | Old backend hostname is dead and the modern AV tenant is already canonical. Retire/read back the old Android listing; never create a second iOS upload under the Festapp identity. |
@@ -49,6 +49,10 @@ version gate; it therefore improves migration pressure but does not by itself
 prove that older writers are absent. Store adoption telemetry or the
 technically enforced maintenance freeze must close that remaining condition.
 `fstapp.fstapp` was excluded from the release and prompt changes.
+Every residual mobile lane now has a fail-closed disposition: authoritative
+adoption when available, otherwise technically read-only for the full
+freeze/cutover window. The freeze receipt, not this policy statement, is the
+required runtime proof.
 
 Each mobile row closes only when its private evidence records all of:
 
