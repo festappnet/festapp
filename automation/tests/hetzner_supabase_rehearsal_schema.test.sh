@@ -71,6 +71,18 @@ readonly TERRAFORM_FIREWALL="$PROJECT_ROOT/automation/hetzner-supabase/terraform
 [[ -x "$ISOLATED_FOUNDATION_SCRIPT" ]] || { echo "isolated foundation builder must be executable" >&2; exit 1; }
 [[ -x "$ENCRYPTED_BACKUP_SCRIPT" ]] || { echo "encrypted backup script must be executable" >&2; exit 1; }
 [[ -x "$ENCRYPTED_RESTORE_SCRIPT" ]] || { echo "encrypted restore drill must be executable" >&2; exit 1; }
+
+for required in \
+  'FESTAPP_BACKUP_INACTIVE_TARGET_ACK' \
+  'backup-complete-inactive-rehearsal-target' \
+  'SOURCE_WAS_ACTIVE_RUNTIME=false' \
+  'runtime_database:$runtimeDatabase' \
+  'source_was_active_runtime:$sourceWasActiveRuntime'; do
+  rg -Fq "$required" "$ENCRYPTED_BACKUP_SCRIPT" || {
+    echo "missing inactive rehearsal recovery safety contract: $required" >&2
+    exit 1
+  }
+done
 [[ -r "$RUNTIME_CADDYFILE" ]] || { echo "Caddy origin configuration must be readable" >&2; exit 1; }
 [[ -r "$RUNTIME_DATABASE_COMPOSE" ]] || { echo "database target Compose override must be readable" >&2; exit 1; }
 [[ -x "$RUNTIME_SWITCH_SCRIPT" ]] || { echo "runtime database switch must be executable" >&2; exit 1; }
