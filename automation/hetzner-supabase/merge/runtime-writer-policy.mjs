@@ -27,7 +27,7 @@ function discoverWorkerEntrypoints(root) {
   const entries = [];
   for (const worker of fs.readdirSync(workersRoot, { withFileTypes: true })) {
     if (!worker.isDirectory()) continue;
-    for (const filename of ['index.ts', 'worker.ts']) {
+    for (const filename of ['index.ts', 'worker.ts', 'index.mjs', 'worker.mjs']) {
       const relative = `workers/${worker.name}/src/${filename}`;
       if (fs.existsSync(path.join(root, relative))) entries.push(relative);
     }
