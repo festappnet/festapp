@@ -212,6 +212,8 @@ def canonical_age_rating_attributes
     profanity_or_crude_humor: age.fetch('profanityOrCrudeHumor'),
     sexual_content_graphic_and_nudity: age.fetch('sexualContentGraphicAndNudity'),
     sexual_content_or_nudity: age.fetch('sexualContentOrNudity'),
+    social_media: age.fetch('socialMedia'),
+    social_media_age_restricted: age.fetch('socialMediaDisabledForUsersUnder13'),
     unrestricted_web_access: age.fetch('unrestrictedWebAccess'),
     user_generated_content: age.fetch('userGeneratedContent'),
     violence_cartoon_or_fantasy: age.fetch('violenceCartoonOrFantasy'),
