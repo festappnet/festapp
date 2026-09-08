@@ -2,6 +2,8 @@
 *.class
 *.lock
 !/pubspec.lock
+!/automation/release/fastlane/Gemfile.lock
+**/.bundle/
 *.log
 *.pyc
 *.swp
