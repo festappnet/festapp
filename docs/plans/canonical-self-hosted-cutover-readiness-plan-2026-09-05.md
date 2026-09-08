@@ -47,16 +47,16 @@ explicitní fail-closed brány.
 |---|---|---|
 | Canonical kontrakt | `docs/operations/supabase-self-hosted/architecture.md`: jeden endpoint, full freeze, cloudy read-only | Cílová architektura je uzavřená. |
 | Merge a recovery rehearsal | `second-canonical-rehearsal-2026-08-28.md`: dvě kompletní sloučení, Auth/Storage, RPO 0, restore a runtime switch | Importer a základní recovery cesta jsou prokázané; nejde ale o čerstvý produkční snapshot. |
-| Repo gate | Na čistém `origin/main` `ea7f13d2e` prošel `repository-cutover-preflight.mjs`: `repository_ready=true`, 148 writer kandidátů, 0 unknown, 14 prod refs, 0 unknown tenantů, 0 pending retirementů | Commitnutý stav repozitáře je připravený. Gate z principu nechává `production_cutover_authorized=false`. |
-| Lokální strom | Aktuální pracovní strom má nesouvisející iOS/Fastlane změny a necommitnutý `workers/supabase-legacy-keepalive/`; lokální scan proto vidí 154 kandidátů | Před finálním gate musí být zamýšlené změny integrovány nebo odstraněny z release worktree. Uživatelské změny se nesmí přepsat. `.mjs` discovery navíc odhalila dříve neklasifikovaný monitor i keepalive. |
+| Repo gate | Na čistém `origin/main` `c47f5dd81` prošel `repository-cutover-preflight.mjs`: `repository_ready=true`, bez blockerů, report SHA-256 `a228b610eb42c8ae9be55aead3c58f4a979b31931630652f87bea077791de22d` | Commitnutý stav repozitáře a všech 11 aktivních overlayů je připravený. Gate z principu nechává `production_cutover_authorized=false`. |
+| Lokální strom | Release změny jsou izolované od původního uživatelského worktree; staré rollout worktrees a lokální rollout větve byly odstraněny | Lokální rollout stopa je čistá; aktuální evidence/backup hardening čekají na samostatný commit. |
 | Tenant overlaye | Všech 11 aktivních overlayů obsahuje dnešní `main`; tři staré refs jsou úmyslně uzavřené retirement hranice | Synchronizace aktivních větví je hotová. |
 | Web | Všech 11 aktivních web deploymentů z 2026-09-04 uspělo v GitHub Actions. Veřejné `backend-activation.json` vrací `200`, `no-store`, `backend=legacy`, `generation=0` | Transition weby jsou staged a stále bezpečně zapisují do legacy zdrojů. Aktivace dosud neproběhla. |
 | iOS | Veřejný App Store readback potvrzuje sedm aktivních aplikací na `0.19.95` | Publikace je hotová, ale adopce není uzavřená. App Store analytics byla 2026-09-02 blokována rolí 403 a OneSignal stále viděl starší nekompatibilní verze u některých tenantů. |
 | Android | Šest autorizovaných identit je v Play production na `0.20.1 (485)`, full rollout, s nezávislým readbackem; jejich source organizace zobrazují soft update prompt `0.20.1`. `fstapp.fstapp` nebyla publikována. | Release gate je uzavřený pro šest lane; zbývá adoption/technically-read-only evidence a retire/read-only dispozice `fstapp.fstapp`. |
-| Databázová parita | `default` a `a` mají všechny tři migrace `20260906120000`–`20260906140000` a shodný finální function/ACL/search-path kontrakt. | Self-hosted katalogový readback je stále nutný; veřejný runtime je zdravý, ale SSH z aktuálního operátorského připojení timeoutuje. |
+| Databázová parita | `default`, `a` i self-hosted mají všechny tři migrace `20260906120000`–`20260906140000`; self-hosted katalogový readback potvrdil finální function/ACL/search-path kontrakt. | Parita je uzavřená. |
 | Runtime | `api.festapp.net` dnes vrací očekávané Auth/REST `401` a Storage `200`; DNS je přes Cloudflare a TLS platí do 2026-11-13 | Veřejný origin je živý, ale health není promotion ani write-activation důkaz. |
-| Recovery | Off-host encrypted backup a starší isolated restore byly prokázány; readiness validator přijímá restore důkaz nejvýše 7 dní starý | Rehearsal z 28. srpna je pro finální gate již za hranicí čerstvosti. Je nutný nový úplný isolated restore, ne jen `pg_restore --list`. |
-| Dostupnost | Jeden CAX11 node, measured restore RTO 790 s, bez repliky/failoveru | Před window musí vlastník výslovně přijmout `single-node-recovery`, nebo se musí zvlášť navrhnout replikovaná topologie. |
+| Recovery | Čerstvý kompletní třízdrojový encrypted backup a isolated no-network restore prošly s RPO 0, RTO 308 s a přesnou DB/Storage/security/import inventurou | Důkaz je platný sedm dní; promotion backup/restore nad přesným finálním targetem zůstává window-only. |
+| Dostupnost | Jeden CAX11 node, measured restore RTO 308 s, bez repliky/failoveru | Před window musí vlastník výslovně přijmout `single-node-recovery`, nebo se musí zvlášť navrhnout replikovaná topologie. |
 | Externí writery | Repo policy má 0 unknown a 18 mutujících runtime surfaces | Live AWS SNS, Vault/notify, OneSignal, payment callbacks, SMTP, sync worker a ostatní canaries stále nemají společný čerstvý passing receipt. |
 | Farnost Opava | Starý `rezervace.farnostopava.cz` dnes zachovává path/query přes 301 na `farnostopava.festapp.net`; canonical origin vrací 200 | Starý WEDOS CNAME handoff už není technickým DB-cutover blockerem, pokud je redirect finální produktové rozhodnutí. Starší work item/matice se musí opravit. |
 
@@ -114,26 +114,28 @@ R2/image boundary, nikoli druhá relační write vrstva.
   profil; ověřit privátními manifesty a artifact digesty, ne jen App Store verzí.
 - **A2:** Staged Function bundle na hostu odpovídá funkčnímu obsahu dnešního
   `main`; znovu svázat digest s finálním repository headem před promotion.
-- **A3:** Denní backup a pětiminutový monitor od 2. září stále běží; ověřit
-  poslední off-host receipts a alert freshness, nikoli stav odvodit z timeru.
+- **A3 (verified 2026-09-08):** Denní backup, hodinový encrypted log upload a
+  pětiminutový monitor běží; poslední off-host receipts a externí API probe
+  jsou čerstvé. Alert/integration receipt se znovu obnoví v konkrétním window.
 
 ### Aktuální blokátory
 
-- **B1:** Šest Android release lane je vydaných; chybí adoption nebo
-  technically-read-only evidence a retire/read-only dispozice `fstapp.fstapp`.
-- **B2:** Chybí úplná iOS active-version/minimum-version adoption evidence.
-- **B3:** Cloud `default` a `a` mají shodný aktuální migrační kontrakt; chybí
-  self-hosted katalogový readback migrací z 6. září kvůli SSH timeoutu.
-- **B4:** Chybí čerstvý úplný isolated restore a explicitní přijetí
-  single-node recovery rizika, nebo replikační design.
+- **B1 (closed by policy):** Šest Android release lane je vydaných; všechny
+  zbylé mobile lane mají adoption-or-freeze-read-only dispozici a
+  `fstapp.fstapp` zůstává technicky read-only bez Play zásahu.
+- **B2 (closed by policy):** iOS lane jsou buď adopted, nebo se v celém window
+  technicky uzavřou read-only; čerstvý freeze receipt zůstává povinný.
+- **B3 (closed):** Cloud `default`, `a` a self-hosted mají shodný aktuální
+  migrační/function/ACL/search-path kontrakt.
+- **B4:** Čerstvý úplný isolated restore prošel; chybí už jen explicitní
+  přijetí `single-node-recovery` s RTO 308 s, nebo replikační design.
 - **B5:** Chybí čerstvé passing canaries všech 11 integrací požadovaných
   `validate-operational-readiness.mjs`.
 - **B6:** Chybí named maintenance window, freeze owners, pre-snapshot/final
   marker, finální import, promotion backup/restore a go/no-go receipts.
-- **B7:** Legacy keepalive a Function guard jsou nasazené, `.mjs` discovery a
-  šest-Worker policy jsou lokálně canonicalizované; změny musí projít release
-  gate a být commitnuté. Všech 11 aktivních overlayů se potom musí sekvenčně
-  srovnat s finálním `main`.
+- **B7 (closed):** Legacy keepalive a Function guard jsou nasazené, `.mjs`
+  discovery a šest-Worker policy jsou na `main` `c47f5dd81`; všech 11 aktivních
+  overlayů prošlo sekvenčním canonical drift gate a obsahuje tento main.
 - **B8 (closed operationally):** Veřejný pre-activation guard je nasazený na
   přesné Function route a ověřeně vrací `503/no-store`; odstranit jej lze pouze
   po promotion a interním ověření canonical Function bundle.
@@ -229,10 +231,10 @@ důkaz použitelný pro konkrétní maintenance window.
 
 **Změny**
 
-- Výslovně přijmout `single-node-recovery` s RTO 790 s, nebo připravit a
+- Výslovně přijmout `single-node-recovery` s RTO 308 s, nebo připravit a
   nacvičit repliku před pokračováním.
-- Ověřit poslední encrypted off-host DB/Storage/runtime backup a provést nový
-  úplný isolated restore s RPO 0; výsledek musí být mladší než 7 dní.
+- Čerstvý encrypted třízdrojový backup a úplný isolated restore s RPO 0 / RTO
+  308 s jsou hotové; před window pouze ověřit sedmidenní čerstvost.
 - Projít přesně: Auth password/OAuth/refresh, AWS SNS, Edge Functions,
   OneSignal, payment callbacks, Realtime, SMTP, Storage a sync worker.
 - Zapsat připravený notify token do finálního target Vaultu, ověřit shodu s
