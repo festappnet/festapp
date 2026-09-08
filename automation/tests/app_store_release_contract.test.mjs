@@ -7,6 +7,22 @@ const root = path.resolve(import.meta.dirname, '../..');
 const fastfile = fs.readFileSync(
   path.join(root, 'automation/release/fastlane/Fastfile'), 'utf8');
 
+test('release tooling pins Fastlane and invokes it through Bundler', () => {
+  const gemfile = fs.readFileSync(
+    path.join(root, 'automation/release/fastlane/Gemfile'), 'utf8');
+  const lockfile = fs.readFileSync(
+    path.join(root, 'automation/release/fastlane/Gemfile.lock'), 'utf8');
+  const iosUpload = fs.readFileSync(
+    path.join(root, 'automation/release/ios_build_and_upload.sh'), 'utf8');
+  assert.match(gemfile, /gem ['"]fastlane['"], ['"]2\.238\.0['"]/);
+  assert.match(lockfile, /fastlane \(2\.238\.0\)/);
+  assert.match(iosUpload, /"\$SCRIPT_DIR\/fastlane_setup\.sh"/);
+  const uploadInvocations = iosUpload.split('\n')
+    .filter((line) => line.includes('fastlane upload_build'));
+  assert.ok(uploadInvocations.length > 0);
+  assert.ok(uploadInvocations.every((line) => line.includes('bundle exec fastlane upload_build')));
+});
+
 test('internal TestFlight upload is artifact-gated and cannot distribute or submit', () => {
   const start = fastfile.indexOf('lane :upload_testflight_build do');
   const finish = fastfile.indexOf("desc 'Read-only editable-version inventory", start);
