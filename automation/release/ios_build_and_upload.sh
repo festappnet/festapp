@@ -10,6 +10,7 @@ source "$ENV_SCRIPT"
 : "${APP_STORE_CONNECT_KEY_ID:?missing APP_STORE_CONNECT_KEY_ID}"
 : "${APP_STORE_CONNECT_ISSUER_ID:?missing APP_STORE_CONNECT_ISSUER_ID}"
 : "${APP_STORE_CONNECT_KEY_PATH:?missing APP_STORE_CONNECT_KEY_PATH}"
+"$SCRIPT_DIR/fastlane_setup.sh"
 if [ ! -f "$APP_STORE_CONNECT_KEY_PATH" ]; then
   echo "App Store Connect key not found: $APP_STORE_CONNECT_KEY_PATH"
   exit 1
@@ -70,4 +71,4 @@ export IPA_PATH="${ipa_files[0]}"
 export FASTLANE_APP_IDENTIFIER="$(node -p "require(process.argv[1]).bundleId" "$release_manifest")"
 echo "Uploading build only; submission and release are separate gates."
 cd "$SCRIPT_DIR/fastlane"
-FASTLANE_SKIP_UPDATE_CHECK=1 FASTLANE_SKIP_INIT=true fastlane upload_build
+FASTLANE_SKIP_UPDATE_CHECK=1 FASTLANE_SKIP_INIT=true bundle exec fastlane upload_build
