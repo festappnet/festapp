@@ -20,7 +20,7 @@ void main() {
     expect(events, ['revealed', 'decorating', 'logged', 'ready']);
   });
 
-  test('watchdog reveals the map when the native callback never arrives',
+  test('watchdog requests recovery when the native callback never arrives',
       () async {
     final events = <String>[];
     final watchdog = MapLibreStyleLoadWatchdog(
@@ -28,12 +28,11 @@ void main() {
     );
 
     watchdog.arm(
-      revealBaseMap: () => events.add('revealed'),
-      onTimeout: () => events.add('timed-out'),
+      onTimeout: () => events.add('recover'),
     );
     await Future<void>.delayed(const Duration(milliseconds: 30));
 
-    expect(events, ['timed-out', 'revealed']);
+    expect(events, ['recover']);
     watchdog.dispose();
   });
 
@@ -44,7 +43,6 @@ void main() {
     );
 
     watchdog.arm(
-      revealBaseMap: () => events.add('revealed'),
       onTimeout: () => events.add('timed-out'),
     );
     watchdog.cancel();
@@ -52,6 +50,38 @@ void main() {
 
     expect(events, isEmpty);
     watchdog.dispose();
+  });
+
+  test('style recovery refreshes once and then fails closed', () {
+    final recovery = MapLibreStyleRecoveryCoordinator();
+
+    expect(
+      recovery.beginRecovery(),
+      MapLibreRecoveryDecision.refreshBundle,
+    );
+    expect(recovery.beginRecovery(), MapLibreRecoveryDecision.ignore);
+    recovery.finishRecovery();
+    expect(recovery.beginRecovery(), MapLibreRecoveryDecision.showFailure);
+
+    recovery.resetForManualRetry();
+    expect(
+      recovery.beginRecovery(),
+      MapLibreRecoveryDecision.refreshBundle,
+    );
+  });
+
+  test('a successful native style load rearms future recovery', () {
+    final recovery = MapLibreStyleRecoveryCoordinator();
+
+    expect(
+      recovery.beginRecovery(),
+      MapLibreRecoveryDecision.refreshBundle,
+    );
+    recovery.markStyleLoaded();
+    expect(
+      recovery.beginRecovery(),
+      MapLibreRecoveryDecision.refreshBundle,
+    );
   });
 
   test('optional native setup never blocks style readiness', () async {

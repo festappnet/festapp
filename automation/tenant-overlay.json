@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "csmostrava2026",
-  "baseMainSha": "65d388803b1ad866ebc133ca4c2a9abd8f2ab116",
+  "baseMainSha": "81600e82b2b524e75b8e453f483ad801d9983292",
   "release": {
     "version": "0.20.2+486",
     "note": "Recover refreshed offline maps on iOS and prevent indefinite map loading"
