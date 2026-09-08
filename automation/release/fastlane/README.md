@@ -8,6 +8,11 @@ any lane, set `FESTAPP_RELEASE_MANIFEST` to the exact private `config.json` for
 the release listing. Fastlane fails closed when that canonical manifest is
 unavailable.
 
+Fastlane is pinned by the adjacent `Gemfile` and `Gemfile.lock`. Run
+`bundle install` once in this directory and invoke every lane with
+`bundle exec fastlane`; the generated `[bundle exec]` notation below should be
+treated as mandatory for Festapp releases.
+
 Store copy and screenshots are staged from that repository into temporary
 directories. Keystores, API keys, passwords, and service-account credentials do
 not belong in either repository.

@@ -2,8 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-if ! command -v fastlane >/dev/null 2>&1; then
-  echo "Fastlane is required. Install it with the repository-approved package manager."
+if ! command -v bundle >/dev/null 2>&1; then
+  echo "Bundler is required. Install it with the repository-approved Ruby package manager."
   exit 1
 fi
 if [ -z "${FESTAPP_RELEASE_MANIFEST:-}" ]; then
@@ -14,4 +14,9 @@ if [ ! -f "$SCRIPT_DIR/fastlane/Fastfile" ] || [ ! -f "$FESTAPP_RELEASE_MANIFEST
   echo "Canonical Fastfile or cutover manifest is missing."
   exit 1
 fi
-echo "Canonical gated Fastlane configuration is present."
+if ! (cd "$SCRIPT_DIR/fastlane" && bundle check >/dev/null); then
+  echo "Pinned Fastlane dependencies are missing. Run bundle install in $SCRIPT_DIR/fastlane."
+  exit 1
+fi
+fastlane_version="$(cd "$SCRIPT_DIR/fastlane" && bundle exec ruby -e 'require "fastlane/version"; print Fastlane::VERSION')"
+echo "Canonical gated Fastlane $fastlane_version configuration is present."
