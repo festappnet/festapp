@@ -413,6 +413,15 @@ symlinks, retains only the pinned upstream `main` router, atomically stages the
 canonical directories and preserves the previous tree. The running runtime is
 not restarted; promotion is the first process that consumes the staged tree.
 
+Until that promotion, the temporary
+`workers/self-hosted-preactivation-guard` route must return `503` for every
+public `api.festapp.net/functions/v1/*` request. This prevents the older
+rehearsal Function tree from becoming a public compatibility path. Keep the
+guard active through promotion and internal Function verification. Removing
+its exact Cloudflare route is a separately recorded activation action performed
+immediately before the external canonical Function canaries; remove no other
+route or Worker.
+
 Before promotion, close the target's database-level default write barrier:
 
 ```bash

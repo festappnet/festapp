@@ -25,6 +25,9 @@
   },
   "workers": {
     "image-worker": { "entrypoint": "workers/image-worker/src/index.ts", "deployment_contract": "workers/image-worker/wrangler.toml", "trigger": "public-http", "effects": ["database-rpc", "r2-write", "cloudflare-cache-purge"], "mutates_authority": true },
+    "self-hosted-preactivation-guard": { "entrypoint": "workers/self-hosted-preactivation-guard/src/index.mjs", "deployment_contract": "workers/self-hosted-preactivation-guard/wrangler.toml", "trigger": "canonical-function-route", "effects": ["fail-closed-http-response"], "mutates_authority": false },
+    "self-hosted-monitor": { "entrypoint": "workers/self-hosted-monitor/src/index.mjs", "deployment_contract": "workers/self-hosted-monitor/wrangler.toml", "trigger": "cloudflare-cron", "effects": ["canonical-and-rehearsal-health-read", "r2-evidence-write", "healthchecks-heartbeat"], "mutates_authority": false },
+    "supabase-legacy-keepalive": { "entrypoint": "workers/supabase-legacy-keepalive/src/index.mjs", "deployment_contract": "workers/supabase-legacy-keepalive/wrangler.toml", "trigger": "cloudflare-cron", "effects": ["legacy-database-read"], "mutates_authority": false },
     "sync-publisher": { "entrypoint": "workers/sync-publisher/src/worker.ts", "deployment_contract": "workers/sync-publisher/wrangler.example.toml", "trigger": "cloudflare-cron-or-internal-http", "effects": ["database-rpc", "r2-write"], "mutates_authority": true },
     "sync-worker": { "entrypoint": "workers/sync-worker/src/index.ts", "deployment_contract": "workers/sync-worker/wrangler.toml", "trigger": "public-http", "effects": ["r2-read", "cloudflare-cache-write"], "mutates_authority": false }
   },
@@ -40,6 +43,7 @@
     }
   },
   "activation_requirements": [
+    "pre-activation Function guard remains active until the reviewed canonical Function bundle is promoted and internally verified, then its exact route is removed before external Function canaries",
     "AWS SNS topic uses SignatureVersion 2 and a signed canonical endpoint canary passes",
     "festapp_notify_webhook_token_v1 in target Vault matches NOTIFY_WEBHOOK_TOKEN and setup_triggers installs only the canonical HTTPS endpoint",
     "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin"
