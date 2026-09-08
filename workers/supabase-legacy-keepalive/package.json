@@ -1,5 +1,5 @@
 {
-  "name": "festapp-self-hosted-monitor",
+  "name": "festapp-supabase-legacy-keepalive",
   "private": true,
   "type": "module",
   "scripts": {
