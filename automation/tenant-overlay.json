@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "4112e855a6f2156ab4ba49438bffd89ddb745472",
+  "baseMainSha": "c47f5dd81d306e466c71e7a27cb4cfff1a7fb3d6",
   "release": {
     "version": "0.20.1+485",
     "note": "Canonical legacy icon rendering"

@@ -1,0 +1,11 @@
+name = "festapp-supabase-legacy-keepalive"
+main = "src/index.mjs"
+compatibility_date = "2026-09-03"
+workers_dev = false
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[triggers]
+crons = ["17 4 * * *"]
