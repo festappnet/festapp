@@ -29,6 +29,13 @@ git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid c
 VALID_TIP=$(git -C "$REPO" rev-parse HEAD)
 git -C "$REPO" show "${BASE_SHA}:automation/check_tenant_branch_drift.sh" > "$TMP_ROOT/checker.sh"
 chmod +x "$TMP_ROOT/checker.sh"
+(grep -Fq 'git hash-object --no-filters "$expected"' "$TMP_ROOT/checker.sh" &&
+  grep -Fq 'git rev-parse "${PROD_TIP}:${path}"' "$TMP_ROOT/checker.sh" &&
+  grep -Fq 'git -c core.autocrlf=false archive "$BASE_MAIN_SHA"' "$TMP_ROOT/checker.sh" &&
+  grep -Fq 'git -c core.autocrlf=false archive "$PROD_TIP" -- "$path"' "$TMP_ROOT/checker.sh") || {
+  echo 'Drift checker must materialize and compare repository bytes independently of autocrlf' >&2
+  exit 1
+}
 (cd "$REPO" && CANONICAL_MAIN_REF=main "$TMP_ROOT/checker.sh" "$BASE_SHA" csmostrava2026 "$VALID_TIP" >/dev/null)
 
 expect_failure() {

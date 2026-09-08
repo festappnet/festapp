@@ -1,0 +1,12 @@
+name = "festapp-self-hosted-preactivation-guard"
+main = "src/index.mjs"
+compatibility_date = "2026-09-05"
+workers_dev = false
+
+routes = [
+  { pattern = "api.festapp.net/functions/v1/*", zone_name = "festapp.net" }
+]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
