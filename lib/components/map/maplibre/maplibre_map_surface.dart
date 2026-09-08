@@ -33,13 +33,21 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
   MapLibreViewportController? _viewportAdapter;
   MapLibreSceneController? _sceneController;
   final Map<String, int> _registeredIconVersions = {};
+  final MapLibreStyleLoadWatchdog _styleLoadWatchdog =
+      MapLibreStyleLoadWatchdog();
   bool _isStyleReady = false;
 
   @override
   void didUpdateWidget(covariant MapLibreMapSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.style != widget.style) {
+    final styleChanged = reloadMapLibreStyleIfChanged(
+      previousStyle: oldWidget.style,
+      nextStyle: widget.style,
+      reload: (style) => _controller?.setStyle(style),
+    );
+    if (styleChanged) {
       _isStyleReady = false;
+      _armStyleLoadWatchdog();
     }
     if (!identical(oldWidget.model.viewport, widget.model.viewport) &&
         _viewportAdapter != null) {
@@ -54,6 +62,7 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
 
   @override
   void dispose() {
+    _styleLoadWatchdog.dispose();
     final adapter = _viewportAdapter;
     if (adapter != null) {
       adapter.invalidate();
@@ -76,14 +85,16 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
     final adapter = MapLibreViewportController(controller);
     _viewportAdapter = adapter;
     widget.model.viewport.attach(adapter);
+    _armStyleLoadWatchdog();
   }
 
   Future<void> _onStyleLoaded(ml.StyleController style) async {
     if (!mounted || !identical(_controller?.style, style)) return;
+    _styleLoadWatchdog.cancel();
     await completeMapLibreStyleLoad(
       // The native style is already usable. Optional marker registration must
       // never leave the whole map hidden behind an infinite loading overlay.
-      revealBaseMap: () => setState(() => _isStyleReady = true),
+      revealBaseMap: _revealBaseMap,
       decorateStyle: () async {
         _registeredIconVersions.clear();
         await _registerIcons(style);
@@ -91,7 +102,12 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
         final sceneController = MapLibreSceneController(style);
         _sceneController = sceneController;
         await sceneController.register(widget.model.scene);
-        await _enableLocationIfAllowed();
+        startOptionalMapLibreSetup(
+          setup: _enableLocationIfAllowed,
+          onError: (error, stackTrace) => AppLogger.warning(
+            'MapLibre optional location setup failed: $error\n$stackTrace',
+          ),
+        );
       },
       onDecorationError: (error, stackTrace) => AppLogger.error(
         'MapLibre scene decoration failed: $error\n$stackTrace',
@@ -102,6 +118,21 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
         widget.model.onCameraReady?.call();
       },
     );
+  }
+
+  void _armStyleLoadWatchdog() {
+    if (!mounted || _controller == null || _isStyleReady) return;
+    _styleLoadWatchdog.arm(
+      onTimeout: () => AppLogger.warning(
+        'MapLibre style callback timed out; revealing the native map surface.',
+      ),
+      revealBaseMap: _revealBaseMap,
+    );
+  }
+
+  void _revealBaseMap() {
+    if (!mounted || _isStyleReady) return;
+    setState(() => _isStyleReady = true);
   }
 
   Future<void> _enableLocationIfAllowed() async {
