@@ -245,6 +245,11 @@ mkdir -p "$TMP_ROOT/partial/automation"
 cp "$PROJECT_ROOT/automation/project.conf" "$TMP_ROOT/partial/automation/project.conf"
 sed -i.bak 's/^BACKEND_ACTIVATION_PHASE=.*/BACKEND_ACTIVATION_PHASE=legacy/' \
   "$TMP_ROOT/partial/automation/project.conf"
+rm -f "$TMP_ROOT/partial/automation/project.conf.bak"
+sed -i.bak \
+  's/^BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=.*/BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=/' \
+  "$TMP_ROOT/partial/automation/project.conf"
+rm -f "$TMP_ROOT/partial/automation/project.conf.bak"
 if node "$PROJECT_ROOT/automation/verify_web_build.mjs" "$BUILD_DIR" "1.2.3+456" \
     "$TMP_ROOT/partial/automation/project.conf" cloudflare \
     > "$TMP_ROOT/partial-activation.log" 2>&1; then
