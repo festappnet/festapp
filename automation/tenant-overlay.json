@@ -3,7 +3,7 @@
   "tenantId": "hvezdamorska",
   "baseMainSha": "1edd7430155f1762de075c83f5953a17abc15686",
   "release": {
-    "version": "0.20.2+486",
+    "version": "0.20.4+488",
     "note": "Make native offline MapLibre loading reliable"
   }
 }
