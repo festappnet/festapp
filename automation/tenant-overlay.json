@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "jubileum2025",
-  "baseMainSha": "14851833a8e54917a0e7f17d05b61e6aec9ef6a1",
+  "baseMainSha": "12f9d717e2365ee15e3ffb2c4de3824d6e1bd3e3",
   "release": {
     "version": "0.20.1+485",
     "note": "Canonical legacy icon rendering"
