@@ -65,10 +65,16 @@ class LegacyMapConfiguration {
 class MapLibreMapConfiguration {
   final String? style;
   final Widget unavailable;
+  final int surfaceGeneration;
+  final VoidCallback? onStyleLoadTimeout;
+  final VoidCallback? onStyleLoadSuccess;
 
   const MapLibreMapConfiguration({
     required this.style,
     required this.unavailable,
+    this.surfaceGeneration = 0,
+    this.onStyleLoadTimeout,
+    this.onStyleLoadSuccess,
   });
 }
 
@@ -124,8 +130,11 @@ class MapRendererHost extends StatelessWidget {
     final style = configuration.style;
     if (style == null) return configuration.unavailable;
     return MapLibreMapSurface(
+      key: ValueKey(configuration.surfaceGeneration),
       style: style,
       model: model,
+      onStyleLoadTimeout: configuration.onStyleLoadTimeout,
+      onStyleLoadSuccess: configuration.onStyleLoadSuccess,
     );
   }
 }
