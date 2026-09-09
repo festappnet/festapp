@@ -332,6 +332,42 @@ For this migration, `full-freeze` is the selected production mode unless a new
 global writer inventory later proves the stricter hybrid contract. The final
 marker cannot be generated honestly before the real production freeze; passing
 the synthetic gate tests is tooling proof, not cutover authorization.
+
+
+The managed-cloud freeze has one guarded entry point. Archive the exact deployed
+Function bodies/sources, API-key inventory and active cron state before the
+window. During the approved window, engage and independently verify the freeze
+before starting any snapshot:
+
+```bash
+node automation/hetzner-supabase/merge/manage-cloud-freeze.mjs archive \
+  --evidence=/private/evidence/cloud-freeze-RUN \
+  --ack=archive-cloud-functions-and-freeze-state
+node automation/hetzner-supabase/merge/manage-cloud-freeze.mjs engage \
+  --evidence=/private/evidence/cloud-freeze-RUN \
+  --ack=engage-full-production-cloud-freeze
+node automation/hetzner-supabase/merge/manage-cloud-freeze.mjs verify \
+  --evidence=/private/evidence/cloud-freeze-RUN \
+  --ack=verify-full-production-cloud-freeze
+```
+
+The tool disables the legacy API keys used by released clients, revokes newer
+publishable/secret keys, creates one private migration-only Storage export key,
+installs statement-level mutation guards on every `public`/`eshop` table,
+disables cron, drains API/Auth/Storage/Function database sessions and archives
+and removes every source Edge Function. Verification proves guard coverage,
+rejected legacy credentials, zero public credentials, one migration key, zero
+active cron jobs, zero deployed Functions and zero mutating sessions for all
+registered clouds. The archive is the pre-write rollback input. Before canonical
+writes open, rollback explicitly restores legacy access, cron, downloaded
+Function sources and replacement non-legacy operator keys. After canonical
+writes open, cloud rollback remains forbidden:
+
+```bash
+node automation/hetzner-supabase/merge/manage-cloud-freeze.mjs rollback \
+  --evidence=/private/evidence/cloud-freeze-RUN \
+  --ack=rollback-before-canonical-writes-open
+```
 The final-marker decision preserves the exact import run ID, snapshot time,
 schema fingerprint and transformation version for every source and binds them
 to one timestamped target database. Promotion authorization expires after four
