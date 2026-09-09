@@ -899,8 +899,9 @@ final class MapLibreMapStateAndroid extends MapLibreMapState
     }
     _jMap?.setStyle$1(
       builder,
-      jni.Style$OnStyleLoaded.implement(_StyleLoadedCallback(_onStyleLoaded))
-        ..releasedBy(arena),
+      jni.Style$OnStyleLoaded.implement(
+        MapLibreStyleLoadedCallback(_onStyleLoaded),
+      )..releasedBy(arena),
     );
   });
 }
@@ -924,8 +925,9 @@ final class _CameraMovementCallback with jni.$MapLibreMap$CancelableCallback {
   bool get onFinish$async => true;
 }
 
-final class _StyleLoadedCallback with jni.$Style$OnStyleLoaded {
-  const _StyleLoadedCallback(this.callback);
+@visibleForTesting
+final class MapLibreStyleLoadedCallback with jni.$Style$OnStyleLoaded {
+  const MapLibreStyleLoadedCallback(this.callback);
 
   final void Function(jni.Style jStyle) callback;
 
@@ -933,6 +935,12 @@ final class _StyleLoadedCallback with jni.$Style$OnStyleLoaded {
   void onStyleLoaded(jni.Style style) {
     callback.call(style);
   }
+
+  // MapLibre invokes this listener from the Android UI thread after native
+  // style parsing. Dispatch through the Dart isolate instead of blocking that
+  // foreign thread while it waits for Dart to run the callback.
+  @override
+  bool get onStyleLoaded$async => true;
 }
 
 final class _MapReadyCallback with jni.$OnMapReadyCallback {
