@@ -78,7 +78,7 @@ void main() {
     final source =
         (assembled['sources'] as Map<String, dynamic>)['versatiles-shortbread']
             as Map<String, dynamic>;
-    expect(source['url'], startsWith('pmtiles://file:///'));
+    expect(source['url'], startsWith('mbtiles:///'));
     expect(source.containsKey('tiles'), isFalse);
     expect(assembled['sprite'], startsWith('file:///'));
     expect(assembled['glyphs'], startsWith('file:///'));
@@ -88,5 +88,28 @@ void main() {
         jsonEncode(assembled), isNot(contains('https://tiles.example.test')));
     expect(
         jsonEncode(assembled), isNot(contains('https://assets.example.test')));
+
+    final mapLibreOnlyManifest = <String, dynamic>{
+      ...manifestJson,
+      'schema_version': 3,
+      'bundle_mode': 'maplibre_only',
+      'assets': (manifestJson['assets'] as List<Object?>)
+          .where(
+              (asset) => (asset as Map<String, dynamic>)['role'] != 'mbtiles')
+          .toList(),
+    };
+    await File('${directory.path}/manifest.json')
+        .writeAsString(jsonEncode(mapLibreOnlyManifest));
+    final mapLibreOnlyInstallation = await OfflineMapBundleManager(
+      rootDirectory: directory.parent,
+    ).verifyExisting(directory);
+    final mapLibreOnlyStyle = jsonDecode(await MapLibreStyleAssembler.assemble(
+      sourceStyleJson: sourceStyle,
+      installation: mapLibreOnlyInstallation,
+    )) as Map<String, dynamic>;
+    final mapLibreOnlySource = (mapLibreOnlyStyle['sources']
+            as Map<String, dynamic>)['versatiles-shortbread']
+        as Map<String, dynamic>;
+    expect(mapLibreOnlySource['url'], startsWith('pmtiles://file:///'));
   });
 }
