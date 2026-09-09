@@ -24,6 +24,7 @@ import 'package:fstapp/components/map/map_viewport_controller.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
 import 'package:fstapp/components/map/map_renderer_benchmark_override.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_style_assembler.dart';
+import 'package:fstapp/components/map/maplibre/maplibre_style_load_guard.dart';
 import 'package:fstapp/components/map/offline_map_bundle_manager.dart';
 import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
 import 'package:fstapp/components/map/offline_map_configuration.dart';
@@ -243,6 +244,9 @@ class _MapPageState extends State<MapPage>
   LegacyMapConfiguration? _legacyOfflineConfiguration;
   String? _mapLibreStyle;
   String? _offlineMapError;
+  final MapLibreStyleRecoveryCoordinator _mapLibreRecovery =
+      MapLibreStyleRecoveryCoordinator();
+  int _mapLibreSurfaceGeneration = 0;
   int? _popupPlaceId;
 
   late final ScrollController _iconScrollController;
@@ -522,6 +526,39 @@ class _MapPageState extends State<MapPage>
     final contract = _offlineConfiguration.selectedContract;
     if (contract == null) return false;
     return _prepareOfflineMap(contract, forceRefresh: forceRefresh);
+  }
+
+  Future<void> _recoverMapLibreStyleLoad() async {
+    if (!mounted) return;
+    switch (_mapLibreRecovery.beginRecovery()) {
+      case MapLibreRecoveryDecision.ignore:
+        return;
+      case MapLibreRecoveryDecision.showFailure:
+        setState(() {
+          _mapLibreStyle = null;
+          _offlineMapError = MapStrings.mapLibreBundleDownloadFailed;
+        });
+        return;
+      case MapLibreRecoveryDecision.refreshBundle:
+        setState(() {
+          _mapLibreStyle = null;
+          _offlineMapError = null;
+          _mapLibreSurfaceGeneration++;
+        });
+        final recovered = await _downloadOfflinePackage(forceRefresh: true);
+        _mapLibreRecovery.finishRecovery();
+        if (!mounted || recovered) return;
+        setState(() {
+          _mapLibreStyle = null;
+          _offlineMapError = MapStrings.mapLibreBundleDownloadFailed;
+        });
+    }
+  }
+
+  Future<void> _retryMapLibreBundle() async {
+    _mapLibreRecovery.resetForManualRetry();
+    setState(() => _mapLibreSurfaceGeneration++);
+    await _downloadOfflinePackage(forceRefresh: true);
   }
 
   Future<bool> _prepareOfflineMap(
@@ -1005,6 +1042,9 @@ class _MapPageState extends State<MapPage>
           mapLibre: MapLibreMapConfiguration(
             style: _mapLibreStyle,
             unavailable: _buildMapLibreUnavailable(),
+            surfaceGeneration: _mapLibreSurfaceGeneration,
+            onStyleLoadTimeout: () => unawaited(_recoverMapLibreStyleLoad()),
+            onStyleLoadSuccess: _mapLibreRecovery.markStyleLoaded,
           ),
         );
     final mapWidget = renderer == OfflineMapRenderer.legacy
@@ -1288,7 +1328,7 @@ class _MapPageState extends State<MapPage>
                 onPressed: ConnectivityService.isOfflineNotifier.value
                     ? null
                     : () => unawaited(
-                          _downloadOfflinePackage(forceRefresh: true),
+                          _retryMapLibreBundle(),
                         ),
                 icon: const Icon(Icons.download),
                 label: Text(MapStrings.downloadMapAgain),
@@ -1323,7 +1363,7 @@ class _MapPageState extends State<MapPage>
                             _downloadState.isBusy
                         ? null
                         : () => unawaited(
-                              _downloadOfflinePackage(forceRefresh: true),
+                              _retryMapLibreBundle(),
                             ),
                     icon: const Icon(Icons.download),
                     label: Text(MapStrings.downloadMapAgain),
