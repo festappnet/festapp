@@ -20,8 +20,13 @@ dependencies:
   maplibre_platform_interface: ^0.3.6
 
 dev_dependencies:
+  flutter_test: { sdk: flutter }
   jnigen: 0.17.0
   very_good_analysis: ^10.0.0
+
+dependency_overrides:
+  maplibre_platform_interface:
+    path: ../maplibre_platform_interface
 
 flutter:
   plugin:

@@ -32,16 +32,28 @@ class MapLibreStyleAssembler {
     final source =
         Map<String, dynamic>.from(rawSources[manifest.sourceName] as Map);
     if (source['type'] != 'vector') {
-      throw OfflineMapBundleException('Offline PMTiles source must be vector.');
+      throw OfflineMapBundleException('Offline map source must be vector.');
     }
 
-    final pmtilesPath = _absoluteAssetPath(
-      bundleDirectory,
-      manifest.assetFor(OfflineMapAssetRole.pmtiles).path,
-    );
+    // Dual-renderer bundles already contain the same vector tiles as MBTiles.
+    // Prefer that mature native source path until gzip-compressed PMTiles
+    // directories are proven reliable on both Android and iOS.
+    // Compact MapLibre-only bundles have no MBTiles asset and keep using
+    // PMTiles.
+    final tileSource = switch (manifest.bundleMode) {
+      OfflineMapBundleMode.dualRenderer => 'mbtiles://${_absoluteAssetPath(
+          bundleDirectory,
+          manifest.assetFor(OfflineMapAssetRole.mbtiles).path,
+        )}',
+      OfflineMapBundleMode.mapLibreOnly =>
+        'pmtiles://${Uri.file(_absoluteAssetPath(
+          bundleDirectory,
+          manifest.assetFor(OfflineMapAssetRole.pmtiles).path,
+        ))}',
+    };
     source
       ..remove('tiles')
-      ..['url'] = 'pmtiles://${Uri.file(pmtilesPath)}';
+      ..['url'] = tileSource;
     style['sources'] = <String, dynamic>{manifest.sourceName: source};
 
     final spriteJson = manifest.assetFor(OfflineMapAssetRole.spriteJson1x);
@@ -65,6 +77,7 @@ class MapLibreStyleAssembler {
   static void _requireLocalUri(Object? value, String field) {
     if (value is! String ||
         !(value.startsWith('file:///') ||
+            value.startsWith('mbtiles:///') ||
             value.startsWith('pmtiles://file:///'))) {
       throw OfflineMapBundleException('$field must resolve inside the bundle.');
     }

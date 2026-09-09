@@ -1,8 +1,10 @@
 # Offline map assets
 
 This directory reproducibly builds one native offline bundle from a single
-source: MBTiles for the legacy renderer and PMTiles for MapLibre. It does not
-add offline map support to Festapp
+source. Dual-renderer bundles use MBTiles in both the legacy and MapLibre
+renderers; MapLibre-only bundles use PMTiles. Keeping MapLibre on MBTiles for
+dual bundles avoids the still-unproven gzip-directory path in MapLibre Native
+without changing the renderer or the vector data. It does not add offline map support to Festapp
 Web/PWA. The browser step below is a local VersaTiles/MapLibre content preview,
 not a Festapp Web acceptance test.
 
@@ -142,7 +144,8 @@ offline support.
 
 The native feasibility probe must be relaunched after network access is removed
 and after the MapLibre ambient cache is cleared. Its style source must be
-`pmtiles://file:///...`; sprite and glyph templates must be `file:///...`.
+`mbtiles:///...` for a dual-renderer bundle or `pmtiles://file:///...` for a
+MapLibre-only bundle; sprite and glyph templates must be `file:///...`.
 Capture native network logs and reject any map resource HTTP(S) request.
 
 ## Publish and roll back
