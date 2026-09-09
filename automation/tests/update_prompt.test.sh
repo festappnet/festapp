@@ -97,15 +97,44 @@ CONFIG_ANON_KEY="$(sed -n 's/^SUPABASE_ANON_KEY=//p' "$PROJECT_ROOT/automation/p
 CONFIG_SUPABASE_URL="$(sed -n 's/^SUPABASE_URL=//p' "$PROJECT_ROOT/automation/project.conf")"
 CONFIG_PROJECT_REF="$(sed -n 's#^SUPABASE_URL=https://\([^.]*\)\.supabase\.co/*#\1#p' \
   "$PROJECT_ROOT/automation/project.conf")"
-printf '// fake compiled app\n%s\n' "$CONFIG_ANON_KEY" > "$BUILD_DIR/main.dart.js"
+CONFIG_ACTIVATION_TENANT_ID="$(sed -n 's/^BACKEND_ACTIVATION_TENANT_ID=//p' \
+  "$PROJECT_ROOT/automation/project.conf")"
+CONFIG_ACTIVATION_PHASE="$(sed -n 's/^BACKEND_ACTIVATION_PHASE=//p' \
+  "$PROJECT_ROOT/automation/project.conf")"
+CONFIG_CANONICAL_URL="$(sed -n 's/^BACKEND_ACTIVATION_CANONICAL_SUPABASE_URL=//p' \
+  "$PROJECT_ROOT/automation/project.conf")"
+CONFIG_CANONICAL_KEY="$(sed -n 's/^BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY=//p' \
+  "$PROJECT_ROOT/automation/project.conf")"
+CONFIG_CANONICAL_ORGANIZATION_ID="$(sed -n \
+  's/^BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=//p' \
+  "$PROJECT_ROOT/automation/project.conf")"
+CONFIG_CANONICAL_ACTIVATION_SHA=''
+CONFIG_CANONICAL_PROFILE_SHA=''
+if [ -n "$CONFIG_ACTIVATION_TENANT_ID" ]; then
+  CONFIG_CANONICAL_ACTIVATION_SHA="$(printf '%s\n' \
+    "{\"schemaVersion\":1,\"tenantId\":\"$CONFIG_ACTIVATION_TENANT_ID\",\"generation\":1,\"backend\":\"canonical\"}" \
+    | shasum -a 256 | awk '{print $1}')"
+  CONFIG_CANONICAL_PROFILE_SHA="$(node \
+    "$PROJECT_ROOT/automation/release/generate_backend_profile_fingerprint.mjs" \
+    "$CONFIG_ACTIVATION_TENANT_ID" "$CONFIG_CANONICAL_URL" "$CONFIG_CANONICAL_KEY" \
+    "$CONFIG_CANONICAL_ORGANIZATION_ID")"
+  printf '%s\n' \
+    "{\"schemaVersion\":1,\"tenantId\":\"$CONFIG_ACTIVATION_TENANT_ID\",\"generation\":0,\"backend\":\"$CONFIG_ACTIVATION_PHASE\"}" \
+    > "$BUILD_DIR/backend-activation.json"
+fi
+printf '// fake compiled app\n%s\n%s\n%s\n%s\n%s\n' \
+  "$CONFIG_ANON_KEY" "$CONFIG_CANONICAL_URL" "$CONFIG_CANONICAL_KEY" \
+  "$CONFIG_CANONICAL_ACTIVATION_SHA" "$CONFIG_CANONICAL_PROFILE_SHA" \
+  > "$BUILD_DIR/main.dart.js"
 printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><script>_flutter.buildConfig={"builds":[{"mainJsPath":"main.dart.js"}]};</script>\n' \
   > "$BUILD_DIR/index.html"
 printf '_flutter.buildConfig={"builds":[{"mainJsPath":"main.dart.js"}]};\n' \
   > "$BUILD_DIR/flutter_bootstrap.js"
 printf "const SUPABASE_KEY = 'sb-%s-auth-token';\n" "$CONFIG_PROJECT_REF" \
   > "$BUILD_DIR/auth_bridge"
-printf "const supabaseUrl = '%s'; const anonKey = '%s'; const authKey = 'sb-%s-auth-token';\n" \
+printf "const supabaseUrl = '%s'; const anonKey = '%s'; const authKey = 'sb-%s-auth-token'; const canonicalUrl = '%s'; const canonicalKey = '%s'; const canonicalProfile = '%s';\n" \
   "$CONFIG_SUPABASE_URL" "$CONFIG_ANON_KEY" "$CONFIG_PROJECT_REF" \
+  "$CONFIG_CANONICAL_URL" "$CONFIG_CANONICAL_KEY" "$CONFIG_CANONICAL_PROFILE_SHA" \
   > "$BUILD_DIR/web-assets/app.js"
 cp "$PROJECT_ROOT/automation/emit_version_manifest.sh" "$TMP_ROOT/automation/emit_version_manifest.sh"
 chmod +x "$TMP_ROOT/automation/emit_version_manifest.sh"
@@ -216,6 +245,11 @@ mkdir -p "$TMP_ROOT/partial/automation"
 cp "$PROJECT_ROOT/automation/project.conf" "$TMP_ROOT/partial/automation/project.conf"
 sed -i.bak 's/^BACKEND_ACTIVATION_PHASE=.*/BACKEND_ACTIVATION_PHASE=legacy/' \
   "$TMP_ROOT/partial/automation/project.conf"
+rm -f "$TMP_ROOT/partial/automation/project.conf.bak"
+sed -i.bak \
+  's/^BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=.*/BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=/' \
+  "$TMP_ROOT/partial/automation/project.conf"
+rm -f "$TMP_ROOT/partial/automation/project.conf.bak"
 if node "$PROJECT_ROOT/automation/verify_web_build.mjs" "$BUILD_DIR" "1.2.3+456" \
     "$TMP_ROOT/partial/automation/project.conf" cloudflare \
     > "$TMP_ROOT/partial-activation.log" 2>&1; then
