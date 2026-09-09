@@ -119,12 +119,16 @@ async function installAndVerifyReceiver(target) {
 }
 
 async function serviceRoleKey(projectRef, token) {
-  const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/api-keys`, {
+  const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/api-keys?reveal=true`, {
     headers: { authorization: `Bearer ${token}` },
   });
   if (!response.ok) fail(`service-key lookup failed: HTTP ${response.status}`);
-  const key = (await response.json()).find((entry) => entry.name === 'service_role')?.api_key;
-  if (!key) fail('legacy service_role key is unavailable');
+  const keys = await response.json();
+  const migrationKeys = keys.filter((entry) => entry.type === 'secret' &&
+    entry.name?.startsWith('festapp_cutover_export_'));
+  if (migrationKeys.length > 1) fail('multiple cutover Storage export keys are active');
+  const key = migrationKeys[0]?.api_key ?? keys.find((entry) => entry.name === 'service_role')?.api_key;
+  if (!key) fail('source Storage read key is unavailable');
   return key;
 }
 
