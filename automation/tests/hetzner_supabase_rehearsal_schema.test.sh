@@ -259,7 +259,8 @@ done
 for required in \
   'CONCURRENCY = 4' \
   'Storage artifact checksum mismatch' \
-  'legacy service_role key is unavailable' \
+  'source Storage read key is unavailable' \
+  'festapp_cutover_export_' \
   'Storage payload MD5 differs from snapshot metadata' \
   'cloud_source_mutated: false' \
   'cloudflare_in_path: false' \
