@@ -59,7 +59,7 @@ services:
       DEFAULT_EMAIL: ${SMTP_ADMIN_EMAIL}
       SMTP_HOSTNAME: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
-      SMTP_SECURE: "true"
+      SMTP_SECURE: ${SMTP_SECURE:-true}
       SMTP_USER_NAME: ${SMTP_USER}
       SMTP_USER_PASSWORD: ${SMTP_PASS}
       PROJECT_URL: http://api-gw:8000
