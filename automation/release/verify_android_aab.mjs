@@ -53,14 +53,20 @@ function main() {
   if (packageName !== manifest.androidPackage) throw new Error('AAB package differs from release manifest');
   if (!Number.isSafeInteger(versionCode) || versionCode < 1) throw new Error('AAB has no valid Android version code');
 
-  const markerPattern = /(bujnmi|miakh|\/Users\/|[A-Za-z]:\\Users\\)/i;
+  const hardMarkerPattern = /(bujnmi|\/Users\/|[A-Za-z]:\\Users\\)/i;
+  const textMarkerPattern = /(bujnmi|miakh|\/Users\/|[A-Za-z]:\\Users\\)/i;
   const names = run('unzip', ['-Z1', aab]);
-  if (markerPattern.test(names)) throw new Error('AAB contains a forbidden personal path or identity marker');
+  if (textMarkerPattern.test(names)) throw new Error('AAB entry name contains a forbidden personal path or identity marker');
   const strings = spawnSync('bash', ['-c', 'set -o pipefail; unzip -p "$1" | strings', 'scan-aab', aab], {
     encoding: 'utf8', maxBuffer: 128 * 1024 * 1024,
   });
   if (strings.status !== 0) throw new Error('Could not scan AAB contents');
-  if (markerPattern.test(strings.stdout)) throw new Error('AAB contains a forbidden personal path or identity marker');
+  if (hardMarkerPattern.test(strings.stdout)) throw new Error('AAB contains a forbidden personal path or identity marker');
+  const textEntries = names.split('\n').filter((name) => /\.(?:css|csv|html?|js|json|md|properties|toml|txt|xml|ya?ml)$/i.test(name));
+  for (const entry of textEntries) {
+    const contents = run('unzip', ['-p', aab, entry], { maxBuffer: 32 * 1024 * 1024 });
+    if (textMarkerPattern.test(contents)) throw new Error(`AAB text entry contains a forbidden personal marker: ${entry}`);
+  }
 
   const artifactSha256 = crypto.createHash('sha256').update(fs.readFileSync(aab)).digest('hex');
   const receipt = {

@@ -44,6 +44,8 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.match(candidate, /cache-provider: basic/);
   assert.match(candidate, /cache-read-only: true/);
   assert.match(candidate, /actions\/upload-artifact@v6/);
+  assert.match(candidate, /android-raw-/);
+  assert.match(candidate, /retention-days: 3/);
   assert.match(candidate, /retention-days: 30/);
   assert.doesNotMatch(candidate, /macos-latest|windows-latest/);
   assert.match(production, /max-parallel: 3/);
