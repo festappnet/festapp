@@ -10,6 +10,7 @@ readonly BACKUP_MANIFEST="${FESTAPP_PROMOTION_BACKUP_MANIFEST:-}"
 readonly RESTORE_RESULT="${FESTAPP_PROMOTION_RESTORE_RESULT:-}"
 readonly RUNTIME_CONFIG="${FESTAPP_PRODUCTION_RUNTIME_CONFIG:-}"
 readonly OPERATIONAL_READINESS="${FESTAPP_OPERATIONAL_READINESS_DECISION:-}"
+readonly ACTIVATION_ACK="${FESTAPP_ACTIVATION_OPEN_WRITES_ACK:-}"
 readonly SERVICES=(caddy api-gw auth rest realtime storage meta functions studio)
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
@@ -68,6 +69,8 @@ readonly TARGET_WRITE_BARRIER="$(docker compose exec -T db psql -X -v ON_ERROR_S
   -U postgres -d "$TARGET_DATABASE" -Atqc 'SHOW default_transaction_read_only')"
 [[ "$TARGET_WRITE_BARRIER" == "on" ]] ||
   fail "target database default_transaction_read_only barrier is not closed"
+[[ -z "$ACTIVATION_ACK" || "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]] ||
+  fail "invalid activation write acknowledgement"
 
 node "$COMPOSE_DIR/validate-production-promotion.mjs" \
   --target-database="$TARGET_DATABASE" \
@@ -164,12 +167,25 @@ wait_for_services() {
 }
 
 rollback() {
+  if [[ "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]]; then
+    docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+      -c "ALTER DATABASE \"$TARGET_DATABASE\" SET default_transaction_read_only = on" >/dev/null || true
+    docker compose exec -T db psql -X -U postgres -d postgres -Atqc \
+      "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$TARGET_DATABASE' AND pid<>pg_backend_pid()" >/dev/null || true
+  fi
   install -o root -g root -m 0600 "$ENV_BACKUP" .env
   docker compose up -d --force-recreate "${SERVICES[@]}" >/dev/null || true
   wait_for_services || true
   echo "Production promotion rolled back to the preserved runtime configuration: $ENV_BACKUP" >&2
 }
 trap rollback ERR
+
+if [[ "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]]; then
+  docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+    -c "ALTER DATABASE \"$TARGET_DATABASE\" RESET default_transaction_read_only" >/dev/null
+  docker compose exec -T db psql -X -U postgres -d postgres -Atqc \
+    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$TARGET_DATABASE' AND pid<>pg_backend_pid()" >/dev/null
+fi
 
 set_env_value FESTAPP_RUNTIME_DATABASE "$TARGET_DATABASE"
 set_env_value FESTAPP_SUPABASE_HOSTNAME "$(jq -r .public_hostname "$RUNTIME_CONFIG")"
@@ -255,20 +271,24 @@ done < <(jq -r '.tenant_canaries[]|[.tenant_id,.organization_id,.occasion_link,.
   .activation_manifest_url,.legacy_activation_sha256]|@tsv' "$RUNTIME_CONFIG")
 
 trap - ERR
+# Default promotion receipt remains external_write_authority_opened:false; the
+# explicit activation acknowledgement records the combined open-write state.
 jq -n --arg promoted_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg previous_database "$CURRENT_DATABASE" --arg target_database "$TARGET_DATABASE" \
   --arg rollback_env "$ENV_BACKUP" --argjson tenant_canaries "$CANARY_COUNT" \
   --arg auth "$AUTH_STATUS" --arg rest "$REST_STATUS" --arg storage "$STORAGE_STATUS" \
   --arg realtime "$REALTIME_STATUS" \
   --arg function_bundle_sha256 "$FUNCTION_BUNDLE_SHA256" \
+  --arg writes_opened "$([[ "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]] && printf true || printf false)" \
   '{promoted_at:$promoted_at,previous_database:$previous_database,target_database:$target_database,
     rollback_env:$rollback_env,canonical_api_canary:{auth:$auth,rest:$rest,storage:$storage,realtime:$realtime},
     tenant_canaries:$tenant_canaries,client_activation_documents_published:false,
-    external_write_authority_opened:false,target_write_barrier:"database-default-read-only",
+    external_write_authority_opened:($writes_opened=="true"),
+    target_write_barrier:(if $writes_opened=="true" then "open" else "database-default-read-only" end),
     function_bundle_sha256:$function_bundle_sha256,
     production_dns_mutated:false,
     deleted_databases:[],deleted_paths:[]}' >"$RUN_DIR/result.json"
 chmod 0600 "$RUN_DIR/result.json"
-echo "Canonical runtime promotion passed without publishing client activation or opening write authority."
+echo "Canonical runtime promotion passed; activation writes opened=$([[ "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]] && printf true || printf false)."
 echo "Rollback env: $ENV_BACKUP"
 echo "Evidence: $RUN_DIR"
