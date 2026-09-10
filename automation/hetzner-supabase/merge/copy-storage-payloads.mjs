@@ -134,9 +134,15 @@ async function serviceRoleKey(projectRef, token) {
 
 async function copyObject({ object, projectRef, serviceKey, target }) {
   const sourcePath = [object.bucket, ...object.name.split('/')].map(encodeURIComponent).join('/');
-  const response = await fetch(`https://${projectRef}.supabase.co/storage/v1/object/${sourcePath}`, {
-    headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}` },
-  });
+  let response;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    response = await fetch(`https://${projectRef}.supabase.co/storage/v1/object/${sourcePath}`, {
+      headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}` },
+    });
+    if (response.ok || response.status < 500) break;
+    await response.body?.cancel();
+    await new Promise((resolve) => setTimeout(resolve, 250 * (2 ** attempt)));
+  }
   if (!response.ok || !response.body) fail(`source Storage download failed: HTTP ${response.status}`);
 
   const descriptor = Buffer.from(JSON.stringify(object)).toString('base64url');
