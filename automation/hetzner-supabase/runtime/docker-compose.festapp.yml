@@ -58,6 +58,16 @@ services:
     logging: *logging
   studio:
     image: supabase/studio:2026.08.03-sha-022b374@sha256:cb20b9a2b8fbb4f47a616c959dfdbde75668603c38d5ddd018e3f25a9f009937
+    entrypoint:
+      - /bin/sh
+      - /opt/festapp-studio/entrypoint.sh
+    command:
+      - node
+      - apps/studio/server.js
+    volumes:
+      - ./studio-customization/entrypoint.sh:/opt/festapp-studio/entrypoint.sh:ro
+      - ./studio-customization/install-logout.mjs:/opt/festapp-studio/install-logout.mjs:ro
+      - ./studio-customization/logout.js:/opt/festapp-studio/logout.js:ro
     logging: *logging
   api-gw:
     image: envoyproxy/envoy:v1.39.0@sha256:5edd669228659835ac243e3ffa5c08a65e92bb267d56da5c28317dbcf5a70292
