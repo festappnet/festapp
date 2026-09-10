@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "2b0651257ded431c531efb8a49ebbee859541bd8",
+  "baseMainSha": "73bce2fdfb6b88a5c67681bdc80e932c6fa5e894",
   "release": {
-    "version": "0.20.8+492",
-    "note": "Persist the canonical latest-news marker on selection"
+    "version": "0.20.9+493",
+    "note": "Write the latest-news marker directly on selection"
   }
 }
