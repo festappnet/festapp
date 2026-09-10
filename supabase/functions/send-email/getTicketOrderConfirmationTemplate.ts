@@ -35,7 +35,7 @@ async function addExternalAttachment(
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ order: ticketOrder.order, requestSecret }),
+    body: JSON.stringify({ orderId: ticketOrder.order.id, requestSecret }),
   });
   if (!response.ok) {
     throw new Error(`Attachment service failed: ${response.status}`);
