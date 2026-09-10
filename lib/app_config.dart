@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = '';
   static const int backendActivationCanonicalOrganizationId = 0;
   static const String backendActivationCanonicalProfileSha256 = '';
+  static const String clientSyncTenantId = '';
   static const String appName = 'Festapp';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
