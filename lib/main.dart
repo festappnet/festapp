@@ -15,6 +15,7 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_endpoint_service.dart';
 import 'package:fstapp/components/occasion/occasion_home_page.dart';
 import 'package:fstapp/services/connectivity_service.dart';
 import 'package:fstapp/services/health_tracking_http_client.dart';
@@ -235,9 +236,12 @@ Future<void> initializeEverything() async {
   // Configure the canonical sync owner even when that recovery times out, so
   // an offline cold start can still activate the persisted public generation.
   try {
+    final syncEndpoints = await ClientSyncEndpointService().resolve();
     ClientSyncRuntime.configure(
       Supabase.instance.client,
       onLastSuccess: OfflineDataService.saveLastSyncedAt,
+      publicHeadOrigin: syncEndpoints.headOrigin,
+      publicAssetOrigin: syncEndpoints.assetOrigin,
     );
     if (supabaseInitialized && !effectiveOffline) {
       if (AuthService.isLoggedIn()) {
