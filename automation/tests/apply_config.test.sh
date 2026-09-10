@@ -338,6 +338,8 @@ for (const [key, value] of Object.entries({
   BACKEND_ACTIVATION_CANONICAL_SUPABASE_URL: 'https://api.festapp.net',
   BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY: 'fixture-canonical-key',
   BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID: '84',
+  SYNC_HEAD_ORIGIN: 'https://sync.festapp.net',
+  SYNC_ASSET_ORIGIN: 'https://assets.festapp.net',
 })) {
   const line = `${key}=${value}`;
   source = new RegExp(`^${key}=.*$`, 'm').test(source)
@@ -355,6 +357,14 @@ cmp -s "$TMP_ROOT/web/backend-activation.json" \
        "$TMP_ROOT/web_client/public/backend-activation.json" || {
     echo "activation manifests differ" >&2; exit 1;
 }
+cmp -s "$TMP_ROOT/web/client-sync-config.json" \
+       "$TMP_ROOT/web_client/public/client-sync-config.json" || {
+    echo "client sync runtime configurations differ" >&2; exit 1;
+}
+assert_contains "$TMP_ROOT/web/client-sync-config.json" \
+    '"syncHeadOrigin":"https://sync.festapp.net"'
+assert_contains "$TMP_ROOT/web/client-sync-config.json" \
+    '"syncAssetOrigin":"https://assets.festapp.net"'
 assert_contains "$TMP_ROOT/web/backend-activation.json" '"backend":"legacy"'
 assert_contains "$TMP_ROOT/lib/app_config.dart" \
     "static const String backendActivationTenantId = 'fixture-transition';"
