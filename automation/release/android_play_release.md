@@ -38,23 +38,22 @@ Each tenant uses GitHub environments named `android-build-<tenant>` and
 `RELEASE_MANIFEST_JSON`, `ANDROID_UPLOAD_KEYSTORE_B64`,
 `ANDROID_KEY_PROPERTIES`, and `ANDROID_UPLOAD_CERT_SHA256`. Production
 environments contain `RELEASE_MANIFEST_JSON`, `GOOGLE_PLAY_JSON`, and
-`ANDROID_UPLOAD_CERT_SHA256`. Repository-level Cloudflare credentials and the
-`FESTAPP_ANDROID_RELEASE_BUCKET` variable provide access to the private R2
-artifact store.
+`ANDROID_UPLOAD_CERT_SHA256`. Both environments contain the same
+`ANDROID_ARTIFACT_PASSPHRASE`; GitHub stores only an AES-256 encrypted candidate
+archive because the source repository is public.
 
 The candidate workflow pins the source branch to its exact remote SHA, checks
 tenant drift, builds on Ubuntu, verifies the AAB package/version/signature,
 rejects personal path or identity markers, and stores the AAB plus a technical
-receipt under:
-
-```text
-android/releases/<package>/<versionCode>/<sourceSha>/<artifactSha256>.aab
-```
+receipt as a private GitHub Actions artifact for 30 days. The artifact name is
+`android-candidate-<tenant>-<sourceSha>`; the workflow summary records its run
+ID, package, version code, source SHA, release-tooling SHA and AAB SHA-256.
 
 `Android production batch` accepts one to thirty fully identified candidates.
 Every item must include `tenant`, `packageName`, `versionCode`, `sourceSha`,
-`artifactSha256`, and `action: "production-completed"`. It refuses an advanced
-branch, downloads only the exact R2 object, repeats all identity checks, performs
+`toolingSha`, `artifactSha256`, `candidateRunId`, and
+`action: "production-completed"`. It
+refuses an advanced branch, downloads only the exact GitHub artifact, repeats all identity checks, performs
 the binary-only production upload, and reads the completed version back from
 Google Play. Dispatching this workflow is still a production mutation and needs
 fresh authorization for every listed package and artifact.

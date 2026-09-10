@@ -21,6 +21,8 @@ function main() {
   const aab = fs.realpathSync(aabValue);
   const manifest = JSON.parse(fs.readFileSync(fs.realpathSync(manifestValue), 'utf8'));
   const expectedFingerprint = normalizeFingerprint(process.env.EXPECTED_UPLOAD_CERT_SHA256 ?? '');
+  const toolingSha = process.env.TOOLING_SHA?.toLowerCase();
+  if (!/^[0-9a-f]{40}$/.test(toolingSha ?? '')) throw new Error('TOOLING_SHA is missing');
   if (!/^[0-9a-f]{64}$/.test(expectedFingerprint)) {
     throw new Error('EXPECTED_UPLOAD_CERT_SHA256 must contain the approved upload certificate SHA-256');
   }
@@ -53,6 +55,7 @@ function main() {
     packageName,
     versionCode,
     sourceSha,
+    toolingSha,
     artifactSha256,
     uploadCertificateSha256: actualFingerprint,
     builder: 'github-actions/ubuntu',

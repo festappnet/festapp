@@ -36,12 +36,16 @@ export function normalizeProductionTargets(value) {
     const packageName = release?.packageName;
     const versionCode = Number(release?.versionCode);
     const sourceSha = release?.sourceSha?.toLowerCase();
+    const toolingSha = release?.toolingSha?.toLowerCase();
     const artifactSha256 = release?.artifactSha256?.toLowerCase();
+    const candidateRunId = Number(release?.candidateRunId);
     if (typeof tenant !== 'string' || !tenantPattern.test(tenant)) throw new Error('invalid tenant');
     if (typeof packageName !== 'string' || !packagePattern.test(packageName)) throw new Error(`invalid package for ${tenant}`);
     if (!Number.isSafeInteger(versionCode) || versionCode < 1) throw new Error(`invalid versionCode for ${tenant}`);
     if (!shaPattern.test(sourceSha ?? '')) throw new Error(`invalid sourceSha for ${tenant}`);
+    if (!shaPattern.test(toolingSha ?? '')) throw new Error(`invalid toolingSha for ${tenant}`);
     if (!hashPattern.test(artifactSha256 ?? '')) throw new Error(`invalid artifactSha256 for ${tenant}`);
+    if (!Number.isSafeInteger(candidateRunId) || candidateRunId < 1) throw new Error(`invalid candidateRunId for ${tenant}`);
     if (release?.action !== 'production-completed') throw new Error(`invalid action for ${tenant}`);
     if (seen.has(packageName)) throw new Error(`duplicate package: ${packageName}`);
     seen.add(packageName);
@@ -51,7 +55,9 @@ export function normalizeProductionTargets(value) {
       packageName,
       versionCode,
       sourceSha,
+      toolingSha,
       artifactSha256,
+      candidateRunId,
       action: 'production-completed',
     };
   });

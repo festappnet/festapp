@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       releases_json:
-        description: 'Approved JSON array containing tenant, packageName, versionCode, sourceSha, artifactSha256 and action=production-completed'
+        description: 'Approved JSON array containing tenant, packageName, versionCode, sourceSha, toolingSha, artifactSha256, candidateRunId and action=production-completed'
         required: true
         type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: android-production-batch
@@ -49,7 +50,7 @@ jobs:
       - name: Check out trusted release tooling
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ matrix.toolingSha }}
       - name: Preserve trusted verification tooling
         shell: bash
         run: |
@@ -92,24 +93,34 @@ jobs:
           jq -e --arg package '${{ matrix.packageName }}' --arg branch '${{ matrix.branch }}' \
             '.schemaVersion == 2 and .androidPackage == $package and .releaseBranch == $branch' \
             "$RUNNER_TEMP/release-manifest.json" >/dev/null
-      - name: Download the exact authorized candidate from private R2
+      - name: Download the exact authorized candidate from GitHub
+        uses: actions/download-artifact@v7
+        with:
+          name: android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}
+          path: ${{ runner.temp }}/candidate
+          run-id: ${{ matrix.candidateRunId }}
+          github-token: ${{ github.token }}
+      - name: Verify the downloaded receipt and hash
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          BUCKET: ${{ vars.FESTAPP_ANDROID_RELEASE_BUCKET }}
+          ARTIFACT_PASSPHRASE: ${{ secrets.ANDROID_ARTIFACT_PASSPHRASE }}
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$BUCKET"
-          prefix="android/releases/${{ matrix.packageName }}/${{ matrix.versionCode }}/${{ matrix.sourceSha }}/${{ matrix.artifactSha256 }}"
-          npx --yes wrangler@4.129.1 r2 object get "$BUCKET/$prefix.aab" --file "$RUNNER_TEMP/release.aab" --remote
-          npx --yes wrangler@4.129.1 r2 object get "$BUCKET/$prefix.receipt.json" --file "$RUNNER_TEMP/stored-receipt.json" --remote
+          test -n "$ARTIFACT_PASSPHRASE"
+          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --decrypt --output "$RUNNER_TEMP/candidate.tar" \
+            "$RUNNER_TEMP/candidate/android-candidate.tar.gpg"
+          mkdir "$RUNNER_TEMP/candidate-plain"
+          tar -C "$RUNNER_TEMP/candidate-plain" -xf "$RUNNER_TEMP/candidate.tar"
+          cp "$RUNNER_TEMP/candidate-plain/app-release.aab" "$RUNNER_TEMP/release.aab"
+          cp "$RUNNER_TEMP/candidate-plain/release-receipt.json" "$RUNNER_TEMP/stored-receipt.json"
           jq -e \
             --arg package '${{ matrix.packageName }}' \
             --argjson version '${{ matrix.versionCode }}' \
             --arg source '${{ matrix.sourceSha }}' \
+            --arg tooling '${{ matrix.toolingSha }}' \
             --arg hash '${{ matrix.artifactSha256 }}' \
-            '.packageName == $package and .versionCode == $version and .sourceSha == $source and .artifactSha256 == $hash' \
+            '.packageName == $package and .versionCode == $version and .sourceSha == $source and .toolingSha == $tooling and .artifactSha256 == $hash' \
             "$RUNNER_TEMP/stored-receipt.json" >/dev/null
           echo '${{ matrix.artifactSha256 }}  '${RUNNER_TEMP}'/release.aab' | sha256sum --check
       - name: Install pinned Bundletool verifier
@@ -123,6 +134,7 @@ jobs:
         env:
           BUNDLETOOL_JAR: ${{ runner.temp }}/bundletool.jar
           EXPECTED_UPLOAD_CERT_SHA256: ${{ secrets.ANDROID_UPLOAD_CERT_SHA256 }}
+          TOOLING_SHA: ${{ matrix.toolingSha }}
         shell: bash
         run: |
           set -euo pipefail

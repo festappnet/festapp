@@ -64,23 +64,6 @@ jobs:
           flutter pub get --enforce-lockfile
           printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > android/local.properties
           (cd android && ./gradlew dependencies --no-daemon --build-cache)
-      - name: Ensure the private Android artifact bucket exists
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          BUCKET: ${{ vars.FESTAPP_ANDROID_RELEASE_BUCKET }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$BUCKET"
-          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets"
-          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-          if ! curl -fsS -H "$auth" "$api" | jq -e --arg bucket "$BUCKET" \
-            '.success and any(.result.buckets[]; .name == $bucket)' >/dev/null; then
-            curl -fsS -X POST -H "$auth" -H 'Content-Type: application/json' \
-              --data "$(jq -cn --arg name "$BUCKET" '{name: $name}')" "$api" | jq -e '.success' >/dev/null
-          fi
-
   build:
     needs: [plan, warm-gradle-cache]
     runs-on: ubuntu-latest
@@ -101,12 +84,19 @@ jobs:
         run: |
           set -euo pipefail
           cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+          cp android/gradlew "$RUNNER_TEMP/gradlew"
+          cp android/gradle/wrapper/gradle-wrapper.jar "$RUNNER_TEMP/gradle-wrapper.jar"
       - name: Check out immutable tenant source
         uses: actions/checkout@v6
         with:
           ref: ${{ matrix.sourceSha }}
           fetch-depth: 0
           clean: true
+      - name: Install the Windows-authoritative Gradle wrapper from trusted main
+        shell: bash
+        run: |
+          install -m 0755 "$RUNNER_TEMP/gradlew" android/gradlew
+          install -m 0644 "$RUNNER_TEMP/gradle-wrapper.jar" android/gradle/wrapper/gradle-wrapper.jar
       - name: Prove source is still the current production branch head
         env:
           BRANCH: ${{ matrix.branch }}
@@ -185,6 +175,7 @@ jobs:
         env:
           BUNDLETOOL_JAR: ${{ runner.temp }}/bundletool.jar
           EXPECTED_UPLOAD_CERT_SHA256: ${{ secrets.ANDROID_UPLOAD_CERT_SHA256 }}
+          TOOLING_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -195,27 +186,40 @@ jobs:
           echo "package=$(jq -r .packageName <<<"$result")" >> "$GITHUB_OUTPUT"
           echo "version_code=$(jq -r .versionCode <<<"$result")" >> "$GITHUB_OUTPUT"
           echo "artifact_sha=$(jq -r .artifactSha256 <<<"$result")" >> "$GITHUB_OUTPUT"
-      - name: Store canonical candidate in private R2
+      - name: Stage the verified candidate artifact
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          BUCKET: ${{ vars.FESTAPP_ANDROID_RELEASE_BUCKET }}
+          ARTIFACT_PASSPHRASE: ${{ secrets.ANDROID_ARTIFACT_PASSPHRASE }}
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$BUCKET"
-          prefix="android/releases/${{ steps.verify.outputs.package }}/${{ steps.verify.outputs.version_code }}/${{ matrix.sourceSha }}/${{ steps.verify.outputs.artifact_sha }}"
-          npx --yes wrangler@4.129.1 r2 object put "$BUCKET/$prefix.aab" \
-            --file build/app/outputs/bundle/release/app-release.aab --remote
-          npx --yes wrangler@4.129.1 r2 object put "$BUCKET/$prefix.receipt.json" \
-            --file "$RUNNER_TEMP/release-receipt.json" --remote
+          test -n "$ARTIFACT_PASSPHRASE"
+          mkdir -p "$RUNNER_TEMP/candidate-plain" "$RUNNER_TEMP/candidate"
+          cp build/app/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/candidate-plain/app-release.aab"
+          cp "$RUNNER_TEMP/release-receipt.json" "$RUNNER_TEMP/candidate-plain/release-receipt.json"
+          tar -C "$RUNNER_TEMP/candidate-plain" -cf "$RUNNER_TEMP/candidate.tar" .
+          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            --output "$RUNNER_TEMP/candidate/android-candidate.tar.gpg" "$RUNNER_TEMP/candidate.tar"
+      - name: Store the candidate as a private GitHub artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}
+          path: ${{ runner.temp }}/candidate
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Record immutable candidate identity
+        shell: bash
+        run: |
           {
             echo "### Android candidate"
+            echo "- Candidate run ID: \`${{ github.run_id }}\`"
+            echo "- Tooling: \`${{ github.sha }}\`"
+            echo "- Artifact: \`android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}\`"
             echo "- Package: \`${{ steps.verify.outputs.package }}\`"
             echo "- Version code: \`${{ steps.verify.outputs.version_code }}\`"
             echo "- Source: \`${{ matrix.sourceSha }}\`"
             echo "- AAB SHA-256: \`${{ steps.verify.outputs.artifact_sha }}\`"
-            echo "- Private R2 key: \`$prefix.aab\`"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Remove private inputs
         if: always()
