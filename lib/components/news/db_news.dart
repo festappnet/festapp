@@ -241,6 +241,22 @@ class DbNews {
     }).select();
   }
 
+  static Future<void> setLatestMessageAsRead() async {
+    AuthService.ensureUserIsLoggedIn();
+    final latestMessage = await _supabase
+        .from(Tb.news.table)
+        .select(Tb.news.id)
+        .eq(Tb.news.occasion, RightsService.currentOccasionId()!)
+        .order(Tb.news.id, ascending: false)
+        .limit(1)
+        .maybeSingle();
+    if (latestMessage == null) return;
+    final latestId = (latestMessage[Tb.news.id] as num).toInt();
+    if (await getLastReadMessage() < latestId) {
+      await setMessagesAsRead(latestId);
+    }
+  }
+
   static Future<List<NewsModel>> getAllNewsMessages() async {
     int lastReadMessageId = 0;
     if (AuthService.isLoggedIn()) {
