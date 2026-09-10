@@ -53,17 +53,18 @@ function main() {
   if (packageName !== manifest.androidPackage) throw new Error('AAB package differs from release manifest');
   if (!Number.isSafeInteger(versionCode) || versionCode < 1) throw new Error('AAB has no valid Android version code');
 
-  const hardMarkerPattern = /(bujnmi|\/Users\/|[A-Za-z]:\\Users\\)/i;
-  const textMarkerPattern = /(bujnmi|miakh|\/Users\/|[A-Za-z]:\\Users\\)/i;
+  const hardMarkerPatterns = [/bujnmi/i, /\/Users\//, /[A-Za-z]:\\Users\\/i];
+  const textMarkerPatterns = [...hardMarkerPatterns, /miakh/i];
+  const containsMarker = (value, patterns) => patterns.some((pattern) => pattern.test(value));
   const names = run('unzip', ['-Z1', aab]);
-  if (textMarkerPattern.test(names)) throw new Error('AAB entry name contains a forbidden personal path or identity marker');
+  if (containsMarker(names, textMarkerPatterns)) throw new Error('AAB entry name contains a forbidden personal path or identity marker');
   const binaryScan = spawnSync('bash', ['-c', String.raw`
     set -euo pipefail
     scan_root="$(mktemp -d)"
     trap 'rm -rf "$scan_root"' EXIT
     unzip -qq "$1" -d "$scan_root"
     match="$({ find "$scan_root" -type f -print0 | xargs -0 strings -f || true; } |
-      awk 'BEGIN { IGNORECASE=1 } /bujnmi|\/Users\/|[A-Za-z]:\\Users\\/ { sub(/:.*/, ""); print; exit }')"
+      awk 'tolower($0) ~ /bujnmi/ || $0 ~ /\/Users\// || tolower($0) ~ /[a-z]:\\users\\/ { sub(/:.*/, ""); print; exit }')"
     if [[ -n "$match" ]]; then
       printf '%s\n' "$match" | sed "s#^$scan_root/##"
     fi
@@ -75,7 +76,7 @@ function main() {
   const textEntries = names.split('\n').filter((name) => /\.(?:css|csv|html?|js|json|md|properties|toml|txt|xml|ya?ml)$/i.test(name));
   for (const entry of textEntries) {
     const contents = run('unzip', ['-p', aab, entry], { maxBuffer: 32 * 1024 * 1024 });
-    if (textMarkerPattern.test(contents)) throw new Error(`AAB text entry contains a forbidden personal marker: ${entry}`);
+    if (containsMarker(contents, textMarkerPatterns)) throw new Error(`AAB text entry contains a forbidden personal marker: ${entry}`);
   }
 
   const artifactSha256 = crypto.createHash('sha256').update(fs.readFileSync(aab)).digest('hex');
