@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
   static const int backendActivationCanonicalOrganizationId = 6;
   static const String backendActivationCanonicalProfileSha256 = '078dddedcecf4ab46a503bd0f3bc25e17f05d931baaa4eafb6712d8c447fdaea';
+  static const String clientSyncTenantId = 'cavfotofest';
   static const String appName = 'Člověk a víra';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
