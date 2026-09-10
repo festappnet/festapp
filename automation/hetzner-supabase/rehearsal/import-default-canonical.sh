@@ -56,6 +56,7 @@ DECLARE
   import_run uuid;
   relation record;
   column_list text;
+  select_list text;
   source_rows bigint;
   target_rows bigint;
   source_companions bigint;
@@ -82,8 +83,13 @@ BEGIN
       AND foreign_table_name <> 'user_companions'
     ORDER BY foreign_table_schema, foreign_table_name
   LOOP
-    SELECT string_agg(format('%I', target.column_name), ', ' ORDER BY target.ordinal_position)
-    INTO column_list
+    SELECT string_agg(format('%I', target.column_name), ', ' ORDER BY target.ordinal_position),
+      string_agg(CASE
+        WHEN relation.target_schema='public' AND relation.table_name='organizations'
+          AND target.column_name='data' THEN 'data-''ONESIGNAL_REST_API_KEY'''
+        ELSE format('%I', target.column_name)
+      END, ', ' ORDER BY target.ordinal_position)
+    INTO column_list, select_list
     FROM information_schema.columns target
     JOIN information_schema.columns source
       ON source.table_schema=relation.source_schema
@@ -95,18 +101,11 @@ BEGIN
     IF column_list IS NULL THEN
       RAISE EXCEPTION 'no common import columns for %.%', relation.target_schema, relation.table_name;
     END IF;
-    IF relation.target_schema='public' AND relation.table_name='organizations' THEN
-      EXECUTE format(
-        'INSERT INTO public.organizations (id,created_at,updated_at,data,title,phone_prefixes) OVERRIDING SYSTEM VALUE SELECT id,created_at,updated_at,data-''ONESIGNAL_REST_API_KEY'',title,phone_prefixes FROM %I.%I',
-        relation.source_schema, relation.table_name
-      );
-    ELSE
-      EXECUTE format(
-        'INSERT INTO %I.%I (%s) OVERRIDING SYSTEM VALUE SELECT %s FROM %I.%I',
-        relation.target_schema, relation.table_name, column_list, column_list,
-        relation.source_schema, relation.table_name
-      );
-    END IF;
+    EXECUTE format(
+      'INSERT INTO %I.%I (%s) OVERRIDING SYSTEM VALUE SELECT %s FROM %I.%I',
+      relation.target_schema, relation.table_name, column_list, select_list,
+      relation.source_schema, relation.table_name
+    );
     EXECUTE format('SELECT count(*) FROM %I.%I', relation.source_schema, relation.table_name) INTO source_rows;
     EXECUTE format('SELECT count(*) FROM %I.%I', relation.target_schema, relation.table_name) INTO target_rows;
     IF source_rows <> target_rows THEN
