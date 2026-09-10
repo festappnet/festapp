@@ -133,7 +133,7 @@ done
 [[ "$TUNNEL_CONNECTED" == true ]] || fail "administrator tunnel did not establish a Cloudflare connection"
 
 readonly LOCAL_ADMIN_STATUS="$(curl -sS -o /dev/null -D "$RUN_DIR/local-admin.headers" \
-  -w '%{http_code}' --max-time 10 "$ADMIN_ORIGIN/")"
+  -w '%{http_code}' --max-time 10 -H "Host: $ADMIN_HOSTNAME" "$ADMIN_ORIGIN/")"
 chmod 0600 "$RUN_DIR/local-admin.headers"
 [[ "$LOCAL_ADMIN_STATUS" == "307" ]] || fail "loopback administrator proxy did not authenticate to Supabase Studio"
 rg -qi '^location: /project/default\r?$' "$RUN_DIR/local-admin.headers" ||

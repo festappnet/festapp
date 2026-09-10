@@ -14,6 +14,7 @@ services:
       FESTAPP_SUPABASE_HOSTNAME: ${FESTAPP_SUPABASE_HOSTNAME:-rehearsal-api.festapp.net}
       FESTAPP_SUPABASE_SITE_ADDRESSES: ${FESTAPP_SUPABASE_SITE_ADDRESSES:-rehearsal-api.festapp.net}
       FESTAPP_SUPABASE_ADMIN_SITE: ${FESTAPP_SUPABASE_ADMIN_SITE:-http://127.0.0.1:8999}
+      FESTAPP_SUPABASE_ADMIN_HOSTNAME: ${FESTAPP_SUPABASE_ADMIN_HOSTNAME:-supabase.festapp.net}
       FESTAPP_SUPABASE_ADMIN_BASIC_AUTH: ${FESTAPP_SUPABASE_ADMIN_BASIC_AUTH:?configure the internal administrator origin credential}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
