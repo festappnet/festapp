@@ -88,7 +88,8 @@ test('AAB validation permits only the known self-signed jarsigner warning class'
     'utf8',
   );
   assert.match(verifier, /\[0, 4\]\.includes\(verification\.status\)/);
-  assert.match(verifier, /jar verified\\\./);
+  assert.match(verifier, /unsigned entries \(16\)/);
+  assert.match(verifier, /verification failure \(1\)/);
   assert.match(verifier, /actualFingerprint !== expectedFingerprint/);
 });
 
