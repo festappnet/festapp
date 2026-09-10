@@ -1812,9 +1812,12 @@ class _MapPageState extends State<MapPage>
         _placeTypeInitialized = true;
       }
     }
-    // Cached types are enough to filter the first paint; if there are none we
-    // wait for the online pass so we don't flash every place unfiltered.
-    if (_placeTypes.isNotEmpty) _placeTypesResolved = true;
+    // The v1 map catalog is a closed aggregate: an empty placeTypes list is a
+    // resolved result, not a pending online read. Treat it as final so places
+    // without configured categories remain visible.
+    if (_placeTypes.isNotEmpty || ClientSyncRuntime.isV1Selected) {
+      _placeTypesResolved = true;
+    }
 
     offlinePlaces.sortPlaces(false);
     var offlineList = loadOtherGroups
