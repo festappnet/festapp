@@ -92,7 +92,9 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 - `database/functions/` — SQL functions organized by domain. `database/tests/` for SQL tests (auto-rollback)
 - `supabase/functions/` — Deno Edge Functions (email, tickets, payments). See `docs/backend/edge_functions.md`
 - `web_client/src/` — Vanilla JS (Vite). Components + services (supabase, router, auth, theme, i18n)
-- `workers/image-worker/` — Cloudflare Worker (TypeScript/Node.js, Wrangler). Serves images from R2, handles upload/delete/presigned URLs, on-the-fly transforms via `?w=&f=&q=` query params. Custom domain: `img.festapp.net`
+- `workers/image-worker/` — Authenticated image control plane for public/private R2 objects; public bytes use the configured image host
+- `workers/sync-worker/` and `workers/sync-publisher/` — Client Sync v1 delivery and immutable artifact publication
+- `automation/hetzner-supabase/` — Self-hosted Supabase infrastructure, merge, rehearsal and operational tooling
 - `automation/` — `project.conf` (single source of truth), `apply_config.sh`, `test_all.sh`
 - `automation/image-migration/` — One-time migration scripts (Supabase Storage → R2). See `automation/image-migration/README.md`
 

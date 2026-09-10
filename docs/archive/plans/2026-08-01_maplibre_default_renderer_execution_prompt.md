@@ -1,11 +1,11 @@
 # Execute: MapLibre jako výchozí offline renderer s vypnutelným legacy fallbackem
 
-Work in `/Users/miakh/source/festapp`.
+Work in `<repo-root>`.
 
 Use the repository's applicable instructions and `verification: standard` from
 the authoritative plan:
 
-`docs/plans/2026-08-01_maplibre_default_renderer_plan.md`
+`docs/archive/plans/2026-08-01_maplibre_default_renderer_plan.md`
 
 Read it in full before editing. The target outcome is a GPU-backed MapLibre
 offline renderer that is the default for new native offline-map

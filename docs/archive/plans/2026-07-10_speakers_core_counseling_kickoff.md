@@ -1,14 +1,14 @@
 # Kick-off prompt (spustit v Claude Code v repu festapp)
 
 Implementuj refaktor „Přednášející jako core + Poradny jako featura“ podle
-schváleného plánu docs/plans/2026-07-10_speakers_core_counseling_feature_plan.md.
+schváleného plánu docs/archive/plans/2026-07-10_speakers_core_counseling_feature_plan.md.
 
 NEJDŘÍV SI PŘEČTI (v tomto pořadí, celé):
-1. docs/plans/2026-07-10_speakers_core_counseling_feature_plan.md — jediný
+1. docs/archive/plans/2026-07-10_speakers_core_counseling_feature_plan.md — jediný
    zdroj pravdy; rozhodnutí R1–R8 v sekci 2 jsou závazná, znovu je neotvírej.
    Sekce 3 je přesná mapa dotčených míst, sekce 4 kompletní seznam testů.
 2. docs/architecture/ai_context.md + CLAUDE.md (kritická pravidla, split-brain).
-3. Kontext hotové feature: docs/plans/2026-07-09_speakers_counseling_plan.md
+3. Kontext hotové feature: docs/archive/plans/2026-07-09_speakers_counseling_plan.md
    (feature je živá jako 0.19.48+298 — měníš gating a UX, ne rezervační logiku).
 4. Kód, který budeš měnit: lib/components/features/{speakers_feature,
    feature_service,feature_constants,feature.dart,feature_metadata}.dart,

@@ -1,6 +1,6 @@
 # Execution prompt: Offline funkcionalita
 
-Implementuj plán `docs/plans/2026-07-12_offline_funkcionalita_plan.md`.
+Implementuj plán `docs/archive/plans/2026-07-12_offline_funkcionalita_plan.md`.
 Cíl: klíčové funkce appky použitelné bez signálu — **čistě klientská práce,
 žádné SQL změny, žádný zásah do live DB**:
 

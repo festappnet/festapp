@@ -184,7 +184,8 @@ from `auth.uid()`, resolves scope and ownership from the database, rejects
 unknown keys and oversized payloads, validates every referenced ID against the
 resolved scope, hardcodes audit/sync impact, and receives the minimum exact
 grant. Prefer `SECURITY INVOKER`; a necessary `SECURITY DEFINER` function uses
-an empty `search_path`, fully qualified objects and explicit auth checks.
+`search_path = public, extensions`, explicitly qualifies non-public objects and
+performs explicit authorization checks.
 
 There are two write lanes:
 

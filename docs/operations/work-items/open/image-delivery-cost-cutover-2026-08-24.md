@@ -5,6 +5,11 @@ Updated: 2026-08-25
 Status: blocked
 Verification: release
 
+> Revalidation required (2026-09-10): the fixed point and queued Windows
+> commands below predate later `0.20.x` releases. Do not resume command `1028`
+> or execute P3/P4 from this snapshot until current store, client, Worker, R2
+> and traffic state has been read back without mutation.
+
 ## Authoritative sources
 
 - Plan: [`../../../plans/image-delivery-cost-cutover-plan-2026-08-23.md`](../../../plans/image-delivery-cost-cutover-plan-2026-08-23.md)

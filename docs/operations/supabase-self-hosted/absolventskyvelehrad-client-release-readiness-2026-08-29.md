@@ -47,7 +47,7 @@ Direct inspection of the exported IPA proved:
 - exact Runner and extension application identifiers;
 - no `OneSignalLocation.framework` in the application bundle.
 
-The IPA, profiles and digest evidence are held only in private FestappSeed
+The IPA, profiles and digest evidence are held only in private configuration
 storage. No App Store version was created, no build was uploaded, and no
 submission was made.
 

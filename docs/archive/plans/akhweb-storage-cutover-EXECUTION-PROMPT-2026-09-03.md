@@ -1,11 +1,11 @@
 # Execute: AKH web storage cutover and Pilgrimway retirement
 
-Work in `/Users/miakh/source/festapp` and `/Users/miakh/source/akhweb`.
+Work in `<repo-root>` and `<akhweb-repo-root>`.
 
 Use each repository's applicable instructions and standard verification.
 Implement the entire authoritative plan:
 
-`docs/plans/akhweb-storage-cutover-plan-2026-09-03.md`
+`docs/archive/plans/akhweb-storage-cutover-plan-2026-09-03.md`
 
 Read it in full before editing. The outcome is an AKH web whose DB/Auth remain
 on `iinvsjtnbyxfrdygsfpo` while all images use the canonical Festapp image API,

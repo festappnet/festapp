@@ -1,6 +1,6 @@
 # Execute: Kanonický EUR platební kontrakt a bezpečné párování
 
-Start in `/Users/miakh/source/festapp`, read the plan, then create a clean
+Start in `<repo-root>`, read the plan, then create a clean
 isolated worktree from the fixed point recorded there. If the plan pair is not
 yet committed, copy only those two planning artifacts into the isolated
 worktree. Do not copy, overwrite or include any other current dirty-worktree
@@ -9,7 +9,7 @@ change.
 Read all repository instructions, especially `docs/architecture/ai_context.md`,
 then read this authoritative plan in full before editing:
 
-`docs/plans/2026-08-05_eur_payment_reference_plan.md`
+`docs/archive/plans/2026-08-05_eur_payment_reference_plan.md`
 
 Use `verification: standard`. Implement local Waves 0–5 in dependency order.
 The completed cutover has one RF/payment identity owner, one provider-aware bank

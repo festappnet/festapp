@@ -1,6 +1,6 @@
 # Execution prompt: Místa + úklid — architektonický úklid
 
-Implementuj plán `docs/plans/2026-07-11_mista_uklid_architektura_plan.md`.
+Implementuj plán `docs/archive/plans/2026-07-11_mista_uklid_architektura_plan.md`.
 Jde o opravu bugu + konsolidaci, **žádnou novou funkčnost**:
 
 1. **Bug:** přesun místa group-adminem tiše selhává (klient to dovoluje,

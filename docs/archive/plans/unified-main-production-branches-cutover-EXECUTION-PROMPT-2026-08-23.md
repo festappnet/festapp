@@ -1,6 +1,6 @@
 # Execute: Jedna kanonická aplikace Festapp a tenké produkční branche
 
-Nejprve v `/Users/miakh/source/festapp` přečti níže uvedený plán z absolutní
+Nejprve v `<repo-root>` přečti níže uvedený plán z absolutní
 cesty. Je zatím necommitnutý v dirty CSM worktree, takže nový main worktree jej
 automaticky neuvidí. Do současného dirty worktree nevstupuj s implementací;
 podle Wave 0 vytvoř hashovaný inventory, čistý izolovaný cutover worktree a oba
@@ -10,7 +10,7 @@ Použij repository instructions v `AGENTS.md`/uživatelských instrukcích,
 `docs/architecture/ai_context.md`, `CONTRIBUTING.md` a verification `standard`.
 Autoritativní plán je:
 
-`/Users/miakh/source/festapp/docs/plans/unified-main-production-branches-cutover-plan-2026-08-23.md`
+`<repo-root>/docs/archive/plans/unified-main-production-branches-cutover-plan-2026-08-23.md`
 
 Před editací jej přečti celý. Proveď všechny vlny v pořadí. Výsledkem musí být
 jeden canonical shared source v `main`; `prod/csmostrava2026` a
@@ -23,9 +23,9 @@ Drift policy, allowlist a checker vždy načítej z recorded main SHA; nikdy z
 produkční branche, kterou právě kontroluješ. Expected tenant tree sestavuj z
 čistého main tree + povolených source/data overlays + fresh config generation.
 Neveřejné security/provisioning hodnoty, provozní kódy a seed payloads patří do
-uživatelova repa `FestappSeed`, ne do Festappu. Security/authorization logika a
+uživatelova repa `private configuration repository`, ne do Festappu. Security/authorization logika a
 public input schema naopak patří do main. Ověřený private owner je
-`rawen-dev/festappseed`, lokálně `/Users/miakh/source/festappseed`; publishing
+`the private configuration repository`, lokálně `<private-config-repo-root>`; publishing
 manifest je `release/store-listings/csm-ostrava-2026/config.json`. Credential
 soubory ponech pouze v ignorovaném `release/private/` nebo schváleném secret
 manageru.

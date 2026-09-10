@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
-const file = resolve(root, "docs/audits/unified-app-cutover-commit-inventory-2026-08-23.tsv");
+const file = resolve(root, "docs/archive/audits/unified-app-cutover-commit-inventory-2026-08-23.tsv");
 const [header, ...lines] = readFileSync(file, "utf8").trim().split("\n");
 const columns = header.split("\t");
 const allowed = new Set(["already-equivalent", "promote", "generalize", "tenant-overlay", "obsolete-by-revert", "operational-only"]);

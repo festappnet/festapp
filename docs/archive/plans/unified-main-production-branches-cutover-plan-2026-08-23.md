@@ -50,7 +50,7 @@ plán součástí `main`.
 - Automatická kontrola, že produkční branche nedivergují mimo schválený overlay
   a že generované tenant soubory odpovídají `automation/project.conf`.
 - Definice veřejného, verzovaného rozhraní mezi tímto repem a soukromým
-  `FestappSeed`: Festapp deklaruje potřebné input names/schema, FestappSeed
+  `private configuration repository`: Festapp deklaruje potřebné input names/schema, private configuration repository
   dodává neveřejné hodnoty a provozní seed/security materiál.
 - Aktualizace dokumentace a pracovního postupu tak, aby se drift znovu
   nevytvořil.
@@ -66,7 +66,7 @@ plán součástí `main`.
 - Nové produktové funkce, které nejsou potřeba pro převzetí existujícího chování.
 - Unifikace dalších historických `prod/*` branchí. Nový mechanismus však musí
   být použitelný i pro ně v navazující práci.
-- Přesun nebo redesign obsahu samotného `FestappSeed`, dokud není repo
+- Přesun nebo redesign obsahu samotného `private configuration repository`, dokud není repo
   jednoznačně nalezeno, přečteny jeho instrukce a udělen scope pro zápis.
 
 ## Constraints
@@ -97,13 +97,13 @@ plán součástí `main`.
   credentials, Apple/Google/Cloudflare/OneSignal private API credentials,
   bootstrap/pairing/reception security codes a neveřejné provozní seed payloads
   nepatří do Festapp Git historie ani tenant overlaye. Jejich vlastníkem je
-  `FestappSeed` nebo schválený secret manager napojený přes něj.
+  `private configuration repository` nebo schválený secret manager napojený přes něj.
 - Autorizační a validační logika sama o sobě je aplikační source code a patří do
   `main`; nesmí se schovat do private seed repa. Hranice odděluje neveřejné
   hodnoty/data od sdílené bezpečnostní implementace.
 - `SUPABASE_ANON_KEY`, public app/bundle IDs, domains a AASA identifiers jsou
   veřejné client build identity, nikoli secrets. Mohou zůstat v public tenant
-  configu, pokud politika FestappSeed neurčí jiný source; nikdy se za ně nesmí
+  configu, pokud politika private configuration repository neurčí jiný source; nikdy se za ně nesmí
   zaměnit service-role nebo deployment credential.
 
 ## Fixed points and current-state evidence
@@ -129,10 +129,10 @@ jinému fixed pointu.
 | Repository už říká, že public tenant identities a brand paths vlastní `project.conf`, nikoli generované soubory. | komentáře v `automation/project.conf` a `apply_config.sh` | Cutover tuto deklaraci musí technicky vynutit, ne jen dokumentovat. |
 | `automation/tests/pwa_offline.test.mjs` obsahuje CSM-specific očekávání. | text `tenant-specific ... CSM sizing` a forced-occasion fixtures | Testy společné logiky musí být tenant-neutral; CSM data patří do overlay fixture/matrix. |
 | CSM obsahuje generické vendored `packages/maplibre_android` a `packages/maplibre_platform_interface`, které main nemá. | `git diff --name-status main prod/csmostrava2026 -- packages` | Sdílené map packages musí být v main, pokud jsou aktivní dependencies; nesmějí zůstat CSM-only. |
-| CSM-specific data jsou identifikovatelná: offline-map manifests, legal sources a recovery SQL; store metadata/screenshots vlastní private `rawen-dev/festappseed`. | `automation/offline-map/manifests/csmostrava2026`, `automation/release/legal`, `database/recovery/2026-*csmostrava*`, FestappSeed `release/store-listings/csm-ostrava-2026` | Runtime tenant artefakty zůstávají na explicitní overlay boundary; publishing data mají jediného private ownera a do Festapp HEAD nepatří. |
-| Předchozí EUR plán používal tenant-neutral implementaci v main a následné cherry-picky do produkčních branchí. | `docs/plans/2026-08-05_eur_payment_reference_plan.md` | Jednorázový cherry-pick nestačí jako dlouhodobá architektura; nový cutover zavede opakovatelný main-first merge a drift gate. |
+| CSM-specific data jsou identifikovatelná: offline-map manifests, legal sources a recovery SQL; store metadata/screenshots vlastní the private configuration repository. | `automation/offline-map/manifests/csmostrava2026`, `automation/release/legal`, `database/recovery/2026-*csmostrava*`, private configuration repository `release/store-listings/csm-ostrava-2026` | Runtime tenant artefakty zůstávají na explicitní overlay boundary; publishing data mají jediného private ownera a do Festapp HEAD nepatří. |
+| Předchozí EUR plán používal tenant-neutral implementaci v main a následné cherry-picky do produkčních branchí. | `docs/archive/plans/2026-08-05_eur_payment_reference_plan.md` | Jednorázový cherry-pick nestačí jako dlouhodobá architektura; nový cutover zavede opakovatelný main-first merge a drift gate. |
 | HM popis produktu byl opraven v aktivním CSM worktree, nikoli v HM/main. | modifikace `web_client/src/components/forms/form_models.js` a nový `product_type_description.test.js` v CSM worktree | Oprava je tenant-neutral a musí být přenesena do main před cutoverem; z CSM nesmí zůstat jako branch-only logika. |
-| FestappSeed bylo nalezeno jako private `rawen-dev/festappseed` a naklonováno v `/Users/miakh/source/festappseed`; obsahuje verzovaný provisioning contract a kanonická CSM publishing data. | read-only repo/remote audit a fail-closed provisioning testy 2026-08-24 | Cross-repo handoff používá jediný `FESTAPP_RELEASE_MANIFEST`; credential soubory zůstávají pouze v ignorovaném `release/private/` nebo schváleném secret manageru. |
+| Privátní konfigurační repozitář v `<private-config-repo-root>` obsahuje verzovaný provisioning contract a kanonická CSM publishing data. | read-only repo/remote audit a fail-closed provisioning testy 2026-08-24 | Cross-repo handoff používá jediný `FESTAPP_RELEASE_MANIFEST`; credential soubory zůstávají pouze v ignorovaném `release/private/` nebo schváleném secret manageru. |
 | Po Wave 0 fetchi bylo zjištěno, že main a CSM nesou dvě různé migrace se stejným prefixem `20260806142000`: main `manage_occasion_users_permission`, CSM `reception_manual_login_code`. | `git log --all -- ...20260806142000*` a obsah obou souborů | Obě nelze vložit do jedné kanonické Supabase historie. Main historický soubor zůstává beze změny; CSM reception contract se přenese novou idempotentní forward reconciliation migrací `20260823120000`, takže se žádná již aplikovaná historie nepřepisuje. |
 
 ## Canonical contract
@@ -152,11 +152,11 @@ jsou deployment overlays nad konkrétním main SHA.
 - feature metadata, permission contracts a runtime registrace;
 - šablony a generátor tenant konfigurace.
 
-`FestappSeed` vlastní neveřejné hodnoty, seed/security payloads a provisioning
+`private configuration repository` vlastní neveřejné hodnoty, seed/security payloads a provisioning
 materiál. Festapp `main` vlastní pouze veřejný input contract: názvy proměnných,
 schema/typy, required/optional pravidla, bezpečné chyby pro chybějící input a
 test fixtures s neplatnými/fiktivními hodnotami. Žádný Festapp test ani plan
-artifact nesmí kopírovat skutečnou hodnotu z FestappSeed.
+artifact nesmí kopírovat skutečnou hodnotu z private configuration repository.
 
 Produkční branch smí vlastnit pouze položky uvedené ve svém strojově čitelném
 overlay manifestu:
@@ -164,7 +164,7 @@ overlay manifestu:
 1. `automation/project.conf` a branch release/version state;
 2. brand assets (loga, fonty, Android/iOS/PWA ikony) uvedené konfigurací;
 3. tenant legal texty nutné pro nasazený web/runtime; store listing metadata a
-   screenshots vlastní FestappSeed a v produkční větvi Festappu nejsou;
+   screenshots vlastní private configuration repository a v produkční větvi Festappu nejsou;
 4. tenant offline-map manifests/bundles;
 5. tenant recovery/runbook artefakty, které se nikdy nespouští jako shared
    migration;
@@ -199,7 +199,7 @@ business rozhodování.
   secrets ne. Anon keys jsou veřejná build identity, service-role/Apple/Google
   credentials se do Git nepřidávají.
 - Private-input resolution: build/deploy dostane tajné hodnoty explicitním
-  environment/file handoffem z FestappSeed/secret manageru. Festapp nesmí mít
+  environment/file handoffem z private configuration repository/secret manageru. Festapp nesmí mít
   fallback na committed tajemství ani automaticky číst libovolný sibling path.
   Interface version/fingerprint může být veřejný; secret content/hash ne.
 
@@ -253,9 +253,9 @@ Forbidden bypasses:
 - squash označený jako sync bez ledgeru, absence proof a testů;
 - force-push produkční historie;
 - deployment migrací na projekt vybraný podle `.env.local`.
-- kopírování secret/security hodnot z FestappSeed do `project.conf`, fixture,
+- kopírování secret/security hodnot z private configuration repository do `project.conf`, fixture,
   dokumentace, patch snapshotu nebo CI logu;
-- přesun authorization/business rules do FestappSeed jen proto, že souvisejí se
+- přesun authorization/business rules do private configuration repository jen proto, že souvisejí se
   security; private repo dodává hodnoty/data, ne druhou implementaci pravidel.
 
 ## Decisions, assumptions, and blockers
@@ -292,10 +292,10 @@ Forbidden bypasses:
 - **D10 — Main policy cannot be branch-owned:** `.paths`, checker, config schema
   a canonical templates jsou načítané z main. Tenant branch vlastní pouze
   input/data a recorded base SHA.
-- **D11 — FestappSeed boundary:** neveřejné security/provisioning hodnoty a
+- **D11 — private configuration repository boundary:** neveřejné security/provisioning hodnoty a
   provozní seed payloads zůstávají mimo Festapp; public schemas a aplikační
   security logic zůstávají v main. Cross-repo handoff musí být explicitní,
-  verzovaný a fail-closed, ale konkrétní FestappSeed path se neurčí bez jeho
+  verzovaný a fail-closed, ale konkrétní private configuration repository path se neurčí bez jeho
   skutečného locatoru a instrukcí.
 - **D12 — Migration collision reconciliation:** konflikt dvou různých
   `20260806142000` migrací se neřeší přepsáním ani výběrem jednoho obsahu. Main
@@ -321,8 +321,8 @@ Forbidden bypasses:
   false: jednodušší model je jediná branch + tenant build matrix; resolve by:
   uživatelův explicitní požadavek na rozdíly v branches je pro tento plán
   autoritativní.
-- **A6:** `FestappSeed` je dostupné pod jiným ownerem/URL nebo mimo aktuální
-  `/Users/miakh/source`; impact if false: private-input část cutoveru zůstane
+- **A6:** `private configuration repository` je dostupné pod jiným ownerem/URL nebo mimo aktuální
+  `<workspace-root>`; impact if false: private-input část cutoveru zůstane
   pouze veřejným Festapp contractem; resolve by: uživatelem dodaný locator nebo
   autorizovaný repository discovery v první Wave 0 session.
 
@@ -337,7 +337,7 @@ Forbidden bypasses:
 - Pokud nelze určit, zda konkrétní HM/CSM chování je produktové nebo tenant-only,
   implementace se zastaví pouze na této položce, uvede caller/data a vyžádá
   rozhodnutí. Ostatní nezávislé vlny mohou pokračovat.
-- Zápis do `FestappSeed` je blokovaný, dokud není znám přesný repo locator,
+- Zápis do `private configuration repository` je blokovaný, dokud není znám přesný repo locator,
   přečteny jeho `AGENTS.md`/README/runbooky a uživatel nepotvrdí, že tento velký
   task smí měnit i druhé repo. Festapp-side schema/secret-free validation může
   pokračovat samostatně.
@@ -346,7 +346,7 @@ Forbidden bypasses:
 
 Realizace vytvoří a průběžně udržuje:
 
-- `docs/audits/unified-app-cutover-ledger-2026-08-23.md` — každý divergentní
+- `docs/archive/audits/unified-app-cutover-ledger-2026-08-23.md` — každý divergentní
   commit/skupina a jeho klasifikace, cílový main commit a důkaz;
 - `automation/tenant-overlays/csmostrava2026.paths` — povolené CSM cesty;
 - `automation/tenant-overlays/hvezdamorska.paths` — povolené HM cesty;
@@ -402,7 +402,7 @@ Tato tabulka je startovní mapa, nikoli povolení přeskočit per-commit ledger.
 | Duplicate/reverted PWA implementations z commitů `6426ae1ec` až `a726d63fc` | Historická alternativní cesta | Zachovat pouze konečný survivor; odstranit fallback/obsolete tests/docs | symbol/route/cache-name absence search + offline tests |
 | Branch-only product description mapping | Omylem umístěná HM oprava na CSM | Přesunout test+fix do main; produkční branche zdědí | main test red-before/green-after; žádný branch-only diff v souboru |
 | Ručně editované generated `app_config`, theme, native identity, manifests | Reprodukovaný tenant stav | Izolovat generated leafs nebo generovat do buildu; zakázat hand edits | dva config runs jsou idempotentní a `git diff` odpovídá manifestu |
-| Private security/provisioning values ve Festapp history, fixtures nebo logs | Nesprávné repo vlastnictví a leak risk | Přesunout source-of-truth do FestappSeed/secret manageru; historii nepřepisovat v tomto plánu a existující leak řešit incident/rotation postupem | secret scan + owner/rotation report bez uvedení hodnot |
+| Private security/provisioning values ve Festapp history, fixtures nebo logs | Nesprávné repo vlastnictví a leak risk | Přesunout source-of-truth do private configuration repository/secret manageru; historii nepřepisovat v tomto plánu a existující leak řešit incident/rotation postupem | secret scan + owner/rotation report bez uvedení hodnot |
 | Staré branch planning docs `HVEZDAMORSKA-PLAN.md`, `HANDOFF-hvezdamorska.md` | Historický návod, potenciálně zavádějící | Archivovat s označením superseded nebo odstranit, pokud neobsahují unikátní provozní fakta | focused doc search neodkazuje na starý workflow jako aktuální |
 | Nezařazené CSM/HM commits | Neznámá reachability | Žádné nesmí zůstat; doplnit ledger status a důkaz | ledger checker: všechny SHAs ve fixed ranges jsou právě jednou klasifikované |
 | Backup/recovery branches | Bezpečnostní návratový bod | Dočasně zachovat jako explicitní boundary | uvedené refs existují do post-release sign-off; nejsou build/deploy targets |
@@ -438,12 +438,12 @@ ověřenému fixed pointu.
    `main`, například `cutover/unified-main-prod-branches-20260823`. Nevytvářet
    commit ani remote branch bez souhlasu.
 6. Ještě před další editací zkopírovat tento plán a execution prompt z
-   `/Users/miakh/source/festapp/docs/plans/` do stejné relativní cesty v novém
+   `<repo-root>/docs/plans/` do stejné relativní cesty v novém
    integration worktree a ověřit jejich SHA-256. Tato dvojice je první součást
    main candidate, nikoli ručně znovu vytvořený dokument.
 7. Ověřit, že backup refs pokrývají pre-sync tips. Pokud remote backup chybí,
    pouze navrhnout jeho push a vyžádat autorizaci.
-8. Získat přesný locator `FestappSeed`. Pokud je dostupný, pouze read-only
+8. Získat přesný locator `private configuration repository`. Pokud je dostupný, pouze read-only
    načíst jeho repository instructions a současný public handoff contract;
    nevypsat secret soubory ani jejich obsah. Pokud dostupný není, zapsat blocker
    a pokračovat jen Festapp-side prací, která žádné private values nepotřebuje.
@@ -461,7 +461,7 @@ ověřenému fixed pointu.
 - Ledger obsahuje všechny tři local/remote tips, hashovaný dirty inventory a
   přiřazený cíl každého topic bucketu.
 - SHA-256 plánu a promptu je stejný v původním a integračním worktree.
-- Ledger obsahuje stav `FestappSeed`: exact locator/instructions read, nebo
+- Ledger obsahuje stav `private configuration repository`: exact locator/instructions read, nebo
   explicitní unresolved blocker bez vymyšlené struktury.
 
 **Exit condition**
@@ -562,7 +562,7 @@ bez stale hodnot předchozího tenanta.
    kontrola musí změnu odmítnout, ne použít podvrženou politiku.
 10. Inventarizovat pouze názvy a zdroje required private inputs používaných build,
     deploy a release skripty. V main vytvořit veřejné schema a fiktivní fixtures;
-    skutečné hodnoty ani jejich hashes nekopírovat. Integraci s FestappSeed měnit
+    skutečné hodnoty ani jejich hashes nekopírovat. Integraci s private configuration repository měnit
     jen po odblokování druhého repa a podle jeho vlastních instrukcí.
 
 **Migration/deletion**
@@ -825,7 +825,7 @@ Kanonický main candidate je interně konzistentní a připravený k branch cuto
 5. Spustit repository-approved secret scanner, pokud existuje; jinak focused
    names/pattern scan a staged-diff review bez vypisování nalezených hodnot.
    Nález skutečného tajemství je incident/blocker: zastavit publikaci, nechat
-   hodnotu zrotovat přes FestappSeed proces a nepřidávat ji do reportu.
+   hodnotu zrotovat přes private configuration repository proces a nepřidávat ji do reportu.
 6. Připravit logické commits a před každým commitem podle `CONTRIBUTING.md`
    ukázat staged status a vyžádat souhlas.
 
@@ -965,7 +965,7 @@ Drift se nemůže tiše vrátit a budoucí práce má jednoznačnou cestu.
    boundaries, test results, skips a unapplied deploy/migrations.
 5. Backup branches označit removal condition: smazat až po samostatně schváleném
    úspěšném release a observačním okně obou tenantů.
-6. Zdokumentovat Festapp↔FestappSeed handoff: public schema version, odpovědnost
+6. Zdokumentovat Festapp↔private configuration repository handoff: public schema version, odpovědnost
    za hodnoty, fail-closed behavior a samostatně autorizovaný update postup.
    Pokud druhé repo zůstane nedostupné, reportovat tuto část jako exact blocker,
    ne jako hotovou integraci.
@@ -1042,7 +1042,7 @@ jeho branch nemá stejný verified main SHA.
 | No old paths/fallbacks | deletion-ledger searches | focused `rg` pro old symbols/cache names/routes/branch literals |
 | No user work lost | pre/post inventory | dirty topic ledger a presence všech patches/tests v main nebo retained worktree |
 | No secret/security material leak | staged/tree scan + public input schema tests | scanner/focused scan bez logování hodnot; missing-input fail-closed test |
-| FestappSeed boundary | cross-repo contract/readback | exact locator/instructions + public schema version, nebo explicitní blocker |
+| private configuration repository boundary | cross-repo contract/readback | exact locator/instructions + public schema version, nebo explicitní blocker |
 | Production state | separately authorized readback | pending; není podmínkou source cutoveru, musí být v reportu jako unapplied |
 
 ## Definition of complete
@@ -1065,7 +1065,7 @@ jeho branch nemá stejný verified main SHA.
       samostatného souhlasu.
 - [ ] Dokumentace popisuje main-first workflow a CI ho vynucuje.
 - [ ] Festapp neobsahuje nová private security data; public input schema a
-      fail-closed validation jsou v main a FestappSeed ownership je doložené
+      fail-closed validation jsou v main a private configuration repository ownership je doložené
       nebo přesně blokované.
 - [ ] Cutover report obsahuje výsledná SHAs a unapplied operational steps.
 - [ ] Stav external required checks/branch protection je buď read-backem ověřen,

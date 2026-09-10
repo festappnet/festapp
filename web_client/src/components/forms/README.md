@@ -11,7 +11,7 @@ Forms are defined in JSON stored in the DB, not hardcoded. The web client
 fetches this definition and renders widgets accordingly.
 
 - **RPC**: `get_form_by_link`
-  (`scripts/functions/eshop_forms/get_form_by_link.sql`) returns the "Form
+  (`database/functions/eshop_forms/get_form_by_link.sql`) returns the "Form
   Bundle" (Metadata, Fields, Products, Secret).
 
 ### 2. Core Files

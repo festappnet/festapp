@@ -1,7 +1,7 @@
 # Plán: Úklidová služba — navazující funkce (historie + blokování ohlašovatelů)
 
 **Stav: NÁVRH PŘIPRAVENÝ K IMPLEMENTACI (revize 2026-07-11).** Navazuje na už
-nasazenou featuru „Úklidová služba" (viz `docs/plans/2026-07-10_uklidova_sluzba_plan.md`).
+nasazenou featuru „Úklidová služba" (viz `docs/archive/plans/2026-07-10_uklidova_sluzba_plan.md`).
 Nic z tohoto dokumentu ještě není implementováno. Rozhodnutí označená ✅ jsou
 potvrzená uživatelem 2026-07-10; otázky v sekcích „Otevřené" se doladí za běhu.
 *Revize 2026-07-11: všechna tvrzení o existujícím kódu ověřena proti repozitáři,

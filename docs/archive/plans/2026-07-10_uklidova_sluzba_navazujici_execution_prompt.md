@@ -1,11 +1,11 @@
 # Execution prompt: Úklidová služba — navazující funkce (A + B)
 
-Implementuj plán `docs/plans/2026-07-10_uklidova_sluzba_navazujici_plan.md` — navazující
+Implementuj plán `docs/archive/plans/2026-07-10_uklidova_sluzba_navazujici_plan.md` — navazující
 funkce úklidové služby: **A) Historie hlášení s exportem .txt**, **B) Blokování
 ohlašovatelů**. Funkce C (recenze WC) **NEDĚLEJ**, je to samostatný task.
 
 Nejdřív si přečti: `docs/architecture/ai_context.md`, celý plán, a předchozí plán
-`docs/plans/2026-07-10_uklidova_sluzba_plan.md` (kontext hotové featury).
+`docs/archive/plans/2026-07-10_uklidova_sluzba_plan.md` (kontext hotové featury).
 
 Postupuj přesně po fázích ze sekce 4 plánu (DB → Flutter data → UI historie →
 UI blokování → i18n → nasazení). Drž se rozhodnutí ✅ a doporučení v plánu, zejména:

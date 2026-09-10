@@ -1,6 +1,6 @@
 # Execute: Recepce, role recepčního a přihlášení přes QR
 
-Work in `/Users/miakh/source/festapp`.
+Work in `<repo-root>`.
 
 Read `AGENTS.md` instructions supplied for this repository and
 `docs/architecture/ai_context.md` first. Use `verification: standard` because
@@ -8,7 +8,7 @@ the work changes authentication and authorization.
 
 Implement the entire authoritative plan:
 
-`docs/plans/2026-08-05_receptionist_qr_login_plan.md`
+`docs/archive/plans/2026-08-05_receptionist_qr_login_plan.md`
 
 Read it in full before editing. The outcome is a default-disabled per-occasion
 Reception feature: an explicitly assigned receptionist can create one new

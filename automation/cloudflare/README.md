@@ -29,7 +29,7 @@ the `festapp-public` R2 bucket is tracked in
 origin:
 
 ```sh
-npx --yes wrangler@4.129.1 r2 bucket cors set festapp-public \
+npx --yes wrangler@4.131.0 r2 bucket cors set festapp-public \
   --file automation/cloudflare/festapp-public-cors.json --force
 ```
 

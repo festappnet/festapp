@@ -1,7 +1,7 @@
 # Plán: Offline funkcionalita (CSM Ostrava 2026)
 
 **Stav: NÁVRH PŘIPRAVENÝ K IMPLEMENTACI (2026-07-12).** Vychází z požadavků
-`docs/plans/2026-07-12_offline_funkcionalita_pozadavky.md` (rozhodnutí R3/R5
+`docs/archive/plans/2026-07-12_offline_funkcionalita_pozadavky.md` (rozhodnutí R3/R5
 tam jsou uzavřená — **neptej se na ně, drž se jich**). Všechna tvrzení o kódu
 (soubory, řádky, RPC) byla 2026-07-12 ověřena proti repozitáři na větvi
 `prod/csmostrava2026`.
