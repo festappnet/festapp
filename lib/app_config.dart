@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
   static const int backendActivationCanonicalOrganizationId = 4;
   static const String backendActivationCanonicalProfileSha256 = 'fe382d4bc495a477e7477020e3aa77fee88a1d7cdfdf97f63c6eac06e2d715f3';
+  static const String clientSyncTenantId = 'aksmcz';
   static const String appName = 'CSA 2024';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
