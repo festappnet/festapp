@@ -13,8 +13,8 @@ const status = document.querySelector('#status');
 const action = document.querySelector('#action');
 const button = document.querySelector('#confirm');
 const token = new URLSearchParams(location.search).get('token') || '';
-const endpoint = "https://lwfpdjxsdmkfyrzqbrlk.supabase.co/functions/v1/confirm-account-deletion";
-const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZnBkanhzZG1rZnlyenFicmxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTEyMjgwNDksImV4cCI6MjAyNjgwNDA0OX0.440P3yf8ZqNjOHEQTn9uJhkKyObhD_7PZ2NwaE9e4J0";
+const endpoint = "https://api.festapp.net/functions/v1/confirm-account-deletion";
+const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M";
 async function inspect() {
   if (!token) { status.textContent = 'Odkaz není platný.'; return; }
   try {
