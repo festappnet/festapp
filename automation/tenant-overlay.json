@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "cavfotofest",
-  "baseMainSha": "c784d5e71fafa74a5326e6b99e85ded977e5c954",
+  "baseMainSha": "a2fe460b7b2ab08f95f30c27753a093b73c21dab",
   "release": {
-    "version": "0.20.5+489",
-    "note": "Persist unread news acknowledgement"
+    "version": "0.20.6+490",
+    "note": "Persist news reads from the active tab owner"
   }
 }
