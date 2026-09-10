@@ -15,7 +15,8 @@ BEGIN
   SELECT id
     INTO occ_id
   FROM public.occasions
-  WHERE link = occasion_link;
+  WHERE link = occasion_link
+    AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
 
   -- If the occasion link is invalid, raise an exception.
   IF occ_id IS NULL THEN
