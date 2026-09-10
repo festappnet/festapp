@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/news/news_model.dart';
-import 'package:fstapp/components/news/news_read_coordinator.dart';
 import 'package:fstapp/components/_shared/async_reload_coordinator.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/components/news/db_news.dart';
@@ -40,7 +39,6 @@ class NewsPage extends StatefulWidget {
 class _NewsPageState extends State<NewsPage> {
   List<NewsModel> newsMessages = [];
   final AsyncReloadCoordinator _refreshCoordinator = AsyncReloadCoordinator();
-  final NewsReadCoordinator _readCoordinator = NewsReadCoordinator();
 
   // The tabs router this page is subscribed to, plus the last active index we
   // saw. Kept as fields so the listener can be removed in dispose() — otherwise
@@ -89,36 +87,9 @@ class _NewsPageState extends State<NewsPage> {
   @override
   void dispose() {
     _refreshCoordinator.dispose();
-    _readCoordinator.dispose();
     ClientSyncRuntime.projectionEpoch.removeListener(_onProjectionChanged);
     _tabsRouter?.removeListener(_onTabChanged);
     super.dispose();
-  }
-
-  Future<void> _checkAsRead() async {
-    await _readCoordinator.acknowledgeLatest(
-        isVisible: () {
-          final router = _tabsRouter;
-          if (router == null) return false;
-          final newsIndex =
-              OccasionHomePage.baseTabKeys.indexOf(OccasionTab.news);
-          return router.activeIndex == newsIndex;
-        },
-        isLoggedIn: AuthService.isLoggedIn,
-        latestUnreadId: () {
-          if (newsMessages.isEmpty || newsMessages.first.isRead) return null;
-          return newsMessages.first.id;
-        },
-        persist: DbNews.setMessagesAsRead,
-        markLocally: (latestReadId) {
-          if (!mounted) return;
-          setState(() {
-            for (final message in newsMessages) {
-              if (message.id <= latestReadId) message.isRead = true;
-            }
-          });
-          widget.onSetAsRead?.call();
-        });
   }
 
   void _showMessageDialog(BuildContext context) {
@@ -170,7 +141,7 @@ class _NewsPageState extends State<NewsPage> {
           if (!mounted) return;
           await OfflineDataService.saveAllMessages(newsMessages);
         }
-        await _checkAsRead();
+        widget.onSetAsRead?.call();
       });
 
   @override
