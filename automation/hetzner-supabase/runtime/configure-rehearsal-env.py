@@ -105,8 +105,8 @@ updates = {
     "ENABLE_PHONE_SIGNUP": "false",
     "ENABLE_PHONE_AUTOCONFIRM": "false",
     "DASHBOARD_USERNAME": "festapp-rehearsal",
-    "STUDIO_DEFAULT_ORGANIZATION": "Festapp Rehearsal",
-    "STUDIO_DEFAULT_PROJECT": "Canonical Merge Rehearsal",
+    "STUDIO_DEFAULT_ORGANIZATION": "Festapp",
+    "STUDIO_DEFAULT_PROJECT": "Festapp Production",
 }
 
 lines = path.read_text().splitlines()

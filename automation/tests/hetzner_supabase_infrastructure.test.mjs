@@ -98,8 +98,8 @@ test('rehearsal environment remains valid when sourced by a shell', () => {
   });
   assert.equal(configured.status, 0, configured.stderr);
   const envText = fs.readFileSync(path.join(tempDir, '.env'), 'utf8');
-  assert.match(envText, /STUDIO_DEFAULT_ORGANIZATION='Festapp Rehearsal'/);
-  assert.match(envText, /STUDIO_DEFAULT_PROJECT='Canonical Merge Rehearsal'/);
+  assert.match(envText, /STUDIO_DEFAULT_ORGANIZATION=Festapp/);
+  assert.match(envText, /STUDIO_DEFAULT_PROJECT='Festapp Production'/);
   assert.match(envText, /^FESTAPP_RUNTIME_DATABASE=postgres$/m);
   assert.match(envText,
     /^FESTAPP_SUPABASE_SITE_ADDRESSES='rehearsal-api\.festapp\.net, api\.festapp\.net'$/m);
