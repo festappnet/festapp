@@ -1,0 +1,225 @@
+name: Android candidate batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets_json:
+        description: 'JSON array of 1-30 tenant IDs, for example ["festivalslunovrat","hvezdamorska"]'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-candidate-batch
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - id: plan
+        env:
+          TARGETS_JSON: ${{ inputs.targets_json }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          input="$RUNNER_TEMP/android-targets.json"
+          printf '%s' "$TARGETS_JSON" > "$input"
+          matrix="$(node automation/release/android_ci_plan.mjs candidate "$input")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  warm-gradle-cache:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - id: flutter-version
+        run: echo "version=$(node automation/flutter_version.mjs)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.flutter-version.outputs.version }}
+          channel: stable
+          cache: true
+      - name: Populate the shared Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+          cache-read-only: false
+      - shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get --enforce-lockfile
+          printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > android/local.properties
+          (cd android && ./gradlew dependencies --no-daemon --build-cache)
+      - name: Ensure the private Android artifact bucket exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BUCKET: ${{ vars.FESTAPP_ANDROID_RELEASE_BUCKET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$BUCKET"
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets"
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          if ! curl -fsS -H "$auth" "$api" | jq -e --arg bucket "$BUCKET" \
+            '.success and any(.result.buckets[]; .name == $bucket)' >/dev/null; then
+            curl -fsS -X POST -H "$auth" -H 'Content-Type: application/json' \
+              --data "$(jq -cn --arg name "$BUCKET" '{name: $name}')" "$api" | jq -e '.success' >/dev/null
+          fi
+
+  build:
+    needs: [plan, warm-gradle-cache]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: android-build-${{ matrix.tenant }}
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Check out trusted release tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Preserve trusted release tooling outside the source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+      - name: Check out immutable tenant source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sourceSha }}
+          fetch-depth: 0
+          clean: true
+      - name: Prove source is still the current production branch head
+        env:
+          BRANCH: ${{ matrix.branch }}
+          SOURCE_SHA: ${{ matrix.sourceSha }}
+          TENANT: ${{ matrix.tenant }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_sha="$(git ls-remote --heads origin "refs/heads/$BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$SOURCE_SHA"
+          base_main_sha="$(jq -r '.baseMainSha' automation/tenant-overlay.json)"
+          test "$TENANT" = "$(jq -r '.tenantId' automation/tenant-overlay.json)"
+          git fetch --no-tags origin main
+          git show "$base_main_sha:automation/check_tenant_branch_drift.sh" > "$RUNNER_TEMP/check_tenant_branch_drift.sh"
+          CANONICAL_MAIN_REF=origin/main bash "$RUNNER_TEMP/check_tenant_branch_drift.sh" \
+            "$base_main_sha" "$TENANT" "$SOURCE_SHA"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - id: flutter-version
+        run: echo "version=$(node automation/flutter_version.mjs)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.flutter-version.outputs.version }}
+          channel: stable
+          cache: true
+      - name: Restore the shared Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+          cache-read-only: true
+      - name: Materialize private tenant and signing inputs
+        env:
+          RELEASE_MANIFEST_JSON: ${{ secrets.RELEASE_MANIFEST_JSON }}
+          UPLOAD_KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 }}
+          KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$RELEASE_MANIFEST_JSON"
+          test -n "$UPLOAD_KEYSTORE_B64"
+          test -n "$KEY_PROPERTIES"
+          printf '%s' "$RELEASE_MANIFEST_JSON" > "$RUNNER_TEMP/release-manifest.json"
+          printf '%s' "$UPLOAD_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/android-upload.keystore"
+          printf '%s\n' "$KEY_PROPERTIES" | sed '/^[[:space:]]*storeFile[[:space:]]*=/d' > android/key.properties
+          printf 'storeFile=%s\n' "$RUNNER_TEMP/android-upload.keystore" >> android/key.properties
+          jq -e --arg branch '${{ matrix.branch }}' \
+            '.schemaVersion == 2 and .releaseBranch == $branch and (.androidPackage | type == "string")' \
+            "$RUNNER_TEMP/release-manifest.json" >/dev/null
+          set -a
+          source automation/project.conf
+          set +a
+          test "$ANDROID_APPLICATION_ID" = "$(jq -r '.androidPackage' "$RUNNER_TEMP/release-manifest.json")"
+          node automation/release/client_cutover_preflight.mjs --require-canonical-cutover
+      - name: Build signed Android App Bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -s)" = Linux
+          test "${GITHUB_ACTIONS:-}" = true
+          flutter pub get --enforce-lockfile
+          version_json="$(node automation/release/project_version.mjs --json)"
+          flutter build appbundle --release --build-name "$(jq -r .version <<<"$version_json")" \
+            --build-number "$(jq -r .build <<<"$version_json")"
+      - name: Install pinned Bundletool verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/google/bundletool/releases/download/1.18.1/bundletool-all-1.18.1.jar \
+            -o "$RUNNER_TEMP/bundletool.jar"
+          echo '675786493983787ffa11550bdb7c0715679a44e1643f3ff980a529e9c822595c  '${RUNNER_TEMP}'/bundletool.jar' | sha256sum --check
+      - id: verify
+        name: Independently verify package, version, signer and personal-data boundary
+        env:
+          BUNDLETOOL_JAR: ${{ runner.temp }}/bundletool.jar
+          EXPECTED_UPLOAD_CERT_SHA256: ${{ secrets.ANDROID_UPLOAD_CERT_SHA256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          aab=build/app/outputs/bundle/release/app-release.aab
+          receipt="$RUNNER_TEMP/release-receipt.json"
+          result="$(node "$RUNNER_TEMP/verify_android_aab.mjs" "$aab" \
+            "$RUNNER_TEMP/release-manifest.json" '${{ matrix.sourceSha }}' "$receipt")"
+          echo "package=$(jq -r .packageName <<<"$result")" >> "$GITHUB_OUTPUT"
+          echo "version_code=$(jq -r .versionCode <<<"$result")" >> "$GITHUB_OUTPUT"
+          echo "artifact_sha=$(jq -r .artifactSha256 <<<"$result")" >> "$GITHUB_OUTPUT"
+      - name: Store canonical candidate in private R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BUCKET: ${{ vars.FESTAPP_ANDROID_RELEASE_BUCKET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$BUCKET"
+          prefix="android/releases/${{ steps.verify.outputs.package }}/${{ steps.verify.outputs.version_code }}/${{ matrix.sourceSha }}/${{ steps.verify.outputs.artifact_sha }}"
+          npx --yes wrangler@4.129.1 r2 object put "$BUCKET/$prefix.aab" \
+            --file build/app/outputs/bundle/release/app-release.aab --remote
+          npx --yes wrangler@4.129.1 r2 object put "$BUCKET/$prefix.receipt.json" \
+            --file "$RUNNER_TEMP/release-receipt.json" --remote
+          {
+            echo "### Android candidate"
+            echo "- Package: \`${{ steps.verify.outputs.package }}\`"
+            echo "- Version code: \`${{ steps.verify.outputs.version_code }}\`"
+            echo "- Source: \`${{ matrix.sourceSha }}\`"
+            echo "- AAB SHA-256: \`${{ steps.verify.outputs.artifact_sha }}\`"
+            echo "- Private R2 key: \`$prefix.aab\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove private inputs
+        if: always()
+        shell: bash
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -type f \( -name '*keystore*' -o -name '*manifest*' \) -delete
+          find android -maxdepth 1 -type f -name 'key.properties' -delete
