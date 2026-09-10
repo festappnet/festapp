@@ -133,6 +133,20 @@ assert.equal(
   'backend activation configuration must be complete or entirely disabled',
 );
 assert.ok(expectedAnonKey, 'project.conf is missing SUPABASE_ANON_KEY');
+const expectedDeleteAccountOrigin = activationPhase === 'canonical'
+  ? activationCanonicalUrl
+  : supabaseUrl;
+const expectedDeleteAccountKey = activationPhase === 'canonical'
+  ? activationCanonicalKey
+  : expectedAnonKey;
+assert.ok(
+  deleteAccountBody.includes(`${expectedDeleteAccountOrigin}/functions/v1/confirm-account-deletion`),
+  'account deletion page targets the wrong backend',
+);
+assert.ok(
+  deleteAccountBody.includes(expectedDeleteAccountKey),
+  'account deletion page uses the wrong anon key',
+);
 const anonPayload = JSON.parse(
   Buffer.from(expectedAnonKey.split('.')[1] || '', 'base64url').toString('utf8'),
 );
