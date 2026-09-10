@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "farnostopava",
-  "baseMainSha": "eb933ff008f65bbc3448d1db7c220fcdb61422f0",
+  "baseMainSha": "2b0651257ded431c531efb8a49ebbee859541bd8",
   "release": {
-    "version": "0.20.7+491",
-    "note": "Persist reads immediately when News is selected"
+    "version": "0.20.8+492",
+    "note": "Persist the canonical latest-news marker on selection"
   }
 }
