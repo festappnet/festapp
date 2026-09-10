@@ -280,7 +280,10 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(dashboardActivation, /ss -H -lnt 'sport = :8999'/);
   assert.match(dashboardActivation, /set_env_value FESTAPP_SUPABASE_ADMIN_BASIC_AUTH/);
   assert.match(dashboardActivation, /API_GATEWAY_ROOT_STATUS/);
+  assert.match(dashboardActivation, /LOCAL_ADMIN_STATUS" == "307"/);
+  assert.match(dashboardActivation, /location: \/project\/default/);
   assert.match(dashboardActivation, /upstream_basic_auth_status:"401"/);
+  assert.match(dashboardActivation, /fail\(\).*return 1/);
   assert.match(dashboardActivation, /cloudflared_tunnel_ha_connections/);
   assert.match(dashboardActivation, /404\|404/);
   assert.match(promotion, /FESTAPP_OPERATIONAL_READINESS_DECISION/);

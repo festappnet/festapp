@@ -50,7 +50,7 @@ public DNS route until the Access and origin gates below pass.
 5. Run `activate-admin-dashboard.sh` with its exact acknowledgement. The script
    proves the Access interception, validates that the token belongs to the
    approved tunnel, records baseline API canaries, starts Caddy plus the tunnel,
-   and then proves a live tunnel, an authenticated local Studio response plus
+   and then proves a live tunnel, an authenticated local Studio redirect plus
    an unauthenticated `401` from the upstream gateway, Auth `200`, REST
    `200`, Storage `200`, Realtime `101`, plus `404` for Studio and postgres-meta
    on the public API hostname.

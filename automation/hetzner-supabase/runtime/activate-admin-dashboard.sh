@@ -13,7 +13,7 @@ readonly TUNNEL_ID="40e1a9a2-d1d5-4789-a691-20818d648b95"
 readonly TUNNEL_TOKEN_FILE="${FESTAPP_ADMIN_TUNNEL_TOKEN_FILE:-/etc/festapp-cloudflared/admin-tunnel.token}"
 readonly CANDIDATE_DIR="${FESTAPP_ADMIN_DASHBOARD_CANDIDATE_DIR:-$COMPOSE_DIR/festapp-admin-dashboard}"
 
-fail() { echo "ERROR: $*" >&2; exit 1; }
+fail() { echo "ERROR: $*" >&2; return 1; }
 set_env_value() {
   local key="$1" value="$2" staged
   [[ "$value" != *$'\n'* && "$value" != *$'\r'* ]] || fail "invalid newline in $key"
@@ -135,7 +135,9 @@ done
 readonly LOCAL_ADMIN_STATUS="$(curl -sS -o /dev/null -D "$RUN_DIR/local-admin.headers" \
   -w '%{http_code}' --max-time 10 "$ADMIN_ORIGIN/")"
 chmod 0600 "$RUN_DIR/local-admin.headers"
-[[ "$LOCAL_ADMIN_STATUS" == "200" ]] || fail "loopback administrator proxy did not authenticate to Supabase Studio"
+[[ "$LOCAL_ADMIN_STATUS" == "307" ]] || fail "loopback administrator proxy did not authenticate to Supabase Studio"
+rg -qi '^location: /project/default\r?$' "$RUN_DIR/local-admin.headers" ||
+  fail "loopback administrator proxy did not return the canonical Studio redirect"
 readonly API_GATEWAY_ROOT_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$API_GATEWAY_ORIGIN/")"
 [[ "$API_GATEWAY_ROOT_STATUS" == "401" ]] ||
   fail "Supabase Studio upstream no longer requires its internal Basic credential"
