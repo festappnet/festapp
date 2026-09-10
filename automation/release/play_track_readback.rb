@@ -14,8 +14,10 @@ abort 'Google Play readback is restricted to the Festapp GitHub-hosted Linux gat
 
 package_name = ENV.fetch('PLAY_PACKAGE').strip
 target_code = Integer(ENV.fetch('PLAY_EXPECTED_VERSION_CODE'), 10)
-credentials = File.expand_path(ENV.fetch('GOOGLE_PLAY_JSON_KEY'))
-abort 'Credential must remain outside the repository' if credentials.start_with?(File.expand_path('../..', __dir__) + File::SEPARATOR)
+credentials = File.realpath(File.expand_path(ENV.fetch('GOOGLE_PLAY_JSON_KEY')))
+workspace = File.realpath(ENV.fetch('GITHUB_WORKSPACE'))
+inside_workspace = credentials == workspace || credentials.start_with?(workspace + File::SEPARATOR)
+abort 'Credential must remain outside the repository' if inside_workspace
 
 service = Google::Apis::AndroidpublisherV3::AndroidPublisherService.new
 service.authorization = Google::Auth::ServiceAccountCredentials.make_creds(

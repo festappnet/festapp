@@ -62,3 +62,11 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.match(production, /gpg[\s\S]*--decrypt/);
   assert.match(production, /play_track_readback\.rb/);
 });
+
+test('Play readback credential guards use the runner workspace after scripts are copied', () => {
+  for (const name of ['play_track_readback.rb', 'play_release_readback.rb']) {
+    const script = fs.readFileSync(path.join(root, 'automation/release', name), 'utf8');
+    assert.match(script, /ENV\.fetch\('GITHUB_WORKSPACE'\)/);
+    assert.doesNotMatch(script, /File\.expand_path\('\.\.\/\.\.', __dir__\)/);
+  }
+});
