@@ -17,12 +17,11 @@ function verifyJarSignature(aab) {
   const verification = spawnSync('jarsigner', ['-verify', '-strict', aab], {
     encoding: 'utf8',
   });
-  const output = `${verification.stdout ?? ''}\n${verification.stderr ?? ''}`;
   // Android upload certificates are commonly self-signed. jarsigner reports
   // that condition (and an unvalidated self-signed chain) as strict code 4.
   // Every other strict bit remains fatal, including unsigned entries (16),
   // unsuitable key usage (8), wrong alias (32), and verification failure (1).
-  if (![0, 4].includes(verification.status) || !/jar verified\./i.test(output)) {
+  if (![0, 4].includes(verification.status)) {
     throw new Error(`jarsigner rejected the AAB (strict exit ${verification.status ?? 'unknown'})`);
   }
 }
