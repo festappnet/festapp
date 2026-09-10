@@ -124,9 +124,13 @@ BEGIN
 END
 $freeze$;
 DO $cron$
+DECLARE job record;
 BEGIN
   IF to_regclass('cron.job') IS NOT NULL THEN
-    UPDATE cron.job SET active=false WHERE active;
+    FOR job IN SELECT jobid FROM cron.job WHERE active
+    LOOP
+      PERFORM cron.alter_job(job.jobid, active := false);
+    END LOOP;
   END IF;
 END
 $cron$;
@@ -154,9 +158,13 @@ BEGIN
 END
 $rollback$;
 DO $cron$
+DECLARE job record;
 BEGIN
   IF to_regclass('cron.job') IS NOT NULL THEN
-    UPDATE cron.job SET active=true WHERE jobid IN (${ids});
+    FOR job IN SELECT jobid FROM cron.job WHERE jobid IN (${ids})
+    LOOP
+      PERFORM cron.alter_job(job.jobid, active := true);
+    END LOOP;
   END IF;
 END
 $cron$;
@@ -262,6 +270,17 @@ async function engage({ token, root }) {
   const manifest = readManifest(root);
   const result = { version: 1, kind: 'festapp-production-cloud-freeze', started_at: new Date().toISOString(), sources: {} };
   for (const source of SOURCE_REGISTRY) {
+    const existingKeys = await apiRequest({ token, projectRef: source.project_ref, route: 'api-keys' });
+    for (const key of existingKeys.filter((item) => item.type === 'secret' &&
+      item.name.startsWith('festapp_cutover_export_'))) {
+      await apiRequest({
+        token,
+        projectRef: source.project_ref,
+        route: `api-keys/${encodeURIComponent(key.id)}`,
+        method: 'DELETE',
+        expected: [200, 204, 404],
+      });
+    }
     const migrationKeyName = `festapp_cutover_export_${Date.now()}`;
     const migrationKey = await apiRequest({
       token,
@@ -282,6 +301,7 @@ async function engage({ token, root }) {
         projectRef: source.project_ref,
         route: `api-keys/${encodeURIComponent(key.id)}`,
         method: 'DELETE',
+        expected: [200, 204, 404],
       });
     }
     await query({ token, projectRef: source.project_ref, sql: freezeSql() });
@@ -292,15 +312,31 @@ async function engage({ token, root }) {
         projectRef: source.project_ref,
         route: `functions/${encodeURIComponent(fn.slug)}`,
         method: 'DELETE',
-        expected: [200, 204],
+        expected: [200, 204, 404],
       });
       removed.push(fn.slug);
     }
+    for (let round = 0; round < 20; round += 1) {
+      const remaining = await apiRequest({ token, projectRef: source.project_ref, route: 'functions' });
+      if (remaining.length === 0) break;
+      for (const fn of remaining) {
+        await apiRequest({
+          token,
+          projectRef: source.project_ref,
+          route: `functions/${encodeURIComponent(fn.slug)}`,
+          method: 'DELETE',
+          expected: [200, 204, 404],
+        });
+      }
+    }
+    const remaining = await apiRequest({ token, projectRef: source.project_ref, route: 'functions' });
+    invariant(remaining.length === 0, `${source.alias} Edge Function deployment history did not drain`);
     await apiRequest({
       token,
       projectRef: source.project_ref,
       route: 'api-keys/legacy?enabled=false',
       method: 'PUT',
+      expected: [200, 422],
     });
     result.sources[source.alias] = {
       project_ref: source.project_ref,
