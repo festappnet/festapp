@@ -21,6 +21,23 @@ Pushing a `prod/*` branch does not start a production build. The GitHub
 the exact production branch; this prevents intermediate overlay commits from
 creating failed build notifications.
 
+## Public client-sync CORS
+
+The canonical browser-origin allowlist for immutable client-sync artifacts in
+the `festapp-public` R2 bucket is tracked in
+`festapp-public-cors.json`. Apply it after adding or changing a production web
+origin:
+
+```sh
+npx --yes wrangler@4.129.1 r2 bucket cors set festapp-public \
+  --file automation/cloudflare/festapp-public-cors.json --force
+```
+
+Then use `wrangler r2 bucket cors list festapp-public` and make a browser GET
+from the changed origin to an artifact URL returned by its public-sync head.
+The bucket policy must cover every active web origin because fresh browser
+installs fetch catalog and live artifacts directly from `assets.festapp.net`.
+
 ## Cloudflare Pages project setup
 
 Both the manually dispatched `.github/workflows/deploy.yml` fallback and
