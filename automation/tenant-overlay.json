@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "aksmcz",
-  "baseMainSha": "7e665a0b2",
+  "baseMainSha": "9fc07fdc5648a2837c438ddf701c9f304f69f9fa",
   "release": {
-    "version": "0.20.11+495",
-    "note": "Preserve occasion permissions in private client sync"
+    "version": "0.20.12+496",
+    "note": "Show canonical map places without configured categories"
   }
 }
