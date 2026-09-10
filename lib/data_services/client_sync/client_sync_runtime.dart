@@ -59,11 +59,13 @@ class ClientSyncRuntime {
   static void configure(
     SupabaseClient supabase, {
     Future<void> Function(DateTime)? onLastSuccess,
+    Uri? publicHeadOrigin,
+    Uri? publicAssetOrigin,
   }) {
     _onLastSuccess = onLastSuccess;
     final publicRemote = HttpPublicSyncRemote(
-      headOrigin: Uri.parse(AppConfig.syncHeadOrigin),
-      artifactOrigin: Uri.parse(AppConfig.syncAssetOrigin),
+      headOrigin: publicHeadOrigin ?? Uri.parse(AppConfig.syncHeadOrigin),
+      artifactOrigin: publicAssetOrigin ?? Uri.parse(AppConfig.syncAssetOrigin),
       artifactRequestUriResolver: kIsWeb
           ? (artifactUri) => resolvePublicArtifactRequestUriForPage(
                 artifactUri,

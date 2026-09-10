@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
   static const int backendActivationCanonicalOrganizationId = 11;
   static const String backendActivationCanonicalProfileSha256 = '8c2b245e4b4893562a75761ed2bfb5e6ce629bba00a99b23a21c9e808faf60e1';
+  static const String clientSyncTenantId = 'farnostopava';
   static const String appName = 'Rezervace Farnost Opava';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
