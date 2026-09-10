@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "d3d0cb2d4d56cdb54070f301cf96ea971525bc1d",
+  "baseMainSha": "c784d5e71fafa74a5326e6b99e85ded977e5c954",
   "release": {
-    "version": "0.20.1+485",
-    "note": "Context-free admin routing"
+    "version": "0.20.5+489",
+    "note": "Persist unread news acknowledgement"
   }
 }
