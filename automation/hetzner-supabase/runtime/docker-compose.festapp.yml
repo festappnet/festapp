@@ -13,6 +13,7 @@ services:
     environment:
       FESTAPP_SUPABASE_HOSTNAME: ${FESTAPP_SUPABASE_HOSTNAME:-rehearsal-api.festapp.net}
       FESTAPP_SUPABASE_SITE_ADDRESSES: ${FESTAPP_SUPABASE_SITE_ADDRESSES:-rehearsal-api.festapp.net}
+      FESTAPP_SUPABASE_ADMIN_SITE: ${FESTAPP_SUPABASE_ADMIN_SITE:-http://127.0.0.1:8999}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
@@ -24,6 +25,34 @@ services:
       - NET_BIND_SERVICE
     security_opt:
       - no-new-privileges:true
+    logging: *logging
+  admin-tunnel:
+    profiles:
+      - admin-dashboard
+    image: cloudflare/cloudflared:2026.9.0@sha256:5f72bbdac390ffa27f1275218b39f658ff39b259d278f295386af36da4d3632b
+    container_name: festapp-supabase-admin-tunnel
+    restart: unless-stopped
+    network_mode: host
+    # Compose implements file-backed secrets as bind mounts and therefore
+    # preserves the root-only 0600 host permissions. Run as root inside this
+    # capability-free, read-only container so the token never needs weaker
+    # host permissions.
+    user: "0:0"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --metrics
+      - 127.0.0.1:20241
+      - run
+      - --token-file
+      - /run/secrets/admin_tunnel_token
+    secrets:
+      - admin_tunnel_token
     logging: *logging
   studio:
     image: supabase/studio:2026.08.03-sha-022b374@sha256:cb20b9a2b8fbb4f47a616c959dfdbde75668603c38d5ddd018e3f25a9f009937
@@ -78,3 +107,7 @@ services:
 volumes:
   caddy-data:
   caddy-config:
+
+secrets:
+  admin_tunnel_token:
+    file: ${FESTAPP_ADMIN_TUNNEL_TOKEN_FILE:-/etc/festapp-cloudflared/admin-tunnel.token}

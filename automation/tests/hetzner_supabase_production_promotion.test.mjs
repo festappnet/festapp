@@ -270,6 +270,14 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(promotion, /non-canonical Auth login aliases/);
   assert.match(promotion, /AWS_SNS_TOPIC_ARN/);
   assert.match(promotion, /NOTIFY_WEBHOOK_TOKEN/);
+  assert.match(promotion, /FESTAPP_SUPABASE_ADMIN_SITE/);
+  assert.match(upgrade, /festapp-admin-dashboard/);
+  assert.match(upgrade, /activate-admin-dashboard\.sh/);
+  const dashboardActivation = fs.readFileSync(path.join(runtime, 'activate-admin-dashboard.sh'), 'utf8');
+  assert.match(dashboardActivation, /40e1a9a2-d1d5-4789-a691-20818d648b95/);
+  assert.match(dashboardActivation, /administrator Caddy listener is not confined to loopback/);
+  assert.match(dashboardActivation, /cloudflared_tunnel_ha_connections/);
+  assert.match(dashboardActivation, /404\|404/);
   assert.match(promotion, /FESTAPP_OPERATIONAL_READINESS_DECISION/);
   assert.doesNotMatch(promotion, /BACKEND_ACTIVATION_PHASE=canonical|GRANT\s|REVOKE\s|ALTER ROLE/);
   assert.match(upgrade, /upgrade-installed-production-runtime-additively/);

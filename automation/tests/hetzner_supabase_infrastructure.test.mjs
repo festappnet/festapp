@@ -55,17 +55,25 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.doesNotMatch(deploy, /rm\s|down\s+-v|prune/);
   assert.match(compose, /127\.0\.0\.1:8000:8000/);
   assert.match(compose, /FESTAPP_SUPABASE_SITE_ADDRESSES/);
+  assert.match(compose, /FESTAPP_SUPABASE_ADMIN_SITE/);
   assert.match(compose, /QR_RATE_SALT: \$\{QR_RATE_SALT:\?configure QR_RATE_SALT/);
   assert.match(compose, /SMTP_HOSTNAME: \$\{SMTP_HOST\}/);
   assert.match(compose, /PROJECT_URL: http:\/\/api-gw:8000/);
   assert.doesNotMatch(compose, /5432:5432/);
-  assert.equal((compose.match(/@sha256:/g) ?? []).length, 12);
+  assert.equal((compose.match(/@sha256:/g) ?? []).length, 13);
+  assert.match(compose, /admin-tunnel:[\s\S]*profiles:[\s\S]*admin-dashboard/);
+  assert.match(compose, /admin-tunnel:[\s\S]*network_mode: host/);
+  assert.match(compose, /admin-tunnel:[\s\S]*--token-file/);
+  assert.match(compose, /admin-tunnel:[\s\S]*read_only: true/);
+  assert.match(compose, /admin-tunnel:[\s\S]*user: "0:0"/);
+  assert.match(compose, /admin-tunnel:[\s\S]*cap_drop:[\s\S]*- ALL/);
   for (const service of ['auth', 'rest', 'realtime', 'storage', 'meta', 'functions', 'studio']) {
     assert.match(databaseTarget, new RegExp(`^  ${service}:`, 'm'));
   }
   assert.match(databaseTarget, /storage:[\s\S]*DATABASE_URL:[\s\S]*FESTAPP_RUNTIME_DATABASE/);
   assert.match(deploy, /caddy\/Caddyfile/);
   assert.match(deploy, /switch-rehearsal-runtime-database\.sh/);
+  assert.match(deploy, /activate-admin-dashboard\.sh/);
   const verifier = fs.readFileSync(path.join(runtime, 'verify-pins.mjs'), 'utf8');
   assert.match(verifier, /assert\.ok\(arm64, `\$\{name\} has no linux\/arm64 registry manifest`\)/);
   assert.doesNotMatch(verifier, /\?\? manifests\[0\]/);
@@ -90,6 +98,7 @@ test('rehearsal environment remains valid when sourced by a shell', () => {
   assert.match(envText, /^FESTAPP_RUNTIME_DATABASE=postgres$/m);
   assert.match(envText,
     /^FESTAPP_SUPABASE_SITE_ADDRESSES='rehearsal-api\.festapp\.net, api\.festapp\.net'$/m);
+  assert.match(envText, /^FESTAPP_SUPABASE_ADMIN_SITE=http:\/\/127\.0\.0\.1:8999$/m);
   assert.match(envText, /https:\/\/csmostrava\.festapp\.net\/reset-password/);
   assert.match(envText, /https:\/\/hvezdamorska\.netlify\.app\/auth_bridge\.html/);
   assert.match(envText, /https:\/\/jubileum2025\.festapp\.net\/auth_bridge\.html/);

@@ -87,6 +87,9 @@ updates = {
     # public URL or activating any client. The one-way activation manifest is
     # still the only switch from legacy to canonical writers.
     "FESTAPP_SUPABASE_SITE_ADDRESSES": "rehearsal-api.festapp.net, api.festapp.net",
+    # The administrator origin stays loopback-only until Cloudflare Access is
+    # proven and activate-admin-dashboard.sh performs the separately gated cutover.
+    "FESTAPP_SUPABASE_ADMIN_SITE": "http://127.0.0.1:8999",
     "SUPABASE_PUBLIC_URL": "https://rehearsal-api.festapp.net",
     "API_EXTERNAL_URL": "https://rehearsal-api.festapp.net",
     "SITE_URL": auth_site_url,

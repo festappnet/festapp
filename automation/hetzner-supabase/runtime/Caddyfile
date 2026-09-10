@@ -6,10 +6,46 @@
 	}
 }
 
-{$FESTAPP_SUPABASE_SITE_ADDRESSES} {
+(festapp_supabase_proxy) {
 	encode zstd gzip
 	header -Server
 	reverse_proxy 127.0.0.1:8000
+}
+
+{$FESTAPP_SUPABASE_SITE_ADDRESSES} {
+	@public_api path \
+ /.well-known/* \
+ /auth/v1 /auth/v1/* \
+ /functions/v1 /functions/v1/* \
+ /graphql/v1 /graphql/v1/* \
+ /realtime/v1 /realtime/v1/* \
+ /rest/v1 /rest/v1/* \
+ /storage/v1 /storage/v1/*
+
+	handle @public_api {
+		import festapp_supabase_proxy
+	}
+
+	handle {
+		header -Server
+		respond "Not Found" 404
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+{$FESTAPP_SUPABASE_ADMIN_SITE:http://127.0.0.1:8999} {
+	import festapp_supabase_proxy
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
 	log {
 		output stdout
 		format json
