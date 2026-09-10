@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
   static const int backendActivationCanonicalOrganizationId = 7;
   static const String backendActivationCanonicalProfileSha256 = '9dd6c445717a6ab8f53c99691365ec9caf5816ac426a2d7fecb0ee1c81e7920f';
+  static const String clientSyncTenantId = 'hvezdamorska';
   static const String appName = 'Hvězda Mořská';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;

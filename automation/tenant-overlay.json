@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "31943b9373d903c3e3bad8b33a30fe85989fd2b9",
+  "baseMainSha": "c959201cb916b6dd5ba6076065e3e366294121d7",
   "release": {
-    "version": "0.20.13+497",
-    "note": "Restore all canonical program days and legacy map icons"
+    "version": "0.20.14+498",
+    "note": "Restore native sync and add remote endpoint configuration"
   }
 }
