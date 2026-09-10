@@ -112,4 +112,6 @@ test('generic Google Play operations stay behind protected GitHub environments',
   assert.match(gateway, /when 'review\.reply'/);
   assert.match(gateway, /when 'grant\.update'/);
   assert.match(gateway, /service\.delete_edit\(package_name, edit\.id\) unless committed/);
+  assert.match(gateway, /summary\[:production\]/);
+  assert.doesNotMatch(gateway, /summary\[:reviews\]/);
 });

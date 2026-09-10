@@ -239,5 +239,15 @@ summary = { operation: operation, packageName: package_name, requestSha256: requ
 summary[:listingCount] = report.dig(:store, :listings)&.length if operation == 'app.inspect'
 summary[:trackCount] = report.dig(:store, :tracks)&.length if operation == 'app.inspect'
 summary[:reviewCount] = report[:reviews]&.length if %w[app.inspect reviews.list].include?(operation)
+if operation == 'app.inspect'
+  production = Array(report.dig(:store, :tracks)).find { |track| track[:track] == 'production' }
+  summary[:production] = Array(production&.dig(:releases)).map do |release|
+    {
+      versionCodes: release[:versionCodes],
+      status: release[:status],
+      userFraction: release[:userFraction]
+    }
+  end
+end
 summary[:changed] = report[:changed] if operation == 'listing.update'
 puts JSON.generate(summary)
