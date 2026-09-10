@@ -3,12 +3,15 @@ set -euo pipefail
 
 readonly EXPECTED_HOSTNAME="festapp-supabase-rehearsal-01"
 readonly EXPECTED_POSTGRES_MAJOR="17"
-readonly EXPECTED_MIGRATION_COUNT="101"
 readonly COMPOSE_DIR="${FESTAPP_REHEARSAL_COMPOSE_DIR:-/opt/festapp-supabase/docker}"
 readonly EVIDENCE_ROOT="${FESTAPP_REHEARSAL_EVIDENCE_ROOT:-/var/lib/festapp-rehearsal-evidence}"
 readonly TARGET_DATABASE="${FESTAPP_REHEARSAL_DATABASE:-postgres}"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+readonly MIGRATIONS_DIR="$PROJECT_ROOT/supabase/migrations"
 readonly SOURCE_REGISTRY="$SCRIPT_DIR/../merge/source-registry.json"
+readonly EXPECTED_MIGRATION_COUNT="$(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.sql' \
+  -exec basename {} .sql \; | awk '/^[0-9]{14}_/{print substr($0,1,14)}' | sort -u | wc -l | tr -d ' ')"
 
 fail() {
   echo "ERROR: $*" >&2
@@ -25,6 +28,7 @@ fail() {
 [[ -f "$COMPOSE_DIR/docker-compose.yml" ]] || fail "missing pinned Supabase Compose runtime"
 [[ -f "$COMPOSE_DIR/docker-compose.festapp.yml" ]] || fail "missing Festapp Compose override"
 [[ -f "$SOURCE_REGISTRY" ]] || fail "missing migration source registry"
+[[ "$EXPECTED_MIGRATION_COUNT" =~ ^[1-9][0-9]*$ ]] || fail "canonical migration set is empty"
 readonly SOURCE_ALIASES_CSV="$(jq -er '.sources | map(.alias) | join(",")' "$SOURCE_REGISTRY")"
 [[ "$SOURCE_ALIASES_CSV" =~ ^[a-z][a-z0-9_-]*(,[a-z][a-z0-9_-]*)+$ ]] ||
   fail "invalid migration source registry aliases"
