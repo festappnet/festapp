@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "doobiscup",
-  "baseMainSha": "d3d0cb2d4d56cdb54070f301cf96ea971525bc1d",
+  "baseMainSha": "c784d5e71fafa74a5326e6b99e85ded977e5c954",
   "release": {
-    "version": "0.20.4+488",
-    "note": "Make native offline MapLibre loading reliable"
+    "version": "0.20.5+489",
+    "note": "Persist unread news acknowledgement"
   }
 }
