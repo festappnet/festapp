@@ -134,6 +134,12 @@ readonly TARGET_STATE="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U
     (SELECT count(*) FROM pg_trigger WHERE tgname='push_log_notifications' AND NOT tgisinternal))")"
 [[ "$TARGET_STATE" == "3|0|$EXPECTED_REFERENCE_PASSES|$EXPECTED_REFERENCE_PASSES|t|t|t|0" ]] ||
   fail "target database is not promotion-ready ($TARGET_STATE)"
+readonly AUTH_EMAIL_MISMATCHES="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres \
+  -d "$TARGET_DATABASE" -Atqc "SELECT count(*) FROM auth.users u JOIN public.user_info ui ON ui.id=u.id
+  WHERE nullif(btrim(ui.email_readonly),'') IS NOT NULL
+    AND lower(u.email)<>ui.organization::text||'+'||lower(btrim(ui.email_readonly))")"
+[[ "$AUTH_EMAIL_MISMATCHES" == "0" ]] ||
+  fail "target contains $AUTH_EMAIL_MISMATCHES non-canonical Auth login aliases"
 
 readonly CURRENT_DATABASE="$(sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' .env)"
 [[ "$CURRENT_DATABASE" == "postgres" || "$CURRENT_DATABASE" =~ ^festapp_rehearsal_[0-9]{14}$ ]] ||
