@@ -2,7 +2,7 @@
 
 **Stav: SCHVÁLENÝ NÁVRH (2026-07-10), nic není implementováno.** Jediný zdroj
 pravdy pro tento refaktor. Navazuje na
-`docs/plans/2026-07-09_speakers_counseling_plan.md` (feature je hotová a živá
+`docs/archive/plans/2026-07-09_speakers_counseling_plan.md` (feature je hotová a živá
 jako 0.19.48+298); tento plán mění **gating a UX**, ne datový model rezervací.
 
 ## 1. Zadání (uživatel, 2026-07-10)

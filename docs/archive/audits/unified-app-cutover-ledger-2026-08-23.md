@@ -15,10 +15,14 @@ This ledger freezes the fetched source ranges and classifies every divergent com
 
 - Ahead/behind at the frozen refs: main `0	5`; CSM `0	3`; HM `0	8`.
 - Dirty CSM snapshot: `/tmp/festapp-unified-cutover.p9Dm64`; tracked patch SHA is recorded in `tracked.patch.sha256`, and all 15 untracked files are recorded in `untracked.sha256` without exposing file contents.
-- Integration worktree: `/Users/miakh/source/festapp-unified-cutover`, branch `cutover/unified-main-prod-branches-20260823`, based on `d071cdd16be4e500b8c1fa16ac2ad070cbf60fe7`.
+- Integration worktree: `<temporary-cutover-worktree>`, branch `cutover/unified-main-prod-branches-20260823`, based on `d071cdd16be4e500b8c1fa16ac2ad070cbf60fe7`.
 - Initial copied plan SHA-256: `b12aad8d0ef3e264b1806802f50f9853b052a8df9a46cfd52f2f02495c847eeb`; current candidate plan SHA-256 after recording migration-collision evidence and Markdown hygiene: `4d773ce4ec6b94c378d91239cd8063d7d5bacc285e3cbef71856c1bbd603f0db`; execution prompt SHA-256: `88df0e05964e0cc3caf11e3a0851bca468315008177c8438c36dd4e97580739c`.
 - Local pre-cutover refs preserve both frozen tenant tips: `backup/prod-csmostrava2026-pre-cutover-20260823` at `84c1d5de5277d4388c25d07235700a93668345c4` and `backup/prod-hvezdamorska-pre-cutover-20260823` at `942c45401b73eaf289bd6f299c606eda4b16cc26`. Pushing those refs remains separately authorized.
-- FestappSeed is the private `rawen-dev/festappseed` repository, cloned at `/Users/miakh/source/festappseed`. Commit `ae91a9cba4b91e3bfbebbe77e750f36638cd76bc` owns the fail-closed CSM Play/App Store provisioning contract and canonical publishing data without committing release credentials. Legacy tracked runtime env files were removed from its current tree while preserving ignored local operator copies; their historical values require external rotation.
+- The private configuration repository at `<private-config-repo-root>` owns the
+  fail-closed CSM store provisioning contract and canonical publishing data
+  without committing release credentials. Legacy tracked runtime env files
+  were removed from its current tree while preserving ignored local operator
+  copies; their historical values require external rotation.
 
 ## Dirty topic transfer
 

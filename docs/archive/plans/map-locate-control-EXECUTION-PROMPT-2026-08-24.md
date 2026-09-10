@@ -12,7 +12,7 @@ viewport.
 The authoritative implementation record, architecture, invariants, removal
 scope, and validation evidence are in:
 
-`docs/plans/map-locate-control-plan-2026-08-24.md`
+`docs/archive/plans/map-locate-control-plan-2026-08-24.md`
 
 Any future change must preserve the renderer-neutral ownership model, continuous
 edge movement, exact tip-to-edge placement, avoidance of map controls, and the

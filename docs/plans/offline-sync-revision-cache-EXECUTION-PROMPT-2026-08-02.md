@@ -1,6 +1,6 @@
 # Execute to completion: canonical offline sync and application mutations
 
-Work in `/Users/miakh/source/festapp`. Obey `AGENTS.md`,
+Work in `<repo-root>`. Obey `AGENTS.md`,
 `docs/architecture/ai_context.md`, repository migration rules, and the current
 verification mode. This is an implementation and canonical-cutover task, not a
 planning or review-only task.

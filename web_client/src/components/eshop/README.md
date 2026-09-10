@@ -16,7 +16,7 @@ _fetching_, but **write logic** is often in SQL.
 
 The web client relies on the same SQL backend functions as the Flutter app:
 
-- `scripts/functions/eshop/confirm_blueprint_order_change.sql`
+- `database/functions/eshop/confirm_blueprint_order_change.sql`
 
 **Logic**:
 
@@ -31,7 +31,7 @@ SQL "heavy lifting".
 ## Database Layers
 
 1. **JS (`db_orders.js`)**: Wrapper calling Supabase RPCs.
-2. **Supabase (`scripts/functions`)**: Business logic.
+2. **Supabase (`database/functions`)**: Business logic.
 3. **Edge Functions**: Emailing/Payments.
 
 ## Critical Implementation Details

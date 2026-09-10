@@ -1,6 +1,6 @@
 # Execute: Společníci — capabilities a admin assignment
 
-Work in `/Users/miakh/source/festapp`.
+Work in `<repo-root>`.
 
 Use the repository instructions in `CLAUDE.md` and
 `docs/architecture/ai_context.md`. Verification is `standard` because the work
@@ -8,7 +8,7 @@ changes authorization, account lifecycle, schema and shared program behavior.
 
 Implement the entire authoritative plan:
 
-`docs/plans/2026-08-05_companions_capabilities_admin_assignment_plan.md`
+`docs/archive/plans/2026-08-05_companions_capabilities_admin_assignment_plan.md`
 
 Read it in full before editing. The outcome is one occasion-level `companions`
 feature with independent `allow_user_create` and `allow_admin_assign`

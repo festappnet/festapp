@@ -1,6 +1,6 @@
 # Execute: Production hardening klientského sync enginu
 
-Work in `/Users/miakh/source/festapp`.
+Work in `<repo-root>`.
 
 Use all applicable repository instructions, beginning with
 `docs/architecture/ai_context.md`, and use `verification: standard` as recorded
@@ -8,7 +8,7 @@ in the plan.
 
 Implement the entire authoritative plan:
 
-`docs/plans/client-sync-production-hardening-plan-2026-08-05.md`
+`docs/archive/plans/client-sync-production-hardening-plan-2026-08-05.md`
 
 Read it in full before editing. The target outcome is to keep
 `client_sync_v1` as the one canonical protocol while adding real five-second
