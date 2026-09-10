@@ -10,9 +10,10 @@ test('cloud freeze SQL covers application tables plus cron', () => {
   const engage = freezeSql();
   assert.match(engage, /'public','eshop'/);
   assert.match(engage, /BEFORE INSERT OR UPDATE OR DELETE OR TRUNCATE/);
-  assert.match(engage, /UPDATE cron\.job SET active=false/);
+  assert.match(engage, /cron\.alter_job\(job\.jobid, active := false\)/);
   assert.match(engage, /pg_terminate_backend/);
-  assert.match(rollbackSql([2, 7]), /UPDATE cron\.job SET active=true WHERE jobid IN \(2,7\)/);
+  assert.match(rollbackSql([2, 7]), /jobid IN \(2,7\)/);
+  assert.match(rollbackSql([2, 7]), /cron\.alter_job\(job\.jobid, active := true\)/);
 });
 
 test('cloud freeze accepts complete guard, cron, Function and session closure', () => {
