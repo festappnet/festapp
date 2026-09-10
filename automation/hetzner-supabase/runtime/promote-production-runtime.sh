@@ -260,7 +260,7 @@ while IFS=$'\t' read -r tenant organization occasion web_origin manifest_url man
   chmod 0600 "$manifest_file"
   [[ "$(sha256sum "$manifest_file" | awk '{print $1}')" == "$manifest_sha" ]] ||
     fail "$tenant activation manifest digest changed"
-  [[ "$(jq -r '[.tenant,.phase]|join("|")' "$manifest_file")" == "$tenant|legacy" ]] ||
+  [[ "$(jq -r '[.tenantId,.backend]|join("|")' "$manifest_file")" == "$tenant|legacy" ]] ||
     fail "$tenant activation is not pinned to legacy"
   occasion_body="$(curl -fsS --max-time 20 --get \
     -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
