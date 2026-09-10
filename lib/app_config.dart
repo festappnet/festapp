@@ -58,8 +58,8 @@ class AppConfig {
   static const String termsUrl = "https://slunovrat.festapp.net/terms/";
   static const String supportUrl = "https://slunovrat.festapp.net/support/";
   static const String deleteAccountUrl = "https://slunovrat.festapp.net/delete-account/";
-  static const String syncHeadOrigin = "";
-  static const String syncAssetOrigin = "";
+  static const String syncHeadOrigin = "https://sync.festapp.net";
+  static const String syncAssetOrigin = "https://assets.festapp.net";
   static const String imageApiUrl = 'https://image-api.festapp.net';
   static const String imageProjectId = 'slunovrat';
   static bool isProLicense = true;
