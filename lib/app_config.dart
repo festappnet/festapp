@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
   static const int backendActivationCanonicalOrganizationId = 5;
   static const String backendActivationCanonicalProfileSha256 = 'bd7e96c00da3c4535355a10e72db81cbc04e38e9b19fc4232edd988824d1df4f';
+  static const String clientSyncTenantId = 'doobiscup';
   static const String appName = 'BISCUP';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
