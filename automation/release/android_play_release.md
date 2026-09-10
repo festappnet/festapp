@@ -57,3 +57,30 @@ refuses an advanced branch, downloads only the exact GitHub artifact, repeats al
 the binary-only production upload, and reads the completed version back from
 Google Play. Dispatching this workflow is still a production mutation and needs
 fresh authorization for every listed package and artifact.
+
+## Reusable Google Play operations
+
+`Google Play gateway` is the generic store-management entry point for Festapp
+and future products such as Mendelio. It supports batches of up to thirty
+requests and provides track, listing, review, user and per-app grant inventory;
+localized listing updates; exact review replies; and per-app grant updates.
+
+The dispatch input contains only tenant, package, operation and the SHA-256 of
+the full request. The full request is supplied through the protected
+environment secret `PLAY_OPERATION_REQUEST_JSON`, keeping review text and
+account identities out of public workflow inputs. Each environment also sets
+`PLAY_ALLOWED_REPOSITORY` to the exact caller repository. Full reports are
+encrypted before artifact upload and retained for 30 days. Mutations require a
+deterministic confirmation derived from the exact content and an independent
+readback before success.
+
+Prepare the protected request with
+`node automation/release/google_play_request.mjs input.json request.json`.
+The helper canonicalizes the JSON, adds the exact confirmation for mutations,
+writes the result with owner-only permissions and prints only its safe selector
+and SHA-256. Store the exact output bytes in the environment secret before
+dispatching the matching selector.
+
+The gateway only runs on a GitHub-hosted Linux runner. Product-specific
+manifests and metadata remain in their private canonical repository and are
+converted to the protected request at dispatch time.
