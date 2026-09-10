@@ -42,7 +42,7 @@ CREATE TEMP TABLE prior_dirty ON COMMIT DROP AS SELECT component,scope_type,scop
 CREATE TEMP TABLE prior_versions ON COMMIT DROP AS SELECT aggregate_type,scope_type,scope_id,aggregate_id,to_jsonb(s) row_data FROM public.client_aggregate_versions s WHERE NOT((scope_type='occasion' AND scope_id IN(SELECT occasion FROM source_occasions)) OR (scope_type='unit' AND scope_id IN(SELECT unit FROM source_units)));
 
 DO $rebuild$
-DECLARE import_run uuid; revision_epoch bigint; aggregate_epoch bigint; changed bigint; alias text:=current_setting('festapp.merge_source_alias'); legacy_regex text:=current_setting('festapp.legacy_ref_regex'); legacy_links bigint; invalid_components bigint; expected_private bigint;
+DECLARE import_run uuid; revision_epoch bigint; aggregate_epoch bigint; changed bigint; alias text:=current_setting('festapp.merge_source_alias'); legacy_regex text:=current_setting('festapp.legacy_ref_regex'); legacy_links bigint; invalid_components bigint; expected_private bigint; canonical_auth_mismatches bigint;
 BEGIN
   SELECT run_id INTO STRICT import_run FROM festapp_merge.import_runs WHERE source_alias=alias AND status='blocked';
   IF EXISTS (WITH required(name) AS (VALUES(alias||'-id-mapping-preparation'),(alias||'-relational-import'),(alias||'-identity-profile-review'),(alias||'-auth-import'),(alias||'-storage-metadata-import'),(alias||'-storage-object-payloads'),(alias||'-auth-and-storage-import'),(alias||'-semantic-reference-validation'),(alias||'-embedded-payload-validation'),(alias||'-operational-reference-validation'),(alias||'-quarantine-disposition')) SELECT 1 FROM required LEFT JOIN festapp_merge.validation_results v ON v.run_id=import_run AND v.check_name=required.name GROUP BY required.name HAVING count(v.check_name)<>1 OR count(*) FILTER(WHERE v.status='pass')<>1) THEN RAISE EXCEPTION 'client-state prerequisite is missing or not passing'; END IF;
@@ -91,10 +91,41 @@ BEGIN
   UPDATE festapp_merge.validation_results SET status='pass',observed=jsonb_build_object('strategy','source-scoped-forward-only-rebuild-v1','mapped_occasions',(SELECT count(*) FROM source_occasions),'public_scopes',(SELECT count(*) FROM public.client_sync_scopes WHERE scope_type='occasion' AND scope_id IN(SELECT occasion FROM source_occasions)),'private_scopes',expected_private,'over_budget_components',0,'prior_source_rows_changed',0,'production_r2_writes',0,'requires_fresh_cutover_snapshot',true) WHERE run_id=import_run AND check_name=alias||'-client-derived-state-rebuild' AND status='blocked'; IF NOT FOUND THEN RAISE EXCEPTION 'client rebuild gate missing'; END IF;
   INSERT INTO festapp_merge.validation_results VALUES(import_run,alias||'-client-materialization','pass',jsonb_build_object('mapped_occasions',(SELECT count(*) FROM source_occasions),'over_budget_components',0,'production_r2_writes',0));
 
+  -- Organization IDs are remapped while merging independent projects. Auth
+  -- login aliases must follow the canonical user_info organization, otherwise
+  -- password login and reset flows keep using the source project's prefix.
+  CREATE TEMP TABLE canonical_auth_email_map ON COMMIT DROP AS
+  SELECT ui.id,
+    ui.organization::text||'+'||lower(btrim(ui.email_readonly)) desired_email,
+    'merge-'||replace(ui.id::text,'-','')||'@invalid.local' temporary_email
+  FROM public.user_info ui
+  WHERE nullif(btrim(ui.email_readonly),'') IS NOT NULL;
+  IF EXISTS(SELECT 1 FROM canonical_auth_email_map GROUP BY desired_email HAVING count(*)>1) OR
+     EXISTS(SELECT 1 FROM canonical_auth_email_map m LEFT JOIN auth.users u ON u.id=m.id WHERE u.id IS NULL) THEN
+    RAISE EXCEPTION 'canonical Auth email mapping is ambiguous or incomplete';
+  END IF;
+  UPDATE auth.users u SET email=m.temporary_email,updated_at=now()
+  FROM canonical_auth_email_map m WHERE u.id=m.id AND lower(u.email)<>m.desired_email;
+  UPDATE auth.identities i SET identity_data=jsonb_set(i.identity_data,'{email}',to_jsonb(m.temporary_email),true),updated_at=now()
+  FROM canonical_auth_email_map m WHERE i.user_id=m.id AND i.provider='email' AND lower(coalesce(i.identity_data->>'email',''))<>m.desired_email;
+  UPDATE auth.users u SET email=m.desired_email,updated_at=now()
+  FROM canonical_auth_email_map m WHERE u.id=m.id AND lower(u.email)<>m.desired_email;
+  UPDATE auth.identities i SET identity_data=jsonb_set(i.identity_data,'{email}',to_jsonb(m.desired_email),true),updated_at=now()
+  FROM canonical_auth_email_map m WHERE i.user_id=m.id AND i.provider='email' AND lower(coalesce(i.identity_data->>'email',''))<>m.desired_email;
+  SELECT count(*) INTO canonical_auth_mismatches
+  FROM auth.users u JOIN public.user_info ui ON ui.id=u.id
+  WHERE nullif(btrim(ui.email_readonly),'') IS NOT NULL
+    AND lower(u.email)<>ui.organization::text||'+'||lower(btrim(ui.email_readonly));
+  IF canonical_auth_mismatches<>0 OR EXISTS(
+    SELECT 1 FROM auth.identities i JOIN public.user_info ui ON ui.id=i.user_id
+    WHERE i.provider='email' AND nullif(btrim(ui.email_readonly),'') IS NOT NULL
+      AND lower(coalesce(i.identity_data->>'email',''))<>ui.organization::text||'+'||lower(btrim(ui.email_readonly))
+  ) THEN RAISE EXCEPTION 'canonical Auth email normalization failed'; END IF;
+
   SELECT count(*) INTO legacy_links FROM public.images WHERE link LIKE '%supabase.co/storage/v1/object/public/%';
   IF (SELECT count(*) FROM public.images i JOIN storage.objects o ON o.bucket_id=split_part(split_part(i.link,'/storage/v1/object/public/',2),'/',1) AND o.name=substring(split_part(i.link,'/storage/v1/object/public/',2) from position('/' in split_part(i.link,'/storage/v1/object/public/',2))+1) WHERE i.link LIKE '%supabase.co/storage/v1/object/public/%')<>legacy_links THEN RAISE EXCEPTION 'legacy Storage URL lacks copied object'; END IF;
   IF EXISTS(SELECT 1 FROM public.client_sync_public_heads WHERE head_json::text ~ (legacy_regex||'|supabase.co')) OR EXISTS(SELECT 1 FROM public.client_sync_publications WHERE coalesce(artifact_url,'') ~ (legacy_regex||'|supabase.co')) OR EXISTS(SELECT 1 FROM public.client_sync_release_manifests WHERE manifest::text ~ (legacy_regex||'|supabase.co') OR coalesce(artifact_url,'') ~ (legacy_regex||'|supabase.co')) THEN RAISE EXCEPTION 'legacy backend URL remains in client-sync state'; END IF;
-  UPDATE festapp_merge.validation_results SET status='pass',observed=jsonb_build_object('registry_version','2026-08-28.2','known_reference_mismatches',0,'legacy_storage_links',legacy_links,'legacy_storage_links_with_copied_objects',legacy_links,'storage_url_rewrite_gate','api.festapp.net-cutover','external_sync_runtime_inert',true,'deleted_rows',0) WHERE run_id=import_run AND check_name=alias||'-reference-registry-completeness' AND status='blocked'; IF NOT FOUND THEN RAISE EXCEPTION 'final reference gate missing'; END IF;
+  UPDATE festapp_merge.validation_results SET status='pass',observed=jsonb_build_object('registry_version','2026-09-10.1','known_reference_mismatches',0,'canonical_auth_email_mismatches',canonical_auth_mismatches,'legacy_storage_links',legacy_links,'legacy_storage_links_with_copied_objects',legacy_links,'storage_url_rewrite_gate','api.festapp.net-cutover','external_sync_runtime_inert',true,'deleted_rows',0) WHERE run_id=import_run AND check_name=alias||'-reference-registry-completeness' AND status='blocked'; IF NOT FOUND THEN RAISE EXCEPTION 'final reference gate missing'; END IF;
   IF EXISTS(SELECT 1 FROM festapp_merge.validation_results WHERE run_id=import_run AND status<>'pass') THEN RAISE EXCEPTION 'merge source still has a non-pass gate'; END IF;
   UPDATE festapp_merge.import_runs SET status='validated' WHERE run_id=import_run AND status='blocked'; IF NOT FOUND THEN RAISE EXCEPTION 'source final transition failed'; END IF;
 END $rebuild$;
