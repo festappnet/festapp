@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
   static const int backendActivationCanonicalOrganizationId = 9;
   static const String backendActivationCanonicalProfileSha256 = '6477caf5d836f0cd4e32020deb35a714fa1e526a7db95b04138c6051ed5f4bf1';
+  static const String clientSyncTenantId = 'jubileum2025';
   static const String appName = 'Jubileum mládeže 2025';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
