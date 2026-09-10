@@ -253,6 +253,7 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   const barrier = fs.readFileSync(path.join(runtime, 'set-production-target-write-barrier.sh'), 'utf8');
   const bundleBuilder = fs.readFileSync(path.join(runtime, 'build-production-function-bundle.sh'), 'utf8');
   const bundleInstaller = fs.readFileSync(path.join(runtime, 'install-production-function-bundle.sh'), 'utf8');
+  const databaseFinalizer = fs.readFileSync(path.join(runtime, 'finalize-canonical-database-operations.sh'), 'utf8');
   assert.match(promotion, /promote-validated-runtime-without-opening-write-authority/);
   assert.match(promotion, /\.env\.pre-production-promotion-/);
   assert.match(promotion, /client_activation_documents_published:false/);
@@ -266,6 +267,7 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(promotion, /Edge Function directory set does not match/);
   assert.match(promotion, /Function bundle digest does not match/);
   assert.match(promotion, /tgname='push_log_notifications'/);
+  assert.match(promotion, /non-canonical Auth login aliases/);
   assert.match(promotion, /AWS_SNS_TOPIC_ARN/);
   assert.match(promotion, /NOTIFY_WEBHOOK_TOKEN/);
   assert.match(promotion, /FESTAPP_OPERATIONAL_READINESS_DECISION/);
@@ -290,9 +292,17 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(bundleInstaller, /unsafe path/);
   assert.match(bundleInstaller, /tar --no-xattrs --no-same-owner/);
   assert.match(bundleInstaller, /staged Function directory set is not canonical/);
+  assert.match(bundleInstaller, /const memoryLimitMb = 512/);
+  assert.match(bundleInstaller, /const workerTimeoutMs = 7/);
   assert.match(bundleInstaller, /runtime_restarted:false/);
   assert.doesNotMatch(bundleInstaller, /docker compose (?:up|restart)/);
-  for (const script of [promotion, upgrade, barrier, bundleBuilder, bundleInstaller]) {
+  assert.match(databaseFinalizer, /pg_net\.database_name/);
+  assert.match(databaseFinalizer, /cron\.schedule_in_database/);
+  assert.match(databaseFinalizer, /timeout_milliseconds:=420000/);
+  assert.match(databaseFinalizer, /Integration Test Account/);
+  assert.match(databaseFinalizer, /external_sync_sources/);
+  assert.match(databaseFinalizer, /canonical Auth email mapping/);
+  for (const script of [promotion, upgrade, barrier, bundleBuilder, bundleInstaller, databaseFinalizer]) {
     const syntax = spawnSync('bash', ['-n'], { input: script, encoding: 'utf8' });
     assert.equal(syntax.status, 0, syntax.stderr);
   }
@@ -310,5 +320,6 @@ test('host provisioning installs the runtime dependencies used by promotion tool
   for (const artifact of [
     'festapp-runtime-writer-policy.json', 'set-production-target-write-barrier.sh',
     'validate-operational-readiness.mjs', 'install-production-function-bundle.sh',
+    'finalize-canonical-database-operations.sh',
   ]) assert.match(deployment, new RegExp(artifact.replaceAll('.', '\\.')));
 });
