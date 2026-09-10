@@ -297,6 +297,7 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.doesNotMatch(bundleInstaller, /docker compose (?:up|restart)/);
   assert.match(databaseFinalizer, /pg_net\.database_name/);
   assert.match(databaseFinalizer, /cron\.schedule_in_database/);
+  assert.match(databaseFinalizer, /timeout_milliseconds:=300000/);
   assert.match(databaseFinalizer, /external_sync_sources/);
   assert.match(databaseFinalizer, /canonical Auth email mapping/);
   for (const script of [promotion, upgrade, barrier, bundleBuilder, bundleInstaller, databaseFinalizer]) {

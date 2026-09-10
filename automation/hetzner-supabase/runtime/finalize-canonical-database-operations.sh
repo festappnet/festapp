@@ -102,9 +102,9 @@ SELECT cron.unschedule(jobid) FROM cron.job;
 SELECT cron.schedule_in_database('festapp_canonical_apply_planned_changes','*/1 * * * *',
   'SELECT public.apply_planned_changes()',:'target_database');
 SELECT cron.schedule_in_database('festapp_canonical_synchronize_orders','*/10 * * * *',
-  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/synchronize-orders',body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)))$$,:'target_database');
+  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/synchronize-orders',body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)),timeout_milliseconds:=300000)$$,:'target_database');
 SELECT cron.schedule_in_database('festapp_canonical_process_email_queue','*/1 * * * *',
-  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/send-email',body:=jsonb_build_object('processQueue',true,'requestSecret',public.generate_request_secret(3600))) WHERE jsonb_array_length(public.get_due_queue_emails())>0$$,:'target_database');
+  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/send-email',body:=jsonb_build_object('processQueue',true,'requestSecret',public.generate_request_secret(3600)),timeout_milliseconds:=300000) WHERE jsonb_array_length(public.get_due_queue_emails())>0$$,:'target_database');
 SQL
 
 docker compose restart db >/dev/null
