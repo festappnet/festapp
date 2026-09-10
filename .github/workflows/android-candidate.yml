@@ -152,7 +152,8 @@ jobs:
           source automation/project.conf
           set +a
           test "$ANDROID_APPLICATION_ID" = "$(jq -r '.androidPackage' "$RUNNER_TEMP/release-manifest.json")"
-          node automation/release/client_cutover_preflight.mjs --require-canonical-cutover
+          FESTAPP_RELEASE_MANIFEST="$RUNNER_TEMP/release-manifest.json" \
+            node automation/release/client_cutover_preflight.mjs --require-canonical-cutover
       - name: Build signed Android App Bundle
         shell: bash
         run: |
