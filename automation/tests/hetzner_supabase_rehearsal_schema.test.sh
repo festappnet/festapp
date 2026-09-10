@@ -10,6 +10,7 @@ readonly DEFAULT_IMPORT_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/rehear
 readonly DEFAULT_MANAGED_IMPORT_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/rehearsal/import-default-managed.sh"
 readonly DEFAULT_AUTH_VALIDATION_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/rehearsal/validate-default-auth-continuity.sh"
 readonly STORAGE_RECEIVER_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/rehearsal/storage-file-receiver.cjs"
+readonly STORAGE_VERIFIER_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/rehearsal/storage-file-verifier.cjs"
 readonly STORAGE_COPY_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/merge/copy-storage-payloads.mjs"
 readonly STORAGE_EVIDENCE_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/merge/record-storage-payload-evidence.mjs"
 readonly MANAGED_STAGE_SCRIPT="$PROJECT_ROOT/automation/hetzner-supabase/merge/stage-managed-export.mjs"
@@ -50,6 +51,7 @@ readonly TERRAFORM_FIREWALL="$PROJECT_ROOT/automation/hetzner-supabase/terraform
 [[ -x "$DEFAULT_MANAGED_IMPORT_SCRIPT" ]] || { echo "default managed importer must be executable" >&2; exit 1; }
 [[ -x "$DEFAULT_AUTH_VALIDATION_SCRIPT" ]] || { echo "default Auth validator must be executable" >&2; exit 1; }
 [[ -r "$STORAGE_RECEIVER_SCRIPT" ]] || { echo "Storage receiver must be readable" >&2; exit 1; }
+[[ -r "$STORAGE_VERIFIER_SCRIPT" ]] || { echo "Storage verifier must be readable" >&2; exit 1; }
 [[ -x "$STORAGE_COPY_SCRIPT" ]] || { echo "Storage payload copier must be executable" >&2; exit 1; }
 [[ -x "$STORAGE_EVIDENCE_SCRIPT" ]] || { echo "Storage evidence recorder must be executable" >&2; exit 1; }
 [[ -x "$MANAGED_STAGE_SCRIPT" ]] || { echo "managed staging loader must be executable" >&2; exit 1; }
@@ -136,7 +138,7 @@ for required in \
   'prepare-empty-private-merge-staging' \
   'festapp-supabase-rehearsal-01' \
   'EXPECTED_POSTGRES_MAJOR="17"' \
-  'EXPECTED_MIGRATION_COUNT="101"' \
+  'EXPECTED_MIGRATION_COUNT="$(find "$MIGRATIONS_DIR"' \
   "to_regnamespace('festapp_merge') IS NULL" \
   'CREATE SCHEMA festapp_merge AUTHORIZATION postgres' \
   'CREATE TABLE festapp_merge.quarantined_rows' \
@@ -276,9 +278,12 @@ done
 for required in 'readManagedDescriptors' 'SOURCE_REGISTRY' 'sourceIndex' \
   'source_artifact_sha256' 'GET DIAGNOSTICS changed=ROW_COUNT' \
   'Storage evidence descriptors differ from the encrypted managed artifact' \
-  'verifyTargetPayloads' 'verifySourcePayloads' 'FESTAPP_STORAGE_VERIFY_ONLY=1' \
+  'verifyTargetPayloads' 'verifySourcePayloads' 'storage-file-verifier.cjs' \
   'independently hashed source/target payloads' 'snapshot_time_content_proof_requires_final_source_freeze'; do
   rg -Fq "$required" "$STORAGE_EVIDENCE_SCRIPT" || { echo "missing Storage evidence recorder contract: $required" >&2; exit 1; }
+done
+for required in 'FileBackend' 'sha256' 'process.exit(0)'; do
+  rg -Fq "$required" "$STORAGE_VERIFIER_SCRIPT" || { echo "missing Storage verifier contract: $required" >&2; exit 1; }
 done
 for required in 'RAW.dump.age' 'raw_artifact_sha256' 'raw_schema_sha256' 'managed_artifact_sha256' \
   'source manifest content checksum mismatch' 'CREATE TABLE festapp_managed_source.provenance' \
