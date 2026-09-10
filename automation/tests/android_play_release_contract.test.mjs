@@ -91,8 +91,9 @@ test('AAB validation permits only the known self-signed jarsigner warning class'
   assert.match(verifier, /unsigned entries \(16\)/);
   assert.match(verifier, /verification failure \(1\)/);
   assert.match(verifier, /actualFingerprint !== expectedFingerprint/);
-  assert.match(verifier, /const hardMarkerPattern = \/\(bujnmi\|/);
-  assert.match(verifier, /const textMarkerPattern = \/\(bujnmi\|miakh\|/);
+  assert.match(verifier, /const hardMarkerPatterns = \[\/bujnmi\/i, \/\\\/Users\\\/\//);
+  assert.match(verifier, /const textMarkerPatterns = \[\.\.\.hardMarkerPatterns, \/miakh\/i\]/);
+  assert.doesNotMatch(verifier, /\/\\\/Users\\\/\/i/);
   assert.match(verifier, /find \"\$scan_root\" -type f -print0 \| xargs -0 strings -f/);
   assert.match(verifier, /AAB entry contains a forbidden personal path or identity marker:/);
 });
