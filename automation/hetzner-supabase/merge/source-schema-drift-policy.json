@@ -2,7 +2,7 @@
   "version": 1,
   "sources": {
     "slunovrat": {
-      "source_schema_sha256": "52629fad9744f41de90c1860a7c8116b70deeccb571ef6f63b0c1363e6831216",
+      "source_schema_sha256": "1fa556746647a40d2f2dc419b4f7e454accf8fec6f246f3accd6a1ada8d09b16",
       "missing_target_tables": [
         {
           "table": "public.email_templates_old",
