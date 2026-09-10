@@ -446,7 +446,8 @@ self.addEventListener('fetch', (event) => {
   // from an app-shell generation. It is deliberately absent from PRECACHE_URLS
   // and has no offline fallback: the client itself keeps legacy until it sees
   // the exact pinned canonical bytes, then persists a monotonic local marker.
-  if (url.pathname === '/backend-activation.json') {
+  if (url.pathname === '/backend-activation.json' ||
+      url.pathname === '/client-sync-config.json') {
     event.respondWith(fetch(request, { cache: 'no-store' }));
     return;
   }
