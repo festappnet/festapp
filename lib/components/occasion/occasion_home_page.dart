@@ -63,6 +63,7 @@ class _OccasionHomePageState extends State<OccasionHomePage>
     with WidgetsBindingObserver {
   int _messageCount = 0;
   final AsyncReloadCoordinator _reloadCoordinator = AsyncReloadCoordinator();
+  final AsyncReloadCoordinator _newsReadCoordinator = AsyncReloadCoordinator();
   final PublicMapSession _mapSession = PublicMapSession();
   late final _AutoRouteMapNavigationAdapter _mapNavigation =
       _AutoRouteMapNavigationAdapter();
@@ -83,11 +84,7 @@ class _OccasionHomePageState extends State<OccasionHomePage>
   @override
   void initState() {
     super.initState();
-    _availableTabs = OccasionTab.getAvailableTabs(() {
-      setState(() {
-        _messageCount = 0;
-      });
-    });
+    _availableTabs = OccasionTab.getAvailableTabs(_acknowledgeActiveNews);
     WidgetsBinding.instance.addObserver(this);
     _mapSession.bindNavigation(_mapNavigation);
     loadData();
@@ -123,6 +120,7 @@ class _OccasionHomePageState extends State<OccasionHomePage>
     _mapSession.dispose();
     _mapNavigation.dispose();
     _reloadCoordinator.dispose();
+    _newsReadCoordinator.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -145,11 +143,44 @@ class _OccasionHomePageState extends State<OccasionHomePage>
   void _onTabsChanged() {
     final tabsRouter = _tabsRouter;
     if (tabsRouter == null) return;
-    final active = tabsRouter.activeIndex >= 0 &&
-        tabsRouter.activeIndex < visibleTabKeys.length &&
-        visibleTabKeys[tabsRouter.activeIndex] == OccasionTab.map;
-    _mapNavigation.setVisible(active);
-    _mapSession.setVisible(active);
+    final activeKey = tabsRouter.activeIndex >= 0 &&
+            tabsRouter.activeIndex < visibleTabKeys.length
+        ? visibleTabKeys[tabsRouter.activeIndex]
+        : null;
+    final mapActive = activeKey == OccasionTab.map;
+    _mapNavigation.setVisible(mapActive);
+    _mapSession.setVisible(mapActive);
+    if (activeKey == OccasionTab.news) _acknowledgeActiveNews();
+  }
+
+  void _acknowledgeActiveNews() {
+    final tabsRouter = _tabsRouter;
+    if (!mounted ||
+        tabsRouter == null ||
+        tabsRouter.activeIndex < 0 ||
+        tabsRouter.activeIndex >= visibleTabKeys.length ||
+        visibleTabKeys[tabsRouter.activeIndex] != OccasionTab.news ||
+        !AuthService.isLoggedIn()) {
+      return;
+    }
+
+    setState(() => _messageCount = 0);
+    unawaited(_newsReadCoordinator.run(() async {
+      final currentRouter = _tabsRouter;
+      if (!mounted ||
+          currentRouter == null ||
+          currentRouter.activeIndex < 0 ||
+          currentRouter.activeIndex >= visibleTabKeys.length ||
+          visibleTabKeys[currentRouter.activeIndex] != OccasionTab.news ||
+          !AuthService.isLoggedIn()) {
+        return;
+      }
+      final messages = await DbNews.getAllNewsMessages();
+      if (messages.isNotEmpty && !messages.first.isRead) {
+        await DbNews.setMessagesAsRead(messages.first.id);
+      }
+      if (mounted) setState(() => _messageCount = 0);
+    }));
   }
 
   Future<void> loadData() => _reloadCoordinator.run(() async {
@@ -236,6 +267,7 @@ class _OccasionHomePageState extends State<OccasionHomePage>
                                 setState(() => _messageCount = count);
                               }
                             },
+                            acknowledgeUnread: _acknowledgeActiveNews,
                           );
                           // Switching tabs restores the retained stack exactly
                           // as it was. Only tapping the already active tab is a
