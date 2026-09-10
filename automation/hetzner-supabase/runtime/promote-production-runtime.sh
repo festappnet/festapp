@@ -170,7 +170,7 @@ rollback() {
   if [[ "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]]; then
     docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
       -c "ALTER DATABASE \"$TARGET_DATABASE\" SET default_transaction_read_only = on" >/dev/null || true
-    docker compose exec -T db psql -X -U postgres -d postgres -Atqc \
+    docker compose exec -T db psql -X -U supabase_admin -d postgres -Atqc \
       "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$TARGET_DATABASE' AND pid<>pg_backend_pid()" >/dev/null || true
   fi
   install -o root -g root -m 0600 "$ENV_BACKUP" .env
@@ -183,7 +183,7 @@ trap rollback ERR
 if [[ "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]]; then
   docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
     -c "ALTER DATABASE \"$TARGET_DATABASE\" RESET default_transaction_read_only" >/dev/null
-  docker compose exec -T db psql -X -U postgres -d postgres -Atqc \
+  docker compose exec -T db psql -X -U supabase_admin -d postgres -Atqc \
     "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$TARGET_DATABASE' AND pid<>pg_backend_pid()" >/dev/null
 fi
 
