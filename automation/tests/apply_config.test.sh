@@ -381,6 +381,17 @@ assert_contains "$TMP_ROOT/lib/app_config.dart" "$EXPECTED_PROFILE_SHA"
 assert_contains "$TMP_ROOT/web_client/src/app_config.js" "$EXPECTED_PROFILE_SHA"
 
 sed -i.bak \
+    's/^BACKEND_ACTIVATION_PHASE=legacy$/BACKEND_ACTIVATION_PHASE=canonical/' \
+    "$TMP_ROOT/automation/project.conf"
+./automation/apply_config.sh > apply_config-activation-canonical.log 2>&1 || {
+    cat apply_config-activation-canonical.log; exit 1;
+}
+assert_contains "$TMP_ROOT/web/delete-account/index.html" \
+    'const endpoint = "https://api.festapp.net/functions/v1/confirm-account-deletion";'
+assert_contains "$TMP_ROOT/web/delete-account/index.html" \
+    'const apiKey = "fixture-canonical-key";'
+
+sed -i.bak \
     's#^BACKEND_ACTIVATION_CANONICAL_SUPABASE_URL=.*#BACKEND_ACTIVATION_CANONICAL_SUPABASE_URL=https://api.example.com#' \
     "$TMP_ROOT/automation/project.conf"
 set +e
