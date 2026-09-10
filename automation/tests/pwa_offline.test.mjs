@@ -56,6 +56,7 @@ try {
   assert.match(worker, /FESTAPP_QUERY_BUILD_VERSION/);
   assert.match(worker, /url\.pathname === '\/festapp-version\.json'/);
   assert.match(worker, /url\.pathname === '\/backend-activation\.json'/);
+  assert.match(worker, /url\.pathname === '\/client-sync-config\.json'/);
   assert.match(worker, /fetch\(request, \{ cache: 'no-store' \}\)/);
   assert.match(worker, /url\.origin === 'https:\/\/fonts\.gstatic\.com'/);
   assert.match(worker, /url\.origin === 'https:\/\/fonts\.googleapis\.com'/);
@@ -71,6 +72,8 @@ try {
   );
   assert.ok(!precacheUrls.includes('/backend-activation.json'),
     'backend activation must not be part of the app-shell precache');
+  assert.ok(!precacheUrls.includes('/client-sync-config.json'),
+    'client sync runtime config must not be part of the app-shell precache');
   assert.ok(coreUrls.includes('/main.dart.js'));
   assert.ok(coreUrls.includes('/flutter?pwa-cache=1'));
   assert.ok(coreUrls.includes('/privacy/'),
