@@ -58,8 +58,8 @@ class AppConfig {
   static const String termsUrl = "https://app.absolventskyvelehrad.cz/terms/";
   static const String supportUrl = "https://app.absolventskyvelehrad.cz/support/";
   static const String deleteAccountUrl = "https://app.absolventskyvelehrad.cz/delete-account/";
-  static const String syncHeadOrigin = "";
-  static const String syncAssetOrigin = "";
+  static const String syncHeadOrigin = "https://sync.festapp.net";
+  static const String syncAssetOrigin = "https://assets.festapp.net";
   static const String imageApiUrl = 'https://image-api.festapp.net';
   static const String imageProjectId = 'a';
   static bool isProLicense = true;
