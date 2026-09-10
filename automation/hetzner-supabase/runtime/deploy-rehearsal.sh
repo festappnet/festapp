@@ -32,6 +32,7 @@ install -o root -g root -m 0700 "$SCRIPT_DIR/promote-production-runtime.sh" prom
 install -o root -g root -m 0700 "$SCRIPT_DIR/set-production-target-write-barrier.sh" set-production-target-write-barrier.sh
 install -o root -g root -m 0700 "$SCRIPT_DIR/validate-operational-readiness.mjs" validate-operational-readiness.mjs
 install -o root -g root -m 0700 "$SCRIPT_DIR/install-production-function-bundle.sh" install-production-function-bundle.sh
+install -o root -g root -m 0700 "$SCRIPT_DIR/finalize-canonical-database-operations.sh" finalize-canonical-database-operations.sh
 install -o root -g root -m 0700 "$SCRIPT_DIR/upgrade-installed-production-runtime.sh" upgrade-installed-production-runtime.sh
 install -o root -g root -m 0700 "$SCRIPT_DIR/rotate-rehearsal-runtime-credentials.sh" rotate-rehearsal-runtime-credentials.sh
 ./configure-rehearsal-env.py
