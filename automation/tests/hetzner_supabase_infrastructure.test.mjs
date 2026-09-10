@@ -57,6 +57,7 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.match(compose, /127\.0\.0\.1:8000:8000/);
   assert.match(compose, /FESTAPP_SUPABASE_SITE_ADDRESSES/);
   assert.match(compose, /FESTAPP_SUPABASE_ADMIN_SITE/);
+  assert.match(compose, /FESTAPP_SUPABASE_ADMIN_BASIC_AUTH/);
   assert.match(compose, /QR_RATE_SALT: \$\{QR_RATE_SALT:\?configure QR_RATE_SALT/);
   assert.match(compose, /SMTP_HOSTNAME: \$\{SMTP_HOST\}/);
   assert.match(compose, /PROJECT_URL: http:\/\/api-gw:8000/);
@@ -69,6 +70,7 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.match(compose, /admin-tunnel:[\s\S]*user: "0:0"/);
   assert.match(compose, /admin-tunnel:[\s\S]*cap_drop:[\s\S]*- ALL/);
   assert.match(caddy, /\{\$FESTAPP_SUPABASE_ADMIN_SITE:http:\/\/127\.0\.0\.1:8999\}[\s\S]*bind 127\.0\.0\.1/);
+  assert.match(caddy, /request_header Authorization "Basic \{\$FESTAPP_SUPABASE_ADMIN_BASIC_AUTH\}"/);
   for (const service of ['auth', 'rest', 'realtime', 'storage', 'meta', 'functions', 'studio']) {
     assert.match(databaseTarget, new RegExp(`^  ${service}:`, 'm'));
   }
