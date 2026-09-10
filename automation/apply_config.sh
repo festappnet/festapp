@@ -129,6 +129,13 @@ if [ -n "$BACKEND_ACTIVATION_TENANT_ID$BACKEND_ACTIVATION_PHASE$BACKEND_ACTIVATI
     case "$BACKEND_ACTIVATION_PHASE" in legacy|canonical) ;; *)
         echo "Error: BACKEND_ACTIVATION_PHASE must be legacy or canonical"; exit 1 ;;
     esac
+    if [ "$BACKEND_ACTIVATION_PHASE" = canonical ]; then
+        [ "${SYNC_HEAD_ORIGIN:-}" = "https://sync.festapp.net" ] &&
+            [ "${SYNC_ASSET_ORIGIN:-}" = "https://assets.festapp.net" ] || {
+            echo "Error: canonical activation requires the shared Festapp sync and asset origins"
+            exit 1
+        }
+    fi
     [[ "$BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID" =~ ^[1-9][0-9]*$ ]] || {
         echo "Error: BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID must be a positive integer"; exit 1;
     }
