@@ -70,6 +70,7 @@ install_runtime_file "$SCRIPT_DIR/promote-production-runtime.sh" "$COMPOSE_DIR/p
 install_runtime_file "$SCRIPT_DIR/set-production-target-write-barrier.sh" "$COMPOSE_DIR/set-production-target-write-barrier.sh"
 install_runtime_file "$SCRIPT_DIR/validate-operational-readiness.mjs" "$COMPOSE_DIR/validate-operational-readiness.mjs"
 install_runtime_file "$SCRIPT_DIR/install-production-function-bundle.sh" "$COMPOSE_DIR/install-production-function-bundle.sh"
+install_runtime_file "$SCRIPT_DIR/finalize-canonical-database-operations.sh" "$COMPOSE_DIR/finalize-canonical-database-operations.sh"
 install_runtime_file "$SCRIPT_DIR/upgrade-installed-production-runtime.sh" "$COMPOSE_DIR/upgrade-installed-production-runtime.sh"
 install_runtime_file "$SCRIPT_DIR/switch-rehearsal-runtime-database.sh" "$COMPOSE_DIR/switch-rehearsal-runtime-database.sh"
 install_runtime_file "$SCRIPT_DIR/docker-compose.database-target.yml" "$COMPOSE_DIR/docker-compose.database-target.yml" 0644
@@ -86,6 +87,7 @@ for dependency in install-runtime-registries.mjs validate-production-promotion.m
   promote-production-runtime.sh upgrade-installed-production-runtime.sh \
   set-production-target-write-barrier.sh validate-operational-readiness.mjs \
   install-production-function-bundle.sh \
+  finalize-canonical-database-operations.sh \
   switch-rehearsal-runtime-database.sh docker-compose.database-target.yml; do
   [[ "$(sha256sum "$COMPOSE_DIR/$dependency" | awk '{print $1}')" == \
      "$(sha256sum "$SCRIPT_DIR/$dependency" | awk '{print $1}')" ]] ||

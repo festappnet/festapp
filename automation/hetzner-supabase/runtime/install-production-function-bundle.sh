@@ -43,6 +43,11 @@ readonly PREVIOUS="volumes/functions.pre-production-$INSTALL_ID"
 install -d -o root -g root -m 0755 "$STAGE"
 tar --no-xattrs --no-same-owner --no-same-permissions -C "$STAGE" -xzf "$ARTIFACT"
 cp -a volumes/functions/main "$STAGE/main"
+grep -qF 'const memoryLimitMb = 150;' "$STAGE/main/index.ts" ||
+  fail "upstream Function router memory-limit contract changed"
+sed -i 's/const memoryLimitMb = 150;/const memoryLimitMb = 512;/' "$STAGE/main/index.ts"
+grep -qF 'const memoryLimitMb = 512;' "$STAGE/main/index.ts" ||
+  fail "Function router memory limit was not raised for production workloads"
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle contains symlinks"
 
 mapfile -t EXPECTED < <({ printf '%s\n' _shared main; jq -r '
