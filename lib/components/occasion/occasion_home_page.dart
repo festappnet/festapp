@@ -182,10 +182,7 @@ class _OccasionHomePageState extends State<OccasionHomePage>
           !AuthService.isLoggedIn()) {
         return;
       }
-      final messages = await DbNews.getAllNewsMessages();
-      if (messages.isNotEmpty && !messages.first.isRead) {
-        await DbNews.setMessagesAsRead(messages.first.id);
-      }
+      await DbNews.setLatestMessageAsRead();
       if (mounted) setState(() => _messageCount = 0);
     }));
   }
