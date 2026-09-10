@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festivalslunovrat",
-  "baseMainSha": "31943b9373d903c3e3bad8b33a30fe85989fd2b9",
+  "baseMainSha": "317a75505bf267245becaa91b81bb4fe49696602",
   "release": {
-    "version": "0.20.13+497",
-    "note": "Restore all canonical program days and legacy map icons"
+    "version": "0.20.14+498",
+    "note": "Restore native sync and add remote endpoint configuration"
   }
 }

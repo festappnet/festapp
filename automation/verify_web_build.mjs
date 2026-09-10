@@ -198,6 +198,16 @@ if (activationEnabled) {
     backendActivationDocument(activationTenantId, activationPhase),
     'built activation manifest differs from project.conf',
   );
+  const clientSyncConfig = JSON.parse(await readFile(
+    path.join(buildDir, 'client-sync-config.json'),
+    'utf8',
+  ));
+  assert.deepEqual(clientSyncConfig, {
+    schemaVersion: 1,
+    tenantId: activationTenantId,
+    syncHeadOrigin: configValue('SYNC_HEAD_ORIGIN'),
+    syncAssetOrigin: configValue('SYNC_ASSET_ORIGIN'),
+  }, 'built client sync runtime configuration differs from project.conf');
   assert.ok(main.includes(Buffer.from(canonicalBackendActivationSha256(activationTenantId))),
     'compiled Flutter bundle lacks the pinned activation digest');
   assert.ok(main.includes(Buffer.from(expectedCanonicalProfileSha256)),

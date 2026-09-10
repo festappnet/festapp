@@ -23,6 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
   static const int backendActivationCanonicalOrganizationId = 19;
   static const String backendActivationCanonicalProfileSha256 = 'e9384a8c6820b5a95122e4804c79e51c70e011da082430ea2a4c5472d99ad9cf';
+  static const String clientSyncTenantId = 'festivalslunovrat';
   static const String appName = 'Slunovrat 2026';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
