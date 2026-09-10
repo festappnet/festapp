@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festivalslunovrat",
-  "baseMainSha": "9fc07fdc5",
+  "baseMainSha": "9fc07fdc5648a2837c438ddf701c9f304f69f9fa",
   "release": {
     "version": "0.20.12+496",
     "note": "Show canonical map places without configured categories"
