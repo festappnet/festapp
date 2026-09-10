@@ -8,6 +8,7 @@ void main() {
       () async {
     var unreadCount = 1;
     var reloadCalls = 0;
+    var acknowledgementCalls = 0;
     final reloadResult = Completer<int>();
 
     handleNewsBadgeTabTap(
@@ -18,15 +19,18 @@ void main() {
         return reloadResult.future;
       },
       setUnreadCount: (count) => unreadCount = count,
+      acknowledgeUnread: () => acknowledgementCalls++,
     );
 
     expect(unreadCount, 0);
     expect(reloadCalls, 0);
+    expect(acknowledgementCalls, 1);
   });
 
   test('tapping another tab refreshes the unread badge', () async {
     var unreadCount = 1;
     var reloadCalls = 0;
+    var acknowledgementCalls = 0;
 
     handleNewsBadgeTabTap(
       isNewsTab: false,
@@ -36,10 +40,12 @@ void main() {
         return 3;
       },
       setUnreadCount: (count) => unreadCount = count,
+      acknowledgeUnread: () => acknowledgementCalls++,
     );
     await Future<void>.delayed(Duration.zero);
 
     expect(reloadCalls, 1);
     expect(unreadCount, 3);
+    expect(acknowledgementCalls, 0);
   });
 }
