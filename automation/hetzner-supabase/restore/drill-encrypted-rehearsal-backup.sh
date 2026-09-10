@@ -59,7 +59,12 @@ ssh -o BatchMode=yes "$SSH_TARGET" "docker run -d --name '$CLEAN_CONTAINER' --ne
 stop_clean_cluster() { ssh -o BatchMode=yes "$SSH_TARGET" "docker stop '$CLEAN_CONTAINER' >/dev/null" || true; }
 trap stop_clean_cluster EXIT
 readonly CLEAN_READY="$(ssh -o BatchMode=yes "$SSH_TARGET" "for attempt in \$(seq 1 60); do
-  docker exec '$CLEAN_CONTAINER' psql -X -U supabase_admin -d postgres -Atqc 'SELECT 1' >/dev/null 2>&1 && { printf ready; exit; }; sleep 1; done; printf failed")"
+  docker logs '$CLEAN_CONTAINER' 2>&1 | grep -q 'PostgreSQL init process complete; ready for start up' &&
+    docker exec '$CLEAN_CONTAINER' psql -X -U supabase_admin -d postgres -Atqc 'SELECT 1' >/dev/null 2>&1 &&
+    { printf ready; exit; }
+  sleep 1
+done
+printf failed")"
 [[ "$CLEAN_READY" == "ready" ]] || fail "clean PostgreSQL restore cluster did not become ready"
 
 # The image foundation can already contain standard Supabase roles. pg_dumpall
