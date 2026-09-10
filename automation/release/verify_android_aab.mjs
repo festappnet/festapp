@@ -53,7 +53,7 @@ function main() {
   if (packageName !== manifest.androidPackage) throw new Error('AAB package differs from release manifest');
   if (!Number.isSafeInteger(versionCode) || versionCode < 1) throw new Error('AAB has no valid Android version code');
 
-  const hardMarkerPatterns = [/bujnmi/i, /\/Users\//, /[A-Za-z]:\\Users\\/i];
+  const hardMarkerPatterns = [/bujnmi/i, /bujnovsky/i, /\/Users\//, /[A-Za-z]:\\Users\\/i];
   const textMarkerPatterns = [...hardMarkerPatterns, /miakh/i];
   const containsMarker = (value, patterns) => patterns.some((pattern) => pattern.test(value));
   const names = run('unzip', ['-Z1', aab]);
@@ -64,7 +64,7 @@ function main() {
     trap 'rm -rf "$scan_root"' EXIT
     unzip -qq "$1" -d "$scan_root"
     match="$({ find "$scan_root" -type f -print0 | xargs -0 strings -f || true; } |
-      awk 'tolower($0) ~ /bujnmi/ || $0 ~ /\/Users\// || tolower($0) ~ /[a-z]:\\users\\/ { sub(/:.*/, ""); print; exit }')"
+      awk 'tolower($0) ~ /bujnmi|bujnovsky/ || $0 ~ /\/Users\// || tolower($0) ~ /[a-z]:\\users\\/ { sub(/:.*/, ""); print; exit }')"
     if [[ -n "$match" ]]; then
       printf '%s\n' "$match" | sed "s#^$scan_root/##"
     fi
