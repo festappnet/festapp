@@ -58,8 +58,8 @@ class AppConfig {
   static const String termsUrl = "https://clovekavira.festapp.net/terms/";
   static const String supportUrl = "https://clovekavira.festapp.net/support/";
   static const String deleteAccountUrl = "https://clovekavira.festapp.net/delete-account/";
-  static const String syncHeadOrigin = "";
-  static const String syncAssetOrigin = "";
+  static const String syncHeadOrigin = "https://sync.festapp.net";
+  static const String syncAssetOrigin = "https://assets.festapp.net";
   static const String imageApiUrl = 'https://image-api.festapp.net';
   static const String imageProjectId = 'a';
   static bool isProLicense = true;
