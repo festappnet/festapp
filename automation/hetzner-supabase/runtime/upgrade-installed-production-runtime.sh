@@ -78,6 +78,10 @@ install -d -o root -g root -m 0700 "$COMPOSE_DIR/festapp-admin-dashboard"
 install_runtime_file "$SCRIPT_DIR/Caddyfile" "$COMPOSE_DIR/festapp-admin-dashboard/Caddyfile" 0644
 install_runtime_file "$SCRIPT_DIR/docker-compose.festapp.yml" "$COMPOSE_DIR/festapp-admin-dashboard/docker-compose.festapp.yml" 0644
 install_runtime_file "$SCRIPT_DIR/docker-compose.database-target.yml" "$COMPOSE_DIR/docker-compose.database-target.yml" 0644
+install -d -o root -g root -m 0755 "$COMPOSE_DIR/studio-customization"
+install_runtime_file "$SCRIPT_DIR/studio-customization/entrypoint.sh" "$COMPOSE_DIR/studio-customization/entrypoint.sh" 0555
+install_runtime_file "$SCRIPT_DIR/studio-customization/install-logout.mjs" "$COMPOSE_DIR/studio-customization/install-logout.mjs" 0444
+install_runtime_file "$SCRIPT_DIR/studio-customization/logout.js" "$COMPOSE_DIR/studio-customization/logout.js" 0444
 install_runtime_file "$RUNTIME_WRITER_POLICY" "$COMPOSE_DIR/festapp-runtime-writer-policy.json" 0444
 
 readonly EXPECTED_SOURCE_SHA="$(node "$SCRIPT_DIR/validate-production-promotion.mjs" --digest-json="$SOURCE_REGISTRY")"
@@ -93,6 +97,8 @@ for dependency in install-runtime-registries.mjs validate-production-promotion.m
   install-production-function-bundle.sh \
   finalize-canonical-database-operations.sh \
   activate-admin-dashboard.sh Caddyfile docker-compose.festapp.yml \
+  studio-customization/entrypoint.sh studio-customization/install-logout.mjs \
+  studio-customization/logout.js \
   switch-rehearsal-runtime-database.sh docker-compose.database-target.yml; do
   case "$dependency" in
     Caddyfile|docker-compose.festapp.yml) installed_dependency="$COMPOSE_DIR/festapp-admin-dashboard/$dependency" ;;

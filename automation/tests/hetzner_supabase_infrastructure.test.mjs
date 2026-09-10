@@ -72,6 +72,14 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.match(compose, /admin-tunnel:[\s\S]*cap_drop:[\s\S]*- ALL/);
   assert.match(caddy, /http:\/\/\{\$FESTAPP_SUPABASE_ADMIN_HOSTNAME:supabase\.festapp\.net\}:8999[\s\S]*bind 127\.0\.0\.1/);
   assert.match(caddy, /request_header Authorization "Basic \{\$FESTAPP_SUPABASE_ADMIN_BASIC_AUTH\}"/);
+  assert.match(compose, /studio:[\s\S]*studio-customization\/entrypoint\.sh/);
+  assert.match(compose, /studio:[\s\S]*studio-customization\/logout\.js/);
+  const studioLogout = fs.readFileSync(path.join(runtime, 'studio-customization/logout.js'), 'utf8');
+  assert.match(studioLogout, /\/cdn-cgi\/access\/logout/);
+  assert.match(studioLogout, /href.*\/account\/me/);
+  assert.match(studioLogout, /text-foreground-lighter/);
+  const studioInstaller = fs.readFileSync(path.join(runtime, 'studio-customization/install-logout.mjs'), 'utf8');
+  assert.match(studioInstaller, /Expected one pinned Studio document chunk/);
   for (const service of ['auth', 'rest', 'realtime', 'storage', 'meta', 'functions', 'studio']) {
     assert.match(databaseTarget, new RegExp(`^  ${service}:`, 'm'));
   }
@@ -82,6 +90,46 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   const verifier = fs.readFileSync(path.join(runtime, 'verify-pins.mjs'), 'utf8');
   assert.match(verifier, /assert\.ok\(arm64, `\$\{name\} has no linux\/arm64 registry manifest`\)/);
   assert.doesNotMatch(verifier, /\?\? manifests\[0\]/);
+});
+
+test('Studio customization installs an idempotent same-origin Access logout control', (t) => {
+  const runtime = path.join(root, 'automation/hetzner-supabase/runtime');
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-studio-customization-'));
+  t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }));
+
+  const chunksDir = path.join(tempDir, '.next/server/chunks/ssr');
+  const pagesDir = path.join(tempDir, '.next/server/pages/project');
+  fs.mkdirSync(chunksDir, { recursive: true });
+  fs.mkdirSync(pagesDir, { recursive: true });
+  const chunk = path.join(chunksDir, 'document.js');
+  const page = path.join(pagesDir, 'default.html');
+  fs.writeFileSync(
+    chunk,
+    'children:[(0,b.jsx)(c.Main,{}),(0,b.jsx)(c.NextScript,{})]',
+  );
+  fs.writeFileSync(page, '<!doctype html><html><body><main></main></body></html>');
+
+  const installer = path.join(runtime, 'studio-customization/install-logout.mjs');
+  const asset = path.join(runtime, 'studio-customization/logout.js');
+  const env = {
+    ...process.env,
+    FESTAPP_STUDIO_ROOT: tempDir,
+    FESTAPP_STUDIO_LOGOUT_ASSET: asset,
+  };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const installed = spawnSync('node', [installer], { encoding: 'utf8', env });
+    assert.equal(installed.status, 0, installed.stderr);
+  }
+
+  assert.match(fs.readFileSync(chunk, 'utf8'), /src:"\/festapp-admin\/logout\.js"/);
+  assert.equal(
+    fs.readFileSync(page, 'utf8').match(/\/festapp-admin\/logout\.js/g)?.length,
+    1,
+  );
+  assert.equal(
+    fs.readFileSync(path.join(tempDir, 'public/festapp-admin/logout.js'), 'utf8'),
+    fs.readFileSync(asset, 'utf8'),
+  );
 });
 
 test('rehearsal environment remains valid when sourced by a shell', () => {
