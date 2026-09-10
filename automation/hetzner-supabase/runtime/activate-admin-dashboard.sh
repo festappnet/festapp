@@ -8,11 +8,26 @@ readonly ADMIN_HOSTNAME="supabase.festapp.net"
 readonly ADMIN_SITE="https://$ADMIN_HOSTNAME"
 readonly API_ORIGIN="https://api.festapp.net"
 readonly ADMIN_ORIGIN="http://127.0.0.1:8999"
+readonly API_GATEWAY_ORIGIN="http://127.0.0.1:8000"
 readonly TUNNEL_ID="40e1a9a2-d1d5-4789-a691-20818d648b95"
 readonly TUNNEL_TOKEN_FILE="${FESTAPP_ADMIN_TUNNEL_TOKEN_FILE:-/etc/festapp-cloudflared/admin-tunnel.token}"
 readonly CANDIDATE_DIR="${FESTAPP_ADMIN_DASHBOARD_CANDIDATE_DIR:-$COMPOSE_DIR/festapp-admin-dashboard}"
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
+set_env_value() {
+  local key="$1" value="$2" staged
+  [[ "$value" != *$'\n'* && "$value" != *$'\r'* ]] || fail "invalid newline in $key"
+  staged="$(mktemp .env.admin-dashboard.XXXXXX)"
+  awk -v key="$key" -v value="$value" '
+    BEGIN { written=0 }
+    index($0,key "=")==1 { print key "=" value; written=1; next }
+    { print }
+    END { if (!written) print key "=" value }
+  ' .env >"$staged"
+  chown root:root "$staged"
+  chmod 0600 "$staged"
+  mv -- "$staged" .env
+}
 [[ "${FESTAPP_ADMIN_DASHBOARD_ACK:-}" == "activate-cloudflare-access-protected-supabase-dashboard" ]] ||
   fail "set FESTAPP_ADMIN_DASHBOARD_ACK=activate-cloudflare-access-protected-supabase-dashboard"
 [[ "$(id -u)" == "0" && "$(hostname -s)" == "$EXPECTED_HOSTNAME" ]] ||
@@ -76,6 +91,12 @@ chmod 0600 "$ACCESS_HEADERS"
 
 api_canary || fail "canonical API baseline canary failed before dashboard activation"
 
+readonly DASHBOARD_USERNAME="$(sed -n 's/^DASHBOARD_USERNAME=//p' .env)"
+readonly DASHBOARD_PASSWORD="$(sed -n 's/^DASHBOARD_PASSWORD=//p' .env)"
+[[ -n "$DASHBOARD_USERNAME" && -n "$DASHBOARD_PASSWORD" ]] ||
+  fail "installed dashboard credentials are missing"
+readonly ADMIN_BASIC_AUTH="$(printf '%s:%s' "$DASHBOARD_USERNAME" "$DASHBOARD_PASSWORD" | base64 -w0)"
+
 rollback() {
   docker compose --profile admin-dashboard stop admin-tunnel >/dev/null 2>&1 || true
   install -o root -g root -m 0600 "$ENV_BACKUP" .env
@@ -86,6 +107,7 @@ rollback() {
 }
 trap rollback ERR
 
+set_env_value FESTAPP_SUPABASE_ADMIN_BASIC_AUTH "$ADMIN_BASIC_AUTH"
 install -o root -g root -m 0644 "$CANDIDATE_DIR/Caddyfile" caddy/Caddyfile
 install -o root -g root -m 0644 "$CANDIDATE_DIR/docker-compose.festapp.yml" docker-compose.festapp.yml
 docker compose config -q
@@ -113,9 +135,10 @@ done
 readonly LOCAL_ADMIN_STATUS="$(curl -sS -o /dev/null -D "$RUN_DIR/local-admin.headers" \
   -w '%{http_code}' --max-time 10 "$ADMIN_ORIGIN/")"
 chmod 0600 "$RUN_DIR/local-admin.headers"
-[[ "$LOCAL_ADMIN_STATUS" == "401" ]] || fail "loopback administrator origin is not protected by Supabase Basic authentication"
-rg -qi '^www-authenticate: Basic ' "$RUN_DIR/local-admin.headers" ||
-  fail "loopback administrator origin did not request Basic authentication"
+[[ "$LOCAL_ADMIN_STATUS" == "200" ]] || fail "loopback administrator proxy did not authenticate to Supabase Studio"
+readonly API_GATEWAY_ROOT_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$API_GATEWAY_ORIGIN/")"
+[[ "$API_GATEWAY_ROOT_STATUS" == "401" ]] ||
+  fail "Supabase Studio upstream no longer requires its internal Basic credential"
 
 api_canary || fail "canonical API canary failed after dashboard activation"
 readonly API_ROOT_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$API_ORIGIN/")"
@@ -136,7 +159,8 @@ jq -n --arg activated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '{version:1,activated_at:$activated_at,admin_hostname:$admin_hostname,
     cloudflare_access_intercept_status:$access_status,
     tunnel:{id:$tunnel_id,connected:true,origin:"http://127.0.0.1:8999"},
-    local_basic_auth_status:$local_admin_status,
+    local_admin_proxy_status:$local_admin_status,
+    upstream_basic_auth_status:"401",
     canonical_api_canary:{auth:"200",rest:"200",storage:"200",realtime:"101"},
     public_dashboard_routes:{root:$api_root_status,postgres_meta:$api_meta_status},
     database_mutated:false,api_credentials_rotated:false}' >"$RUN_DIR/result.json"

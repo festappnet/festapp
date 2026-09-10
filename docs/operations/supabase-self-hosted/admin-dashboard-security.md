@@ -18,10 +18,11 @@ public DNS route until the Access and origin gates below pass.
   reaches the origin. Its allow policy contains only `bujnmi@gmail.com` and
   `vichapavel@gmail.com`; no domain-wide, country-wide, bypass, or
   service-token rule grants interactive access.
-- Administrators authenticate through an identity provider that emits an MFA
-  claim. The Access application requires MFA and uses a one-hour maximum
-  session. Supabase HTTP Basic authentication remains as a second layer and its
-  secret is distributed through the approved password manager.
+- Administrators authenticate through Google and Cloudflare independent MFA.
+  The Access application requires MFA and uses a one-hour maximum session.
+  After Access succeeds, the loopback-only Caddy proxy supplies the existing
+  Supabase HTTP Basic credential to the upstream gateway; the credential is
+  never sent to the browser, so the user proceeds directly to Studio.
 - Cloudflare Access logs identify the person. Runtime access logs and PostgreSQL
   audit logs remain encrypted off-host for 30 days. Studio still uses one
   database role, so durable SQL changes belong in reviewed repository
@@ -49,10 +50,11 @@ public DNS route until the Access and origin gates below pass.
 5. Run `activate-admin-dashboard.sh` with its exact acknowledgement. The script
    proves the Access interception, validates that the token belongs to the
    approved tunnel, records baseline API canaries, starts Caddy plus the tunnel,
-   and then proves a live tunnel, local Basic authentication, Auth `200`, REST
+   and then proves a live tunnel, an authenticated local Studio response plus
+   an unauthenticated `401` from the upstream gateway, Auth `200`, REST
    `200`, Storage `200`, Realtime `101`, plus `404` for Studio and postgres-meta
    on the public API hostname.
-6. Complete a login through Access and HTTP Basic, open Studio, and run only
+6. Complete a login through Access, open Studio, and run only
    `select current_user;` for the first authenticated check. Confirm the Access
    event contains the expected administrator identity.
 
