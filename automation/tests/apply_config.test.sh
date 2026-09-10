@@ -338,6 +338,8 @@ for (const [key, value] of Object.entries({
   BACKEND_ACTIVATION_CANONICAL_SUPABASE_URL: 'https://api.festapp.net',
   BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY: 'fixture-canonical-key',
   BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID: '84',
+  SYNC_HEAD_ORIGIN: 'https://sync.festapp.net',
+  SYNC_ASSET_ORIGIN: 'https://assets.festapp.net',
 })) {
   const line = `${key}=${value}`;
   source = new RegExp(`^${key}=.*$`, 'm').test(source)
