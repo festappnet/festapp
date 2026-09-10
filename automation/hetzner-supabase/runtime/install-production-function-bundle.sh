@@ -50,6 +50,13 @@ elif ! grep -Eq '^[[:space:]]*const memoryLimitMb = 512;?$' "$STAGE/main/index.t
 fi
 grep -Eq '^[[:space:]]*const memoryLimitMb = 512;?$' "$STAGE/main/index.ts" ||
   fail "Function router memory limit was not raised for production workloads"
+if grep -Eq '^[[:space:]]*const workerTimeoutMs = 1 \* 60 \* 1000;?$' "$STAGE/main/index.ts"; then
+  sed -Ei 's/const workerTimeoutMs = 1 \* 60 \* 1000;?$/const workerTimeoutMs = 7 * 60 * 1000/' "$STAGE/main/index.ts"
+elif ! grep -Eq '^[[:space:]]*const workerTimeoutMs = 7 \* 60 \* 1000;?$' "$STAGE/main/index.ts"; then
+  fail "upstream Function router timeout contract changed"
+fi
+grep -Eq '^[[:space:]]*const workerTimeoutMs = 7 \* 60 \* 1000;?$' "$STAGE/main/index.ts" ||
+  fail "Function router timeout was not raised for production workloads"
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle contains symlinks"
 
 mapfile -t EXPECTED < <({ printf '%s\n' _shared main; jq -r '

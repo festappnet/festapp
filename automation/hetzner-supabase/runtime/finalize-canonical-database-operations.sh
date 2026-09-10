@@ -69,6 +69,15 @@ BEGIN
   UPDATE auth.identities i SET identity_data=jsonb_set(i.identity_data,'{email}',to_jsonb(m.desired_email),true),updated_at=now()
   FROM canonical_auth_email_map m WHERE i.user_id=m.id AND i.provider='email' AND lower(coalesce(i.identity_data->>'email',''))<>m.desired_email;
 
+  UPDATE eshop.bank_accounts ba SET is_fetch_enabled=false,updated_at=now()
+  WHERE ba.type='FIO' AND ba.is_fetch_enabled AND (
+    ba.title IN ('Integration Test Account','Repro Acc','Crash Acc','Crash Acc V2','Test Admin Creator Acc','Floating Sync Acc','Test CZK','Test EUR')
+    OR EXISTS (
+      SELECT 1 FROM eshop.unit_bank_accounts uba
+      JOIN public.units u ON u.id=uba.unit JOIN public.organizations o ON o.id=u.organization
+      WHERE uba.bank_account=ba.id AND (o.title LIKE 'Test %' OR o.title LIKE 'Crash Org%' OR o.title='Reprom Org')
+    )
+  );
   DELETE FROM public.external_sync_sources WHERE supabase_url LIKE '%.supabase.co';
   FOR r IN SELECT table_schema,table_name,column_name,data_type FROM information_schema.columns
     WHERE table_schema IN ('public','eshop') AND data_type IN ('text','character varying','json','jsonb')
@@ -102,9 +111,9 @@ SELECT cron.unschedule(jobid) FROM cron.job;
 SELECT cron.schedule_in_database('festapp_canonical_apply_planned_changes','*/1 * * * *',
   'SELECT public.apply_planned_changes()',:'target_database');
 SELECT cron.schedule_in_database('festapp_canonical_synchronize_orders','*/10 * * * *',
-  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/synchronize-orders',body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)),timeout_milliseconds:=300000)$$,:'target_database');
+  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/synchronize-orders',body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)),timeout_milliseconds:=420000)$$,:'target_database');
 SELECT cron.schedule_in_database('festapp_canonical_process_email_queue','*/1 * * * *',
-  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/send-email',body:=jsonb_build_object('processQueue',true,'requestSecret',public.generate_request_secret(3600)),timeout_milliseconds:=300000) WHERE jsonb_array_length(public.get_due_queue_emails())>0$$,:'target_database');
+  $$SELECT net.http_post(url:='https://api.festapp.net/functions/v1/send-email',body:=jsonb_build_object('processQueue',true,'requestSecret',public.generate_request_secret(3600)),timeout_milliseconds:=420000) WHERE jsonb_array_length(public.get_due_queue_emails())>0$$,:'target_database');
 SQL
 
 docker compose restart db >/dev/null

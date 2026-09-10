@@ -293,11 +293,13 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(bundleInstaller, /tar --no-xattrs --no-same-owner/);
   assert.match(bundleInstaller, /staged Function directory set is not canonical/);
   assert.match(bundleInstaller, /const memoryLimitMb = 512/);
+  assert.match(bundleInstaller, /const workerTimeoutMs = 7/);
   assert.match(bundleInstaller, /runtime_restarted:false/);
   assert.doesNotMatch(bundleInstaller, /docker compose (?:up|restart)/);
   assert.match(databaseFinalizer, /pg_net\.database_name/);
   assert.match(databaseFinalizer, /cron\.schedule_in_database/);
-  assert.match(databaseFinalizer, /timeout_milliseconds:=300000/);
+  assert.match(databaseFinalizer, /timeout_milliseconds:=420000/);
+  assert.match(databaseFinalizer, /Integration Test Account/);
   assert.match(databaseFinalizer, /external_sync_sources/);
   assert.match(databaseFinalizer, /canonical Auth email mapping/);
   for (const script of [promotion, upgrade, barrier, bundleBuilder, bundleInstaller, databaseFinalizer]) {
