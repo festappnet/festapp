@@ -153,18 +153,13 @@ class _OccasionHomePageState extends State<OccasionHomePage>
     if (activeKey == OccasionTab.news) _acknowledgeActiveNews();
   }
 
-  void _acknowledgeActiveNews() => _acknowledgeNews(requireActiveTab: true);
-
-  void _acknowledgeSelectedNews() => _acknowledgeNews(requireActiveTab: false);
-
-  void _acknowledgeNews({required bool requireActiveTab}) {
+  void _acknowledgeActiveNews() {
     final tabsRouter = _tabsRouter;
     if (!mounted ||
         tabsRouter == null ||
-        (requireActiveTab &&
-            (tabsRouter.activeIndex < 0 ||
-                tabsRouter.activeIndex >= visibleTabKeys.length ||
-                visibleTabKeys[tabsRouter.activeIndex] != OccasionTab.news)) ||
+        tabsRouter.activeIndex < 0 ||
+        tabsRouter.activeIndex >= visibleTabKeys.length ||
+        visibleTabKeys[tabsRouter.activeIndex] != OccasionTab.news ||
         !AuthService.isLoggedIn()) {
       return;
     }
@@ -174,11 +169,9 @@ class _OccasionHomePageState extends State<OccasionHomePage>
       final currentRouter = _tabsRouter;
       if (!mounted ||
           currentRouter == null ||
-          (requireActiveTab &&
-              (currentRouter.activeIndex < 0 ||
-                  currentRouter.activeIndex >= visibleTabKeys.length ||
-                  visibleTabKeys[currentRouter.activeIndex] !=
-                      OccasionTab.news)) ||
+          currentRouter.activeIndex < 0 ||
+          currentRouter.activeIndex >= visibleTabKeys.length ||
+          visibleTabKeys[currentRouter.activeIndex] != OccasionTab.news ||
           !AuthService.isLoggedIn()) {
         return;
       }
@@ -271,7 +264,9 @@ class _OccasionHomePageState extends State<OccasionHomePage>
                                 setState(() => _messageCount = count);
                               }
                             },
-                            acknowledgeUnread: _acknowledgeSelectedNews,
+                            acknowledgeUnread: () => unawaited(
+                              DbNews.setLatestMessageAsRead(),
+                            ),
                           );
                           // Switching tabs restores the retained stack exactly
                           // as it was. Only tapping the already active tab is a
