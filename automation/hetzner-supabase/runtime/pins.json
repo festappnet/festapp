@@ -35,7 +35,8 @@
       "edgeRuntime": "supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7",
       "postgres": "supabase/postgres:17.6.1.136@sha256:a9946f08d31e8eb1149229c94e5c26603a9233116807cbbd93d75179cbac516a",
       "supavisor": "supabase/supavisor:2.9.5@sha256:1dd306835b0215909cf76371a7a20be71268bbc97619f7133b882c5e9a7392e8",
-      "caddy": "caddy:2.11.4@sha256:1172d4213087d3fc30bafc7ff2c2896180eb0c41ff7f75f315568fb36cabdcba"
+      "caddy": "caddy:2.11.4@sha256:1172d4213087d3fc30bafc7ff2c2896180eb0c41ff7f75f315568fb36cabdcba",
+      "cloudflared": "cloudflare/cloudflared:2026.9.0@sha256:5f72bbdac390ffa27f1275218b39f658ff39b259d278f295386af36da4d3632b"
     }
   },
   "sources": {
@@ -45,6 +46,7 @@
     "dockerEngine": "https://docs.docker.com/engine/release-notes/29/",
     "dockerCompose": "https://github.com/docker/compose/releases/tag/v5.5.0",
     "caddy": "https://github.com/caddyserver/caddy/releases/tag/v2.11.4",
+    "cloudflared": "https://github.com/cloudflare/cloudflared/releases/tag/2026.9.0",
     "terraform": "https://github.com/hashicorp/terraform/releases/tag/v1.16.1",
     "hcloudProvider": "https://github.com/hetznercloud/terraform-provider-hcloud/releases/tag/v1.68.0"
   }
