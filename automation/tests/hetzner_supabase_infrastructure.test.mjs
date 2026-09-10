@@ -49,6 +49,7 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   const runtime = path.join(root, 'automation/hetzner-supabase/runtime');
   const deploy = fs.readFileSync(path.join(runtime, 'deploy-rehearsal.sh'), 'utf8');
   const compose = fs.readFileSync(path.join(runtime, 'docker-compose.festapp.yml'), 'utf8');
+  const caddy = fs.readFileSync(path.join(runtime, 'Caddyfile'), 'utf8');
   const databaseTarget = fs.readFileSync(path.join(runtime, 'docker-compose.database-target.yml'), 'utf8');
   assert.match(deploy, /241bb11c0627f2981746d37033f57dbfa81d29b0/);
   assert.match(deploy, /refusing to overwrite/);
@@ -67,6 +68,7 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.match(compose, /admin-tunnel:[\s\S]*read_only: true/);
   assert.match(compose, /admin-tunnel:[\s\S]*user: "0:0"/);
   assert.match(compose, /admin-tunnel:[\s\S]*cap_drop:[\s\S]*- ALL/);
+  assert.match(caddy, /\{\$FESTAPP_SUPABASE_ADMIN_SITE:http:\/\/127\.0\.0\.1:8999\}[\s\S]*bind 127\.0\.0\.1/);
   for (const service of ['auth', 'rest', 'realtime', 'storage', 'meta', 'functions', 'studio']) {
     assert.match(databaseTarget, new RegExp(`^  ${service}:`, 'm'));
   }

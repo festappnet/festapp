@@ -28,7 +28,7 @@ done
 base64 -d <"$TUNNEL_TOKEN_FILE" 2>/dev/null |
   jq -e --arg tunnel_id "$TUNNEL_ID" '.t == $tunnel_id and (.s | type == "string" and length > 0)' >/dev/null ||
   fail "administrator tunnel token does not belong to the approved tunnel"
-for dependency in base64 curl docker flock jq rg; do
+for dependency in base64 curl docker flock jq rg ss; do
   command -v "$dependency" >/dev/null || fail "$dependency is required"
 done
 
@@ -95,6 +95,9 @@ readonly OBSERVED_ADMIN_SITE="$(docker inspect -f '{{range .Config.Env}}{{printl
   sed -n 's/^FESTAPP_SUPABASE_ADMIN_SITE=//p')"
 [[ "$OBSERVED_ADMIN_SITE" == "$ADMIN_ORIGIN" ]] ||
   fail "administrator Caddy listener is not confined to loopback"
+readonly ADMIN_LISTENERS="$(ss -H -lnt 'sport = :8999' | awk '{print $4}' | sort -u)"
+[[ "$ADMIN_LISTENERS" == "127.0.0.1:8999" ]] ||
+  fail "administrator Caddy socket is not bound exclusively to IPv4 loopback"
 
 TUNNEL_CONNECTED=false
 for _attempt in $(seq 1 30); do
