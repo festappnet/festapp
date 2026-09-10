@@ -27,8 +27,10 @@ expected_listing = {
   short_description: File.read(File.join(metadata_root, 'short_description.txt')).strip,
   full_description: File.read(File.join(metadata_root, 'full_description.txt')).strip
 }
-credentials = File.expand_path(ENV.fetch('GOOGLE_PLAY_JSON_KEY'))
-abort 'Credential must remain outside the repository' if credentials.start_with?(File.expand_path('../..', __dir__) + File::SEPARATOR)
+credentials = File.realpath(File.expand_path(ENV.fetch('GOOGLE_PLAY_JSON_KEY')))
+workspace = File.realpath(ENV.fetch('GITHUB_WORKSPACE'))
+inside_workspace = credentials == workspace || credentials.start_with?(workspace + File::SEPARATOR)
+abort 'Credential must remain outside the repository' if inside_workspace
 
 service = Google::Apis::AndroidpublisherV3::AndroidPublisherService.new
 service.authorization = Google::Auth::ServiceAccountCredentials.make_creds(
