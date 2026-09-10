@@ -95,7 +95,8 @@ DECLARE
   before_rows bigint; after_rows bigint; expected_rows bigint; inserted_rows bigint; excluded_rows bigint:=0;
   excluded_tables integer:=0; quarantined_drift bigint:=0; column_list text; select_list text; expression text;
   mapping_table text; own_strict_mapping boolean; sequence_record record; foreign_key record;
-  child_not_null text; join_expression text; orphan_rows bigint; collision_profiles bigint; actual text; expected text;
+  child_not_null text; join_expression text; orphan_rows bigint; collision_profiles bigint;
+  reset_token_collisions bigint:=0; actual text; expected text;
   v_source_alias text:=current_setting('festapp.merge_source_alias');
   stage_public text:=current_setting('festapp.merge_stage_public');
   stage_eshop text:=current_setting('festapp.merge_stage_eshop');
@@ -257,6 +258,11 @@ BEGIN
     IF relation.target_schema='public' AND relation.table_name='user_info' THEN
       EXECUTE format('INSERT INTO public.user_info (%s) OVERRIDING SYSTEM VALUE SELECT %s FROM %I.%I s WHERE NOT EXISTS (SELECT 1 FROM festapp_merge.id_mappings m WHERE m.run_id=%L AND m.source_table=''public.user_info'' AND m.source_id=s.id::text)',column_list,select_list,relation.source_schema,relation.table_name,import_run);
       expected_rows:=source_rows-collision_profiles; GET DIAGNOSTICS inserted_rows=ROW_COUNT;
+    ELSIF relation.target_schema='public' AND relation.table_name='user_reset_token' THEN
+      EXECUTE format('INSERT INTO festapp_merge.quarantined_rows(run_id,source_table,source_primary_key,source_row,reason) SELECT %L,''public.user_reset_token'',jsonb_build_object(''user'',s."user"),jsonb_build_object(''user'',s."user",''created_at'',s.created_at,''token_redacted'',true),''identity-merged-existing-canonical-reset-token-preferred'' FROM %I.%I s WHERE EXISTS (SELECT 1 FROM public.user_reset_token t WHERE t."user"=coalesce((SELECT m.target_id::uuid FROM festapp_merge.id_mappings m WHERE m.run_id=%L AND m.source_table=''auth.users'' AND m.source_id=s."user"::text),s."user"))',import_run,relation.source_schema,relation.table_name,import_run);
+      GET DIAGNOSTICS reset_token_collisions=ROW_COUNT;
+      EXECUTE format('INSERT INTO public.user_reset_token (%s) OVERRIDING SYSTEM VALUE SELECT %s FROM %I.%I s WHERE NOT EXISTS (SELECT 1 FROM public.user_reset_token t WHERE t."user"=coalesce((SELECT m.target_id::uuid FROM festapp_merge.id_mappings m WHERE m.run_id=%L AND m.source_table=''auth.users'' AND m.source_id=s."user"::text),s."user"))',column_list,select_list,relation.source_schema,relation.table_name,import_run);
+      expected_rows:=source_rows-reset_token_collisions; GET DIAGNOSTICS inserted_rows=ROW_COUNT;
     ELSE
       EXECUTE format('INSERT INTO %I.%I (%s) OVERRIDING SYSTEM VALUE SELECT %s FROM %I.%I s',relation.target_schema,relation.table_name,column_list,select_list,relation.source_schema,relation.table_name);
       expected_rows:=source_rows; GET DIAGNOSTICS inserted_rows=ROW_COUNT;
@@ -280,7 +286,7 @@ BEGIN
     IF sequence_record.sequence_name IS NOT NULL THEN EXECUTE format('SELECT setval(%L,coalesce(max(%I),1),max(%I) IS NOT NULL) FROM %I.%I',sequence_record.sequence_name,sequence_record.column_name,sequence_record.column_name,sequence_record.table_schema,sequence_record.table_name); END IF;
   END LOOP;
   INSERT INTO festapp_merge.validation_results(run_id,check_name,status,observed) VALUES
-    (import_run,v_source_alias||'-relational-import','pass',jsonb_build_object('source_tables',(SELECT count(*) FROM information_schema.foreign_tables WHERE foreign_table_schema IN (stage_public,stage_eshop)),'id_mappings',(SELECT count(*) FROM festapp_merge.id_mappings WHERE run_id=import_run),'excluded_derived_tables',excluded_tables,'excluded_derived_rows',excluded_rows,'quarantined_schema_drift_rows',quarantined_drift,'schema_drift_policy_sha256',policy_sha,'application_foreign_key_orphans',0,'auth_foreign_keys_deferred',true)),
+    (import_run,v_source_alias||'-relational-import','pass',jsonb_build_object('source_tables',(SELECT count(*) FROM information_schema.foreign_tables WHERE foreign_table_schema IN (stage_public,stage_eshop)),'id_mappings',(SELECT count(*) FROM festapp_merge.id_mappings WHERE run_id=import_run),'excluded_derived_tables',excluded_tables,'excluded_derived_rows',excluded_rows,'quarantined_schema_drift_rows',quarantined_drift,'quarantined_reset_token_collisions',reset_token_collisions,'schema_drift_policy_sha256',policy_sha,'application_foreign_key_orphans',0,'auth_foreign_keys_deferred',true)),
     (import_run,v_source_alias||'-identity-profile-review','blocked',jsonb_build_object('preserved_profiles',collision_profiles,'canonical_rule','existing-canonical-profile-preferred')),
     (import_run,v_source_alias||'-client-derived-state-rebuild','blocked',jsonb_build_object('tables',excluded_tables,'rows',excluded_rows,'raw_snapshot_preserved',true,'requires_forced_full_sync',true)),
     (import_run,v_source_alias||'-auth-and-storage-import','blocked',jsonb_build_object('auth_users',0,'storage_objects',0));
