@@ -164,6 +164,26 @@ jobs:
           version_json="$(node automation/release/project_version.mjs --json)"
           flutter build appbundle --release --build-name "$(jq -r .version <<<"$version_json")" \
             --build-number "$(jq -r .build <<<"$version_json")"
+      - name: Encrypt the raw build output for validation recovery
+        env:
+          ARTIFACT_PASSPHRASE: ${{ secrets.ANDROID_ARTIFACT_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_PASSPHRASE"
+          mkdir -p "$RUNNER_TEMP/raw"
+          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            --output "$RUNNER_TEMP/raw/app-release.aab.gpg" \
+            build/app/outputs/bundle/release/app-release.aab
+      - name: Store the encrypted raw build output
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-raw-${{ matrix.tenant }}-${{ matrix.sourceSha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/raw/app-release.aab.gpg
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
       - name: Install pinned Bundletool verifier
         shell: bash
         run: |
