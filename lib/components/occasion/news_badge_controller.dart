@@ -6,6 +6,7 @@ void handleNewsBadgeTabTap({
   required bool isLoggedIn,
   required Future<int> Function() loadUnreadCount,
   required void Function(int count) setUnreadCount,
+  required void Function() acknowledgeUnread,
 }) {
   if (!isLoggedIn) return;
 
@@ -14,6 +15,7 @@ void handleNewsBadgeTabTap({
   // messages as read cannot put the stale value back.
   if (isNewsTab) {
     setUnreadCount(0);
+    acknowledgeUnread();
     return;
   }
 
