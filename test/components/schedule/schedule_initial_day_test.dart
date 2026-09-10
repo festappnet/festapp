@@ -1,5 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 TimeBlockItem event(DateTime start, DateTime end) => TimeBlockItem(
       id: start.millisecondsSinceEpoch,
@@ -11,8 +14,55 @@ TimeBlockItem event(DateTime start, DateTime end) => TimeBlockItem(
 TimeBlockGroup day(DateTime date, {List<TimeBlockItem> events = const []}) =>
     TimeBlockGroup(title: '', dateTime: date, events: events);
 
+class _EmptyAssetLoader extends AssetLoader {
+  const _EmptyAssetLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(String path, Locale locale) async => {};
+}
+
 void main() {
   final now = DateTime(2026, 8, 8, 12); // Saturday.
+
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('day splitting handles canonical events in arbitrary order',
+      (tester) async {
+    late BuildContext context;
+    await tester.pumpWidget(EasyLocalization(
+      supportedLocales: const [Locale('cs')],
+      path: 'assets/translations',
+      assetLoader: const _EmptyAssetLoader(),
+      fallbackLocale: const Locale('cs'),
+      child: Builder(
+        builder: (outerContext) => MaterialApp(
+          locale: outerContext.locale,
+          supportedLocales: outerContext.supportedLocales,
+          localizationsDelegates: outerContext.localizationDelegates,
+          home: Builder(builder: (value) {
+            context = value;
+            return const SizedBox.shrink();
+          }),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final groups = TimeBlockHelper.splitTimeBlocksByDate(
+      [
+        event(DateTime(2026, 6, 21, 9), DateTime(2026, 6, 21, 10)),
+        event(DateTime(2026, 6, 18, 11), DateTime(2026, 6, 18, 12)),
+        event(DateTime(2026, 6, 20, 7), DateTime(2026, 6, 20, 8)),
+        event(DateTime(2026, 6, 19, 7), DateTime(2026, 6, 19, 8)),
+      ],
+      context,
+      4,
+    );
+
+    expect(groups.map((group) => group.dateTime?.day), [18, 19, 20, 21]);
+  });
 
   test('opens the exact current date when it exists', () {
     final groups = [
