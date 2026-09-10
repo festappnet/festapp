@@ -13,6 +13,20 @@ function normalizeFingerprint(value) {
   return value.replaceAll(':', '').trim().toLowerCase();
 }
 
+function verifyJarSignature(aab) {
+  const verification = spawnSync('jarsigner', ['-verify', '-strict', aab], {
+    encoding: 'utf8',
+  });
+  const output = `${verification.stdout ?? ''}\n${verification.stderr ?? ''}`;
+  // Android upload certificates are commonly self-signed. jarsigner reports
+  // that condition (and an unvalidated self-signed chain) as strict code 4.
+  // Every other strict bit remains fatal, including unsigned entries (16),
+  // unsuitable key usage (8), wrong alias (32), and verification failure (1).
+  if (![0, 4].includes(verification.status) || !/jar verified\./i.test(output)) {
+    throw new Error(`jarsigner rejected the AAB (strict exit ${verification.status ?? 'unknown'})`);
+  }
+}
+
 function main() {
   const [aabValue, manifestValue, sourceSha, receiptValue] = process.argv.slice(2);
   if (!aabValue || !manifestValue || !/^[0-9a-f]{40}$/.test(sourceSha ?? '') || !receiptValue) {
@@ -27,7 +41,7 @@ function main() {
     throw new Error('EXPECTED_UPLOAD_CERT_SHA256 must contain the approved upload certificate SHA-256');
   }
 
-  run('jarsigner', ['-verify', '-strict', aab]);
+  verifyJarSignature(aab);
   const certificate = run('keytool', ['-printcert', '-jarfile', aab]);
   const actualFingerprint = normalizeFingerprint(certificate.match(/^\s*SHA256:\s*(.+)$/m)?.[1] ?? '');
   if (actualFingerprint !== expectedFingerprint) throw new Error('AAB signer differs from the approved upload certificate');

@@ -82,6 +82,16 @@ test('production workflow enforces the authorized AAB hash before Fastlane', () 
   assert.match(workflow, /bundle exec fastlane android play_production/);
 });
 
+test('AAB validation permits only the known self-signed jarsigner warning class', () => {
+  const verifier = fs.readFileSync(
+    path.join(root, 'automation/release/verify_android_aab.mjs'),
+    'utf8',
+  );
+  assert.match(verifier, /\[0, 4\]\.includes\(verification\.status\)/);
+  assert.match(verifier, /jar verified\\\./);
+  assert.match(verifier, /actualFingerprint !== expectedFingerprint/);
+});
+
 test('generic Google Play operations stay behind protected GitHub environments', () => {
   const workflow = fs.readFileSync(
     path.join(root, '.github/workflows/google-play-gateway.yml'),
