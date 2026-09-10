@@ -1,6 +1,6 @@
 {
   "name": "festapp-web-client",
-  "version": "0.20.11",
+  "version": "0.20.12",
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
