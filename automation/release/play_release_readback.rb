@@ -4,6 +4,14 @@ require 'google/apis/androidpublisher_v3'
 require 'googleauth'
 require 'json'
 
+expected_gateway = {
+  'GITHUB_ACTIONS' => 'true',
+  'GITHUB_REPOSITORY' => 'festappnet/festapp',
+  'RUNNER_ENVIRONMENT' => 'github-hosted',
+  'RUNNER_OS' => 'Linux'
+}
+abort 'Google Play readback is restricted to the Festapp GitHub-hosted Linux gateway' unless expected_gateway.all? { |name, value| ENV[name] == value }
+
 manifest_value = ENV.fetch('FESTAPP_RELEASE_MANIFEST').strip
 abort 'FESTAPP_RELEASE_MANIFEST must not be empty' if manifest_value.empty?
 manifest_path = File.realpath(File.expand_path(manifest_value))
