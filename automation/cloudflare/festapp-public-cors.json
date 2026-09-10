@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://app.absolventskyvelehrad.cz",
+          "https://csa2024.festapp.net",
+          "https://clovekavira.festapp.net",
+          "https://csmostrava.festapp.net",
+          "https://biscup.festapp.net",
+          "https://farnostopava.festapp.net",
+          "https://live.festapp.net",
+          "https://vstupenky.online",
+          "https://slunovrat.festapp.net",
+          "https://hvezdamorska.festapp.net",
+          "https://jubileum2025.festapp.net",
+          "https://app.festivalslunovrat.cz"
+        ],
+        "methods": ["GET"],
+        "headers": ["If-None-Match"]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 86400
+    }
+  ]
+}
