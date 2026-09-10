@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "9fc07fdc5648a2837c438ddf701c9f304f69f9fa",
+  "baseMainSha": "3ec027ba3e2e483f8e8c95442772e8d348840632",
   "release": {
-    "version": "0.20.12+496",
-    "note": "Show canonical map places without configured categories"
+    "version": "0.20.13+497",
+    "note": "Restore all canonical program days and legacy map icons"
   }
 }
