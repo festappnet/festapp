@@ -37,7 +37,7 @@
 	}
 }
 
-{$FESTAPP_SUPABASE_ADMIN_SITE:http://127.0.0.1:8999} {
+http://{$FESTAPP_SUPABASE_ADMIN_HOSTNAME:supabase.festapp.net}:8999 {
 	bind 127.0.0.1
 	request_header Authorization "Basic {$FESTAPP_SUPABASE_ADMIN_BASIC_AUTH}"
 	import festapp_supabase_proxy
