@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "csmostrava2026",
-  "baseMainSha": "a2fe460b7b2ab08f95f30c27753a093b73c21dab",
+  "baseMainSha": "eb933ff008f65bbc3448d1db7c220fcdb61422f0",
   "release": {
-    "version": "0.20.6+490",
-    "note": "Persist news reads from the active tab owner"
+    "version": "0.20.7+491",
+    "note": "Persist reads immediately when News is selected"
   }
 }
