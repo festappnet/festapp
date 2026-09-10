@@ -454,12 +454,14 @@ class TimeBlockHelper {
       List<TimeBlockItem> events, BuildContext context, int splitHour) {
     List<TimeBlockGroup> toReturn = [];
     if (events.isEmpty) return toReturn;
-    var fromD = events.first.startTime.subtract(const Duration(days: 1));
+    final sortedEvents = [...events]
+      ..sort((left, right) => left.startTime.compareTo(right.startTime));
+    var fromD = sortedEvents.first.startTime.subtract(const Duration(days: 1));
     var fromDate = DateTime(fromD.year, fromD.month, fromD.day);
     var tested = fromDate.add(Duration(hours: splitHour));
-    while (!tested.isAfter(events.last.startTime)) {
+    while (!tested.isAfter(sortedEvents.last.startTime)) {
       var next = tested.add(const Duration(days: 1));
-      var focused = events
+      var focused = sortedEvents
           .where((e) =>
               e.startTime.isAfter(tested) && e.startTime.isBefore(next) ||
               e.startTime.isAtSameMomentAs(next))
