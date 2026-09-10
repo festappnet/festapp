@@ -162,6 +162,39 @@ if [ "$BACKEND_ACTIVATION_CANONICAL_MANIFEST_SHA256" = disabled ]; then
     BACKEND_ACTIVATION_CANONICAL_MANIFEST_SHA256=""
     BACKEND_ACTIVATION_MANIFEST_URL=""
 fi
+CLIENT_SYNC_CONFIG_PATHS=(
+    "$PROJECT_ROOT/web/client-sync-config.json"
+    "$PROJECT_ROOT/web_client/public/client-sync-config.json"
+)
+CLIENT_SYNC_TENANT_ID="${BACKEND_ACTIVATION_TENANT_ID:-${IMAGE_PROJECT_ID:-}}"
+if [ -n "${SYNC_HEAD_ORIGIN:-}" ] || [ -n "${SYNC_ASSET_ORIGIN:-}" ]; then
+    [ -n "$CLIENT_SYNC_TENANT_ID" ] &&
+        [ -n "${SYNC_HEAD_ORIGIN:-}" ] && [ -n "${SYNC_ASSET_ORIGIN:-}" ] || {
+        echo "Error: client sync runtime configuration must be complete"; exit 1;
+    }
+    node - "$CLIENT_SYNC_TENANT_ID" "$SYNC_HEAD_ORIGIN" \
+        "$SYNC_ASSET_ORIGIN" "${CLIENT_SYNC_CONFIG_PATHS[@]}" <<'NODE'
+const fs = require('fs');
+const [tenantId, syncHeadOrigin, syncAssetOrigin, ...paths] = process.argv.slice(2);
+for (const value of [syncHeadOrigin, syncAssetOrigin]) {
+  const url = new URL(value);
+  if (url.protocol !== 'https:' || url.username || url.password ||
+      !url.hostname || (url.pathname !== '/' && url.pathname !== '') ||
+      url.search || url.hash) {
+    throw new Error('client sync endpoint must be an HTTPS origin');
+  }
+}
+const document = `${JSON.stringify({
+  schemaVersion: 1,
+  tenantId,
+  syncHeadOrigin,
+  syncAssetOrigin,
+})}\n`;
+for (const path of paths) fs.writeFileSync(path, document);
+NODE
+else
+    rm -f "${CLIENT_SYNC_CONFIG_PATHS[@]}"
+fi
 [[ "$WEB_LINK" =~ ^https?://[^[:space:]]+$ ]] || {
     echo "Error: WEB_LINK must be an absolute HTTP(S) URL"; exit 1;
 }
@@ -619,6 +652,7 @@ PY
 
     sed_inplace "s|static const String syncHeadOrigin = \".*\";|static const String syncHeadOrigin = \"${SYNC_HEAD_ORIGIN:-}\";|g" "$FLUTTER_CONFIG"
     sed_inplace "s|static const String syncAssetOrigin = \".*\";|static const String syncAssetOrigin = \"${SYNC_ASSET_ORIGIN:-}\";|g" "$FLUTTER_CONFIG"
+    sed_inplace "s|static const String clientSyncTenantId = '.*';|static const String clientSyncTenantId = '$CLIENT_SYNC_TENANT_ID';|g" "$FLUTTER_CONFIG"
     sed_inplace "s|static const String imageApiUrl = '.*';|static const String imageApiUrl = '$IMAGE_API_URL';|g" "$FLUTTER_CONFIG"
     sed_inplace "s|static const String imageProjectId = '.*';|static const String imageProjectId = '$IMAGE_PROJECT_ID';|g" "$FLUTTER_CONFIG"
 
