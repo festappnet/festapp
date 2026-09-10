@@ -96,7 +96,6 @@ readonly FUNCTION_BUNDLE_SHA256="$(cd volumes/functions &&
   find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')"
 [[ "$FUNCTION_BUNDLE_SHA256" == "$(jq -r .function_bundle_sha256 "$RUNTIME_CONFIG")" ]] ||
   fail "deployed Edge Function bundle digest does not match the runtime contract"
-readonly REFERENCE_VERSION="$(jq -r .version festapp-reference-registry.json)"
 mapfile -t MERGE_SOURCE_ALIASES < <(jq -er '.sources[]|select(.role=="merge-source")|.alias' festapp-source-registry.json | sort)
 readonly EXPECTED_REFERENCE_PASSES="${#MERGE_SOURCE_ALIASES[@]}"
 [[ "$EXPECTED_REFERENCE_PASSES" -gt 0 ]] || fail "source registry contains no merge-source reference gates"
@@ -109,12 +108,24 @@ readonly TARGET_STATE="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U
       JOIN festapp_merge.import_runs r USING(run_id)
       WHERE r.source_alias=ANY(string_to_array('$MERGE_SOURCE_ALIASES_CSV',','))
         AND v.check_name=r.source_alias||'-reference-registry-completeness'
-        AND v.observed->>'registry_version'='$REFERENCE_VERSION' AND v.status='pass'),
+        AND v.status='pass'
+        AND v.observed->>'known_reference_mismatches'='0'
+        AND v.observed->>'deleted_rows'='0'
+        AND (v.observed->>'external_sync_runtime_inert')::boolean
+        AND v.observed->>'storage_url_rewrite_gate'='api.festapp.net-cutover'
+        AND (v.observed->>'legacy_storage_links')::bigint =
+            (v.observed->>'legacy_storage_links_with_copied_objects')::bigint),
     (SELECT count(DISTINCT r.source_alias) FROM festapp_merge.validation_results v
       JOIN festapp_merge.import_runs r USING(run_id)
       WHERE r.source_alias=ANY(string_to_array('$MERGE_SOURCE_ALIASES_CSV',','))
         AND v.check_name=r.source_alias||'-reference-registry-completeness'
-        AND v.observed->>'registry_version'='$REFERENCE_VERSION' AND v.status='pass'),
+        AND v.status='pass'
+        AND v.observed->>'known_reference_mismatches'='0'
+        AND v.observed->>'deleted_rows'='0'
+        AND (v.observed->>'external_sync_runtime_inert')::boolean
+        AND v.observed->>'storage_url_rewrite_gate'='api.festapp.net-cutover'
+        AND (v.observed->>'legacy_storage_links')::bigint =
+            (v.observed->>'legacy_storage_links_with_copied_objects')::bigint),
     (SELECT count(*)>0 FROM auth.users),(SELECT count(*)>0 FROM storage.objects),
     (SELECT count(*)>0 FROM realtime.schema_migrations),
     (SELECT count(*) FROM pg_trigger WHERE tgname='push_log_notifications' AND NOT tgisinternal))")"
