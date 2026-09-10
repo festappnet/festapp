@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festivalslunovrat",
-  "baseMainSha": "317a75505bf267245becaa91b81bb4fe49696602",
+  "baseMainSha": "c959201cb916b6dd5ba6076065e3e366294121d7",
   "release": {
     "version": "0.20.14+498",
     "note": "Restore native sync and add remote endpoint configuration"
