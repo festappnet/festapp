@@ -36,6 +36,7 @@ test('production targets require immutable artifact identity and explicit comple
 
 test('GitHub release workflows use Linux, bounded matrices, shared cache and immutable artifacts', () => {
   const candidate = fs.readFileSync(path.join(root, '.github/workflows/android-candidate.yml'), 'utf8');
+  const revalidation = fs.readFileSync(path.join(root, '.github/workflows/android-candidate-revalidate.yml'), 'utf8');
   const production = fs.readFileSync(path.join(root, '.github/workflows/android-production.yml'), 'utf8');
   assert.match(candidate, /runs-on: ubuntu-latest/);
   assert.match(candidate, /max-parallel: 5/);
@@ -47,6 +48,10 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.match(candidate, /android-raw-/);
   assert.match(candidate, /retention-days: 3/);
   assert.match(candidate, /retention-days: 30/);
+  assert.match(revalidation, /actions\/download-artifact@v7/);
+  assert.match(revalidation, /run-id: \$\{\{ needs\.plan\.outputs\.raw_run_id \}\}/);
+  assert.match(revalidation, /android-raw-\$\{\{ matrix\.tenant \}\}/);
+  assert.doesNotMatch(revalidation, /flutter build|macos-latest|windows-latest/);
   assert.doesNotMatch(candidate, /macos-latest|windows-latest/);
   assert.match(production, /max-parallel: 3/);
   assert.match(production, /artifactSha256/);
