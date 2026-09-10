@@ -38,7 +38,6 @@ class NewsPage extends StatefulWidget {
 
 class _NewsPageState extends State<NewsPage> {
   List<NewsModel> newsMessages = [];
-  bool _isSetAsReadCalled = false;
   final AsyncReloadCoordinator _refreshCoordinator = AsyncReloadCoordinator();
 
   // The tabs router this page is subscribed to, plus the last active index we
@@ -80,8 +79,7 @@ class _NewsPageState extends State<NewsPage> {
     final newsIndex = OccasionHomePage.baseTabKeys.indexOf(OccasionTab.news);
     final active = router.activeIndex;
     if (active == newsIndex && _lastActiveIndex != newsIndex) {
-      _checkAsRead();
-      loadData();
+      unawaited(loadData());
     }
     _lastActiveIndex = active;
   }
@@ -92,18 +90,6 @@ class _NewsPageState extends State<NewsPage> {
     ClientSyncRuntime.projectionEpoch.removeListener(_onProjectionChanged);
     _tabsRouter?.removeListener(_onTabChanged);
     super.dispose();
-  }
-
-  Future<void> _checkAsRead() async {
-    if (ModalRoute.of(context)?.isCurrent == true && !_isSetAsReadCalled) {
-      if (AuthService.isLoggedIn() &&
-          newsMessages.isNotEmpty &&
-          newsMessages.first.isRead == false) {
-        await DbNews.setMessagesAsRead(newsMessages.first.id);
-        widget.onSetAsRead?.call();
-        _isSetAsReadCalled = true;
-      }
-    }
   }
 
   void _showMessageDialog(BuildContext context) {
@@ -155,7 +141,7 @@ class _NewsPageState extends State<NewsPage> {
           if (!mounted) return;
           await OfflineDataService.saveAllMessages(newsMessages);
         }
-        _checkAsRead();
+        widget.onSetAsRead?.call();
       });
 
   @override
