@@ -9,8 +9,10 @@ packages:
   - ca-certificates
   - curl
   - fail2ban
+  - iproute2
   - jq
   - nodejs
+  - ripgrep
   - unattended-upgrades
 write_files:
   - path: /etc/ssh/sshd_config.d/10-festapp-hardening.conf

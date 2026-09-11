@@ -11,7 +11,7 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [[ "$VERSION_ID" == "26.04" ]] || { echo "expected Ubuntu 26.04" >&2; exit 1; }
 
 apt-get update -qq
-apt-get install -y -qq ca-certificates curl jq nodejs
+apt-get install -y -qq ca-certificates curl iproute2 jq nodejs ripgrep
 install -d -m 0755 /etc/apt/keyrings
 if [[ ! -f /etc/apt/keyrings/docker.asc ]]; then
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
