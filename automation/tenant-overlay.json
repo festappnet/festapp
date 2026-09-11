@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "absolventskyvelehrad",
-  "baseMainSha": "c959201cb916b6dd5ba6076065e3e366294121d7",
+  "baseMainSha": "516f1f0294bfd65842a1a18e9b28b7658f951833",
   "release": {
-    "version": "0.20.14+498",
-    "note": "Restore native sync and add remote endpoint configuration"
+    "version": "0.20.15+499",
+    "note": "Disable ticket usage changes for cancelled tickets"
   }
 }
