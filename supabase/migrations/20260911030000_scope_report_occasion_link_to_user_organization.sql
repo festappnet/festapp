@@ -1,6 +1,11 @@
-CREATE OR REPLACE FUNCTION public.get_report_ws(occasion_link TEXT)
-RETURNS jsonb SECURITY DEFINER
-SET search_path = public, extensions AS $$
+-- Canonical merges can contain the same legacy occasion link in more than one
+-- organization. Resolve report reads inside the authenticated user's tenant.
+CREATE OR REPLACE FUNCTION public.get_report_ws(occasion_link text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
     occasion_id bigint;
     report_data text;
@@ -36,4 +41,9 @@ EXCEPTION WHEN OTHERS THEN
         'detail', coalesce(SQLERRM, 'An unexpected error occurred')
     );
 END;
-$$ LANGUAGE plpgsql;
+$$;
+
+-- Restore the repository-standard SECURITY DEFINER search path on the
+-- inventory RPC changed by the preceding tenant-scope migration.
+ALTER FUNCTION public.get_inventory_pools_by_occasion_link(text)
+SET search_path = public, extensions;
