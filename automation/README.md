@@ -33,7 +33,7 @@ main SHA and compares generated content byte-for-byte, so a production branch
 cannot supply its own allowlist or checker policy.
 
 The public private-input interface is `automation/private-inputs.schema.json`.
-It declares names only. Values come from FestappSeed or an approved secret
+It declares names only. Values come from private configuration repository or an approved secret
 manager through an explicit build/deploy handoff and are never committed here.
 
 ## Web deployment
@@ -60,8 +60,11 @@ routing, build steps, env vars).
   by `deploy_direct.sh`. Emits `build/web/_worker.js` (single routing source).
 - **`deploy_direct.sh`**: Builds, uploads, and verifies the configured
   Cloudflare Pages production release without a git push.
-- **`test_all.sh`**: The master test runner. Executes Web Client unit tests,
-  Database regression tests, and automation/scripts tests.
+- **`test_all.sh`**: The master test runner. Executes Web Client, database,
+  Flutter, Deno Edge Function, image-worker integration and automation tests.
+  Environment-dependent suites are skipped when their required local tools or
+  credentials are absent; pass a scope such as `web`, `db`, `flutter`,
+  `integration`, or `automation` for a targeted run.
 - **`bootstrap_local_db.sh`**: Rebuilds the isolated local PostgreSQL test
   instance from the versioned production-compatible schema baseline, records
   the baseline migration cutoff, applies newer forward migrations, and seeds

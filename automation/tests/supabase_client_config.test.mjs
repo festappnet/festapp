@@ -21,6 +21,19 @@ import {
 
 const root = path.resolve(import.meta.dirname, '../..');
 
+test('live database test entrypoints default only to the canonical self-hosted API', () => {
+  const entrypoints = [
+    'tests/integration/bank_import_real.js',
+    'web_client/tests/core/rpc_security.test.js',
+  ].map((relative) => fs.readFileSync(path.join(root, relative), 'utf8'));
+
+  for (const source of entrypoints) {
+    assert.match(source, /https:\/\/api\.festapp\.net/);
+    assert.doesNotMatch(source, /https:\/\/[a-z0-9-]+\.supabase\.co/);
+    assert.match(source, /Refusing non-canonical Supabase test target/);
+  }
+});
+
 test('Supabase client origin accepts cloud and self-hosted HTTPS origins only', () => {
   assert.equal(parseSupabaseOrigin('https://api.festapp.net/'), 'https://api.festapp.net');
   for (const invalid of [

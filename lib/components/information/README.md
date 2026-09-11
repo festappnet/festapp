@@ -14,8 +14,8 @@ logic.
 
 If `type == "game"`, the page becomes a game checkpoint.
 
-- **RPC**: `game_guess` (`scripts/functions/information/game_guess.sql` -
-  _example path_)
+- **RPC**: `game_guess`
+  (`database/functions/others/game_guess.sql`)
 - **Logic**:
   - Users enter a code/password.
   - SQL validates it against the hidden answer.

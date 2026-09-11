@@ -4,9 +4,14 @@ import assert from 'node:assert';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
-const SUPABASE_URL = 'https://kjdpmixlnhntmxjedpxh.supabase.co';
-// Anon key is public, so it's fine to have here for testing "public" access
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqZHBtaXhsbmhudG14amVkcHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDE5NDI5NzEsImV4cCI6MjAxNzUxODk3MX0.06nTXCL-i1GxLckfEyCNlVVwt62QTzKUezqmsYSR_MI';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://api.festapp.net';
+const ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const targetHost = new URL(SUPABASE_URL).hostname;
+const targetIsCanonical = ['api.festapp.net', '127.0.0.1', 'localhost'].includes(targetHost);
+
+if (!targetIsCanonical) {
+    throw new Error(`Refusing non-canonical Supabase test target: ${targetHost}`);
+}
 
 const SECURED_FUNCTIONS = [
     // Sync Functions
@@ -39,7 +44,9 @@ const SECURED_FUNCTIONS = [
  */
 
 SECURED_FUNCTIONS.forEach((func) => {
-    test(`Security: Public RPC call to '${func.name}' should be blocked`, async (t) => {
+    test(`Security: Public RPC call to '${func.name}' should be blocked`, {
+        skip: ANON_KEY ? false : 'SUPABASE_ANON_KEY is required for the live self-hosted security test',
+    }, async (t) => {
         const rpcUrl = `${SUPABASE_URL}/rest/v1/rpc/${func.name}`;
         console.log(`Testing Public Access to: ${rpcUrl}`);
 

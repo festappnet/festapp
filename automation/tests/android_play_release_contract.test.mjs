@@ -21,16 +21,11 @@ test('Android Play tooling pins Fastlane through Bundler', () => {
   );
 
   assert.match(gemfile, /gem ['"]fastlane['"], ['"]2\.238\.0['"]/);
-  assert.match(wrapper, /bundle exec fastlane android play_check/);
-  assert.match(wrapper, /bundle exec fastlane android play_production/);
-  assert.match(
-    wrapper,
-    /bundle exec fastlane android play_check[\s\S]*?\$fastlaneExit = \$LASTEXITCODE[\s\S]*?throw "Read-only Google Play check failed/,
-  );
-  assert.match(
-    wrapper,
-    /bundle exec fastlane android play_production[\s\S]*?\$fastlaneExit = \$LASTEXITCODE[\s\S]*?throw "Google Play production upload failed/,
-  );
+  assert.doesNotMatch(wrapper, /bundle exec fastlane android play_/);
+  assert.doesNotMatch(wrapper, /GOOGLE_PLAY_JSON_KEY|UploadProduction|PlayCheck/);
+  assert.match(fastfile, /def assert_github_play_gateway!/);
+  assert.match(fastfile, /'RUNNER_ENVIRONMENT' => 'github-hosted'/);
+  assert.match(fastfile, /'RUNNER_OS' => 'Linux'/);
 });
 
 test('byte-exact backend activation documents are always checked out with LF', () => {
@@ -76,21 +71,53 @@ test('production upload remains a separately confirmed binary-only lane', () => 
   assert.match(lane, /skip_upload_screenshots: true/);
 });
 
-test('production wrapper enforces the authorized AAB hash on the Fastlane input', () => {
-  const wrapper = fs.readFileSync(
-    path.join(root, 'automation/release/android_release.ps1'),
+test('production workflow enforces the authorized AAB hash before Fastlane', () => {
+  const workflow = fs.readFileSync(
+    path.join(root, '.github/workflows/android-production.yml'),
+    'utf8',
+  );
+  assert.match(workflow, /artifactSha256/);
+  assert.match(workflow, /sha256sum --check/);
+  assert.match(workflow, /verify_android_aab\.mjs/);
+  assert.match(workflow, /bundle exec fastlane android play_production/);
+});
+
+test('AAB validation permits only the known self-signed jarsigner warning class', () => {
+  const verifier = fs.readFileSync(
+    path.join(root, 'automation/release/verify_android_aab.mjs'),
+    'utf8',
+  );
+  assert.match(verifier, /\[0, 4\]\.includes\(verification\.status\)/);
+  assert.match(verifier, /unsigned entries \(16\)/);
+  assert.match(verifier, /verification failure \(1\)/);
+  assert.match(verifier, /actualFingerprint !== expectedFingerprint/);
+  assert.match(verifier, /const hardMarkerPatterns = \[\/bujnmi\/i, \/bujnovsky\/i, \/\\\/Users\\\/\//);
+  assert.match(verifier, /const textMarkerPatterns = \[\.\.\.hardMarkerPatterns, \/miakh\/i\]/);
+  assert.doesNotMatch(verifier, /\/\\\/Users\\\/\/i/);
+  assert.match(verifier, /find \"\$scan_root\" -type f -print0 \| xargs -0 strings -f/);
+  assert.match(verifier, /AAB entry contains a forbidden personal path or identity marker:/);
+});
+
+test('generic Google Play operations stay behind protected GitHub environments', () => {
+  const workflow = fs.readFileSync(
+    path.join(root, '.github/workflows/google-play-gateway.yml'),
+    'utf8',
+  );
+  const gateway = fs.readFileSync(
+    path.join(root, 'automation/release/google_play_gateway.rb'),
     'utf8',
   );
 
-  assert.match(
-    wrapper,
-    /\[Parameter\(Mandatory, ParameterSetName='Production'\)\][\s\S]*?\$ExpectedUploadSha256/,
-  );
-  assert.match(wrapper, /Get-FileHash -Algorithm SHA256 -LiteralPath \$uploadPath/);
-  assert.match(wrapper, /\$actualHash -ne \$expectedHash/);
-  assert.match(wrapper, /\$env:PLAY_AAB_PATH = \$uploadPath/);
-  assert.match(
-    wrapper,
-    /Authorized AAB SHA-256[\s\S]*?bundle exec fastlane android play_production/,
-  );
+  assert.match(workflow, /environment: android-production-/);
+  assert.match(workflow, /PLAY_OPERATION_REQUEST_JSON/);
+  assert.match(workflow, /requestSha256/);
+  assert.match(workflow, /--symmetric --cipher-algo AES256/);
+  assert.match(gateway, /PLAY_ALLOWED_REPOSITORY/);
+  assert.match(gateway, /'RUNNER_ENVIRONMENT' => 'github-hosted'/);
+  assert.match(gateway, /when 'listing\.update'/);
+  assert.match(gateway, /when 'review\.reply'/);
+  assert.match(gateway, /when 'grant\.update'/);
+  assert.match(gateway, /service\.delete_edit\(package_name, edit\.id\) unless committed/);
+  assert.match(gateway, /summary\[:production\]/);
+  assert.doesNotMatch(gateway, /summary\[:reviews\]/);
 });

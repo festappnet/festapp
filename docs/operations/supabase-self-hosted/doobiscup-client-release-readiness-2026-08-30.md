@@ -49,8 +49,8 @@ Direct inspection of the signed, non-uploaded IPA proved production APNs, the
 single BISCUP App Group on Runner and extension,
 `applinks:biscup.festapp.net`, exact application identifiers, version
 `0.19.93 (472)`, and absence of `OneSignalLocation.framework`. The IPA,
-profiles and digest evidence are held only in private FestappSeed. No App Store
-version, upload or submission was created.
+profiles and digest evidence are held only in private configuration storage. No
+App Store version, upload or submission was created.
 
 ## Remaining gates
 

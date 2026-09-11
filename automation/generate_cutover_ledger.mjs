@@ -4,8 +4,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const output = resolve(root, "docs/audits/unified-app-cutover-ledger-2026-08-23.md");
-const inventoryOutput = resolve(root, "docs/audits/unified-app-cutover-commit-inventory-2026-08-23.tsv");
+const output = resolve(root, "docs/archive/audits/unified-app-cutover-ledger-2026-08-23.md");
+const inventoryOutput = resolve(root, "docs/archive/audits/unified-app-cutover-commit-inventory-2026-08-23.tsv");
 const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).trim();
 const lines = (value) => value ? value.split("\n").filter(Boolean) : [];
 
@@ -200,10 +200,10 @@ ${Object.entries(fixed).map(([ref, sha]) => `| \`${ref}\` | \`${sha}\` |`).join(
 
 - Ahead/behind at the frozen refs: main \`${git("rev-list", "--left-right", "--count", `${fixed["origin/main"]}...${fixed.main}`)}\`; CSM \`${git("rev-list", "--left-right", "--count", `${fixed["origin/prod/csmostrava2026"]}...${fixed["prod/csmostrava2026"]}`)}\`; HM \`${git("rev-list", "--left-right", "--count", `${fixed["origin/prod/hvezdamorska"]}...${fixed["prod/hvezdamorska"]}`)}\`.
 - Dirty CSM snapshot: \`/tmp/festapp-unified-cutover.p9Dm64\`; tracked patch SHA is recorded in \`tracked.patch.sha256\`, and all 15 untracked files are recorded in \`untracked.sha256\` without exposing file contents.
-- Integration worktree: \`/Users/miakh/source/festapp-unified-cutover\`, branch \`cutover/unified-main-prod-branches-20260823\`, based on \`${fixed.main}\`.
+- Integration worktree: \`<temporary-cutover-worktree>\`, branch \`cutover/unified-main-prod-branches-20260823\`, based on \`${fixed.main}\`.
 - Initial copied plan SHA-256: \`b12aad8d0ef3e264b1806802f50f9853b052a8df9a46cfd52f2f02495c847eeb\`; current candidate plan SHA-256 after recording migration-collision evidence and Markdown hygiene: \`4d773ce4ec6b94c378d91239cd8063d7d5bacc285e3cbef71856c1bbd603f0db\`; execution prompt SHA-256: \`88df0e05964e0cc3caf11e3a0851bca468315008177c8438c36dd4e97580739c\`.
 - Existing backup refs do not cover the current CSM/HM tips. Creating/pushing dedicated pre-cutover refs remains separately authorized.
-- FestappSeed is the verified private \`rawen-dev/festappseed\` repository. Its versioned provisioning contract and publishing manifest own the cross-repo handoff; Festapp keeps only generic fail-closed consumers.
+- The private configuration repository owns the versioned provisioning contract and publishing manifest; its locator, revision and values are intentionally omitted from this public ledger. Festapp keeps only generic fail-closed consumers.
 
 ## Dirty topic transfer
 

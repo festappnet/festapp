@@ -58,7 +58,9 @@ async function verifyOnline() {
   const composeImages = new Set((await compose.text()).split(/\r?\n/)
     .map((line) => line.match(/^\s+image:\s+(\S+)$/)?.[1]).filter(Boolean));
   for (const [name, pinned] of Object.entries(pins.supabase.images)) {
-    if (name !== 'caddy') assert.ok(composeImages.has(pinned.split('@')[0]), `${name} is not in the selected Supabase bundle`);
+    if (!['caddy', 'cloudflared'].includes(name)) {
+      assert.ok(composeImages.has(pinned.split('@')[0]), `${name} is not in the selected Supabase bundle`);
+    }
     if (process.argv.includes('--registry')) {
       let inspected;
       try {

@@ -1,24 +1,29 @@
-CREATE OR REPLACE FUNCTION get_report_ws(occasion_link TEXT)
+CREATE OR REPLACE FUNCTION public.get_report_ws(occasion_link TEXT)
 RETURNS jsonb SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
     occasion_id bigint;
     report_data text;
 BEGIN
-    SELECT id
+    SELECT o.id
     INTO occasion_id
-    FROM public.occasions
-    WHERE link = occasion_link;
+    FROM public.occasions o
+    WHERE o.link = occasion_link
+      AND o.organization = (
+        SELECT ui.organization
+        FROM public.user_info ui
+        WHERE ui.id = auth.uid()
+      );
 
     IF occasion_id IS NULL THEN
         RAISE EXCEPTION 'Occasion not found for link: %', occasion_link;
     END IF;
 
-    IF NOT get_is_editor_order_view_on_occasion(occasion_id) THEN
+    IF NOT public.get_is_editor_order_view_on_occasion(occasion_id) THEN
         RAISE EXCEPTION 'User is not authorized to view this report.';
     END IF;
 
-    report_data := get_report_for_occasion(occasion_id);
+    report_data := public.get_report_for_occasion(occasion_id);
 
     RETURN jsonb_build_object(
         'code', 200,
