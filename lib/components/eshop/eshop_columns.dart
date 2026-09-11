@@ -32,6 +32,9 @@ import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'views/add_cash_payment_dialog.dart';
 
+bool canToggleTicketUsage(String? formattedState) =>
+    formattedState?.split(';').first != OrderModel.stornoState;
+
 class EshopColumns {
   // Column identifier constants
   static const String TICKET_ID = "ticketId";
@@ -81,7 +84,8 @@ class EshopColumns {
   static const String PAYMENT_INFO_VARIABLE_SYMBOL =
       "paymentInfoVariableSymbol";
   static const String PAYMENT_INFO_DEADLINE = "orderDataDeadline";
-  static const String PAYMENT_INFO_DEPOSIT_DEADLINE = "paymentInfoDepositDeadline";
+  static const String PAYMENT_INFO_DEPOSIT_DEADLINE =
+      "paymentInfoDepositDeadline";
   static const String PAYMENT_INFO_REMINDER_SENT = "isReminderSent";
 
   static const String ORDER_SYMBOL = "orderSymbol";
@@ -530,7 +534,9 @@ class EshopColumns {
             field: ORDER_PRICE,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
-            width: FeatureService.isFeatureEnabled(FeatureConstants.deposit) ? 140 : 100,
+            width: FeatureService.isFeatureEnabled(FeatureConstants.deposit)
+                ? 140
+                : 100,
             renderer: FeatureService.isFeatureEnabled(FeatureConstants.deposit)
                 ? (ctx) {
                     final order = ctx.row.cells[ORDER_MODEL_REFERENCE]?.value
@@ -764,43 +770,47 @@ class EshopColumns {
                       rendererContext.row.cells[TICKET_STATE]?.value as String?;
                   final isUsed =
                       formattedState?.split(';').first == OrderModel.usedState;
+                  final canToggleUsage = canToggleTicketUsage(formattedState);
                   final actionLabel = isUsed
                       ? OrdersStrings.restoreTicket
                       : OrdersStrings.confirmTicket;
 
                   return ElevatedButton(
-                    onPressed: () async {
-                      final ticketId =
-                          rendererContext.row.cells[TICKET_ID]!.value as int;
-                      final ticketSymbol = rendererContext
-                              .row.cells[TICKET_SYMBOL]?.value as String? ??
-                          ticketId.toString();
+                    onPressed: canToggleUsage
+                        ? () async {
+                            final ticketId = rendererContext
+                                .row.cells[TICKET_ID]!.value as int;
+                            final ticketSymbol = rendererContext.row
+                                    .cells[TICKET_SYMBOL]?.value as String? ??
+                                ticketId.toString();
 
-                      // Using the ticket symbol directly as the confirmation message body for simplicity.
-                      var confirm = await DialogHelper.showConfirmationDialog(
-                        context,
-                        actionLabel,
-                        ticketSymbol,
-                      );
+                            // Using the ticket symbol directly as the confirmation message body for simplicity.
+                            var confirm =
+                                await DialogHelper.showConfirmationDialog(
+                              context,
+                              actionLabel,
+                              ticketSymbol,
+                            );
 
-                      if (confirm == true) {
-                        if (isUsed) {
-                          await DbTickets.unuseTicket(ticketId);
-                        } else {
-                          await DbTickets.useTicket(ticketId);
-                        }
-                        if (context.mounted) {
-                          ToastHelper.Show(
-                            context,
-                            "$ticketSymbol: ${CommonStrings.ok}",
-                          );
-                        }
-                        var afterFunction = data[TICKET_CONFIRM];
-                        if (afterFunction is Future<void> Function()?) {
-                          afterFunction?.call();
-                        }
-                      }
-                    },
+                            if (confirm == true) {
+                              if (isUsed) {
+                                await DbTickets.unuseTicket(ticketId);
+                              } else {
+                                await DbTickets.useTicket(ticketId);
+                              }
+                              if (context.mounted) {
+                                ToastHelper.Show(
+                                  context,
+                                  "$ticketSymbol: ${CommonStrings.ok}",
+                                );
+                              }
+                              var afterFunction = data[TICKET_CONFIRM];
+                              if (afterFunction is Future<void> Function()?) {
+                                afterFunction?.call();
+                              }
+                            }
+                          }
+                        : null,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1051,17 +1061,17 @@ class EshopColumns {
           ),
         ],
         if (FeatureService.isFeatureEnabled(FeatureConstants.deposit))
-        PAYMENT_INFO_DEPOSIT_DEADLINE: [
-          TrinaColumn(
-            readOnly: true,
-            enableEditingMode: false,
-            title: OrdersStrings.gridDepositDeadline,
-            field: PAYMENT_INFO_DEPOSIT_DEADLINE,
-            type: TrinaColumnType.text(),
-            textAlign: TrinaColumnTextAlign.end,
-            width: 110,
-          ),
-        ],
+          PAYMENT_INFO_DEPOSIT_DEADLINE: [
+            TrinaColumn(
+              readOnly: true,
+              enableEditingMode: false,
+              title: OrdersStrings.gridDepositDeadline,
+              field: PAYMENT_INFO_DEPOSIT_DEADLINE,
+              type: TrinaColumnType.text(),
+              textAlign: TrinaColumnTextAlign.end,
+              width: 110,
+            ),
+          ],
         PAYMENT_INFO_REMINDER_SENT: [
           TrinaColumn(
             title: OrdersStrings.gridReminderSent,
@@ -1357,6 +1367,4 @@ class EshopColumns {
       builder: (_) => ProductsDialog(ticketId: ticketId),
     );
   }
-
-
 }
