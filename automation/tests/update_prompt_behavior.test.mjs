@@ -44,6 +44,7 @@ const appendedElements = [];
 const deletedCaches = [];
 let unregistered = 0;
 let replacedLocation = null;
+let reloads = 0;
 
 const activeWorker = {
   scriptURL: 'https://app.test/festapp_service_worker.js',
@@ -97,7 +98,7 @@ const window = {
   __FESTAPP_LOCAL_DEVELOPMENT__: false,
   location: {
     href: 'https://app.test/news',
-    reload: () => { throw new Error('failed cutover must use a cache-busted clean restart'); },
+    reload: () => { reloads++; },
     replace: (url) => { replacedLocation = String(url); },
   },
   addEventListener: (type, listener) => windowListeners.set(type, listener),
@@ -141,5 +142,30 @@ assert.equal(
 assert.equal(unregistered, 0, 'window recovery must preserve the canonical Festapp worker');
 assert.deepEqual(deletedCaches, [], 'window recovery must never delete versioned shells');
 assert.match(replacedLocation, /festapp-recovery=2\.0\.0%2B2/);
+assert.equal(reloads, 0, 'failed cutover recovery must use a cache-busted restart');
+
+const runtimeErrorListener = windowListeners.get('error');
+assert.ok(runtimeErrorListener, 'runtime corruption must be observed globally');
+runtimeErrorListener({
+  message: 'Cannot define property ___dart_dispatch_record_ZxYxX_0_, object is not extensible',
+  error: new TypeError(
+    'Cannot define property ___dart_dispatch_record_ZxYxX_0_, object is not extensible',
+  ),
+});
+await new Promise((resolve) => setImmediate(resolve));
+
+assert.equal(
+  reloads,
+  1,
+  'a corrupt Dart runtime must automatically retry with a coherent app shell',
+);
+runtimeErrorListener({ message: 'Unrelated application error' });
+windowListeners.get('unhandledrejection')({
+  reason: new TypeError(
+    'Cannot define property ___dart_dispatch_record_ZxYxX_0_, object is not extensible',
+  ),
+});
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(reloads, 1, 'runtime recovery must neither match other errors nor reload-loop');
 
 console.log('update_prompt_behavior.test: ok');
