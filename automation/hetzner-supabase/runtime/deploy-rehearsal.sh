@@ -21,6 +21,10 @@ install -o root -g root -m 0644 "$SCRIPT_DIR/docker-compose.festapp.yml" docker-
 install -o root -g root -m 0644 "$SCRIPT_DIR/docker-compose.database-target.yml" docker-compose.database-target.yml
 install -d -o root -g root -m 0755 caddy
 install -o root -g root -m 0644 "$SCRIPT_DIR/Caddyfile" caddy/Caddyfile
+install -d -o root -g root -m 0755 studio-customization
+install -o root -g root -m 0555 "$SCRIPT_DIR/studio-customization/entrypoint.sh" studio-customization/entrypoint.sh
+install -o root -g root -m 0444 "$SCRIPT_DIR/studio-customization/install-logout.mjs" studio-customization/install-logout.mjs
+install -o root -g root -m 0444 "$SCRIPT_DIR/studio-customization/logout.js" studio-customization/logout.js
 install -o root -g root -m 0700 "$SCRIPT_DIR/configure-rehearsal-env.py" configure-rehearsal-env.py
 install -o root -g root -m 0700 "$SCRIPT_DIR/switch-rehearsal-runtime-database.sh" switch-rehearsal-runtime-database.sh
 install -o root -g root -m 0444 "$SCRIPT_DIR/../merge/source-registry.json" festapp-source-registry.json
@@ -34,6 +38,7 @@ install -o root -g root -m 0700 "$SCRIPT_DIR/validate-operational-readiness.mjs"
 install -o root -g root -m 0700 "$SCRIPT_DIR/install-production-function-bundle.sh" install-production-function-bundle.sh
 install -o root -g root -m 0700 "$SCRIPT_DIR/finalize-canonical-database-operations.sh" finalize-canonical-database-operations.sh
 install -o root -g root -m 0700 "$SCRIPT_DIR/upgrade-installed-production-runtime.sh" upgrade-installed-production-runtime.sh
+install -o root -g root -m 0700 "$SCRIPT_DIR/activate-admin-dashboard.sh" activate-admin-dashboard.sh
 install -o root -g root -m 0700 "$SCRIPT_DIR/rotate-rehearsal-runtime-credentials.sh" rotate-rehearsal-runtime-credentials.sh
 ./configure-rehearsal-env.py
 

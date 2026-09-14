@@ -66,7 +66,9 @@ displaying data - critical for multi-tenancy security!
 
 ### Key Features
 
-- Local storage via SharedPreferences (JSON)
+- Cross-platform key/value storage through `StorageHelper` (JSON)
+- Client Sync v1 projections use the dedicated `ClientSyncStore`; do not bypass
+  `ClientSyncRuntime` when that capability is selected
 - Type-safe generic methods: `saveOffline<T>()`, `getOffline<T>()`, `getAllOffline<T>()`
 - Domain-specific helpers: `saveAllEvents()`/`getAllEvents()`, `saveAllInfo()`/`getAllInfo()`, etc.
 
@@ -88,17 +90,26 @@ final cached = await OfflineDataService.getAllEvents();
 
 **Location**: `lib/data_services/synchro_service.dart`
 
-**Role**: Fetches remote data and populates offline cache. Read-only sync (no outgoing change queue).
+**Role**: Selects the active synchronization path. Client Sync v1 refreshes
+versioned public/private projections; legacy tenants still use direct RPC/table
+reads and populate `OfflineDataService`.
 
 ### Key Methods
 
-- `refreshOfflineData()` — Fetches user info, events, activities, inventory, places, path groups, icons, info, and news from Supabase and saves to OfflineDataService cache
-- `getAppConfig(LinkModel)` — Retrieves app configuration via RPC (`get_app_config_v217`)
+- `refreshOfflineData()` — Refreshes `ClientSyncRuntime` and the offline search
+  index when v1 is selected; otherwise fetches user info, events, activities,
+  inventory, map data, information, speakers, cleaning status and news into the
+  legacy cache
+- `getAppConfig(LinkModel)` — Retrieves app configuration through
+  `AppConfigRpc` (`get_app_config_v219`, with explicit legacy fallback only when
+  the selected backend profile requires it)
 
 ### Data Flow
 
 ```
-SynchroService.refreshOfflineData() → Supabase RPCs/queries → OfflineDataService.saveAll*()
+SynchroService.refreshOfflineData()
+  → ClientSyncRuntime (v1) OR Supabase RPCs/queries (legacy)
+  → projection store / OfflineDataService
 ```
 
 ---
@@ -126,7 +137,7 @@ graph LR
     A[App starts] --> B["SynchroService<br/>.refreshOfflineData()"]
     B --> C[Supabase RPCs/queries]
     C --> D["OfflineDataService<br/>.saveAll*()"]
-    D --> E[SharedPreferences JSON]
+    D --> E[StorageHelper JSON]
     E -->|No connection| F["OfflineDataService<br/>.getAll*()"]
     F --> G[Cached data served]
 ```
@@ -139,4 +150,4 @@ graph LR
 
 ---
 
-**Last updated**: 2026-02-14
+**Last updated**: 2026-09-10
