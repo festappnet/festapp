@@ -92,7 +92,7 @@ four-argument admin RPC is also hardened and the obsolete three-argument
 overload is absent, preventing a released client from bypassing the guard.
 
 The provider credential itself must still be rotated through an authorized
-OneSignal/FestappSeed session. Production activation remains blocked until the
+OneSignal/private-configuration session. Production activation remains blocked until the
 replacement is provisioned, notification and account-deletion canaries pass,
 and the historical key is rejected. No secret value is recorded in this
 repository.
