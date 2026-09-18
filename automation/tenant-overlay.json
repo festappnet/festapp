@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "399b2f23ea4a9c67771b4fed80fec860fc255cf4",
+  "baseMainSha": "c5a698c3ef892534aad97ea8ddd234f0f9f43391",
   "release": {
-    "version": "0.20.16+500",
-    "note": "Start the ticket scanner camera after a user action"
+    "version": "0.20.17+501",
+    "note": "Fix web ticket scanner camera preview and mobile playback"
   }
 }
