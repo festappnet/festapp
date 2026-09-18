@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "10946d669ecd31df5f56deaddb9d063de57864d1",
+  "baseMainSha": "399b2f23ea4a9c67771b4fed80fec860fc255cf4",
   "release": {
-    "version": "0.20.15+499",
-    "note": "Recover stale web runtimes before QR scanning"
+    "version": "0.20.16+500",
+    "note": "Start the ticket scanner camera after a user action"
   }
 }
