@@ -51,6 +51,8 @@ class _ScanPageState extends State<ScanPage> {
   String? _occasionTitle;
   List<Feature> _features = [];
   bool _canScanTicketsManually = false;
+  bool _webCameraStarted = !kIsWeb;
+  bool _startingCamera = false;
 
   // Track if we just successfully used the ticket
   bool _justConfirmed = false;
@@ -58,9 +60,9 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void initState() {
     super.initState();
-    final ticketFeature =
-        FeatureService.getFeatureDetails(FeatureConstants.ticket)
-            as TicketFeature?;
+    final ticketFeature = FeatureService.getFeatureDetails(
+      FeatureConstants.ticket,
+    ) as TicketFeature?;
     if (ticketFeature?.canScanManually == true) {
       _canScanTicketsManually = true;
     }
@@ -75,9 +77,10 @@ class _ScanPageState extends State<ScanPage> {
 
   final MobileScannerController _mobileScannerController =
       MobileScannerController(
-    formats: [BarcodeFormat.qrCode],
-    detectionSpeed: DetectionSpeed.noDuplicates,
-  );
+        formats: [BarcodeFormat.qrCode],
+        detectionSpeed: DetectionSpeed.noDuplicates,
+        autoStart: !kIsWeb,
+      );
 
   @override
   void dispose() {
@@ -89,14 +92,11 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> didChangeDependencies() async {
     super.didChangeDependencies();
     if (widget.scanCode == null && context.routeData.hasPendingChildren) {
-      widget.scanCode =
-          context.routeData.pendingChildren[0].params.getString("scanCode");
+      widget.scanCode = context.routeData.pendingChildren[0].params.getString(
+        "scanCode",
+      );
     }
 
-    if (kIsWeb) {
-      MobileScannerPlatform.instance.setBarcodeLibraryScriptUrl(
-          "https://unpkg.com/@zxing/library@0.21.3");
-    }
     AppLogger.debug(widget.scanCode ?? '');
 
     checkForCode();
@@ -122,8 +122,9 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> _loadOccasionTitle() async {
     if (widget.scanCode == null) return;
     try {
-      final occasionData =
-          await DbTickets.getOccasionByScanCode(widget.scanCode!);
+      final occasionData = await DbTickets.getOccasionByScanCode(
+        widget.scanCode!,
+      );
       if (occasionData != null && mounted) {
         setState(() {
           _occasionTitle = occasionData['title'];
@@ -132,8 +133,9 @@ class _ScanPageState extends State<ScanPage> {
                 .map((f) => Feature.fromJson(f))
                 .toList();
             final ticketFeature = FeatureService.getFeatureDetails(
-                FeatureConstants.ticket,
-                features: _features) as TicketFeature?;
+              FeatureConstants.ticket,
+              features: _features,
+            ) as TicketFeature?;
             _canScanTicketsManually = ticketFeature?.canScanManually ?? false;
           }
         });
@@ -161,14 +163,53 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 
+  Future<void> _startCamera() async {
+    if (_startingCamera) return;
+    final retry = _webCameraStarted;
+    setState(() {
+      _webCameraStarted = true;
+      _startingCamera = true;
+    });
+    try {
+      if (retry) {
+        await _mobileScannerController.stop();
+      }
+      await _mobileScannerController.start();
+    } finally {
+      if (mounted) {
+        setState(() => _startingCamera = false);
+      }
+    }
+  }
+
+  Widget _buildCameraAction({required String message}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _startingCamera ? null : _startCamera,
+              icon: const Icon(Icons.camera_alt),
+              label: Text(ScanStrings.startCamera),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     bool canSearch = AppConfig.isAppSupported || _canScanTicketsManually;
 
     Color backgroundColor =
         (_scannedObject == null && _scanState == ScanState.nothing)
-            ? ThemeConfig.grey200(context)
-            : getResultColor(_scanState);
+        ? ThemeConfig.grey200(context)
+        : getResultColor(_scanState);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -190,8 +231,10 @@ class _ScanPageState extends State<ScanPage> {
                   Container(
                     width: double.infinity,
                     color: ThemeConfig.whiteColor(context),
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 16,
+                    ),
                     child: Text(
                       "${OrdersStrings.scanningForOccasion} $_occasionTitle",
                       style: TextStyle(
@@ -208,18 +251,31 @@ class _ScanPageState extends State<ScanPage> {
                 buildScannedUserDetails(backgroundColor),
                 // Scanner view
                 Expanded(
-                  child: MobileScanner(
-                    fit: BoxFit.fitWidth,
-                    controller: _mobileScannerController,
-                    onDetect: (capture) async {
-                      final List<Barcode> barcodes = capture.barcodes;
-                      var id = barcodes.firstOrNull;
-                      if (id == null) {
-                        return;
-                      }
-                      AppLogger.debug(id.rawValue ?? '');
-                      await setupNewId(id.rawValue.toString());
-                    },
+                  child: Stack(
+                    children: [
+                      MobileScanner(
+                        fit: BoxFit.fitWidth,
+                        controller: _mobileScannerController,
+                        errorBuilder: (context, error) => _buildCameraAction(
+                          message: ScanStrings.cameraUnavailable,
+                        ),
+                        onDetect: (capture) async {
+                          final List<Barcode> barcodes = capture.barcodes;
+                          var id = barcodes.firstOrNull;
+                          if (id == null) {
+                            return;
+                          }
+                          AppLogger.debug(id.rawValue ?? '');
+                          await setupNewId(id.rawValue.toString());
+                        },
+                      ),
+                      if (kIsWeb && !_webCameraStarted)
+                        Positioned.fill(
+                          child: _buildCameraAction(
+                            message: ScanStrings.cameraStartDescription,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -248,8 +304,9 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _openUserSearchDialog() async {
-    List<UserInfoModel> allUsers =
-        await DbUsers.getAllUsersBasicsForScan(widget.scanCode!);
+    List<UserInfoModel> allUsers = await DbUsers.getAllUsersBasicsForScan(
+      widget.scanCode!,
+    );
 
     if (!mounted) return;
 
@@ -264,8 +321,9 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _openTicketSearchDialog() async {
-    List<TicketModel> allTickets =
-        await DbTickets.getAllTicketsForScan(widget.scanCode!);
+    List<TicketModel> allTickets = await DbTickets.getAllTicketsForScan(
+      widget.scanCode!,
+    );
 
     if (!mounted) return;
 
@@ -334,7 +392,9 @@ class _ScanPageState extends State<ScanPage> {
     if (_scannedObject == null) return;
 
     bool success = await DbTickets.updateTicketToUsed(
-        _scannedObject!.id!, widget.scanCode!);
+      _scannedObject!.id!,
+      widget.scanCode!,
+    );
 
     if (success) {
       setState(() {
@@ -360,17 +420,18 @@ class _ScanPageState extends State<ScanPage> {
       builder: (context) {
         return AlertDialog(
           title: Text(ScanStrings.resetPassword),
-          content: Text(OrdersStrings.resetPasswordConfirmationContent(
-              _defaultResetPassword)),
+          content: Text(
+            OrdersStrings.resetPasswordConfirmationContent(
+              _defaultResetPassword,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(CommonStrings.cancel), // Use CommonStrings
             ),
             TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(CommonStrings.reset), // Use CommonStrings
             ),
@@ -383,7 +444,10 @@ class _ScanPageState extends State<ScanPage> {
 
     try {
       final result = await DbTickets.resetPassword(
-          _scannedObject!.id!, _defaultResetPassword, widget.scanCode!);
+        _scannedObject!.id!,
+        _defaultResetPassword,
+        widget.scanCode!,
+      );
       final email = result.email;
 
       if (!mounted) return;
@@ -397,19 +461,28 @@ class _ScanPageState extends State<ScanPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(OrdersStrings.gridEmail,
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(
+                  OrdersStrings.gridEmail,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 SelectableText(email, style: const TextStyle(fontSize: 18)),
                 const SizedBox(height: 24),
-                Text(CommonStrings.password, // Use CommonStrings
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(
+                  CommonStrings.password, // Use CommonStrings
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                const SelectableText(_defaultResetPassword,
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SelectableText(
+                  _defaultResetPassword,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
               ],
             ),
             actions: [
@@ -435,7 +508,8 @@ class _ScanPageState extends State<ScanPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(OrdersStrings.errorResetPassword(e.toString()))),
+            content: Text(OrdersStrings.errorResetPassword(e.toString())),
+          ),
         );
       }
     }
