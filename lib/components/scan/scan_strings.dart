@@ -9,10 +9,13 @@ class ScanStrings {
   static String get confirmTicket =>
       'FeatureTicket.confirmTicket'.tr(); // "Confirm Ticket"
   static String get scanCameraInstruction =>
-      'FeatureTicket.scanCameraInstruction'
-          .tr(); // "Point the camera at the attendee's code for an entry verification."
+      'FeatureTicket.scanCameraInstruction'.tr(); // "Point the camera at the attendee's code for an entry verification."
   static String get resetPassword =>
       'FeatureTicket.resetPassword'.tr(); // "Reset Password"
   static String get signedInCompanions =>
       'FeatureTicket.signedInCompanions'.tr(); // "Signed in companions"
+  static String get startCamera => 'FeatureTicket.startCamera'.tr();
+  static String get cameraStartDescription =>
+      'FeatureTicket.cameraStartDescription'.tr();
+  static String get cameraUnavailable => 'FeatureTicket.cameraUnavailable'.tr();
 }
