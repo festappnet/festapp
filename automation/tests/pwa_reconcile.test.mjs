@@ -81,6 +81,16 @@ test('one reconcile policy retains exactly current and live known shells', async
     assert.equal(skipWaitingCalls, 1,
       'a pre-coordinator web client must not strand its successor waiting');
     names = names.filter((name) => name !== 'festapp-app-shell-0.19.93+457');
+    names.push('festapp-app-shell-0.20.17+501');
+    context.self.navigator.onLine = true;
+    await dispatchInstall();
+    assert.equal(skipWaitingCalls, 1,
+      'the affected shell stays user coordinated when online status is true');
+    context.self.navigator.onLine = false;
+    await dispatchInstall();
+    assert.equal(skipWaitingCalls, 2,
+      'a successfully installed worker must replace the false-offline shell');
+    names = names.filter((name) => name !== 'festapp-app-shell-0.20.17+501');
 
     const dispatch = async (data, source = clients[0]) => {
       let pending = Promise.resolve();
