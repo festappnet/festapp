@@ -1148,6 +1148,7 @@
     "scanCode": "Scan Code",
     "signedInCompanions": "Signed in companions",
     "startCamera": "Start camera",
+    "restartCamera": "Restart camera",
     "cameraStartDescription": "Start the scanner with the button below and allow camera access.",
     "cameraUnavailable": "The camera could not be started. Check camera permissions and try again.",
     "ticketType": "Ticket Type",

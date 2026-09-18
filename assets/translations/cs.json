@@ -1148,6 +1148,7 @@
     "scanCode": "Kód ke skenování",
     "signedInCompanions": "Přihlášení společníci",
     "startCamera": "Spustit kameru",
+    "restartCamera": "Restartovat kameru",
     "cameraStartDescription": "Pro spuštění skeneru povolte kameru tlačítkem níže.",
     "cameraUnavailable": "Kameru se nepodařilo spustit. Zkontrolujte oprávnění kamery a zkuste to znovu.",
     "ticketType": "Typ vstupenky",
