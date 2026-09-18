@@ -51,7 +51,6 @@ class _ScanPageState extends State<ScanPage> {
   String? _occasionTitle;
   List<Feature> _features = [];
   bool _canScanTicketsManually = false;
-  bool _webCameraStarted = !kIsWeb;
   bool _startingCamera = false;
 
   // Track if we just successfully used the ticket
@@ -77,10 +76,10 @@ class _ScanPageState extends State<ScanPage> {
 
   final MobileScannerController _mobileScannerController =
       MobileScannerController(
-        formats: [BarcodeFormat.qrCode],
-        detectionSpeed: DetectionSpeed.noDuplicates,
-        autoStart: !kIsWeb,
-      );
+    formats: [BarcodeFormat.qrCode],
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    autoStart: !kIsWeb,
+  );
 
   @override
   void dispose() {
@@ -165,13 +164,11 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _startCamera() async {
     if (_startingCamera) return;
-    final retry = _webCameraStarted;
     setState(() {
-      _webCameraStarted = true;
       _startingCamera = true;
     });
     try {
-      if (retry) {
+      if (_mobileScannerController.value.isRunning) {
         await _mobileScannerController.stop();
       }
       await _mobileScannerController.start();
@@ -193,7 +190,13 @@ class _ScanPageState extends State<ScanPage> {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: _startingCamera ? null : _startCamera,
-              icon: const Icon(Icons.camera_alt),
+              icon: _startingCamera
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.camera_alt),
               label: Text(ScanStrings.startCamera),
             ),
           ],
@@ -208,8 +211,8 @@ class _ScanPageState extends State<ScanPage> {
 
     Color backgroundColor =
         (_scannedObject == null && _scanState == ScanState.nothing)
-        ? ThemeConfig.grey200(context)
-        : getResultColor(_scanState);
+            ? ThemeConfig.grey200(context)
+            : getResultColor(_scanState);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -252,6 +255,7 @@ class _ScanPageState extends State<ScanPage> {
                 // Scanner view
                 Expanded(
                   child: Stack(
+                    fit: StackFit.expand,
                     children: [
                       MobileScanner(
                         fit: BoxFit.fitWidth,
@@ -269,10 +273,30 @@ class _ScanPageState extends State<ScanPage> {
                           await setupNewId(id.rawValue.toString());
                         },
                       ),
-                      if (kIsWeb && !_webCameraStarted)
+                      if (kIsWeb)
                         Positioned.fill(
-                          child: _buildCameraAction(
-                            message: ScanStrings.cameraStartDescription,
+                          child: ValueListenableBuilder<MobileScannerState>(
+                            valueListenable: _mobileScannerController,
+                            builder: (context, cameraState, child) {
+                              if (cameraState.isRunning) {
+                                return Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: IconButton.filledTonal(
+                                      onPressed: _startCamera,
+                                      tooltip: ScanStrings.restartCamera,
+                                      icon: const Icon(Icons.refresh),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return _buildCameraAction(
+                                message: cameraState.error == null
+                                    ? ScanStrings.cameraStartDescription
+                                    : ScanStrings.cameraUnavailable,
+                              );
+                            },
                           ),
                         ),
                     ],
