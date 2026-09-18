@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "5251f32d23d56ae4676f2a4d064c42e2ea6826e1",
+  "baseMainSha": "a276ac6b7b225f804120322fbe7fab2cde1a0419",
   "release": {
-    "version": "0.20.18+502",
-    "note": "Load web assets when browser reports a false offline state"
+    "version": "0.20.19+503",
+    "note": "Activate PWA recovery for clients stranded by false offline state"
   }
 }
