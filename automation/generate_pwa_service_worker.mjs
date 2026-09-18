@@ -56,6 +56,12 @@ const MAX_EXPLICIT_PRUNE_OPERATIONS = 100;
 const EMERGENCY_RECOVERY_CACHE_NAMES = new Set([
   'festapp-app-shell-0.19.85+418',
 ]);
+// This shell rejected uncached assets when navigator.onLine was false, even
+// when requests worked. A successful install proves the network is available;
+// activate immediately for those stranded clients so they can reload.
+const FALSE_OFFLINE_RECOVERY_CACHE_NAMES = new Set([
+  'festapp-app-shell-0.20.17+501',
+]);
 // These releases predate the web-client -> Flutter runtime coordinator. A new
 // worker must take control without reloading their existing page; otherwise
 // the old worker can keep serving the old web client that has no way to
@@ -96,7 +102,9 @@ async function precacheAtomically() {
 async function requiresEmergencyCutover() {
   try {
     const names = await withStorageTimeout(caches.keys());
-    return names.some((name) => EMERGENCY_RECOVERY_CACHE_NAMES.has(name));
+    return names.some((name) => EMERGENCY_RECOVERY_CACHE_NAMES.has(name) ||
+      (self.navigator.onLine === false &&
+        FALSE_OFFLINE_RECOVERY_CACHE_NAMES.has(name)));
   } catch (_) {
     return false;
   }
