@@ -23,6 +23,9 @@ Function, cron, callback, worker or operator can write to them.
 - Published cutover tooling: `main` / `603989d879781086960bd2db3b61a270eb62c7e7`
 - Runtime bundle: Supabase `self-hosted/v0.8.0`, PostgreSQL `17.6.1.136`, Terraform `1.16.1`
 - Last verified production state: all seven active iOS identities serve `0.19.95`; six authorized Android identities serve `0.20.1 (485)` at full rollout. `fstapp.fstapp` is excluded.
+- Current read-only reconciliation: 2026-09-23 public activation, source `a`/
+  `slunovrat` freeze, and R2 backup observations below. The older mobile version
+  inventory above is historical, not a current store readback.
 
 ## Completed actions
 
@@ -92,40 +95,53 @@ Function, cron, callback, worker or operator can write to them.
   with 100/100 table freeze guards and `slunovrat` with 66/66. Both had zero
   active cron jobs, zero deployed Edge Functions, zero observed active mutating
   sessions and zero publishable keys. Both rejected their old anon keys (`401`).
-  These observations establish substantial live cutover progress; they do not
-  replace the missing private promotion and final source receipts.
+  These observations establish substantial live cutover progress.
+- The 2026-09-10 production operator session records a passing seven-lane cloud
+  freeze, an authorized `full-freeze` final-marker gate, three successful
+  encrypted restore drills, and runtime promotion with canonical writes opened.
+  Its final handoff records successful login, email, order and contract canaries
+  and all 11 web activations. The private JSON receipts were not copied into
+  this public repository.
+- On 2026-09-23, all 11 live activation-document SHA-256 digests matched the
+  exact digest compiled into their current tenant branches. Four tenants with
+  configured occasion links returned exactly one matching occasion from the
+  canonical REST API. Cloudflare no longer has the pre-activation guard Worker
+  script. The R2 backup run `20260910T052041Z` remains present; the latest
+  observed daily run `20260922T024347Z` has a nonempty encrypted database,
+  globals, Storage and runtime artifact plus a manifest declaring 30-day
+  retention. No backup restore was attempted in this read-only reconciliation.
 
 ## Next action
 
-Reconcile the private production promotion, final import/restore, writer-lane,
-client-adoption and retention receipts against the now-live canonical web state.
-Confirm the disposition of source `default` through an authorized account or
-its final archive: the current Management API token receives `403`, the project
-is absent from its project list, and its former Supabase hostname does not
-resolve. Only then determine which closure conditions remain.
+Establish the current ownership and retention disposition of source `default`
+through its owning Supabase account or final archive. The current Management
+API token receives `403`, the project is absent from its project list, and its
+former hostname does not resolve. Do not infer deletion or a verified retained
+read-only state from those observations.
 
 ## Remaining order
 
-1. Read the private final import, isolated restore, promotion, freeze and
-   go/no-go receipts without replaying the production cutover.
-2. Establish source `default` ownership/disposition and verify its final
-   write-authority and backup evidence; independently confirm all server,
-   provider, mobile and manual writers use only the canonical runtime.
-3. Reconcile installed-client adoption, integration canaries and the
-   retention/deletion ledger. Remove or separately track temporary activation
-   paths and credentials only after their applicable gate and authority.
+1. Recover source `default` ownership/disposition and the private final
+   import, promotion and go/no-go JSON receipts where still retained.
+2. Reconcile installed-client adoption and current server/provider/manual
+   writers against the canonical runtime; check the retained source inventory.
+3. After the retention/adoption gate, remove old keys, temporary activation
+   artifacts and the legacy keepalive only with their required authority, or
+   record a separately approved long-lived compatibility boundary.
 4. Close this item only after every definition-of-complete line has evidence.
 
 ## Current blocker
 
-The 2026-09-10 pre-window blockers below are historical and no longer describe
-the public activation state. The public web lanes are canonical and two source
-projects pass current read-only freeze checks. This checkout has no final private
-promotion, import/restore, adoption or retention receipt. The current token
-cannot inspect source `default` (`403`); its old hostname has no DNS answer.
-The production host was not reachable through the recorded SSH route during this
-read-only audit. Do not infer a completed cleanup or sole write authority from
-web activation alone.
+The 2026-09-10 pre-window blockers below are historical. The operator session
+records a successful production cutover, the public web lanes are canonical,
+and two source projects pass current freeze checks. The original private JSON
+receipts are not in this checkout. The current token cannot inspect source
+`default` (`403`), which is absent from its project list; its former hostname
+has no DNS answer. The production host is unreachable through the recorded SSH
+route from this workstation. Installed-client adoption and the retention gate
+have not been independently closed. Legacy compiled endpoints/keys and the
+read-only keepalive remain by the runbook's transition contract; do not remove
+them or mark this item complete from public activation alone.
 
 ## Pre-cutover gap ledger (historical 2026-09-10)
 
@@ -215,4 +231,5 @@ against the private operational record.
 | 2026-09-08 | Complete recovery drill | encrypted backup `20260908T042903Z` plus isolated no-network restore | three-source inventory, 9,648 Auth users, 1,453 Storage objects and 792 scopes reproduced exactly; RPO 0, RTO 308 seconds; production target/clouds unmodified |
 | 2026-09-08 | Host/observability refresh | systemd, R2 monitor receipt, external probes, TLS and Hetzner firewall readback | backup/log timers and latest runs pass; Auth/REST/Storage/Realtime pass on both origins; TLS valid through 2026-11-13; ports 80/443 are Cloudflare-only |
 | 2026-09-08 | Temporary SSH closure | Hetzner firewall UI readback | temporary operator `/32` removed after host work; original restricted administrator source retained; firewall fully applied |
-| 2026-09-23 | Read-only live-state reconciliation | public manifests/Auth/Access and Management API source checks | 11/11 web lanes canonical; Auth health `200`; Access intercept `302`; `a` and `slunovrat` frozen as described above; `default` and private promotion/cleanup receipts unverified |
+| 2026-09-23 | Read-only live-state reconciliation | public manifests/Auth/Access and Management API source checks | 11/11 web lanes canonical; Auth health `200`; Access intercept `302`; `a` and `slunovrat` frozen as described above; `default` and private JSON/cleanup receipts unverified |
+| 2026-09-23 | Prior operator evidence and backup reconciliation | 2026-09-10 operator session output; Cloudflare R2 object metadata and manifests; live activation-document hashes | final freeze/restore/promotion outputs recovered; 11/11 compiled manifest hashes match; current R2 run `20260922T024347Z` contains all five nonempty expected files; `default` disposition and retention cleanup remain open |
