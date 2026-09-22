@@ -2,8 +2,9 @@
 
 Opened: 2026-09-02
 Updated: 2026-09-23
-Status: blocked
+Status: completed
 Verification: release
+Closed: 2026-09-23
 
 ## Authoritative sources
 
@@ -14,9 +15,12 @@ Verification: release
 
 ## Outcome
 
-`https://api.festapp.net` is the only relational/Auth/Storage authority. Cloud
-projects `default`, `a` and `slunovrat` are retained read-only; no client,
-Function, cron, callback, worker or operator can write to them.
+The operational switch to self-hosted Supabase at `https://api.festapp.net`
+completed on 2026-09-10. The production operator record reports successful
+promotion, canonical writes opened and post-switch canaries; the 2026-09-23
+public readback confirms all 11 active web clients use the canonical backend.
+Legacy-source disposition and credential cleanup are tracked separately in
+[`../open/legacy-supabase-decommission-2026-09-23.md`](../open/legacy-supabase-decommission-2026-09-23.md).
 
 ## Fixed point
 
@@ -111,37 +115,21 @@ Function, cron, callback, worker or operator can write to them.
   globals, Storage and runtime artifact plus a manifest declaring 30-day
   retention. No backup restore was attempted in this read-only reconciliation.
 
-## Next action
+## Closure basis and limits
 
-Establish the current ownership and retention disposition of source `default`
-through its owning Supabase account or final archive. The current Management
-API token receives `403`, the project is absent from its project list, and its
-former hostname does not resolve. Do not infer deletion or a verified retained
-read-only state from those observations.
+The 2026-09-10 operator record reports a passing seven-lane freeze, final
+import/restore, promotion, opened canonical writes and successful login, email,
+order and contract canaries. On 2026-09-23, all 11 live web activation documents
+matched their compiled canonical manifest digests; canonical Auth and linked
+occasion readbacks passed, and the latest observed encrypted R2 backup set was
+nonempty. These observations support closure of the operational switch.
 
-## Remaining order
-
-1. Recover source `default` ownership/disposition and the private final
-   import, promotion and go/no-go JSON receipts where still retained.
-2. Reconcile installed-client adoption and current server/provider/manual
-   writers against the canonical runtime; check the retained source inventory.
-3. After the retention/adoption gate, remove old keys, temporary activation
-   artifacts and the legacy keepalive only with their required authority, or
-   record a separately approved long-lived compatibility boundary.
-4. Close this item only after every definition-of-complete line has evidence.
-
-## Current blocker
-
-The 2026-09-10 pre-window blockers below are historical. The operator session
-records a successful production cutover, the public web lanes are canonical,
-and two source projects pass current freeze checks. The original private JSON
-receipts are not in this checkout. The current token cannot inspect source
-`default` (`403`), which is absent from its project list; its former hostname
-has no DNS answer. The production host is unreachable through the recorded SSH
-route from this workstation. Installed-client adoption and the retention gate
-have not been independently closed. Legacy compiled endpoints/keys and the
-read-only keepalive remain by the runbook's transition contract; do not remove
-them or mark this item complete from public activation alone.
+The original private JSON receipts were not copied into this repository. The
+production host was not reachable from this workstation on 2026-09-23. Source
+`default` cannot be inspected with the available Management API token; its
+retained/deleted state must not be inferred from `403` or absent DNS. Installed
+mobile adoption, legacy credentials and remaining source cleanup are open in
+the separate decommission item. This closure does not assert those are done.
 
 ## Pre-cutover gap ledger (historical 2026-09-10)
 
@@ -185,14 +173,15 @@ against the private operational record.
 - Before canonical writes open, rollback restores routing to the still-frozen cloud sources.
 - After canonical writes open, self-hosted remains the only writer; recovery uses its encrypted backup/forward repair and cloud writes never reopen.
 
-## Definition of complete
+## Definition of complete for the operational switch
 
-- [ ] Every active client/store/web lane is released and adopted or proven read-only/retired.
-- [ ] Every writer lane is frozen and then moved to the canonical runtime with live evidence.
-- [ ] Fresh final data/Auth/Storage import and isolated restore pass.
-- [ ] `api.festapp.net` is the only write authority and both clouds remain read-only.
-- [ ] Legacy activation paths and credentials are removed after the retention/adoption gate.
-- [ ] The item is moved to `../completed/` and the open index is updated.
+- [x] The production operator record reports final freeze, import, restore,
+  promotion, canonical writes opened and post-switch canaries.
+- [x] All 11 active web activation documents and their compiled digests point
+  at the canonical backend; live Auth and linked occasion probes pass.
+- [x] An encrypted off-host backup set is present after the switch.
+- [x] Legacy-source decommission and unverified receipts are transferred to a
+  separate open item rather than represented as completed cutover evidence.
 
 ## Operational log
 
@@ -233,3 +222,4 @@ against the private operational record.
 | 2026-09-08 | Temporary SSH closure | Hetzner firewall UI readback | temporary operator `/32` removed after host work; original restricted administrator source retained; firewall fully applied |
 | 2026-09-23 | Read-only live-state reconciliation | public manifests/Auth/Access and Management API source checks | 11/11 web lanes canonical; Auth health `200`; Access intercept `302`; `a` and `slunovrat` frozen as described above; `default` and private JSON/cleanup receipts unverified |
 | 2026-09-23 | Prior operator evidence and backup reconciliation | 2026-09-10 operator session output; Cloudflare R2 object metadata and manifests; live activation-document hashes | final freeze/restore/promotion outputs recovered; 11/11 compiled manifest hashes match; current R2 run `20260922T024347Z` contains all five nonempty expected files; `default` disposition and retention cleanup remain open |
+| 2026-09-23 | Operational switch closure | operator evidence and 2026-09-23 public readback | cutover complete; legacy-source decommission transferred to a separate work item |

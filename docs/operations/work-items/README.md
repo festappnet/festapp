@@ -35,7 +35,7 @@ proven when they are part of the outcome.
 
 | Work item | Status | Fixed point | Next action |
 |---|---|---|---|
-| [Canonical self-hosted Supabase cutover](open/canonical-self-hosted-cutover-2026-09-02.md) | blocked | 2026-09-23: cutover outputs recovered; 11/11 web lanes canonical; current R2 backup present | Establish source `default` ownership and retention disposition; then close adoption and cleanup gates. |
+| [Legacy Supabase source and credential decommission](open/legacy-supabase-decommission-2026-09-23.md) | blocked | Operational cutover completed; `a`/`slunovrat` freeze observed | Establish source `default` ownership/disposition; token returns `403`. |
 | [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Read back current store, client, Worker, R2 and traffic state before resuming. |
 | [Store publishing data cutover](open/store-publishing-data-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Reconcile current tenant refs and private manifest ownership; do not replay command `1027`. |
 | [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | August snapshot; revalidation required | Compare current migrations, `main`, tenant config and live schema before requesting rollout authority. |
