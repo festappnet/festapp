@@ -3,6 +3,19 @@
 Read `CLAUDE.md` and `docs/architecture/ai_context.md` before changing the
 repository.
 
+## Fast, small-context code navigation
+
+- Start with `rg --files`, scoped `rg -l`/`rg -n`, or `git diff --name-only` to
+  locate relevant files. Read only the needed lines; filter large JSON with
+  `jq` and keep successful command output brief.
+- Use targeted `fvm dart analyze <file>` when Dart diagnostics matter. Avoid
+  whole-file dumps, repository-wide searches and full validation output when a
+  narrower check answers the question.
+- Serena is optional in this repository. Use it when symbol relationships,
+  references, diagnostics or a structural refactor need semantic precision, or
+  when its overview avoids reading a large file. Do not initialize it solely
+  because it is available. If selected, read its initial instructions once.
+
 ## Tenant branch and Flutter build scope
 
 - By default, work on `main` and at most one currently selected tenant or
