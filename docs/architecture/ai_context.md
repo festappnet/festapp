@@ -2,19 +2,22 @@
 
 Festapp is an event management platform: Flutter (mobile+web) + Supabase (PostgreSQL, Edge Functions, Auth) + vanilla JS web client for public forms/eshop.
 
-## Critical: Resolve the Live Supabase Project from Project Config
+## Critical: Resolve the Live Supabase Target from Activation
 
-For live-data investigation, the canonical target is the `SUPABASE_URL` in
-`automation/project.conf`. Extract the project ref from that URL and verify that
-the same database contains the occasion named by `FORCE_OCCASION_LINK` before
-querying user or event data.
+Since the 2026-09-10 production activation, `https://api.festapp.net` is the
+canonical live Auth, REST, Storage and Function endpoint. For a tenant, verify
+`BACKEND_ACTIVATION_PHASE=canonical` in its `automation/project.conf` and read
+its current `WEB_LINK/backend-activation.json` before investigating live data.
+The document must match the tenant ID and canonical generation. Verify the
+configured `BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID` and, when present,
+`FORCE_OCCASION_LINK` against the same canonical database before querying user
+or event data. Stop and report a mismatch rather than searching another source.
 
-Do not select the live project from `FESTAPP_SUPABASE_PROJECT_REF` in
-`.env.local`: that value may point to a different Festapp development or legacy
-instance. `.env.local` credentials may be used to authenticate to the Supabase
-management interface, but they do not determine the target project. If the
-configured occasion is absent, stop and report a target mismatch instead of
-searching another project and treating an empty result as authoritative.
+`SUPABASE_URL` remains a compiled legacy fallback in transition mobile builds;
+it does not identify the live database. `FESTAPP_SUPABASE_PROJECT_REF` in
+`.env.local` also does not select the target; it may refer to a development or
+legacy project. Credentials from that file may authenticate the management
+interface only for a project they actually grant access to.
 
 ## Critical: Split Brain Logic
 
@@ -25,16 +28,14 @@ Business logic is split between **SQL functions** (`database/functions/`) and Da
 - **In Dart/JS**: UI, navigation, file operations (image upload/copy via `workers/image-worker/`)
 - **Hybrid**: Occasion duplication/deletion — SQL copies DB rows, Dart copies images from Storage
 
-## Critical: Pre-Cutover Database Parity
+## Critical: Post-Cutover Database Authority
 
-Until the self-hosted database cutover is complete, every database schema,
-function, or data-contract change must remain semantically identical in all
-three database targets: the self-hosted target, the canonical `default` cloud
-Supabase source, and cloud Supabase source `a`. Author the change as canonical
-repository SQL, apply and verify it on every target through the approved release
-workflow, and do not report the database change complete while any target is
-missing it. If one target cannot be updated, stop and record the parity blocker;
-never allow an implicit compatibility fork.
+Author database schema, function and data-contract changes as canonical
+repository SQL and apply them to the self-hosted production target through the
+approved release workflow. The former cloud sources are frozen retention or
+reconciliation targets, not migration targets. Do not reopen cloud writes or
+apply routine production migrations to them. A recovery or reconciliation
+operation against a former source requires its own explicit plan and authority.
 
 Key SQL directories: `eshop_orders/` (orders), `eshop_forms/` (form→order), `user_permissions/` (RBAC), `events/` (schedule), `inventory/` (capacity).
 

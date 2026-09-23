@@ -2,8 +2,11 @@
 
 The Cloudflare control-plane tunnel `festapp-supabase-admin`
 (`40e1a9a2-d1d5-4789-a691-20818d648b95`) was provisioned on 2026-09-10 with
-the exact loopback ingress and a `404` catch-all. It remains inactive and has no
-public DNS route until the Access and origin gates below pass.
+the exact loopback ingress and a `404` catch-all. On 2026-09-23, the public
+administrator hostname returned `302` to Cloudflare Access, so the earlier
+"inactive/no public DNS" observation is obsolete. This read-only check did not
+verify an authenticated Studio login or the origin configuration; retain the
+activation gates below as the required proof for those properties.
 
 ## Target state
 
