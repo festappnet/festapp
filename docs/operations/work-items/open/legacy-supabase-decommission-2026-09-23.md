@@ -83,3 +83,4 @@ source-deletion approval is recorded here.
 | Date | Action | Result |
 | --- | --- | --- |
 | 2026-09-23 | Split legacy cleanup from the completed operational switch | Outstanding source and key disposition stays visible without reopening the production cutover. |
+| 2026-09-23 | Read-only source `default` recheck | Current Management API credential still receives `403`; its ownership, retention and deletion state remain unknown. No legacy source or credential was changed. |
