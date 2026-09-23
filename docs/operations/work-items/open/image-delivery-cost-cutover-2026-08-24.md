@@ -75,6 +75,8 @@ Worker/R2 routing and traffic before defining a new release candidate. The
 recorded `0.19.91+441` target and command `1028` are superseded: the current
 `origin/prod/csmostrava2026` config declares `0.20.14+498` on 2026-09-23.
 Do not replay any old Windows command or deploy P3/P4 from this snapshot.
+The user has included all active tenants in the investigation while deferring
+new mobile app publication.
 
 ## Remaining order
 
@@ -99,9 +101,23 @@ Do not replay any old Windows command or deploy P3/P4 from this snapshot.
 
 The old control-channel observation (`health=200`, cursor `1024`, no result for
 commands `1025` through `1028`) is historical and has not been rechecked.
-Current store, client, Worker, R2 and traffic state is unverified. This work
-item targets CSM and shared image infrastructure; a separate exact rollout
-scope is required before changing other tenant branches or routes.
+Current store versions and installed-client adoption are unverified. This work
+item targets CSM and shared image infrastructure;
+the exact host/branch rollout set must be recorded before route mutations.
+
+On 2026-09-23, all 11 active tenant configurations and their public activation
+documents report `backend=canonical`, generation 1. Wrangler reports no custom
+R2 domain on `festapp-images`, `festapp-images-a` or `festapp-images-akhweb`;
+the Worker configuration still routes `img.festapp.net`,
+`a.img.festapp.net`, `akh.img.festapp.net` and `image-api.festapp.net` to the
+image Worker. The 2026-09-23 Cloudflare GraphQL
+`httpRequestsAdaptiveGroups` readback for the prior 30 days observed no
+`/upload`, `/delete` or `/presign/` requests on the three public image hosts.
+It did observe `/private/` requests returning `401` as recently as
+2026-09-22 (`a.img.festapp.net`: 31 observed requests that day). The adaptive
+dataset does not identify the caller and cannot prove exhaustive zero traffic.
+The remaining attempts keep the P3/P4 adoption gate open under the current
+plan. No new app, route or R2 domain was published in this investigation.
 
 ## Authority gates
 
@@ -146,3 +162,5 @@ scope is required before changing other tenant branches or routes.
 | 2026-08-24 | Post-build tenant candidate | `d90d42a3d5551cf3871734d6f36cc3967d9025ed` | verified and published on `cutover/csm-after-1027`; production ref unchanged |
 | 2026-08-25 | Canonical replacement build request | control-channel command `1028` | queued for current production source `4eb1d556c`, version `0.19.91+441`; no Play mutation authorized |
 | 2026-09-23 | Repository-only revalidation | `origin/prod/csmostrava2026` config declares `0.20.14+498` | old command and version are superseded; no store, Worker or traffic mutation |
+| 2026-09-23 | Active-tenant and R2 readback | 11/11 public activation documents canonical generation 1; three named R2 buckets have no custom domain; image Worker retains all four host routes | P3/P4 still pending; no app or infrastructure mutation |
+| 2026-09-23 | 30-day Cloudflare HTTP analytics | `httpRequestsAdaptiveGroups`, three public image hosts, exact legacy control paths | no observed upload/delete/presign; `/private/` 401 attempts through 2026-09-22, so zero-legacy gate remains open; no route mutation |
