@@ -1,7 +1,7 @@
 # Work item: roll out canonical EUR payment references
 
 Opened: 2026-08-24
-Updated: 2026-08-24
+Updated: 2026-09-23
 Status: blocked
 Verification: release
 
@@ -24,7 +24,10 @@ pairing is verified, and obsolete pairing paths are absent.
 
 - Implementation branch: `origin/feature/eur-payment-cutover`.
 - Source SHA: `a903ea681`.
-- Production migrations: not applied.
+- Production migration state: not rechecked after the 2026-09-10 self-hosted
+  cutover; the August statement above is not current production evidence.
+- The two ordered migration files and corresponding RF functions are present
+  in current `main`; the old feature-branch fixed point is historical.
 
 ## Completed actions
 
@@ -33,8 +36,12 @@ pairing is verified, and obsolete pairing paths are absent.
 
 ## Next action
 
-Authorize and run the plan's read-only production preflight against the project
-resolved from `automation/project.conf`; stop on any tenant mismatch.
+Resolve the selected tenant from canonical activation and run a read-only schema,
+migration-ledger, bank-account and active-consumer preflight against the
+self-hosted database. `SUPABASE_URL` in `automation/project.conf` is a compiled
+legacy fallback and must not select the live SQL target. Scope any later rollout
+to the selected tenant; the old plan's multi-tenant sequence needs a new fixed
+point before execution.
 
 ## Remaining order
 
@@ -46,13 +53,15 @@ resolved from `automation/project.conf`; stop on any tenant mismatch.
 
 ## Current blocker
 
-Production database inspection/migration and rollout require a separate release authorization.
+The live migration state, eligible EUR account and current consumers have not
+been rechecked since the self-hosted cutover. Production rollout remains a
+release operation after that preflight.
 
 ## Authority gates
 
 | Action | Required authority | State |
 |---|---|---|
-| Production preflight | Explicit live-project inspection authorization | pending |
+| Production preflight | Canonical activation identity and read-only access | pending |
 | Apply migrations | Exact project ref, migration IDs, pre-state and rollback confirmation | pending |
 | Client/backend rollout | Exact source/artifact/deployment identities | pending |
 
@@ -74,3 +83,4 @@ Production database inspection/migration and rollout require a separate release 
 | Date | Action | Receipt/evidence | Result |
 |---|---|---|---|
 | 2026-08-24 | Preserve implementation | `origin/feature/eur-payment-cutover` at `a903ea681` | no local-only implementation remains |
+| 2026-09-23 | Repository-only revalidation | current `main` contains both ordered RF migrations and RF functions | live migration state and EUR account remain unverified; old `SUPABASE_URL` target is not authoritative |
