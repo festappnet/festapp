@@ -35,6 +35,7 @@ proven when they are part of the outcome.
 
 | Work item | Status | Fixed point | Next action |
 |---|---|---|---|
+| [Admin password-reset runtime fix](open/admin-password-reset-runtime-2026-09-23.md) | blocked | `main` `3d9123037`, selected tenant `c1c17f803` | Restore production SQL access, apply migration and verify canary. |
 | [Legacy Supabase source and credential decommission](open/legacy-supabase-decommission-2026-09-23.md) | blocked | Operational cutover completed; `a`/`slunovrat` freeze observed | Establish source `default` ownership/disposition; token returns `403`. |
 | [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Read back current store, client, Worker, R2 and traffic state before resuming. |
 | [Store publishing data cutover](open/store-publishing-data-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Reconcile current tenant refs and private manifest ownership; do not replay command `1027`. |
