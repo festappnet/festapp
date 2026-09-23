@@ -47,10 +47,13 @@ run a controlled admin password-reset canary on an authorized test identity.
 ## Current blocker
 
 The recorded SSH route is unreachable from this workstation (TCP port 22 still
-unreachable on 2026-09-23). The protected administrator hostname redirects to
-Cloudflare Access, but no authenticated Studio session or approved migration
-execution channel is available here. An Access redirect alone does not prove
-database access or that the migration ran.
+unreachable on 2026-09-23). Terraform restricts that port to explicit
+administrator CIDRs; this Mac's current address is not verified on that
+allowlist, and the local Hetzner CLI has no authenticated context. The protected
+administrator hostname redirects to Cloudflare Access, but its named-user MFA
+login has not been completed in an agent-accessible session. No approved
+migration execution channel is available here. An Access redirect alone does
+not prove database access or that the migration ran.
 
 ## Authority gates
 
@@ -78,3 +81,4 @@ database access or that the migration ran.
 | --- | --- | --- |
 | 2026-09-23 | Reproduce and publish repository fix | Isolated PostgreSQL tests pass; production SQL access remains unavailable. |
 | 2026-09-23 | Recheck production access and Tickets activation | Canonical activation readback passed; SSH is unreachable, and the administrator hostname requires Cloudflare Access authentication. No production SQL or password change was attempted. |
+| 2026-09-23 | Diagnose access and backup | Another Hetzner host accepts outbound SSH from this Mac, while the Festapp host does not; the documented Festapp firewall restricts SSH by source CIDR. R2 manifest `20260922T024347Z` lists four nonempty encrypted artifacts with 30-day retention. Waiting for the named administrator's Cloudflare Access MFA login or restored approved SSH route. |

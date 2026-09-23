@@ -28,6 +28,9 @@ evidence-backed decision without affecting the live canonical backend.
 - Source `default` is absent from the available Management API project list;
   that token receives `403` and the former hostname has no DNS answer. Its
   ownership, deletion and retention state are unverified.
+- The same Management API account lists source `a` and `slunovrat` as
+  `ACTIVE_HEALTHY` on 2026-09-23; this is provider status, not proof of current
+  client traffic or permission to delete them.
 - A read-only legacy keepalive still exists. Older compiled mobile endpoints,
   keys and installed-client adoption have not been independently inventoried
   after the switch. The original private cutover JSON receipts are unavailable
@@ -84,3 +87,4 @@ source-deletion approval is recorded here.
 | --- | --- | --- |
 | 2026-09-23 | Split legacy cleanup from the completed operational switch | Outstanding source and key disposition stays visible without reopening the production cutover. |
 | 2026-09-23 | Read-only source `default` recheck | Current Management API credential still receives `403`; its ownership, retention and deletion state remain unknown. No legacy source or credential was changed. |
+| 2026-09-23 | Read-only visible-project inventory | Sources `a` and `slunovrat` remain `ACTIVE_HEALTHY` in the accessible Management API account; `default` is absent. No cleanup mutation was attempted. |
