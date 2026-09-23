@@ -24,6 +24,8 @@ remain denied for the unit-editor path.
 - Repository fix on `main`: `3d9123037`.
 - Selected tenant `prod/festapptickets`: merge `c1c17f803` contains the fix.
 - Production SQL deployment: unverified and not represented as complete.
+- Tickets live activation readback on 2026-09-23: `tenant=festapptickets`,
+  `backend=canonical`, `generation=1`.
 
 ## Completed actions
 
@@ -38,14 +40,17 @@ remain denied for the unit-editor path.
 
 ## Next action
 
-Restore the approved production-host database access path, apply the checked-in
+Restore an approved production database execution path, apply the checked-in
 migration to the live self-hosted database, then read back its definition and
 run a controlled admin password-reset canary on an authorized test identity.
 
 ## Current blocker
 
-The recorded SSH route is unreachable from this workstation. No alternative
-approved SQL execution channel has been verified.
+The recorded SSH route is unreachable from this workstation (TCP port 22 still
+unreachable on 2026-09-23). The protected administrator hostname redirects to
+Cloudflare Access, but no authenticated Studio session or approved migration
+execution channel is available here. An Access redirect alone does not prove
+database access or that the migration ran.
 
 ## Authority gates
 
@@ -72,3 +77,4 @@ approved SQL execution channel has been verified.
 | Date | Action | Result |
 | --- | --- | --- |
 | 2026-09-23 | Reproduce and publish repository fix | Isolated PostgreSQL tests pass; production SQL access remains unavailable. |
+| 2026-09-23 | Recheck production access and Tickets activation | Canonical activation readback passed; SSH is unreachable, and the administrator hostname requires Cloudflare Access authentication. No production SQL or password change was attempted. |
