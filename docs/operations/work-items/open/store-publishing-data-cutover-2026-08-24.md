@@ -1,7 +1,7 @@
 # Work item: complete store publishing data cutover
 
 Opened: 2026-08-24
-Updated: 2026-08-24
+Updated: 2026-09-23
 Status: blocked
 Verification: standard
 
@@ -59,28 +59,31 @@ one owner: the private configuration repository.
 
 ## Next action
 
-Wait for production Windows command `1027` to finish, verify its signed AAB
-receipt, then advance the CSM production branch to the already verified
-`cutover/csm-after-1027` candidate.
+Compare the current CSM production ref and its release consumers with the
+private manifest owner. The recorded candidate `cutover/csm-after-1027` and
+Windows command `1027` are superseded: the current CSM config declares
+`0.20.14+498`, while the candidate describes an August `0.19.x` state. Do not
+replay that command or advance the old candidate.
 
 ## Remaining order
 
-1. Accept only the exact matching `COMPLETE` result for Windows command `1027`
-   and verify its artifact receipt.
-2. Advance `prod/csmostrava2026` to `d90d42a3d` and run the production-branch
-   drift/readback gate.
+1. Compare the current CSM production branch and release consumers against
+   the private canonical manifest and check for remaining public duplicates.
+2. Remove any proven duplicate using a new current source fixed point and run
+   the production-branch drift/readback gate for CSM only.
 
 ## Current blocker
 
-The Windows workstation has not yet returned command `1027`; advancing the CSM
-branch first would invalidate the requested artifact provenance.
+The old Windows-command status has not been rechecked. Current CSM production
+already advanced beyond the recorded candidate; current private manifest and
+store state need fresh readback before any further release operation.
 
 ## Authority gates
 
 | Action | Required authority | State |
 |---|---|---|
 | Festapp commit | Explicit user confirmation after staging | granted 2026-08-24 |
-| Advance CSM production branch | Completed Windows command `1027` plus deterministic overlay gate | pending |
+| Advance CSM production branch | Fresh current-source fixed point plus deterministic overlay gate | pending |
 
 ## Rollback and recovery
 
@@ -107,3 +110,4 @@ branch first would invalidate the requested artifact provenance.
 | 2026-08-24 | Deterministic tenant regeneration | CSM `d90d42a3d`; Hvezda morska production `7febb2734` | drift/config/absence gates passed; HM temporary candidate removed after production cutover |
 | 2026-08-24 | Duplicate cleanup | removed remote `cleanup/store-assets-private-cutover`; former helper checkout moved to macOS Trash | obsolete public/helper paths no longer active |
 | 2026-08-24 | Hvezda morska production web | Netlify `6a8c2e9f69d58a00089f6c5a`; commit `7febb2734110add23b84c2d3063924af743db907`; bundle `0.19.84+387` | published; live `kralovna2026` form visibly renders the deposit description |
+| 2026-09-23 | Repository-only revalidation | `origin/prod/csmostrava2026` config declares `0.20.14+498` | old CSM candidate and command are superseded; no branch or store mutation |

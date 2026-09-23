@@ -1,7 +1,7 @@
 # Work item: rotate exposed runtime credentials
 
 Opened: 2026-08-24
-Updated: 2026-08-29
+Updated: 2026-09-23
 Status: blocked
 Verification: release
 
@@ -40,6 +40,9 @@ repository without restoring secret values to Festapp or Git.
   values into a no-direct-grants server-only table, and delivery consumers use
   a service-role-only RPC. An isolated migration test moved 10/10 rows and left
   zero legacy JSON keys without recording any value.
+- On 2026-09-23, the current Festapp tracked tree contains no `*.env` or
+  `supabase/*.env` files. This repository check does not prove provider-side
+  rotation or historical key revocation.
 
 ## Next action
 
@@ -98,3 +101,4 @@ Rotation requires authenticated external service access and destructive revocati
 | 2026-08-24 | Remove tracked runtime env files | private operational receipt | current tree clean; historical values still require rotation |
 | 2026-08-28 | Remove OneSignal credential from client/admin JSON boundary | isolated server-only migration and SQL/Edge tests | code path complete; provider rotation and revocation still pending |
 | 2026-08-29 | Verify Slunovrat OneSignal app and current server-only credential | app `4c5b7280-510f-4628-8fb8-b4bdd4fed1b2`; provider read HTTP 200; zero-recipient send HTTP 200 | Chrome/Safari origin remains `https://app.festivalslunovrat.cz`; no subscriber notified; no provider setting changed |
+| 2026-09-23 | Current tracked-file inventory | `git ls-files` for `*.env` and `supabase/*.env` returned none | Provider credentials and revocation receipts remain unverified. |

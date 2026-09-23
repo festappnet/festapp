@@ -39,7 +39,7 @@ proven when they are part of the outcome.
 |---|---|---|---|
 | [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Read back current store, client, Worker, R2 and traffic state before resuming. |
 | [Store publishing data cutover](open/store-publishing-data-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Reconcile current tenant refs and private manifest ownership; do not replay command `1027`. |
-| [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | August snapshot; revalidation required | Compare current migrations, `main`, tenant config and live schema before requesting rollout authority. |
+| [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | RF migrations/functions present in `main`; live state unverified | Check the selected tenant against canonical activation, migration ledger and EUR account before any rollout. |
 | [Exposed runtime credential rotation](open/runtime-credential-rotation-2026-08-24.md) | blocked | incident remains open; private fixed point omitted | Inventory current provider state without recording credentials or private locators. |
 
 ## Maintenance rules
