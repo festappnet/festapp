@@ -39,6 +39,12 @@ operation against a former source requires its own explicit plan and authority.
 
 Key SQL directories: `eshop_orders/` (orders), `eshop_forms/` (form→order), `user_permissions/` (RBAC), `events/` (schedule), `inventory/` (capacity).
 
+When production SSH is unavailable, use the reviewed
+`automation/hetzner-supabase/runtime/access-sql.py` fallback through the
+existing named-user Cloudflare Access login. It verifies the database identity
+and SQL file digest before execution. See
+[`admin-dashboard-security.md`](../operations/supabase-self-hosted/admin-dashboard-security.md#command-line-sql-fallback).
+
 ## Critical: Security Rules
 
 All functions MUST be created in the `public` schema. Never create functions in other schemas.

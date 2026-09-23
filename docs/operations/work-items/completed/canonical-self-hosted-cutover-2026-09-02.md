@@ -19,8 +19,8 @@ The operational switch to self-hosted Supabase at `https://api.festapp.net`
 completed on 2026-09-10. The production operator record reports successful
 promotion, canonical writes opened and post-switch canaries; the 2026-09-23
 public readback confirms all 11 active web clients use the canonical backend.
-Legacy-source disposition and credential cleanup are tracked separately in
-[`../open/legacy-supabase-decommission-2026-09-23.md`](../open/legacy-supabase-decommission-2026-09-23.md).
+The separate [legacy-source cleanup record](legacy-supabase-decommission-2026-09-23.md)
+was closed by user decision without deleting retained resources.
 
 ## Fixed point
 
