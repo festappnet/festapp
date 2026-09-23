@@ -26,6 +26,8 @@ next action, blockers, authority gates, rollback identifiers and closure proof.
 - `verification` — implementation is live and only an observation gate remains.
 - `completed` — every closure condition is proven; move the file to
   `completed/` and update this index in the same commit.
+- `closed by user decision` — the user withdraws the remaining work; move the
+  record to `completed/` while preserving unverified facts and retained resources.
 
 Do not mark an item complete because code was merged. Production state,
 installed-client adoption, legacy contraction and required observation must be
@@ -35,7 +37,6 @@ proven when they are part of the outcome.
 
 | Work item | Status | Fixed point | Next action |
 |---|---|---|---|
-| [Legacy Supabase source and credential decommission](open/legacy-supabase-decommission-2026-09-23.md) | blocked | Operational cutover completed; `a`/`slunovrat` freeze observed | Establish source `default` ownership/disposition; token returns `403`. |
 | [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Read back current store, client, Worker, R2 and traffic state before resuming. |
 | [Store publishing data cutover](open/store-publishing-data-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Reconcile current tenant refs and private manifest ownership; do not replay command `1027`. |
 | [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | August snapshot; revalidation required | Compare current migrations, `main`, tenant config and live schema before requesting rollout authority. |
@@ -52,4 +53,5 @@ proven when they are part of the outcome.
 4. Never use a work item to authorize its own production mutation. Record the
    required authority and the receipt after it is granted and executed.
 5. On closure, update authoritative evidence, move the item to `completed/`, and
-   remove its row from the open table in one commit.
+   remove its row from the open table in one commit. A withdrawn task must say
+   which cleanup remains undone; closure is not evidence of decommissioning.
