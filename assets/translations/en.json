@@ -1494,7 +1494,7 @@
     "safeSenderInfo": "This address is safe. It is a special robot that only reads payment e-mails and nothing else.",
     "forwardingEmailWarning": "Warning: Please keep this e-mail secret. Do not share it with anyone.",
     "creditorNameLabel": "Account holder name",
-    "creditorNameHelp": "Required for EUR EPC payment QR codes; use the legal beneficiary name."
+    "creditorNameHelp": "For EUR payments. If empty, the organization name is used."
   },
   "FeatureContract": {
     "title": "Contract",

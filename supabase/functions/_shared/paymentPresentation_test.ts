@@ -63,6 +63,18 @@ Deno.test("EUR presentation fails closed without creditor data", () => {
   );
 });
 
+Deno.test("EUR presentation keeps Czech names and removes EPC field separators", () => {
+  const payload = buildEpcSctPayload({
+    amount: 12.3,
+    currency_code: "EUR",
+    account_number: "DE71110220330123456789",
+    creditor_name: " Hvězda\nMořská ",
+    creditor_reference: "RF18539007547034",
+  });
+  assertEquals(payload.split("\n")[5], "Hvězda Mořská");
+  assertEquals(payload.split("\n")[9], "RF18539007547034");
+});
+
 Deno.test("RF validation rejects a changed checksum payload", () => {
   assertEquals(isValidCreditorReference("RF18539007547034"), true);
   assertEquals(isValidCreditorReference("RF18539007547035"), false);
