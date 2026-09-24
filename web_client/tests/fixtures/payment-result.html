@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulace dokončení objednávky | Festapp</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root { --primary-color: #1d6176; --dark-green: #28734c; --background-color: #f7faf9; --text-color: #18313b; --divider-color: #d9e4e1; font-family: Arial, sans-serif; color: var(--text-color); }
+    body { margin: 0; background: var(--background-color); }
+    .preview-controls { position: sticky; top: 0; z-index: 2; background: white; padding: 10px; text-align: center; border-bottom: 1px solid var(--divider-color); }
+    .preview-controls button { padding: 8px 16px; margin: 0 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="preview-controls">Ukázková objednávka bez odeslání dat
+    <button data-currency="CZK">CZK / VS</button><button data-currency="EUR">EUR / RF</button>
+  </div>
+  <main id="result"></main>
+  <script type="module">
+    import { OrderResult } from '/src/components/forms/order_result.js';
+    import { LocalizationService } from '/src/services/localization_service.js';
+    await LocalizationService.loadTranslations('cs');
+    const samples = {
+      CZK: { format: 'SPD', payload: 'SPD*1.0*ACC:CZ6508000000192000145399*AM:490.00*CC:CZK*X-VS:123456789', reference_kind: 'VS', reference: '123456789', account_number: 'CZ6508000000192000145399', account_number_human_readable: '19-2000145399/0800', amount: 490, currency_code: 'CZK' },
+      EUR: { format: 'EPC_SCT', payload: 'BCD\n002\n1\nSCT\n\nExample\nDE89370400440532013000\nEUR12.50\n\nRF18539007547034\n\n', reference_kind: 'RF', reference: 'RF18 5390 0754 7034', account_number: 'DE89370400440532013000', amount: 12.5, currency_code: 'EUR' },
+    };
+    const render = currency => OrderResult.render(document.querySelector('#result'), true,
+      { payment_qr: samples[currency], ticketOrder: { order: { data: { email: 'zakaznik@example.cz' } } } },
+      { communicationTone: 'formal', visibleFields: [{ type: 'ticket' }] }, () => {});
+    document.querySelectorAll('[data-currency]').forEach(button => button.addEventListener('click', () => render(button.dataset.currency)));
+    render('CZK');
+  </script>
+</body>
+</html>

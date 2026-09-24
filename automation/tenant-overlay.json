@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "b70a2854fe9478fe306686258b7e61267a408b99",
+  "baseMainSha": "0fb35df2b0127a9ab115fa5496008c6e700bcc2f",
   "release": {
     "version": "0.20.19+503",
     "note": "Recover PWA assets when browsers report a false offline state"

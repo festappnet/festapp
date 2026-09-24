@@ -6,7 +6,6 @@ web_client/public/netlify-retire-worker.js
 assets/icons/fstappicon.png
 assets/icons/fstapplogo.dark.svg
 assets/icons/fstapplogo.svg
-assets/translations/cs.json
 web/apple-touch-icon.png
 web/android-chrome-*.png
 web/favicon*.png
