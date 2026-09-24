@@ -56,6 +56,12 @@ const MAX_EXPLICIT_PRUNE_OPERATIONS = 100;
 const EMERGENCY_RECOVERY_CACHE_NAMES = new Set([
   'festapp-app-shell-0.19.85+418',
 ]);
+// This shell rejected uncached assets when navigator.onLine was false, even
+// when requests worked. A successful install proves the network is available;
+// activate immediately for those stranded clients so they can reload.
+const FALSE_OFFLINE_RECOVERY_CACHE_NAMES = new Set([
+  'festapp-app-shell-0.20.17+501',
+]);
 // These releases predate the web-client -> Flutter runtime coordinator. A new
 // worker must take control without reloading their existing page; otherwise
 // the old worker can keep serving the old web client that has no way to
@@ -96,7 +102,9 @@ async function precacheAtomically() {
 async function requiresEmergencyCutover() {
   try {
     const names = await withStorageTimeout(caches.keys());
-    return names.some((name) => EMERGENCY_RECOVERY_CACHE_NAMES.has(name));
+    return names.some((name) => EMERGENCY_RECOVERY_CACHE_NAMES.has(name) ||
+      (self.navigator.onLine === false &&
+        FALSE_OFFLINE_RECOVERY_CACHE_NAMES.has(name)));
   } catch (_) {
     return false;
   }
@@ -376,7 +384,6 @@ function isFlutterBootstrapExecutable(pathname) {
 }
 
 async function recoverCurrentExecutable(request, cache, allowNewerBootstrap) {
-  if (self.navigator.onLine === false) return Response.error();
   try {
     const versionResponse = await fetch('/festapp-version.json?sw-recovery=' +
       encodeURIComponent(BUILD_VERSION), { cache: 'no-store' });
@@ -421,7 +428,6 @@ self.addEventListener('fetch', (event) => {
       const cache = await caches.open(FONT_CACHE_NAME);
       const cached = await cache.match(request);
       if (cached) return cached;
-      if (self.navigator.onLine === false) return Response.error();
       const response = await fetch(request);
       if (response.ok || response.type === 'opaque') {
         await cache.put(request, response.clone());
@@ -454,12 +460,14 @@ self.addEventListener('fetch', (event) => {
 
   // This is the network truth used to discover a newer completed deployment.
   if (url.pathname === '/festapp-version.json') {
-    if (self.navigator.onLine === false) {
-      event.respondWith(caches.open(CACHE_NAME).then(async (cache) =>
-        (await cache.match('/festapp-version.json')) || Response.error()));
-      return;
-    }
-    event.respondWith(fetch(request));
+    event.respondWith((async () => {
+      try {
+        return await fetch(request);
+      } catch (_) {
+        const cache = await caches.open(CACHE_NAME);
+        return (await cache.match('/festapp-version.json')) || Response.error();
+      }
+    })());
     return;
   }
 
@@ -535,8 +543,12 @@ self.addEventListener('fetch', (event) => {
 
     // Fill the rest of this build's known shell lazily. This keeps updates
     // quick while preserving offline access for resources the user has used.
-    if (self.navigator.onLine === false) return Response.error();
-    const response = await fetch(request);
+    let response;
+    try {
+      response = await fetch(request);
+    } catch (_) {
+      return Response.error();
+    }
     if (response.ok && PRECACHE_PATHS.has(url.pathname)) {
       try {
         await cache.put(request, response.clone());
