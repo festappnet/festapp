@@ -38,6 +38,16 @@ for tenant in festapp festapptickets absolventskyvelehrad aksmcz cavfotofest csm
   cmp "$TMP_ROOT/$tenant.first.sha256" "$TMP_ROOT/$tenant.second.sha256"
 done
 
+font_root="$TMP_ROOT/csmostrava2026"
+font_config="$TMP_ROOT/csm-custom-font.conf"
+cp "$PROJECT_ROOT/automation/tests/fixtures/tenants/csmostrava2026.conf" "$font_config"
+printf '\nFONT_FILES="fonts/Fixture Custom.ttf"\n' >> "$font_config"
+printf 'tenant-font-fixture' > "$font_root/fonts/Fixture Custom.ttf"
+(cd "$font_root" && bash automation/apply_config.sh "$font_config" >/dev/null)
+grep -qF 'asset: fonts/Fixture Custom.ttf' "$font_root/pubspec.yaml"
+grep -qF "src: url('./assets/fonts/FixtureCustom.ttf')" "$font_root/web_client/src/theme_config.css"
+cmp "$font_root/fonts/Fixture Custom.ttf" "$font_root/web_client/src/assets/fonts/FixtureCustom.ttf"
+
 grep -qE 'fixturecsm' "$TMP_ROOT/csmostrava2026/lib/app_config.dart"
 grep -qF 'static webLink = "https://dev.example.invalid";' "$TMP_ROOT/festapp/web_client/src/app_config.js"
 grep -qF "backendActivationTenantId = 'festapp'" "$TMP_ROOT/festapp/lib/app_config.dart"
