@@ -3,7 +3,7 @@
   "tenantId": "festapptickets",
   "baseMainSha": "2a7a41aa92a658f3ab90f86d07670dced1abbaf7",
   "release": {
-    "version": "0.20.19+503",
-    "note": "Activate PWA recovery for clients stranded by false offline state"
+    "version": "0.20.25+509",
+    "note": "Deliver current main payment QR and shared communication tone"
   }
 }
