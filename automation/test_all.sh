@@ -280,6 +280,8 @@ if [ "$RUN_AUTOMATION" = true ]; then
         fi
     done
 
+    node "$SCRIPT_DIR/tests/font_config.test.mjs"
+
     echo "Running canonical PWA storage and recovery contract tests..."
     node --test \
       "$SCRIPT_DIR/tests/pwa_manifest.test.mjs" \
