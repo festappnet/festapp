@@ -1,6 +1,7 @@
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { presentPayment } from "../_shared/paymentPresentation.ts";
 import { resolveTicketOrderCommandIdentity } from "./commandIdentity.ts";
+import { useFakturoid } from "./fakturoid.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -114,6 +115,45 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
+    }
+
+    const order = ticketOrder.order;
+    if (Number(order?.payment_info?.amount) > 0) {
+      const { data: services, error: servicesError } = await supabaseAdmin.rpc(
+        "get_external_services",
+        { p_order_id: order.id },
+      );
+      if (servicesError) throw servicesError;
+      const fakturoid = services?.find((service: any) =>
+        service.type === "FAKTUROID"
+      );
+      if (fakturoid) {
+        const config = fakturoid.data;
+        const variableSymbol = await useFakturoid(
+          {
+            client_id: config.client_id,
+            client_secret: config.client_secret,
+            slug: config.slug,
+            subject_id: config.subject_id,
+            note: config.note,
+          },
+          order,
+          order.occasion.title,
+          commandId,
+          [],
+          "prepare",
+        );
+        if (String(order.payment_info.currency_code).toUpperCase() === "CZK") {
+          const { error: updateError } = await supabaseAdmin.rpc(
+            "update_payment_info_variable_symbol",
+            {
+              p_payment_info_id: order.payment_info.id,
+              p_variable_symbol: Number(variableSymbol),
+            },
+          );
+          if (updateError) throw updateError;
+        }
+      }
     }
 
     const paymentInfo = ticketOrder.order?.payment_info;
