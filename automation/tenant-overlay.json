@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "59305db9d5bdd2dcb93504a92fe3bf25c636c10d",
+  "baseMainSha": "d4769824a213413c461cf9be9ac2a68a3e014090",
   "release": {
-    "version": "0.20.22+506",
-    "note": "Initialize form communication tone from unit settings"
+    "version": "0.20.23+507",
+    "note": "Fix unit communication tone translation label"
   }
 }
