@@ -1,7 +1,7 @@
 # Work item: complete image delivery cost cutover
 
 Opened: 2026-08-24
-Updated: 2026-08-25
+Updated: 2026-09-23
 Status: blocked
 Verification: release
 
@@ -70,20 +70,19 @@ authoritative for architecture, security, migration and validation.
 
 ## Next action
 
-Power on or wake the production Windows workstation and let its existing
-user-scoped Festapp Control Channel monitor process through command `1028`. Accept only a
-matching `COMPLETE` or exact `BLOCKED` result. Do not enqueue a duplicate build.
-
-Expected result: a newly built signed `fstapp.jm2025` AAB with version code `441`,
-checkout SHA `4eb1d556c74d63233af5bdc971f02bcbea0c7314` containing image-cutover source
-`cbb3fa7425b7c33b2cab1bba4e2ffe8765f5b6cc`, matching upload certificate,
-AAB SHA-256, non-secret provenance manifest and explicit proof that no Play edit
-was created.
+Read back current CSM store versions, installed-client compatibility, image
+Worker/R2 routing and traffic before defining a new release candidate. The
+recorded `0.19.91+441` target and command `1028` are superseded: the current
+`origin/prod/csmostrava2026` config declares `0.20.14+498` on 2026-09-23.
+Do not replay any old Windows command or deploy P3/P4 from this snapshot.
+The user has included all active tenants in the investigation while deferring
+new mobile app publication.
 
 ## Remaining order
 
-1. Produce and independently inspect the Android AAB on Windows.
-2. Produce the iOS archive from the same canonical source through
+1. Establish the current release source and produce an independently inspected
+   Android AAB on Windows only if the refreshed plan still requires it.
+2. Produce the iOS archive from that same source through
    the established Apple release workflow; do not substitute build `439`.
 3. Present and obtain exact artifact-specific production authorizations for
    Google Play and App Store, release both clients, and read back store state.
@@ -100,11 +99,25 @@ was created.
 
 ## Current blocker
 
-The Mac control-channel master is healthy (`health=200`, unauthorized queue
-access returns `401`, pairing exists), but the Windows result cursor has not
-advanced beyond command `1024`. Commands `1025` through `1028` have no result.
-The required external action is only to wake the Windows workstation and allow
-its monitor to resume polling.
+The old control-channel observation (`health=200`, cursor `1024`, no result for
+commands `1025` through `1028`) is historical and has not been rechecked.
+Current store versions and installed-client adoption are unverified. This work
+item targets CSM and shared image infrastructure;
+the exact host/branch rollout set must be recorded before route mutations.
+
+On 2026-09-23, all 11 active tenant configurations and their public activation
+documents report `backend=canonical`, generation 1. Wrangler reports no custom
+R2 domain on `festapp-images`, `festapp-images-a` or `festapp-images-akhweb`;
+the Worker configuration still routes `img.festapp.net`,
+`a.img.festapp.net`, `akh.img.festapp.net` and `image-api.festapp.net` to the
+image Worker. The 2026-09-23 Cloudflare GraphQL
+`httpRequestsAdaptiveGroups` readback for the prior 30 days observed no
+`/upload`, `/delete` or `/presign/` requests on the three public image hosts.
+It did observe `/private/` requests returning `401` as recently as
+2026-09-22 (`a.img.festapp.net`: 31 observed requests that day). The adaptive
+dataset does not identify the caller and cannot prove exhaustive zero traffic.
+The remaining attempts keep the P3/P4 adoption gate open under the current
+plan. No new app, route or R2 domain was published in this investigation.
 
 ## Authority gates
 
@@ -127,7 +140,8 @@ its monitor to resume polling.
 
 ## Definition of complete
 
-- [ ] Android `0.19.91+441` is released and its exact artifact is verified.
+- [ ] The current Android release carrying the image contract and its exact
+  artifact are verified.
 - [ ] iOS is released from the same canonical image-cutover source and its exact artifact is verified.
 - [ ] The web client with the canonical image contract is deployed and verified.
 - [ ] The adoption/minimum-version gate excludes every legacy control client.
@@ -147,3 +161,6 @@ its monitor to resume polling.
 | 2026-08-24 | Canonical replacement build request | control-channel command `1027` | queued for branch tip `4429055d1`; supersedes `1026` |
 | 2026-08-24 | Post-build tenant candidate | `d90d42a3d5551cf3871734d6f36cc3967d9025ed` | verified and published on `cutover/csm-after-1027`; production ref unchanged |
 | 2026-08-25 | Canonical replacement build request | control-channel command `1028` | queued for current production source `4eb1d556c`, version `0.19.91+441`; no Play mutation authorized |
+| 2026-09-23 | Repository-only revalidation | `origin/prod/csmostrava2026` config declares `0.20.14+498` | old command and version are superseded; no store, Worker or traffic mutation |
+| 2026-09-23 | Active-tenant and R2 readback | 11/11 public activation documents canonical generation 1; three named R2 buckets have no custom domain; image Worker retains all four host routes | P3/P4 still pending; no app or infrastructure mutation |
+| 2026-09-23 | 30-day Cloudflare HTTP analytics | `httpRequestsAdaptiveGroups`, three public image hosts, exact legacy control paths | no observed upload/delete/presign; `/private/` 401 attempts through 2026-09-22, so zero-legacy gate remains open; no route mutation |
