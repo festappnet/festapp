@@ -1146,6 +1146,9 @@
     "resetPassword": "Obnovit heslo",
     "scanCode": "Kód ke skenování",
     "signedInCompanions": "Přihlášení společníci",
+    "startCamera": "Spustit kameru",
+    "cameraStartDescription": "Pro spuštění skeneru povolte kameru tlačítkem níže.",
+    "cameraUnavailable": "Kameru se nepodařilo spustit. Zkontrolujte oprávnění kamery a zkuste to znovu.",
     "ticketType": "Typ vstupenky",
     "backgroundImageHint": "(1600x900 px)",
     "uploadImageSuccess": "Soubor byl úspěšně nahrán."
