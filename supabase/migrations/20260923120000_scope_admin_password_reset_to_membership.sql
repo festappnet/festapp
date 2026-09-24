@@ -1,4 +1,6 @@
-CREATE OR REPLACE FUNCTION reset_user_password(p_user_id uuid, p_password text)
+-- Align password reset permissions with the users administration roles and
+-- merged cross-organization memberships.
+CREATE OR REPLACE FUNCTION public.reset_user_password(p_user_id uuid, p_password text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER

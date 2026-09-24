@@ -1,20 +1,13 @@
 @font-face {
     font-family: 'Cerebri-Sans';
-    src: url('./assets/fonts/FuturaPTBook.ttf') format('truetype');
+    src: url('./assets/fonts/Cerebri-Sans-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Cerebri-Sans';
-    src: url('./assets/fonts/FuturaPTMedium.ttf') format('truetype');
-    font-weight: 500;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Cerebri-Sans';
-    src: url('./assets/fonts/GillSansBold.otf') format('opentype');
+    src: url('./assets/fonts/Cerebri-Sans-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
 }

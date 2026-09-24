@@ -2,8 +2,11 @@
 
 The Cloudflare control-plane tunnel `festapp-supabase-admin`
 (`40e1a9a2-d1d5-4789-a691-20818d648b95`) was provisioned on 2026-09-10 with
-the exact loopback ingress and a `404` catch-all. It remains inactive and has no
-public DNS route until the Access and origin gates below pass.
+the exact loopback ingress and a `404` catch-all. On 2026-09-23, the public
+administrator hostname returned `302` to Cloudflare Access, so the earlier
+"inactive/no public DNS" observation is obsolete. This read-only check did not
+verify an authenticated Studio login or the origin configuration; retain the
+activation gates below as the required proof for those properties.
 
 ## Target state
 
@@ -27,6 +30,40 @@ public DNS route until the Access and origin gates below pass.
   audit logs remain encrypted off-host for 30 days. Studio still uses one
   database role, so durable SQL changes belong in reviewed repository
   migrations; dashboard SQL is an emergency/diagnostic path.
+
+## Command-line SQL fallback
+
+`automation/hetzner-supabase/runtime/access-sql.py` uses the same protected
+Studio database API without keeping the SQL editor open. It adds no public
+endpoint or service credential. An approved administrator first completes the
+normal named-user Cloudflare Access login and MFA with `cloudflared access
+login https://supabase.festapp.net`; subsequent commands pipe its locally
+cached session token through stdin. The helper never prints or saves the token.
+Access sessions expire normally.
+
+```bash
+FESTAPP_EXPECTED_DB=festapp_rehearsal_20260909220601
+cloudflared access token https://supabase.festapp.net |
+  python3 automation/hetzner-supabase/runtime/access-sql.py \
+    --token-stdin --expect-database "$FESTAPP_EXPECTED_DB" --check
+
+FESTAPP_MIGRATION=supabase/migrations/20260923120000_scope_admin_password_reset_to_membership.sql
+FESTAPP_SQL_SHA=$(shasum -a 256 "$FESTAPP_MIGRATION" | awk '{print $1}')
+cloudflared access token https://supabase.festapp.net |
+  python3 automation/hetzner-supabase/runtime/access-sql.py \
+    --token-stdin --expect-database "$FESTAPP_EXPECTED_DB" \
+    --migration-file "$FESTAPP_MIGRATION" --sha256 "$FESTAPP_SQL_SHA"
+```
+
+The helper checks the exact database name and file hash before execution. For a
+migration it requires the canonical repository path, rejects an existing
+version, writes the migration and ledger row in one transaction, then verifies
+the ledger. Use `--sql-file` with an exact SHA-256 for reviewed diagnostic SQL.
+Replace the example database and migration path with the current reviewed
+values; the pictured password migration is already applied and will be
+rejected on a repeat attempt. The Studio API is an internal interface, so
+recheck this path after a Studio upgrade; restore approved direct database
+access if it changes.
 
 ## Ordered activation
 

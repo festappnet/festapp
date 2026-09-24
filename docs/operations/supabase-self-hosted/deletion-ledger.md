@@ -13,7 +13,7 @@
 | Cloud refs/Management API paths | self-hosted deploy proven | repo/config scan | retained |
 | Old JWT/API/service keys | adoption and rotation complete | revoke test | retained |
 | `supabase-legacy-keepalive` Worker and anon-key secret | approved cloud retention complete | Worker/cron/secret inventory and zero required keepalive traffic | retained boundary; read-only GET only |
-| `self-hosted-preactivation-guard` Worker route | canonical Function bundle promoted and internally verified | exact route inventory plus external hardened Function canaries | temporary fail-closed boundary |
+| `self-hosted-preactivation-guard` Worker route | canonical Function bundle promoted and internally verified | exact route inventory plus external hardened Function canaries | Worker script absent from the configured Cloudflare account on 2026-09-23; route inventory still unverified |
 
 Cloud project deletion is never implied by another gate. It requires explicit
 destructive approval after retention.
