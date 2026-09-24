@@ -393,6 +393,15 @@ BEGIN
             WHERE b.id = bank_account_id;
         END IF;
 
+        -- A configured account holder takes precedence. Otherwise use the
+        -- occasion's organization name for EPC payment instructions.
+        IF upper(trim(first_currency_code)) = 'EUR' AND NULLIF(trim(creditor_name), '') IS NULL THEN
+          SELECT left(trim(regexp_replace(title, '[[:space:][:cntrl:]]+', ' ', 'g')), 70)
+          INTO creditor_name
+          FROM public.organizations
+          WHERE id = organization_id;
+        END IF;
+
         -- If user chose to pay full amount, skip deposit
         IF input_data->>'payment_type' = 'full' THEN
             v_total_deposit := 0;

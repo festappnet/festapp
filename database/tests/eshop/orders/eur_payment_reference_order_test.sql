@@ -17,7 +17,7 @@ DECLARE
   v_creditor_reference text;
 BEGIN
   INSERT INTO public.organizations (title)
-  VALUES ('EUR RF test organization') RETURNING id INTO v_org_id;
+  VALUES (E'Hvězda\nMořská') RETURNING id INTO v_org_id;
   INSERT INTO public.units (title, organization)
   VALUES ('EUR RF test unit', v_org_id) RETURNING id INTO v_unit_id;
 
@@ -26,7 +26,7 @@ BEGIN
   INSERT INTO eshop.bank_accounts (
     title, account_number, creditor_name, supported_currencies, secret, type
   ) VALUES (
-    'EUR RF test bank', 'DE71110220330123456789', 'Festapp Test',
+    'EUR RF test bank', 'DE71110220330123456789', NULL,
     ARRAY['EUR'], v_secret_id, 'FIO'
   ) RETURNING id INTO v_bank_account_id;
   INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority)
@@ -63,6 +63,12 @@ BEGIN
   )) INTO v_result;
 
   PERFORM assert_eq((v_result->>'code')::integer, 200, 'EUR order must succeed');
+  PERFORM assert_eq(v_result->'order'->'payment_info'->>'creditor_name',
+    'Hvězda Mořská', 'missing account payee must fall back to clean organization title');
+  PERFORM assert_eq(
+    public.get_order_details_for_email((v_result->'order'->>'id')::bigint)
+      ->'data'->'bank_account'->>'creditor_name',
+    'Hvězda Mořská', 'later payment emails must use the same EUR beneficiary');
   v_payment_info_id := (v_result->'order'->'payment_info'->>'id')::bigint;
   SELECT variable_symbol, creditor_reference
   INTO v_variable_symbol, v_creditor_reference
