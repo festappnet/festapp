@@ -1,5 +1,7 @@
-import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
-import { buildFakturoidInvoicePayload } from "./fakturoidPayload.ts";
+import {
+  assertFakturoidVariableSymbol,
+  buildFakturoidInvoicePayload,
+} from "./fakturoidPayload.ts";
 
 export interface FakturoidConfig {
   client_id: string;
@@ -46,8 +48,6 @@ export async function useFakturoid(
 
   // 2) Create Proforma with minimal payload
   const d = order.data;
-  const isEur =
-    String(order.payment_info.currency_code).toUpperCase() === "EUR";
   const originalVariableSymbol = String(order.payment_info.variable_symbol);
   const createBody = buildFakturoidInvoicePayload(
     order,
@@ -80,16 +80,7 @@ export async function useFakturoid(
     result = await invRes.json();
   }
 
-  // 3) Update our payment_info.variable_symbol
-  if (!isEur && result.variable_symbol) {
-    await supabaseAdmin.rpc("update_payment_info_variable_symbol", {
-      p_payment_info_id: order.payment_info.id,
-      p_variable_symbol: result.variable_symbol,
-    });
-    order.payment_info.variable_symbol = result.variable_symbol;
-  }
-
-  // 4) Patch in all the client_* fields via a second API call
+  // 3) Keep the invoice aligned with the VS already shown to the customer.
   const patchBody: any = {
     client_name: `${d.name || ""} ${d.surname || ""}`.trim(),
     client_street: d.street,
@@ -98,10 +89,8 @@ export async function useFakturoid(
     client_country: d.country,
     client_has_delivery_address: false,
     client_phone: d.phone,
+    variable_symbol: originalVariableSymbol,
   };
-  if (isEur) {
-    patchBody.variable_symbol = originalVariableSymbol;
-  }
 
   const patchRes = await fetch(
     `https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${result.id}.json`,
@@ -111,9 +100,13 @@ export async function useFakturoid(
       body: JSON.stringify(patchBody),
     },
   );
+  if (!patchRes.ok) {
+    throw new Error(`Fakturoid patch failed ${patchRes.status}`);
+  }
   const patched = await patchRes.json();
+  assertFakturoidVariableSymbol(patched, originalVariableSymbol);
 
-  // 5) Fetch PDF with up to one retry on 204
+  // 4) Fetch PDF with up to one retry on 204
   if (patched.pdf_url) {
     await new Promise((r) => setTimeout(r, 1000));
     let pdfRes = await fetch(patched.pdf_url, {
