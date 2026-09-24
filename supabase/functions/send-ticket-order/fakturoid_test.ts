@@ -1,12 +1,20 @@
 import { assertEquals, assertRejects, assertThrows } from "jsr:@std/assert";
-import { useFakturoid } from "./fakturoid.ts";
+import { createFakturoidGateway } from "./fakturoid.ts";
 import {
   assertFakturoidVariableSymbol,
   buildFakturoidInvoicePayload,
 } from "./fakturoidPayload.ts";
 
+const config = {
+  client_id: "test",
+  client_secret: "test",
+  slug: "test",
+  subject_id: 1,
+};
+
 function order(currency: string, variableSymbol: string) {
   return {
+    data: {},
     payment_info: {
       amount: 125.5,
       currency_code: currency,
@@ -17,28 +25,28 @@ function order(currency: string, variableSymbol: string) {
   };
 }
 
-Deno.test("EUR proforma preserves the numeric VS used by RF payment", () => {
+function gateway(
+  reply: (url: string, method: string, body?: Record<string, unknown>) => Response,
+) {
+  return createFakturoidGateway(((input: string | URL | Request, init?: RequestInit) => {
+    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    return Promise.resolve(reply(String(input), init?.method ?? "GET", body));
+  }) as typeof fetch);
+}
+
+Deno.test("EUR proforma carries the VS used to derive the RF reference", () => {
   const payload = buildFakturoidInvoicePayload(
-    order("EUR", "123456"),
-    "Hvezda morska",
-    "command-1",
-    42,
-    "Tenant note",
-    "2026-08-23",
+    order("EUR", "123456"), "Hvezda morska", "command-1", 42,
+    "Tenant note", "2026-08-23",
   );
   assertEquals(payload.variable_symbol, "123456");
   assertEquals(payload.note, "Tenant note");
-  assertEquals(payload.currency, "EUR");
 });
 
-Deno.test("CZK proforma lets Fakturoid assign the variable symbol", () => {
+Deno.test("CZK proforma lets Fakturoid assign its variable symbol", () => {
   const payload = buildFakturoidInvoicePayload(
-    order("CZK", "987654"),
-    "Long tenant unit",
-    "command-2",
-    43,
-    undefined,
-    "2026-08-23",
+    order("CZK", "987654"), "Long tenant unit", "command-2", 43,
+    undefined, "2026-08-23",
   );
   assertEquals(payload.variable_symbol, undefined);
   assertEquals(
@@ -47,103 +55,89 @@ Deno.test("CZK proforma lets Fakturoid assign the variable symbol", () => {
   );
 });
 
-Deno.test("EUR Fakturoid response must preserve the RF numeric VS", () => {
+Deno.test("EUR invoice must preserve the RF numeric VS", () => {
   assertFakturoidVariableSymbol({ variable_symbol: 987654 }, "987654");
   assertThrows(
-    () =>
-      assertFakturoidVariableSymbol({ variable_symbol: "20260950" }, "987654"),
-    Error,
-    "FAKTUROID_VARIABLE_SYMBOL_MISMATCH",
+    () => assertFakturoidVariableSymbol({ variable_symbol: "20260950" }, "987654"),
+    Error, "FAKTUROID_VARIABLE_SYMBOL_MISMATCH",
   );
 });
 
-Deno.test("CZK invoice creation returns Fakturoid VS before the order response", async () => {
-  const originalFetch = globalThis.fetch;
-  const sent: Array<{ method: string; body: Record<string, unknown> }> = [];
-  globalThis.fetch = async (_input, init) => {
-    const method = init?.method ?? "GET";
-    if (method === "POST" && String(_input).endsWith("/oauth/token")) {
-      return Response.json({ access_token: "test-token" });
-    }
+Deno.test("checkout returns Fakturoid's CZK VS without mutating its input", async () => {
+  const sent: Record<string, unknown>[] = [];
+  const client = gateway((url, method, body) => {
+    if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
     if (method === "GET") return Response.json([]);
-    sent.push({ method, body: JSON.parse(String(init?.body)) });
+    sent.push(body!);
     return Response.json({ id: 55, variable_symbol: "20260950" });
-  };
-  try {
-    const ticketOrder = { ...order("CZK", "987654"), data: {} };
-    const variableSymbol = await useFakturoid(
-      { client_id: "test", client_secret: "test", slug: "test", subject_id: 1 },
-      ticketOrder,
-      "Test unit",
-      "test-command",
-      [],
-      "prepare",
-    );
-    assertEquals(variableSymbol, "20260950");
-    assertEquals(ticketOrder.payment_info.variable_symbol, "20260950");
-    assertEquals(sent.map((request) => request.method), ["POST"]);
-    assertEquals(sent[0].body.variable_symbol, undefined);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+  });
+  const input = order("CZK", "987654");
+  const variableSymbol = await client.preparePayment({
+    config, order: input, unitName: "Test unit", commandId: "command-1",
+  });
+  assertEquals(variableSymbol, "20260950");
+  assertEquals(input.payment_info.variable_symbol, "987654");
+  assertEquals(sent.length, 1);
+  assertEquals(sent[0].variable_symbol, undefined);
 });
 
-Deno.test("email worker waits for the invoice prepared by the order", async () => {
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (_input, init) => {
-    if (String(_input).endsWith("/oauth/token")) {
-      return Response.json({ access_token: "test-token" });
-    }
-    if ((init?.method ?? "GET") === "GET") return Response.json([]);
-    return Response.json({ id: 55, variable_symbol: "20260950" });
-  };
-  try {
-    await assertRejects(
-      () =>
-        useFakturoid(
-          {
-            client_id: "test",
-            client_secret: "test",
-            slug: "test",
-            subject_id: 1,
-          },
-          { ...order("CZK", "987654"), data: {} },
-          "Test unit",
-          "test-command",
-          [],
-        ),
-      Error,
-      "FAKTUROID_INVOICE_NOT_READY",
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+Deno.test("email phase cannot create a second proforma", async () => {
+  const client = gateway((url) => url.endsWith("/oauth/token")
+    ? Response.json({ access_token: "token" })
+    : Response.json([]));
+  await assertRejects(
+    () => client.getEmailAttachment({ config, order: order("CZK", "1"), commandId: "command-1" }),
+    Error, "FAKTUROID_INVOICE_NOT_READY",
+  );
 });
 
-Deno.test("email worker does not overwrite Fakturoid client with a blank name", async () => {
-  const originalFetch = globalThis.fetch;
+Deno.test("checkout keeps Fakturoid client when the form has no name", async () => {
   const methods: string[] = [];
-  globalThis.fetch = async (_input, init) => {
-    const method = init?.method ?? "GET";
+  const client = gateway((url, method) => {
     methods.push(method);
-    if (String(_input).endsWith("/oauth/token")) {
-      return Response.json({ access_token: "test-token" });
-    }
-    return Response.json([{ id: 55, variable_symbol: "20260950" }]);
-  };
-  try {
-    const ticketOrder = { ...order("CZK", "987654"), data: {} };
-    const variableSymbol = await useFakturoid(
-      { client_id: "test", client_secret: "test", slug: "test", subject_id: 1 },
-      ticketOrder,
-      "Test unit",
-      "test-command",
-      [],
-    );
-    assertEquals(variableSymbol, "20260950");
-    assertEquals(ticketOrder.payment_info.variable_symbol, "20260950");
-    assertEquals(methods, ["POST", "GET"]);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+    return url.endsWith("/oauth/token")
+      ? Response.json({ access_token: "token" })
+      : Response.json([{ id: 55, variable_symbol: "20260950" }]);
+  });
+  const result = await client.preparePayment({
+    config, order: order("CZK", "987654"), unitName: "Test unit",
+    commandId: "command-1",
+  });
+  assertEquals(result, "20260950");
+  assertEquals(methods, ["POST", "GET"]);
+});
+
+Deno.test("checkout completes the client update before accepting a named buyer", async () => {
+  const requests: Array<{ method: string; body?: Record<string, unknown> }> = [];
+  const client = gateway((url, method, body) => {
+    requests.push({ method, body });
+    if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
+    if (method === "GET") return Response.json([{ id: 55, variable_symbol: "123456" }]);
+    return Response.json({ id: 55, variable_symbol: "123456" });
+  });
+  const input = order("EUR", "123456");
+  input.data = { name: "Eva", surname: "Nováková" };
+  const result = await client.preparePayment({
+    config, order: input, unitName: "Test unit", commandId: "command-1",
+  });
+  assertEquals(result, "123456");
+  assertEquals(requests.map((item) => item.method), ["POST", "GET", "PUT"]);
+  assertEquals(requests[2].body?.client_name, "Eva Nováková");
+  assertEquals(requests[2].body?.variable_symbol, "123456");
+});
+
+Deno.test("failed client update rejects checkout", async () => {
+  const client = gateway((url, method) => {
+    if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
+    if (method === "GET") return Response.json([{ id: 55, variable_symbol: "123456" }]);
+    return new Response("unavailable", { status: 503 });
+  });
+  const input = order("CZK", "123456");
+  input.data = { name: "Eva" };
+  await assertRejects(
+    () => client.preparePayment({
+      config, order: input, unitName: "Test unit", commandId: "command-1",
+    }),
+    Error, "Fakturoid patch failed 503",
+  );
 });

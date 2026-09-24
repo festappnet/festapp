@@ -1,7 +1,7 @@
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { presentPayment } from "../_shared/paymentPresentation.ts";
 import { resolveTicketOrderCommandIdentity } from "./commandIdentity.ts";
-import { useFakturoid } from "./fakturoid.ts";
+import { fakturoidGateway } from "./fakturoid.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,30 +129,59 @@ Deno.serve(async (req) => {
       );
       if (fakturoid) {
         const config = fakturoid.data;
-        const variableSymbol = await useFakturoid(
-          {
-            client_id: config.client_id,
-            client_secret: config.client_secret,
-            slug: config.slug,
-            subject_id: config.subject_id,
-            note: config.note,
-          },
-          order,
-          order.occasion.title,
-          commandId,
-          [],
-          "prepare",
+        const { data: orderState, error: stateError } = await supabaseAdmin.rpc(
+          "get_fakturoid_ticket_order_state_v1",
+          { p_order_id: order.id },
         );
-        if (String(order.payment_info.currency_code).toUpperCase() === "CZK") {
-          const { error: updateError } = await supabaseAdmin.rpc(
-            "update_payment_info_variable_symbol",
-            {
-              p_payment_info_id: order.payment_info.id,
-              p_variable_symbol: Number(variableSymbol),
-            },
-          );
-          if (updateError) throw updateError;
+        if (stateError) throw stateError;
+        if (orderState === "storno") {
+          return new Response(JSON.stringify({
+            code: 503,
+            message: "Fakturoid could not complete this order",
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
         }
+        let variableSymbol = String(order.payment_info.variable_symbol);
+        if (orderState === "preparing_payment") {
+          try {
+            variableSymbol = await fakturoidGateway.preparePayment({
+              config: {
+                client_id: config.client_id,
+                client_secret: config.client_secret,
+                slug: config.slug,
+                subject_id: config.subject_id,
+                note: config.note,
+              },
+              order,
+              unitName: order.occasion.title,
+              commandId,
+            });
+          } catch (error) {
+            console.error("Fakturoid order preparation failed:", error);
+            const { error: abortError } = await supabaseAdmin.rpc(
+              "abort_fakturoid_ticket_order_v1",
+              { p_order_id: order.id, p_command_id: commandId },
+            );
+            if (abortError) throw abortError;
+            return new Response(JSON.stringify({
+              code: 503,
+              message: "Fakturoid could not complete this order",
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
+        }
+        const { data: confirmedSymbol, error: completionError } =
+          await supabaseAdmin.rpc("complete_fakturoid_ticket_order_v1", {
+            p_order_id: order.id,
+            p_command_id: commandId,
+            p_variable_symbol: Number(variableSymbol),
+          });
+        if (completionError) throw completionError;
+        order.payment_info.variable_symbol = String(confirmedSymbol);
       }
     }
 
