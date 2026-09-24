@@ -1,9 +1,10 @@
 # Work item: complete canonical self-hosted Supabase cutover
 
 Opened: 2026-09-02
-Updated: 2026-09-10
-Status: in-progress
+Updated: 2026-09-23
+Status: completed
 Verification: release
+Closed: 2026-09-23
 
 ## Authoritative sources
 
@@ -14,15 +15,21 @@ Verification: release
 
 ## Outcome
 
-`https://api.festapp.net` is the only relational/Auth/Storage authority. Cloud
-projects `default`, `a` and `slunovrat` are retained read-only; no client,
-Function, cron, callback, worker or operator can write to them.
+The operational switch to self-hosted Supabase at `https://api.festapp.net`
+completed on 2026-09-10. The production operator record reports successful
+promotion, canonical writes opened and post-switch canaries; the 2026-09-23
+public readback confirms all 11 active web clients use the canonical backend.
+The separate [legacy-source cleanup record](legacy-supabase-decommission-2026-09-23.md)
+was closed by user decision without deleting retained resources.
 
 ## Fixed point
 
 - Published cutover tooling: `main` / `603989d879781086960bd2db3b61a270eb62c7e7`
 - Runtime bundle: Supabase `self-hosted/v0.8.0`, PostgreSQL `17.6.1.136`, Terraform `1.16.1`
 - Last verified production state: all seven active iOS identities serve `0.19.95`; six authorized Android identities serve `0.20.1 (485)` at full rollout. `fstapp.fstapp` is excluded.
+- Current read-only reconciliation: 2026-09-23 public activation, source `a`/
+  `slunovrat` freeze, and R2 backup observations below. The older mobile version
+  inventory above is historical, not a current store readback.
 
 ## Completed actions
 
@@ -84,52 +91,51 @@ Function, cron, callback, worker or operator can write to them.
 - Updated all five Worker dependency trees to Wrangler `4.131.0`; Miniflare now
   resolves patched Sharp `0.35.4`. All Worker unit/type checks and npm audits
   pass, and Dependabot reports no remaining open alert.
+- On 2026-09-23, all 11 active public web activation documents returned `200`,
+  `backend=canonical`, `generation=1`, the expected tenant ID and `no-store`.
+  The canonical Auth health endpoint returned `200` with the configured public
+  key; the administrator hostname redirected to Cloudflare Access (`302`).
+- On 2026-09-23, read-only Supabase Management API checks showed source `a`
+  with 100/100 table freeze guards and `slunovrat` with 66/66. Both had zero
+  active cron jobs, zero deployed Edge Functions, zero observed active mutating
+  sessions and zero publishable keys. Both rejected their old anon keys (`401`).
+  These observations establish substantial live cutover progress.
+- The 2026-09-10 production operator session records a passing seven-lane cloud
+  freeze, an authorized `full-freeze` final-marker gate, three successful
+  encrypted restore drills, and runtime promotion with canonical writes opened.
+  Its final handoff records successful login, email, order and contract canaries
+  and all 11 web activations. The private JSON receipts were not copied into
+  this public repository.
+- On 2026-09-23, all 11 live activation-document SHA-256 digests matched the
+  exact digest compiled into their current tenant branches. Four tenants with
+  configured occasion links returned exactly one matching occasion from the
+  canonical REST API. Cloudflare no longer has the pre-activation guard Worker
+  script. The R2 backup run `20260910T052041Z` remains present; the latest
+  observed daily run `20260922T024347Z` has a nonempty encrypted database,
+  globals, Storage and runtime artifact plus a manifest declaring 30-day
+  retention. No backup restore was attempted in this read-only reconciliation.
 
-## Next action
+## Closure basis and limits
 
-Approve the single-node recovery disposition and name a maintenance window,
-owner and on-call. Every residual mobile lane already has an adoption-or-freeze
-read-only disposition. A passing operational-readiness decision can only be
-produced for the exact final target inside that maintenance window.
+The 2026-09-10 operator record reports a passing seven-lane freeze, final
+import/restore, promotion, opened canonical writes and successful login, email,
+order and contract canaries. On 2026-09-23, all 11 live web activation documents
+matched their compiled canonical manifest digests; canonical Auth and linked
+occasion readbacks passed, and the latest observed encrypted R2 backup set was
+nonempty. These observations support closure of the operational switch.
 
-## Remaining order
+The original private JSON receipts were not copied into this repository. The
+production host was not reachable from this workstation on 2026-09-23. Source
+`default` cannot be inspected with the available Management API token; its
+retained/deleted state must not be inferred from `403` or absent DNS. Installed
+mobile adoption, legacy credentials and remaining source cleanup are open in
+the separate decommission item. This closure does not assert those are done.
 
-1. Record authoritative Android/iOS adoption evidence where available; all
-   other mobile lanes become technically read-only for the complete freeze.
-   `fstapp.fstapp` remains excluded and technically read-only.
-2. Approve `single-node-recovery` with measured RTO 308 seconds or provision a
-   separately designed replica, then name the maintenance owner/on-call and a
-   window of at least 60 minutes.
-3. Confirm the live AWS SNS subscription and callback, install the prepared
-   notification token in the final target Vault, and exercise payment/bank,
-   Edge Function, cron, worker and manual-credential canaries.
-4. Run physical-device/web cold-start, refresh/reauth, rights and
-   idempotent-write canaries for every active identity.
-5. Schedule the maintenance window; acquire fresh encrypted snapshots only
-   after full write/Auth/Storage/Function freeze and zero mutating sessions.
-6. Import final state, validate exact markers/conflicts/FKs/Auth/Storage, create
-   and restore the encrypted promotion backup, then run the production
-   promotion gate.
-7. Switch server writers, activate the pinned client manifests, open canonical
-   writes, run canaries and retain all cloud sources read-only.
+## Pre-cutover gap ledger (historical 2026-09-10)
 
-## Current blocker
-
-The authorized Android publication gate is complete. Every residual mobile lane
-has a selected fail-closed disposition: authoritative adoption when available,
-otherwise technically read-only through the source freeze; `fstapp.fstapp`
-remains excluded from Play and uses the read-only disposition. The fresh freeze
-receipt remains a window gate. Final canonical publisher scope IDs cannot be fixed
-until the fresh production merge mapping exists. Repository readiness is closed:
-`main` `c47f5dd81` and all 11 active tenant refs passed the canonical drift gate;
-the clean remote preflight is blocker-free. Installed runtime tooling, provider
-input preparation, scheduled independent backup and off-host monitoring/logging are closed. Operational
-readiness still requires fresh AWS SNS/Vault/provider canaries and the evidence
-that can only be produced during the maintenance window.
-The current runtime is also a single-node topology; production requires an
-explicit acceptance of the measured restore-based RTO or a replicated design.
-
-## Pre-cutover gap ledger
+The rows below were recorded before the now-live canonical web activation. They
+are preserved as historical evidence and require reconciliation with private
+production receipts before being used as current gates.
 
 | Gate | Current evidence | State |
 | --- | --- | --- |
@@ -148,7 +154,10 @@ explicit acceptance of the measured restore-based RTO or a replicated design.
 Passing rows are observations, not durable waivers. The 30-minute operational
 gate must re-evaluate all volatile checks immediately before the freeze.
 
-## Authority gates
+## Authority gates (historical 2026-09-10)
+
+These states predate the public canonical activation and must be reconciled
+against the private operational record.
 
 | Action | Required authority | State |
 | --- | --- | --- |
@@ -164,14 +173,15 @@ gate must re-evaluate all volatile checks immediately before the freeze.
 - Before canonical writes open, rollback restores routing to the still-frozen cloud sources.
 - After canonical writes open, self-hosted remains the only writer; recovery uses its encrypted backup/forward repair and cloud writes never reopen.
 
-## Definition of complete
+## Definition of complete for the operational switch
 
-- [ ] Every active client/store/web lane is released and adopted or proven read-only/retired.
-- [ ] Every writer lane is frozen and then moved to the canonical runtime with live evidence.
-- [ ] Fresh final data/Auth/Storage import and isolated restore pass.
-- [ ] `api.festapp.net` is the only write authority and both clouds remain read-only.
-- [ ] Legacy activation paths and credentials are removed after the retention/adoption gate.
-- [ ] The item is moved to `../completed/` and the open index is updated.
+- [x] The production operator record reports final freeze, import, restore,
+  promotion, canonical writes opened and post-switch canaries.
+- [x] All 11 active web activation documents and their compiled digests point
+  at the canonical backend; live Auth and linked occasion probes pass.
+- [x] An encrypted off-host backup set is present after the switch.
+- [x] Legacy-source decommission and unverified receipts are transferred to a
+  separate open item rather than represented as completed cutover evidence.
 
 ## Operational log
 
@@ -210,3 +220,6 @@ gate must re-evaluate all volatile checks immediately before the freeze.
 | 2026-09-08 | Complete recovery drill | encrypted backup `20260908T042903Z` plus isolated no-network restore | three-source inventory, 9,648 Auth users, 1,453 Storage objects and 792 scopes reproduced exactly; RPO 0, RTO 308 seconds; production target/clouds unmodified |
 | 2026-09-08 | Host/observability refresh | systemd, R2 monitor receipt, external probes, TLS and Hetzner firewall readback | backup/log timers and latest runs pass; Auth/REST/Storage/Realtime pass on both origins; TLS valid through 2026-11-13; ports 80/443 are Cloudflare-only |
 | 2026-09-08 | Temporary SSH closure | Hetzner firewall UI readback | temporary operator `/32` removed after host work; original restricted administrator source retained; firewall fully applied |
+| 2026-09-23 | Read-only live-state reconciliation | public manifests/Auth/Access and Management API source checks | 11/11 web lanes canonical; Auth health `200`; Access intercept `302`; `a` and `slunovrat` frozen as described above; `default` and private JSON/cleanup receipts unverified |
+| 2026-09-23 | Prior operator evidence and backup reconciliation | 2026-09-10 operator session output; Cloudflare R2 object metadata and manifests; live activation-document hashes | final freeze/restore/promotion outputs recovered; 11/11 compiled manifest hashes match; current R2 run `20260922T024347Z` contains all five nonempty expected files; `default` disposition and retention cleanup remain open |
+| 2026-09-23 | Operational switch closure | operator evidence and 2026-09-23 public readback | cutover complete; legacy-source decommission transferred to a separate work item |
