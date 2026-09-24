@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "aksmcz",
-  "baseMainSha": "b70a2854fe9478fe306686258b7e61267a408b99",
+  "baseMainSha": "27dc42587d326342776f901ab4a4b56a15fa8c3b",
   "release": {
     "version": "0.20.19+503",
     "note": "Recover PWA assets when browsers report a false offline state"
