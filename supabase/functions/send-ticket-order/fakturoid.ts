@@ -85,7 +85,9 @@ export async function useFakturoid(
   // Creating the proforma supplies the final CZK VS. Customer details retain
   // their original email-worker update and do not delay the payment response.
   let patched = result;
-  if (mode === "attachment") {
+  // Some forms collect only an email address. Keep the proforma's existing
+  // customer data in that case; Fakturoid rejects an empty client_name (422).
+  if (mode === "attachment" && `${d.name || ""} ${d.surname || ""}`.trim()) {
     const patchBody: Record<string, unknown> = {
       client_name: `${d.name || ""} ${d.surname || ""}`.trim(),
       client_street: d.street,
