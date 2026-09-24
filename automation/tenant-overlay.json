@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "d81ca854ba8113a02a68903cc3e3e13d84ef74d8",
+  "baseMainSha": "620c6cf2dee4ea9b202dcacca8d026bb7d1ea18d",
   "release": {
-    "version": "0.20.23+507",
-    "note": "Fix unit communication tone translation label"
+    "version": "0.20.24+508",
+    "note": "Allow EUR payment QR to use organization name"
   }
 }
