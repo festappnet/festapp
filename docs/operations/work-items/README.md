@@ -37,10 +37,9 @@ proven when they are part of the outcome.
 
 | Work item | Status | Fixed point | Next action |
 |---|---|---|---|
-| [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Read back current store, client, Worker, R2 and traffic state before resuming. |
-| [Store publishing data cutover](open/store-publishing-data-cutover-2026-08-24.md) | blocked | August snapshot; revalidation required | Reconcile current tenant refs and private manifest ownership; do not replay command `1027`. |
-| [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | RF migrations/functions present in `main`; live state unverified | Check the selected tenant against canonical activation, migration ledger and EUR account before any rollout. |
-| [Exposed runtime credential rotation](open/runtime-credential-rotation-2026-08-24.md) | blocked | incident remains open; private fixed point omitted | Inventory current provider state without recording credentials or private locators. |
+| [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | Public image hosts still on Worker; R2 domains absent; recent rejected `/private/` traffic | Resolve installed-client adoption and legacy traffic before P3/P4; no mobile publication now. |
+| [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | Both migrations live; account details are owner-managed; no active EUR form | Pilot EUR order/QR/pairing when an account owner enables an EUR form. |
+| [Exposed runtime credential rotation](open/runtime-credential-rotation-2026-08-24.md) | blocked | No former env files in `main` or 11 active tenant branches; revocations unverified | Inventory provider credentials and record non-secret rotation/revocation receipts. |
 
 ## Maintenance rules
 
