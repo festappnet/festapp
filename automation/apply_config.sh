@@ -868,11 +868,12 @@ echo "Project configuration applied successfully."
 # We invoke the helper script to handle dynamic file detection and rewrites
 NODE_SCRIPT="$PROJECT_ROOT/automation/configure_fonts.js"
 
-if [ -f "$NODE_SCRIPT" ] && [ -d "$PROJECT_ROOT/automation/fonts" ]; then
+if [ -f "$NODE_SCRIPT" ]; then
     echo "Running Dynamic Font Configuration..."
-    node "$NODE_SCRIPT" "$PROJECT_ROOT" "$FONT_FAMILY_BASE"
+    node "$NODE_SCRIPT" "$PROJECT_ROOT" "$FONT_FAMILY_BASE" "${FONT_FILES:-}"
 else
-    echo "Skipping Font Configuration (Script or fonts/ dir missing)"
+    echo "Error: Font configuration script not found: $NODE_SCRIPT"
+    exit 1
 fi
 
 # 8. Version Configuration (Handled by configure_version.js)
