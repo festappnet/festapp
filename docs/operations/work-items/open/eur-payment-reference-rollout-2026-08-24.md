@@ -8,9 +8,9 @@ Verification: release
 > 2026-09-24 follow-up: the user authorized an organization-title fallback for
 > paid EUR orders with no account-specific payee. The repository change keeps
 > an explicit account payee first, cleans control/whitespace characters in the
-> fallback and leaves bank account 1025 untouched. This behavior is pending the
-> canonical SQL migration and Function deployment; the live blocker below
-> describes the pre-deployment state.
+> fallback and leaves bank account 1025 untouched. The order migration is live;
+> a follow-up migration supplies the same name to existing email Functions.
+> The live blocker below describes the pre-deployment state.
 
 > The August rollout sequence is superseded by the live 2026-09-23 readback.
 > Both migrations are already present in the self-hosted database. Do not
@@ -63,8 +63,8 @@ pairing is verified, and obsolete pairing paths are absent.
 
 ## Next action
 
-Deploy the new organization-title fallback through the canonical SQL and
-Function release workflow. Then verify live EUR order/QR/RF output and bank
+Deploy the email-details fallback through the canonical SQL release workflow.
+Then verify live EUR order/QR/RF output and bank
 pairing as a scoped pilot. Do not change account `8`, `737` or `1025` centrally
 or replay the already applied migrations.
 

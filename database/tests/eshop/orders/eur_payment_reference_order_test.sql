@@ -65,6 +65,10 @@ BEGIN
   PERFORM assert_eq((v_result->>'code')::integer, 200, 'EUR order must succeed');
   PERFORM assert_eq(v_result->'order'->'payment_info'->>'creditor_name',
     'Hvězda Mořská', 'missing account payee must fall back to clean organization title');
+  PERFORM assert_eq(
+    public.get_order_details_for_email((v_result->'order'->>'id')::bigint)
+      ->'data'->'bank_account'->>'creditor_name',
+    'Hvězda Mořská', 'later payment emails must use the same EUR beneficiary');
   v_payment_info_id := (v_result->'order'->'payment_info'->>'id')::bigint;
   SELECT variable_symbol, creditor_reference
   INTO v_variable_symbol, v_creditor_reference
