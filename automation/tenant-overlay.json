@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "75a173f48ed3513d129302cb3c66296fdebf57dc",
+  "baseMainSha": "59305db9d5bdd2dcb93504a92fe3bf25c636c10d",
   "release": {
-    "version": "0.20.21+505",
-    "note": "Keep expanded QR payment result fully scrollable"
+    "version": "0.20.22+506",
+    "note": "Initialize form communication tone from unit settings"
   }
 }
