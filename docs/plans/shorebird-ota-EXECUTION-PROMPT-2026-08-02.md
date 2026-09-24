@@ -1,6 +1,6 @@
 # Execute: Bezpečné OTA aktualizace mobilní aplikace přes Shorebird
 
-Work in `/Users/miakh/source/festapp`.
+Work in `<repo-root>`.
 
 Použij repository instructions a verification mode `standard` zaznamenaný v plánu. Produkční/store operace mají vlastní release gate a samostatnou autoritu.
 
