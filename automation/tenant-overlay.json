@@ -3,7 +3,7 @@
   "tenantId": "hvezdamorska",
   "baseMainSha": "0fb35df2b0127a9ab115fa5496008c6e700bcc2f",
   "release": {
-    "version": "0.20.19+503",
-    "note": "Recover PWA assets when browsers report a false offline state"
+    "version": "0.20.20+504",
+    "note": "Show QR payment options on public order confirmation"
   }
 }
