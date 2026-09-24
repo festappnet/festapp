@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "da2cbb657d7721a3cd9ce38a9aa855b1f4718c36",
+  "baseMainSha": "d20ab77962be26d84e92ff7d2badd89c90640db1",
   "release": {
     "version": "0.20.24+508",
     "note": "Allow EUR payment QR to use organization name"
