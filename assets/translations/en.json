@@ -1002,6 +1002,7 @@
     "timezoneIsRequired": "Timezone is required",
     "invalidTimezone": "Please select or type a valid timezone",
     "timezonesLoading": "Timezones loading or unavailable...",
+    "labelDefaultCommunicationTone": "Default communication tone",
     "labelReplyToEmail": "Reply-To Email",
     "helperReplyToEmail": "Replies from customers to automated emails (confirmations, reminders) will be sent to this address.",
     "validationEmailInvalid": "Please enter a valid email address.",

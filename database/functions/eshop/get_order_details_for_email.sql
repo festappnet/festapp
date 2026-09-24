@@ -75,7 +75,7 @@ BEGIN
         -- 2. Modified query to fetch both form_fields and form_data at the same time
         SELECT
             jsonb_object_agg(ff.id, to_jsonb(ff.*)), -- All fields
-            f.data                                   -- The form's data
+            public.get_effective_form_data(f.id)     -- Form data with unit defaults
         INTO
             form_fields_data,
             form_data
@@ -86,7 +86,7 @@ BEGIN
         WHERE
             f.key = form_key
         GROUP BY
-            f.data; -- Group by the non-aggregated column
+            f.id; -- Group by the form used for effective data
 
         -- If form fields were found, add them to the result data
         IF form_fields_data IS NOT NULL THEN

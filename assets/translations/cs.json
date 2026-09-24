@@ -1002,6 +1002,7 @@
     "timezoneIsRequired": "Časové pásmo je povinné",
     "invalidTimezone": "Vyberte nebo zadejte platné časové pásmo",
     "timezonesLoading": "Načítání časových pásem nebo nejsou k dispozici...",
+    "labelDefaultCommunicationTone": "Výchozí tón komunikace",
     "labelReplyToEmail": "E-mail pro odpovědi",
     "helperReplyToEmail": "Odpovědi zákazníků na automatické e-maily (potvrzení, připomínky) budou zasílány na tuto adresu.",
     "validationEmailInvalid": "Zadejte prosím platnou e-mailovou adresu.",
