@@ -17,6 +17,11 @@ assets and namespaced legal/store/offline-map/recovery data. It also records:
 }
 ```
 
+Custom font binaries live under tenant-owned `fonts/` paths. `FONT_FILES` in
+`project.conf` lists those source files; `apply_config.sh` generates their web
+copies and the Flutter/web font declarations. `FONT_FAMILY_BASE` alone does not
+select font files.
+
 The allowlists, generated-path list, metadata schema and drift checker are
 loaded with `git show` from `baseMainSha`. A production branch cannot expand its
 own policy. The checker creates a fresh archive of main, overlays only approved
