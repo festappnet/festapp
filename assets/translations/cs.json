@@ -1081,6 +1081,7 @@
     "sentFrom": "Odesláno z {appName}"
   },
   "UnitSettings": {
+    "labelDefaultCommunicationTone": "Výchozí tón komunikace",
     "labelReplyToEmail": "Výchozí e-mail pro odpovědi",
     "labelDefaultTimezone": "Výchozí časová zóna",
     "deleteUnit": "Smazat organizaci",

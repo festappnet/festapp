@@ -1081,6 +1081,7 @@
     "sentFrom": "Sent from {appName}"
   },
   "UnitSettings": {
+    "labelDefaultCommunicationTone": "Default communication tone",
     "labelReplyToEmail": "Reply-To Email",
     "labelDefaultTimezone": "Default Timezone",
     "deleteUnit": "Delete Organization",

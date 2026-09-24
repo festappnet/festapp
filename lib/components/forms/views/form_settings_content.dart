@@ -9,6 +9,7 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/form_feature.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -54,6 +55,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
   String _communicationTone = 'formal';
+
+  String get _unitTone =>
+      RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
+              'informal'
+          ? 'informal'
+          : 'formal';
 
   @override
   void initState() {
@@ -131,7 +138,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           msgData?[FormModel.metaType] as String? ?? 'name_surname';
 
       _communicationTone =
-          _form!.data?[FormHelper.metaCommunicationTone] as String? ?? 'formal';
+          _form!.data?[FormHelper.metaCommunicationTone] as String? ??
+              _unitTone;
 
       if (_form!.deadlineDurationSeconds != null &&
           _form!.deadlineDurationSeconds! > 0) {
@@ -642,11 +650,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child: Text(
                                             FormStrings.deleteFormTitle,
                                             style: TextStyle(
-                                                color: (_form?.canDelete ??
-                                                        true)
-                                                    ? ThemeConfig.redColor(
-                                                        innerContext)
-                                                    : Colors.grey),
+                                                color:
+                                                    (_form?.canDelete ?? true)
+                                                        ? ThemeConfig.redColor(
+                                                            innerContext)
+                                                        : Colors.grey),
                                           ),
                                         ),
                                       ),

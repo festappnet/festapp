@@ -72,6 +72,9 @@ BEGIN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1003, 'message', 'Form is not linked to any occasion')::TEXT;
         END IF;
 
+        -- The order payload captures the effective tone for its confirmation email.
+        form_data := public.get_effective_form_data(form_id);
+
         is_editor := public.get_is_editor_order_on_occasion(occasion_id);
 
         IF NOT is_editor THEN

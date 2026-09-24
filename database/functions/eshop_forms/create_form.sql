@@ -11,8 +11,16 @@ DECLARE
     new_form_id BIGINT;
     new_form JSONB;
     new_product_type_id BIGINT;
+    v_communication_tone TEXT;
     now TIMESTAMPTZ := NOW();
 BEGIN
+    SELECT CASE WHEN u.data->>'communication_tone' = 'informal'
+                THEN 'informal' ELSE 'formal' END
+    INTO v_communication_tone
+    FROM public.occasions o
+    JOIN public.units u ON u.id = o.unit
+    WHERE o.id = p_occasion_id;
+
     -- The definitive server-side uniqueness check for the form link
     IF EXISTS (SELECT 1 FROM public.forms WHERE link = p_link) THEN
         RAISE EXCEPTION '%',
@@ -36,7 +44,10 @@ BEGIN
         now,
         now,
         604800, -- Default to 7 days
-        '{"is_reminder_enabled": true}'::jsonb -- Default reminder setting
+        jsonb_build_object(
+            'is_reminder_enabled', true,
+            'communication_tone', COALESCE(v_communication_tone, 'formal')
+        )
     )
     RETURNING to_jsonb(public.forms.*) INTO new_form;
 
