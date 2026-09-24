@@ -7,7 +7,7 @@ allowed-tools: Read, Run Command
 # Project Workflows
 
 > **Official project procedures. See
-> [CONTRIBUTING.md](../../../../../CONTRIBUTING.md) for full details.**
+> [CONTRIBUTING.md](../../../../CONTRIBUTING.md) for full details.**
 
 ## 0. Context & Architecture (CRITICAL)
 
@@ -31,7 +31,8 @@ When writing PostgreSQL functions (`database/functions/`):
 
 ### Run All Tests (Recommended)
 
-Runs both Web Client and Database tests.
+Runs Web Client, database, Flutter, Deno Edge Function, integration and
+automation tests, with environment-dependent skips reported explicitly.
 
 ```bash
 ./automation/test_all.sh
@@ -57,23 +58,12 @@ System-level tests (requires Supabase connection).
 node tests/integration/bank_import.js --existing-token "..."
 ```
 
-## 2.5 Database Deployment via MCP
+## 2.5 Remote deployment
 
-To deploy/update SQL functions remotely:
-
-1. **Identify**: `mcp_supabase-mcp-server_list_projects` to get the
-   `project_id`.
-2. **Read**: `view_file` the local SQL file.
-3. **Execute**: `mcp_supabase-mcp-server_execute_sql` with the `project_id` and
-   `query` (file content).
-
-## 2.6 Deno Edge Function Deployment via MCP
-
-To deploy/update Edge Functions:
-
-1. **Upload**: `mcp_supabase-mcp-server_deploy_edge_function`.
-   - `files`: Read content of `index.ts`, `deno.json` etc. first.
-2. **Note**: Always `list_dir` and `view_file` to get the latest content.
+Keep SQL and Edge Function sources versioned and use the approved release
+workflow. Resolve live targets from `automation/project.conf`, not from a
+project ref in `.env.local`. Database changes must retain pre-cutover parity
+across self-hosted, `default`, and `a` targets.
 
 ## 3. Flutter Workflow
 
@@ -102,9 +92,8 @@ Before committing, run this checklist:
    - **Scan for Secrets**: Ensure no API keys, tokens, or passwords are in the
      staged files.
    - **Check .env**: Confirm `.env` files are ignored and not being committed.
-6. **Stage Only (NEVER COMMIT)**:
-   - `git add .`
-   - **STOP**. Do not run `git commit`. The user will perform the commit.
+6. **Publish according to scope**: Stage only relevant files and follow the
+   active repository instructions and the user's requested commit/push scope.
 
 ## 5. Codebase Cleanup Workflow
 
@@ -146,5 +135,5 @@ For complex cross-cutting concerns (leaks, API changes):
 
 ---
 
-> **Rule:** Never commit changes automatically. Always leave them staged for the
-> user.
+> Repository and user instructions are authoritative when choosing whether to
+> commit or publish a completed change.

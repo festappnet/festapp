@@ -29,8 +29,9 @@ Both App Store profiles were then regenerated with the existing distribution
 certificate. Direct inspection of the exported, non-uploaded IPA proved
 production APNs, the single CAV App Group on Runner and extension,
 `applinks:clovekavira.festapp.net`, exact application identifiers, and absence
-of `OneSignalLocation.framework`. Private FestappSeed holds the IPA, profiles
-and digest evidence. No App Store version, upload or submission was created.
+of `OneSignalLocation.framework`. Private configuration storage holds the IPA,
+profiles and digest evidence. No App Store version, upload or submission was
+created.
 
 ## Remaining gates
 

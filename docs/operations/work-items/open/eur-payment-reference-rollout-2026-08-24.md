@@ -5,10 +5,15 @@ Updated: 2026-08-24
 Status: blocked
 Verification: release
 
+> Revalidation required (2026-09-10): this item records an August rollout
+> snapshot. Before any production action, compare the canonical migrations,
+> current `main`, tenant configuration and live schema; never replay the old
+> branch instructions by assumption.
+
 ## Authoritative sources
 
-- Plan: [`../../../plans/2026-08-05_eur_payment_reference_plan.md`](../../../plans/2026-08-05_eur_payment_reference_plan.md)
-- Execution prompt: [`../../../plans/2026-08-05_eur_payment_reference_execution_prompt.md`](../../../plans/2026-08-05_eur_payment_reference_execution_prompt.md)
+- Plan: [`../../../archive/plans/2026-08-05_eur_payment_reference_plan.md`](../../../archive/plans/2026-08-05_eur_payment_reference_plan.md)
+- Execution prompt: [`../../../archive/plans/2026-08-05_eur_payment_reference_execution_prompt.md`](../../../archive/plans/2026-08-05_eur_payment_reference_execution_prompt.md)
 
 ## Outcome
 

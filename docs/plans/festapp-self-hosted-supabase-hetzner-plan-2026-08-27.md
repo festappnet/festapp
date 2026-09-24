@@ -94,7 +94,7 @@ typu „last write wins“.
 | Image worker registry dnes rozlišuje `IMAGE_PROJECT_ID=default|a`. | image worker konfigurace | R2 buckety mohou zůstat oddělené, ale oba záznamy budou ověřovat proti jednomu Supabase endpointu. |
 | DB cron/webhook kód skládá URL Edge Functions. | migrace a SQL | URL a secrets se musí změnit transakčně s cutoverem. |
 | Lokální config uvádí PostgreSQL 15; skutečná produkční verze musí být ověřena na obou zdrojích. | `supabase/config.toml`, `.temp/postgres-version` | Cíl se volí podle skutečné kompatibility; upgrade major verze není součást cutoveru. |
-| Mendelio má Terraform, Caddy, pinned Compose, root-only env, restore a monitoring skripty. | `/Users/miakh/source/roman_seznamka/scripts/hetzner-supabase` a `platform-backup` | Převzít provozní strukturu a bezpečnostní principy, aktualizovat runtime a Festapp specifika. |
+| Mendelio má Terraform, Caddy, pinned Compose, root-only env, restore a monitoring skripty. | `<reference-infrastructure-repo>` a `platform-backup` | Převzít provozní strukturu a bezpečnostní principy, aktualizovat runtime a Festapp specifika. |
 
 Oficiální Supabase dokumentace uvádí pro plný self-hosted stack doporučený
 výchozí bod 4 CPU, 8 GB RAM a 80 GB SSD; self-hosted provozovatel si sám zajišťuje

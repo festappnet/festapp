@@ -13,6 +13,24 @@
       isConditionalMediationAvailable: function () { return Promise.resolve(false); }
     };
   </script>
+  <script>
+    // mobile_scanner's web reader calls play() on a camera video without
+    // setting muted/inline playback. Older mobile browsers reject that call
+    // after getUserMedia's async permission flow loses the original tap.
+    (function () {
+      const originalPlay = HTMLVideoElement.prototype.play;
+      HTMLVideoElement.prototype.play = function () {
+        if (typeof MediaStream !== 'undefined' && this.srcObject instanceof MediaStream) {
+          this.muted = true;
+          this.autoplay = true;
+          this.playsInline = true;
+          this.setAttribute('muted', '');
+          this.setAttribute('playsinline', '');
+        }
+        return originalPlay.apply(this, arguments);
+      };
+    })();
+  </script>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -272,7 +290,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.14+498";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.19+503";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
