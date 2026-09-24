@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "c959201cb916b6dd5ba6076065e3e366294121d7",
+  "baseMainSha": "a276ac6b7b225f804120322fbe7fab2cde1a0419",
   "release": {
-    "version": "0.20.14+498",
-    "note": "Restore native sync and add remote endpoint configuration"
+    "version": "0.20.19+503",
+    "note": "Recover PWA assets when browsers report a false offline state"
   }
 }
