@@ -7,8 +7,6 @@ assets/icons/fstapplogo.dark.svg
 assets/icons/fstapplogo.png
 fonts/Cerebri-Sans-Bold.ttf
 fonts/Cerebri-Sans-Regular.ttf
-web_client/src/assets/fonts/Cerebri-Sans-Bold.ttf
-web_client/src/assets/fonts/Cerebri-Sans-Regular.ttf
 android/app/src/main/res/mipmap-*/ic_launcher.png
 ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
 web/apple-touch-icon.png

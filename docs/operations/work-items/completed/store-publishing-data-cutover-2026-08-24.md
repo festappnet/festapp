@@ -1,14 +1,13 @@
 # Work item: complete store publishing data cutover
 
 Opened: 2026-08-24
-Updated: 2026-08-24
-Status: blocked
+Updated: 2026-09-23
+Closed: 2026-09-23
+Status: completed
 Verification: standard
 
-> Revalidation required (2026-09-10): the recorded candidate branch and
-> command `1027` predate later production releases. Do not advance that branch
-> or replay the command. Reconcile the remaining outcome against current
-> tenant refs and the private release-manifest owner first.
+> The August candidate branch and command `1027` were superseded. Neither was
+> replayed, and this closure did not publish a new app or alter a store listing.
 
 ## Authoritative sources
 
@@ -59,28 +58,25 @@ one owner: the private configuration repository.
 
 ## Next action
 
-Wait for production Windows command `1027` to finish, verify its signed AAB
-receipt, then advance the CSM production branch to the already verified
-`cutover/csm-after-1027` candidate.
+None for the public store-data ownership cutover. Future store releases use
+their own current manifest and artifact fixed point.
 
 ## Remaining order
 
-1. Accept only the exact matching `COMPLETE` result for Windows command `1027`
-   and verify its artifact receipt.
-2. Advance `prod/csmostrava2026` to `d90d42a3d` and run the production-branch
-   drift/readback gate.
+No remaining operation in this work item.
 
 ## Current blocker
 
-The Windows workstation has not yet returned command `1027`; advancing the CSM
-branch first would invalidate the requested artifact provenance.
+None for the repository ownership boundary. Current private manifest contents
+and live store listings were not reread; they are inputs to a future release,
+not evidence that public store data remains in Festapp.
 
 ## Authority gates
 
 | Action | Required authority | State |
 |---|---|---|
 | Festapp commit | Explicit user confirmation after staging | granted 2026-08-24 |
-| Advance CSM production branch | Completed Windows command `1027` plus deterministic overlay gate | pending |
+| Advance CSM production branch | Fresh current-source fixed point plus deterministic overlay gate | pending |
 
 ## Rollback and recovery
 
@@ -91,11 +87,11 @@ branch first would invalidate the requested artifact provenance.
 
 ## Definition of complete
 
-- [ ] All release consumers use the private manifest or public runtime config as appropriate.
-- [ ] No app-specific store data remains reachable in Festapp HEAD.
-- [ ] Cleanup is integrated through canonical main and tenant generation.
-- [ ] Superseded worktrees/branches are removed.
-- [ ] This item is moved to `../completed/` and the index is updated.
+- [x] Public release entry points require the private manifest or public runtime config.
+- [x] No app-specific store asset/metadata directories remain in `main` or any of the 11 active production branch trees.
+- [x] Generic cleanup is in canonical `main` and all 11 active tenant branches contain it.
+- [x] Superseded remote branches and local worktrees are absent.
+- [x] This item is moved to `../completed/` and the index is updated.
 
 ## Operational log
 
@@ -107,3 +103,5 @@ branch first would invalidate the requested artifact provenance.
 | 2026-08-24 | Deterministic tenant regeneration | CSM `d90d42a3d`; Hvezda morska production `7febb2734` | drift/config/absence gates passed; HM temporary candidate removed after production cutover |
 | 2026-08-24 | Duplicate cleanup | removed remote `cleanup/store-assets-private-cutover`; former helper checkout moved to macOS Trash | obsolete public/helper paths no longer active |
 | 2026-08-24 | Hvezda morska production web | Netlify `6a8c2e9f69d58a00089f6c5a`; commit `7febb2734110add23b84c2d3063924af743db907`; bundle `0.19.84+387` | published; live `kralovna2026` form visibly renders the deposit description |
+| 2026-09-23 | Repository-only revalidation | `origin/prod/csmostrava2026` config declares `0.20.14+498` | old CSM candidate and command are superseded; no branch or store mutation |
+| 2026-09-23 | Closure check | current `main` release scripts require `FESTAPP_RELEASE_MANIFEST`; 11/11 active branch trees have zero paths under former store-data directories; superseded remote branches and local worktrees absent | Public store-data ownership cutover complete; no new app or store mutation |
