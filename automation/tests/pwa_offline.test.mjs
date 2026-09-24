@@ -108,6 +108,7 @@ try {
   const cachedWebClient = new Response('<html>generic event list</html>');
   const cachedPrivacy = new Response('<html>privacy policy</html>');
   let networkCalls = 0;
+  let networkAvailable = false;
   let activationNetworkCalls = 0;
   let activationDocument = '{"schemaVersion":1,"tenantId":"test","generation":1,"backend":"legacy"}\n';
   let serverVersion = '1.2.3+5';
@@ -176,11 +177,12 @@ try {
       const url = String(request.url || request);
       if (url.includes('/backend-activation.json')) {
         activationNetworkCalls++;
-        if (!context.self.navigator.onLine) throw new Error('offline');
+        if (!networkAvailable) throw new Error('offline');
         return new Response(activationDocument, {
           headers: { 'content-type': 'application/json' },
         });
       }
+      if (!networkAvailable) throw new Error('offline');
       networkCalls++;
       if (url.includes('/festapp-version.json')) {
         return new Response(JSON.stringify({ version: serverVersion }), {
@@ -189,6 +191,9 @@ try {
       }
       if (url.includes('/main.dart.js')) {
         return new Response('recovered current executable');
+      }
+      if (url.includes('/web-assets/index.js')) {
+        return new Response('web client bundle');
       }
       throw new Error(`unexpected network request: ${url}`);
     },
@@ -317,6 +322,7 @@ try {
   );
   assert.equal(activationNetworkCalls, 1);
   context.self.navigator.onLine = true;
+  networkAvailable = true;
   const legacyActivationResponse = await dispatchFetch(activationRequest);
   assert.match(await legacyActivationResponse.text(), /"backend":"legacy"/);
   activationDocument = '{"schemaVersion":1,"tenantId":"test","generation":1,"backend":"canonical"}\n';
@@ -409,6 +415,17 @@ try {
   );
   assert.equal(await liveAfterPrune.text(), '{}');
   assert.equal(openedCaches.at(-1), 'festapp-app-shell-1.2.3+3');
+
+  // Chrome can report offline while real requests still work. A missing web
+  // bundle must be fetched so the cached HTML does not become a blank page.
+  const webBundle = await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'),
+  );
+  assert.equal(await webBundle.text(), 'web client bundle');
+  const liveVersion = await dispatchFetch(
+    new Request('https://app.test/festapp-version.json?t=false-offline'),
+  );
+  assert.equal((await liveVersion.json()).version, '1.2.3+4');
 
   const webClientIndex = await readFile(
     path.join(projectRoot, 'web_client/index.html'),
