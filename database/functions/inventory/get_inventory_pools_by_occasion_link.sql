@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_inventory_pools_by_occasion_link(p_occasion_link text)
+CREATE OR REPLACE FUNCTION public.get_inventory_pools_by_occasion_link(p_occasion_link text)
 RETURNS jsonb
 SECURITY DEFINER
 SET search_path = public, extensions
@@ -11,14 +11,27 @@ DECLARE
     v_spots_data jsonb;
     result jsonb;
 BEGIN
-    -- Find the occasion ID from the provided link.
-    SELECT id INTO v_occasion_id FROM public.occasions WHERE link = p_occasion_link;
+    -- Canonical merges may contain the same legacy link in multiple tenants.
+    SELECT o.id
+    INTO v_occasion_id
+    FROM public.occasions o
+    WHERE o.link = p_occasion_link
+      AND o.organization = (
+        SELECT ui.organization
+        FROM public.user_info ui
+        WHERE ui.id = auth.uid()
+      );
     IF v_occasion_id IS NULL THEN
         RAISE EXCEPTION 'Occasion with link % not found.', p_occasion_link;
     END IF;
 
     -- Permission check to ensure the user can view data for this occasion.
-    IF NOT get_is_editor_order_view_on_occasion(v_occasion_id) THEN
+    IF NOT COALESCE((
+        SELECT ou.is_editor_order_view
+        FROM public.occasion_users ou
+        WHERE ou."user" = auth.uid()
+          AND ou.occasion = v_occasion_id
+    ), false) THEN
         RAISE EXCEPTION 'User is not authorized to view this occasion.';
     END IF;
 

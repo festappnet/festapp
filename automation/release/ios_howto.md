@@ -27,10 +27,10 @@ Connect.
 
 ---
 
-## 🗝 Step 2: Provision Credentials from FestappSeed
+## 🗝 Step 2: Provision credentials from the private configuration source
 
-Provision the App Store Connect key and identifiers from the private
-FestappSeed repository into a local directory outside this repository. Do not
+Provision the App Store Connect key and identifiers from the designated private
+configuration repository into a local directory outside this repository. Do not
 copy the `.p8` key into the Festapp checkout.
 
 Create the ignored local file `automation/release/.set_appstore_env.sh` with
@@ -39,7 +39,7 @@ references to the externally provisioned values:
 ```bash
 export APP_STORE_CONNECT_KEY_ID="ABCD123456"
 export APP_STORE_CONNECT_ISSUER_ID="01234567-89ab-cdef-0123-456789abcdef"
-export APP_STORE_CONNECT_KEY_PATH="/absolute/path/provisioned-from-FestappSeed/AuthKey_ABCD123456.p8"
+export APP_STORE_CONNECT_KEY_PATH="<private-config-root>/AuthKey_ABCD123456.p8"
 ```
 
 The key file must be readable only by its owner (`chmod 600`). Both the shell
@@ -104,7 +104,7 @@ Whatever you type will be used as the "What's New" description for that version.
 
 Make sure:
 
-- FestappSeed has provisioned the original `.p8` file outside this repository
+- the private configuration source has provisioned the original `.p8` file outside this repository
 - `APP_STORE_CONNECT_KEY_PATH` is an absolute path to that external file
 - the key file mode is `600`
 - the key ID in your env file matches the provisioned key

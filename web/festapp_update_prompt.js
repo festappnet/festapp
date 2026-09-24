@@ -6,8 +6,10 @@
   const cutoverStorageKey = 'festappCutoverVersion';
   const cleanRecoveryStorageKey = 'festappCleanRecoveryVersion';
   const startupRecoveryStorageKey = 'festappStartupRecoveryVersion';
+  const runtimeRecoveryStorageKey = 'festappRuntimeRecoveryVersion';
   const bannerId = 'festapp-update-banner';
   let checkInFlight = false;
+  let runtimeRecoveryInFlight = false;
 
   // Compatibility boundary for installations created before Festapp's worker.
   // Remove after the minimum supported installed version is newer than that
@@ -482,6 +484,38 @@
     return true;
   }
 
+  function isDartDispatchRuntimeFailure(event) {
+    const candidates = [
+      event?.message,
+      event?.error?.message,
+      event?.reason?.message,
+      event?.reason,
+    ];
+    return candidates.some(function(candidate) {
+      const message = typeof candidate === 'string' ? candidate : '';
+      return message.includes('Cannot define property ___dart_dispatch_record') &&
+        message.includes('object is not extensible');
+    });
+  }
+
+  async function recoverCorruptRuntime(reason) {
+    if (runtimeRecoveryInFlight) return false;
+    runtimeRecoveryInFlight = true;
+
+    if (navigator.onLine === false ||
+        sessionStorage.getItem(runtimeRecoveryStorageKey) === currentVersion) {
+      showUpdateBanner(currentVersion, 'legacy-cache');
+      return false;
+    }
+
+    console.warn('Festapp Dart runtime is inconsistent; loading a coherent app shell:', reason);
+    sessionStorage.setItem(runtimeRecoveryStorageKey, currentVersion || '1');
+    if (await cutOverToVersion(currentVersion)) return true;
+    await prepareNetworkReload();
+    window.location.reload();
+    return true;
+  }
+
   function scheduleStartupRecovery() {
     window.setTimeout(function checkStartup() {
       if (window.__FESTAPP_APP_READY__ === true) return;
@@ -616,6 +650,16 @@
   window.addEventListener('festapp-update-available', function(event) {
     const detail = event.detail || {};
     showUpdateBanner(detail.version || currentVersion, detail.reason);
+  });
+  window.addEventListener('error', function(event) {
+    if (isDartDispatchRuntimeFailure(event)) {
+      recoverCorruptRuntime('dart-dispatch-error');
+    }
+  });
+  window.addEventListener('unhandledrejection', function(event) {
+    if (isDartDispatchRuntimeFailure(event)) {
+      recoverCorruptRuntime('dart-dispatch-rejection');
+    }
   });
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {

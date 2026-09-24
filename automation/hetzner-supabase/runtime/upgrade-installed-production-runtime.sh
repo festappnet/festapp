@@ -72,8 +72,16 @@ install_runtime_file "$SCRIPT_DIR/validate-operational-readiness.mjs" "$COMPOSE_
 install_runtime_file "$SCRIPT_DIR/install-production-function-bundle.sh" "$COMPOSE_DIR/install-production-function-bundle.sh"
 install_runtime_file "$SCRIPT_DIR/finalize-canonical-database-operations.sh" "$COMPOSE_DIR/finalize-canonical-database-operations.sh"
 install_runtime_file "$SCRIPT_DIR/upgrade-installed-production-runtime.sh" "$COMPOSE_DIR/upgrade-installed-production-runtime.sh"
+install_runtime_file "$SCRIPT_DIR/activate-admin-dashboard.sh" "$COMPOSE_DIR/activate-admin-dashboard.sh"
 install_runtime_file "$SCRIPT_DIR/switch-rehearsal-runtime-database.sh" "$COMPOSE_DIR/switch-rehearsal-runtime-database.sh"
+install -d -o root -g root -m 0700 "$COMPOSE_DIR/festapp-admin-dashboard"
+install_runtime_file "$SCRIPT_DIR/Caddyfile" "$COMPOSE_DIR/festapp-admin-dashboard/Caddyfile" 0644
+install_runtime_file "$SCRIPT_DIR/docker-compose.festapp.yml" "$COMPOSE_DIR/festapp-admin-dashboard/docker-compose.festapp.yml" 0644
 install_runtime_file "$SCRIPT_DIR/docker-compose.database-target.yml" "$COMPOSE_DIR/docker-compose.database-target.yml" 0644
+install -d -o root -g root -m 0755 "$COMPOSE_DIR/studio-customization"
+install_runtime_file "$SCRIPT_DIR/studio-customization/entrypoint.sh" "$COMPOSE_DIR/studio-customization/entrypoint.sh" 0555
+install_runtime_file "$SCRIPT_DIR/studio-customization/install-logout.mjs" "$COMPOSE_DIR/studio-customization/install-logout.mjs" 0444
+install_runtime_file "$SCRIPT_DIR/studio-customization/logout.js" "$COMPOSE_DIR/studio-customization/logout.js" 0444
 install_runtime_file "$RUNTIME_WRITER_POLICY" "$COMPOSE_DIR/festapp-runtime-writer-policy.json" 0444
 
 readonly EXPECTED_SOURCE_SHA="$(node "$SCRIPT_DIR/validate-production-promotion.mjs" --digest-json="$SOURCE_REGISTRY")"
@@ -88,8 +96,15 @@ for dependency in install-runtime-registries.mjs validate-production-promotion.m
   set-production-target-write-barrier.sh validate-operational-readiness.mjs \
   install-production-function-bundle.sh \
   finalize-canonical-database-operations.sh \
+  activate-admin-dashboard.sh Caddyfile docker-compose.festapp.yml \
+  studio-customization/entrypoint.sh studio-customization/install-logout.mjs \
+  studio-customization/logout.js \
   switch-rehearsal-runtime-database.sh docker-compose.database-target.yml; do
-  [[ "$(sha256sum "$COMPOSE_DIR/$dependency" | awk '{print $1}')" == \
+  case "$dependency" in
+    Caddyfile|docker-compose.festapp.yml) installed_dependency="$COMPOSE_DIR/festapp-admin-dashboard/$dependency" ;;
+    *) installed_dependency="$COMPOSE_DIR/$dependency" ;;
+  esac
+  [[ "$(sha256sum "$installed_dependency" | awk '{print $1}')" == \
      "$(sha256sum "$SCRIPT_DIR/$dependency" | awk '{print $1}')" ]] ||
     fail "installed runtime dependency mismatch: $dependency"
 done

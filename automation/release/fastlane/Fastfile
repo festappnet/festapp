@@ -25,7 +25,19 @@ TARGET_VERSION = PROJECT_VERSION.fetch('version')
 TARGET_BUILD = PROJECT_VERSION.fetch('build')
 PLAY_PACKAGE = MANIFEST.fetch('androidPackage')
 
+def assert_github_play_gateway!
+  expected = {
+    'GITHUB_ACTIONS' => 'true',
+    'GITHUB_REPOSITORY' => 'festappnet/festapp',
+    'RUNNER_ENVIRONMENT' => 'github-hosted',
+    'RUNNER_OS' => 'Linux'
+  }
+  mismatches = expected.reject { |name, value| ENV[name] == value }.keys
+  UI.user_error!("Google Play access is restricted to the Festapp GitHub-hosted Linux gateway (invalid: #{mismatches.join(', ')})") unless mismatches.empty?
+end
+
 def play_key_path!
+  assert_github_play_gateway!
   path = File.expand_path(ENV.fetch('GOOGLE_PLAY_JSON_KEY'))
   UI.user_error!("Google Play credential not found: #{path}") unless File.file?(path)
   UI.user_error!('Google Play credential must remain outside the repository') if path.start_with?(File.expand_path('../../..', __dir__) + File::SEPARATOR)
@@ -65,6 +77,7 @@ def expected_apple_screenshot_counts
 end
 
 def relevant_play_version_codes
+  assert_github_play_gateway!
   service = Google::Apis::AndroidpublisherV3::AndroidPublisherService.new
   service.authorization = File.open(play_key_path!) do |credential|
     Google::Auth::ServiceAccountCredentials.make_creds(
