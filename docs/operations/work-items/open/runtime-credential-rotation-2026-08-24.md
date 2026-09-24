@@ -5,26 +5,33 @@ Updated: 2026-08-29
 Status: blocked
 Verification: release
 
+> Revalidation required (2026-09-10): retain this incident item until every
+> revocation is proven, but inventory current provider state before acting.
+> Never record credential values, private repository locators or private commit
+> identifiers in this public repository.
+
 ## Authoritative sources
 
-- Cutover plan: [`../../../plans/unified-main-production-branches-cutover-plan-2026-08-23.md`](../../../plans/unified-main-production-branches-cutover-plan-2026-08-23.md)
-- FestappSeed provisioning contract: repository `festapp-platform/FestappSeed`, commit `4e7adbdb`
+- Cutover plan: [`../../../archive/plans/unified-main-production-branches-cutover-plan-2026-08-23.md`](../../../archive/plans/unified-main-production-branches-cutover-plan-2026-08-23.md)
+- Private provisioning contract: locator and revision retained outside this
+  public repository
 
 ## Outcome
 
 Every credential formerly tracked in the three removed Supabase runtime env
-files is replaced and revoked; provisioning uses FestappSeed without restoring
-secret values to Festapp or Git.
+files is replaced and revoked; provisioning uses the private configuration
+repository without restoring secret values to Festapp or Git.
 
 ## Fixed point
 
-- FestappSeed removal/contract SHA: `4e7adbdbd30aa38bcaebdc4b6d308b9b3f8c4f9f`.
+- Private removal/contract fixed point: retained in the private incident record.
 - Festapp boundary SHA: `5028473a466b7c318f0ca34c3ccb21e592a00203`.
 - Secret rotation/revocation receipts: not yet recorded.
 
 ## Completed actions
 
-- Tracked runtime env files were removed from FestappSeed HEAD.
+- Tracked runtime env files were removed from the private repository's current
+  tree.
 - A versioned, tested provisioning contract and non-secret example were added.
 - Festapp shared/tenant branches now document the external provisioning boundary.
 - The OneSignal REST credential was removed from the Flutter organization model,
@@ -36,7 +43,8 @@ secret values to Festapp or Git.
 
 ## Next action
 
-Using the authorized service consoles and FestappSeed process, inventory the
+Using the authorized service consoles and private configuration process,
+inventory the
 credential types from `supabase/aksmcz.env`, `supabase/festapp.env` and
 `supabase/slunovratopava.env` without printing values; rotate each live value and
 record only service, timestamp and revocation receipt.
@@ -49,7 +57,7 @@ Never put the replacement back into `organizations.data`.
 Do not use in-place rotation for the first replacement: OneSignal invalidates
 the old secret immediately. Create a second App API Key with an authenticated
 Organization API Key, canary it, atomically provision it to the canonical
-server-only store and the ignored FestappSeed operator env, and only then
+server-only store and the ignored private operator environment, and only then
 delete the historical key and prove denial.
 
 ## Remaining order
@@ -87,6 +95,6 @@ Rotation requires authenticated external service access and destructive revocati
 
 | Date | Action | Receipt/evidence | Result |
 |---|---|---|---|
-| 2026-08-24 | Remove tracked runtime env files | FestappSeed `4e7adbdb` | HEAD clean; historical values still require rotation |
+| 2026-08-24 | Remove tracked runtime env files | private operational receipt | current tree clean; historical values still require rotation |
 | 2026-08-28 | Remove OneSignal credential from client/admin JSON boundary | isolated server-only migration and SQL/Edge tests | code path complete; provider rotation and revocation still pending |
 | 2026-08-29 | Verify Slunovrat OneSignal app and current server-only credential | app `4c5b7280-510f-4628-8fb8-b4bdd4fed1b2`; provider read HTTP 200; zero-recipient send HTTP 200 | Chrome/Safari origin remains `https://app.festivalslunovrat.cz`; no subscriber notified; no provider setting changed |
