@@ -119,3 +119,31 @@ Deno.test("email worker waits for the invoice prepared by the order", async () =
     globalThis.fetch = originalFetch;
   }
 });
+
+Deno.test("email worker does not overwrite Fakturoid client with a blank name", async () => {
+  const originalFetch = globalThis.fetch;
+  const methods: string[] = [];
+  globalThis.fetch = async (_input, init) => {
+    const method = init?.method ?? "GET";
+    methods.push(method);
+    if (String(_input).endsWith("/oauth/token")) {
+      return Response.json({ access_token: "test-token" });
+    }
+    return Response.json([{ id: 55, variable_symbol: "20260950" }]);
+  };
+  try {
+    const ticketOrder = { ...order("CZK", "987654"), data: {} };
+    const variableSymbol = await useFakturoid(
+      { client_id: "test", client_secret: "test", slug: "test", subject_id: 1 },
+      ticketOrder,
+      "Test unit",
+      "test-command",
+      [],
+    );
+    assertEquals(variableSymbol, "20260950");
+    assertEquals(ticketOrder.payment_info.variable_symbol, "20260950");
+    assertEquals(methods, ["POST", "GET"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
