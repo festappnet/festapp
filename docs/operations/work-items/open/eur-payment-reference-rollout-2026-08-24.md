@@ -2,15 +2,15 @@
 
 Opened: 2026-08-24
 Updated: 2026-09-24
-Status: blocked
+Status: in progress
 Verification: release
 
 > 2026-09-24 follow-up: the user authorized an organization-title fallback for
 > paid EUR orders with no account-specific payee. The repository change keeps
 > an explicit account payee first, cleans control/whitespace characters in the
-> fallback and leaves bank account 1025 untouched. The order migration is live;
-> a follow-up migration supplies the same name to existing email Functions.
-> The live blocker below describes the pre-deployment state.
+> fallback and leaves bank account 1025 untouched. Both SQL migrations and
+> Hvězda Mořská web version `0.20.24+508` are live. Order `6467` proved the
+> decoded QR and RF reference; bank pairing still needs an incoming transfer.
 
 > The August rollout sequence is superseded by the live 2026-09-23 readback.
 > Both migrations are already present in the self-hosted database. Do not
@@ -47,45 +47,36 @@ pairing is verified, and obsolete pairing paths are absent.
   `creditor_name`; no open form is assigned to them and no EUR payment info was
   created in the prior 30 days. Historical EUR payment-info counts are 0, 16
   and 20 respectively, with zero stored RF references.
-- The live `public.create_ticket_order_internal_v1` function contains the
-  `EUR_CREDITOR_NAME_REQUIRED` guard. Account `8` is labeled as a test account;
+- On 2026-09-23, the live `public.create_ticket_order_internal_v1` function
+  contained the `EUR_CREDITOR_NAME_REQUIRED` guard. Account `8` is labeled as a test account;
   `737` belongs to unit AKH and `1025` to Hvězda Mořská. Neither the unit nor
   organization data provides a verified legal payee name.
 - The live order function uses the bank account selected on the form or falls
   back to an account linked to the occasion's unit for the required currency.
   Its account number and `creditor_name` flow into the order result and payment
-  templates. Account administrators already edit these fields in Festapp;
-  `BankAccountGeneralTab` requires a nonempty name when EUR is selected.
-- Mendelio's EUR QR uses a fixed `Mendelio` beneficiary for its shared billing
-  owner. Festapp's bank account owners differ by unit, so its per-account
-  configuration is the correct equivalent. No central payee assignment is
-  needed or authorized by this work item.
+  templates. Account administrators can override the organization fallback
+  with an account-specific name in Festapp.
+- The 2026-09-24 live Hvězda Mořská order `6467` used EUR account `1025`,
+  amount `187.00`, VS `2441`, RF `RF572441`, and QR beneficiary `Hvězda Mořská`.
+  The decoded QR matched the backend RF and the later-email payee readback.
 
 ## Next action
 
-Deploy the email-details fallback through the canonical SQL release workflow.
-Then verify live EUR order/QR/RF output and bank
-pairing as a scoped pilot. Do not change account `8`, `737` or `1025` centrally
-or replay the already applied migrations.
+Observe a real incoming EUR transfer and verify pairing against the stored RF.
+Do not change account `8`, `737` or `1025` centrally or replay applied migrations.
 
 ## Remaining order
 
 1. Check live order/RF output consumers and current pairing function against
    the canonical contract.
-2. Run a controlled EUR pilot, pairing reconciliation and observation when an
-   account owner enables EUR on an active form; preserve historical orders and
-   references.
+2. Reconcile an incoming EUR transfer against a stored RF; preserve historical
+   orders and references.
 3. Remove any proven obsolete pairing path only after current runtime checks.
 
 ## Current blocker
 
-No open form currently uses the three legacy EUR-capable accounts, so there is
-no active EUR order to pilot. Their administrators can configure the missing
-names through the existing account settings before use. The live order
-function deliberately rejects a paid EUR order with a missing name; no
-bank account, order, function or migration was changed in this read-only
-inspection. This is not a request for the operator to collect account-holder
-names from the user.
+The QR/order pilot is complete. No incoming test transfer was made, so bank
+pairing and reconciliation are not yet proven by this pilot.
 
 ## Authority gates
 
@@ -93,7 +84,8 @@ names from the user.
 |---|---|---|
 | Production preflight | Canonical activation identity and named-user read-only access | completed 2026-09-23 |
 | Update EUR bank account payees | Owning account administrator uses Festapp account settings | owner-managed when an account is activated |
-| EUR pilot or client/backend rollout | Current consumer inventory and exact pilot/artifact identities | pending if EUR is activated |
+| EUR QR/order pilot | Current consumer inventory and exact pilot/artifact identities | completed 2026-09-24; order `6467` |
+| Incoming EUR pairing | A real transfer with its RF reference | pending |
 
 ## Rollback and recovery
 
@@ -121,3 +113,6 @@ names from the user.
 | 2026-09-23 | Named-user canonical preflight | database identity verified; query SHA-256 `78c896b92a9ca78e2971618737c3ead593a8897b99b2eeaa75c41defd28b17a8` | both migrations, RF/IBAN functions and live order guard present; three EUR accounts lack creditor name; zero recent EUR payment info and zero open forms; no mutation |
 | 2026-09-23 | Read-only payee-source check | account/unit/organization labels and relevant JSON keys for accounts `8`, `737`, `1025` | test, AKH and Hvězda Mořská ownership context found; no verified legal payee name in the checked records |
 | 2026-09-23 | Correct ownership boundary | form/unit account selection, user-admin account settings and live order guard checked | account details are managed by their owners in Festapp; central payee collection request withdrawn |
+| 2026-09-24 | Deploy organization payee fallback | migrations `20260924120000`, `20260924130000` applied to canonical database with verified file hashes and ledger rows | order and later-email payment data use organization name when account name is blank |
+| 2026-09-24 | Live EUR QR pilot | Hvězda Mořská order `6467`; decoded EPC QR; backend RF check | `Hvězda Mořská`, `EUR187.00`, `RF572441` matched order and email data |
+| 2026-09-24 | Deploy Hvězda Mořská web | workflow `35997649020`, tenant SHA `67904f659`, version `0.20.24+508` | succeeded; public deployment verifier passed three consecutive probes |
