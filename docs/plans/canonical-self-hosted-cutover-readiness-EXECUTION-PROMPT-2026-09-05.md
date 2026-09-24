@@ -1,6 +1,6 @@
 # Execute: dokončení canonical self-hosted Supabase cutoveru
 
-Pracuj v `/Users/miakh/source/festapp` v release verification režimu a dodrž
+Pracuj v `<repo-root>` v release verification režimu a dodrž
 `AGENTS.md`, `CLAUDE.md`, `docs/architecture/ai_context.md` a produkční runbook.
 
 Autoritativní plán je:

@@ -43,7 +43,7 @@ This project is a Single Page Application (SPA) that acts as a web client for:
 
 2. **Run Dev Server**:
    ```bash
-   npm start
+   npm run dev
    ```
 
 3. **Build**:
@@ -53,14 +53,11 @@ This project is a Single Page Application (SPA) that acts as a web client for:
 
 ## Testing
 
-The project uses Jest for testing.
+The project uses Node.js's native test runner.
 
 ```bash
 # Run all tests
 npm test
-
-# Run tests in watch mode
-npm run test:watch
 ```
 
 ## Maintenance Scripts

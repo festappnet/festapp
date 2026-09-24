@@ -1,7 +1,7 @@
 # Work item: complete canonical self-hosted Supabase cutover
 
 Opened: 2026-09-02
-Updated: 2026-09-08
+Updated: 2026-09-10
 Status: in-progress
 Verification: release
 
@@ -20,7 +20,7 @@ Function, cron, callback, worker or operator can write to them.
 
 ## Fixed point
 
-- Published cutover tooling: `main` / `c47f5dd81d306e466c71e7a27cb4cfff1a7fb3d6`
+- Published cutover tooling: `main` / `603989d879781086960bd2db3b61a270eb62c7e7`
 - Runtime bundle: Supabase `self-hosted/v0.8.0`, PostgreSQL `17.6.1.136`, Terraform `1.16.1`
 - Last verified production state: all seven active iOS identities serve `0.19.95`; six authorized Android identities serve `0.20.1 (485)` at full rollout. `fstapp.fstapp` is excluded.
 
@@ -81,8 +81,9 @@ Function, cron, callback, worker or operator can write to them.
   `f8ba3e28-2eb9-4cb7-81ea-e4992ca16467`) with one daily cron and only the
   three source anon keys. All three exact source GET probes returned `200`;
   the Worker has no public route or write credential.
-- Updated the shared Worker deployment tool to Wrangler `4.129.1`; the monitor
-  and keepalive unit suites pass with zero npm audit findings.
+- Updated all five Worker dependency trees to Wrangler `4.131.0`; Miniflare now
+  resolves patched Sharp `0.35.4`. All Worker unit/type checks and npm audits
+  pass, and Dependabot reports no remaining open alert.
 
 ## Next action
 
