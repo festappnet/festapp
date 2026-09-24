@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "farnostopava",
-  "baseMainSha": "a276ac6b7b225f804120322fbe7fab2cde1a0419",
+  "baseMainSha": "b70a2854fe9478fe306686258b7e61267a408b99",
   "release": {
     "version": "0.20.19+503",
     "note": "Recover PWA assets when browsers report a false offline state"
