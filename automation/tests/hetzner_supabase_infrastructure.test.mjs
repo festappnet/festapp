@@ -49,26 +49,87 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   const runtime = path.join(root, 'automation/hetzner-supabase/runtime');
   const deploy = fs.readFileSync(path.join(runtime, 'deploy-rehearsal.sh'), 'utf8');
   const compose = fs.readFileSync(path.join(runtime, 'docker-compose.festapp.yml'), 'utf8');
+  const caddy = fs.readFileSync(path.join(runtime, 'Caddyfile'), 'utf8');
   const databaseTarget = fs.readFileSync(path.join(runtime, 'docker-compose.database-target.yml'), 'utf8');
   assert.match(deploy, /241bb11c0627f2981746d37033f57dbfa81d29b0/);
   assert.match(deploy, /refusing to overwrite/);
   assert.doesNotMatch(deploy, /rm\s|down\s+-v|prune/);
   assert.match(compose, /127\.0\.0\.1:8000:8000/);
   assert.match(compose, /FESTAPP_SUPABASE_SITE_ADDRESSES/);
+  assert.match(compose, /FESTAPP_SUPABASE_ADMIN_SITE/);
+  assert.match(compose, /FESTAPP_SUPABASE_ADMIN_HOSTNAME/);
+  assert.match(compose, /FESTAPP_SUPABASE_ADMIN_BASIC_AUTH/);
   assert.match(compose, /QR_RATE_SALT: \$\{QR_RATE_SALT:\?configure QR_RATE_SALT/);
   assert.match(compose, /SMTP_HOSTNAME: \$\{SMTP_HOST\}/);
   assert.match(compose, /PROJECT_URL: http:\/\/api-gw:8000/);
   assert.doesNotMatch(compose, /5432:5432/);
-  assert.equal((compose.match(/@sha256:/g) ?? []).length, 12);
+  assert.equal((compose.match(/@sha256:/g) ?? []).length, 13);
+  assert.match(compose, /admin-tunnel:[\s\S]*profiles:[\s\S]*admin-dashboard/);
+  assert.match(compose, /admin-tunnel:[\s\S]*network_mode: host/);
+  assert.match(compose, /admin-tunnel:[\s\S]*--token-file/);
+  assert.match(compose, /admin-tunnel:[\s\S]*read_only: true/);
+  assert.match(compose, /admin-tunnel:[\s\S]*user: "0:0"/);
+  assert.match(compose, /admin-tunnel:[\s\S]*cap_drop:[\s\S]*- ALL/);
+  assert.match(caddy, /http:\/\/\{\$FESTAPP_SUPABASE_ADMIN_HOSTNAME:supabase\.festapp\.net\}:8999[\s\S]*bind 127\.0\.0\.1/);
+  assert.match(caddy, /request_header Authorization "Basic \{\$FESTAPP_SUPABASE_ADMIN_BASIC_AUTH\}"/);
+  assert.match(compose, /studio:[\s\S]*studio-customization\/entrypoint\.sh/);
+  assert.match(compose, /studio:[\s\S]*studio-customization\/logout\.js/);
+  const studioLogout = fs.readFileSync(path.join(runtime, 'studio-customization/logout.js'), 'utf8');
+  assert.match(studioLogout, /\/cdn-cgi\/access\/logout/);
+  assert.match(studioLogout, /href.*\/account\/me/);
+  assert.match(studioLogout, /text-foreground-lighter/);
+  const studioInstaller = fs.readFileSync(path.join(runtime, 'studio-customization/install-logout.mjs'), 'utf8');
+  assert.match(studioInstaller, /Expected one pinned Studio document chunk/);
   for (const service of ['auth', 'rest', 'realtime', 'storage', 'meta', 'functions', 'studio']) {
     assert.match(databaseTarget, new RegExp(`^  ${service}:`, 'm'));
   }
   assert.match(databaseTarget, /storage:[\s\S]*DATABASE_URL:[\s\S]*FESTAPP_RUNTIME_DATABASE/);
   assert.match(deploy, /caddy\/Caddyfile/);
   assert.match(deploy, /switch-rehearsal-runtime-database\.sh/);
+  assert.match(deploy, /activate-admin-dashboard\.sh/);
   const verifier = fs.readFileSync(path.join(runtime, 'verify-pins.mjs'), 'utf8');
   assert.match(verifier, /assert\.ok\(arm64, `\$\{name\} has no linux\/arm64 registry manifest`\)/);
   assert.doesNotMatch(verifier, /\?\? manifests\[0\]/);
+});
+
+test('Studio customization installs an idempotent same-origin Access logout control', (t) => {
+  const runtime = path.join(root, 'automation/hetzner-supabase/runtime');
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-studio-customization-'));
+  t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }));
+
+  const chunksDir = path.join(tempDir, '.next/server/chunks/ssr');
+  const pagesDir = path.join(tempDir, '.next/server/pages/project');
+  fs.mkdirSync(chunksDir, { recursive: true });
+  fs.mkdirSync(pagesDir, { recursive: true });
+  const chunk = path.join(chunksDir, 'document.js');
+  const page = path.join(pagesDir, 'default.html');
+  fs.writeFileSync(
+    chunk,
+    'children:[(0,b.jsx)(c.Main,{}),(0,b.jsx)(c.NextScript,{})]',
+  );
+  fs.writeFileSync(page, '<!doctype html><html><body><main></main></body></html>');
+
+  const installer = path.join(runtime, 'studio-customization/install-logout.mjs');
+  const asset = path.join(runtime, 'studio-customization/logout.js');
+  const env = {
+    ...process.env,
+    FESTAPP_STUDIO_ROOT: tempDir,
+    FESTAPP_STUDIO_LOGOUT_ASSET: asset,
+  };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const installed = spawnSync('node', [installer], { encoding: 'utf8', env });
+    assert.equal(installed.status, 0, installed.stderr);
+  }
+
+  assert.match(fs.readFileSync(chunk, 'utf8'), /src:"\/festapp-admin\/logout\.js"/);
+  assert.equal(
+    fs.readFileSync(page, 'utf8').match(/\/festapp-admin\/logout\.js/g)?.length,
+    1,
+  );
+  assert.equal(
+    fs.readFileSync(path.join(tempDir, 'public/festapp-admin/logout.js'), 'utf8'),
+    fs.readFileSync(asset, 'utf8'),
+  );
 });
 
 test('rehearsal environment remains valid when sourced by a shell', () => {
@@ -85,11 +146,12 @@ test('rehearsal environment remains valid when sourced by a shell', () => {
   });
   assert.equal(configured.status, 0, configured.stderr);
   const envText = fs.readFileSync(path.join(tempDir, '.env'), 'utf8');
-  assert.match(envText, /STUDIO_DEFAULT_ORGANIZATION='Festapp Rehearsal'/);
-  assert.match(envText, /STUDIO_DEFAULT_PROJECT='Canonical Merge Rehearsal'/);
+  assert.match(envText, /STUDIO_DEFAULT_ORGANIZATION=Festapp/);
+  assert.match(envText, /STUDIO_DEFAULT_PROJECT='Festapp Production'/);
   assert.match(envText, /^FESTAPP_RUNTIME_DATABASE=postgres$/m);
   assert.match(envText,
     /^FESTAPP_SUPABASE_SITE_ADDRESSES='rehearsal-api\.festapp\.net, api\.festapp\.net'$/m);
+  assert.match(envText, /^FESTAPP_SUPABASE_ADMIN_SITE=http:\/\/127\.0\.0\.1:8999$/m);
   assert.match(envText, /https:\/\/csmostrava\.festapp\.net\/reset-password/);
   assert.match(envText, /https:\/\/hvezdamorska\.netlify\.app\/auth_bridge\.html/);
   assert.match(envText, /https:\/\/jubileum2025\.festapp\.net\/auth_bridge\.html/);

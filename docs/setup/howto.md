@@ -1,169 +1,107 @@
-# Festapp Setup Guide
+# Festapp setup and tenant guide
 
-> **This is an early file _how to_.** In need of support, contact
-> [michael.bujnovsky@festapp.net](mailto:michael.bujnovsky@festapp.net), so we
-> can fix possible errors.
+Festapp is configured from versioned inputs; do not hand-edit generated Dart,
+web, Android or iOS configuration. For local development, start with
+[local_development.md](local_development.md). For an existing production tenant,
+also read [tenant_overlays.md](../architecture/tenant_overlays.md).
 
----
+## Prerequisites
 
-## Backend Setup
+- Git, Node.js/npm and FVM
+- the Flutter SDK pinned by `FLUTTER_VERSION` in `automation/project.conf`
+- Docker-compatible runtime and Supabase CLI for local database work
+- platform tooling only when building Android or iOS
 
-##### Create a New Supabase Project
-
-- Visit [supabase.com](https://supabase.com) and start a new project.
-
-##### Supabase / Database Setup
-
-1. Launch the installation tool on
-   [live.festapp.net/instanceInstall](https://live.festapp.net/instanceInstall)
-   (or build your own and run on localhost with Flutter Web).
-2. Fill in the correct reference links and connection string with your Database
-   password (It can be obtained via Supabase - Project Settings - Database -
-   Database password).
-3. Copy composed supabase functions from installation tool and deploy them to
-   Supabase via CLI. For deployment is needed:
-   - Supabase CLI
-4. Run each section - this will get SQL scripts from the GitHub and seed them to
-   your Database. Follow the order:
-
-       1. Tables  
-       2. Functions  
-       3. Policies  
-       4. Seed (you can create new admin account here)
-
-##### Notifications
-
-- Visit [OneSignal Dashboard](https://dashboard.onesignal.com/)
-- For all platforms follow the
-  [OneSignal Flutter SDK Setup](https://documentation.onesignal.com/docs/flutter-sdk-setup).
-- Android can be setup once for each app.
-- Apple/iOS needs additional setup and it must be setup for each app
-  individually:
-  - Get App ID and set up in `appConfig`.
-  - Upload Apple P8 file.
-  - Update Group ID.
-  - Add to the same app group with OneSignal.
-
-##### Email Setup (SMTP)
-
-- Get a SMTP server (e.g. AWS) with SMTP variables (see below).
-- Edit and seed the password reset template.
-
-##### Environment Variables
-
-- Fill `.env` file as following:
-
-```
-SMTP_HOSTNAME=
-SMTP_USER_NAME=
-SMTP_USER_PASSWORD=
-# default sender email address
-DEFAULT_EMAIL=
-# url in format https://kjdpmixlnhntmxjedpxh.supabase.co
-PROJECT_URL=
+```bash
+fvm install
+fvm flutter pub get
+npm install --prefix web_client
 ```
 
-- Set `.env` to your project:
+## Configuration
 
-```
-supabase secrets set --env-file ./supabase/.env --project-ref yoursupabaseid
-```
+`automation/project.conf` is the public source of truth for application
+identity, domains, Supabase public client configuration, feature defaults,
+branding and version pins. Apply it with:
 
----
-
-## Frontend Setup
-
-##### General Configuration
-
-- Rename **appName** in `AppConfig`.
-- Set up colors in `ThemeConfig.dart`.
-- Configure fonts.
-- Remove unused localizations:
-  - In `appConfig`
-  - In iOS `plist`
-- If you make changes to Pages, run:
-
-```
-fvm dart run build_runner build
+```bash
+./automation/apply_config.sh
 ```
 
-##### Logos & Icons
+The command validates required values and generates the corresponding Flutter,
+web, Android and iOS leaves. Fonts come from `automation/fonts/`; tenant-owned
+brand assets and legal Markdown must be listed by the tenant overlay policy.
+Never put private credentials in `project.conf`.
 
-- Use SVG inside the app.
-- Fix incompatible SVGs using [SVGOMG](https://svgomg.net/).
+Private local values belong in the ignored `.env.local`. Production secrets
+come from the approved secret manager or deployment handoff described by
+`automation/private-inputs.schema.json` and
+`automation/tenant-external-services.schema.json`.
 
-##### Web Configuration
+## Database and Edge Functions
 
-- Use [RealFaviconGenerator](https://realfavicongenerator.net/) for web
-  favicons.
-- Add SVG icon to web loading.
-- Rename titles in `index.html`.
-- Rename `site.webmanifest`.
+Build the isolated local database from the checked-in schema baseline:
 
-##### Android Configuration
-
-- Add PNG icon to `assets`.
-- Run:
-
-```
-fvm dart run flutter_launcher_icons
+```bash
+./automation/bootstrap_local_db.sh
+./automation/test_all.sh db
 ```
 
-- Set label (short name, max 30 chars).
-- Set App ID in 3 places.
+Active forward migrations live in `supabase/migrations/`; canonical function
+sources live in `database/functions/`. Do not edit an applied migration or use
+the operator-only `instance-install` function as a production deployment path.
 
-##### iOS Configuration
+Until the self-hosted cutover is complete, every schema, function and data
+contract change must be applied and verified on the self-hosted target and both
+cloud sources (`default` and `a`). Resolve a live target from `SUPABASE_URL` in
+the selected tenant's `automation/project.conf`, never from a project ref in
+`.env.local`. See [edge_functions.md](../backend/edge_functions.md) for function
+authorization, tests and deployment constraints.
 
-- Change `CFBundleName`, `CFBundleDisplayName`.
-- Replace launch image inside Xcode.
-- Set bundle identifier inside Xcode.
+## Tenant creation or upgrade
 
----
+Shared code is developed on `main`. A `prod/<tenant>` branch may contain only
+the paths allowed by `automation/tenant-overlays/<tenant>.paths`, generated
+leaves and an `automation/tenant-overlay.json` recording its exact main SHA.
+
+For every tenant, start from a clean main tree, apply that tenant's source/data
+overlay, run `automation/apply_config.sh`, then validate with the main-owned
+drift checker. Never generate tenant B over tenant A's working tree. Detailed
+steps and the checker command are in
+[tenant_overlays.md](../architecture/tenant_overlays.md).
+
+## Integrations
+
+- Push notifications use OneSignal. Keep public app IDs in tenant
+  configuration and credentials outside Git.
+- SMTP setup is documented in [aws_ses.md](aws_ses.md).
+- Bank import setup is documented in [bank_import.md](bank_import.md).
+- Participant CSV format is documented in
+  [csv_user_import.md](csv_user_import.md).
+- Public and private images use the R2 control plane described in
+  [image_worker.md](../backend/image_worker.md).
+
+## Running and testing
+
+```bash
+fvm flutter run -d chrome
+npm run dev --prefix web_client
+./automation/test_all.sh
+```
+
+The full runner reports environment-dependent skips. Use the targeted scopes
+`web`, `db`, `flutter`, `integration`, or `automation` while developing, and
+follow [CONTRIBUTING.md](../../CONTRIBUTING.md) for the security checklist.
 
 ## Publishing
 
-##### Web Deployment
+Web releases use `automation/deploy_direct.sh`, which builds, uploads to
+Cloudflare Pages and verifies the configured custom domain. A Git push does not
+start a deployment. See the
+[Cloudflare deployment guide](../../automation/cloudflare/README.md).
 
-- Set up Netlify from branch.
-- Example Netlify setup for domain `app.festapp.net`:
-
-      Type: A  
-      Name: app  
-      Value: 75.2.60.5
-
-##### Android Deployment
-
-- Create a new app.
-- Upload the App Bundle.
-- Complete declarations.
-- Example privacy policy links:
-  - [Privacy Policy](https://raw.githack.com/festappnet/festapp/prod/festapp/PrivacyPolicy.html)
-  - [Request Privacy Policy](https://raw.githack.com/festappnet/festapp/prod/festapp/PrivacyPolicy.html#request)
-- Import data types as CSV from Festapp standard csv file or fill them.
-- For participant imports, including the optional `Skupina:` column, see
-  [CSV user import](csv_user_import.md).
-- Upload assets:
-  - Icon: 512×512 px
-  - Feature Graphic: 1024×500 px
-- Fill in:
-  - Short description
-  - Long description
-  - Category: Event/Travel
-  - Screenshots:
-    - 2 phone screenshots
-    - 2 tablet screenshots
-- Add countries.
-- Release the app.
-
-##### iOS Deployment
-
-- Create a new app on App Store Connect.
-- Upload 3 screenshots for iPhone and iPad.
-- Complete privacy settings.
-
-##### Screenshots
-
-- Use [App Mockup Studio](https://studio.app-mockup.com/).
-- Devices (Simulator and Mockup Studio):
-  - iPhone 16 Pro Max
-  - iPad Pro 12.9
+Android publishing uses
+[android_play_release.md](../../automation/release/android_play_release.md).
+iOS candidate and upload steps are in
+[ios_howto.md](../../automation/release/ios_howto.md). Release only the tenant
+branch explicitly selected for the current task.

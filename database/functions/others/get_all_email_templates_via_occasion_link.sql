@@ -7,10 +7,16 @@ AS $$
 DECLARE
     v_occasion_id bigint;
 BEGIN
-    -- Retrieve the occasion ID
-    SELECT id INTO v_occasion_id
-    FROM public.occasions
-    WHERE link = occasion_link;
+    -- Canonical merges may contain the same legacy link in multiple tenants.
+    SELECT o.id
+    INTO v_occasion_id
+    FROM public.occasions o
+    WHERE o.link = occasion_link
+      AND o.organization = (
+        SELECT ui.organization
+        FROM public.user_info ui
+        WHERE ui.id = auth.uid()
+      );
 
     IF v_occasion_id IS NULL THEN
         RAISE EXCEPTION 'Occasion not found for link: %', occasion_link;

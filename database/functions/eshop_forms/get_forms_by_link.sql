@@ -14,7 +14,8 @@ BEGIN
     SELECT id
     INTO v_occasion_id
     FROM public.occasions
-    WHERE link = occasion_link;
+    WHERE link = occasion_link
+      AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
 
     -- Step 2: If no occasion is found, throw a 'no_data_found' exception.
     IF v_occasion_id IS NULL THEN
