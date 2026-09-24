@@ -2,12 +2,13 @@
 const fs = require('fs');
 const path = require('path');
 
-// Arguments: [node, script, projectRoot, fontFamilyBase]
+// Arguments: [node, script, projectRoot, fontFamilyBase, commaSeparatedFontFiles]
 const projectRoot = process.argv[2];
 let fontFamilyBase = process.argv[3] || 'Futura'; // Default
+const configuredFiles = process.argv[4] || '';
 
 if (!projectRoot) {
-    console.error("Usage: node configure_fonts.js <projectRoot> [fontFamilyBase]");
+    console.error("Usage: node configure_fonts.js <projectRoot> [fontFamilyBase] [fontFiles]");
     process.exit(1);
 }
 
@@ -18,24 +19,42 @@ const pubspecPath = path.join(projectRoot, 'pubspec.yaml');
 const webThemePath = path.join(projectRoot, 'web_client/src/theme_config.css');
 const dartThemePath = path.join(projectRoot, 'lib/theme_config.dart');
 
-// Ensure source exists
-if (!fs.existsSync(fontSourceDir)) {
-    console.error(`Font source directory not found: ${fontSourceDir}`);
-    process.exit(0);
-}
-
 // Ensure dests exist
 if (!fs.existsSync(flutterFontDir)) fs.mkdirSync(flutterFontDir, { recursive: true });
 if (!fs.existsSync(webFontDir)) fs.mkdirSync(webFontDir, { recursive: true });
 
 // 1. Scan and Classify Fonts
 const fonts = [];
-const files = fs.readdirSync(fontSourceDir);
-const validFiles = files.filter(f => f.match(/\.(ttf|otf)$/i));
+let fontSources;
+if (configuredFiles) {
+    const files = configuredFiles.split(',').map(file => file.trim());
+    if (files.some(file => !/^fonts\/[^/,]+\.(ttf|otf)$/i.test(file)) ||
+        new Set(files).size !== files.length ||
+        new Set(files.map(file => path.basename(file).replace(/\s+/g, ''))).size !== files.length) {
+        throw new Error('FONT_FILES must list distinct .ttf/.otf files directly under fonts/ with unique web filenames');
+    }
+    const allowedDir = fs.realpathSync(flutterFontDir);
+    fontSources = files.map(file => {
+        const source = path.join(projectRoot, file);
+        if (!fs.existsSync(source) ||
+            path.dirname(fs.realpathSync(source)) !== allowedDir ||
+            !fs.statSync(source).isFile()) {
+            throw new Error(`Configured font is missing or outside fonts/: ${file}`);
+        }
+        return { file: path.basename(file), source };
+    });
+} else {
+    if (!fs.existsSync(fontSourceDir)) {
+        throw new Error(`Font source directory not found: ${fontSourceDir}`);
+    }
+    fontSources = fs.readdirSync(fontSourceDir)
+        .filter(file => /\.(ttf|otf)$/i.test(file))
+        .map(file => ({ file, source: path.join(fontSourceDir, file) }));
+}
+const validFiles = fontSources.map(font => font.file);
 
 if (validFiles.length === 0) {
-    console.log("No fonts found in automation/fonts. Exiting.");
-    process.exit(0);
+    throw new Error('No .ttf/.otf fonts found in automation/fonts');
 }
 
 // Auto-Detect Family Name
@@ -53,7 +72,7 @@ function detectFamilyName(fileList) {
     return common.replace(/-/g, ' ').replace(/_/g, ' ').trim();
 }
 
-const detectedFamily = detectFamilyName(validFiles);
+const detectedFamily = configuredFiles ? null : detectFamilyName(validFiles);
 if (detectedFamily && detectedFamily !== 'Futura') {
     // If the user provided a specific env var override, maybe respect it?
     // But typically auto-detect is preferred if files are provided.
@@ -69,8 +88,7 @@ if (detectedFamily && detectedFamily !== 'Futura') {
 
 console.log(`Scanning fonts...`);
 
-validFiles.forEach(file => {
-    const srcPath = path.join(fontSourceDir, file);
+fontSources.forEach(({ file, source: srcPath }) => {
     let weight = 400;
     let style = 'normal';
     const lowerName = file.toLowerCase();
@@ -99,7 +117,8 @@ validFiles.forEach(file => {
 // 2. Clear and Copy Files
 console.log(`Found ${fonts.length} fonts. Syncing...`);
 fonts.forEach(font => {
-    fs.copyFileSync(font.srcPath, path.join(flutterFontDir, font.appFilename));
+    const flutterTarget = path.join(flutterFontDir, font.appFilename);
+    if (font.srcPath !== flutterTarget) fs.copyFileSync(font.srcPath, flutterTarget);
     fs.copyFileSync(font.srcPath, path.join(webFontDir, font.webFilename));
 });
 

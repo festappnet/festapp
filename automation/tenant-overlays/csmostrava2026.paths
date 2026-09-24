@@ -6,7 +6,6 @@ assets/icons/fstapplogo.png
 assets/icons/fstapplogo.svg
 assets/icons/fstapplogo_program.png
 fonts/Gill Sans Regular.ttf
-web_client/src/assets/fonts/GillSansRegular.ttf
 android/app/src/main/res/mipmap-*/ic_launcher.png
 ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
 web/csmostrava-*.svg
