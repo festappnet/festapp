@@ -171,11 +171,9 @@ flutter:
   fonts:
     - family: Cerebri-Sans
       fonts:
-        - asset: fonts/Futura PT Book.ttf
+        - asset: fonts/Cerebri-Sans-Regular.ttf
           weight: 400
-        - asset: fonts/Futura PT Medium.ttf
-          weight: 500
-        - asset: fonts/Gill Sans Bold.otf
+        - asset: fonts/Cerebri-Sans-Bold.ttf
           weight: 700
   assets:
     - assets/icons/

@@ -36,3 +36,8 @@ web_client/public/site.webmanifest
 web_client/src/app_config.js
 web_client/src/theme_config.css
 web_client/src/version.js
+# Web copies of tenant-owned font sources selected by FONT_FILES.
+web_client/src/assets/fonts/Agrandir-Narrow.ttf
+web_client/src/assets/fonts/Cerebri-Sans-Bold.ttf
+web_client/src/assets/fonts/Cerebri-Sans-Regular.ttf
+web_client/src/assets/fonts/GillSansRegular.ttf
