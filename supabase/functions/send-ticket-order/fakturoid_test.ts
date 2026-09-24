@@ -81,10 +81,8 @@ Deno.test("CZK invoice creation returns Fakturoid VS before the order response",
     );
     assertEquals(variableSymbol, "20260950");
     assertEquals(ticketOrder.payment_info.variable_symbol, "20260950");
-    assertEquals(sent.map((request) => request.body.variable_symbol), [
-      undefined,
-      undefined,
-    ]);
+    assertEquals(sent.map((request) => request.method), ["POST"]);
+    assertEquals(sent[0].body.variable_symbol, undefined);
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -83,29 +83,37 @@ export async function useFakturoid(
   if (!result) throw new Error("FAKTUROID_INVOICE_NOT_READY");
 
   // The order response waits for Fakturoid's final CZK symbol.
-  const patchBody: any = {
-    client_name: `${d.name || ""} ${d.surname || ""}`.trim(),
-    client_street: d.street,
-    client_city: d.city,
-    client_zip: d.zip,
-    client_country: d.country,
-    client_has_delivery_address: false,
-    client_phone: d.phone,
-  };
+  const clientName = `${d.name || ""} ${d.surname || ""}`.trim();
+  const patchBody: Record<string, unknown> = {};
+  // A public test form can omit the buyer's name. Sending an empty client_name
+  // makes Fakturoid reject an otherwise valid proforma with HTTP 422.
+  if (clientName) {
+    patchBody.client_name = clientName;
+    for (const [key, value] of Object.entries({
+      client_street: d.street,
+      client_city: d.city,
+      client_zip: d.zip,
+      client_country: d.country,
+      client_phone: d.phone,
+    })) {
+      if (value) patchBody[key] = value;
+    }
+    patchBody.client_has_delivery_address = false;
+  }
   if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
     patchBody.variable_symbol = originalVariableSymbol;
   }
 
   let patched = result;
-  if (mode === "prepare") {
+  if (mode === "prepare" && Object.keys(patchBody).length > 0) {
     const patchRes = await fetch(
-    `https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${result.id}.json`,
-    {
-      method: "PUT",
-      headers: apiHeaders,
-      body: JSON.stringify(patchBody),
-    },
-  );
+      `https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${result.id}.json`,
+      {
+        method: "PUT",
+        headers: apiHeaders,
+        body: JSON.stringify(patchBody),
+      },
+    );
     if (!patchRes.ok) {
       throw new Error(`Fakturoid patch failed ${patchRes.status}`);
     }
