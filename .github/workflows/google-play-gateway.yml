@@ -1,0 +1,108 @@
+name: Google Play gateway
+
+on:
+  workflow_dispatch:
+    inputs:
+      requests_json:
+        description: 'JSON array with tenant, packageName, operation and SHA-256 of the protected request'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: google-play-gateway
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: plan
+        env:
+          REQUESTS_JSON: ${{ inputs.requests_json }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          input="$RUNNER_TEMP/google-play-requests.json"
+          printf '%s' "$REQUESTS_JSON" > "$input"
+          matrix="$(node automation/release/google_play_plan.mjs "$input")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  execute:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: android-production-${{ matrix.tenant }}
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: Install pinned Play tooling
+        working-directory: automation/release/fastlane
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle config set --local path "$RUNNER_TEMP/bundle"
+          bundle install --jobs 4 --retry 3
+      - name: Materialize protected request and credential
+        env:
+          PLAY_OPERATION_REQUEST_JSON: ${{ secrets.PLAY_OPERATION_REQUEST_JSON }}
+          GOOGLE_PLAY_JSON: ${{ secrets.GOOGLE_PLAY_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$PLAY_OPERATION_REQUEST_JSON"
+          test -n "$GOOGLE_PLAY_JSON"
+          printf '%s' "$PLAY_OPERATION_REQUEST_JSON" > "$RUNNER_TEMP/play-request.json"
+          printf '%s' "$GOOGLE_PLAY_JSON" > "$RUNNER_TEMP/google-play.json"
+          echo '${{ matrix.requestSha256 }}  '${RUNNER_TEMP}'/play-request.json' | sha256sum --check
+      - name: Execute through the GitHub-only gateway
+        env:
+          PLAY_ALLOWED_REPOSITORY: ${{ secrets.PLAY_ALLOWED_REPOSITORY }}
+          PLAY_REQUEST_PATH: ${{ runner.temp }}/play-request.json
+          PLAY_REQUEST_SHA256: ${{ matrix.requestSha256 }}
+          PLAY_OPERATION: ${{ matrix.operation }}
+          PLAY_PACKAGE: ${{ matrix.packageName }}
+          PLAY_REPORT_PATH: ${{ runner.temp }}/play-report.json
+          GOOGLE_PLAY_JSON_KEY: ${{ runner.temp }}/google-play.json
+        working-directory: automation/release/fastlane
+        shell: bash
+        run: bundle exec ruby ../google_play_gateway.rb
+      - name: Encrypt the full report
+        env:
+          ARTIFACT_PASSPHRASE: ${{ secrets.ANDROID_ARTIFACT_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_PASSPHRASE"
+          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            --output "$RUNNER_TEMP/play-report.json.gpg" "$RUNNER_TEMP/play-report.json"
+      - name: Store encrypted report
+        uses: actions/upload-artifact@v6
+        with:
+          name: google-play-${{ matrix.tenant }}-${{ matrix.operation }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/play-report.json.gpg
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove protected inputs
+        if: always()
+        shell: bash
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -type f \( \
+            -name 'play-request.json' -o \
+            -name 'google-play.json' -o \
+            -name 'play-report.json' \
+          \) -delete
