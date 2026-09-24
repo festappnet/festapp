@@ -22,7 +22,8 @@ export async function useFakturoid(
     contentType: string;
     encoding: "binary";
   }>,
-): Promise<void> {
+  mode: "prepare" | "attachment" = "attachment",
+): Promise<string> {
   // 1) Get OAuth token
   const creds = btoa(`${client_id}:${client_secret}`);
   const tokenRes = await fetch(
@@ -67,7 +68,7 @@ export async function useFakturoid(
   }
   const existing = await lookupResponse.json();
   let result = Array.isArray(existing) ? existing[0] : undefined;
-  if (!result) {
+  if (!result && mode === "prepare") {
     const invRes = await fetch(
       `https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices.json`,
       {
@@ -79,8 +80,9 @@ export async function useFakturoid(
     if (!invRes.ok) throw new Error(`Fakturoid create failed ${invRes.status}`);
     result = await invRes.json();
   }
+  if (!result) throw new Error("FAKTUROID_INVOICE_NOT_READY");
 
-  // 3) Keep the invoice aligned with the VS already shown to the customer.
+  // The order response waits for Fakturoid's final CZK symbol.
   const patchBody: any = {
     client_name: `${d.name || ""} ${d.surname || ""}`.trim(),
     client_street: d.street,
@@ -89,10 +91,14 @@ export async function useFakturoid(
     client_country: d.country,
     client_has_delivery_address: false,
     client_phone: d.phone,
-    variable_symbol: originalVariableSymbol,
   };
+  if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
+    patchBody.variable_symbol = originalVariableSymbol;
+  }
 
-  const patchRes = await fetch(
+  let patched = result;
+  if (mode === "prepare") {
+    const patchRes = await fetch(
     `https://app.fakturoid.cz/api/v3/accounts/${slug}/invoices/${result.id}.json`,
     {
       method: "PUT",
@@ -100,14 +106,23 @@ export async function useFakturoid(
       body: JSON.stringify(patchBody),
     },
   );
-  if (!patchRes.ok) {
-    throw new Error(`Fakturoid patch failed ${patchRes.status}`);
+    if (!patchRes.ok) {
+      throw new Error(`Fakturoid patch failed ${patchRes.status}`);
+    }
+    patched = await patchRes.json();
   }
-  const patched = await patchRes.json();
-  assertFakturoidVariableSymbol(patched, originalVariableSymbol);
+  const variableSymbol = String(patched.variable_symbol ?? "");
+  if (!/^\d{1,10}$/.test(variableSymbol)) {
+    throw new Error("FAKTUROID_VARIABLE_SYMBOL_INVALID");
+  }
+  if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
+    assertFakturoidVariableSymbol(patched, originalVariableSymbol);
+  } else {
+    order.payment_info.variable_symbol = variableSymbol;
+  }
 
-  // 4) Fetch PDF with up to one retry on 204
-  if (patched.pdf_url) {
+  // PDF generation is kept in the email worker so the order waits only for VS.
+  if (mode === "attachment" && patched.pdf_url) {
     await new Promise((r) => setTimeout(r, 1000));
     let pdfRes = await fetch(patched.pdf_url, {
       headers: { Authorization: `Bearer ${access_token}` },
@@ -133,4 +148,5 @@ export async function useFakturoid(
       console.error("Could not fetch PDF, status:", pdfRes.status);
     }
   }
+  return variableSymbol;
 }

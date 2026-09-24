@@ -31,7 +31,7 @@ Deno.test("EUR proforma preserves the numeric VS used by RF payment", () => {
   assertEquals(payload.currency, "EUR");
 });
 
-Deno.test("CZK proforma preserves the order VS shown in payment QR", () => {
+Deno.test("CZK proforma lets Fakturoid assign the variable symbol", () => {
   const payload = buildFakturoidInvoicePayload(
     order("CZK", "987654"),
     "Long tenant unit",
@@ -40,14 +40,14 @@ Deno.test("CZK proforma preserves the order VS shown in payment QR", () => {
     undefined,
     "2026-08-23",
   );
-  assertEquals(payload.variable_symbol, "987654");
+  assertEquals(payload.variable_symbol, undefined);
   assertEquals(
     (payload.lines as Array<{ unit_name: string }>)[0].unit_name,
     "Long tenan",
   );
 });
 
-Deno.test("Fakturoid response must not replace the displayed payment VS", () => {
+Deno.test("EUR Fakturoid response must preserve the RF numeric VS", () => {
   assertFakturoidVariableSymbol({ variable_symbol: 987654 }, "987654");
   assertThrows(
     () =>
@@ -57,7 +57,7 @@ Deno.test("Fakturoid response must not replace the displayed payment VS", () => 
   );
 });
 
-Deno.test("CZK invoice creation and patch retain the customer-facing VS", async () => {
+Deno.test("CZK invoice creation returns Fakturoid VS before the order response", async () => {
   const originalFetch = globalThis.fetch;
   const sent: Array<{ method: string; body: Record<string, unknown> }> = [];
   globalThis.fetch = async (_input, init) => {
@@ -67,26 +67,30 @@ Deno.test("CZK invoice creation and patch retain the customer-facing VS", async 
     }
     if (method === "GET") return Response.json([]);
     sent.push({ method, body: JSON.parse(String(init?.body)) });
-    return Response.json({ id: 55, variable_symbol: "987654" });
+    return Response.json({ id: 55, variable_symbol: "20260950" });
   };
   try {
-    await useFakturoid(
+    const ticketOrder = { ...order("CZK", "987654"), data: {} };
+    const variableSymbol = await useFakturoid(
       { client_id: "test", client_secret: "test", slug: "test", subject_id: 1 },
-      { ...order("CZK", "987654"), data: {} },
+      ticketOrder,
       "Test unit",
       "test-command",
       [],
+      "prepare",
     );
+    assertEquals(variableSymbol, "20260950");
+    assertEquals(ticketOrder.payment_info.variable_symbol, "20260950");
     assertEquals(sent.map((request) => request.body.variable_symbol), [
-      "987654",
-      "987654",
+      undefined,
+      undefined,
     ]);
   } finally {
     globalThis.fetch = originalFetch;
   }
 });
 
-Deno.test("CZK invoice rejects a different VS returned after patch", async () => {
+Deno.test("email worker waits for the invoice prepared by the order", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (_input, init) => {
     if (String(_input).endsWith("/oauth/token")) {
@@ -111,7 +115,7 @@ Deno.test("CZK invoice rejects a different VS returned after patch", async () =>
           [],
         ),
       Error,
-      "FAKTUROID_VARIABLE_SYMBOL_MISMATCH",
+      "FAKTUROID_INVOICE_NOT_READY",
     );
   } finally {
     globalThis.fetch = originalFetch;

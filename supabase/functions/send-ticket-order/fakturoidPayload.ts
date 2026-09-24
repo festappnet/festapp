@@ -14,7 +14,6 @@ export function buildFakturoidInvoicePayload(
     issued_on: issuedOn,
     taxable_fulfillment_due: issuedOn,
     currency: order.payment_info.currency_code,
-    variable_symbol: String(order.payment_info.variable_symbol),
     iban: order.payment_info.account_number,
     bank_account: order.payment_info.account_number_human_readable,
     lines: [{
@@ -25,6 +24,10 @@ export function buildFakturoidInvoicePayload(
       vat_rate: 0,
     }],
   };
+  // EUR uses the order's RF reference; CZK uses the VS assigned by Fakturoid.
+  if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
+    body.variable_symbol = String(order.payment_info.variable_symbol);
+  }
   if (note) body.note = note;
   return body;
 }

@@ -80,7 +80,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     service.type === "FAKTUROID"
   );
   if (fakturoid) {
-    await useFakturoid(
+    const variableSymbol = await useFakturoid(
       {
         client_id: fakturoid.data.client_id,
         client_secret: fakturoid.data.client_secret,
@@ -93,6 +93,16 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       String(task.data.command_id),
       attachments,
     );
+    if (String(paymentInfo.currency_code).toUpperCase() === "CZK") {
+      const { error: updateError } = await supabaseAdmin.rpc(
+        "update_payment_info_variable_symbol",
+        {
+          p_payment_info_id: paymentInfo.id,
+          p_variable_symbol: Number(variableSymbol),
+        },
+      );
+      if (updateError) throw updateError;
+    }
   } else if (paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount
