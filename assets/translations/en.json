@@ -1081,6 +1081,7 @@
     "sentFrom": "Sent from {appName}"
   },
   "UnitSettings": {
+    "labelDefaultCommunicationTone": "Default communication tone",
     "labelReplyToEmail": "Reply-To Email",
     "labelDefaultTimezone": "Default Timezone",
     "deleteUnit": "Delete Organization",
@@ -1093,8 +1094,14 @@
     "successTitle_informal": "Your order was accepted!",
     "successRegistrationTitle": "Your registration was accepted!",
     "successRegistrationTitle_informal": "Your registration was accepted!",
-    "paymentInfo": "Payment information has been sent to your email.",
-    "paymentInfo_informal": "Payment information has been sent to your email.",
+    "paymentInfo": "Thank you! Your confirmation and payment details will also arrive by email.",
+    "paymentInfo_informal": "Thank you! Your confirmation and payment details will also arrive by email.",
+    "paymentInfoWithEmail": "Thank you! Your confirmation and payment details will arrive at {email}.",
+    "paymentInfoWithEmail_informal": "Thank you! Your confirmation and payment details will arrive at {email}.",
+    "confirmationInfo": "Thank you. Your confirmation will arrive by email.",
+    "confirmationInfo_informal": "Thank you. Your confirmation will arrive by email.",
+    "confirmationInfoWithEmail": "Thank you. Your confirmation will arrive at {email}.",
+    "confirmationInfoWithEmail_informal": "Thank you. Your confirmation will arrive at {email}.",
     "selectSeat": "Please select a seat.",
     "selectSeat_informal": "Please select a seat.",
     "submitOrder": "Submit order",
@@ -1115,8 +1122,11 @@
     "depositInfoOnSite": "Remaining amount payable on site.",
     "depositInfoDaysBefore": "Remaining amount must be paid at least {days} days before the event.",
     "paymentQrTitle": "Scan to pay",
-    "paymentQrSubtitle": "You can also find the payment details below.",
+    "paymentQrSubtitle": "Scan the QR code in your banking app.",
     "downloadQr": "Download QR code",
+    "copy": "Copy",
+    "showPaymentOptions": "Show payment options",
+    "hidePaymentOptions": "Hide payment options",
     "bankAccount": "Bank account",
     "iban": "IBAN",
     "variableSymbol": "Variable symbol",
@@ -1484,7 +1494,7 @@
     "safeSenderInfo": "This address is safe. It is a special robot that only reads payment e-mails and nothing else.",
     "forwardingEmailWarning": "Warning: Please keep this e-mail secret. Do not share it with anyone.",
     "creditorNameLabel": "Account holder name",
-    "creditorNameHelp": "Required for EUR EPC payment QR codes; use the legal beneficiary name."
+    "creditorNameHelp": "For EUR payments. If empty, the organization name is used."
   },
   "FeatureContract": {
     "title": "Contract",

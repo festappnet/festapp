@@ -17,7 +17,8 @@
     "flatpickr": "^4.6.13",
     "glob": "^13.0.0",
     "node-localstorage": "^3.0.5",
-    "pg": "^8.17.1"
+    "pg": "^8.17.1",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "jsdom": "^27.3.0",
