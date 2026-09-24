@@ -5,23 +5,27 @@ Updated: 2026-08-24
 Status: blocked
 Verification: standard
 
+> Revalidation required (2026-09-10): the recorded candidate branch and
+> command `1027` predate later production releases. Do not advance that branch
+> or replay the command. Reconcile the remaining outcome against current
+> tenant refs and the private release-manifest owner first.
+
 ## Authoritative sources
 
 - Architecture: [`../../../architecture/ai_context.md`](../../../architecture/ai_context.md)
 - Public implementation: `main` commit `478bb68aec187e6cdd65bf2f32d89533b919f537`
-- Private owner: `rawen-dev/festappseed`, path
-  `release/store-listings/csm-ostrava-2026`
+- Private owner: the designated private release-manifest repository; its
+  locator and revision are intentionally omitted here
 
 ## Outcome
 
 Festapp contains reusable, fail-closed release tooling only. CSM Apple/Google
 identity, metadata, screenshots, artwork and operational decisions have exactly
-one owner: FestappSeed.
+one owner: the private configuration repository.
 
 ## Fixed point
 
-- Private repository: `rawen-dev/festappseed` `main` at
-  `ae91a9cba4b91e3bfbebbe77e750f36638cd76bc`.
+- Private repository fixed point: retained in the private operational record.
 - Public generic cleanup: `main` at
   `478bb68aec187e6cdd65bf2f32d89533b919f537`.
 - CSM canonical candidate: `cutover/csm-after-1027` at
@@ -33,7 +37,8 @@ one owner: FestappSeed.
 ## Completed actions
 
 - Canonical Apple and Google publishing assets are committed byte-identically
-  in FestappSeed after credential-pattern and filename scans.
+  in the private configuration repository after credential-pattern and filename
+  scans.
 - The private manifest owns both bundle IDs, Android package and release branch;
   `automation/project.conf` in the exact Festapp checkout exclusively owns the
   target version and numeric build.
@@ -47,7 +52,7 @@ one owner: FestappSeed.
   absent from both candidates.
 - The superseded public cleanup branch was removed from `origin`; the duplicate
   helper checkout was moved to the macOS Trash after byte-for-byte comparison
-  with FestappSeed.
+  with the private configuration repository.
 - Hvezda morska was advanced to its canonical production overlay, passed the
   repaired CI tenant gate and was published by Netlify. The live
   `0.19.84+387` form renders the product-type description below `Záloha`.
@@ -80,7 +85,8 @@ branch first would invalidate the requested artifact provenance.
 ## Rollback and recovery
 
 - Public deletions remain recoverable from Git and the dated local preservation snapshot.
-- Private canonical data remains preserved in FestappSeed commit `ae91a9c` and
+- Private canonical data remains preserved at the private operational fixed
+  point and
   the recoverable Trash copy of the former helper checkout.
 
 ## Definition of complete
@@ -95,8 +101,8 @@ branch first would invalidate the requested artifact provenance.
 
 | Date | Action | Receipt/evidence | Result |
 |---|---|---|---|
-| 2026-08-24 | Source asset/config consolidation | source commits `0093ff0`, `fa666c0`, `dc93da5` | 95 files copied byte-identically into the designated FestappSeed owner |
-| 2026-08-24 | FestappSeed consolidation | `ae91a9cba4b91e3bfbebbe77e750f36638cd76bc`; 7 provisioning tests plus filename/content credential scan | committed; canonical private owner ready |
+| 2026-08-24 | Source asset/config consolidation | source commits `0093ff0`, `fa666c0`, `dc93da5` | 95 files copied byte-identically into the designated private owner |
+| 2026-08-24 | Private configuration consolidation | private operational receipt; 7 provisioning tests plus filename/content credential scan | committed; canonical private owner ready |
 | 2026-08-24 | Public canonical integration | `main` `478bb68aec187e6cdd65bf2f32d89533b919f537` | generic fail-closed manifest contract and self-contained tenant web build integrated |
 | 2026-08-24 | Deterministic tenant regeneration | CSM `d90d42a3d`; Hvezda morska production `7febb2734` | drift/config/absence gates passed; HM temporary candidate removed after production cutover |
 | 2026-08-24 | Duplicate cleanup | removed remote `cleanup/store-assets-private-cutover`; former helper checkout moved to macOS Trash | obsolete public/helper paths no longer active |
