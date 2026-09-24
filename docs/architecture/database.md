@@ -82,7 +82,9 @@ SQL functions organized by domain:
 
 | Directory | Purpose | Key Functions |
 |-----------|---------|---------------|
+| `account_deletion/` | Account deletion lifecycle | Request/confirm deletion contracts |
 | `activities/` | Volunteer shift management | Task CRUD, assignment logic |
+| `cleaning/` | Cleaning reports | Status, report and resolution commands |
 | `cron/` | Scheduled jobs | Automated cleanup, notifications |
 | `emails/` | Email operations | Template rendering, logging |
 | `eshop/` | Product management | `update_product`, product queries |
@@ -92,9 +94,12 @@ SQL functions organized by domain:
 | `eshop_transactions/` | Transactions | `add_transaction_to_payment_info_ws` |
 | `events/` | Schedule events | Event CRUD, sign-up logic, event feedback |
 | `inventory/` | Capacity pools | Pool allocation, availability checks |
+| `notifications/` | Notification delivery | Queue and provider delivery helpers |
 | `organization/` | Domain ops | Org settings, admin management |
 | `others/` | Cross-cutting | `duplicate_occasion`, `check_is_*` guards, image records, email templates |
+| `places/` | Map data | Place and path commands |
 | `seed/` | Data seeding | Initial data setup |
+| `speakers/` | Speakers and counselling | Speaker/topic commands and search |
 | `support/` | Help operations | Support requests |
 | `synchronization/` | Data sync | Sync state management |
 | `units/` | Unit management | Unit CRUD, user-unit linking |
@@ -134,14 +139,15 @@ The codebase uses two permission function families:
 
 ### Search Path Discipline
 
-Functions consistently use:
+Application RPCs use:
 ```sql
 SET search_path = public, extensions
--- eshop_bank_accounts/ and eshop_transactions/ add the eshop schema:
-SET search_path = public, eshop, extensions
--- some eshop/ functions that query eshop tables directly:
-SET search_path = eshop, public, extensions
+SELECT ... FROM eshop.orders; -- explicitly qualify non-public schemas
 ```
+
+Never add `eshop` or another writable schema to a `SECURITY DEFINER` search
+path. Keep non-public objects schema-qualified and enforce authorization inside
+the function.
 
 ---
 
@@ -240,5 +246,5 @@ Dart or `supabase.rpc(...)` in JS):
 | `delete_user` | Flutter | User deletion |
 | `create_user_in_organization_with_data_pure` | SQL Functions (internal) | User creation |
 | `get_ticket_details_for_generating` | Edge Functions | Ticket PDF data |
-| `get_occasion_seo_data` | Netlify Edge | SEO metadata |
-| `get_available_occasions` | Netlify Edge | Sitemap data |
+| `get_occasion_seo_data` | Cloudflare Pages Worker | SEO metadata |
+| `get_available_occasions` | Cloudflare Pages Worker | Sitemap data |
