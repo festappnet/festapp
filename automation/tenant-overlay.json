@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "0fb35df2b0127a9ab115fa5496008c6e700bcc2f",
+  "baseMainSha": "75a173f48ed3513d129302cb3c66296fdebf57dc",
   "release": {
-    "version": "0.20.20+504",
-    "note": "Show QR payment options on public order confirmation"
+    "version": "0.20.21+505",
+    "note": "Keep expanded QR payment result fully scrollable"
   }
 }
