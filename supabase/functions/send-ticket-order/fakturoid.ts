@@ -46,8 +46,12 @@ type InvoiceRequest = {
 
 /** The checkout phase alone may create an invoice; the email phase only reads it. */
 export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
+  // Finish API failures inside the checkout worker so it can cancel the order.
+  const request: typeof fetch = (input, init) =>
+    fetcher(input, { ...init, signal: AbortSignal.timeout(30_000) });
+
   async function access(config: FakturoidConfig) {
-    const response = await fetcher("https://app.fakturoid.cz/api/v3/oauth/token", {
+    const response = await request("https://app.fakturoid.cz/api/v3/oauth/token", {
       method: "POST",
       headers: {
         Authorization: `Basic ${btoa(`${config.client_id}:${config.client_secret}`)}`,
@@ -79,7 +83,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices.json`,
     );
     url.searchParams.set("custom_id", commandId);
-    const response = await fetcher(url, { headers });
+    const response = await request(url, { headers });
     if (!response.ok) {
       throw new Error(`Fakturoid lookup failed ${response.status}`);
     }
@@ -108,7 +112,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     const { headers } = await access(config);
     let invoice = await findInvoice(config, commandId, headers);
     if (!invoice) {
-      const response = await fetcher(
+      const response = await request(
         `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices.json`,
         {
           method: "POST",
@@ -143,7 +147,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       if (order.payment_info.currency_code.trim().toUpperCase() === "EUR") {
         patchBody.variable_symbol = String(order.payment_info.variable_symbol);
       }
-      const response = await fetcher(
+      const response = await request(
         `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${invoice.id}.json`,
         { method: "PUT", headers, body: JSON.stringify(patchBody) },
       );
@@ -166,12 +170,12 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     };
     if (invoice.pdf_url) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      let response = await fetcher(invoice.pdf_url, {
+      let response = await request(invoice.pdf_url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.status === 204) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        response = await fetcher(invoice.pdf_url, {
+        response = await request(invoice.pdf_url, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
