@@ -1,56 +1,16 @@
-# Active Skills
+# Project agent guidance
 
-The following skills have been selected for this project. Agents should verify
-their actions against these guidelines.
+Festapp's authoritative repository guidance is intentionally small and
+checked in with the codebase:
 
-## Essential Reading
+- [AGENTS.md](../AGENTS.md) — repository scope, tenant branch rules and
+  verification defaults
+- [CLAUDE.md](../CLAUDE.md) — quick commands and required architecture context
+- [AI context](../docs/architecture/ai_context.md) — security and architecture
+  invariants
+- [Contributing](../CONTRIBUTING.md) — development and validation workflow
+- [Project workflows](skills/skills/project-workflows/SKILL.md) — compact
+  repository-specific workflow skill
 
-Before using skills, review:
-
-- **[docs/architecture/ai_context.md](../docs/architecture/ai_context.md)** -
-  Architecture, directory structure, Split Brain Logic
-- **[docs/architecture/SERVICES.md](../docs/architecture/SERVICES.md)** -
-  Critical data services (RightsService, OfflineDataService)
-- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Testing, security checklist,
-  commit workflow
-
-## Core Standards
-
-- **[Clean Code](skills/skills/clean-code/SKILL.md)** _Focus: Pragmatic
-  standards, SRP, meaningful naming._
-- **[Systematic Debugging](skills/skills/systematic-debugging/SKILL.md)**
-  _Focus: Root cause analysis before fixing. Mandatory for complex bugs._
-  - See also:
-    **[Edge Function Debugging](skills/skills/systematic-debugging/edge-function-debugging.md)**
-    **[Database RPC Debugging](skills/skills/systematic-debugging/database-rpc-debugging.md)**
-
-## Architecture & Data
-
-- **[Database Design](skills/skills/database-design/SKILL.md)** _Focus: Schema
-  design, migrations, indexing._
-- **[i18n Localization](skills/skills/i18n-localization/SKILL.md)** _Focus:
-  Translation keys, separate locale files._
-
-## Quality Assurance
-
-- **[Testing Patterns](skills/skills/testing-patterns/SKILL.md)** _Focus: TDD,
-  Factory patterns for test data._
-- **[Security Review](skills/skills/cc-skill-security-review/SKILL.md)** _Focus:
-  Input validation, secure secrets, checklist._
-
-## Backend & API
-
-- **[Backend Patterns](skills/skills/cc-skill-backend-patterns/SKILL.md)**
-  _Focus: Supabase RPCs, Transactions, N+1 prevention._
-
-## Performance
-
-- **[Performance Profiling](skills/skills/performance-profiling/SKILL.md)**
-  _Focus: Core Web Vitals, Bundle Analysis, Lighthouse._
-
-## Project Specific
-
-- **[Project Workflows](skills/skills/project-workflows/SKILL.md)** _Focus:
-  Festapp-specific testing, committing, and migration procedures._
-- **[Bank Integration](skills/skills/bank-integration/SKILL.md)** _Focus: Email
-  parsing, deduplication strategy, and strict pairing logic._
+Personal/global skills are installed outside this repository. Do not add links
+here to workstation-local skills that are not present in the checkout.

@@ -2,9 +2,16 @@ const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const { exec } = require('child_process');
 
-// Default Config
-const DEFAULT_SB_URL = "https://kjdpmixlnhntmxjedpxh.supabase.co";
-const DEFAULT_SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqZHBtaXhsbmhudG14amVkcHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDE5NDI5NzEsImV4cCI6MjAxNzUxODk3MX0.06nTXCL-i1GxLckfEyCNlVVwt62QTzKUezqmsYSR_MI";
+const DEFAULT_SB_URL = "https://api.festapp.net";
+
+function assertCanonicalTestTarget(value) {
+    const url = new URL(value);
+    const allowedHosts = new Set(['api.festapp.net', '127.0.0.1', 'localhost']);
+    if (!allowedHosts.has(url.hostname)) {
+        throw new Error(`Refusing non-canonical Supabase test target: ${url.hostname}`);
+    }
+    return url.origin;
+}
 
 // Args
 const args = process.argv.slice(2);
@@ -22,8 +29,11 @@ for (let i = 0; i < args.length; i++) {
 }
 
 async function main() {
-    const sbUrl = process.env.SUPABASE_URL || DEFAULT_SB_URL;
-    const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || DEFAULT_SB_KEY;
+    const sbUrl = assertCanonicalTestTarget(process.env.SUPABASE_URL || DEFAULT_SB_URL);
+    const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!sbKey) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for this production integration test');
+    }
     const supabase = createClient(sbUrl, sbKey, { db: { schema: 'eshop' } });
     let accountId = null;
 

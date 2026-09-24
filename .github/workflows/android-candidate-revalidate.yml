@@ -1,0 +1,183 @@
+name: Android candidate revalidation
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets_json:
+        description: 'JSON array of 1-30 tenant IDs whose raw AABs will be revalidated'
+        required: true
+        type: string
+      raw_run_id:
+        description: 'Completed Android candidate run containing encrypted raw AAB artifacts'
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: android-candidate-revalidation
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      raw_run_id: ${{ steps.plan.outputs.raw_run_id }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: plan
+        env:
+          TARGETS_JSON: ${{ inputs.targets_json }}
+          RAW_RUN_ID: ${{ inputs.raw_run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RAW_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          input="$RUNNER_TEMP/android-targets.json"
+          printf '%s' "$TARGETS_JSON" > "$input"
+          matrix="$(node automation/release/android_ci_plan.mjs candidate "$input")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "raw_run_id=$RAW_RUN_ID" >> "$GITHUB_OUTPUT"
+
+  revalidate:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: android-build-${{ matrix.tenant }}
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Check out trusted release tooling
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Preserve trusted verifier outside the source checkout
+        run: cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+      - name: Check out immutable tenant source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.sourceSha }}
+          fetch-depth: 0
+          clean: true
+      - name: Prove source is still the current production branch head
+        env:
+          BRANCH: ${{ matrix.branch }}
+          SOURCE_SHA: ${{ matrix.sourceSha }}
+          TENANT: ${{ matrix.tenant }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_sha="$(git ls-remote --heads origin "refs/heads/$BRANCH" | awk '{print $1}')"
+          test "$remote_sha" = "$SOURCE_SHA"
+          base_main_sha="$(jq -r '.baseMainSha' automation/tenant-overlay.json)"
+          test "$TENANT" = "$(jq -r '.tenantId' automation/tenant-overlay.json)"
+          git fetch --no-tags origin main
+          git show "$base_main_sha:automation/check_tenant_branch_drift.sh" > "$RUNNER_TEMP/check_tenant_branch_drift.sh"
+          CANONICAL_MAIN_REF=origin/main bash "$RUNNER_TEMP/check_tenant_branch_drift.sh" \
+            "$base_main_sha" "$TENANT" "$SOURCE_SHA"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Materialize the private tenant manifest
+        env:
+          RELEASE_MANIFEST_JSON: ${{ secrets.RELEASE_MANIFEST_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$RELEASE_MANIFEST_JSON"
+          printf '%s' "$RELEASE_MANIFEST_JSON" > "$RUNNER_TEMP/release-manifest.json"
+          jq -e --arg branch '${{ matrix.branch }}' \
+            '.schemaVersion == 2 and .releaseBranch == $branch and (.androidPackage | type == "string")' \
+            "$RUNNER_TEMP/release-manifest.json" >/dev/null
+      - name: Download the encrypted raw AAB from the named candidate run
+        uses: actions/download-artifact@v7
+        with:
+          name: android-raw-${{ matrix.tenant }}-${{ matrix.sourceSha }}-${{ needs.plan.outputs.raw_run_id }}
+          path: ${{ runner.temp }}/raw
+          run-id: ${{ needs.plan.outputs.raw_run_id }}
+          github-token: ${{ github.token }}
+      - name: Decrypt the raw AAB
+        env:
+          ARTIFACT_PASSPHRASE: ${{ secrets.ANDROID_ARTIFACT_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_PASSPHRASE"
+          mkdir -p build/app/outputs/bundle/release
+          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --decrypt \
+            --output build/app/outputs/bundle/release/app-release.aab \
+            "$RUNNER_TEMP/raw/app-release.aab.gpg"
+      - name: Install pinned Bundletool verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/google/bundletool/releases/download/1.18.1/bundletool-all-1.18.1.jar \
+            -o "$RUNNER_TEMP/bundletool.jar"
+          echo '675786493983787ffa11550bdb7c0715679a44e1643f3ff980a529e9c822595c  '${RUNNER_TEMP}'/bundletool.jar' | sha256sum --check
+      - id: verify
+        name: Independently reverify package, version, signer and personal-data boundary
+        env:
+          BUNDLETOOL_JAR: ${{ runner.temp }}/bundletool.jar
+          EXPECTED_UPLOAD_CERT_SHA256: ${{ secrets.ANDROID_UPLOAD_CERT_SHA256 }}
+          TOOLING_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          aab=build/app/outputs/bundle/release/app-release.aab
+          receipt="$RUNNER_TEMP/release-receipt.json"
+          result="$(node "$RUNNER_TEMP/verify_android_aab.mjs" "$aab" \
+            "$RUNNER_TEMP/release-manifest.json" '${{ matrix.sourceSha }}' "$receipt")"
+          echo "package=$(jq -r .packageName <<<"$result")" >> "$GITHUB_OUTPUT"
+          echo "version_code=$(jq -r .versionCode <<<"$result")" >> "$GITHUB_OUTPUT"
+          echo "artifact_sha=$(jq -r .artifactSha256 <<<"$result")" >> "$GITHUB_OUTPUT"
+      - name: Stage the reverified candidate artifact
+        env:
+          ARTIFACT_PASSPHRASE: ${{ secrets.ANDROID_ARTIFACT_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/candidate-plain" "$RUNNER_TEMP/candidate"
+          cp build/app/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/candidate-plain/app-release.aab"
+          cp "$RUNNER_TEMP/release-receipt.json" "$RUNNER_TEMP/candidate-plain/release-receipt.json"
+          tar -C "$RUNNER_TEMP/candidate-plain" -cf "$RUNNER_TEMP/candidate.tar" .
+          printf '%s' "$ARTIFACT_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            --output "$RUNNER_TEMP/candidate/android-candidate.tar.gpg" "$RUNNER_TEMP/candidate.tar"
+      - name: Store the candidate as a private GitHub artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}
+          path: ${{ runner.temp }}/candidate
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Record immutable candidate identity
+        shell: bash
+        run: |
+          {
+            echo "### Android candidate"
+            echo "- Candidate run ID: \`${{ github.run_id }}\`"
+            echo "- Revalidated raw run ID: \`${{ needs.plan.outputs.raw_run_id }}\`"
+            echo "- Tooling: \`${{ github.sha }}\`"
+            echo "- Artifact: \`android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}\`"
+            echo "- Package: \`${{ steps.verify.outputs.package }}\`"
+            echo "- Version code: \`${{ steps.verify.outputs.version_code }}\`"
+            echo "- Source: \`${{ matrix.sourceSha }}\`"
+            echo "- AAB SHA-256: \`${{ steps.verify.outputs.artifact_sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove private inputs
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/release-manifest.json"
+          rm -rf "$RUNNER_TEMP/raw" "$RUNNER_TEMP/candidate-plain"

@@ -4,15 +4,10 @@
 
 ## 0. Developer Setup (First Time)
 
-To enable Agent Skills (optional but recommended):
-
-```bash
-# Clone standard skills
-git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skills
-
-# Restore project custom skills (already in repo)
-# (Happens automatically via git checkout as they are tracked files)
-```
+Follow [docs/setup/local_development.md](docs/setup/local_development.md) for
+the supported Flutter/FVM and isolated database setup. Project-specific agent
+rules are tracked in `AGENTS.md`, `CLAUDE.md`, and
+`docs/architecture/ai_context.md`; no third-party skill repository is required.
 
 ## 1. Testing Workflow
 
@@ -54,44 +49,19 @@ If a test fails saying "function does not exist":
 2. Check that every active migration has a unique 14-digit timestamp.
 3. Run schema check tests if available.
 
-### D. Testing via Supabase MCP (Recommended for Agents/No-Docker)
+### D. Remote database and Edge Function changes
 
-1. **Run SQL/RPCs**: Use `mcp_supabase-mcp-server_execute_sql` or
-   `apply_migration`.
-2. **Run Tests**:
-   - Read the content of a test file (e.g.,
-     `database/tests/bank_account_sync_test.sql`).
-   - Execute that content using `mcp_supabase-mcp-server_execute_sql`.
-   - _Note_: This runs tests in the target environment (local or remote). Ensure
-     you are targeting the correct Project ID.
+Do not use a remote database as a substitute for the isolated test database.
+Version every SQL change in the repository and deploy it through the approved
+release workflow. Until the self-hosted cutover is complete, schema, function,
+and data-contract changes must remain semantically identical on the self-hosted
+target and cloud sources `default` and `a`.
 
-### E. Database Deployment via MCP (Agent Workflow)
-
-When you need to deploy or update a function remotely without a full deployment:
-
-1. **Identify Target**: Run `mcp_supabase-mcp-server_list_projects` to find the
-   active project ID (e.g., `festapp` / `kjdpmixlnhntmxjedpxh`).
-2. **Read Source**: Always read the **local file** first (e.g.,
-   `view_file("database/functions/...")`) to get the latest source code.
-3. **Execute**: Use `mcp_supabase-mcp-server_execute_sql` with the `project_id`
-   and the file content as the `query`.
-   - _Tip_: This bypasses the need for local processing or git pushes if you are
-     just Hot-Fixing or validating logic.
-
-### F. Deno Edge Function Deployment via MCP
-
-To update Edge Functions (TypeScript) remotely:
-
-1. **Upload Files**: Use `mcp_supabase-mcp-server_deploy_edge_function`.
-   - **`project_id`**: Target project (e.g., `kjdpmixlnhntmxjedpxh`).
-   - **`name`**: Function name (folder name).
-   - **`entrypoint_path`**: Path to main file (e.g., `index.ts`).
-   - **`files`**: CONTENT of the files. You must read them first!
-2. **Process**:
-   - `list_dir` the function directory.
-   - `view_file` relevant files (`index.ts`, `deno.json`).
-   - Call `deploy_edge_function` passing the file contents in the `files` array
-     argument.
+Resolve the live target from `SUPABASE_URL` in `automation/project.conf`, then
+verify `FORCE_OCCASION_LINK` in that same database. Never select a target from
+the project ref in `.env.local`. Deploy Deno functions from their checked-in
+`supabase/functions/<name>/` source and follow
+[docs/backend/edge_functions.md](docs/backend/edge_functions.md).
 
 ## 2. Secrets & Configuration
 
@@ -105,8 +75,9 @@ To update Edge Functions (TypeScript) remotely:
 **CRITICAL**: Every time you write a new PostgreSQL function (RPC), especially
 with `SECURITY DEFINER`, you MUST verify:
 
-1. **Search Path**: Always include `SET search_path = public, eshop, extensions`
-   (or relevant schemas).
+1. **Search Path**: Use `SET search_path = public, extensions`. Qualify every
+   `eshop` object explicitly (for example `eshop.orders`); never add `eshop` to
+   the search path.
    - _Why?_ Prevents search_path hijacking where malicious users create objects
      in public schema.
 2. **Permissions Check**: If the function modifies data or returns sensitive
@@ -157,8 +128,8 @@ Ensure the codebase is clean:
 If you are dealing with a complex issue (e.g., data leaks, wide-spread API
 changes):
 
-1. **Search**: Use `grep` or `find_by_name` to identify all affected files.
-   - Example: `grep -l "CREATE OR REPLACE FUNCTION" database/tests/**/*.sql`
+1. **Search**: Use `rg` and `rg --files` to identify all affected files.
+   - Example: `rg -l "CREATE OR REPLACE FUNCTION" database/tests`
 2. **List**: Create a checklist in `task.md` or a temporary artifact.
 3. **Execute**: systematically go through each file in the list.
 4. **Mark and Verify**: Check off each item as you fix it. Verify after each
@@ -191,17 +162,12 @@ If you modified `en.json` or `cs.json`:
 
 Review status, stage, and commit.
 
-> **AGENT RULE**: **NEVER** automatically commit changes. You MUST Always stop
-> after `git add` and ask the user for confirmation before committing.
->
-> 1. Run `git add .` (if appropriate).
-> 2. Show `git status`.
-> 3. **STOP** and ask "Ready to commit?"
+Stage only the files belonging to the change. Agents follow `AGENTS.md` and the
+user's explicit commit and publication scope.
 
 ```bash
 git status
-git add .
-# User must approve the following:
+git add path/to/changed-files
 git commit -m "feat: description of changes"
 ```
 
