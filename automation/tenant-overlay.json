@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "d4769824a213413c461cf9be9ac2a68a3e014090",
+  "baseMainSha": "d81ca854ba8113a02a68903cc3e3e13d84ef74d8",
   "release": {
     "version": "0.20.23+507",
     "note": "Fix unit communication tone translation label"
