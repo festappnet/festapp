@@ -96,11 +96,14 @@ for required in 'caddy:' 'network_mode: host' NET_BIND_SERVICE 'read_only: true'
   'rehearsal-api.festapp.net'; do
   rg -Fq "$required" "$RUNTIME_COMPOSE" || { echo "missing public-origin contract $required in $RUNTIME_COMPOSE" >&2; exit 1; }
 done
-for required in FESTAPP_SUPABASE_SITE_ADDRESSES trusted_proxies_strict CF-Connecting-IP \
-  'reverse_proxy 127.0.0.1:8000'; do
+for required in FESTAPP_SUPABASE_SITE_ADDRESSES FESTAPP_SUPABASE_ADMIN_SITE \
+  trusted_proxies_strict CF-Connecting-IP 'reverse_proxy 127.0.0.1:8000' \
+  '/auth/v1' '/rest/v1' '/storage/v1' '/realtime/v1' '/functions/v1' \
+  'Strict-Transport-Security' 'X-Frame-Options' 'respond "Not Found" 404'; do
   rg -Fq "$required" "$RUNTIME_CADDYFILE" || { echo "missing public-origin contract $required in $RUNTIME_CADDYFILE" >&2; exit 1; }
 done
 for required in FESTAPP_SUPABASE_HOSTNAME FESTAPP_SUPABASE_SITE_ADDRESSES \
+  FESTAPP_SUPABASE_ADMIN_SITE \
   'https://rehearsal-api.festapp.net' \
   API_EXTERNAL_URL SUPABASE_PUBLIC_URL; do
   rg -Fq "$required" "$RUNTIME_CONFIGURATOR" || { echo "missing public-origin contract $required in $RUNTIME_CONFIGURATOR" >&2; exit 1; }

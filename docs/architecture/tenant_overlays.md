@@ -68,7 +68,8 @@ conflict in an allowed overlay path is an explicit tenant decision; blanket
 Festapp owns public schemas and authorization/business logic.
 `automation/private-inputs.schema.json` and
 `automation/tenant-external-services.schema.json` declare input names and
-types without values. FestappSeed or an approved secret manager owns private
+types without values. The designated private configuration repository or an
+approved secret manager owns private
 credentials, provisioning material and production seed payloads. Missing
 required input fails closed; the repository never searches an implicit sibling
 directory or prints a supplied value.

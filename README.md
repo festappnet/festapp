@@ -116,8 +116,9 @@ and handle payments.
 This project is built using the [Flutter](https://github.com/flutter/flutter)
 framework and the Dart programming language.
 
-For the backend, it uses [Supabase](https://github.com/supabase/supabase), a
-serverless platform. It includes:
+The backend uses the [Supabase](https://github.com/supabase/supabase) stack
+across managed-cloud and self-hosted targets during the current cutover. It
+includes:
 
 - Deno functions written in TypeScript
 - PostgreSQL scripts for database operations
@@ -126,7 +127,10 @@ serverless platform. It includes:
 graph TD
     A["Flutter App<br/>(Android / iOS / Web)"] -->|Supabase SDK| S
     B["Web Client<br/>(Vanilla JS)<br/>Forms, Blueprint"] -->|REST API / RPC| S
-    C["Netlify Edge Functions<br/>SEO, Sitemap"] -->|REST API| S
+    C["Cloudflare Pages Worker<br/>routing, SEO, sitemap"] -->|REST API / RPC| S
+    W["Cloudflare Workers<br/>client sync, image control"] -->|RPC| S
+    W --> R2["Cloudflare R2<br/>sync and image objects"]
+    A -->|immutable sync artifacts| W
 
     S["Supabase Platform"]
     S --- Auth
@@ -203,17 +207,14 @@ For a helpful step-by-step guide on creating your own app, see
 
 ---
 
-## Currently in production
+## Deployments
 
-- [Absolventský Velehrad](https://app.absolventskyvelehrad.cz)
-- [Člověk a Víra](https://clovekavira.netlify.app)
-- [BISCUP](https://biscup.netlify.app)
-- [Celostátní setkání animátorů 2024](https://aksmcz.netlify.app)
-- [Festival Slunovrat](https://app.festivalslunovrat.cz)
-- [Hvězda mořská](https://hvezdamorska.netlify.app)
-- [Jubileum mládeže 2025](https://jubileum2025.netlify.app)
-
-Under similar names usually available in AppStore and Google Play Store.
+Festapp deployments are tenant-specific. Shared application and release tooling
+live on `main`; each `prod/*` branch contains only its approved configuration
+and brand overlay. Web releases use direct Cloudflare Pages upload and are never
+triggered by a branch push alone. See
+[tenant overlays](docs/architecture/tenant_overlays.md) and the
+[Cloudflare deployment guide](automation/cloudflare/README.md).
 
 ---
 
@@ -233,9 +234,10 @@ Run the full test suite with a single command:
 ./automation/test_all.sh
 ```
 
-This runs: Web Client tests (JS), Database tests (SQL), Flutter tests, Edge
-Function tests, and Integration tests. Database tests execute inside
-transactions and auto-rollback, so no data is modified.
+This runs Web Client, database, Flutter, Edge Function, integration and
+automation tests. Environment-dependent suites report when required local tools
+or credentials are absent. Database tests execute inside transactions and
+auto-rollback, so no fixture data is retained.
 
 For more details on testing, deployment, and the security audit checklist, see
 **[CONTRIBUTING.md](CONTRIBUTING.md)**.
@@ -289,12 +291,16 @@ festapp/
 │   └── database_tables/    # Table name constants (Tb class)
 ├── database/               # PostgreSQL logic
 │   ├── functions/          # SQL functions (organized by domain)
-│   ├── migrations/         # Schema migrations
+│   ├── migrations_legacy/  # Historical pre-Supabase upgrade fragments
 │   ├── policies/           # Row Level Security policies
 │   ├── tables/             # Table definitions
 │   ├── tests/              # SQL regression tests
 │   └── seed/               # Initial data
-├── supabase/functions/     # Deno Edge Functions (TypeScript)
+├── supabase/
+│   ├── baseline/           # Versioned schema-only local bootstrap
+│   ├── migrations/         # Active forward migrations
+│   └── functions/          # Deno Edge Functions (TypeScript)
+├── workers/                # Cloudflare Workers (sync, images, monitoring)
 ├── web_client/             # Standalone JS web client
 │   ├── src/components/     # UI components (forms, blueprint, ticket ordering)
 │   ├── src/services/       # Client services (auth, router, supabase, theme, localization, etc.)
@@ -302,12 +308,14 @@ festapp/
 │   └── tests/              # Unit and integration tests
 ├── automation/             # Config, build, deploy scripts
 │   ├── project.conf        # Single source of truth for configuration
-│   └── apply_config.sh     # Propagates config to all targets
-└── netlify/                # Edge functions (SEO, sitemap)
+│   ├── apply_config.sh     # Propagates config to all targets
+│   └── hetzner-supabase/   # Self-hosted Supabase tooling and runbooks
+└── netlify/                # Legacy retirement adapters and regression tests
 ```
 
 For detailed project architecture and internal documentation, please refer to
-**[docs/architecture/ai_context.md](docs/architecture/ai_context.md)**.
+the **[documentation map](docs/README.md)** and
+**[AI context](docs/architecture/ai_context.md)**.
 
 ---
 
