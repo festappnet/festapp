@@ -1,3 +1,359 @@
+-- Initialize new forms from the unit and resolve missing legacy tones.
+
+CREATE OR REPLACE FUNCTION public.get_effective_form_data(p_form_id bigint)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SET search_path = public, extensions
+AS $$
+    SELECT COALESCE(f.data, '{}'::jsonb) || jsonb_build_object(
+        'communication_tone',
+        CASE
+            WHEN f.data->>'communication_tone' IN ('formal', 'informal')
+                THEN f.data->>'communication_tone'
+            WHEN u.data->>'communication_tone' IN ('formal', 'informal')
+                THEN u.data->>'communication_tone'
+            ELSE 'formal'
+        END
+    )
+    FROM public.forms f
+    JOIN public.occasions o ON o.id = f.occasion
+    JOIN public.units u ON u.id = o.unit
+    WHERE f.id = p_form_id;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_effective_form_data(bigint)
+FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_effective_form_data(bigint) TO service_role;
+
+CREATE OR REPLACE FUNCTION create_form(
+    p_occasion_id BIGINT,
+    p_link TEXT,
+    p_title TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SET search_path = public, extensions
+AS $$
+DECLARE
+    new_form_id BIGINT;
+    new_form JSONB;
+    new_product_type_id BIGINT;
+    v_communication_tone TEXT;
+    now TIMESTAMPTZ := NOW();
+BEGIN
+    SELECT CASE WHEN u.data->>'communication_tone' = 'informal'
+                THEN 'informal' ELSE 'formal' END
+    INTO v_communication_tone
+    FROM public.occasions o
+    JOIN public.units u ON u.id = o.unit
+    WHERE o.id = p_occasion_id;
+
+    -- The definitive server-side uniqueness check for the form link
+    IF EXISTS (SELECT 1 FROM public.forms WHERE link = p_link) THEN
+        RAISE EXCEPTION '%',
+            JSONB_BUILD_OBJECT('code', 4090, 'message', 'Form link is already in use')::TEXT;
+    END IF;
+
+    -- Create the new form
+    INSERT INTO public.forms(
+        title,
+        link,
+        occasion,
+        created_at,
+        updated_at,
+        deadline_duration_seconds,
+        data
+    )
+    VALUES (
+        p_title,
+        p_link,
+        p_occasion_id,
+        now,
+        now,
+        604800, -- Default to 7 days
+        jsonb_build_object(
+            'is_reminder_enabled', true,
+            'communication_tone', COALESCE(v_communication_tone, 'formal')
+        )
+    )
+    RETURNING to_jsonb(public.forms.*) INTO new_form;
+
+    new_form_id := (new_form->>'id')::BIGINT;
+
+    -- Create default 'email' and 'ticket' fields
+    INSERT INTO public.form_fields(title, type, is_required, form, "order")
+    VALUES ('', 'email', true, new_form_id, 0),
+           ('', 'ticket', true, new_form_id, 1);
+
+    -- Ensure 'spot' product type exists for the occasion
+    IF NOT EXISTS (SELECT 1 FROM eshop.product_types WHERE occasion = p_occasion_id AND type = 'spot') THEN
+        INSERT INTO eshop.product_types(title, type, occasion)
+        VALUES ('Spot', 'spot', p_occasion_id)
+        RETURNING id INTO new_product_type_id;
+    ELSE
+        SELECT id INTO new_product_type_id FROM eshop.product_types WHERE occasion = p_occasion_id AND type = 'spot' LIMIT 1;
+    END IF;
+
+    -- Ensure the 'spot' product type has at least one product
+    IF NOT EXISTS (SELECT 1 FROM eshop.products WHERE occasion = p_occasion_id AND product_type = new_product_type_id) THEN
+        INSERT INTO eshop.products(title, price, product_type, occasion, currency_code, "order")
+        VALUES ('Variant 1', 100, new_product_type_id, p_occasion_id, 'CZK', 0);
+    END IF;
+
+    -- Create the 'product_type' form field linked to 'spot'
+    INSERT INTO public.form_fields(title, type, is_required, form, "order", product_type, is_ticket_field)
+    VALUES ('Spot', 'product_type', false, new_form_id, 2, new_product_type_id, true);
+
+    -- Return the raw data of the newly created form
+    RETURN new_form;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_form_by_link(form_link TEXT)
+RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE
+    allData JSON;
+    generated_secret UUID := gen_random_uuid();
+    form_exists BOOLEAN;
+    is_editor_view BOOLEAN := false;
+    occ_id BIGINT;
+BEGIN
+    -- Check if the form exists
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.forms
+        WHERE link = form_link
+    ) INTO form_exists;
+
+    IF NOT form_exists THEN
+        RETURN jsonb_build_object(
+            'code', 404,
+            'message', 'Form does not exist.'
+        );
+    END IF;
+
+    SELECT occasion INTO occ_id FROM public.forms WHERE link = form_link;
+    is_editor_view := public.get_is_editor_order_view_on_occasion(occ_id);
+
+
+    IF NOT is_editor_view AND NOT EXISTS (
+        SELECT 1
+        FROM public.forms
+        WHERE link = form_link AND is_open = true
+    ) THEN
+        -- If the form is closed, retrieve only the 'header_off' message
+        SELECT jsonb_build_object(
+            'code', 400,
+            'data', jsonb_build_object(
+                'header_off', f.header_off,
+                'is_open', f.is_open
+            )
+        )
+        INTO allData
+        FROM public.forms f
+        WHERE f.link = form_link;
+
+        RETURN allData;
+    END IF;
+
+    -- If the form is open, retrieve the full form data including dynamic product availability
+    SELECT jsonb_build_object(
+        'code', 200,
+        'data', jsonb_build_object(
+            'id', f.id,
+            'key', f.key,
+            'created_at', f.created_at,
+            'data', public.get_effective_form_data(f.id),
+            'type', f.type,
+            'title', f.title,
+            'is_open', f.is_open,
+            'header', f.header,
+            'header_off', f.header_off,
+            'occasion', jsonb_build_object(
+                'id', o.id,
+                'features', o.features,
+                'start_time', o.start_time
+            ),
+            'blueprint', f.blueprint,
+            'deadline_duration_seconds', f.deadline_duration_seconds,
+            'account_number', ba.account_number,
+            'secret', generated_secret,
+            'fields', (
+                SELECT jsonb_agg(
+                    jsonb_build_object(
+                        'id', ff.id,
+                        'title', ff.title,
+                        'description', ff.description,
+                        'data', ff.data,
+                        'type', ff.type,
+                        'is_required', ff.is_required,
+                        'is_hidden', ff.is_hidden,
+                        'is_ticket_field', ff.is_ticket_field,
+                        'order', ff."order",
+                        'product_type_data', (
+                            CASE
+                                WHEN ff.product_type IS NOT NULL THEN
+                                    jsonb_build_object(
+                                        'id', pt.id,
+                                        'title', pt.title,
+                                        'description', pt.description,
+                                        'type', pt.type,
+                                        'data', pt.data,
+                                        'occasion', pt.occasion,
+                                        'products', (
+                                            SELECT jsonb_agg(
+                                                jsonb_build_object(
+                                                    'id', p.id,
+                                                    'title', p.title,
+                                                    'description', p.description,
+                                                    'price', p.price,
+                                                    'currency_code', p.currency_code,
+                                                    'data', p.data,
+                                                    'order', p."order",
+                                                    'ordered_count', (
+                                                        SELECT count(*)
+                                                        FROM eshop.order_product_ticket opt
+                                                        WHERE opt.product = p.id
+                                                    ),
+                                                    'maximum', p.maximum,
+                                                    'is_dynamically_available', is_product_dynamically_available(p.id)
+                                                ) ORDER BY COALESCE(p."order", 0)
+                                            )
+                                            FROM eshop.products p
+                                            WHERE p.product_type = pt.id
+                                              AND NOT p.is_hidden
+                                        )
+                                    )
+                                ELSE NULL
+                            END
+                        )
+                    ) ORDER BY COALESCE(ff."order", 0)
+                )
+                FROM public.form_fields ff
+                LEFT JOIN eshop.product_types pt ON ff.product_type = pt.id
+                WHERE ff.form = f.id AND ff.is_hidden = false
+            )
+        )
+    )
+    INTO allData
+    FROM public.forms f
+    LEFT JOIN eshop.bank_accounts ba ON f.bank_account = ba.id
+    LEFT JOIN public.occasions o ON f.occasion = o.id
+    WHERE f.link = form_link;
+
+    RETURN allData;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_order_details_for_email(p_order_id bigint)
+RETURNS jsonb
+SET search_path = public, extensions AS $$
+DECLARE
+    result_data jsonb;
+    reference_history_data jsonb;
+    form_fields_data jsonb;
+    form_data jsonb;
+    form_key uuid;
+    latest_history_id bigint;
+    v_reply_to_email TEXT;
+BEGIN
+    -- Retrieve the order, occasion, payment info, and bank account as separate objects
+    SELECT jsonb_build_object(
+        'order', to_jsonb(o.*),
+        'occasion', to_jsonb(occ.*),
+        'payment_info', to_jsonb(pi.*),
+        'bank_account', to_jsonb(ba.*)
+    )
+    INTO result_data
+    FROM eshop.orders AS o
+    LEFT JOIN public.occasions AS occ ON o.occasion = occ.id
+    LEFT JOIN eshop.payment_info AS pi ON o.payment_info = pi.id
+    LEFT JOIN eshop.bank_accounts AS ba ON pi.bank_account = ba.id
+    WHERE o.id = p_order_id;
+
+    -- Check if the order was found
+    IF result_data IS NULL THEN
+        RETURN jsonb_build_object('code', 404, 'message', 'Order not found.');
+    END IF;
+
+    -- Call the function you provided to get the email
+    SELECT get_reply_to_email_for_order(p_order_id) INTO v_reply_to_email;
+
+    -- Add the email to the result data. jsonb_build_object handles NULLs gracefully.
+    result_data := result_data || jsonb_build_object('reply_to', v_reply_to_email);
+
+
+    -- Find the latest order_history ID for the given order
+    SELECT oh.id
+    INTO latest_history_id
+    FROM eshop.orders_history AS oh
+    WHERE oh.order = p_order_id
+    ORDER BY oh.created_at DESC
+    LIMIT 1;
+
+    IF latest_history_id IS NOT NULL THEN
+        result_data := result_data || jsonb_build_object('latest_history_id', latest_history_id);
+    END IF;
+
+    -- Get the data of the latest SENT history entry
+    SELECT data INTO reference_history_data
+    FROM eshop.orders_history
+    WHERE "order" = p_order_id AND (data->>'is_sent_to_customer')::boolean IS TRUE
+    ORDER BY created_at DESC LIMIT 1;
+
+    -- If no sent record was found, get the oldest record as the reference
+    IF NOT FOUND THEN
+        SELECT data INTO reference_history_data
+        FROM eshop.orders_history
+        WHERE "order" = p_order_id
+        ORDER BY created_at ASC LIMIT 1;
+    END IF;
+
+    -- Add the reference data to the result
+    IF reference_history_data IS NOT NULL THEN
+        result_data := result_data || jsonb_build_object('reference_history', reference_history_data);
+    END IF;
+
+    -- Extract the form's unique key from the order's data
+    form_key := (result_data->'order'->'data'->>'form')::uuid;
+
+    -- If a form key exists, fetch all associated form fields
+    IF form_key IS NOT NULL THEN
+        -- 2. Modified query to fetch both form_fields and form_data at the same time
+        SELECT
+            jsonb_object_agg(ff.id, to_jsonb(ff.*)), -- All fields
+            public.get_effective_form_data(f.id)     -- Form data with unit defaults
+        INTO
+            form_fields_data,
+            form_data
+        FROM
+            public.form_fields AS ff
+        JOIN
+            public.forms AS f ON ff.form = f.id
+        WHERE
+            f.key = form_key
+        GROUP BY
+            f.id; -- Group by the form used for effective data
+
+        -- If form fields were found, add them to the result data
+        IF form_fields_data IS NOT NULL THEN
+            result_data := result_data || jsonb_build_object('form_fields', form_fields_data);
+        END IF;
+
+        -- 3. Added this block to merge the form_data
+        IF form_data IS NOT NULL THEN
+            result_data := result_data || jsonb_build_object('form_data', form_data);
+        END IF;
+    END IF;
+
+    -- Return a success response with the collected data
+    RETURN jsonb_build_object('code', 200, 'data', result_data);
+
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION public.create_ticket_order_internal_v1(input_data JSONB)
 RETURNS JSONB
 LANGUAGE plpgsql
