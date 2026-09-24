@@ -1494,7 +1494,7 @@
     "safeSenderInfo": "Tato adresa je bezpečná. Je to speciální robot, který čte pouze e-maily o platbách a nic jiného.",
     "forwardingEmailWarning": "Upozornění: Prosím, udržujte tento e-mail v tajnosti. S nikým jej nesdílejte.",
     "creditorNameLabel": "Jméno majitele účtu",
-    "creditorNameHelp": "Povinné pro EUR EPC platební QR kódy; uveďte právní název příjemce."
+    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace."
   },
   "FeatureContract": {
     "title": "Smlouva",
