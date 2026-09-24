@@ -1,6 +1,6 @@
 # Execute: Image delivery without per-view Worker charges
 
-Work in `/Users/miakh/source/festapp`.
+Work in `<repo-root>`.
 
 Use the repository's applicable instructions and standard verification recorded in the plan.
 

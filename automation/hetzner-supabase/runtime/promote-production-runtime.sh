@@ -196,6 +196,7 @@ fi
 set_env_value FESTAPP_RUNTIME_DATABASE "$TARGET_DATABASE"
 set_env_value FESTAPP_SUPABASE_HOSTNAME "$(jq -r .public_hostname "$RUNTIME_CONFIG")"
 set_env_value FESTAPP_SUPABASE_SITE_ADDRESSES "$(jq -r .public_hostname "$RUNTIME_CONFIG")"
+set_env_value FESTAPP_SUPABASE_ADMIN_SITE "http://127.0.0.1:8999"
 set_env_value SUPABASE_PUBLIC_URL "$(jq -r .supabase_public_url "$RUNTIME_CONFIG")"
 set_env_value API_EXTERNAL_URL "$(jq -r .api_external_url "$RUNTIME_CONFIG")"
 set_env_value SITE_URL "$(jq -r .site_url "$RUNTIME_CONFIG")"
@@ -230,6 +231,7 @@ readonly EXPECTED_NOTIFY_TOKEN="$(container_env functions NOTIFY_WEBHOOK_TOKEN)"
 readonly EXPECTED_NOTIFY_TOKEN_SHA="$(printf '%s' "$EXPECTED_NOTIFY_TOKEN" | sha256sum | awk '{print $1}')"
 [[ "$(container_env caddy FESTAPP_SUPABASE_HOSTNAME)" == "api.festapp.net" &&
    "$(container_env caddy FESTAPP_SUPABASE_SITE_ADDRESSES)" == "api.festapp.net" &&
+   "$(container_env caddy FESTAPP_SUPABASE_ADMIN_SITE)" == "http://127.0.0.1:8999" &&
    "$(container_env auth API_EXTERNAL_URL)" == "https://api.festapp.net" &&
    "$(container_env auth GOTRUE_SITE_URL)" == "$EXPECTED_SITE_URL" &&
    "$(container_env auth GOTRUE_URI_ALLOW_LIST)" == "$EXPECTED_REDIRECTS" &&

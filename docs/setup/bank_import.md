@@ -35,10 +35,9 @@ deploying the RF activation migration.
 
 ## Documentation Map
 
-- **Architecture**: `AI_README.md` (See "Split Brain Logic" and "Supabase
-  Interactions").
-- **Database**: `database/README.md`.
-- **Automation**: `automation/README.md`.
+- **Architecture**: [AI context](../architecture/ai_context.md).
+- **Database**: [Database architecture](../architecture/database.md).
+- **Automation**: [Automation reference](../../automation/README.md).
 
 ## Setup Guide
 
@@ -52,7 +51,7 @@ your main email.
 
 1. Run the setup script:
    ```bash
-   ../../automation/setup_aws_ses.sh
+   ./automation/setup_aws_ses.sh
    ```
 2. If prompted (or if emails don't arrive), verify the subdomain:
    ```bash
@@ -66,16 +65,15 @@ your main email.
 Run the helper script for the subdomain:
 
 ```bash
-../../automation/check_dns_setup.sh bank.festapp.net
+./automation/check_dns_setup.sh bank.festapp.net
 ```
 
 ### 3. Supabase Deployment
 
-**Database:**
-
-- **New Instances**: Managed by `instance-install`.
-- **Existing Instances**: Run
-  `supabase/migrations/20260124000000_email_sync_columns.sql`.
+Apply the current ordered `supabase/migrations/` set through the approved
+database release workflow. The operator-only `instance-install` function is not
+a production deployment path. Preserve the required pre-cutover parity across
+the self-hosted target and cloud sources `default` and `a`.
 
 **Edge Function:**
 
@@ -99,7 +97,9 @@ before AWS sends any emails.
 
 1. Check Status:
    ```bash
-   aws sns list-subscriptions-by-topic --topic-arn "arn:aws:sns:eu-central-1:274371802740:festapp-bank-emails" --region eu-central-1
+   aws sns list-subscriptions-by-topic \
+     --topic-arn "arn:aws:sns:<region>:<account-id>:<topic-name>" \
+     --region <region>
    ```
 2. **If "PendingConfirmation"**:
    - Go to **AWS Console > SNS > Subscriptions**.
@@ -110,28 +110,24 @@ before AWS sends any emails.
 
 ## Testing
 
-### Locations
+Run the local parser and pairing integration coverage without live credentials:
 
-- **Integration Tests**: `tests/integration/`
-- **Test Data**: `tests/integration/fixtures/`
+```bash
+cd workers/image-worker
+npx vitest run tests/integration/bank-import.test.ts
+cd ../..
 
-### Test with Personal Email (Simulation)
-
-You can simulate an incoming email using your own text file.
-
-1. Create a file `my_email.txt` with the raw email content.
-2. Run the test:
-   ```bash
-   export SUPABASE_URL=...
-   export SUPABASE_SERVICE_ROLE_KEY=...
-   node tests/integration/bank_import.js --email-file tests/integration/fixtures/fio-sample.txt --token "00000000-0000-0000-0000-00000000TEST"
-   ```
-   _Replace the file path with your own if needed._
+deno test --allow-env --allow-net --allow-read \
+  supabase/functions/bank-mail-parser/test_parser.ts \
+  supabase/functions/bank-mail-parser/test_parser_comprehensive.ts \
+  supabase/functions/bank-mail-parser/snsVerification_test.ts
+```
 
 ### Test with REAL Email (End-to-End)
 
-This script sends an actual email via AWS SES and waits for it to appear in the
-DB.
+This script sends an actual email via AWS SES and writes to the configured
+canonical database. Run it only as an explicitly authorized production canary;
+keep token and service-role values out of shell history and logs.
 
 ```bash
 node tests/integration/bank_import_real.js --existing-token "YOUR_TOKEN" --from "info@festapp.net"
