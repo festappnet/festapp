@@ -227,6 +227,7 @@
     "type": "Тип",
     "upcomingEvents": "Майбутні події",
     "update": "Оновити",
+    "retry": "Спробувати ще раз",
     "updateAppPrompt": "Оновіть застосунок до останньої версії для всіх функцій.",
     "updatedItem": "Оновлено: {item}.",
     "users": "Користувачі",
@@ -239,6 +240,7 @@
     "emailTemplates": "Шаблони листів",
     "createCopySuccess": "Копію події успішно створено.",
     "createCopyFailed": "Не вдалося створити копію події.",
+    "createCopyMediaFailed": "Копію події створено, але не вдалося скопіювати її зображення.",
     "quotes": "Цитати"
   },
   "FormsFeature": {
