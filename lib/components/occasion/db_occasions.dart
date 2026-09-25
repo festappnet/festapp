@@ -1,6 +1,5 @@
 import 'package:fstapp/components/information/game/game_settings_model.dart';
 import 'package:fstapp/components/images/db_images.dart';
-import 'package:fstapp/components/images/image_model.dart';
 import 'package:fstapp/components/occasion/occasion_commands.dart';
 import 'package:fstapp/components/occasion/occasion_media_copier.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -211,23 +210,5 @@ class DbOccasions {
     } else {
       await _supabase.rpc('delete_occasion', params: {'oc': oc});
     }
-
-    final data = await _supabase
-        .from(Tb.images.table)
-        .select()
-        .isFilter(Tb.images.occasion, null)
-        .isFilter(Tb.images.unit, null);
-    final orphanImages =
-        List<ImageModel>.from(data.map((x) => ImageModel.fromJson(x)));
-
-    for (var img in orphanImages) {
-      await DbImages.removeImage(img.link!);
-    }
-
-    await _supabase
-        .from(Tb.images.table)
-        .delete()
-        .isFilter(Tb.images.occasion, null)
-        .isFilter(Tb.images.unit, null);
   }
 }

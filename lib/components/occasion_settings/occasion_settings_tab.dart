@@ -231,14 +231,25 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   }
 
   Future<void> _deleteOccasion() async {
+    final deletedOccasion = occasion!;
+    final unitId = deletedOccasion.unit;
+    if (unitId == null) {
+      ToastHelper.Show(context, CommonStrings.unexpectedError);
+      return;
+    }
     try {
-      await DbOccasions.deleteOccasion(occasion!.id!);
-      await RightsService.updateAppData(force: true);
-      ToastHelper.Show(
-          context, "${CommonStrings.deleted}: ${occasion!.title!}");
-      Navigator.of(context).pop();
+      await DbOccasions.deleteOccasion(deletedOccasion.id!);
     } catch (e) {
-      ToastHelper.Show(context, e.toString());
+      if (mounted) ToastHelper.Show(context, e.toString());
+      return;
+    }
+    if (!mounted) return;
+    ToastHelper.Show(
+        context, "${CommonStrings.deleted}: ${deletedOccasion.title!}");
+    try {
+      await RouterService.replaceWithUnitAdmin(context, unitId);
+    } catch (e) {
+      if (mounted) ToastHelper.Show(context, e.toString());
     }
   }
 
