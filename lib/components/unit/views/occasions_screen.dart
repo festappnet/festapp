@@ -132,7 +132,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         context, UnitStrings.createCopy, UnitStrings.createCopyConfirm);
     if (conf == true) {
       try {
-        await DbOccasions.duplicateOccasion(occasion.id!, occasion.unit);
+        await DbOccasions.duplicateOccasion(occasion.id!);
         if (!mounted) return;
         ToastHelper.Show(context, UnitStrings.createCopySuccess);
         await _loadOccasions();

@@ -1,14 +1,12 @@
-import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/information/game/game_settings_model.dart';
+import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_model.dart';
-import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_commands.dart';
+import 'package:fstapp/components/occasion/occasion_media_copier.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion_services/service_item_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
-import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/components/features/feature_constants.dart';
-import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -186,30 +184,13 @@ class DbOccasions {
     });
   }
 
-  static Future<void> duplicateOccasion(int oc, int? unit) async {
+  static Future<void> duplicateOccasion(int oc) async {
     final ocId = ClientSyncRuntime.isV1Selected
         ? await _commands.duplicate(oc)
         : await _supabase.rpc("duplicate_occasion", params: {"oc": oc}) as int;
 
     var occasion = await getOccasion(ocId);
-
-    var ticketDetails = FeatureService.getFeatureDetails(
-        FeatureConstants.ticket,
-        features: occasion.features);
-    if (ticketDetails is TicketFeature &&
-        ticketDetails.ticketBackground != null &&
-        ticketDetails.ticketBackground!.isNotEmpty) {
-      var cpy = await DbImages.createCopyOfImage(
-          ticketDetails.ticketBackground!, ocId, unit);
-      ticketDetails.ticketBackground = cpy;
-    }
-
-    var ocImage = occasion.data?["image"];
-    if (ocImage != null) {
-      var cpy = await DbImages.createCopyOfImage(ocImage, ocId, unit);
-      occasion.data!["image"] = cpy;
-    }
-
+    await copyOccasionMedia(occasion, DbImages.createCopyOfImage);
     await updateOccasion(occasion);
   }
 
