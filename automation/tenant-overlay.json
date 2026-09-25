@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "dbc5a5af9d4d0dcdaee3231927ef2bb305127d70",
+  "baseMainSha": "ef9d390c3f89cd8cbae821af37ae2575b75b1712",
   "release": {
-    "version": "0.20.34+518",
-    "note": "Avoid delayed unit administration startup"
+    "version": "0.20.35+519",
+    "note": "Keep loading surface visible until app is ready"
   }
 }
