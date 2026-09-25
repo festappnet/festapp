@@ -9,6 +9,7 @@ import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbOccasions {
@@ -184,14 +185,24 @@ class DbOccasions {
     });
   }
 
-  static Future<void> duplicateOccasion(int oc) async {
+  /// Returns false only when the event exists but its media could not be copied.
+  static Future<bool> duplicateOccasion(int oc) async {
     final ocId = ClientSyncRuntime.isV1Selected
         ? await _commands.duplicate(oc)
         : await _supabase.rpc("duplicate_occasion", params: {"oc": oc}) as int;
 
-    var occasion = await getOccasion(ocId);
-    await copyOccasionMedia(occasion, DbImages.createCopyOfImage);
-    await updateOccasion(occasion);
+    try {
+      final occasion = await getOccasion(ocId);
+      await copyOccasionMedia(occasion, DbImages.createCopyOfImage);
+      await updateOccasion(occasion);
+      return true;
+    } catch (error, stackTrace) {
+      // The database copy is committed. Keep its existing public media links
+      // and report the partial result instead of inviting a second copy.
+      debugPrint('Occasion $ocId was copied, but media setup failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return false;
+    }
   }
 
   static Future<void> deleteOccasion(int oc) async {

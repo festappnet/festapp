@@ -23,6 +23,7 @@ class CommonStrings {
   static String get or => 'Common.or'.tr(); // "Or"
   static String get send => 'Common.send'.tr(); // "Send"
   static String get update => 'Common.update'.tr(); // "Update"
+  static String get retry => 'Common.retry'.tr();
   static String get continueAction => 'Common.continueAction'.tr(); // "Continue"
   static String get proceed => 'Common.proceed'.tr(); // "Proceed"
   static String get saveChanges => 'Common.saveChanges'.tr(); // "Save changes"
