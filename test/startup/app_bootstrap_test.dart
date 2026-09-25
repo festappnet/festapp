@@ -12,9 +12,26 @@ void main() {
 
   test('preserves explicit web deep links', () {
     expect(
-      initialRouteForUri(Uri.parse(
-          'https://preview.example/sample-event/news?filter=latest')),
+      initialRouteForUri(
+          Uri.parse('https://preview.example/sample-event/news?filter=latest')),
       '/sample-event/news?filter=latest',
+    );
+  });
+
+  test('unit admin deep links own their context load', () {
+    expect(
+      isUnitAdminStartupRoute(
+          Uri.parse('https://vstupenky.online/unit/13/edit')),
+      isTrue,
+    );
+    expect(
+      isUnitAdminStartupRoute(Uri.parse('https://vstupenky.online/unit/13')),
+      isFalse,
+    );
+    expect(
+      isUnitAdminStartupRoute(
+          Uri.parse('https://vstupenky.online/akh-ples/admin')),
+      isFalse,
     );
   });
 

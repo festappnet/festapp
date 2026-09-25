@@ -72,6 +72,14 @@ String initialRouteForUri(Uri uri) {
   return '$path${uri.hasQuery ? '?${uri.query}' : ''}';
 }
 
+bool isUnitAdminStartupRoute(Uri uri) {
+  final segments = uri.pathSegments;
+  return segments.length == 3 &&
+      segments[0] == 'unit' &&
+      int.tryParse(segments[1]) != null &&
+      segments[2] == 'edit';
+}
+
 /// Paints immediately on PWA, Android and iOS while startup restores the local
 /// context and probes online services. A slow or unreachable backend therefore
 /// cannot leave the process sitting on an OS/browser splash with no Flutter UI.
@@ -144,6 +152,12 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
 
 Future<void> initializeEverything() async {
   AppLogger.debug('Initialization started');
+
+  // The unit editor fetches its own unit context. Loading the default occasion
+  // here can continue after the startup timeout and block that fetch in
+  // RightsService's serialized update queue.
+  final skipInitialOccasion =
+      kIsWeb && isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri());
 
   WidgetsFlutterBinding.ensureInitialized();
   AppLogger.debug('Widgets binding initialized');
@@ -274,7 +288,7 @@ Future<void> initializeEverything() async {
   }
 
   try {
-    final cachedSyncModel = allowPersistedOccasionData
+    final cachedSyncModel = allowPersistedOccasionData && !skipInitialOccasion
         ? await ClientSyncRuntime.restoreLastContext()
         : null;
     if (cachedSyncModel != null) {
@@ -325,7 +339,7 @@ Future<void> initializeEverything() async {
     if (effectiveOffline) {
       RightsService.useOfflineVersion = true;
       AppLogger.debug('Offline start: using cached occasion data');
-    } else {
+    } else if (!skipInitialOccasion) {
       await RightsService.updateAppData(force: true, refreshOffline: false)
           .timeout(occasionLoadTimeout(
         hasCachedSettings: hasCachedOccasionSettings,
@@ -338,6 +352,8 @@ Future<void> initializeEverything() async {
           AppLogger.error('Private offline snapshot refresh failed: $error');
         }));
       }
+    } else {
+      AppLogger.debug('Unit admin route: occasion preload skipped');
     }
   } catch (e) {
     AppLogger.error('Occasion loading failed: $e');
