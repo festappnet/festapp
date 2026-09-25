@@ -54,7 +54,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
-  String _communicationTone = 'formal';
+  String _communicationTone = 'inherit';
 
   String get _unitTone =>
       RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
@@ -137,9 +137,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentMessageType =
           msgData?[FormModel.metaType] as String? ?? 'name_surname';
 
-      _communicationTone =
-          _form!.data?[FormHelper.metaCommunicationTone] as String? ??
-              _unitTone;
+      final savedTone = _form!.data?[FormHelper.metaCommunicationTone];
+      _communicationTone = savedTone == 'formal' || savedTone == 'informal'
+          ? savedTone as String
+          : 'inherit';
 
       if (_form!.deadlineDurationSeconds != null &&
           _form!.deadlineDurationSeconds! > 0) {
@@ -197,7 +198,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       FormModel.metaType: _paymentMessageType,
     };
 
-    _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
+    if (_communicationTone == 'inherit') {
+      _form!.data!.remove(FormHelper.metaCommunicationTone);
+    } else {
+      _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
+    }
 
     final days = int.tryParse(_deadlineDaysController.text);
     if (days != null && days > 0) {
@@ -522,6 +527,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       border: const OutlineInputBorder(),
                                     ),
                                     items: [
+                                      DropdownMenuItem(
+                                          value: 'inherit',
+                                          child: Text(_unitTone == 'informal'
+                                              ? FormStrings.toneInheritInformal
+                                              : FormStrings.toneInheritFormal)),
                                       DropdownMenuItem(
                                           value: 'random',
                                           child:
