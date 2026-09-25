@@ -434,6 +434,12 @@
   window.markFestappAppReady = function() {
     if (window.__FESTAPP_APP_READY__ === true) return;
     window.__FESTAPP_APP_READY__ = true;
+    const loader = document.getElementById('loader-content');
+    if (loader) {
+      loader.style.opacity = '0';
+      loader.style.pointerEvents = 'none';
+      setTimeout(function() { loader.remove(); }, 400);
+    }
     window.dispatchEvent(new Event('festapp-app-ready'));
   };
 
@@ -453,14 +459,6 @@
                 useColorEmoji: true
               });
               await appRunner.runApp();
-              const loader = document.getElementById('loader-content');
-              if (loader) {
-                loader.style.opacity = '0';
-                loader.style.pointerEvents = 'none';
-                setTimeout(function() {
-                  loader.remove();
-                }, 400);
-              }
             } catch (error) {
               console.error('Festapp Flutter startup failed:', error);
               if (window.recoverFestappStartup) {
@@ -486,8 +484,10 @@
       margin: 0px;
     }
     .main-content {
-      height: 100%;
-      width: 100%;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: #242424;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -536,6 +536,7 @@
 
   <div class="main-content" id="loader-content">
     <img class="initial-logo" src="android-chrome-192x192.png" alt="">
+    <div class="loader" role="status" aria-label="Načítání aplikace"></div>
   </div>
 </body>
 </html>
