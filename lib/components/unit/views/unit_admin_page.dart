@@ -8,7 +8,6 @@ import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/data_services/update_service.dart';
 import 'package:fstapp/services/app_logger.dart';
-import 'package:fstapp/components/unit/db_units.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/unit/views/occasions_screen.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
@@ -38,6 +37,10 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
   List<OccasionModel>? _occasions;
   Widget _currentScreen = const Center(child: CircularProgressIndicator());
   String _currentMenu = "";
+  bool _isLoading = false;
+  int? _loadingId;
+  bool _reloadAfterCurrent = false;
+  bool _forceAfterCurrent = false;
 
   void _setCurrentScreen(Widget screen, String menu) {
     if (mounted) {
@@ -61,7 +64,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
   }
 
   void _onRightsChanged() {
-    if (RightsService.currentUnit()?.id == widget.id) {
+    if (!_isLoading && RightsService.currentUnit()?.id == widget.id) {
       _loadOrganization(force: false);
     }
   }
@@ -88,51 +91,84 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
   }
 
   Future<void> _loadOrganization({bool force = false}) async {
-    await UpdateService.versionCheck(context);
-    if (RightsService.currentUnit()?.id != widget.id! || force) {
-      await RightsService.updateAppData(unitId: widget.id!, force: force);
+    final id = widget.id;
+    if (id == null) return;
+    if (_isLoading) {
+      if (force || _loadingId != id) {
+        _reloadAfterCurrent = true;
+        _forceAfterCurrent |= force;
+      }
+      return;
     }
-    _loadedId = widget.id;
+    _isLoading = true;
+    _loadingId = id;
     try {
+      await UpdateService.versionCheck(context);
+      if (RightsService.currentUnit()?.id != id || force) {
+        await RightsService.updateAppData(
+                unitId: id, force: force, refreshOffline: false)
+            .timeout(const Duration(seconds: 20));
+      }
+      if (!mounted || widget.id != id) return;
       _currentUnit = RightsService.currentUnit();
       if (_currentUnit != null) {
-        _occasions = await DbOccasions.getAllOccasionsForEdit(widget.id!);
+        _occasions = await DbOccasions.getAllOccasionsForEdit(id)
+            .timeout(const Duration(seconds: 20));
       }
-    } catch (e) {
-      // Fallback or error handling
-      AppLogger.error("Error loading unit edit data: $e");
-    }
-
-    if (_currentUnit != null) {
-      // If we are already on a screen, keep it, otherwise default to Occasions
-      if (_currentMenu.isEmpty) {
-        _setCurrentScreen(
-            OccasionsScreen(unit: _currentUnit!, initialOccasions: _occasions),
-            "Occasions");
-      } else {
-        // Refresh the current screen if needed, or just let the user stay where they are.
-        // For Settings, we might want to re-inject the updated unit.
-        if (_currentMenu == "Settings") {
-          _setCurrentScreen(
-              UnitSettingsScreen(
-                  unit: _currentUnit!, onUnitUpdated: _handleUnitUpdate),
-              "Settings");
-        } else if (_currentMenu == "Occasions") {
-          // Refresh occasions screen with new data if we are forcing reload
+      if (!mounted || widget.id != id) return;
+      _loadedId = id;
+      if (_currentUnit != null) {
+        if (_currentMenu.isEmpty || _currentMenu == "Occasions") {
           _setCurrentScreen(
               OccasionsScreen(
                   unit: _currentUnit!, initialOccasions: _occasions),
               "Occasions");
+        } else if (_currentMenu == "Settings") {
+          _setCurrentScreen(
+              UnitSettingsScreen(
+                  unit: _currentUnit!, onUnitUpdated: _handleUnitUpdate),
+              "Settings");
         } else if (_currentMenu == "EmailTemplates") {
           _setCurrentScreen(
               EmailTemplatesTab(unitId: _currentUnit!.id!), "EmailTemplates");
         }
+      } else {
+        _showLoadFailure();
       }
-    } else if (mounted) {
-      setState(() {
-        _currentScreen = Center(child: Text(UnitStrings.loadUnitFailed));
-      });
+    } catch (e) {
+      AppLogger.error("Error loading unit edit data: $e");
+      if (mounted && widget.id == id) {
+        _loadedId = id;
+        _showLoadFailure();
+      }
+    } finally {
+      _isLoading = false;
+      _loadingId = null;
+      if (mounted && (_reloadAfterCurrent || widget.id != id)) {
+        final retryForce = _forceAfterCurrent;
+        _reloadAfterCurrent = false;
+        _forceAfterCurrent = false;
+        _loadOrganization(force: retryForce);
+      }
     }
+  }
+
+  void _showLoadFailure() {
+    _setCurrentScreen(
+      Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(UnitStrings.loadUnitFailed),
+            TextButton(
+              onPressed: () => _loadOrganization(force: true),
+              child: Text(CommonStrings.retry),
+            ),
+          ],
+        ),
+      ),
+      "",
+    );
   }
 
   void _handleUnitUpdate() {
