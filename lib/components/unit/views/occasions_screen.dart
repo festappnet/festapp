@@ -131,14 +131,25 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     final conf = await DialogHelper.showConfirmationDialog(
         context, UnitStrings.createCopy, UnitStrings.createCopyConfirm);
     if (conf == true) {
+      bool mediaCopied;
       try {
-        await DbOccasions.duplicateOccasion(occasion.id!);
-        if (!mounted) return;
-        ToastHelper.Show(context, UnitStrings.createCopySuccess);
-        await _loadOccasions();
+        mediaCopied = await DbOccasions.duplicateOccasion(occasion.id!);
       } catch (e) {
         if (!mounted) return;
         ToastHelper.Show(context, UnitStrings.createCopyFailed);
+        return;
+      }
+      if (!mounted) return;
+      ToastHelper.Show(
+          context,
+          mediaCopied
+              ? UnitStrings.createCopySuccess
+              : UnitStrings.createCopyMediaFailed);
+      try {
+        await _loadOccasions();
+      } catch (e) {
+        if (!mounted) return;
+        ToastHelper.Show(context, UnitStrings.loadEventFailed);
       }
     }
   }

@@ -20,6 +20,7 @@ BEGIN
 
   INSERT INTO public.organizations(title)
   VALUES ('Occasion copy editor test') RETURNING id INTO v_organization;
+  UPDATE public.user_info SET organization = v_organization WHERE id = v_actor;
   INSERT INTO public.units(title, organization)
   VALUES ('Occasion copy unit', v_organization) RETURNING id INTO v_unit;
   INSERT INTO public.unit_users(unit, "user", is_manager, is_editor)
@@ -66,6 +67,19 @@ BEGIN
   PERFORM assert_true(v_copy IS NOT NULL, 'copy is created');
   PERFORM assert_true(public.get_is_editor_on_occasion(v_copy),
     'copy creator can edit the new occasion');
+  PERFORM assert_true(public.get_is_manager_on_occasion(v_copy),
+    'copy creator can administer the new occasion');
+  PERFORM assert_true(public.get_is_editor_order_view_on_occasion(v_copy),
+    'copy creator can view orders on the new occasion');
+  PERFORM assert_true(public.get_is_editor_order_on_occasion(v_copy),
+    'copy creator can manage orders on the new occasion');
+  PERFORM assert_eq(public.get_orders(
+    (SELECT link FROM public.occasions WHERE id = v_copy),
+    NULL, '{}'::jsonb)->>'code', '200',
+    'orders endpoint accepts a new copy with zero orders');
+  PERFORM assert_eq(public.get_orders_tab_data(
+    (SELECT link FROM public.occasions WHERE id = v_copy))->'orders',
+    '[]'::jsonb, 'orders tab loads an empty order list');
   PERFORM assert_true(public.check_upload_permission(p_occasion_id => v_copy),
     'copy creator can upload occasion media');
   SELECT public.save_occasion_client_sync_v1(
