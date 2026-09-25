@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "2a7a41aa92a658f3ab90f86d07670dced1abbaf7",
+  "baseMainSha": "55804243740e0b3966bfdf7529bda7f8c8b32edc",
   "release": {
-    "version": "0.20.25+509",
-    "note": "Deliver current main payment QR and shared communication tone"
+    "version": "0.20.26+510",
+    "note": "Clarify that order email usually arrives within minutes"
   }
 }
