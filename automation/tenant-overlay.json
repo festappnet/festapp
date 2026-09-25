@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "3ce0b150fd3c3c2a607d19a01c940872b6bed8c3",
+  "baseMainSha": "25e98e7eb2c616c91e961d94dd147dddd9e8e499",
   "release": {
-    "version": "0.20.28+512",
-    "note": "Show inherited form tone in its dropdown"
+    "version": "0.20.29+513",
+    "note": "Use organization wording for inherited form tone"
   }
 }
