@@ -82,6 +82,8 @@ class FormStrings {
       'FeatureFormSettings.labelCommunicationTone'.tr(); // "Tone"
   static String get toneFormal =>
       'FeatureFormSettings.toneFormal'.tr(); // "Formal"
+  static String toneInherit(String tone) =>
+      'FeatureFormSettings.toneInherit'.tr(namedArgs: {'tone': tone});
   static String get toneInformal =>
       'FeatureFormSettings.toneInformal'.tr(); // "Informal "
   static String get pickColor =>
