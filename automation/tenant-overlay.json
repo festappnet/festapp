@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "3d5ec8c519684989d103cfcfcac77143c2b15662",
+  "baseMainSha": "c6279aa46243ddfcbe299ea839c72dad743f1911",
   "release": {
-    "version": "0.20.30+514",
-    "note": "Fix copying ticketed occasions"
+    "version": "0.20.31+515",
+    "note": "Finish occasion copy access and result handling"
   }
 }
