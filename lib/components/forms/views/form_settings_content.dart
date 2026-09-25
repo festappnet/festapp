@@ -528,11 +528,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                     items: [
                                       DropdownMenuItem(
-                                          value: 'inherit',
-                                          child: Text(_unitTone == 'informal'
-                                              ? FormStrings.toneInheritInformal
-                                              : FormStrings.toneInheritFormal)),
-                                      DropdownMenuItem(
                                           value: 'random',
                                           child:
                                               Text(FormStrings.vsTypeRandom)),
@@ -628,6 +623,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       border: const OutlineInputBorder(),
                                     ),
                                     items: [
+                                      DropdownMenuItem(
+                                          value: 'inherit',
+                                          child: Text(FormStrings.toneInherit(
+                                              _unitTone == 'informal'
+                                                  ? FormStrings.toneInformal
+                                                  : FormStrings.toneFormal))),
                                       DropdownMenuItem(
                                           value: 'formal',
                                           child: Text(FormStrings.toneFormal)),
