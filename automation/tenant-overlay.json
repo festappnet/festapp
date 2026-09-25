@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "55804243740e0b3966bfdf7529bda7f8c8b32edc",
+  "baseMainSha": "74db8b2385ae6ed55a46f6432b6ff4c8c344fad1",
   "release": {
-    "version": "0.20.26+510",
-    "note": "Clarify that order email usually arrives within minutes"
+    "version": "0.20.27+511",
+    "note": "Keep form tone inherited from unit until explicitly overridden"
   }
 }
