@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "c6279aa46243ddfcbe299ea839c72dad743f1911",
+  "baseMainSha": "408a8fdca36079217b03a8566449a4d55effef81",
   "release": {
-    "version": "0.20.31+515",
-    "note": "Finish occasion copy access and result handling"
+    "version": "0.20.32+516",
+    "note": "Repair image copy backend and return after event deletion"
   }
 }
