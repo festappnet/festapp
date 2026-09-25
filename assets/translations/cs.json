@@ -266,10 +266,10 @@
     "msgTypeNone": "Žádná",
     "msgTypeOccasionTitle": "Název události",
     "communicationToneTitle": "Tón komunikace",
-    "helperCommunicationTone": "Tón veřejného formuláře a automatických e-mailů. Pokud zvolíte nastavení jednotky, formulář převezme i její pozdější změny.",
+    "helperCommunicationTone": "Tón veřejného formuláře a automatických e-mailů. Pokud zvolíte nastavení organizace, formulář převezme i její pozdější změny.",
     "labelCommunicationTone": "Tón",
     "toneFormal": "Formální (Vy)",
-    "toneInherit": "Podle nastavení jednotky: {tone}",
+    "toneInherit": "Podle nastavení organizace: {tone}",
     "toneInformal": "Neformální (Ty)",
     "pickColor": "Vybrat barvu",
     "buttonGotIt": "Hotovo",
@@ -1599,9 +1599,9 @@
     "createCopyFailed": "Nepodařilo se vytvořit kopii události.",
     "quotes": "Citáty",
     "loadEventFailed": "Nepodařilo se načíst událost. Zkuste to prosím znovu.",
-    "loadUnitFailed": "Nepodařilo se načíst data jednotky.",
+    "loadUnitFailed": "Nepodařilo se načíst data organizace.",
     "noEventsFound": "Nebyly nalezeny žádné události.",
-    "unit": "Jednotka"
+    "unit": "Organizace"
   },
   "OccasionHome": {
     "addToSchedule": "Přidat do programu",

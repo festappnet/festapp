@@ -266,10 +266,10 @@
     "msgTypeNone": "None",
     "msgTypeOccasionTitle": "Occasion Title",
     "communicationToneTitle": "Communication Tone",
-    "helperCommunicationTone": "Tone of the public form and automated emails. The unit setting also follows future changes to the unit default.",
+    "helperCommunicationTone": "Tone of the public form and automated emails. Choose the organization setting to follow future changes to its communication tone.",
     "labelCommunicationTone": "Tone",
     "toneFormal": "Formal",
-    "toneInherit": "Use unit setting: {tone}",
+    "toneInherit": "Use organization setting: {tone}",
     "toneInformal": "Informal",
     "pickColor": "Pick a color",
     "buttonGotIt": "Got it",
@@ -1599,9 +1599,9 @@
     "createCopyFailed": "Failed to create event copy.",
     "quotes": "Quotes",
     "loadEventFailed": "Could not load event. Please try again.",
-    "loadUnitFailed": "Failed to load unit data.",
+    "loadUnitFailed": "Failed to load organization data.",
     "noEventsFound": "No events found.",
-    "unit": "Unit"
+    "unit": "Organization"
   },
   "OccasionHome": {
     "addToSchedule": "Add To Schedule",
