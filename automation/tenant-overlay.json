@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "74db8b2385ae6ed55a46f6432b6ff4c8c344fad1",
+  "baseMainSha": "3ce0b150fd3c3c2a607d19a01c940872b6bed8c3",
   "release": {
-    "version": "0.20.27+511",
-    "note": "Keep form tone inherited from unit until explicitly overridden"
+    "version": "0.20.28+512",
+    "note": "Show inherited form tone in its dropdown"
   }
 }
