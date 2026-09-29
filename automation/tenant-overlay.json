@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "farnostopava",
-  "baseMainSha": "b70a2854fe9478fe306686258b7e61267a408b99",
+  "baseMainSha": "ef9d390c3f89cd8cbae821af37ae2575b75b1712",
   "release": {
-    "version": "0.20.19+503",
-    "note": "Recover PWA assets when browsers report a false offline state"
+    "version": "0.20.20+504",
+    "note": "Update Farnost Opava web to current main"
   }
 }

@@ -22,6 +22,9 @@ Custom font binaries live under tenant-owned `fonts/` paths. `FONT_FILES` in
 copies and the Flutter/web font declarations. `FONT_FAMILY_BASE` alone does not
 select font files.
 
+Translations under `assets/translations/` are shared application content owned
+by `main`. Tenant overlays must not replace whole translation catalogs.
+
 The allowlists, generated-path list, metadata schema and drift checker are
 loaded with `git show` from `baseMainSha`. A production branch cannot expand its
 own policy. The checker creates a fresh archive of main, overlays only approved

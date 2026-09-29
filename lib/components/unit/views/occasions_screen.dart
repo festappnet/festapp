@@ -130,15 +130,34 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
     final conf = await DialogHelper.showConfirmationDialog(
         context, UnitStrings.createCopy, UnitStrings.createCopyConfirm);
-    if (conf == true) {
+    if (conf == true && mounted) {
+      bool mediaCopied = false;
+      final created = await DialogHelper.showProgressDialogAsync(
+        context,
+        UnitStrings.createCopy,
+        1,
+        isBasic: true,
+        futures: [
+          () async {
+            mediaCopied = await DbOccasions.duplicateOccasion(occasion.id!);
+          },
+        ],
+      );
+      if (!mounted) return;
+      if (!created) {
+        ToastHelper.Show(context, UnitStrings.createCopyFailed);
+        return;
+      }
+      ToastHelper.Show(
+          context,
+          mediaCopied
+              ? UnitStrings.createCopySuccess
+              : UnitStrings.createCopyMediaFailed);
       try {
-        await DbOccasions.duplicateOccasion(occasion.id!, occasion.unit);
-        if (!mounted) return;
-        ToastHelper.Show(context, UnitStrings.createCopySuccess);
         await _loadOccasions();
       } catch (e) {
         if (!mounted) return;
-        ToastHelper.Show(context, UnitStrings.createCopyFailed);
+        ToastHelper.Show(context, UnitStrings.loadEventFailed);
       }
     }
   }

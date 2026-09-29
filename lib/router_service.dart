@@ -220,6 +220,15 @@ class RouterService {
         context, "unit/${RightsService.currentUnit()!.id!}/edit");
   }
 
+  /// Clear a deleted occasion from the route stack and reload its unit.
+  static Future<void> replaceWithUnitAdmin(
+      BuildContext context, int unitId) async {
+    final rootRouter = context.router.root;
+    await RightsService.updateAppData(
+        unitId: unitId, force: true, refreshOffline: false);
+    await rootRouter.replaceAll([UnitAdminRoute(id: unitId)]);
+  }
+
   @visibleForTesting
   static UnitModel? postLoginAdminUnit(List<UnitModel>? userUnits) {
     if (userUnits != null && userUnits.isNotEmpty) {

@@ -8,6 +8,7 @@ import 'package:fstapp/components/unit/db_units.dart';
 import 'package:fstapp/components/users/db_users.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/unit/unit_settings_strings.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -43,6 +44,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   late String? _title;
   late TextEditingController _replyToEmailController;
   String? _selectedTimezone;
+  String _communicationTone = 'formal';
   List<String> _allTimezones = [];
   String _versionInfo = "";
 
@@ -140,6 +142,10 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _replyToEmailController = TextEditingController(
       text: _unit.data?[Tb.units.data_reply_to] as String? ?? '',
     );
+    _communicationTone =
+        _unit.data?[Tb.units.data_communication_tone] == 'informal'
+            ? 'informal'
+            : 'formal';
 
     _allTimezones = TimeHelper.getAvailableTimezoneNames();
     _selectedTimezone = _unit.data?[dataTimezone] as String? ?? tz.local.name;
@@ -174,9 +180,14 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
 
     _unit.data![dataTimezone] = _selectedTimezone;
+    _unit.data![Tb.units.data_communication_tone] = _communicationTone;
 
     try {
       await DbUnits.updateUnit(_unit);
+      widget.unit.data = _unit.data;
+      if (RightsService.currentUnit()?.id == _unit.id) {
+        RightsService.currentUnit()?.data = _unit.data;
+      }
       ToastHelper.Show(context, "${CommonStrings.saved}: ${_unit.title!}");
       widget.onUnitUpdated();
     } catch (e) {
@@ -304,6 +315,32 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                             errorText:
                                 OccasionSettingsStrings.validationEmailInvalid),
                       ]),
+                    ),
+                    const SizedBox(height: 24),
+                    DropdownButtonFormField<String>(
+                      initialValue: _communicationTone,
+                      decoration: InputDecoration(
+                        labelText:
+                            UnitSettingsStrings.labelDefaultCommunicationTone,
+                        border: const OutlineInputBorder(),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'formal',
+                          child: Text(FormStrings.toneFormal),
+                        ),
+                        DropdownMenuItem(
+                          value: 'informal',
+                          child: Text(FormStrings.toneInformal),
+                        ),
+                      ],
+                      onChanged: _canEdit
+                          ? (value) {
+                              if (value != null) {
+                                setState(() => _communicationTone = value);
+                              }
+                            }
+                          : null,
                     ),
                     const SizedBox(height: 24),
                     if (_allTimezones.isNotEmpty)

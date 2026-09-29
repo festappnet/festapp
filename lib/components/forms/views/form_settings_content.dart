@@ -9,6 +9,7 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/form_feature.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -53,7 +54,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
-  String _communicationTone = 'formal';
+  String _communicationTone = 'inherit';
+
+  String get _unitTone =>
+      RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
+              'informal'
+          ? 'informal'
+          : 'formal';
 
   @override
   void initState() {
@@ -130,8 +137,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentMessageType =
           msgData?[FormModel.metaType] as String? ?? 'name_surname';
 
-      _communicationTone =
-          _form!.data?[FormHelper.metaCommunicationTone] as String? ?? 'formal';
+      final savedTone = _form!.data?[FormHelper.metaCommunicationTone];
+      _communicationTone = savedTone == 'formal' || savedTone == 'informal'
+          ? savedTone as String
+          : 'inherit';
 
       if (_form!.deadlineDurationSeconds != null &&
           _form!.deadlineDurationSeconds! > 0) {
@@ -189,7 +198,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       FormModel.metaType: _paymentMessageType,
     };
 
-    _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
+    if (_communicationTone == 'inherit') {
+      _form!.data!.remove(FormHelper.metaCommunicationTone);
+    } else {
+      _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
+    }
 
     final days = int.tryParse(_deadlineDaysController.text);
     if (days != null && days > 0) {
@@ -611,6 +624,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                     items: [
                                       DropdownMenuItem(
+                                          value: 'inherit',
+                                          child: Text(FormStrings.toneInherit(
+                                              _unitTone == 'informal'
+                                                  ? FormStrings.toneInformal
+                                                  : FormStrings.toneFormal))),
+                                      DropdownMenuItem(
                                           value: 'formal',
                                           child: Text(FormStrings.toneFormal)),
                                       DropdownMenuItem(
@@ -642,11 +661,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child: Text(
                                             FormStrings.deleteFormTitle,
                                             style: TextStyle(
-                                                color: (_form?.canDelete ??
-                                                        true)
-                                                    ? ThemeConfig.redColor(
-                                                        innerContext)
-                                                    : Colors.grey),
+                                                color:
+                                                    (_form?.canDelete ?? true)
+                                                        ? ThemeConfig.redColor(
+                                                            innerContext)
+                                                        : Colors.grey),
                                           ),
                                         ),
                                       ),
