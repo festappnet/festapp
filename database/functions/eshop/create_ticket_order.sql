@@ -72,6 +72,9 @@ BEGIN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1003, 'message', 'Form is not linked to any occasion')::TEXT;
         END IF;
 
+        -- The order payload captures the effective tone for its confirmation email.
+        form_data := public.get_effective_form_data(form_id);
+
         is_editor := public.get_is_editor_order_on_occasion(occasion_id);
 
         IF NOT is_editor THEN
@@ -388,6 +391,15 @@ BEGIN
             INTO account_number, account_number_human_readable, creditor_name
             FROM eshop.bank_accounts b
             WHERE b.id = bank_account_id;
+        END IF;
+
+        -- A configured account holder takes precedence. Otherwise use the
+        -- occasion's organization name for EPC payment instructions.
+        IF upper(trim(first_currency_code)) = 'EUR' AND NULLIF(trim(creditor_name), '') IS NULL THEN
+          SELECT left(trim(regexp_replace(title, '[[:space:][:cntrl:]]+', ' ', 'g')), 70)
+          INTO creditor_name
+          FROM public.organizations
+          WHERE id = organization_id;
         END IF;
 
         -- If user chose to pay full amount, skip deposit

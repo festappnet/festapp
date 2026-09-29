@@ -1,0 +1,934 @@
+-- Initialize new forms from the unit and resolve missing legacy tones.
+
+CREATE OR REPLACE FUNCTION public.get_effective_form_data(p_form_id bigint)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SET search_path = public, extensions
+AS $$
+    SELECT COALESCE(f.data, '{}'::jsonb) || jsonb_build_object(
+        'communication_tone',
+        CASE
+            WHEN f.data->>'communication_tone' IN ('formal', 'informal')
+                THEN f.data->>'communication_tone'
+            WHEN u.data->>'communication_tone' IN ('formal', 'informal')
+                THEN u.data->>'communication_tone'
+            ELSE 'formal'
+        END
+    )
+    FROM public.forms f
+    JOIN public.occasions o ON o.id = f.occasion
+    JOIN public.units u ON u.id = o.unit
+    WHERE f.id = p_form_id;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_effective_form_data(bigint)
+FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_effective_form_data(bigint) TO service_role;
+
+CREATE OR REPLACE FUNCTION create_form(
+    p_occasion_id BIGINT,
+    p_link TEXT,
+    p_title TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SET search_path = public, extensions
+AS $$
+DECLARE
+    new_form_id BIGINT;
+    new_form JSONB;
+    new_product_type_id BIGINT;
+    v_communication_tone TEXT;
+    now TIMESTAMPTZ := NOW();
+BEGIN
+    SELECT CASE WHEN u.data->>'communication_tone' = 'informal'
+                THEN 'informal' ELSE 'formal' END
+    INTO v_communication_tone
+    FROM public.occasions o
+    JOIN public.units u ON u.id = o.unit
+    WHERE o.id = p_occasion_id;
+
+    -- The definitive server-side uniqueness check for the form link
+    IF EXISTS (SELECT 1 FROM public.forms WHERE link = p_link) THEN
+        RAISE EXCEPTION '%',
+            JSONB_BUILD_OBJECT('code', 4090, 'message', 'Form link is already in use')::TEXT;
+    END IF;
+
+    -- Create the new form
+    INSERT INTO public.forms(
+        title,
+        link,
+        occasion,
+        created_at,
+        updated_at,
+        deadline_duration_seconds,
+        data
+    )
+    VALUES (
+        p_title,
+        p_link,
+        p_occasion_id,
+        now,
+        now,
+        604800, -- Default to 7 days
+        jsonb_build_object(
+            'is_reminder_enabled', true,
+            'communication_tone', COALESCE(v_communication_tone, 'formal')
+        )
+    )
+    RETURNING to_jsonb(public.forms.*) INTO new_form;
+
+    new_form_id := (new_form->>'id')::BIGINT;
+
+    -- Create default 'email' and 'ticket' fields
+    INSERT INTO public.form_fields(title, type, is_required, form, "order")
+    VALUES ('', 'email', true, new_form_id, 0),
+           ('', 'ticket', true, new_form_id, 1);
+
+    -- Ensure 'spot' product type exists for the occasion
+    IF NOT EXISTS (SELECT 1 FROM eshop.product_types WHERE occasion = p_occasion_id AND type = 'spot') THEN
+        INSERT INTO eshop.product_types(title, type, occasion)
+        VALUES ('Spot', 'spot', p_occasion_id)
+        RETURNING id INTO new_product_type_id;
+    ELSE
+        SELECT id INTO new_product_type_id FROM eshop.product_types WHERE occasion = p_occasion_id AND type = 'spot' LIMIT 1;
+    END IF;
+
+    -- Ensure the 'spot' product type has at least one product
+    IF NOT EXISTS (SELECT 1 FROM eshop.products WHERE occasion = p_occasion_id AND product_type = new_product_type_id) THEN
+        INSERT INTO eshop.products(title, price, product_type, occasion, currency_code, "order")
+        VALUES ('Variant 1', 100, new_product_type_id, p_occasion_id, 'CZK', 0);
+    END IF;
+
+    -- Create the 'product_type' form field linked to 'spot'
+    INSERT INTO public.form_fields(title, type, is_required, form, "order", product_type, is_ticket_field)
+    VALUES ('Spot', 'product_type', false, new_form_id, 2, new_product_type_id, true);
+
+    -- Return the raw data of the newly created form
+    RETURN new_form;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_form_by_link(form_link TEXT)
+RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE
+    allData JSON;
+    generated_secret UUID := gen_random_uuid();
+    form_exists BOOLEAN;
+    is_editor_view BOOLEAN := false;
+    occ_id BIGINT;
+BEGIN
+    -- Check if the form exists
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.forms
+        WHERE link = form_link
+    ) INTO form_exists;
+
+    IF NOT form_exists THEN
+        RETURN jsonb_build_object(
+            'code', 404,
+            'message', 'Form does not exist.'
+        );
+    END IF;
+
+    SELECT occasion INTO occ_id FROM public.forms WHERE link = form_link;
+    is_editor_view := public.get_is_editor_order_view_on_occasion(occ_id);
+
+
+    IF NOT is_editor_view AND NOT EXISTS (
+        SELECT 1
+        FROM public.forms
+        WHERE link = form_link AND is_open = true
+    ) THEN
+        -- If the form is closed, retrieve only the 'header_off' message
+        SELECT jsonb_build_object(
+            'code', 400,
+            'data', jsonb_build_object(
+                'header_off', f.header_off,
+                'is_open', f.is_open
+            )
+        )
+        INTO allData
+        FROM public.forms f
+        WHERE f.link = form_link;
+
+        RETURN allData;
+    END IF;
+
+    -- If the form is open, retrieve the full form data including dynamic product availability
+    SELECT jsonb_build_object(
+        'code', 200,
+        'data', jsonb_build_object(
+            'id', f.id,
+            'key', f.key,
+            'created_at', f.created_at,
+            'data', public.get_effective_form_data(f.id),
+            'type', f.type,
+            'title', f.title,
+            'is_open', f.is_open,
+            'header', f.header,
+            'header_off', f.header_off,
+            'occasion', jsonb_build_object(
+                'id', o.id,
+                'features', o.features,
+                'start_time', o.start_time
+            ),
+            'blueprint', f.blueprint,
+            'deadline_duration_seconds', f.deadline_duration_seconds,
+            'account_number', ba.account_number,
+            'secret', generated_secret,
+            'fields', (
+                SELECT jsonb_agg(
+                    jsonb_build_object(
+                        'id', ff.id,
+                        'title', ff.title,
+                        'description', ff.description,
+                        'data', ff.data,
+                        'type', ff.type,
+                        'is_required', ff.is_required,
+                        'is_hidden', ff.is_hidden,
+                        'is_ticket_field', ff.is_ticket_field,
+                        'order', ff."order",
+                        'product_type_data', (
+                            CASE
+                                WHEN ff.product_type IS NOT NULL THEN
+                                    jsonb_build_object(
+                                        'id', pt.id,
+                                        'title', pt.title,
+                                        'description', pt.description,
+                                        'type', pt.type,
+                                        'data', pt.data,
+                                        'occasion', pt.occasion,
+                                        'products', (
+                                            SELECT jsonb_agg(
+                                                jsonb_build_object(
+                                                    'id', p.id,
+                                                    'title', p.title,
+                                                    'description', p.description,
+                                                    'price', p.price,
+                                                    'currency_code', p.currency_code,
+                                                    'data', p.data,
+                                                    'order', p."order",
+                                                    'ordered_count', (
+                                                        SELECT count(*)
+                                                        FROM eshop.order_product_ticket opt
+                                                        WHERE opt.product = p.id
+                                                    ),
+                                                    'maximum', p.maximum,
+                                                    'is_dynamically_available', is_product_dynamically_available(p.id)
+                                                ) ORDER BY COALESCE(p."order", 0)
+                                            )
+                                            FROM eshop.products p
+                                            WHERE p.product_type = pt.id
+                                              AND NOT p.is_hidden
+                                        )
+                                    )
+                                ELSE NULL
+                            END
+                        )
+                    ) ORDER BY COALESCE(ff."order", 0)
+                )
+                FROM public.form_fields ff
+                LEFT JOIN eshop.product_types pt ON ff.product_type = pt.id
+                WHERE ff.form = f.id AND ff.is_hidden = false
+            )
+        )
+    )
+    INTO allData
+    FROM public.forms f
+    LEFT JOIN eshop.bank_accounts ba ON f.bank_account = ba.id
+    LEFT JOIN public.occasions o ON f.occasion = o.id
+    WHERE f.link = form_link;
+
+    RETURN allData;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_order_details_for_email(p_order_id bigint)
+RETURNS jsonb
+SET search_path = public, extensions AS $$
+DECLARE
+    result_data jsonb;
+    reference_history_data jsonb;
+    form_fields_data jsonb;
+    form_data jsonb;
+    form_key uuid;
+    latest_history_id bigint;
+    v_reply_to_email TEXT;
+BEGIN
+    -- Retrieve the order, occasion, payment info, and bank account as separate objects
+    SELECT jsonb_build_object(
+        'order', to_jsonb(o.*),
+        'occasion', to_jsonb(occ.*),
+        'payment_info', to_jsonb(pi.*),
+        'bank_account', to_jsonb(ba.*)
+    )
+    INTO result_data
+    FROM eshop.orders AS o
+    LEFT JOIN public.occasions AS occ ON o.occasion = occ.id
+    LEFT JOIN eshop.payment_info AS pi ON o.payment_info = pi.id
+    LEFT JOIN eshop.bank_accounts AS ba ON pi.bank_account = ba.id
+    WHERE o.id = p_order_id;
+
+    -- Check if the order was found
+    IF result_data IS NULL THEN
+        RETURN jsonb_build_object('code', 404, 'message', 'Order not found.');
+    END IF;
+
+    -- Call the function you provided to get the email
+    SELECT get_reply_to_email_for_order(p_order_id) INTO v_reply_to_email;
+
+    -- Add the email to the result data. jsonb_build_object handles NULLs gracefully.
+    result_data := result_data || jsonb_build_object('reply_to', v_reply_to_email);
+
+
+    -- Find the latest order_history ID for the given order
+    SELECT oh.id
+    INTO latest_history_id
+    FROM eshop.orders_history AS oh
+    WHERE oh.order = p_order_id
+    ORDER BY oh.created_at DESC
+    LIMIT 1;
+
+    IF latest_history_id IS NOT NULL THEN
+        result_data := result_data || jsonb_build_object('latest_history_id', latest_history_id);
+    END IF;
+
+    -- Get the data of the latest SENT history entry
+    SELECT data INTO reference_history_data
+    FROM eshop.orders_history
+    WHERE "order" = p_order_id AND (data->>'is_sent_to_customer')::boolean IS TRUE
+    ORDER BY created_at DESC LIMIT 1;
+
+    -- If no sent record was found, get the oldest record as the reference
+    IF NOT FOUND THEN
+        SELECT data INTO reference_history_data
+        FROM eshop.orders_history
+        WHERE "order" = p_order_id
+        ORDER BY created_at ASC LIMIT 1;
+    END IF;
+
+    -- Add the reference data to the result
+    IF reference_history_data IS NOT NULL THEN
+        result_data := result_data || jsonb_build_object('reference_history', reference_history_data);
+    END IF;
+
+    -- Extract the form's unique key from the order's data
+    form_key := (result_data->'order'->'data'->>'form')::uuid;
+
+    -- If a form key exists, fetch all associated form fields
+    IF form_key IS NOT NULL THEN
+        -- 2. Modified query to fetch both form_fields and form_data at the same time
+        SELECT
+            jsonb_object_agg(ff.id, to_jsonb(ff.*)), -- All fields
+            public.get_effective_form_data(f.id)     -- Form data with unit defaults
+        INTO
+            form_fields_data,
+            form_data
+        FROM
+            public.form_fields AS ff
+        JOIN
+            public.forms AS f ON ff.form = f.id
+        WHERE
+            f.key = form_key
+        GROUP BY
+            f.id; -- Group by the form used for effective data
+
+        -- If form fields were found, add them to the result data
+        IF form_fields_data IS NOT NULL THEN
+            result_data := result_data || jsonb_build_object('form_fields', form_fields_data);
+        END IF;
+
+        -- 3. Added this block to merge the form_data
+        IF form_data IS NOT NULL THEN
+            result_data := result_data || jsonb_build_object('form_data', form_data);
+        END IF;
+    END IF;
+
+    -- Return a success response with the collected data
+    RETURN jsonb_build_object('code', 200, 'data', result_data);
+
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.create_ticket_order_internal_v1(input_data JSONB)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    result JSONB;
+    order_id BIGINT;
+    ticket_data JSONB;
+    spot_data RECORD;
+    spot_id BIGINT;
+    spot_product RECORD;
+    now TIMESTAMPTZ := NOW();
+    calculated_price NUMERIC(10,2) := 0;
+    spot_secret UUID;
+    product_id BIGINT;
+    ordered_count BIGINT;
+    used_spots JSONB := '[]'::JSONB;
+    occasion_id BIGINT;
+    organization_id BIGINT;
+    unit_id BIGINT;
+    occasion_title TEXT;
+    occasion_features JSONB;
+    account_number TEXT;
+    account_number_human_readable TEXT;
+    creditor_name TEXT;
+    generated_creditor_reference TEXT;
+    ticket_details JSONB := '[]'::JSONB;
+    product_data RECORD;
+    ticket_id BIGINT;
+    order_product_ticket_id BIGINT;
+    ticket_symbol TEXT;
+    ticket_products JSONB := '[]'::JSONB;
+    payment_info_id BIGINT;
+    generated_variable_symbol BIGINT;
+    bank_account_id BIGINT;
+    form_key UUID;
+    deadline TIMESTAMPTZ;
+    form_deadline_duration BIGINT;
+    form_data JSONB;
+    currency_code TEXT;
+    first_currency_code TEXT := NULL;
+    field_item JSONB;
+    products_array BIGINT[] := '{}';
+    form_id BIGINT;
+    field_type TEXT;
+    key_val RECORD;
+    order_data JSONB;
+    order_note TEXT;
+    ticket_note TEXT;
+    reply_to TEXT;
+    is_open_val BOOLEAN;
+    is_editor BOOLEAN;
+    v_product_deposit NUMERIC;
+    v_total_deposit NUMERIC := 0;
+BEGIN
+    -- Wrap the entirelogic in a subtransaction block
+    BEGIN
+        -- Validate input_data and extract form key and email
+        IF input_data IS NULL OR input_data->'form' IS NULL THEN
+            RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1001, 'message', 'Missing form key in input data')::TEXT;
+        END IF;
+
+        form_key := (input_data->>'form')::UUID;
+        SELECT id, occasion, bank_account, deadline_duration_seconds, data, is_open
+        INTO form_id, occasion_id, bank_account_id, form_deadline_duration, form_data, is_open_val
+        FROM public.forms
+        WHERE key = form_key;
+
+        IF occasion_id IS NULL THEN
+            RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1003, 'message', 'Form is not linked to any occasion')::TEXT;
+        END IF;
+
+        -- The order payload captures the effective tone for its confirmation email.
+        form_data := public.get_effective_form_data(form_id);
+
+        is_editor := public.get_is_editor_order_on_occasion(occasion_id);
+
+        IF NOT is_editor THEN
+            IF is_open_val IS FALSE THEN
+                 RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1021, 'message', 'Form is closed')::TEXT;
+            END IF;
+
+            -- Check for start_time and end_time constraints only if not editor
+            IF COALESCE(form_data->'schedule'->>'start_time', form_data->>'start_time') IS NOT NULL THEN
+                IF now < (COALESCE(form_data->'schedule'->>'start_time', form_data->>'start_time'))::TIMESTAMPTZ THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1019, 'message', 'Form is not yet open')::TEXT;
+                END IF;
+            END IF;
+
+            IF COALESCE(form_data->'schedule'->>'end_time', form_data->>'end_time') IS NOT NULL THEN
+                IF now > (COALESCE(form_data->'schedule'->>'end_time', form_data->>'end_time'))::TIMESTAMPTZ THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1020, 'message', 'Form is closed')::TEXT;
+                END IF;
+            END IF;
+        END IF;
+
+        -- Fetch organization, unit, and occasion title from the occasion
+        SELECT organization, unit, title, features
+        INTO organization_id, unit_id, occasion_title, occasion_features
+        FROM public.occasions
+        WHERE id = occasion_id;
+
+        IF organization_id IS NULL THEN
+            RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1005, 'message', 'No organization found for the occasion')::TEXT;
+        END IF;
+
+        IF input_data ? 'fields' THEN
+            DECLARE
+                valid_fields JSONB := '[]'::JSONB;
+                elem JSONB;
+                field_key TEXT;
+            BEGIN
+                FOR elem IN SELECT * FROM jsonb_array_elements(input_data->'fields')
+                LOOP
+                    field_key := (SELECT key FROM jsonb_object_keys(elem) AS key);
+
+                    IF field_key IS NULL THEN
+                        CONTINUE;
+                    END IF;
+
+                    -- Validate the field against the form_fields table
+                    SELECT ff.type INTO field_type
+                    FROM public.form_fields ff
+                    WHERE ff.id = field_key::BIGINT AND ff.form = form_id AND ff.is_hidden = false;
+
+                    IF FOUND THEN
+                        valid_fields := valid_fields || elem;
+
+                        IF field_type IN ('email', 'name', 'surname', 'phone', 'note') THEN
+                            input_data := jsonb_set(input_data, ARRAY[field_type], elem->field_key, true);
+                        END IF;
+                    END IF;
+                END LOOP;
+
+                input_data := jsonb_set(input_data, '{fields}', valid_fields);
+            END;
+        END IF;
+
+        IF input_data->>'email' IS NULL THEN
+            RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1002, 'message', 'Missing email in input data')::TEXT;
+        END IF;
+
+        INSERT INTO eshop.orders (created_at, updated_at, occasion, form)
+        VALUES (now, now, occasion_id, form_id)
+        RETURNING id INTO order_id;
+
+        -- Process each ticket
+        FOR ticket_data IN SELECT * FROM JSONB_ARRAY_ELEMENTS(input_data->'ticket') LOOP
+
+            spot_data := NULL;
+            spot_product := NULL;
+            spot_id := NULL;
+            ticket_note := NULL;
+
+            IF ticket_data->>'spot' IS NOT NULL THEN
+                SELECT * INTO spot_data
+                FROM eshop.spots
+                WHERE id = (ticket_data->>'spot')::BIGINT
+                  AND occasion = occasion_id;
+
+                IF spot_data IS NULL THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1007, 'message', 'Invalid or unrelated spot')::TEXT;
+                END IF;
+
+                IF spot_data.order_product_ticket IS NOT NULL THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1008, 'message', 'Spot is already reserved or in use')::TEXT;
+                END IF;
+
+                spot_secret := (input_data->>'secret')::UUID;
+                IF spot_data.secret IS DISTINCT FROM spot_secret THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1009, 'message', 'Invalid secret for spot')::TEXT;
+                END IF;
+
+                spot_id := spot_data.id;
+                used_spots := used_spots || JSONB_BUILD_ARRAY(spot_id);
+
+                SELECT i.*, it.type, it.title as type_title, spot_data.title as spot_title
+                INTO spot_product
+                FROM eshop.products i
+                LEFT JOIN eshop.product_types it ON i.product_type = it.id
+                WHERE i.id = spot_data.product;
+            END IF;
+
+            products_array := '{}';
+            IF ticket_data ? 'fields' THEN
+                FOR field_item IN SELECT * FROM JSONB_ARRAY_ELEMENTS(ticket_data->'fields')
+                LOOP
+                    IF field_item ? 'note' THEN
+                        ticket_note := field_item->>'note';
+                    END IF;
+                    IF field_item ? 'product_type' THEN
+                        products_array := products_array || ((field_item->>'product_type')::BIGINT);
+                    END IF;
+                END LOOP;
+            END IF;
+
+            ticket_symbol := generate_ticket_symbol(organization_id, occasion_id);
+            INSERT INTO eshop.tickets (state, occasion, ticket_symbol, note, created_at, updated_at)
+            VALUES ('ordered', occasion_id, ticket_symbol, ticket_note, now, now)
+            RETURNING id INTO ticket_id;
+
+            ticket_products := '[]'::JSONB;
+
+            IF spot_id IS NOT NULL THEN
+                products_array := products_array || spot_product.id;
+            END IF;
+
+            FOREACH product_id IN ARRAY products_array LOOP
+
+                IF product_id IS NULL THEN
+                    CONTINUE;
+                END IF;
+
+                SELECT i.*, it.type, it.title AS type_title, '' AS spot_title
+                INTO product_data
+                FROM eshop.products i
+                LEFT JOIN eshop.product_types it ON i.product_type = it.id
+                WHERE i.id = product_id
+                  AND it.occasion = occasion_id;
+
+                IF product_data IS NULL THEN
+                    RAISE EXCEPTION '%',
+                        jsonb_build_object(
+                            'code', 1011,
+                            'message', 'Product not found or not part of occasion',
+                            'details', product_id
+                        )::text;
+                END IF;
+
+                IF COALESCE(product_data.maximum, 0) > 0 THEN
+                    SELECT COUNT(*) INTO ordered_count
+                    FROM eshop.order_product_ticket
+                    WHERE product = product_id;
+                    IF ordered_count + 1 > product_data.maximum THEN
+                        RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
+                            'code', 1017,
+                            'message', 'Product is overbooked',
+                            'product', jsonb_strip_nulls(JSONB_BUILD_OBJECT(
+                                'id', product_data.id,
+                                'title', product_data.title,
+                                'price', product_data.price,
+                                'type', product_data.type,
+                                'currency_code', product_data.currency_code
+                            ))
+                        )::TEXT;
+                    END IF;
+                END IF;
+
+                IF product_data.type = 'spot' AND spot_product IS NULL THEN
+                    spot_product := product_data;
+                END IF;
+
+                IF product_data.is_hidden THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
+                        'code', 1012,
+                        'message', 'Selected product is hidden and cannot be ordered',
+                        'id', product_id
+                    )::TEXT;
+                END IF;
+
+                IF first_currency_code IS NULL THEN
+                    first_currency_code := product_data.currency_code;
+                ELSE
+                    IF product_data.currency_code IS DISTINCT FROM first_currency_code THEN
+                        RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
+                            'code', 1014,
+                            'message', 'Products in the order must have the same currency',
+                            'expected_currency', first_currency_code,
+                            'actual_currency', product_data.currency_code
+                        )::TEXT;
+                    END IF;
+                END IF;
+
+                -- Build the product details for the ticket
+                DECLARE
+                    v_spot_title TEXT := NULL;
+                    v_spot_description TEXT := NULL;
+                BEGIN
+                    -- Safe extraction of spot details
+                    IF spot_id IS NOT NULL AND spot_product IS NOT NULL THEN
+                         -- Only access fields if we have a spot_id (implies spot_product is fully set from spot lookup)
+                         -- AND product_id matches.
+                         IF product_id = spot_product.id THEN
+                             v_spot_title := spot_product.spot_title;
+                             v_spot_description := spot_product.description;
+                         END IF;
+                    END IF;
+
+                    ticket_products := ticket_products || jsonb_strip_nulls(JSONB_BUILD_OBJECT(
+                        'id', product_id,
+                        'title', product_data.title,
+                        'type', product_data.type,
+                        'type_title', product_data.type_title,
+                        'price', product_data.price,
+                        'currency_code', product_data.currency_code,
+                        'spot_title', v_spot_title,
+                        'description', v_spot_description,
+                        'data', product_data.data
+                    ));
+                END;
+
+                -- Accumulate the product price into the order total
+                calculated_price := calculated_price + COALESCE(product_data.price, 0)::NUMERIC(10,2);
+
+                -- Accumulate the product deposit into the order deposit total
+                v_product_deposit := COALESCE((product_data.data->'deposit'->>'amount')::NUMERIC, 0);
+                IF v_product_deposit > COALESCE(product_data.price, 0) THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
+                        'code', 1016,
+                        'message', 'Deposit amount cannot exceed product price',
+                        'product_id', product_id,
+                        'deposit', v_product_deposit,
+                        'price', product_data.price
+                    )::TEXT;
+                END IF;
+                v_total_deposit := v_total_deposit + v_product_deposit;
+
+                -- Link the ticket and product to the order
+                INSERT INTO eshop.order_product_ticket ("order", product, ticket)
+                VALUES (order_id, product_id, ticket_id)
+                RETURNING id INTO order_product_ticket_id;
+
+                -- For the spot product, link the generated order product ticket id to the spot record
+                IF spot_id IS NOT NULL THEN
+                    IF product_id = spot_product.id THEN
+                        UPDATE eshop.spots
+                        SET order_product_ticket = order_product_ticket_id, updated_at = now
+                        WHERE id = spot_id;
+                    END IF;
+                END IF;
+            END LOOP;
+
+            -- If no explicit ticket->spot was provided, then at least one of the fields must be a spot product.
+            IF spot_product IS NULL THEN
+                RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1015, 'message', 'Spot product is missing in ticket fields')::TEXT;
+            END IF;
+
+            -- Append the ticket details (with its products and the extracted ticket note) to the overall ticket_details array
+            ticket_details := ticket_details || JSONB_BUILD_OBJECT(
+                'id', ticket_id,
+                'ticket_symbol', ticket_symbol,
+                'note', ticket_note,
+                'products', ticket_products
+            );
+        END LOOP;
+
+        order_data := input_data - 'ticket' || JSONB_BUILD_OBJECT('tickets', ticket_details);
+
+        -- Determine the bank account details based on the form and supported currency fallback using unit accounts only
+        -- Modified Bank Account Selection: Exclude CASH Accounts
+        IF bank_account_id IS NULL THEN
+            SELECT uba.bank_account, ba.account_number, ba.account_number_human_readable, ba.creditor_name
+            INTO bank_account_id, account_number, account_number_human_readable, creditor_name
+            FROM eshop.unit_bank_accounts uba
+            JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
+            WHERE uba.unit = (SELECT unit FROM public.occasions WHERE id = occasion_id)
+              AND ba.supported_currencies @> ARRAY[first_currency_code]
+              AND (ba.type IS DISTINCT FROM 'CASH') -- EXCLUDE CASH ACCOUNTS
+            ORDER BY uba.priority ASC, ba.id ASC
+            LIMIT 1;
+            
+            IF bank_account_id IS NULL THEN
+                RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
+                    'code', 1018,
+                    'message', 'No available bank account supports the required currency',
+                    'required_currency', first_currency_code
+                )::TEXT;
+            END IF;
+        ELSE
+            -- Validate manually selected account: Exclude CASH Accounts
+            PERFORM 1
+            FROM eshop.unit_bank_accounts uba
+            JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
+            WHERE uba.unit = (SELECT unit FROM public.occasions WHERE id = occasion_id)
+              AND ba.id = bank_account_id
+              AND ba.supported_currencies @> ARRAY[first_currency_code]
+              AND (ba.type IS DISTINCT FROM 'CASH'); -- EXCLUDE CASH ACCOUNTS
+
+            IF NOT FOUND THEN
+                RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
+                    'code', 1018,
+                    'message', 'The specified bank account does not support the required currency, is not linked, or is invalid (CASH type)',
+                    'expected_currency', first_currency_code,
+                    'provided_bank_account', bank_account_id
+                )::TEXT;
+            END IF;
+            
+            SELECT b.account_number, b.account_number_human_readable, b.creditor_name
+            INTO account_number, account_number_human_readable, creditor_name
+            FROM eshop.bank_accounts b
+            WHERE b.id = bank_account_id;
+        END IF;
+
+        -- If user chose to pay full amount, skip deposit
+        IF input_data->>'payment_type' = 'full' THEN
+            v_total_deposit := 0;
+        END IF;
+
+        -- Generate a variable symbol and create the payment info record
+        generated_variable_symbol := generate_payment_variable_symbol(bank_account_id, form_id);
+        INSERT INTO eshop.payment_info (bank_account, variable_symbol, amount, deposit_amount, currency_code, created_at)
+        VALUES (bank_account_id, generated_variable_symbol, calculated_price, NULLIF(v_total_deposit, 0), first_currency_code, now)
+        RETURNING id INTO payment_info_id;
+
+        IF upper(trim(first_currency_code)) = 'EUR' AND calculated_price > 0 THEN
+          IF creditor_name IS NULL OR length(trim(creditor_name)) NOT BETWEEN 1 AND 70 THEN
+            RAISE EXCEPTION 'EUR_CREDITOR_NAME_REQUIRED';
+          END IF;
+          IF account_number IS NULL OR NOT public.is_valid_iban(account_number) THEN
+            RAISE EXCEPTION 'EUR_VALID_IBAN_REQUIRED';
+          END IF;
+          generated_creditor_reference := public.generate_creditor_reference(generated_variable_symbol);
+          UPDATE eshop.payment_info
+          SET creditor_reference = generated_creditor_reference
+          WHERE id = payment_info_id AND creditor_reference IS NULL;
+        END IF;
+
+        -- persist all of the non‐state fields
+        UPDATE eshop.orders
+        SET
+          price         = calculated_price,
+          currency_code = first_currency_code,
+          payment_info  = payment_info_id,
+          data          = order_data,
+          updated_at    = now
+        WHERE id = order_id;
+
+        -- Apply inventory allocations. This will raise an overbooking error if spots are unavailable.
+        PERFORM apply_allocations(order_id);
+
+        -- Always mark as 'ordered' initially to satisfy state requirements
+        IF calculated_price = 0 THEN
+          PERFORM update_order_and_tickets_to_paid(order_id);
+        ELSE
+          UPDATE eshop.orders
+          SET state      = 'ordered'
+          WHERE id = order_id;
+
+          -- Calculate deadline if deadline duration is provided
+          IF form_deadline_duration IS NOT NULL THEN
+              deadline := now + make_interval(secs => form_deadline_duration);
+              PERFORM public.set_payment_deadline(payment_info_id, deadline);
+          ELSE
+              deadline := NULL;
+          END IF;
+        END IF;
+
+        -- Check via Unified Helper if order is already paid (e.g. price is 0)
+        PERFORM public.recalculate_order_payment_status(order_id);
+
+        -- Queue deposit reminder if deposit exists and deadline is days-based (not "on site")
+        IF v_total_deposit > 0 THEN
+            DECLARE
+                v_occ_start_time TIMESTAMPTZ;
+                v_deposit_deadline_days INT;
+                v_deposit_deadline TEXT;
+                v_reminder_interval BIGINT;
+                v_reminder_is_enabled BOOLEAN;
+                v_deposit_deadline_ts TIMESTAMPTZ;
+                v_deposit_feature JSONB;
+            BEGIN
+                -- Read occasion start_time
+                SELECT start_time INTO v_occ_start_time
+                FROM public.occasions WHERE id = occasion_id;
+
+                -- Get deposit feature config from features JSONB
+                SELECT elem INTO v_deposit_feature
+                FROM jsonb_array_elements(occasion_features) elem
+                WHERE elem->>'code' = 'deposit';
+
+                v_deposit_deadline_days := (v_deposit_feature->>'deposit_deadline_days')::int;
+                v_deposit_deadline := v_deposit_feature->>'deposit_deadline';
+
+                -- Store deposit deadline on payment_info and queue reminder
+                IF v_deposit_deadline IS DISTINCT FROM 'on_site' AND v_deposit_deadline_days IS NOT NULL THEN
+                    v_deposit_deadline_ts := v_occ_start_time - make_interval(days => v_deposit_deadline_days);
+
+                    -- Store the calculated deposit deadline on the payment_info record
+                    UPDATE eshop.payment_info
+                    SET deposit_deadline = v_deposit_deadline_ts
+                    WHERE id = payment_info_id;
+
+                    -- Only queue reminder if deadline is in the future
+                    IF v_deposit_deadline_ts > NOW() THEN
+                        -- Get reminder interval from occasion form feature
+                        SELECT elem->>'reminder_interval_seconds'
+                        INTO v_reminder_interval
+                        FROM jsonb_array_elements(occasion_features) elem
+                        WHERE elem->>'code' = 'form';
+
+                        -- Check if reminder is enabled on the form feature
+                        SELECT (elem->>'reminder_is_enabled')::boolean
+                        INTO v_reminder_is_enabled
+                        FROM jsonb_array_elements(occasion_features) elem
+                        WHERE elem->>'code' = 'form';
+
+                        IF COALESCE(v_reminder_is_enabled, FALSE) AND v_reminder_interval IS NOT NULL THEN
+                            INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
+                            VALUES (
+                                v_deposit_deadline_ts - make_interval(secs => v_reminder_interval),
+                                'TICKET_ORDER_REMINDER',
+                                jsonb_build_object('order_id', order_id, 'is_deposit_reminder', true),
+                                organization_id,
+                                occasion_id,
+                                unit_id
+                            );
+                        END IF;
+                    END IF;
+                END IF;
+                -- Note: if deposit_deadline = 'on_site', deposit_deadline stays NULL → means "Na místě"
+            END;
+        END IF;
+
+        -- Log the order to orders_history with details
+        INSERT INTO eshop.orders_history (created_at, data, "order", state, price, currency_code)
+        VALUES (
+            now,
+            JSONB_BUILD_OBJECT('input_data', input_data, 'tickets', ticket_details),
+            order_id,
+            'ordered',
+            calculated_price,
+            first_currency_code
+        );
+
+        -- Get the reply-to email for the order
+        reply_to := get_reply_to_email_for_order(order_id);
+
+        -- Check features and auto-import users if enabled
+        PERFORM public.process_occasion_auto_import(occasion_id);
+
+        -- Prepare the success response JSON
+        result := JSONB_BUILD_OBJECT(
+            'code', 200,
+            'order', JSONB_BUILD_OBJECT(
+                'id', order_id,
+                'data', order_data,
+                'form', JSONB_BUILD_OBJECT(
+                    'id', form_id,
+                    'data', form_data
+                ),
+                'payment_info', JSONB_BUILD_OBJECT(
+                    'id', payment_info_id,
+                    'variable_symbol', generated_variable_symbol,
+                    'creditor_reference', generated_creditor_reference,
+                    'creditor_name', creditor_name,
+                    'amount', calculated_price,
+                    'deposit_amount', NULLIF(v_total_deposit, 0),
+                    'deposit_deadline', (SELECT deposit_deadline FROM eshop.payment_info WHERE id = payment_info_id),
+                    'deadline', deadline,
+                    'account_number', account_number,
+                    'account_number_human_readable', account_number_human_readable,
+                    'currency_code', first_currency_code
+                ),
+                'occasion', JSONB_BUILD_OBJECT(
+                    'id', occasion_id,
+                    'organization', organization_id,
+                    'unit', unit_id,
+                    'title', occasion_title,
+                    'features', occasion_features,
+                    'data', (SELECT data FROM public.occasions WHERE id = occasion_id)
+                ),
+                'reply_to', reply_to
+            )
+        );
+
+    EXCEPTION WHEN OTHERS THEN
+        -- In case of any error, the inner block is rolled back and we capture the error message.
+        result := CASE
+            WHEN left(SQLERRM, 1) = '{' THEN SQLERRM::JSONB
+            ELSE JSONB_BUILD_OBJECT('code', 1013, 'message', SQLERRM)
+        END;
+    END;
+
+    RETURN result;
+END;
+$$;
