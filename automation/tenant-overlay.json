@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "4e992b450eff1d6ec429c0a5d19681f8451a5ad6",
+  "baseMainSha": "56522640ae8a897e01690e5a3c601199003dd1fe",
   "release": {
-    "version": "0.20.27+511",
-    "note": "Add upper-right fullscreen toggle to modal HTML editors with retained caret and draft"
+    "version": "0.20.28+512",
+    "note": "Complete fullscreen save and cancel and provide a visible exit fullscreen action"
   }
 }
