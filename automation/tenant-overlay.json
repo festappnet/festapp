@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "2808a16f5bbdfd050da358fa343c305f1b202e05",
+  "baseMainSha": "7a26a08560022fc2b5fb1ab3b2a8dce446669bea",
   "release": {
-    "version": "0.20.23+507",
-    "note": "Expand HTML editor into a full page and preserve draft on return"
+    "version": "0.20.24+508",
+    "note": "Instant fullscreen with fixed vertical left toolbar and independent document scroll"
   }
 }
