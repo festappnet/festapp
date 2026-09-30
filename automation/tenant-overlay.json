@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "ef9d390c3f89cd8cbae821af37ae2575b75b1712",
+  "baseMainSha": "cdb2da7dc5d7dcb9e071d20a612e25313fe09a11",
   "release": {
-    "version": "0.20.35+519",
-    "note": "Keep loading surface visible until app is ready"
+    "version": "0.20.36+520",
+    "note": "Keep blueprint visible while zooming and panning"
   }
 }
