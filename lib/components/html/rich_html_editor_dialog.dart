@@ -7,6 +7,8 @@ import 'html_strings.dart';
 import 'rich_html_editor.dart';
 import 'rich_html_editor_controller.dart';
 
+enum HtmlEditorFullscreenAction { save, cancel, collapse }
+
 class RichHtmlEditorDialog extends StatefulWidget {
   const RichHtmlEditorDialog._(
       {required this.controller,
@@ -52,18 +54,20 @@ class RichHtmlEditorDialog extends StatefulWidget {
     return result;
   }
 
-  static Future<void> expand(
+  static Future<HtmlEditorFullscreenAction> expand(
       BuildContext context, RichHtmlEditorController controller) async {
-    final route = PageRouteBuilder<String>(
+    final route = PageRouteBuilder<HtmlEditorFullscreenAction>(
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
         fullscreenDialog: true,
         pageBuilder: (_, __, ___) => RichHtmlEditorDialog._(
             controller: controller, ownsController: false, fullPage: true));
-    await Navigator.of(context, rootNavigator: true).push<String>(route);
+    final action = await Navigator.of(context, rootNavigator: true)
+        .push<HtmlEditorFullscreenAction>(route);
     // The inline editor must not remount until the page's exit transition
     // removes its editor: both share the document layout key and IME client.
     await route.completed;
+    return action ?? HtmlEditorFullscreenAction.collapse;
   }
 
   @override
@@ -74,7 +78,24 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
   bool _expanded = false;
   bool get _fullPage => widget.fullPage || _expanded;
 
+  void _finish(bool save) {
+    if (widget.ownsController) {
+      Navigator.pop<String>(context, save ? widget.controller.html : null);
+    } else {
+      Navigator.pop<HtmlEditorFullscreenAction>(
+          context,
+          save
+              ? HtmlEditorFullscreenAction.save
+              : HtmlEditorFullscreenAction.cancel);
+    }
+  }
+
   Future<void> _toggleFullscreen() async {
+    if (widget.fullPage) {
+      Navigator.pop<HtmlEditorFullscreenAction>(
+          context, HtmlEditorFullscreenAction.collapse);
+      return;
+    }
     setState(() => _expanded = !_expanded);
     await WidgetsBinding.instance.endOfFrame;
     if (mounted) widget.controller.focusNode.requestFocus();
@@ -110,18 +131,24 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
       appBar: AppBar(
           title: Text(widget.title ?? CommonStrings.edit),
           actions: [
-            if (!widget.fullPage)
+            if (_fullPage)
+              Builder(
+                  builder: (context) => TextButton.icon(
+                      style: TextButton.styleFrom(
+                          foregroundColor: IconTheme.of(context).color),
+                      onPressed: _toggleFullscreen,
+                      icon: const Icon(Icons.close_fullscreen),
+                      label: Text(HtmlStrings.collapse)))
+            else
               IconButton(
-                  tooltip: _expanded ? CommonStrings.back : HtmlStrings.expand,
+                  tooltip: HtmlStrings.expand,
                   onPressed: _toggleFullscreen,
-                  icon: Icon(
-                      _expanded ? Icons.close_fullscreen : Icons.open_in_full)),
+                  icon: const Icon(Icons.open_in_full)),
           ],
           leading: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () async {
-                if (await _canClose() && context.mounted)
-                  Navigator.pop(context);
+                if (await _canClose() && context.mounted) _finish(false);
               })),
       body: _fullPage
           ? Padding(
@@ -144,14 +171,12 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
               child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                 TextButton(
                     onPressed: () async {
-                      if (await _canClose() && context.mounted)
-                        Navigator.pop(context);
+                      if (await _canClose() && context.mounted) _finish(false);
                     },
                     child: Text(CommonStrings.storno)),
                 const SizedBox(width: 12),
                 FilledButton(
-                    onPressed: () =>
-                        Navigator.pop(context, widget.controller.html),
+                    onPressed: () => _finish(true),
                     child: Text(CommonStrings.save)),
               ]))),
     ));
