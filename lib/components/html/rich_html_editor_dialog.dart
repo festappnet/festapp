@@ -9,10 +9,14 @@ import 'rich_html_editor_controller.dart';
 
 class RichHtmlEditorDialog extends StatefulWidget {
   const RichHtmlEditorDialog._(
-      {required this.controller, this.title, this.ownsController = true});
+      {required this.controller,
+      this.title,
+      this.ownsController = true,
+      this.fullPage = false});
   final RichHtmlEditorController controller;
   final String? title;
   final bool ownsController;
+  final bool fullPage;
 
   static Future<String?> show(BuildContext context,
       {String? initialHtml,
@@ -50,11 +54,14 @@ class RichHtmlEditorDialog extends StatefulWidget {
 
   static Future<void> expand(
       BuildContext context, RichHtmlEditorController controller) async {
-    await showDialog<String>(
-        context: context,
-        barrierDismissible: false,
+    final route = MaterialPageRoute<String>(
+        fullscreenDialog: true,
         builder: (_) => RichHtmlEditorDialog._(
-            controller: controller, ownsController: false));
+            controller: controller, ownsController: false, fullPage: true));
+    await Navigator.of(context, rootNavigator: true).push<String>(route);
+    // The inline editor must not remount until the page's exit transition
+    // removes its editor: both share the document layout key and IME client.
+    await route.completed;
   }
 
   @override
@@ -100,8 +107,8 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
       body: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-              constraints:
-                  BoxConstraints(maxWidth: small ? double.infinity : 1000),
+              constraints: BoxConstraints(
+                  maxWidth: widget.fullPage || small ? double.infinity : 1000),
               child: SingleChildScrollView(
                   child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -131,14 +138,16 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                 if (!didPop && await _canClose() && context.mounted)
                   Navigator.pop(context);
               },
-              child: small
-                  ? Dialog.fullscreen(child: content)
-                  : Dialog(
-                      clipBehavior: Clip.antiAlias,
-                      child: SizedBox(
-                          width: 1000,
-                          height: MediaQuery.sizeOf(context).height * 0.85,
-                          child: content)),
+              child: widget.fullPage
+                  ? content
+                  : small
+                      ? Dialog.fullscreen(child: content)
+                      : Dialog(
+                          clipBehavior: Clip.antiAlias,
+                          child: SizedBox(
+                              width: 1000,
+                              height: MediaQuery.sizeOf(context).height * 0.85,
+                              child: content)),
             ));
   }
 }
