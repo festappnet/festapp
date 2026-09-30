@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "d57397156c621bfd086ed1c567b09525b77408fe",
+  "baseMainSha": "e20d4b1101751adbe5e4db9b9c16e32dae54fee9",
   "release": {
-    "version": "0.20.25+509",
-    "note": "Repair festapp2025 concatenated form metadata and move fullscreen control to upper right"
+    "version": "0.20.26+510",
+    "note": "Retain fullscreen typing focus and make form answer previews non-interactive"
   }
 }
