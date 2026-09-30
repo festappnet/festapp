@@ -22,11 +22,11 @@ class RichHtmlEditor extends StatefulWidget {
   const RichHtmlEditor(
       {required this.controller,
       this.enabled = true,
-      this.fillAvailableSpace = false,
+      this.fullscreen = false,
       super.key});
   final RichHtmlEditorController controller;
   final bool enabled;
-  final bool fillAvailableSpace;
+  final bool fullscreen;
   @override
   State<RichHtmlEditor> createState() => _RichHtmlEditorState();
 }
@@ -276,79 +276,97 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
           imageBytesResolver: controller.media.previewBytes);
     return AnimatedBuilder(
         animation: controller,
-        builder: (context, _) => Column(
+        builder: (context, _) => Flex(
+              direction: widget.fullscreen ? Axis.horizontal : Axis.vertical,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(children: [
-                      _tool(Icons.format_bold, HtmlStrings.bold,
-                          () => controller.toggle(boldAttribution),
-                          attribution: boldAttribution),
-                      _tool(Icons.format_italic, HtmlStrings.italic,
-                          () => controller.toggle(italicsAttribution),
-                          attribution: italicsAttribution),
-                      _tool(Icons.format_underlined, HtmlStrings.underline,
-                          () => controller.toggle(underlineAttribution),
-                          attribution: underlineAttribution),
-                      _tool(Icons.format_strikethrough, HtmlStrings.strike,
-                          () => controller.toggle(strikethroughAttribution),
-                          attribution: strikethroughAttribution),
-                      _tool(Icons.link, HtmlStrings.link, () => _async(_link)),
-                      _tool(Icons.image_outlined, HtmlStrings.image,
-                          () => _async(_image),
-                          available: controller.owner.canImport),
-                      _tool(Icons.content_paste, HtmlStrings.paste,
-                          () => _async(controller.paste)),
-                      _tool(Icons.undo, HtmlStrings.undo, controller.undo),
-                      _tool(Icons.redo, HtmlStrings.redo, controller.redo),
-                      PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_horiz),
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'imageUrl':
-                                _async(_imageUrl);
-                              case 'h2':
-                                _block(header2Attribution);
-                              case 'h3':
-                                _block(header3Attribution);
-                              case 'ol':
-                                _list(ListItemType.ordered);
-                              case 'ul':
-                                _list(ListItemType.unordered);
-                              case 'in':
-                                _indent(true);
-                              case 'out':
-                                _indent(false);
-                              case 'left':
-                                _align(TextAlign.left);
-                              case 'center':
-                                _align(TextAlign.center);
-                              case 'right':
-                                _align(TextAlign.right);
-                            }
-                            controller.focusNode.requestFocus();
-                          },
-                          itemBuilder: (_) => [
-                                if (controller.owner.canImport)
-                                  PopupMenuItem(
-                                      value: 'imageUrl',
-                                      child: Text(HtmlStrings.imageUrl)),
-                                for (final item in [
-                                  ('h2', HtmlStrings.heading2),
-                                  ('h3', HtmlStrings.heading3),
-                                  ('ol', HtmlStrings.orderedList),
-                                  ('ul', HtmlStrings.bulletList),
-                                  ('in', HtmlStrings.indent),
-                                  ('out', HtmlStrings.outdent),
-                                  ('left', HtmlStrings.alignLeft),
-                                  ('center', HtmlStrings.alignCenter),
-                                  ('right', HtmlStrings.alignRight)
-                                ])
-                                  PopupMenuItem(
-                                      value: item.$1, child: Text(item.$2)),
-                              ]),
-                    ])),
+                SizedBox(
+                    width: widget.fullscreen ? 56 : null,
+                    child: SingleChildScrollView(
+                        scrollDirection:
+                            widget.fullscreen ? Axis.vertical : Axis.horizontal,
+                        child: Flex(
+                            direction: widget.fullscreen
+                                ? Axis.vertical
+                                : Axis.horizontal,
+                            children: [
+                              _tool(Icons.format_bold, HtmlStrings.bold,
+                                  () => controller.toggle(boldAttribution),
+                                  attribution: boldAttribution),
+                              _tool(Icons.format_italic, HtmlStrings.italic,
+                                  () => controller.toggle(italicsAttribution),
+                                  attribution: italicsAttribution),
+                              _tool(
+                                  Icons.format_underlined,
+                                  HtmlStrings.underline,
+                                  () => controller.toggle(underlineAttribution),
+                                  attribution: underlineAttribution),
+                              _tool(
+                                  Icons.format_strikethrough,
+                                  HtmlStrings.strike,
+                                  () => controller
+                                      .toggle(strikethroughAttribution),
+                                  attribution: strikethroughAttribution),
+                              _tool(Icons.link, HtmlStrings.link,
+                                  () => _async(_link)),
+                              _tool(Icons.image_outlined, HtmlStrings.image,
+                                  () => _async(_image),
+                                  available: controller.owner.canImport),
+                              _tool(Icons.content_paste, HtmlStrings.paste,
+                                  () => _async(controller.paste)),
+                              _tool(Icons.undo, HtmlStrings.undo,
+                                  controller.undo),
+                              _tool(Icons.redo, HtmlStrings.redo,
+                                  controller.redo),
+                              PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_horiz),
+                                  onSelected: (value) {
+                                    switch (value) {
+                                      case 'imageUrl':
+                                        _async(_imageUrl);
+                                      case 'h2':
+                                        _block(header2Attribution);
+                                      case 'h3':
+                                        _block(header3Attribution);
+                                      case 'ol':
+                                        _list(ListItemType.ordered);
+                                      case 'ul':
+                                        _list(ListItemType.unordered);
+                                      case 'in':
+                                        _indent(true);
+                                      case 'out':
+                                        _indent(false);
+                                      case 'left':
+                                        _align(TextAlign.left);
+                                      case 'center':
+                                        _align(TextAlign.center);
+                                      case 'right':
+                                        _align(TextAlign.right);
+                                    }
+                                    controller.focusNode.requestFocus();
+                                  },
+                                  itemBuilder: (_) => [
+                                        if (controller.owner.canImport)
+                                          PopupMenuItem(
+                                              value: 'imageUrl',
+                                              child:
+                                                  Text(HtmlStrings.imageUrl)),
+                                        for (final item in [
+                                          ('h2', HtmlStrings.heading2),
+                                          ('h3', HtmlStrings.heading3),
+                                          ('ol', HtmlStrings.orderedList),
+                                          ('ul', HtmlStrings.bulletList),
+                                          ('in', HtmlStrings.indent),
+                                          ('out', HtmlStrings.outdent),
+                                          ('left', HtmlStrings.alignLeft),
+                                          ('center', HtmlStrings.alignCenter),
+                                          ('right', HtmlStrings.alignRight)
+                                        ])
+                                          PopupMenuItem(
+                                              value: item.$1,
+                                              child: Text(item.$2)),
+                                      ]),
+                            ]))),
                 _documentViewport(ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 180),
                     child: SuperEditorAndroidControlsScope(
@@ -356,8 +374,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                         child: SuperEditorIosControlsScope(
                             controller: _ios!,
                             child: CustomScrollView(
-                                shrinkWrap: !widget.fillAvailableSpace,
-                                physics: widget.fillAvailableSpace
+                                shrinkWrap: !widget.fullscreen,
+                                physics: widget.fullscreen
                                     ? null
                                     : const NeverScrollableScrollPhysics(),
                                 slivers: [
@@ -435,7 +453,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   }
 
   Widget _documentViewport(Widget document) =>
-      widget.fillAvailableSpace ? Expanded(child: document) : document;
+      widget.fullscreen ? Expanded(child: document) : document;
 
   ExecutionInstruction _pasteShortcut(
       {required SuperEditorContext editContext, required KeyEvent keyEvent}) {

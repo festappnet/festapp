@@ -110,7 +110,7 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
           ? Padding(
               padding: const EdgeInsets.all(12),
               child: RichHtmlEditor(
-                  controller: widget.controller, fillAvailableSpace: true))
+                  controller: widget.controller, fullscreen: true))
           : Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(

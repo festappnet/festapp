@@ -153,7 +153,7 @@ void main() {
         same(controller));
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('fullscreen toolbar stays fixed while the document scrolls',
+  testWidgets('fullscreen left toolbar stays fixed while the document scrolls',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1;
@@ -174,6 +174,9 @@ void main() {
     await tester.pump();
     final toolbar = find.byIcon(Icons.format_bold);
     final before = tester.getTopLeft(toolbar);
+    final italic = tester.getTopLeft(find.byIcon(Icons.format_italic));
+    expect(italic.dx, before.dx);
+    expect(italic.dy, greaterThan(before.dy));
     final document = find.byType(CustomScrollView);
     expect(document, findsOneWidget);
     final scrollable = tester.state<ScrollableState>(
