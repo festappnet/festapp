@@ -478,7 +478,8 @@ class _DraftImageBuilder extends ImageComponentBuilder {
             return Image.memory(UriData.parse(source).contentAsBytes(),
                 fit: BoxFit.contain);
           if (source.isEmpty) return const Icon(Icons.broken_image_outlined);
-          if (controller.owner.canImport)
+          if (controller.owner.canImport &&
+              !controller.isOriginalImageSource(source))
             return _AuthorizedImagePreview(
                 source: source, controller: controller);
           if (!{'http', 'https'}.contains(Uri.tryParse(source)?.scheme))
