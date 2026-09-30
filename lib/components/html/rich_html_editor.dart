@@ -20,9 +20,13 @@ import 'rich_html_editor_dialog.dart';
 
 class RichHtmlEditor extends StatefulWidget {
   const RichHtmlEditor(
-      {required this.controller, this.enabled = true, super.key});
+      {required this.controller,
+      this.enabled = true,
+      this.fillAvailableSpace = false,
+      super.key});
   final RichHtmlEditorController controller;
   final bool enabled;
+  final bool fillAvailableSpace;
   @override
   State<RichHtmlEditor> createState() => _RichHtmlEditorState();
 }
@@ -345,15 +349,17 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                       value: item.$1, child: Text(item.$2)),
                               ]),
                     ])),
-                ConstrainedBox(
+                _documentViewport(ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 180),
                     child: SuperEditorAndroidControlsScope(
                         controller: _android,
                         child: SuperEditorIosControlsScope(
                             controller: _ios!,
                             child: CustomScrollView(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: !widget.fillAvailableSpace,
+                                physics: widget.fillAvailableSpace
+                                    ? null
+                                    : const NeverScrollableScrollPhysics(),
                                 slivers: [
                                   SuperEditor(
                                     editor: controller.editor,
@@ -423,10 +429,13 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               action != pasteWhenCmdVIsPressed)
                                     ],
                                   )
-                                ])))),
+                                ]))))),
               ],
             ));
   }
+
+  Widget _documentViewport(Widget document) =>
+      widget.fillAvailableSpace ? Expanded(child: document) : document;
 
   ExecutionInstruction _pasteShortcut(
       {required SuperEditorContext editContext, required KeyEvent keyEvent}) {
