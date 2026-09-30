@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "ba9e97589e6fb122836c0b5820e1b49ad7aa167b",
+  "baseMainSha": "2808a16f5bbdfd050da358fa343c305f1b202e05",
   "release": {
-    "version": "0.20.22+506",
-    "note": "Use canonical news save commands and shared image preview cache"
+    "version": "0.20.23+507",
+    "note": "Expand HTML editor into a full page and preserve draft on return"
   }
 }
