@@ -54,9 +54,11 @@ class RichHtmlEditorDialog extends StatefulWidget {
 
   static Future<void> expand(
       BuildContext context, RichHtmlEditorController controller) async {
-    final route = MaterialPageRoute<String>(
+    final route = PageRouteBuilder<String>(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
         fullscreenDialog: true,
-        builder: (_) => RichHtmlEditorDialog._(
+        pageBuilder: (_, __, ___) => RichHtmlEditorDialog._(
             controller: controller, ownsController: false, fullPage: true));
     await Navigator.of(context, rootNavigator: true).push<String>(route);
     // The inline editor must not remount until the page's exit transition
@@ -104,15 +106,22 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                 if (await _canClose() && context.mounted)
                   Navigator.pop(context);
               })),
-      body: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-              constraints: BoxConstraints(
-                  maxWidth: widget.fullPage || small ? double.infinity : 1000),
-              child: SingleChildScrollView(
-                  child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: RichHtmlEditor(controller: widget.controller))))),
+      body: widget.fullPage
+          ? Padding(
+              padding: const EdgeInsets.all(12),
+              child: RichHtmlEditor(
+                  controller: widget.controller, fillAvailableSpace: true))
+          : Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                      maxWidth:
+                          widget.fullPage || small ? double.infinity : 1000),
+                  child: SingleChildScrollView(
+                      child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child:
+                              RichHtmlEditor(controller: widget.controller))))),
       bottomNavigationBar: SafeArea(
           child: Padding(
               padding: const EdgeInsets.all(12),
