@@ -155,14 +155,17 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
       ]);
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Align(
+        alignment: Alignment.topRight,
+        child: IconButton(
+            tooltip: HtmlStrings.expand,
+            onPressed: _saving ? null : _expand,
+            icon: const Icon(Icons.open_in_full)),
+      ),
       if (!_expanded)
         RichHtmlEditor(
             controller: _controller!, enabled: !_saving && widget.enabled),
       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        IconButton(
-            tooltip: HtmlStrings.expand,
-            onPressed: _saving ? null : _expand,
-            icon: const Icon(Icons.open_in_full)),
         TextButton(
             onPressed: _saving ? null : _cancel,
             child: Text(CommonStrings.storno)),
