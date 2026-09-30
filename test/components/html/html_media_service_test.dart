@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 import 'package:image/image.dart' as image;
 import 'dart:typed_data';
@@ -11,6 +12,44 @@ final png =
 const owner = HtmlMediaOwner.occasion(12);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('file import accepts a real JPEG and preserves its bytes', () async {
+    final bytes =
+        Uint8List.fromList(image.encodeJpg(image.Image(width: 2, height: 2)));
+    final media = HtmlMediaDraft();
+    addTearDown(media.dispose);
+    final source = await media.addBytes(bytes, owner);
+    expect(media.previewBytes(source), bytes);
+  });
+  test('pixel cap rejects oversized PNG metadata before decoding', () async {
+    // Valid oversized IHDR/CRC; reject the header before pixel allocation.
+    final bytes = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAE4gAABOICAYAAABdmIfLAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=');
+    final media = HtmlMediaDraft();
+    addTearDown(media.dispose);
+    await expectLater(media.addBytes(bytes, owner), throwsA(isA<StateError>()));
+  });
+  test('editor preview decodes an existing PNG without uploading it', () async {
+    var fetches = 0;
+    var uploads = 0;
+    final media = HtmlMediaDraft(
+        owns: (_, __) async => true,
+        fetch: (_, scope) async {
+          expect(scope, owner);
+          fetches++;
+          return png;
+        },
+        upload: (_, __) async {
+          uploads++;
+          return 'https://assets.test/uploaded.png';
+        });
+    addTearDown(media.dispose);
+    expect(await media.previewSource('https://assets.test/existing.png', owner),
+        png);
+    expect(await media.previewSource('https://assets.test/existing.png', owner),
+        png);
+    expect(fetches, 1);
+    expect(uploads, 0);
+  });
   test('paste stages and deduplicates images; only parent save uploads',
       () async {
     var uploads = 0;
