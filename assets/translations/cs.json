@@ -1829,6 +1829,7 @@
     "alignCenter": "Zarovnat na střed",
     "alignRight": "Zarovnat vpravo",
     "expand": "Zvětšit editor",
+    "collapse": "Zmenšit editor",
     "imageUrl": "URL obrázku",
     "discardDraft": "Zahodit neuložené změny?",
     "unknownPublish": "Výsledek publikování není známý. Před dalším pokusem znovu načtěte zprávy.",

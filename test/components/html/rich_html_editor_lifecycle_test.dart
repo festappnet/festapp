@@ -156,7 +156,7 @@ void main() {
     expect(tester.testTextInput.hasAnyClients, isTrue);
     expect(tester.getSize(page), const Size(1200, 800));
     final route = ModalRoute.of(tester.element(page))!;
-    expect(route, isA<PageRoute<String>>());
+    expect(route, isA<PageRoute<HtmlEditorFullscreenAction>>());
     expect(route.transitionDuration, Duration.zero);
     expect(route.reverseTransitionDuration, Duration.zero);
     expect(
@@ -167,7 +167,7 @@ void main() {
     expect(controller.html, '<p>Orixginal draft</p>');
     insert(controller, ' expanded');
     await tester.pump();
-    await tester.tap(find.byIcon(Icons.close));
+    await tester.tap(find.byIcon(Icons.close_fullscreen));
     await tester.pump();
     await tester.pump(
         route.reverseTransitionDuration + const Duration(milliseconds: 100));
@@ -179,6 +179,52 @@ void main() {
         same(controller));
     await tester.pumpWidget(const SizedBox());
   });
+  for (final save in [true, false]) {
+    testWidgets(
+        'fullscreen ${save ? "save" : "cancel"} returns original modal HTML to viewing',
+        (tester) async {
+      var html = '<p>Original</p>';
+      var writes = 0;
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: Builder(
+                  builder: (context) => TextButton(
+                      onPressed: () => showDialog<void>(
+                          context: context,
+                          builder: (_) => Dialog(
+                              child: StatefulBuilder(
+                                  builder: (context, setState) =>
+                                      EditableHtmlField(
+                                          html: html,
+                                          onChanged: (value) =>
+                                              setState(() => html = value),
+                                          onSave: (_) async {
+                                            writes++;
+                                          })))),
+                      child: const Text('Open parent modal'))))));
+      await tester.tap(find.text('Open parent modal'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pump();
+      final controller =
+          tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+      insert(controller, ' changed');
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.text(save ? 'Common.save' : 'Common.storno'));
+      await tester.pumpAndSettle();
+      expect(find.byType(RichHtmlEditorDialog), findsNothing);
+      expect(find.byType(RichHtmlEditor), findsNothing);
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.byIcon(Icons.edit), findsOneWidget);
+      expect(html, save ? '<p>Original changed</p>' : '<p>Original</p>');
+      expect(writes, save ? 1 : 0);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   testWidgets('modal editor expands and returns with its draft and caret',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 800);

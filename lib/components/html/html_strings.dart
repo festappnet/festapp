@@ -21,6 +21,7 @@ class HtmlStrings {
   static String get alignCenter => 'HtmlEditor.alignCenter'.tr();
   static String get alignRight => 'HtmlEditor.alignRight'.tr();
   static String get expand => 'HtmlEditor.expand'.tr();
+  static String get collapse => 'HtmlEditor.collapse'.tr();
   static String get imageUrl => 'HtmlEditor.imageUrl'.tr();
   static String get discardDraft => 'HtmlEditor.discardDraft'.tr();
   static String get unknownPublish => 'HtmlEditor.unknownPublish'.tr();
