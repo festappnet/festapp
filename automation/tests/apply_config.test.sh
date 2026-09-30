@@ -53,6 +53,10 @@ mkdir -p "$TMP_ROOT/automation" \
          "$TMP_ROOT/assets/icons"
 
 cp "$PROJECT_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/apply_config.sh"
+cp "$PROJECT_ROOT/automation/configure_fonts.js" "$TMP_ROOT/automation/configure_fonts.js"
+mkdir -p "$TMP_ROOT/automation/fonts"
+# Font configuration inspects filenames; this fixture does not render glyphs.
+touch "$TMP_ROOT/automation/fonts/Futura-Regular.ttf"
 cp "$PROJECT_ROOT/automation/hetzner-supabase/merge/source-registry.json" \
    "$TMP_ROOT/automation/hetzner-supabase/merge/source-registry.json"
 cp "$PROJECT_ROOT/automation/lib/supabase_client_config.mjs" "$TMP_ROOT/automation/lib/supabase_client_config.mjs"
@@ -96,10 +100,7 @@ if [ -f "$PROJECT_ROOT/web_client/src/theme_config.css" ]; then
     cp "$PROJECT_ROOT/web_client/src/theme_config.css" "$TMP_ROOT/web_client/src/theme_config.css"
 fi
 
-# Skip the optional helper scripts apply_config.sh calls at the end (fonts,
-# version) — they require Node and a fonts/ tree we are not staging.
-# apply_config.sh only invokes them if the files exist, so leaving them out
-# keeps the test focused.
+# Version generation is optional; keep this fixture focused on configuration.
 
 # 2. Run apply_config.sh in the temp tree.
 cd "$TMP_ROOT"
