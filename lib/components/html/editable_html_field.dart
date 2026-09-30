@@ -93,7 +93,9 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
       var html = _controller!.html;
       if (_writer != null) {
         html = await _controller!.prepareForSave(context: context);
+        if (!mounted) return;
         await _writer!(html);
+        if (!mounted) return;
       }
       _coordinator?.recordValue(_controller!);
       widget.onChanged(html);
