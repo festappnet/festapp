@@ -108,7 +108,10 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   google_fonts: ^8.0.1
   file_picker: ^8.1.7
-  venue_seat_picker: ^0.1.1
+  venue_seat_picker:
+    git:
+      url: https://github.com/festappnet/venue_seat_picker.git
+      ref: 3b7d57acaa6f0e0fb0980c7fa2aaf841c64150b5
 
   cached_network_image: any
   cached_network_image_platform_interface: any
