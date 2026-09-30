@@ -8,20 +8,17 @@ import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/components/news/db_news.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
-import 'package:fstapp/router_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/components/news/news_form_page.dart';
 import 'package:fstapp/components/news/news_strings.dart';
-import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/services/time_helper.dart';
-import 'package:fstapp/components/html/html_view.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/widgets/pop_button.dart';
 import 'package:fstapp/components/images/zoomable_image/zoomable_image.dart';
-import '../html/html_editor_page.dart';
+import '../html/rich_html_editor_controller.dart';
+import '../html/editable_html_field.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import '../occasion/occasion_home_page.dart';
 
@@ -37,6 +34,7 @@ class NewsPage extends StatefulWidget {
 }
 
 class _NewsPageState extends State<NewsPage> {
+  final _htmlSave = HtmlSaveCoordinator();
   List<NewsModel> newsMessages = [];
   final AsyncReloadCoordinator _refreshCoordinator = AsyncReloadCoordinator();
 
@@ -86,6 +84,7 @@ class _NewsPageState extends State<NewsPage> {
 
   @override
   void dispose() {
+    _htmlSave.dispose();
     _refreshCoordinator.dispose();
     ClientSyncRuntime.projectionEpoch.removeListener(_onProjectionChanged);
     _tabsRouter?.removeListener(_onTabChanged);
@@ -93,26 +92,10 @@ class _NewsPageState extends State<NewsPage> {
   }
 
   void _showMessageDialog(BuildContext context) {
-    context.router.root
-        .pushPath(RouterService.getCurrentLink() + NewsFormPage.ROUTE)
-        .then((value) async {
-      if (value != null) {
-        var data = value as Map<String, dynamic>;
-        bool addToNews = data["add_to_news"] ?? true;
-        bool withNotification = data["with_notification"]!;
-        List<String>? to = data["to"];
-        String message = data["content"]!;
-        var heading = data["heading"];
-        String headingDefault = data["heading_default"]!;
-
-        await DbNews.insertNewsMessage(context, heading, headingDefault,
-            message, addToNews, withNotification, to);
-
-        if (addToNews) {
-          await loadData();
-        }
-      }
-    });
+    context.router.root.push<bool>(NewsFormRoute(onSubmit: (submission) =>
+      DbNews.publishSubmission(context, submission))).then((saved) async {
+        if (saved == true && mounted) await loadData();
+      });
   }
 
   Future<void> loadNewsMessages() async {
@@ -145,7 +128,9 @@ class _NewsPageState extends State<NewsPage> {
       });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HtmlEditingScope(coordinator: _htmlSave, child: _buildHtmlParent(context));
+
+  Widget _buildHtmlParent(BuildContext context) {
     return Scaffold(
       backgroundColor: ThemeConfig.newsPageColor(context),
       appBar: AppBar(
@@ -185,6 +170,7 @@ class _NewsPageState extends State<NewsPage> {
                         if (i != 0) const Divider(),
                         Builder(builder: (context) {
                           final message = newsMessages[i];
+                          final htmlVersion = message.aggregateVersion;
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -233,11 +219,20 @@ class _NewsPageState extends State<NewsPage> {
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.all(16),
-                                        child: HtmlView(
-                                          html: message.message!,
-                                          isSelectable: true,
-                                          twoFingersOn: onPinchStart,
-                                          twoFingersOff: onPinchEnd,
+                                        child: EditableHtmlField(
+                                          key: ValueKey('news-html-${message.id}'),
+                                          html: message.message,
+                                          enabled: RightsService.isEditor(),
+                                          owner: HtmlMediaOwner.occasion(RightsService.currentOccasionId()),
+                                          onChanged: (_) {},
+                                          onSave: (html) async {
+                                            final snapshot = NewsModel(id: message.id,
+                                              message: html, createdAt: message.createdAt,
+                                              createdBy: message.createdBy, views: message.views,
+                                              aggregateVersion: htmlVersion);
+                                            await DbNews.updateNewsMessage(snapshot);
+                                            if (mounted) await loadData();
+                                          },
                                         ),
                                       ),
                                       Visibility(
@@ -274,41 +269,12 @@ class _NewsPageState extends State<NewsPage> {
                               if (RightsService.isEditor())
                                 PopupMenuButton<ContextMenuChoice>(
                                   onSelected: (choice) async {
-                                    if (choice == ContextMenuChoice.delete) {
-                                      await DbNews.deleteNewsMessage(message);
-                                      ToastHelper.Show(
-                                          context, NewsStrings.messageRemoved);
-                                    } else {
-                                      await RouterService.navigatePageInfo(
-                                        context,
-                                        HtmlEditorRoute(
-                                          content: {
-                                            HtmlEditorPage.parContent:
-                                                message.message
-                                          },
-                                          occasionId:
-                                              RightsService.currentOccasionId(),
-                                        ),
-                                      ).then((value) async {
-                                        if (value != null) {
-                                          var newMessage = value as String;
-                                          message.message = newMessage;
-                                          await DbNews.updateNewsMessage(
-                                              message);
-                                          ToastHelper.Show(context,
-                                              NewsStrings.messageChanged);
-                                        }
-                                      });
-                                    }
-                                    await loadData();
+                                    await DbNews.deleteNewsMessage(message);
+                                    if (mounted) await loadData();
                                   },
                                   icon: const Icon(Icons.more_horiz),
                                   itemBuilder: (BuildContext context) =>
                                       <PopupMenuEntry<ContextMenuChoice>>[
-                                    PopupMenuItem<ContextMenuChoice>(
-                                      value: ContextMenuChoice.edit,
-                                      child: Text(CommonStrings.edit),
-                                    ),
                                     PopupMenuItem<ContextMenuChoice>(
                                       value: ContextMenuChoice.delete,
                                       child: Text(CommonStrings.delete),

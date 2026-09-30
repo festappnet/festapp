@@ -9,6 +9,8 @@ Deno.test("target policy rejects local, private, credentialed and non-HTTPS URLs
     "https://10.0.0.1/a.png",
     "https://[::1]/a.png",
     "https://user:pass@example.com/a.png",
+    "https://image-api.festapp.net/private/image",
+    "https://IMAGE-API.festapp.net./private/image",
   ]) {
     try {
       parseSafeTarget(value);
@@ -16,6 +18,41 @@ Deno.test("target policy rejects local, private, credentialed and non-HTTPS URLs
     } catch (error) {
       assertEquals(error instanceof UnsafeTargetError, true);
     }
+  }
+});
+
+Deno.test("redirect limit is three and every external request has a timeout signal", async () => {
+  let calls = 0;
+  await assertRejects(() => fetchPublicImage("https://images.example/start", {
+    resolveDns: () => Promise.resolve(["203.0.113.1"]),
+    fetch: (_url, init) => {
+      calls += 1;
+      assertEquals(init.redirect, "manual");
+      assertEquals(init.signal instanceof AbortSignal, true);
+      return Promise.resolve(new Response(null, {
+        status: 302, headers: { location: `/redirect-${calls}` },
+      }));
+    },
+  }), UnsafeTargetError);
+  assertEquals(calls, 4);
+});
+
+Deno.test("declared and streamed image sizes over 10 MiB are rejected", async () => {
+  const max = 10 * 1024 * 1024;
+  for (const response of [
+    new Response(null, { headers: { "content-type": "image/png", "content-length": `${max + 1}` } }),
+    new Response(new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(max));
+        controller.enqueue(new Uint8Array(1));
+        controller.close();
+      },
+    }), { headers: { "content-type": "image/png" } }),
+  ]) {
+    await assertRejects(() => fetchPublicImage("https://images.example/large.png", {
+      resolveDns: () => Promise.resolve(["203.0.113.1"]),
+      fetch: () => Promise.resolve(response),
+    }), UnsafeTargetError);
   }
 });
 

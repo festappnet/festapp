@@ -12,7 +12,6 @@ import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/groups/group_place_dialog.dart';
 import 'package:fstapp/components/users/db_users.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/map/map_page.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -275,37 +274,11 @@ class _UserGroupsTabState extends State<UserGroupsTab> {
           field: Tb.user_group_info.description,
           type: TrinaColumnType.text(defaultValue: null),
           renderer: (rendererContext) {
-            return ElevatedButton(
-              onPressed: () async {
-                var oldText = rendererContext.row
-                    .cells[Tb.user_group_info.description]!.value as String?;
-                RouterService.navigatePageInfo(
-                  context,
-                  HtmlEditorRoute(content: {
-                    HtmlEditorPage.parContent: oldText,
-                  }, occasionId: RightsService.currentOccasionId()),
-                ).then((value) async {
-                  if (value != null) {
-                    var newText = value as String;
-                    if (newText != oldText) {
-                      var cell = rendererContext
-                          .row.cells[Tb.user_group_info.description]!;
-                      rendererContext.stateManager
-                          .changeCellValue(cell, newText, force: true);
-                    }
-                  }
-                });
-              },
-              child: Row(
-                children: [
-                  const Icon(Icons.edit),
-                  Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Text(GroupsStrings.buttonEdit),
-                  ),
-                ],
-              ),
-            );
+            return DataGridHelper.buildHtmlEditorButton(context: context,
+              field: Tb.user_group_info.description, rendererContext: rendererContext,
+              occasionId: RightsService.currentOccasionId(),
+              loadContent: () async => rendererContext.row.cells[Tb.user_group_info.description]?.value as String?);
+
           },
         ),
         TrinaColumn(

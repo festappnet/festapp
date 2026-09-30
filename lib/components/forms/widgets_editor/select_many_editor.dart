@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
@@ -94,10 +95,12 @@ class SelectManyEditor {
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'additional_settings') {
+                        final htmlCoordinator = HtmlEditingScope.maybeOf(context);
                         showDialog(
                           context: context,
                           builder: (context) => OptionDetailEditorDialog(
                             option: formOption,
+                            coordinator: htmlCoordinator,
                             occasionId: occasionId,
                           ),
                         ).then((_) {

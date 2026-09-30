@@ -1,0 +1,144 @@
+import 'package:flutter/material.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
+
+import 'html_media_service.dart';
+import 'html_strings.dart';
+import 'rich_html_editor.dart';
+import 'rich_html_editor_controller.dart';
+
+class RichHtmlEditorDialog extends StatefulWidget {
+  const RichHtmlEditorDialog._(
+      {required this.controller, this.title, this.ownsController = true});
+  final RichHtmlEditorController controller;
+  final String? title;
+  final bool ownsController;
+
+  static Future<String?> show(BuildContext context,
+      {String? initialHtml,
+      Future<String?> Function()? loadHtml,
+      String? title,
+      HtmlMediaOwner owner = const HtmlMediaOwner.none(),
+      HtmlContentProfile profile = HtmlContentProfile.appContent,
+      HtmlSaveCoordinator? coordinator,
+      HtmlMediaDraft? media}) async {
+    String? html = initialHtml;
+    if (html == null && loadHtml != null) {
+      var loaded = false;
+      await ExceptionHandler.guardVoid(context, futureFunction: () async {
+        html = await loadHtml();
+        loaded = true;
+      });
+      if (!loaded || !context.mounted) return null;
+    }
+    if (!context.mounted) return null;
+    coordinator ??= HtmlEditingScope.maybeOf(context);
+    final draftMedia = media ?? coordinator?.media;
+    final controller = RichHtmlEditorController(
+        initialHtml: html,
+        owner: draftMedia == null ? const HtmlMediaOwner.none() : owner,
+        profile: profile,
+        media: draftMedia);
+    final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) =>
+            RichHtmlEditorDialog._(controller: controller, title: title));
+    if (result != null) coordinator?.recordValue(controller);
+    return result;
+  }
+
+  static Future<void> expand(
+      BuildContext context, RichHtmlEditorController controller) async {
+    await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => RichHtmlEditorDialog._(
+            controller: controller, ownsController: false));
+  }
+
+  @override
+  State<RichHtmlEditorDialog> createState() => _RichHtmlEditorDialogState();
+}
+
+class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
+  Future<bool> _canClose() async {
+    if (!widget.ownsController || !widget.controller.isDirty) return true;
+    return await showDialog<bool>(
+            context: context,
+            builder: (context) =>
+                AlertDialog(title: Text(HtmlStrings.discardDraft), actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(CommonStrings.storno)),
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(CommonStrings.ok)),
+                ])) ==
+        true;
+  }
+
+  @override
+  void dispose() {
+    if (widget.ownsController) widget.controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final small = MediaQuery.sizeOf(context).width < 650;
+    final content = SafeArea(
+        child: Scaffold(
+      appBar: AppBar(
+          title: Text(widget.title ?? CommonStrings.edit),
+          leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () async {
+                if (await _canClose() && context.mounted)
+                  Navigator.pop(context);
+              })),
+      body: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(maxWidth: small ? double.infinity : 1000),
+              child: SingleChildScrollView(
+                  child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: RichHtmlEditor(controller: widget.controller))))),
+      bottomNavigationBar: SafeArea(
+          child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(
+                    onPressed: () async {
+                      if (await _canClose() && context.mounted)
+                        Navigator.pop(context);
+                    },
+                    child: Text(CommonStrings.storno)),
+                const SizedBox(width: 12),
+                FilledButton(
+                    onPressed: () =>
+                        Navigator.pop(context, widget.controller.html),
+                    child: Text(CommonStrings.save)),
+              ]))),
+    ));
+    return AnimatedBuilder(
+        animation: widget.controller,
+        builder: (context, _) => PopScope(
+              canPop: !widget.ownsController || !widget.controller.isDirty,
+              onPopInvokedWithResult: (didPop, _) async {
+                if (!didPop && await _canClose() && context.mounted)
+                  Navigator.pop(context);
+              },
+              child: small
+                  ? Dialog.fullscreen(child: content)
+                  : Dialog(
+                      clipBehavior: Clip.antiAlias,
+                      child: SizedBox(
+                          width: 1000,
+                          height: MediaQuery.sizeOf(context).height * 0.85,
+                          child: content)),
+            ));
+  }
+}

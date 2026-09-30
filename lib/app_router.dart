@@ -14,7 +14,6 @@ import 'package:fstapp/components/unit/views/unit_page.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
 import 'package:fstapp/components/users/views/transfer_page.dart';
 import 'package:fstapp/components/users/views/reset_password_page.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
 import 'package:fstapp/components/information/info_page.dart';
 import 'package:fstapp/components/app_management/install_page.dart';
 import 'package:fstapp/components/map/map_page.dart';
@@ -106,9 +105,6 @@ class AppRouter extends RootStackRouter {
         AutoRoute(
             page: NewsFormRoute.page,
             path: "/:$linkFormatted/${NewsFormPage.ROUTE}"),
-        AutoRoute(
-            page: HtmlEditorRoute.page,
-            path: "/:$linkFormatted/${HtmlEditorPage.ROUTE}"),
         CustomRoute(
             page: AdminRoute.page,
             path: "/:$linkFormatted/${AdminPage.ROUTE}",

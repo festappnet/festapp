@@ -51,12 +51,11 @@ dependencies:
   collection: ^1.18.0
   geolocator: ^14.0.2
   flutter_widget_from_html: ^0.17.1
-  quill_html_editor:
-    git:
-      url: https://github.com/the-airbender/quill_html_editor.git
-      ref: a2beeb5bfd436e86f2635c8db1154b4190eeedb5
-  flutter_quill: ^11.5.1
-  vsc_quill_delta_to_html: ^1.0.5
+  super_editor: 0.3.0-dev.52
+  super_editor_clipboard: 0.2.10
+  super_clipboard: 0.9.1
+  http_parser: ^4.1.2
+  csslib: ^1.0.2
   trina_grid: ^2.1.1
   # trina_grid's select-column popup requires a ShadTheme ancestor; we wrap
   # our grids in one (see single_table_data_grid.dart).

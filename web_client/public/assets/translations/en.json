@@ -266,9 +266,10 @@
     "msgTypeNone": "None",
     "msgTypeOccasionTitle": "Occasion Title",
     "communicationToneTitle": "Communication Tone",
-    "helperCommunicationTone": "Select the tone for automated communications, like payment confirmation emails or reminders. This will affect the wording in the email templates.",
+    "helperCommunicationTone": "Tone of the public form and automated emails. Choose the organization setting to follow future changes to its communication tone.",
     "labelCommunicationTone": "Tone",
     "toneFormal": "Formal",
+    "toneInherit": "Use organization setting: {tone}",
     "toneInformal": "Informal",
     "pickColor": "Pick a color",
     "buttonGotIt": "Got it",
@@ -864,7 +865,8 @@
     "pruneShellsConfirm": "Only unused app versions will be removed. Sign-in, offline data, and fonts remain preserved.",
     "storageUsage": "Browser usage: {usage} MiB of {quota} MiB",
     "storageBlocked": "The app will not remove anything right now. Your data remains safe.",
-    "storageReady": "Retained versions: {retained}; deletable: {deletable}"
+    "storageReady": "Retained versions: {retained}; deletable: {deletable}",
+    "oneSignalSecretManagedServerSide": "The OneSignal REST API key is managed in the server-only notification secret store."
   },
   "GroupStrings": {
     "newGroup": "New Group",
@@ -1080,6 +1082,7 @@
     "sentFrom": "Sent from {appName}"
   },
   "UnitSettings": {
+    "labelDefaultCommunicationTone": "Default communication tone",
     "labelReplyToEmail": "Reply-To Email",
     "labelDefaultTimezone": "Default Timezone",
     "deleteUnit": "Delete Organization",
@@ -1156,6 +1159,7 @@
     "scanCode": "Scan Code",
     "signedInCompanions": "Signed in companions",
     "startCamera": "Start camera",
+    "restartCamera": "Restart camera",
     "cameraStartDescription": "Start the scanner with the button below and allow camera access.",
     "cameraUnavailable": "The camera could not be started. Check camera permissions and try again.",
     "ticketType": "Ticket Type",
@@ -1375,6 +1379,7 @@
     "type": "Type",
     "upcomingEvents": "Upcoming Events",
     "update": "Update",
+    "retry": "Try again",
     "updateAppPrompt": "Update the app to the latest version to access all features.",
     "updatedItem": "Updated: {item}.",
     "users": "Users",
@@ -1491,7 +1496,7 @@
     "safeSenderInfo": "This address is safe. It is a special robot that only reads payment e-mails and nothing else.",
     "forwardingEmailWarning": "Warning: Please keep this e-mail secret. Do not share it with anyone.",
     "creditorNameLabel": "Account holder name",
-    "creditorNameHelp": "Required for EUR EPC payment QR codes; use the legal beneficiary name."
+    "creditorNameHelp": "For EUR payments. If empty, the organization name is used."
   },
   "FeatureContract": {
     "title": "Contract",
@@ -1593,11 +1598,12 @@
     "emailTemplates": "Email Templates",
     "createCopySuccess": "Event copy created successfully.",
     "createCopyFailed": "Failed to create event copy.",
+    "createCopyMediaFailed": "The event copy was created, but its images could not be copied.",
     "quotes": "Quotes",
     "loadEventFailed": "Could not load event. Please try again.",
-    "loadUnitFailed": "Failed to load unit data.",
+    "loadUnitFailed": "Failed to load organization data.",
     "noEventsFound": "No events found.",
-    "unit": "Unit"
+    "unit": "Organization"
   },
   "OccasionHome": {
     "addToSchedule": "Add To Schedule",
@@ -1804,10 +1810,31 @@
     "noResults": "No results."
   },
   "HtmlEditor": {
-    "processingContent": "Processing content and detecting large images...",
-    "reducingImagesSize": "Reducing Images Size...",
-    "largeImagesDetected": "Large Images Detected",
-    "largeImagesPrompt": "Some images are large and may slow down the app. Press OK to convert them into optimal size."
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strike": "Strikethrough",
+    "link": "Link",
+    "image": "Image",
+    "paste": "Paste",
+    "undo": "Undo",
+    "redo": "Redo",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "orderedList": "Numbered list",
+    "bulletList": "Bullet list",
+    "indent": "Indent",
+    "outdent": "Outdent",
+    "alignLeft": "Align left",
+    "alignCenter": "Align center",
+    "alignRight": "Align right",
+    "expand": "Expand editor",
+    "imageUrl": "Image URL",
+    "discardDraft": "Discard unsaved changes?",
+    "unknownPublish": "The publish outcome is unknown. Reload the news before trying to publish again.",
+    "unknownUpload": "The image upload outcome is unknown. Retrying can create another image.",
+    "retryUpload": "Retry image upload",
+    "importFailed": "Image or clipboard import failed. The draft was kept."
   },
   "FeatureCounseling": {
     "title": "Counseling",
