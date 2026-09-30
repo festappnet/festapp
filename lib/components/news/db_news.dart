@@ -67,21 +67,24 @@ class DbNews {
     await _supabase.from(Tb.news.table).delete().eq(Tb.news.id, message.id);
   }
 
-  static Future<void> updateNewsMessage(NewsModel message,
-      {String? originalMessage}) async {
-    final result = await _commands.update(
-        RightsService.currentOccasionId()!, message,
-        originalMessage:
-            ClientSyncRuntime.isV1Selected ? null : originalMessage);
-    if (result.status == NewsCommandStatus.conflict) {
-      throw StateError('News was changed by another editor');
+  static Future<void> updateNewsMessage(NewsModel message) async {
+    if (ClientSyncRuntime.isV1Selected) {
+      final result =
+          await _commands.update(RightsService.currentOccasionId()!, message);
+      if (result.status == NewsCommandStatus.conflict) {
+        throw StateError('News was changed by another editor');
+      }
+      if (result.status == NewsCommandStatus.rejected || result.news == null) {
+        throw StateError('News save was rejected');
+      }
+      message
+        ..message = result.news!.message
+        ..aggregateVersion = result.version;
+      return;
     }
-    if (result.status == NewsCommandStatus.rejected || result.news == null) {
-      throw StateError('News save was rejected');
-    }
-    message
-      ..message = result.news!.message
-      ..aggregateVersion = result.version;
+    await _supabase
+        .from(Tb.news.table)
+        .update({Tb.news.message: message.message}).eq(Tb.news.id, message.id);
   }
 
   static Future<void> sendGroupNotification(

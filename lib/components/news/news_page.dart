@@ -171,7 +171,6 @@ class _NewsPageState extends State<NewsPage> {
                         Builder(builder: (context) {
                           final message = newsMessages[i];
                           final htmlVersion = message.aggregateVersion;
-                          final htmlOriginal = message.message;
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -231,8 +230,7 @@ class _NewsPageState extends State<NewsPage> {
                                               message: html, createdAt: message.createdAt,
                                               createdBy: message.createdBy, views: message.views,
                                               aggregateVersion: htmlVersion);
-                                            await DbNews.updateNewsMessage(snapshot,
-                                                originalMessage: htmlOriginal);
+                                            await DbNews.updateNewsMessage(snapshot);
                                             if (mounted) await loadData();
                                           },
                                         ),

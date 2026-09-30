@@ -42,10 +42,6 @@ class RichHtmlEditorController extends ChangeNotifier {
   int _generation = 0;
   bool _disposed = false;
   String? _cachedHtml;
-  late Set<String> _originalImageSources;
-
-  bool isOriginalImageSource(String source) =>
-      _originalImageSources.contains(source);
 
   String get html => _cachedHtml ??= _codec.isUnchanged
       ? _codec.encode()
@@ -61,11 +57,6 @@ class RichHtmlEditorController extends ChangeNotifier {
 
   void _load(String? value) {
     _codec = HtmlEditorDocument(value);
-    _originalImageSources = HtmlDocumentCodec.decode(value)
-        .imageSlots
-        .map((image) => image.source ?? image.attributes['data-src'])
-        .whereType<String>()
-        .toSet();
     _baselineHtml = _codec.encode();
     editor = createDefaultDocumentEditor(
         document: _codec.document, isHistoryEnabled: true);

@@ -9,14 +9,10 @@ import 'rich_html_editor_controller.dart';
 
 class RichHtmlEditorDialog extends StatefulWidget {
   const RichHtmlEditorDialog._(
-      {required this.controller,
-      this.title,
-      this.ownsController = true,
-      this.fullPage = false});
+      {required this.controller, this.title, this.ownsController = true});
   final RichHtmlEditorController controller;
   final String? title;
   final bool ownsController;
-  final bool fullPage;
 
   static Future<String?> show(BuildContext context,
       {String? initialHtml,
@@ -54,16 +50,11 @@ class RichHtmlEditorDialog extends StatefulWidget {
 
   static Future<void> expand(
       BuildContext context, RichHtmlEditorController controller) async {
-    final route = PageRouteBuilder<String>(
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-        fullscreenDialog: true,
-        pageBuilder: (_, __, ___) => RichHtmlEditorDialog._(
-            controller: controller, ownsController: false, fullPage: true));
-    await Navigator.of(context, rootNavigator: true).push<String>(route);
-    // The inline editor must not remount until the page's exit transition
-    // removes its editor: both share the document layout key and IME client.
-    await route.completed;
+    await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => RichHtmlEditorDialog._(
+            controller: controller, ownsController: false));
   }
 
   @override
@@ -106,22 +97,15 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                 if (await _canClose() && context.mounted)
                   Navigator.pop(context);
               })),
-      body: widget.fullPage
-          ? Padding(
-              padding: const EdgeInsets.all(12),
-              child: RichHtmlEditor(
-                  controller: widget.controller, fullscreen: true))
-          : Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      maxWidth:
-                          widget.fullPage || small ? double.infinity : 1000),
-                  child: SingleChildScrollView(
-                      child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child:
-                              RichHtmlEditor(controller: widget.controller))))),
+      body: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(maxWidth: small ? double.infinity : 1000),
+              child: SingleChildScrollView(
+                  child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: RichHtmlEditor(controller: widget.controller))))),
       bottomNavigationBar: SafeArea(
           child: Padding(
               padding: const EdgeInsets.all(12),
@@ -147,16 +131,14 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                 if (!didPop && await _canClose() && context.mounted)
                   Navigator.pop(context);
               },
-              child: widget.fullPage
-                  ? content
-                  : small
-                      ? Dialog.fullscreen(child: content)
-                      : Dialog(
-                          clipBehavior: Clip.antiAlias,
-                          child: SizedBox(
-                              width: 1000,
-                              height: MediaQuery.sizeOf(context).height * 0.85,
-                              child: content)),
+              child: small
+                  ? Dialog.fullscreen(child: content)
+                  : Dialog(
+                      clipBehavior: Clip.antiAlias,
+                      child: SizedBox(
+                          width: 1000,
+                          height: MediaQuery.sizeOf(context).height * 0.85,
+                          child: content)),
             ));
   }
 }
