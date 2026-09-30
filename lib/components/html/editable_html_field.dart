@@ -118,9 +118,17 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     setState(() => _expanded = true);
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    await RichHtmlEditorDialog.expand(context, _controller!);
+    final action = await RichHtmlEditorDialog.expand(context, _controller!);
     if (!mounted) return;
     setState(() => _expanded = false);
+    if (action == HtmlEditorFullscreenAction.save) {
+      await _apply();
+      return;
+    }
+    if (action == HtmlEditorFullscreenAction.cancel) {
+      _cancel();
+      return;
+    }
     await WidgetsBinding.instance.endOfFrame;
     if (mounted) _controller!.focusNode.requestFocus();
   }
