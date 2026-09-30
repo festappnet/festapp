@@ -27,6 +27,7 @@ class Main {
             // 2. Check Routing (SPA Support)
             if (await RouterService.handleInitialLoad()) {
                  RouterService.initPopStateListener();
+                 window.markFestappAppReady?.();
                  return; 
             }
             
@@ -45,21 +46,13 @@ class Main {
             
             // Init PopState forভাগে logic
             RouterService.initPopStateListener();
+            window.markFestappAppReady?.();
 
 
             
         } catch (e) {
             console.error("Initialization Error:", e);
-            // Show error on UI if critical
-            const app = document.getElementById('app');
-            if (app) {
-                const errDiv = document.createElement('div');
-                errDiv.style.color = 'red';
-                errDiv.style.padding = '20px';
-                errDiv.style.textAlign = 'center';
-                errDiv.textContent = 'Failed to initialize application: ' + e.message;
-                document.body.prepend(errDiv);
-            }
+            window.failFestappWebClientStartup?.('web-initialization-error');
         }
     }
 }
