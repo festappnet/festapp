@@ -1829,6 +1829,7 @@
     "alignCenter": "Align center",
     "alignRight": "Align right",
     "expand": "Expand editor",
+    "collapse": "Exit fullscreen",
     "imageUrl": "Image URL",
     "discardDraft": "Discard unsaved changes?",
     "unknownPublish": "The publish outcome is unknown. Reload the news before trying to publish again.",
