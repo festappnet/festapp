@@ -124,6 +124,10 @@ void main() {
         tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
     insert(controller, ' draft');
     await tester.pump();
+    final expandButton = find.byIcon(Icons.open_in_full);
+    expect(tester.getCenter(expandButton).dx, greaterThan(1100));
+    expect(tester.getBottomLeft(expandButton).dy,
+        lessThan(tester.getTopLeft(find.byType(RichHtmlEditor)).dy));
     await tester.tap(find.byIcon(Icons.open_in_full));
     await tester.pump();
     await tester.pump();
