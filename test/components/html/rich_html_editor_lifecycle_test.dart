@@ -179,6 +179,61 @@ void main() {
         same(controller));
     await tester.pumpWidget(const SizedBox());
   });
+  testWidgets('modal editor expands and returns with its draft and caret',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    String? saved;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+      builder: (context) => TextButton(
+          onPressed: () async {
+            saved = await RichHtmlEditorDialog.show(context,
+                initialHtml: '<p>Original</p>', title: 'Datagrid');
+          },
+          child: const Text('Open')),
+    ))));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    final controller =
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    controller.focusNode.requestFocus();
+    await tester.pump();
+    final selection = controller.editor.composer.selection;
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(Dialog), findsNothing);
+    expect(tester.getSize(find.byType(RichHtmlEditorDialog)),
+        const Size(1200, 800));
+    expect(
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).fullscreen,
+        isTrue);
+    expect(controller.focusNode.hasFocus, isTrue);
+    expect(controller.editor.composer.selection, selection);
+    await tester.typeImeText(' draft');
+    await tester.pump();
+    expect(controller.html, '<p>Original draft</p>');
+    await tester.tap(find.byIcon(Icons.close_fullscreen));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(controller.focusNode.hasFocus, isTrue);
+    expect(controller.html, '<p>Original draft</p>');
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(Dialog), findsNothing);
+    await tester.tap(find.text('Common.save'));
+    await tester.pumpAndSettle();
+    expect(saved, '<p>Original draft</p>');
+    expect(find.byType(RichHtmlEditorDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('fullscreen left toolbar stays fixed while the document scrolls',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 800);

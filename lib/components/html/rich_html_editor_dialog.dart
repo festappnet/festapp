@@ -71,6 +71,15 @@ class RichHtmlEditorDialog extends StatefulWidget {
 }
 
 class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
+  bool _expanded = false;
+  bool get _fullPage => widget.fullPage || _expanded;
+
+  Future<void> _toggleFullscreen() async {
+    setState(() => _expanded = !_expanded);
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) widget.controller.focusNode.requestFocus();
+  }
+
   Future<bool> _canClose() async {
     if (!widget.ownsController || !widget.controller.isDirty) return true;
     return await showDialog<bool>(
@@ -100,13 +109,21 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
         child: Scaffold(
       appBar: AppBar(
           title: Text(widget.title ?? CommonStrings.edit),
+          actions: [
+            if (!widget.fullPage)
+              IconButton(
+                  tooltip: _expanded ? CommonStrings.back : HtmlStrings.expand,
+                  onPressed: _toggleFullscreen,
+                  icon: Icon(
+                      _expanded ? Icons.close_fullscreen : Icons.open_in_full)),
+          ],
           leading: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () async {
                 if (await _canClose() && context.mounted)
                   Navigator.pop(context);
               })),
-      body: widget.fullPage
+      body: _fullPage
           ? Padding(
               padding: const EdgeInsets.all(12),
               child: RichHtmlEditor(
@@ -114,9 +131,8 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
           : Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      maxWidth:
-                          widget.fullPage || small ? double.infinity : 1000),
+                  constraints:
+                      BoxConstraints(maxWidth: small ? double.infinity : 1000),
                   child: SingleChildScrollView(
                       child: Padding(
                           padding: const EdgeInsets.all(12),
@@ -147,7 +163,7 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                 if (!didPop && await _canClose() && context.mounted)
                   Navigator.pop(context);
               },
-              child: widget.fullPage
+              child: _fullPage
                   ? content
                   : small
                       ? Dialog.fullscreen(child: content)
