@@ -11,6 +11,7 @@ import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:super_editor/super_editor.dart';
+import 'package:super_editor/super_editor_test.dart';
 
 void insert(RichHtmlEditorController controller, String text) {
   final node = controller.editor.document.first as TextNode;
@@ -124,6 +125,21 @@ void main() {
         tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
     insert(controller, ' draft');
     await tester.pump();
+    controller.focusNode.requestFocus();
+    await tester.pump();
+    final node = controller.editor.document.first as TextNode;
+    controller.editor.execute([
+      ChangeSelectionRequest(
+          DocumentSelection.collapsed(
+              position: DocumentPosition(
+                  nodeId: node.id,
+                  nodePosition: const TextNodePosition(offset: 3))),
+          SelectionChangeType.placeCaret,
+          SelectionReason.userInteraction),
+    ]);
+    await tester.pump();
+    final selection = controller.editor.composer.selection;
+    expect(controller.focusNode.hasFocus, isTrue);
     final expandButton = find.byIcon(Icons.open_in_full);
     expect(tester.getCenter(expandButton).dx, greaterThan(1100));
     expect(tester.getBottomLeft(expandButton).dy,
@@ -135,6 +151,9 @@ void main() {
     final page = find.byType(RichHtmlEditorDialog);
     expect(page, findsOneWidget);
     expect(find.byType(Dialog), findsNothing);
+    expect(controller.focusNode.hasFocus, isTrue);
+    expect(controller.editor.composer.selection, selection);
+    expect(tester.testTextInput.hasAnyClients, isTrue);
     expect(tester.getSize(page), const Size(1200, 800));
     final route = ModalRoute.of(tester.element(page))!;
     expect(route, isA<PageRoute<String>>());
@@ -143,6 +162,9 @@ void main() {
     expect(
         tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
         same(controller));
+    await tester.typeImeText('x');
+    await tester.pump();
+    expect(controller.html, '<p>Orixginal draft</p>');
     insert(controller, ' expanded');
     await tester.pump();
     await tester.tap(find.byIcon(Icons.close));
@@ -151,7 +173,7 @@ void main() {
         route.reverseTransitionDuration + const Duration(milliseconds: 100));
     await tester.pump();
     expect(find.byType(RichHtmlEditorDialog), findsNothing);
-    expect(controller.html, '<p>Original draft expanded</p>');
+    expect(controller.html, '<p>Orixginal draft expanded</p>');
     expect(
         tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
         same(controller));

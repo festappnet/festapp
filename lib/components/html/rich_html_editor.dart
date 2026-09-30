@@ -381,6 +381,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                 slivers: [
                                   SuperEditor(
                                     editor: controller.editor,
+                                    autofocus: widget.fullscreen,
                                     focusNode: controller.focusNode,
                                     documentLayoutKey: controller.layoutKey,
                                     shrinkWrap: true,
