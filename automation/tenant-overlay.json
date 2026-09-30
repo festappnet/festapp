@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "cdb2da7dc5d7dcb9e071d20a612e25313fe09a11",
+  "baseMainSha": "a1f6d6a67df38b310434c608d6cfa88a9bc7017e",
   "release": {
-    "version": "0.20.36+520",
-    "note": "Keep blueprint visible while zooming and panning"
+    "version": "0.20.37+521",
+    "note": "Recover mobile homepage startup independently of cached modules"
   }
 }
