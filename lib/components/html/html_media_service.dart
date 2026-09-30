@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as image_headers;
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_control_client.dart';
 import 'package:fstapp/components/images/image_file_format.dart';
@@ -278,8 +280,24 @@ Future<Uint8List> _validateAndNormalize(Uint8List bytes) async {
   ui.Image? image;
   try {
     descriptor = await ui.ImageDescriptor.encoded(buffer);
-    if (descriptor.width * descriptor.height > HtmlMediaDraft.maxPixels)
+    // Encoded ImageDescriptor.width/height throw on Flutter web. Read the
+    // supported file's metadata before full decoding, retaining the pixel cap.
+    final int width;
+    final int height;
+    if (kIsWeb) {
+      final info = image_headers.findDecoderForData(bytes)?.startDecode(bytes);
+      if (info == null || info.width <= 0 || info.height <= 0) {
+        throw const FormatException('Image dimensions cannot be read on web');
+      }
+      width = info.width;
+      height = info.height;
+    } else {
+      width = descriptor.width;
+      height = descriptor.height;
+    }
+    if (width * height > HtmlMediaDraft.maxPixels) {
       throw StateError('Image exceeds 16 MP');
+    }
     // HEIC must be genuinely decoded and normalized. Unsupported platform
     // decoders fail explicitly rather than storing HEIC bytes with a JPG name.
     codec = await descriptor.instantiateCodec();

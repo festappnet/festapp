@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "05fb3f23f3734fb1bc6e2a4a3a382623ace62fe1",
+  "baseMainSha": "e79cd6dc94e3cd6d7fbaaf50b2bb25a4eccf1f77",
   "release": {
-    "version": "0.20.20+504",
-    "note": "Canonical Super Editor HTML editing for live Festapp testing"
+    "version": "0.20.21+505",
+    "note": "Fix web image preview and import metadata decoding"
   }
 }
