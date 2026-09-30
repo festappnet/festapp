@@ -134,6 +134,8 @@ void main() {
     expect(tester.getSize(page), const Size(1200, 800));
     final route = ModalRoute.of(tester.element(page))!;
     expect(route, isA<PageRoute<String>>());
+    expect(route.transitionDuration, Duration.zero);
+    expect(route.reverseTransitionDuration, Duration.zero);
     expect(
         tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
         same(controller));
@@ -149,6 +151,44 @@ void main() {
     expect(
         tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
         same(controller));
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets('fullscreen left toolbar stays fixed while the document scrolls',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final html = List.generate(80, (i) => '<p>Paragraph $i</p>').join();
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child:
+                    EditableHtmlField(html: html, onChanged: _ignoreHtml)))));
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pump();
+    await tester.ensureVisible(find.byIcon(Icons.open_in_full));
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    final toolbar = find.byIcon(Icons.format_bold);
+    final before = tester.getTopLeft(toolbar);
+    final italic = tester.getTopLeft(find.byIcon(Icons.format_italic));
+    expect(italic.dx, before.dx);
+    expect(italic.dy, greaterThan(before.dy));
+    final document = find.byType(CustomScrollView);
+    expect(document, findsOneWidget);
+    final scrollable = tester.state<ScrollableState>(
+        find.descendant(of: document, matching: find.byType(Scrollable)).first);
+    expect(scrollable.position.maxScrollExtent, greaterThan(300));
+    scrollable.position.jumpTo(300);
+    await tester.pump();
+    expect(scrollable.position.pixels, 300);
+    expect(tester.getTopLeft(toolbar), before);
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pump();
+    await tester.pump();
     await tester.pumpWidget(const SizedBox());
   });
   for (final platform in [
