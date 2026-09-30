@@ -6,6 +6,9 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import vm from 'node:vm';
+import { createRequire } from 'node:module';
+
+const { JSDOM } = createRequire(new URL('../../web_client/package.json', import.meta.url))('jsdom');
 
 const projectRoot = path.resolve(import.meta.dirname, '../..');
 const tempRoot = await mkdtemp(path.join(tmpdir(), 'festapp-pwa-'));
@@ -427,14 +430,46 @@ try {
   );
   assert.equal((await liveVersion.json()).version, '1.2.3+4');
 
+  // A resumed mobile worker has no generation recorded for this page, and
+  // may never have seen a navigation event (e.g. the HTML came from cache).
+  // Execute the real HTML's classic bootstrap while its entry module waits.
+  const resumedId = 'resumed-web-page';
+  const resumedClient = { id: resumedId, url: 'https://app.test/', postMessage() {} };
+  clientsById.set(resumedId, resumedClient);
+  const pendingWebModule = dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), resumedId,
+  );
+  const bootstrapHtml = (await readFile(path.join(projectRoot, 'web_client/index.html'), 'utf8'))
+    .replace(/(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/, '$1"1.2.3+4"');
+  const resumedPage = new JSDOM(bootstrapHtml, {
+    url: 'https://app.test/',
+    runScripts: 'dangerously',
+    beforeParse(window) {
+      const serviceWorker = new window.EventTarget();
+      serviceWorker.controller = {
+        postMessage(data) {
+          handlers.message({ data, source: resumedClient, waitUntil() {} });
+        },
+      };
+      Object.defineProperty(window.navigator, 'serviceWorker', { value: serviceWorker });
+    },
+  });
+  try {
+    const resumedWebModule = await pendingWebModule;
+    assert.equal(await resumedWebModule.text(), 'web client bundle',
+      'cached HTML must unlock its entry module without first executing that module');
+  } finally {
+    resumedPage.window.close();
+  }
+
   const webClientIndex = await readFile(
     path.join(projectRoot, 'web_client/index.html'),
     'utf8',
   );
   assert.match(webClientIndex, /serviceWorker\.register\('\/festapp_service_worker\.js'/);
-  assert.match(webClientIndex, /import \{ APP_VERSION \} from '\/src\/version\.js'/);
+  assert.match(webClientIndex, /window\.__FESTAPP_BUILD_VERSION__ = "[^"]+"/);
   assert.match(webClientIndex, /type: 'FESTAPP_CLIENT_VERSION'/);
-  assert.match(webClientIndex, /version: APP_VERSION/);
+  assert.match(webClientIndex, /version: window\.__FESTAPP_BUILD_VERSION__/);
   assert.match(webClientIndex, /controllerchange/);
   assert.match(webClientIndex, /visibilitychange/);
   assert.doesNotMatch(webClientIndex, /serviceWorker\.getRegistrations\(\)/);

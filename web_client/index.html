@@ -50,6 +50,86 @@
     <!-- Main Style (Inject via JS) -->
     
     <script>
+        // This handshake must not depend on the module it unlocks. A resumed
+        // mobile worker can forget the client generation before loading JS.
+        window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+        const startupCopy = navigator.language.startsWith('cs') || navigator.language.startsWith('sk')
+            ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
+            : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
+        function reportFestappClientVersion() {
+            navigator.serviceWorker?.controller?.postMessage({
+                type: 'FESTAPP_CLIENT_VERSION',
+                version: window.__FESTAPP_BUILD_VERSION__,
+            });
+        }
+        reportFestappClientVersion();
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', reportFestappClientVersion);
+            navigator.serviceWorker.addEventListener('message', function(event) {
+                if (event.data?.type === 'FESTAPP_REPORT_VERSION') reportFestappClientVersion();
+            });
+            window.addEventListener('focus', reportFestappClientVersion);
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') reportFestappClientVersion();
+            });
+        }
+
+        window.markFestappAppReady = function() {
+            if (window.__FESTAPP_APP_READY__ === true) return;
+            window.__FESTAPP_APP_READY__ = true;
+            document.getElementById('web-client-startup')?.remove();
+            window.dispatchEvent(new Event('festapp-app-ready'));
+        };
+        window.failFestappWebClientStartup = function(reason) {
+            if (window.__FESTAPP_APP_READY__ === true) return;
+            window.__FESTAPP_WEB_STARTUP_FAILURE__ = reason;
+            const fallback = document.getElementById('web-client-startup');
+            if (fallback) {
+                fallback.querySelector('p').textContent = startupCopy.failed;
+                fallback.querySelector('button').hidden = false;
+            }
+            window.recoverFestappStartup?.(reason).catch(function(error) {
+                console.warn('Festapp web startup recovery failed:', error);
+            });
+        };
+        window.retryFestappWebClient = async function() {
+            const button = document.querySelector('#web-client-startup button');
+            if (button) button.disabled = true;
+            try {
+                await window.prepareFestappNetworkReload?.();
+                window.location.reload();
+            } catch (error) {
+                if (button) button.disabled = false;
+                console.warn('Festapp web reload failed:', error);
+            }
+        };
+        window.addEventListener('error', function(event) {
+            if (event.target?.tagName === 'SCRIPT' && event.target.type === 'module') {
+                window.failFestappWebClientStartup('web-module-error');
+            }
+        }, true);
+        window.addEventListener('unhandledrejection', function() {
+            window.failFestappWebClientStartup('web-startup-error');
+        });
+        window.addEventListener('load', function() {
+            window.setTimeout(function() {
+                window.failFestappWebClientStartup('web-startup-timeout');
+            }, 25000);
+        });
+
+        // Reuse the same bounded cache recovery as the Flutter entrypoint.
+        // The combined web build already ships this canonical public script.
+        if (!['localhost', '127.0.0.1', '::1'].includes(location.hostname)) {
+            const recovery = document.createElement('script');
+            recovery.src = '/festapp_update_prompt.js';
+            recovery.onload = function() {
+                if (window.__FESTAPP_WEB_STARTUP_FAILURE__) {
+                    window.failFestappWebClientStartup(window.__FESTAPP_WEB_STARTUP_FAILURE__);
+                }
+            };
+            document.head.appendChild(recovery);
+        }
+
         // Simple console logger for development; could be replaced by a proper service
         window.onerror = function(msg, url, line, col, error) {
             console.error('Global Error:', msg, url, line, col, error);
@@ -58,6 +138,16 @@
     </script>
 </head>
 <body>
+    <div id="web-client-startup" role="status"
+         style="position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;color:#333;font:16px sans-serif;padding:24px;text-align:center">
+        <p>Loading…</p>
+        <button hidden onclick="window.retryFestappWebClient()"
+                style="padding:12px 20px;font:inherit;cursor:pointer">Try again</button>
+    </div>
+    <script>
+        document.querySelector('#web-client-startup p').textContent = startupCopy.loading;
+        document.querySelector('#web-client-startup button').textContent = startupCopy.retry;
+    </script>
     <div id="app" style="display: none;">
         <!-- Header -->
         <user-header id="universal-header"></user-header>
@@ -88,15 +178,6 @@
     <!-- Application Entry (Module) -->
     <script type="module" src="/src/main.js"></script>
     <script type="module">
-        import { APP_VERSION } from '/src/version.js';
-
-        function reportFestappClientVersion() {
-            navigator.serviceWorker.controller?.postMessage({
-                type: 'FESTAPP_CLIENT_VERSION',
-                version: APP_VERSION,
-            });
-        }
-
         async function persistUsedFontResources() {
             await navigator.serviceWorker.ready;
             if (!navigator.serviceWorker.controller) {
@@ -133,14 +214,6 @@
                 return persistUsedFontResources();
             }).catch(function(error) {
                 console.warn('Festapp offline service worker registration failed:', error);
-            });
-            navigator.serviceWorker.addEventListener('controllerchange', reportFestappClientVersion);
-            navigator.serviceWorker.addEventListener('message', function(event) {
-                if (event.data?.type === 'FESTAPP_REPORT_VERSION') reportFestappClientVersion();
-            });
-            window.addEventListener('focus', reportFestappClientVersion);
-            document.addEventListener('visibilitychange', function() {
-                if (document.visibilityState === 'visible') reportFestappClientVersion();
             });
         }
     </script>
