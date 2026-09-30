@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/html/html_media_service.dart';
 import 'package:fstapp/components/html/rich_html_editor.dart';
+import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:super_editor/super_editor.dart';
 
@@ -22,6 +23,8 @@ void insert(RichHtmlEditorController controller, String text) {
         attributions: {})
   ]);
 }
+
+void _ignoreHtml(String _) {}
 
 void main() {
   testWidgets('existing images reuse the reading view image cache',
@@ -95,6 +98,57 @@ void main() {
     expect(changes, 0);
     expect(tester.takeException(), isNull);
     expect(coordinator.hasDraft, isFalse);
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets('expand opens a whole page and retains the inline draft',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Navigator(
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(
+              body: EditableHtmlField(
+                  html: '<p>Original</p>', onChanged: _ignoreHtml),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pump();
+    final controller =
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    insert(controller, ' draft');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final page = find.byType(RichHtmlEditorDialog);
+    expect(page, findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
+    expect(tester.getSize(page), const Size(1200, 800));
+    final route = ModalRoute.of(tester.element(page))!;
+    expect(route, isA<PageRoute<String>>());
+    expect(
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
+        same(controller));
+    insert(controller, ' expanded');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pump();
+    await tester.pump(
+        route.reverseTransitionDuration + const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(find.byType(RichHtmlEditorDialog), findsNothing);
+    expect(controller.html, '<p>Original draft expanded</p>');
+    expect(
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
+        same(controller));
     await tester.pumpWidget(const SizedBox());
   });
   for (final platform in [
