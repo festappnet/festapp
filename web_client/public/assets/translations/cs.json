@@ -266,9 +266,10 @@
     "msgTypeNone": "Žádná",
     "msgTypeOccasionTitle": "Název události",
     "communicationToneTitle": "Tón komunikace",
-    "helperCommunicationTone": "Vyberte tón pro automatickou komunikaci, jako jsou e-maily s potvrzením platby nebo připomínky. Ovlivní to styl textů v e-mailových šablonách.",
+    "helperCommunicationTone": "Tón veřejného formuláře a automatických e-mailů. Pokud zvolíte nastavení organizace, formulář převezme i její pozdější změny.",
     "labelCommunicationTone": "Tón",
     "toneFormal": "Formální (Vy)",
+    "toneInherit": "Podle nastavení organizace: {tone}",
     "toneInformal": "Neformální (Ty)",
     "pickColor": "Vybrat barvu",
     "buttonGotIt": "Hotovo",
@@ -864,7 +865,8 @@
     "pruneShellsConfirm": "Odstraní se pouze nepoužívané verze aplikace. Přihlášení, offline data a fonty zůstanou zachované.",
     "storageUsage": "Využití prohlížeče: {usage} MiB z {quota} MiB",
     "storageBlocked": "Aplikace teď nic neodstraní. Vaše data zůstávají v bezpečí.",
-    "storageReady": "Zachované verze: {retained}; k odstranění: {deletable}"
+    "storageReady": "Zachované verze: {retained}; k odstranění: {deletable}",
+    "oneSignalSecretManagedServerSide": "OneSignal REST API klíč je spravovaný v serverovém úložišti tajných údajů pro oznámení."
   },
   "GroupStrings": {
     "newGroup": "Nová skupina",
@@ -1080,6 +1082,7 @@
     "sentFrom": "Odesláno z {appName}"
   },
   "UnitSettings": {
+    "labelDefaultCommunicationTone": "Výchozí tón komunikace",
     "labelReplyToEmail": "Výchozí e-mail pro odpovědi",
     "labelDefaultTimezone": "Výchozí časová zóna",
     "deleteUnit": "Smazat organizaci",
@@ -1156,6 +1159,7 @@
     "scanCode": "Kód ke skenování",
     "signedInCompanions": "Přihlášení společníci",
     "startCamera": "Spustit kameru",
+    "restartCamera": "Restartovat kameru",
     "cameraStartDescription": "Pro spuštění skeneru povolte kameru tlačítkem níže.",
     "cameraUnavailable": "Kameru se nepodařilo spustit. Zkontrolujte oprávnění kamery a zkuste to znovu.",
     "ticketType": "Typ vstupenky",
@@ -1375,6 +1379,7 @@
     "type": "Typ",
     "upcomingEvents": "Nadcházející události",
     "update": "Aktualizovat",
+    "retry": "Zkusit znovu",
     "updateAppPrompt": "Aktualizujte aplikaci na nejnovější verzi pro přístup ke všem funkcím.",
     "updatedItem": "Aktualizováno: {item}.",
     "users": "Uživatelé",
@@ -1491,7 +1496,7 @@
     "safeSenderInfo": "Tato adresa je bezpečná. Je to speciální robot, který čte pouze e-maily o platbách a nic jiného.",
     "forwardingEmailWarning": "Upozornění: Prosím, udržujte tento e-mail v tajnosti. S nikým jej nesdílejte.",
     "creditorNameLabel": "Jméno majitele účtu",
-    "creditorNameHelp": "Povinné pro EUR EPC platební QR kódy; uveďte právní název příjemce."
+    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace."
   },
   "FeatureContract": {
     "title": "Smlouva",
@@ -1593,11 +1598,12 @@
     "emailTemplates": "Šablony e-mailů",
     "createCopySuccess": "Kopie události byla úspěšně vytvořena.",
     "createCopyFailed": "Nepodařilo se vytvořit kopii události.",
+    "createCopyMediaFailed": "Kopie události vznikla, ale nepodařilo se zkopírovat její obrázky.",
     "quotes": "Citáty",
     "loadEventFailed": "Nepodařilo se načíst událost. Zkuste to prosím znovu.",
-    "loadUnitFailed": "Nepodařilo se načíst data jednotky.",
+    "loadUnitFailed": "Nepodařilo se načíst data organizace.",
     "noEventsFound": "Nebyly nalezeny žádné události.",
-    "unit": "Jednotka"
+    "unit": "Organizace"
   },
   "OccasionHome": {
     "addToSchedule": "Přidat do programu",
@@ -1804,10 +1810,31 @@
     "noResults": "Žádné výsledky."
   },
   "HtmlEditor": {
-    "processingContent": "Zpracovávání obsahu a detekce velkých obrázků...",
-    "reducingImagesSize": "Probíhá zmenšování velikosti obrázků...",
-    "largeImagesDetected": "Zjištěny velké obrázky",
-    "largeImagesPrompt": "Některé obrázky jsou velké a mohou zpomalit aplikaci. Stiskněte OK pro jejich převod na optimální velikost."
+    "bold": "Tučně",
+    "italic": "Kurzíva",
+    "underline": "Podtržení",
+    "strike": "Přeškrtnutí",
+    "link": "Odkaz",
+    "image": "Obrázek",
+    "paste": "Vložit",
+    "undo": "Zpět",
+    "redo": "Znovu",
+    "heading2": "Nadpis 2",
+    "heading3": "Nadpis 3",
+    "orderedList": "Číslovaný seznam",
+    "bulletList": "Odrážky",
+    "indent": "Odsadit",
+    "outdent": "Zmenšit odsazení",
+    "alignLeft": "Zarovnat vlevo",
+    "alignCenter": "Zarovnat na střed",
+    "alignRight": "Zarovnat vpravo",
+    "expand": "Zvětšit editor",
+    "imageUrl": "URL obrázku",
+    "discardDraft": "Zahodit neuložené změny?",
+    "unknownPublish": "Výsledek publikování není známý. Před dalším pokusem znovu načtěte zprávy.",
+    "unknownUpload": "Výsledek nahrání obrázku není známý. Opakování může vytvořit další obrázek.",
+    "retryUpload": "Opakovat nahrání obrázku",
+    "importFailed": "Import obrázku nebo schránky selhal. Rozpracovaný obsah zůstal zachován."
   },
   "FeatureCounseling": {
     "title": "Poradny",

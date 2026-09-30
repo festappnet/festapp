@@ -1,3 +1,4 @@
+import 'package:fstapp/services/exception_handler.dart';
 import 'dart:typed_data';
 
 import 'package:auto_route/auto_route.dart';
@@ -5,14 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/app_router.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/features/feature_service.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -23,7 +24,6 @@ import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/unit/views/occasion_card.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 import 'package:fstapp/components/images/db_images.dart';
-import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -41,6 +41,11 @@ class OccasionSettingsTab extends StatefulWidget {
 }
 
 class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
+
   final _formKey = GlobalKey<FormState>();
 
   // Data
@@ -83,6 +88,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
   @override
   void dispose() {
+    _htmlSave.dispose();
     _linkController.dispose();
     _replyToEmailController.dispose();
     super.dispose();
@@ -157,6 +163,11 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   }
 
   Future<void> _saveSettings() async {
+    await ExceptionHandler.guardVoid(context, futureFunction: () =>
+      _htmlSave.save(() => _performHtmlSave(), context: context));
+  }
+
+  Future<void> _performHtmlSave() async {
     // 1. Validate the form. If it's not valid, do nothing.
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -178,6 +189,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
           occasion!.link = _linkValue;
           occasion!.startTime = _from;
           occasion!.endTime = _to;
+          _description = await _htmlSave.prepare(_description ?? '', HtmlMediaOwner.occasion(occasion!.id));
           occasion!.description = _description;
           occasion!.isOpen = _isOpen;
           occasion!.isHidden = _isHidden;
@@ -204,6 +216,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
           // 5. Persist the changes to the database.
           await DbOccasions.updateOccasion(occasion!);
+      _htmlSave.markSaved();
 
           // 6. Check if the component is still mounted and the new link is valid.
           if (mounted && occasion!.link != null) {
@@ -309,8 +322,8 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildHtmlParent(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -410,46 +423,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                   const SizedBox(height: 16),
                   Text(OccasionSettingsStrings.description),
                   const SizedBox(height: 8),
-                  ClipRect(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 400),
-                      child: ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.white, Colors.transparent],
-                          stops: const [0.9, 1.0],
-                        ).createShader(bounds),
-                        blendMode: BlendMode.dstIn,
-                        child: HtmlView(
-                          html: _description ?? "",
-                          isSelectable: true,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: isEditingEnabled
-                          ? () async {
-                              RouterService.navigatePageInfo(
-                                context,
-                                HtmlEditorRoute(content: {
-                                  HtmlEditorPage.parContent: _description
-                                }, occasionId: occasion!.id),
-                              ).then((value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _description = value as String;
-                                  });
-                                }
-                              });
-                            }
-                          : null,
-                      child: Text(OccasionSettingsStrings.editContent),
-                    ),
-                  ),
+                  EditableHtmlField(html: _description, enabled: isEditingEnabled,
+                    coordinator: _htmlSave, owner: HtmlMediaOwner.occasion(occasion!.id),
+                    onChanged: (html) => setState(() => _description = html)),
                   const SizedBox(height: 16),
                   if (AppConfig.isAppSupported)
                     SwitchListTile(

@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/forms/models/form_option_model.dart';
-import 'package:fstapp/router_service.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
-import 'package:fstapp/components/html/html_view.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 
 class OptionDetailEditorDialog extends StatefulWidget {
   final FormOptionModel option;
   final int? occasionId;
+  final HtmlSaveCoordinator? coordinator;
 
   const OptionDetailEditorDialog(
-      {super.key, required this.option, this.occasionId});
+      {super.key, required this.option, this.occasionId, this.coordinator});
 
   @override
   _OptionDetailEditorDialogState createState() =>
@@ -26,23 +25,6 @@ class _OptionDetailEditorDialogState extends State<OptionDetailEditorDialog> {
   void initState() {
     super.initState();
     _description = widget.option.description ?? "";
-  }
-
-  Future<void> _editContent() async {
-    RouterService.navigatePageInfo(
-      context,
-      HtmlEditorRoute(
-        content: {HtmlEditorPage.parContent: _description},
-        occasionId: widget.occasionId,
-      ),
-    ).then((value) {
-      if (value != null) {
-        setState(() {
-          _description = value as String;
-          widget.option.description = _description;
-        });
-      }
-    });
   }
 
   @override
@@ -63,17 +45,9 @@ class _OptionDetailEditorDialogState extends State<OptionDetailEditorDialog> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            HtmlView(
-              html: _description,
-              isSelectable: true,
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: ElevatedButton(
-                onPressed: _editContent,
-                child: Text(CommonStrings.editContent),
-              ),
-            ),
+            EditableHtmlField(html: _description, coordinator: widget.coordinator,
+              owner: HtmlMediaOwner.occasion(widget.occasionId),
+              onChanged: (html) => setState(() { _description = html; widget.option.description = html; })),
             const SizedBox(height: 24),
           ],
         ),

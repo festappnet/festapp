@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -25,6 +26,11 @@ class ExportOptions {
 }
 
 class SingleDataGridController<T extends ITrinaRowModel> {
+  HtmlSaveCoordinator? _htmlSave;
+  HtmlSaveCoordinator get htmlSave => _htmlSave ??= HtmlSaveCoordinator();
+  void disposeHtml() { _htmlSave?.dispose(); _htmlSave = null; }
+  Future<void> prepareHtmlRows() => htmlSave.prepareWhere((identity) =>
+    {...updatedRows, ...newRows}.any((row) => row.key == identity.entity && !deletedRows.contains(row)));
   ValueNotifier<Key> refreshKeyNotifier = ValueNotifier(UniqueKey());
 
   late TrinaGridStateManager stateManager;
@@ -106,6 +112,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
 
   /// Applies [rows] to the grid and inserts the first column if needed.
   void applyDataToGrid() async {
+    htmlSave.clearBindings();
     stateManager.removeAllRows();
     stateManager.appendRows(rows);
 

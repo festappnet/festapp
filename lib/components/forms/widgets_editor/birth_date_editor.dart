@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/forms/models/holder_models/birth_date_field_holder.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
-import 'package:fstapp/router_service.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 
 import 'form_message_widget.dart';
 
@@ -230,26 +229,13 @@ class BirthDateEditor {
               ],
             ),
             if (!isStrict)
-              FormMessageWidget(
-                message: currentMessage,
-                defaultMessage: defaultWarning,
-                isEditable: true,
-                onEdit: () async {
-                  final result = await RouterService.navigatePageInfo(
-                    context,
-                    HtmlEditorRoute(
-                        content: {HtmlEditorPage.parContent: currentMessage},
-                        occasionId: occasionId),
-                  );
-                  if (result != null) {
-                    currentMessage = result as String;
-                    field.data ??= {};
-                    field.data![BirthDateFieldHolder.metaMessage] =
-                        currentMessage;
-                    setState(() {});
-                  }
-                },
-              ),
+              EditableHtmlField(html: currentMessage, placeholder: defaultWarning,
+                owner: HtmlMediaOwner.occasion(occasionId),
+                onChanged: (html) {
+                  currentMessage = html; field.data ??= {};
+                  field.data![BirthDateFieldHolder.metaMessage] = html;
+                  setState(() {});
+                }),
           ],
         );
       },

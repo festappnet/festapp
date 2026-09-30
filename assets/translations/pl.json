@@ -453,9 +453,30 @@
     "noResults": "Brak wyników."
   },
   "HtmlEditor": {
-    "processingContent": "Przetwarzanie treści i wykrywanie dużych obrazów...",
-    "reducingImagesSize": "Zmniejszanie rozmiaru obrazów...",
-    "largeImagesDetected": "Wykryto duże obrazy",
-    "largeImagesPrompt": "Niektóre obrazy są duże i mogą spowolnić aplikację. Naciśnij OK, aby przekonwertować je na optymalny rozmiar."
+    "bold": "Pogrubienie",
+    "italic": "Kursywa",
+    "underline": "Podkreślenie",
+    "strike": "Przekreślenie",
+    "link": "Link",
+    "image": "Obraz",
+    "paste": "Wklej",
+    "undo": "Cofnij",
+    "redo": "Ponów",
+    "heading2": "Nagłówek 2",
+    "heading3": "Nagłówek 3",
+    "orderedList": "Lista numerowana",
+    "bulletList": "Lista punktowana",
+    "indent": "Zwiększ wcięcie",
+    "outdent": "Zmniejsz wcięcie",
+    "alignLeft": "Wyrównaj do lewej",
+    "alignCenter": "Wyśrodkuj",
+    "alignRight": "Wyrównaj do prawej",
+    "expand": "Powiększ",
+    "imageUrl": "Adres obrazu",
+    "discardDraft": "Odrzucić zmiany?",
+    "unknownPublish": "Wynik publikacji jest nieznany. Przed kolejną próbą odśwież wiadomości.",
+    "unknownUpload": "Wynik przesyłania obrazu jest nieznany. Ponowna próba może utworzyć kolejny obraz.",
+    "retryUpload": "Ponów przesyłanie",
+    "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
   }
 }
