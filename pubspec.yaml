@@ -150,10 +150,6 @@ dependency_overrides:
     git:
       url: https://github.com/miakh/flutter-vector-map-tiles.git
       ref: 429de4cda07a6dfa7141a9f044aa5f7576765c5b
-  # The Quill editor fork still declares Android WebView 3.x, but only uses
-  # APIs retained by 4.x. Keep one WebView implementation for the current
-  # YouTube player until the editor updates its dependency constraint.
-  webview_flutter_android: ^4.12.0
   maplibre_android:
     path: packages/maplibre_android
   maplibre_ios:
