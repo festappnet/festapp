@@ -6,6 +6,21 @@ import 'package:fstapp/components/html/html_view.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 void main() {
+  testWidgets('plain contacts are clickable in existing displayed HTML',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+            body: HtmlView(
+      html: '<p>or call 731140198, info@example.org, www.example.org</p>',
+      offlineOverride: false,
+    ))));
+    final rendered = tester
+        .widget<HtmlWithAppLinksWidget>(find.byType(HtmlWithAppLinksWidget));
+    expect(rendered.html, contains('href="tel:731140198"'));
+    expect(rendered.html, contains('href="mailto:info@example.org"'));
+    expect(rendered.html, contains('href="https://www.example.org"'));
+  });
+
   testWidgets('public HTML images use the stable web byte renderer',
       (tester) async {
     const imageUrl =
