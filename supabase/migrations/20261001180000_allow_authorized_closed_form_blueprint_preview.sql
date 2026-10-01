@@ -1,3 +1,4 @@
+-- Match get_form_by_link: order-view editors may preview closed forms.
 CREATE OR REPLACE FUNCTION get_blueprint(
     my_secret UUID,
     form_key UUID,
