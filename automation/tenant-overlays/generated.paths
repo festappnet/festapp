@@ -41,3 +41,10 @@ web_client/src/assets/fonts/Agrandir-Narrow.ttf
 web_client/src/assets/fonts/Cerebri-Sans-Bold.ttf
 web_client/src/assets/fonts/Cerebri-Sans-Regular.ttf
 web_client/src/assets/fonts/GillSansRegular.ttf
+
+# Generated verified-link files for the selected tenant.
+web/.well-known/assetlinks.json
+web_client/public/.well-known/assetlinks.json
+web_client/public/.well-known/apple-app-site-association
+web_client/public/apple-app-site-association
+web_client/public/_headers

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "36f49593380efe829993a90570156a3b1a1cdfdb",
+  "baseMainSha": "25befd9c83c846903956ff7a2094142fe0d1d891",
   "release": {
-    "version": "0.20.36+520",
-    "note": "Ticket layout editor, responsive controls and shared PDF preview"
+    "version": "0.20.37+521",
+    "note": "Google sign-in broker and web callback adapters"
   }
 }
