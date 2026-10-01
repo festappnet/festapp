@@ -4,6 +4,7 @@ import 'package:image/image.dart' as test_image;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/html/html_media_service.dart';
@@ -28,6 +29,50 @@ void insert(RichHtmlEditorController controller, String text) {
 void _ignoreHtml(String _) {}
 
 void main() {
+  testWidgets('selection toolbar formats text and follows selection lifetime',
+      (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    final controller = RichHtmlEditorController(
+        initialHtml: '<p>Selected text</p>',
+        owner: const HtmlMediaOwner.none());
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: RichHtmlEditor(controller: controller))));
+    controller.focusNode.requestFocus();
+    await tester.pump();
+    final node = controller.editor.document.first as TextNode;
+    final selection = DocumentSelection(
+        base: DocumentPosition(
+            nodeId: node.id, nodePosition: const TextNodePosition(offset: 0)),
+        extent: DocumentPosition(
+            nodeId: node.id, nodePosition: const TextNodePosition(offset: 8)));
+    controller.editor.execute([
+      ChangeSelectionRequest(selection, SelectionChangeType.expandSelection,
+          SelectionReason.userInteraction),
+    ]);
+    await tester.pump();
+    await tester.pump();
+    final toolbar = find.byKey(const ValueKey('html-selection-toolbar'));
+    expect(toolbar, findsOneWidget);
+    await tester.tap(
+        find.descendant(of: toolbar, matching: find.byIcon(Icons.format_bold)));
+    await tester.pump();
+    expect(controller.html, contains('<strong>Selected</strong>'));
+    expect(controller.editor.composer.selection, selection);
+    expect(controller.focusNode.hasFocus, isTrue);
+    controller.editor.execute([
+      ChangeSelectionRequest(
+          DocumentSelection.collapsed(position: selection.extent),
+          SelectionChangeType.placeCaret,
+          SelectionReason.userInteraction),
+    ]);
+    await tester.pump();
+    await tester.pump();
+    expect(toolbar, findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('existing images reuse the reading view image cache',
       (tester) async {
     const source = 'https://a.img.festapp.net/images/643/existing.png';

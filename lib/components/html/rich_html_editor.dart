@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:flutter/services.dart';
+import 'package:follow_the_leader/follow_the_leader.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:super_editor/super_editor.dart';
@@ -32,6 +33,9 @@ class RichHtmlEditor extends StatefulWidget {
 }
 
 class _RichHtmlEditorState extends State<RichHtmlEditor> {
+  final _selectionLinks = SelectionLayerLinks();
+  final _selectionToolbar = OverlayPortalController();
+  final _popoverFocus = FocusNode();
   SuperEditorIosControlsControllerWithNativePaste? _ios;
   Editor? _configuredEditor;
   late final SuperEditorAndroidControlsController _android;
@@ -41,6 +45,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     super.initState();
     if (kIsWeb) ClipboardEvents.instance?.registerPasteEventListener(_webPaste);
     controller.addListener(_controllerChanged);
+    controller.focusNode.addListener(_selectionChanged);
     _android = SuperEditorAndroidControlsController(
         toolbarBuilder: (context, key, focalPoint) =>
             AndroidTextEditingFloatingToolbar(
@@ -79,8 +84,11 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   }
 
   void _configureIos() {
+    _configuredEditor?.composer.selectionNotifier
+        .removeListener(_selectionChanged);
     _ios?.dispose();
     _configuredEditor = controller.editor;
+    controller.editor.composer.selectionNotifier.addListener(_selectionChanged);
     _ios = SuperEditorIosControlsControllerWithNativePaste(
         editor: controller.editor,
         documentLayoutResolver: () =>
@@ -93,15 +101,88 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         });
   }
 
+  void _selectionChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final selection = controller.editor.composer.selection;
+      final desktop = kIsWeb ||
+          !{TargetPlatform.android, TargetPlatform.iOS}
+              .contains(defaultTargetPlatform);
+      final show = widget.enabled &&
+          desktop &&
+          controller.focusNode.hasFocus &&
+          selection != null &&
+          !selection.isCollapsed &&
+          selection.base.nodePosition is TextNodePosition &&
+          selection.extent.nodePosition is TextNodePosition;
+      if (show && !_selectionToolbar.isShowing) {
+        _selectionToolbar.show();
+      }
+      if (!show && _selectionToolbar.isShowing) {
+        _selectionToolbar.hide();
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  Widget _floatingToolbar(BuildContext context) => Positioned(
+      left: 0,
+      top: 0,
+      child: Follower.withOffset(
+          link: _selectionLinks.expandedSelectionBoundsLink,
+          leaderAnchor: Alignment.topLeft,
+          followerAnchor: Alignment.bottomLeft,
+          offset: const Offset(0, -8),
+          boundary: const SafeAreaFollowerBoundary(),
+          showWhenUnlinked: false,
+          child: SuperEditorPopover(
+              popoverFocusNode: _popoverFocus,
+              editorFocusNode: controller.focusNode,
+              child: Material(
+                  key: const ValueKey('html-selection-toolbar'),
+                  elevation: 6,
+                  borderRadius: BorderRadius.circular(12),
+                  clipBehavior: Clip.antiAlias,
+                  child: AnimatedBuilder(
+                      animation: Listenable.merge([
+                        controller,
+                        controller.editor.composer.selectionNotifier
+                      ]),
+                      builder: (context, _) =>
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            _tool(Icons.format_bold, HtmlStrings.bold,
+                                () => controller.toggle(boldAttribution),
+                                attribution: boldAttribution),
+                            _tool(Icons.format_italic, HtmlStrings.italic,
+                                () => controller.toggle(italicsAttribution),
+                                attribution: italicsAttribution),
+                            _tool(
+                                Icons.format_underlined,
+                                HtmlStrings.underline,
+                                () => controller.toggle(underlineAttribution),
+                                attribution: underlineAttribution),
+                            _tool(
+                                Icons.format_strikethrough,
+                                HtmlStrings.strike,
+                                () =>
+                                    controller.toggle(strikethroughAttribution),
+                                attribution: strikethroughAttribution),
+                            _tool(Icons.link, HtmlStrings.link,
+                                () => _async(_link)),
+                          ]))))));
+
   @override
   void didUpdateWidget(RichHtmlEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != controller) {
       oldWidget.controller.removeListener(_controllerChanged);
+      oldWidget.controller.focusNode.removeListener(_selectionChanged);
       controller.addListener(_controllerChanged);
+      controller.focusNode.addListener(_selectionChanged);
     }
     if (oldWidget.controller != controller ||
         _configuredEditor != controller.editor) _configureIos();
+    _selectionChanged();
   }
 
   @override
@@ -109,6 +190,10 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     if (kIsWeb)
       ClipboardEvents.instance?.unregisterPasteEventListener(_webPaste);
     controller.removeListener(_controllerChanged);
+    controller.focusNode.removeListener(_selectionChanged);
+    _configuredEditor?.composer.selectionNotifier
+        .removeListener(_selectionChanged);
+    _popoverFocus.dispose();
     _ios?.dispose();
     _android.dispose();
     super.dispose();
@@ -274,183 +359,198 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
       return HtmlView(
           html: controller.html,
           imageBytesResolver: controller.media.previewBytes);
-    return AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) => Flex(
-              direction: widget.fullscreen ? Axis.horizontal : Axis.vertical,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                    width: widget.fullscreen ? 56 : null,
-                    child: SingleChildScrollView(
-                        scrollDirection:
-                            widget.fullscreen ? Axis.vertical : Axis.horizontal,
-                        child: Flex(
-                            direction: widget.fullscreen
+    return OverlayPortal(
+        controller: _selectionToolbar,
+        overlayChildBuilder: _floatingToolbar,
+        child: AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) => Flex(
+                  direction:
+                      widget.fullscreen ? Axis.horizontal : Axis.vertical,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                        width: widget.fullscreen ? 56 : null,
+                        child: SingleChildScrollView(
+                            scrollDirection: widget.fullscreen
                                 ? Axis.vertical
                                 : Axis.horizontal,
-                            children: [
-                              _tool(Icons.format_bold, HtmlStrings.bold,
-                                  () => controller.toggle(boldAttribution),
-                                  attribution: boldAttribution),
-                              _tool(Icons.format_italic, HtmlStrings.italic,
-                                  () => controller.toggle(italicsAttribution),
-                                  attribution: italicsAttribution),
-                              _tool(
-                                  Icons.format_underlined,
-                                  HtmlStrings.underline,
-                                  () => controller.toggle(underlineAttribution),
-                                  attribution: underlineAttribution),
-                              _tool(
-                                  Icons.format_strikethrough,
-                                  HtmlStrings.strike,
-                                  () => controller
-                                      .toggle(strikethroughAttribution),
-                                  attribution: strikethroughAttribution),
-                              _tool(Icons.link, HtmlStrings.link,
-                                  () => _async(_link)),
-                              _tool(Icons.image_outlined, HtmlStrings.image,
-                                  () => _async(_image),
-                                  available: controller.owner.canImport),
-                              _tool(Icons.content_paste, HtmlStrings.paste,
-                                  () => _async(controller.paste)),
-                              _tool(Icons.undo, HtmlStrings.undo,
-                                  controller.undo),
-                              _tool(Icons.redo, HtmlStrings.redo,
-                                  controller.redo),
-                              PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_horiz),
-                                  onSelected: (value) {
-                                    switch (value) {
-                                      case 'imageUrl':
-                                        _async(_imageUrl);
-                                      case 'h2':
-                                        _block(header2Attribution);
-                                      case 'h3':
-                                        _block(header3Attribution);
-                                      case 'ol':
-                                        _list(ListItemType.ordered);
-                                      case 'ul':
-                                        _list(ListItemType.unordered);
-                                      case 'in':
-                                        _indent(true);
-                                      case 'out':
-                                        _indent(false);
-                                      case 'left':
-                                        _align(TextAlign.left);
-                                      case 'center':
-                                        _align(TextAlign.center);
-                                      case 'right':
-                                        _align(TextAlign.right);
-                                    }
-                                    controller.focusNode.requestFocus();
-                                  },
-                                  itemBuilder: (_) => [
-                                        if (controller.owner.canImport)
-                                          PopupMenuItem(
-                                              value: 'imageUrl',
-                                              child:
-                                                  Text(HtmlStrings.imageUrl)),
-                                        for (final item in [
-                                          ('h2', HtmlStrings.heading2),
-                                          ('h3', HtmlStrings.heading3),
-                                          ('ol', HtmlStrings.orderedList),
-                                          ('ul', HtmlStrings.bulletList),
-                                          ('in', HtmlStrings.indent),
-                                          ('out', HtmlStrings.outdent),
-                                          ('left', HtmlStrings.alignLeft),
-                                          ('center', HtmlStrings.alignCenter),
-                                          ('right', HtmlStrings.alignRight)
-                                        ])
-                                          PopupMenuItem(
-                                              value: item.$1,
-                                              child: Text(item.$2)),
-                                      ]),
-                            ]))),
-                _documentViewport(ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 180),
-                    child: SuperEditorAndroidControlsScope(
-                        controller: _android,
-                        child: SuperEditorIosControlsScope(
-                            controller: _ios!,
-                            child: CustomScrollView(
-                                shrinkWrap: !widget.fullscreen,
-                                physics: widget.fullscreen
-                                    ? null
-                                    : const NeverScrollableScrollPhysics(),
-                                slivers: [
-                                  SuperEditor(
-                                    editor: controller.editor,
-                                    autofocus: widget.fullscreen,
-                                    focusNode: controller.focusNode,
-                                    documentLayoutKey: controller.layoutKey,
-                                    shrinkWrap: true,
-                                    log: null,
-                                    selectionPolicies:
-                                        const SuperEditorSelectionPolicies(
-                                            clearSelectionWhenEditorLosesFocus:
-                                                false,
-                                            clearSelectionWhenImeConnectionCloses:
-                                                false),
-                                    stylesheet: defaultStylesheet.copyWith(
-                                        inlineTextStyler: htmlInlineTextStyler,
-                                        documentPadding:
-                                            const EdgeInsets.all(8),
-                                        addRulesAfter: [
-                                          StyleRule(
-                                              BlockSelector.all,
-                                              (doc, node) => {
-                                                    Styles.textStyle:
-                                                        htmlBlockTextStyler(
-                                                            node,
-                                                            Theme.of(context)
-                                                                .textTheme
-                                                                .bodyLarge!
-                                                                .copyWith(
-                                                                    height: 1.4,
-                                                                    fontSize: switch (
-                                                                        node.getMetadataValue(
-                                                                            'blockType')) {
-                                                                      final type
-                                                                          when type ==
-                                                                              header1Attribution =>
-                                                                        30,
-                                                                      final type
-                                                                          when type ==
-                                                                              header2Attribution =>
-                                                                        24,
-                                                                      final type
-                                                                          when type ==
-                                                                              header3Attribution =>
-                                                                        20,
-                                                                      _ => null,
-                                                                    },
-                                                                    fontFamily: node.getMetadataValue('blockType') ==
-                                                                            const NamedAttribution('pre')
-                                                                        ? 'monospace'
-                                                                        : null)),
-                                                    Styles.padding:
-                                                        const CascadingPadding
-                                                            .symmetric(
-                                                            horizontal: 0),
-                                                  })
-                                        ]),
-                                    componentBuilders: [
-                                      _DraftImageBuilder(controller),
-                                      _PreservedBuilder(
-                                          controller, _editPreserved),
-                                      ...defaultComponentBuilders
-                                    ],
-                                    keyboardActions: [
-                                      if (!kIsWeb) _pasteShortcut,
-                                      ...defaultImeKeyboardActions.where(
-                                          (action) =>
-                                              action != pasteWhenCmdVIsPressed)
-                                    ],
-                                  )
-                                ]))))),
-              ],
-            ));
+                            child: Flex(
+                                direction: widget.fullscreen
+                                    ? Axis.vertical
+                                    : Axis.horizontal,
+                                children: [
+                                  _tool(Icons.format_bold, HtmlStrings.bold,
+                                      () => controller.toggle(boldAttribution),
+                                      attribution: boldAttribution),
+                                  _tool(
+                                      Icons.format_italic,
+                                      HtmlStrings.italic,
+                                      () =>
+                                          controller.toggle(italicsAttribution),
+                                      attribution: italicsAttribution),
+                                  _tool(
+                                      Icons.format_underlined,
+                                      HtmlStrings.underline,
+                                      () => controller
+                                          .toggle(underlineAttribution),
+                                      attribution: underlineAttribution),
+                                  _tool(
+                                      Icons.format_strikethrough,
+                                      HtmlStrings.strike,
+                                      () => controller
+                                          .toggle(strikethroughAttribution),
+                                      attribution: strikethroughAttribution),
+                                  _tool(Icons.link, HtmlStrings.link,
+                                      () => _async(_link)),
+                                  _tool(Icons.image_outlined, HtmlStrings.image,
+                                      () => _async(_image),
+                                      available: controller.owner.canImport),
+                                  _tool(Icons.content_paste, HtmlStrings.paste,
+                                      () => _async(controller.paste)),
+                                  _tool(Icons.undo, HtmlStrings.undo,
+                                      controller.undo),
+                                  _tool(Icons.redo, HtmlStrings.redo,
+                                      controller.redo),
+                                  PopupMenuButton<String>(
+                                      icon: const Icon(Icons.more_horiz),
+                                      onSelected: (value) {
+                                        switch (value) {
+                                          case 'imageUrl':
+                                            _async(_imageUrl);
+                                          case 'h2':
+                                            _block(header2Attribution);
+                                          case 'h3':
+                                            _block(header3Attribution);
+                                          case 'ol':
+                                            _list(ListItemType.ordered);
+                                          case 'ul':
+                                            _list(ListItemType.unordered);
+                                          case 'in':
+                                            _indent(true);
+                                          case 'out':
+                                            _indent(false);
+                                          case 'left':
+                                            _align(TextAlign.left);
+                                          case 'center':
+                                            _align(TextAlign.center);
+                                          case 'right':
+                                            _align(TextAlign.right);
+                                        }
+                                        controller.focusNode.requestFocus();
+                                      },
+                                      itemBuilder: (_) => [
+                                            if (controller.owner.canImport)
+                                              PopupMenuItem(
+                                                  value: 'imageUrl',
+                                                  child: Text(
+                                                      HtmlStrings.imageUrl)),
+                                            for (final item in [
+                                              ('h2', HtmlStrings.heading2),
+                                              ('h3', HtmlStrings.heading3),
+                                              ('ol', HtmlStrings.orderedList),
+                                              ('ul', HtmlStrings.bulletList),
+                                              ('in', HtmlStrings.indent),
+                                              ('out', HtmlStrings.outdent),
+                                              ('left', HtmlStrings.alignLeft),
+                                              (
+                                                'center',
+                                                HtmlStrings.alignCenter
+                                              ),
+                                              ('right', HtmlStrings.alignRight)
+                                            ])
+                                              PopupMenuItem(
+                                                  value: item.$1,
+                                                  child: Text(item.$2)),
+                                          ]),
+                                ]))),
+                    _documentViewport(ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 180),
+                        child: SuperEditorAndroidControlsScope(
+                            controller: _android,
+                            child: SuperEditorIosControlsScope(
+                                controller: _ios!,
+                                child: CustomScrollView(
+                                    shrinkWrap: !widget.fullscreen,
+                                    physics: widget.fullscreen
+                                        ? null
+                                        : const NeverScrollableScrollPhysics(),
+                                    slivers: [
+                                      SuperEditor(
+                                        editor: controller.editor,
+                                        selectionLayerLinks: _selectionLinks,
+                                        autofocus: widget.fullscreen,
+                                        focusNode: controller.focusNode,
+                                        documentLayoutKey: controller.layoutKey,
+                                        shrinkWrap: true,
+                                        log: null,
+                                        selectionPolicies:
+                                            const SuperEditorSelectionPolicies(
+                                                clearSelectionWhenEditorLosesFocus:
+                                                    false,
+                                                clearSelectionWhenImeConnectionCloses:
+                                                    false),
+                                        stylesheet: defaultStylesheet.copyWith(
+                                            inlineTextStyler:
+                                                htmlInlineTextStyler,
+                                            documentPadding:
+                                                const EdgeInsets.all(8),
+                                            addRulesAfter: [
+                                              StyleRule(
+                                                  BlockSelector.all,
+                                                  (doc, node) => {
+                                                        Styles.textStyle:
+                                                            htmlBlockTextStyler(
+                                                                node,
+                                                                Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .bodyLarge!
+                                                                    .copyWith(
+                                                                        height:
+                                                                            1.4,
+                                                                        fontSize:
+                                                                            switch (node.getMetadataValue(
+                                                                                'blockType')) {
+                                                                          final type
+                                                                              when type == header1Attribution =>
+                                                                            30,
+                                                                          final type
+                                                                              when type == header2Attribution =>
+                                                                            24,
+                                                                          final type
+                                                                              when type == header3Attribution =>
+                                                                            20,
+                                                                          _ =>
+                                                                            null,
+                                                                        },
+                                                                        fontFamily: node.getMetadataValue('blockType') ==
+                                                                                const NamedAttribution('pre')
+                                                                            ? 'monospace'
+                                                                            : null)),
+                                                        Styles.padding:
+                                                            const CascadingPadding
+                                                                .symmetric(
+                                                                horizontal: 0),
+                                                      })
+                                            ]),
+                                        componentBuilders: [
+                                          _DraftImageBuilder(controller),
+                                          _PreservedBuilder(
+                                              controller, _editPreserved),
+                                          ...defaultComponentBuilders
+                                        ],
+                                        keyboardActions: [
+                                          if (!kIsWeb) _pasteShortcut,
+                                          ...defaultImeKeyboardActions.where(
+                                              (action) =>
+                                                  action !=
+                                                  pasteWhenCmdVIsPressed)
+                                        ],
+                                      )
+                                    ]))))),
+                  ],
+                )));
   }
 
   Widget _documentViewport(Widget document) =>
