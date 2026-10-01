@@ -1,7 +1,7 @@
 import QRCode from 'npm:qrcode';
 import { Buffer } from 'node:buffer';
 import { PDFDocument } from 'npm:pdf-lib';
-import { parseLayout, ticketPresets, TicketType } from '../_shared/ticketLayout.ts';
+import { parseLayout, preset, ticketPresets, TicketType } from '../_shared/ticketLayout.ts';
 import { sampleData } from '../_shared/ticketRenderData.ts';
 import { loadLayoutResources, generateTicketPdf } from '../_shared/ticketGeneration.ts';
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Cache-Control':'no-store'};
@@ -26,25 +26,30 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     if(!await deps.authorize(auth,occasionId))return reply(403,{error:'Forbidden'});
     const occasion=await deps.occasion(occasionId);
     const feature={...(occasion.features?.find((f:any)=>f.code==='ticket')??{}),ticket_type:type};
-    // Newly uploaded public image objects are the sole permitted client-supplied source.
-    if(body.background!==undefined&&body.background!==null){
-      const url=new URL(body.background);
-      if(url.protocol!=='https:'||url.hostname!=='img.festapp.net'||url.username||url.password||url.port) return reply(400,{error:'Unapproved image source'});
+    // Keep an unchanged persisted source; new client-supplied sources must be
+    // uploaded image objects. All image reads still pass public-DNS/SSRF checks.
+    const requestedBackground=typeof body.background==='string' && body.background.trim()===''?null:body.background;
+    if(requestedBackground!==undefined&&requestedBackground!==null){
+      const url=new URL(requestedBackground);
+      if(requestedBackground!==feature.background && (url.protocol!=='https:'||url.hostname!=='img.festapp.net'||url.username||url.password||url.port)) return reply(400,{error:'Unapproved image source'});
       feature.background=url.href;
     }
-    if(body.background===null)feature.background=null;
+    if(requestedBackground===null)feature.background=null;
     const resources=await deps.resources(occasion,feature);
     const layout=body.layout===undefined?(feature.layout===undefined?undefined:parseLayout(feature.layout)):parseLayout(body.layout);
     let template=layout?.templates[type as TicketType];
     let width=1600,height=900;
     if(resources.background){const doc=await PDFDocument.create();let img;try{img=await doc.embedPng(resources.background);}catch{img=await doc.embedJpg(resources.background);}width=img.width;height=img.height;}
-    const choices=ticketPresets(type,width,height);
-    if(type==='wide' && /^[0-9A-Fa-f]{6}$/.test(feature.darkColor??''))for(const [key,t] of Object.entries(choices))if(key!=='portrait')for(const e of t.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
-    const initial=choices.classic;
+    const choices=ticketPresets(width,height);
+    const initial=preset(type,width,height);
+    if(/^[0-9A-Fa-f]{6}$/.test(feature.darkColor??'')) {
+      const colored=[...Object.entries(choices).filter(([key])=>!key.startsWith('portrait')).map(([,t])=>t),...(type==='wide'?[initial]:[])];
+      for(const t of colored)for(const e of t.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
+    }
     template??=initial;
     const data=sampleData(scenario,occasion);
     const qr=QRCode.create(data.qr!,{errorCorrectionLevel:'M'}).modules;
-    if(mode==='resolve') return reply(200,{template,preset:initial,presets:choices,presetBackgrounds:type==='wide'?{portrait:null}:{},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
+    if(mode==='resolve') return reply(200,{template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
     const result=await generateTicketPdf(data,resources,template,type,true);
     return reply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});
   }catch {return reply(400,{error:'Ticket preview rejected. Check layout and image resources.'});}

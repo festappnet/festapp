@@ -1,3 +1,4 @@
+-- Avoid blocking occasion saves when only the automatic form slug collides.
 CREATE OR REPLACE FUNCTION public.update_occasion_internal_v1(input_data JSONB)
  RETURNS void
  LANGUAGE plpgsql

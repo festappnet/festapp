@@ -68,7 +68,7 @@ export function parseLayout(value: unknown): TicketLayout { validateLayout(value
 
 // Named/mobile and image-backed layouts share the original generators' pages.
 // Selecting a style copies ordinary geometry; no second template/render contract.
-export function ticketPresets(type: TicketType, imageWidth=1600, imageHeight=800): Record<string,Template> {
+function legacyStyleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Record<string,Template> {
   const classic=preset(type,imageWidth,imageHeight);
   const make=(binding:Binding,x:number,y:number,width:number,height:number,fontSize=12,maxLines=2,align:'left'|'center'='left'):Element=>({id:binding,binding,box:{x,y,width,height},visible:true,locked:false,style:{fontSize,minFontSize:6,maxLines,color:'2A2A2A',align}});
   const compact=structuredClone(classic), event=structuredClone(classic);
@@ -85,5 +85,20 @@ export function ticketPresets(type: TicketType, imageWidth=1600, imageHeight=800
   }
   const result:Record<string,Template>={classic,compact,event,...(type==='wide'?{portrait:portraitPreset()}: {})};
   for(const t of Object.values(result))validateLayout({schemaVersion:1,templates:{[type]:t}});
+  return result;
+}
+
+// The public gallery is independent of the legacy storage slot. Every new
+// choice is a complete ticket-sized PDF, valid in either slot. Existing saved
+// and unsaved legacy layouts keep their page geometry until a style is chosen.
+export function ticketPresets(imageWidth=1600, imageHeight=800): Record<string,Template> {
+  const wide=legacyStyleVariants('wide',imageWidth,imageHeight);
+  const named=legacyStyleVariants('named');
+  const result:Record<string,Template>={classic:wide.classic,compact:wide.compact,event:wide.event,portrait:named.classic,portrait_compact:named.compact,portrait_event:named.event};
+  for(const t of Object.values(result)) {
+    t.pageFit='ticket';
+    t.page={width:t.ticketArea.width,height:t.ticketArea.height};
+    t.ticketArea={...t.ticketArea,x:0,y:0};
+  }
   return result;
 }
