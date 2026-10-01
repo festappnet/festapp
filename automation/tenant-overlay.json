@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "25befd9c83c846903956ff7a2094142fe0d1d891",
+  "baseMainSha": "e408d225cfb0d7fa33c2306348b5f1c8681e10fd",
   "release": {
     "version": "0.20.37+521",
     "note": "Google sign-in broker and web callback adapters"
