@@ -568,8 +568,14 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     final actions = widget.toolbarActions;
     if (actions == null || widget.fullscreen) return tools;
     return LayoutBuilder(builder: (context, constraints) {
-      if (constraints.maxWidth >= 800) {
-        return Row(children: [Expanded(child: tools), actions]);
+      if (constraints.maxWidth >= 400) {
+        return Row(children: [
+          Expanded(child: tools),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth - 48),
+            child: actions,
+          ),
+        ]);
       }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
