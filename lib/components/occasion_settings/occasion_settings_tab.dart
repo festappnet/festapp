@@ -1,3 +1,5 @@
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/ticket_layout/ticket_layout_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'dart:typed_data';
 
@@ -44,7 +46,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   final _formKey = GlobalKey<FormState>();
 
@@ -163,8 +165,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   }
 
   Future<void> _saveSettings() async {
-    await ExceptionHandler.guardVoid(context, futureFunction: () =>
-      _htmlSave.save(() => _performHtmlSave(), context: context));
+    await ExceptionHandler.guardVoid(context,
+        futureFunction: () =>
+            _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
@@ -189,7 +192,8 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
           occasion!.link = _linkValue;
           occasion!.startTime = _from;
           occasion!.endTime = _to;
-          _description = await _htmlSave.prepare(_description ?? '', HtmlMediaOwner.occasion(occasion!.id));
+          _description = await _htmlSave.prepare(
+              _description ?? '', HtmlMediaOwner.occasion(occasion!.id));
           occasion!.description = _description;
           occasion!.isOpen = _isOpen;
           occasion!.isHidden = _isHidden;
@@ -216,7 +220,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
           // 5. Persist the changes to the database.
           await DbOccasions.updateOccasion(occasion!);
-      _htmlSave.markSaved();
+          _htmlSave.markSaved();
 
           // 6. Check if the component is still mounted and the new link is valid.
           if (mounted && occasion!.link != null) {
@@ -237,6 +241,41 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
         },
       );
     } catch (error) {
+      final tickets = occasion!.features.whereType<TicketFeature>().toList();
+      final layoutConflict =
+          error.toString().contains('ticket_layout_conflict') ||
+              (error.toString().contains('changed by another editor') &&
+                  tickets.any((t) => t.layoutChange != null));
+      if (mounted && layoutConflict) {
+        final reload = await showDialog<bool>(
+            context: context,
+            builder: (c) => AlertDialog(
+                    content: Text(TicketLayoutStrings.conflict),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(c, false),
+                          child: Text(TicketLayoutStrings.cancel)),
+                      FilledButton(
+                          onPressed: () => Navigator.pop(c, true),
+                          child: Text(TicketLayoutStrings.reloadSaved)),
+                    ]));
+        if (reload == true && mounted) {
+          await ExceptionHandler.guard(context, futureFunction: () async {
+            var fresh = await DbOccasions.getOccasion(occasion!.id!);
+            fresh = await DbOccasions.getOccasionByLink(fresh.link!);
+            if (!mounted) return;
+            final current =
+                fresh.features.whereType<TicketFeature>().firstOrNull;
+            setState(() {
+              for (final ticket in tickets) {
+                ticket.loadSavedLayout(current?.layout);
+              }
+              occasion!.aggregateVersion = fresh.aggregateVersion;
+            });
+          });
+        }
+        return;
+      }
       if (mounted) {
         ToastHelper.Show(context, error.toString());
       }
@@ -321,7 +360,6 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       }
     }
   }
-
 
   Widget _buildHtmlParent(BuildContext context) {
     if (_isLoading) {
@@ -423,9 +461,12 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                   const SizedBox(height: 16),
                   Text(OccasionSettingsStrings.description),
                   const SizedBox(height: 8),
-                  EditableHtmlField(html: _description, enabled: isEditingEnabled,
-                    coordinator: _htmlSave, owner: HtmlMediaOwner.occasion(occasion!.id),
-                    onChanged: (html) => setState(() => _description = html)),
+                  EditableHtmlField(
+                      html: _description,
+                      enabled: isEditingEnabled,
+                      coordinator: _htmlSave,
+                      owner: HtmlMediaOwner.occasion(occasion!.id),
+                      onChanged: (html) => setState(() => _description = html)),
                   const SizedBox(height: 16),
                   if (AppConfig.isAppSupported)
                     SwitchListTile(

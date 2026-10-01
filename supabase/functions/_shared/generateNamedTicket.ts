@@ -1,3 +1,5 @@
+import { getMinimalisticDateRange } from './ticketDate.ts';
+import { generateTicketImage, type LayoutTicketRequest } from './generateTicket.ts';
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import QRCode from "npm:qrcode";
 import { PDFDocument, rgb } from "npm:pdf-lib";
@@ -54,36 +56,6 @@ export async function fetchNamedTicketResources(ticket: any) {
 /**
  * Returns a minimalistic date range string formatted according to the given locale.
  */
-function getMinimalisticDateRange(
-  start: Date,
-  end: Date,
-  locale: string = "cs"
-): string {
-  const fullEnd = new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(end);
-  let minimalStart: string;
-  if (start.getFullYear() === end.getFullYear()) {
-    if (start.getMonth() === end.getMonth()) {
-      minimalStart = new Intl.DateTimeFormat(locale, { day: "numeric" }).format(start);
-    } else {
-      minimalStart = new Intl.DateTimeFormat(locale, {
-        day: "numeric",
-        month: "short",
-      }).format(start);
-    }
-  } else {
-    minimalStart = new Intl.DateTimeFormat(locale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(start);
-  }
-  return `${minimalStart} - ${fullEnd}`;
-}
-
 /**
  * Draws a dashed line between two points.
  * The line is drawn as a series of dashes.
@@ -201,8 +173,10 @@ export async function generateNamedTicketImage(
     customFontBytes: Uint8Array;
   },
   orderData: any,
-  locale: string = "cs"
+  locale: string = "cs",
+  custom?: LayoutTicketRequest
 ): Promise<Uint8Array> {
+  if(custom)return generateTicketImage(ticket,resources as any,custom);
   try {
     const { occasion, logoBytes, customFontBytes } = resources;
 

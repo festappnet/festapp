@@ -2,6 +2,7 @@
   "version": 1,
   "canonical_origin": "https://api.festapp.net",
   "edge_functions": {
+    "preview-ticket-layout": { "trigger": "client-http", "effects": ["database-read", "remote-asset-read"], "mutates_authority": false },
     "bank-mail-parser": { "trigger": "aws-sns-callback", "effects": ["database-rpc", "aws-sns-subscription-confirmation"], "mutates_authority": true },
     "cancel-reception-registration": { "trigger": "client-http", "effects": ["database-rpc", "auth-session-revocation"], "mutates_authority": true },
     "confirm-account-deletion": { "trigger": "client-http", "effects": ["database-rpc", "auth-delete", "storage-delete", "onesignal-delete", "smtp"], "mutates_authority": true },

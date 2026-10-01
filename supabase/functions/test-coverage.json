@@ -1,6 +1,7 @@
 {
   "version": 1,
   "production": {
+    "preview-ticket-layout": {"smokeTests": ["supabase/functions/_shared/edgeEntrypoints_test.ts"], "behaviorTests": ["supabase/functions/preview-ticket-layout/preview_test.ts"]},
     "bank-mail-parser": {
       "smokeTests": ["supabase/functions/bank-mail-parser/snsVerification_test.ts"],
       "behaviorTests": ["supabase/functions/bank-mail-parser/test_parser_comprehensive.ts"]
