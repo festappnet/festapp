@@ -759,7 +759,7 @@ packages:
     source: hosted
     version: "9.0.0"
   follow_the_leader:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: follow_the_leader
       sha256: "5cc5676008b786e8a34725874c750489c778431d2f9c423f0cc3c18527535236"
