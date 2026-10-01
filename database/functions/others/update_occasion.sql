@@ -21,6 +21,9 @@ SET search_path = public, extensions
      v_form_id BIGINT;
      v_form_blueprint BIGINT;
      v_form_settings JSONB;
+     v_form_link TEXT;
+     v_form_link_base TEXT;
+     v_form_link_suffix INTEGER;
      v_reminder_interval_seconds BIGINT;
 
      input_features JSONB;
@@ -211,11 +214,25 @@ SET search_path = public, extensions
 
          -- Create a default form if one doesn't exist for the occasion
          IF NOT EXISTS (SELECT 1 FROM public.forms WHERE occasion = occ_id) THEN
-             PERFORM create_form(
-                 occ_id,
-                 COALESCE(input_data->>'form_link', updated_occ.link),
-                 'Registration'
-             );
+             v_form_link := NULLIF(btrim(input_data->>'form_link'), '');
+             IF v_form_link IS NULL THEN
+                 -- Occasion slugs and form slugs are separate namespaces.
+                 -- An automatic default must not block an unrelated settings save.
+                 v_form_link_base := COALESCE(NULLIF(updated_occ.link, ''), 'registration');
+                 v_form_link := v_form_link_base;
+                 v_form_link_suffix := 0;
+                 LOOP
+                     -- Serialize automatic allocation for each candidate, including
+                     -- candidates that are another occasion's unsuffixed slug.
+                     PERFORM pg_advisory_xact_lock(hashtextextended('default-form:' || v_form_link, 0));
+                     EXIT WHEN NOT EXISTS (SELECT 1 FROM public.forms WHERE link = v_form_link);
+                     v_form_link_suffix := v_form_link_suffix + 1;
+                     v_form_link := v_form_link_base || '-' || occ_id::text ||
+                         CASE WHEN v_form_link_suffix = 1 THEN '' ELSE '-' || v_form_link_suffix::text END;
+                 END LOOP;
+             END IF;
+             -- Explicit links still use create_form's collision validation.
+             PERFORM create_form(occ_id, v_form_link, 'Registration');
          END IF;
 
          -- Check if reminders are enabled within the form feature

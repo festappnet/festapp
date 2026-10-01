@@ -2051,6 +2051,9 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "style_portrait_event": "Bold name ticket",
+    "style_portrait_compact": "Compact name ticket",
+    "chooseTemplate": "Choose template",
     "openPdf": "Open PDF",
     "pdfExternalHint": "This browser opens PDFs separately. Open the PDF or download it using the button above.",
     "viewOptions": "View and tools",
@@ -2109,9 +2112,9 @@
     "restoreDraft": "Restore local draft",
     "qrColor": "QR color",
     "styles": "Ticket templates",
-    "style_classic": "Original ticket",
-    "style_compact": "Compact",
-    "style_event": "Event title",
+    "style_classic": "Classic landscape",
+    "style_compact": "Compact landscape",
+    "style_event": "Bold landscape",
     "grid": "Grid",
     "snap": "Snapping",
     "resetSlider": "Double-click to restore the template font size",

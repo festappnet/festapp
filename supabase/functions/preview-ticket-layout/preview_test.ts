@@ -23,7 +23,7 @@ Deno.test('preview bounds input and rejects secrets, real IDs and unapproved ima
 Deno.test('resolve returns style choices and uses known occasion details in every scenario',async()=>{
   const s=setup();s.deps.occasion=async()=>({id:7,title:'Festival v naší obci',start_time:'2026-11-07T18:00:00Z',end_time:'2026-11-07T23:00:00Z',data:{place_name:'Sokolovna'},features:[]});
   const result=await (await handlePreview(req(),s.deps)).json();
-  assertEquals(Object.keys(result.presets),['classic','compact','event']);
+  assertEquals(Object.keys(result.presets),['classic','compact','event','portrait','portrait_compact','portrait_event']);
   for(const scenario of Object.values(result.scenarios) as any[]) {assertEquals(scenario.occasionTitle,'Festival v naší obci');assert(scenario.occasionDatePlace.includes('Sokolovna'));assert(scenario.occasionDatePlace.includes('11. 2026'));assertEquals(scenario.qr,'festapp-preview:X3827K6M8R');}
 });
 Deno.test('image-backed presets inherit existing text color without weakening QR colors',async()=>{
@@ -46,4 +46,40 @@ Deno.test('portrait PDF page matches editable ticket area',async()=>{
   const {PDFDocument}=await import('npm:pdf-lib');
   const doc=await PDFDocument.load(Uint8Array.from(atob((await response.json()).file),c=>c.charCodeAt(0)));
   assertEquals(doc.getPages()[0].getSize(),{width:240,height:450});
+});
+
+Deno.test('legacy type does not restrict gallery, background selection or saved layout',async()=>{
+  const s=setup();
+  const results=[];
+  for(const type of ['named','wide']) {
+    const response=await handlePreview(req({...body,type}),s.deps);
+    const result=await response.json();results.push(result);
+    assertEquals(result.template,preset(type as 'named'|'wide',1600,900));
+    const template=result.presets.compact;
+    const background='https://img.festapp.net/custom-ticket.png';
+    let received:any;
+    s.deps.resources=async(_occasion,feature)=>{received=feature;return {font,metrics};};
+    const reopened=await handlePreview(req({...body,type,background,layout:{schemaVersion:1,templates:{[type]:template}}}),s.deps);
+    assertEquals(reopened.status,200);
+    assertEquals((await reopened.json()).template,template);
+    assertEquals(received.background,background);
+  }
+  assertEquals(results[0].presets,results[1].presets);
+  assertEquals(results[0].presetBackgrounds,results[1].presetBackgrounds);
+});
+
+Deno.test('an unchanged saved background remains usable when it predates img.festapp.net',async()=>{
+  const s=setup();
+  const background='https://legacy-example.supabase.co/storage/v1/object/public/tickets/ball.png';
+  s.deps.occasion=async()=>({id:7,features:[{code:'ticket',ticket_type:'wide',background}]});
+  const response=await handlePreview(req({...body,type:'wide',background}),s.deps);
+  assertEquals(response.status,200);
+});
+
+Deno.test('conference2024 empty stored background resolves without parsing an empty URL',async()=>{
+  const s=setup();
+  s.deps.occasion=async()=>({id:1,organization:1,features:[{code:'ticket',background:''}]});
+  const response=await handlePreview(req({...body,occasionId:1,type:'wide',background:''}),s.deps);
+  assertEquals(response.status,200);
+  assertEquals((await response.json()).backgroundUrl,null);
 });
