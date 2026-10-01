@@ -184,27 +184,19 @@ class DbSpeakers {
 
   static Future<int> setEventSpeakers(
       int eventId, List<int> speakerIds, int expectedVersion) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.saveEventSpeakers(
-        RightsService.currentOccasionId()!,
-        eventId,
-        expectedVersion,
-        speakerIds,
-      );
-      if (result.status == SpeakerCommandStatus.conflict) {
-        throw StateError('Event was changed by another editor');
-      }
-      if (result.status == SpeakerCommandStatus.rejected) {
-        throw StateError('Event speaker save was rejected');
-      }
-      return result.version;
+    final result = await _commands.saveEventSpeakers(
+      RightsService.currentOccasionId()!,
+      eventId,
+      expectedVersion,
+      speakerIds,
+    );
+    if (result.status == SpeakerCommandStatus.conflict) {
+      throw StateError('Event was changed by another editor');
     }
-    final res = await _supabase.rpc('set_event_speakers', params: {
-      'p_event': eventId,
-      'p_speakers': speakerIds,
-    });
-    _ensureOk(res);
-    return expectedVersion;
+    if (result.status == SpeakerCommandStatus.rejected) {
+      throw StateError('Event speaker save was rejected');
+    }
+    return result.version;
   }
 
   static Future<({int created, List<int> eventIds})> createCounselingSlots({

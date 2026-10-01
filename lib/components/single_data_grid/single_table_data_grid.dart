@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -37,7 +38,13 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: widget.controller.htmlSave, child: _buildGrid(context));
+
+  @override
+  void dispose() { widget.controller.disposeHtml(); super.dispose(); }
+
+  Widget _buildGrid(BuildContext context) {
     return ValueListenableBuilder<Key>(
       valueListenable: widget.controller.refreshKeyNotifier,
       builder: (context, key, child) {

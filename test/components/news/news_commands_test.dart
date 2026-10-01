@@ -46,6 +46,78 @@ void main() {
     expect(result.version, 4);
   });
 
+  for (final serverMessage in ['Original', 'Changed elsewhere']) {
+    test(
+        'unversioned edit binds a version only to matching snapshot: $serverMessage',
+        () async {
+      final versions = <Object?>[];
+      final ids = <Object?>[];
+      final commands = SupabaseNewsCommands.withTransport(
+          ClientCommandTransport((_, parameters) async {
+        versions.add(parameters['p_expected_version']);
+        ids.add(parameters['p_command_id']);
+        return {
+          'status': versions.length == 1 ? 'conflict' : 'applied',
+          'code': versions.length == 1 ? 409 : 200,
+          'data': {
+            'version': versions.length == 1 ? 5 : 6,
+            'news': {
+              'id': 8,
+              'message': versions.length == 1 ? serverMessage : 'Edited',
+              'created_at': '2026-08-03T10:00:00Z'
+            }
+          },
+          'sync': {'replacements': <Object>[]},
+        };
+      }, maxAttempts: 1));
+      final result = await commands.update(
+          7,
+          NewsModel(
+              id: 8,
+              createdAt: DateTime.utc(2026),
+              message: 'Edited',
+              createdBy: null,
+              views: 0),
+          originalMessage: 'Original');
+      final matches = serverMessage == 'Original';
+      expect(versions, matches ? [0, 5] : [0]);
+      expect(result.status,
+          matches ? NewsCommandStatus.applied : NewsCommandStatus.conflict);
+      expect(ids.toSet().length, versions.length);
+    });
+  }
+  test('snapshot version binding stops after another concurrent change',
+      () async {
+    var attempts = 0;
+    final commands = SupabaseNewsCommands.withTransport(
+        ClientCommandTransport((_, parameters) async {
+      attempts++;
+      return {
+        'status': 'conflict',
+        'code': 409,
+        'data': {
+          'version': attempts + 5,
+          'news': {
+            'id': 8,
+            'message': 'Original',
+            'created_at': '2026-08-03T10:00:00Z'
+          }
+        },
+        'sync': {'replacements': <Object>[]}
+      };
+    }, maxAttempts: 1));
+    final result = await commands.update(
+        7,
+        NewsModel(
+            id: 8,
+            createdAt: DateTime.utc(2026),
+            message: 'Edited',
+            createdBy: null,
+            views: 0),
+        originalMessage: 'Original');
+    expect(attempts, 2);
+    expect(result.status, NewsCommandStatus.conflict);
+  });
   test('news plus notification stays one typed publication command', () async {
     late String functionName;
     late Map<String, dynamic> parameters;

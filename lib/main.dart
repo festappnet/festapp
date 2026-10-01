@@ -25,7 +25,6 @@ import 'package:fstapp/startup/startup_failure_policy.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -475,7 +474,6 @@ class _MyAppState extends State<MyApp> {
         localizationsDelegates: [
           ...context.localizationDelegates,
           FormBuilderLocalizations.delegate,
-          FlutterQuillLocalizations.delegate,
         ],
         supportedLocales: context.supportedLocales,
         locale: context.locale,

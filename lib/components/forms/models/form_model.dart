@@ -117,7 +117,7 @@ class FormModel {
           ? DateTime.parse(json[Tb.forms.created_at])
           : null,
       title: json[Tb.forms.title],
-      data: json[Tb.forms.data],
+      data: _parseMetadata(json[Tb.forms.data]),
       key: json[Tb.forms.key],
       occasionId: parsedOccasionId,
       occasionModel: parsedOccasionModel,
@@ -144,8 +144,28 @@ class FormModel {
       stats:
           json['stats'] != null ? FormStatsModel.fromJson(json['stats']) : null,
       isReminderEnabled: json['is_reminder_feature_enabled'],
-      canDelete: json['can_delete'] ?? true, // Default to true if not present to avoid breaking existing clients slightly, but realistically it comes from DB.
+      canDelete: json['can_delete'] ??
+          true, // Default to true if not present to avoid breaking existing clients slightly, but realistically it comes from DB.
     );
+  }
+
+  // Older JSONB concatenations can produce [null, {settings}] instead of an
+  // object. Normalize once at the read boundary; all writes remain objects.
+  static Map<String, dynamic>? _parseMetadata(dynamic value) {
+    if (value == null) return null;
+    if (value is Map<String, dynamic>) return Map.of(value);
+    if (value is List) {
+      final metadata = <String, dynamic>{};
+      for (final entry in value) {
+        if (entry == null) continue;
+        if (entry is! Map<String, dynamic>) {
+          throw const FormatException('Form metadata must contain objects');
+        }
+        metadata.addAll(entry);
+      }
+      return metadata;
+    }
+    throw const FormatException('Form metadata must be an object');
   }
 
   Map<String, dynamic> toJson() => {

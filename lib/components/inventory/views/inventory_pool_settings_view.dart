@@ -1,15 +1,14 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/users/db_users.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
-import 'package:fstapp/router_service.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -17,7 +16,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/inventory/db_inventory_pools.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 import '../../map/place_model.dart';
@@ -51,6 +49,11 @@ class _LoadResult {
 }
 
 class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
+
   static const int _datePickerPaddingDays = 7;
   final _formKey = GlobalKey<FormState>();
   InventoryPoolBundle? _bundle;
@@ -77,6 +80,7 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
 
   @override
   void dispose() {
+    _htmlSave.dispose();
     _poolTitleController.dispose();
     _sellableCapacityController.dispose();
     super.dispose();
@@ -144,6 +148,12 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
   }
 
   Future<void> _saveChanges(BuildContext currentContext) async {
+    await ExceptionHandler.guardVoid(currentContext, futureFunction: () =>
+      _htmlSave.save(() => _performHtmlSave(currentContext), context: currentContext));
+    if (mounted) setState(() => _isSaving = false);
+  }
+
+  Future<void> _performHtmlSave(BuildContext currentContext) async {
     if (!_formKey.currentState!.validate() || _bundle == null) return;
 
     final contextsToDelete = _originalContexts
@@ -170,6 +180,8 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
     _bundle!.pool.type = _selectedType;
     _updateContextsOrder();
 
+    _bundle!.pool.description = await _htmlSave.prepare(_bundle!.pool.description ?? '',
+      HtmlMediaOwner.occasion(_bundle!.pool.occasionId), originalHtml: _originalDescription);
     final updatedBundle = await ExceptionHandler.guard(
       currentContext,
       futureFunction: () =>
@@ -179,6 +191,7 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
 
     if (mounted) {
       if (updatedBundle != null) {
+      _htmlSave.markSaved();
         // Link products to contexts BEFORE creating the original backup
         if (updatedBundle.contexts != null && updatedBundle.products != null) {
           for (var context in updatedBundle.contexts!) {
@@ -238,7 +251,9 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
     }
   }
 
-  void _cancelEdit() {
+  Future<void> _cancelEdit() async {
+    if (!await confirmHtmlDiscard(context, _htmlSave) || !mounted) return;
+    _htmlSave.markSaved();
     setState(() {
       _bundle?.contexts = _originalContexts.map((c) => c.copyWith()).toList();
       _poolTitleController.text = _bundle?.pool.title ?? '';
@@ -497,8 +512,8 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildHtmlParent(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -577,39 +592,11 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
                             Text(InventoryStrings.settingsDescriptionLabel,
                                 style: Theme.of(context).textTheme.labelLarge),
                             const SizedBox(height: 8),
-                            if (_bundle!.pool.description?.isNotEmpty ?? false)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: InputDecorator(
-                                  decoration: InputDecoration(
-                                    border: const OutlineInputBorder(),
-                                    contentPadding: const EdgeInsets.all(12),
-                                  ),
-                                  child: HtmlView(
-                                      html: _bundle!.pool.description!,
-                                      isSelectable: true),
-                                ),
-                              ),
-                            Center(
-                              child: ElevatedButton.icon(
-                                icon: const Icon(Icons.edit),
-                                label: Text(CommonStrings.editContent),
-                                onPressed: () async {
-                                  final result =
-                                      await RouterService.navigatePageInfo(
-                                    context,
-                                    HtmlEditorRoute(content: {
-                                      HtmlEditorPage.parContent:
-                                          _bundle!.pool.description ?? ""
-                                    }, occasionId: _bundle!.pool.occasionId),
-                                  );
-                                  if (result != null && mounted) {
-                                    setState(() => _bundle!.pool.description =
-                                        result as String);
-                                  }
-                                },
-                              ),
-                            ),
+                            InputDecorator(
+                              decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.all(12)),
+                              child: EditableHtmlField(html: _bundle!.pool.description, coordinator: _htmlSave,
+                                owner: HtmlMediaOwner.occasion(_bundle!.pool.occasionId),
+                                onChanged: (html) => setState(() => _bundle!.pool.description = html))),
                             const SizedBox(height: 24),
                             _buildTypeSelector(context),
                             const SizedBox(height: 24),
