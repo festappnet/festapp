@@ -20,3 +20,14 @@ test('runtime exposes exactly the Google proof endpoints and fails on upstream r
     assert.notEqual(spawnSync('python3',[patch,file]).status,0);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+// Production schedules target DB jobs from postgres, never rehearsal cron stubs.
+test('Google cleanup uses only the canonical control-plane scheduler', () => {
+  const migration = fs.readFileSync(new URL('../../supabase/migrations/20261001150000_google_auth_broker.sql', import.meta.url), 'utf8');
+  const installer = fs.readFileSync(new URL('../hetzner-supabase/runtime/install-google-auth-cleanup.sh', import.meta.url), 'utf8');
+  assert.match(migration, /pg_extension WHERE extname = 'pg_cron'/);
+  assert.match(migration, /current_database\(\) = current_setting\('cron.database_name', true\)/);
+  assert.match(installer, /-d postgres/);
+  assert.match(installer, /cron\.schedule_in_database\('festapp-external-login-cleanup-v1'/);
+  assert.doesNotMatch(installer, /cron\.unschedule|ALTER SYSTEM|restart/);
+});
