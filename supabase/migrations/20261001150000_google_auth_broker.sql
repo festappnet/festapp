@@ -214,9 +214,9 @@ GRANT EXECUTE ON FUNCTION public.initialize_registration_unit_v1(uuid,bigint,tex
 
 -- Source: database/functions/users/create_user_from_registration.sql
 CREATE OR REPLACE FUNCTION public.create_user_from_registration(
-    org bigint, 
-    email text, 
-    password text, 
+    org bigint,
+    email text,
+    password text,
     data jsonb,
     unit_title text DEFAULT 'Moje akce'
 )
