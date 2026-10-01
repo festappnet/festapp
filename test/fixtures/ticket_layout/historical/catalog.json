@@ -1,0 +1,576 @@
+[
+  {
+    "id": "cream",
+    "label": "Krémová elegance",
+    "occasionId": 81,
+    "title": "Ples AKH 2025",
+    "source": "https://img.festapp.net/images/1759677693964_fixed.jpg",
+    "image": "cream.jpg",
+    "width": 1600,
+    "height": 900,
+    "textColor": "643617",
+    "template": {
+      "page": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "ticketArea": {
+        "x": 29.76400000000001,
+        "y": 29.764,
+        "width": 535.752,
+        "height": 301.36049999999994
+      },
+      "elements": [
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 405.16245,
+            "y": 174.11939999999998,
+            "width": 80.3628,
+            "height": 80.3628
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 405.16245,
+            "y": 258.4822,
+            "width": 80.3628,
+            "height": 22
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 9.375659999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "643617",
+            "align": "left"
+          }
+        },
+        {
+          "id": "spotGroup",
+          "binding": "spotGroup",
+          "box": {
+            "x": 50,
+            "y": 201.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "643617",
+            "align": "left"
+          }
+        },
+        {
+          "id": "food",
+          "binding": "food",
+          "box": {
+            "x": 50,
+            "y": 223.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "643617",
+            "align": "left"
+          }
+        },
+        {
+          "id": "note",
+          "binding": "note",
+          "box": {
+            "x": 50,
+            "y": 245.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "643617",
+            "align": "left"
+          }
+        },
+        {
+          "id": "price",
+          "binding": "price",
+          "box": {
+            "x": 50,
+            "y": 267.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "643617",
+            "align": "left"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "forest",
+    "label": "Tmavě zelená",
+    "occasionId": 82,
+    "title": "Skautský ples 2026",
+    "source": "https://img.festapp.net/images/1763705920159.jpg",
+    "image": "forest-clean.png",
+    "width": 1672,
+    "height": 941,
+    "textColor": "FFFFFF",
+    "template": {
+      "page": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "ticketArea": {
+        "x": 29.76400000000001,
+        "y": 29.764,
+        "width": 535.752,
+        "height": 301.36049999999994
+      },
+      "elements": [
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 405.16245,
+            "y": 174.11939999999998,
+            "width": 80.3628,
+            "height": 80.3628
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 405.16245,
+            "y": 258.4822,
+            "width": 80.3628,
+            "height": 22
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 9.375659999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "spotGroup",
+          "binding": "spotGroup",
+          "box": {
+            "x": 50,
+            "y": 201.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "food",
+          "binding": "food",
+          "box": {
+            "x": 50,
+            "y": 223.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "note",
+          "binding": "note",
+          "box": {
+            "x": 50,
+            "y": 245.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "price",
+          "binding": "price",
+          "box": {
+            "x": 50,
+            "y": 267.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        }
+      ]
+    },
+    "originalImage": "forest.jpg",
+    "artworkNote": "Clean AI-redrawn variant of the historical reference; original retained in forest.jpg."
+  },
+  {
+    "id": "mono",
+    "label": "Černobílá",
+    "occasionId": 92,
+    "title": "Farní ples",
+    "source": "https://img.festapp.net/images/1763683465788.jpg",
+    "image": "mono.jpg",
+    "width": 1600,
+    "height": 900,
+    "textColor": "000000",
+    "template": {
+      "page": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "ticketArea": {
+        "x": 29.76400000000001,
+        "y": 29.764,
+        "width": 535.752,
+        "height": 301.36049999999994
+      },
+      "elements": [
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 405.16245,
+            "y": 174.11939999999998,
+            "width": 80.3628,
+            "height": 80.3628
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 405.16245,
+            "y": 258.4822,
+            "width": 80.3628,
+            "height": 22
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 9.375659999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "000000",
+            "align": "left"
+          }
+        },
+        {
+          "id": "spotGroup",
+          "binding": "spotGroup",
+          "box": {
+            "x": 50,
+            "y": 201.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "000000",
+            "align": "left"
+          }
+        },
+        {
+          "id": "food",
+          "binding": "food",
+          "box": {
+            "x": 50,
+            "y": 223.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "000000",
+            "align": "left"
+          }
+        },
+        {
+          "id": "note",
+          "binding": "note",
+          "box": {
+            "x": 50,
+            "y": 245.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "000000",
+            "align": "left"
+          }
+        },
+        {
+          "id": "price",
+          "binding": "price",
+          "box": {
+            "x": 50,
+            "y": 267.36049999999994,
+            "width": 241.08839999999998,
+            "height": 21
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.036279999999998,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "000000",
+            "align": "left"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "portrait",
+    "label": "Jmenná na výšku",
+    "image": null,
+    "width": 200,
+    "height": 375,
+    "template": {
+      "pageFit": "ticket",
+      "page": {
+        "width": 200,
+        "height": 375
+      },
+      "ticketArea": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 375
+      },
+      "elements": [
+        {
+          "id": "logo",
+          "binding": "logo",
+          "box": {
+            "x": 71.875,
+            "y": 12.5,
+            "width": 56.25,
+            "height": 56.25
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "occasionTitle",
+          "binding": "occasionTitle",
+          "box": {
+            "x": 6.25,
+            "y": 77,
+            "width": 187.5,
+            "height": 32
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12.5,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "occasionDatePlace",
+          "binding": "occasionDatePlace",
+          "box": {
+            "x": 6.25,
+            "y": 111,
+            "width": 187.5,
+            "height": 24
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.75,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "orderName",
+          "binding": "orderName",
+          "box": {
+            "x": 6.25,
+            "y": 151,
+            "width": 187.5,
+            "height": 32
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12.5,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 50,
+            "y": 206.25,
+            "width": 100,
+            "height": 100
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 10,
+            "y": 313,
+            "width": 180,
+            "height": 20
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.75,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "footer",
+          "binding": "footer",
+          "box": {
+            "x": 6.25,
+            "y": 348,
+            "width": 187.5,
+            "height": 20
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 6.25,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        }
+      ]
+    }
+  }
+]

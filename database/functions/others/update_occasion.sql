@@ -24,6 +24,7 @@ SET search_path = public, extensions
      v_reminder_interval_seconds BIGINT;
 
      input_features JSONB;
+     old_features JSONB;
      processed_features JSONB;
      feature JSONB;
      form_feature_found BOOLEAN;
@@ -101,16 +102,23 @@ SET search_path = public, extensions
          -- This is an UPDATE operation
 
          -- Check for the existence of the occasion and get its current unit
-         SELECT unit INTO final_unit FROM public.occasions WHERE id = occ_id;
+         SELECT unit, features INTO final_unit, old_features FROM public.occasions WHERE id = occ_id FOR UPDATE;
          IF NOT FOUND THEN
              RAISE EXCEPTION 'Occasion with ID % not found', occ_id;
          END IF;
+
+         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+             RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
+         END IF;
+         processed_features := public.merge_ticket_layout_features(old_features, processed_features, input_data->'ticket_layout_change');
 
          -- Determine the final unit, allowing it to be updated.
          final_unit := COALESCE((input_data->>'unit')::BIGINT, final_unit);
 
          -- Security check: ensure the current user has editor rights on the target unit.
-         PERFORM check_is_editor_on_unit(final_unit);
+         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+             RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
+         END IF;
 
          UPDATE public.occasions
             SET updated_at  = now,
@@ -140,7 +148,9 @@ SET search_path = public, extensions
          END IF;
 
          -- Security check for the new occasion's unit.
-         PERFORM check_is_editor_on_unit(final_unit);
+         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+             RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
+         END IF;
 
          -- We still need to default 'reminder_is_enabled' for the 'form' feature if not specified.
          -- We do this on the already processed_features array.
@@ -157,6 +167,8 @@ SET search_path = public, extensions
              END IF;
              processed_features := processed_features || feature::jsonb;
          END LOOP;
+
+         processed_features := public.merge_ticket_layout_features('[]', processed_features, input_data->'ticket_layout_change', true);
 
          INSERT INTO public.occasions(
              created_at, updated_at, title, description, link, data,

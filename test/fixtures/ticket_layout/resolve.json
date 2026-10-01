@@ -1,0 +1,2872 @@
+{
+  "template": {
+    "page": {
+      "width": 212.5,
+      "height": 387.5
+    },
+    "ticketArea": {
+      "x": 6.25,
+      "y": 6.25,
+      "width": 200,
+      "height": 375
+    },
+    "elements": [
+      {
+        "id": "logo",
+        "binding": "logo",
+        "box": {
+          "x": 71.875,
+          "y": 12.5,
+          "width": 56.25,
+          "height": 56.25
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "occasionTitle",
+        "binding": "occasionTitle",
+        "box": {
+          "x": 6.25,
+          "y": 77,
+          "width": 187.5,
+          "height": 32
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12.5,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "occasionDatePlace",
+        "binding": "occasionDatePlace",
+        "box": {
+          "x": 6.25,
+          "y": 111,
+          "width": 187.5,
+          "height": 24
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 8.75,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "orderName",
+        "binding": "orderName",
+        "box": {
+          "x": 6.25,
+          "y": 151,
+          "width": 187.5,
+          "height": 32
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12.5,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "qr",
+        "binding": "qr",
+        "box": {
+          "x": 50,
+          "y": 206.25,
+          "width": 100,
+          "height": 100
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "ticketSymbol",
+        "binding": "ticketSymbol",
+        "box": {
+          "x": 10,
+          "y": 313,
+          "width": 180,
+          "height": 20
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 8.75,
+          "minFontSize": 6,
+          "maxLines": 1,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "footer",
+        "binding": "footer",
+        "box": {
+          "x": 6.25,
+          "y": 348,
+          "width": 187.5,
+          "height": 20
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 6.25,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      }
+    ]
+  },
+  "preset": {
+    "page": {
+      "width": 212.5,
+      "height": 387.5
+    },
+    "ticketArea": {
+      "x": 6.25,
+      "y": 6.25,
+      "width": 200,
+      "height": 375
+    },
+    "elements": [
+      {
+        "id": "logo",
+        "binding": "logo",
+        "box": {
+          "x": 71.875,
+          "y": 12.5,
+          "width": 56.25,
+          "height": 56.25
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "occasionTitle",
+        "binding": "occasionTitle",
+        "box": {
+          "x": 6.25,
+          "y": 77,
+          "width": 187.5,
+          "height": 32
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12.5,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "occasionDatePlace",
+        "binding": "occasionDatePlace",
+        "box": {
+          "x": 6.25,
+          "y": 111,
+          "width": 187.5,
+          "height": 24
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 8.75,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "orderName",
+        "binding": "orderName",
+        "box": {
+          "x": 6.25,
+          "y": 151,
+          "width": 187.5,
+          "height": 32
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12.5,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "qr",
+        "binding": "qr",
+        "box": {
+          "x": 50,
+          "y": 206.25,
+          "width": 100,
+          "height": 100
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 12,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "ticketSymbol",
+        "binding": "ticketSymbol",
+        "box": {
+          "x": 10,
+          "y": 313,
+          "width": 180,
+          "height": 20
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 8.75,
+          "minFontSize": 6,
+          "maxLines": 1,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      },
+      {
+        "id": "footer",
+        "binding": "footer",
+        "box": {
+          "x": 6.25,
+          "y": 348,
+          "width": 187.5,
+          "height": 20
+        },
+        "visible": true,
+        "locked": false,
+        "style": {
+          "fontSize": 6.25,
+          "minFontSize": 6,
+          "maxLines": 2,
+          "color": "2A2A2A",
+          "align": "center"
+        }
+      }
+    ]
+  },
+  "scenarios": {
+    "normal": {
+      "qr": "VZOR:NEPLATNY",
+      "ticketSymbol": "VZOR:NEPLATNY",
+      "spotGroup": "Stůl: Stůl 12",
+      "food": "Večeře: Slavnostní večeře",
+      "note": "Poznámka: Příjemný večer",
+      "price": "Cena: 0 Kč",
+      "occasionTitle": "Slavnostní večer",
+      "occasionDatePlace": "1. - 1. 10. 2026, Kulturní dům",
+      "orderName": "Jana Nováková",
+      "logo": null,
+      "footer": "Vstupenka je nepřenosná"
+    },
+    "long": {
+      "qr": "VZOR:NEPLATNY",
+      "ticketSymbol": "VZOR:NEPLATNY",
+      "spotGroup": "Stůl: Stůl 12",
+      "food": "Večeře: Slavnostní večeře",
+      "note": "Poznámka: Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer ",
+      "price": "Cena: 0 Kč",
+      "occasionTitle": "Slavnostní setkání přátel a příznivců kulturního života",
+      "occasionDatePlace": "1. - 1. 10. 2026, Kulturní dům",
+      "orderName": "Kateřina Šťastná Nováková",
+      "logo": null,
+      "footer": "Vstupenka je nepřenosná"
+    },
+    "missing": {
+      "qr": "VZOR:NEPLATNY",
+      "ticketSymbol": "VZOR:NEPLATNY",
+      "spotGroup": null,
+      "food": null,
+      "note": null,
+      "price": "Cena: 0 Kč",
+      "occasionTitle": "Slavnostní večer",
+      "occasionDatePlace": "1. - 1. 10. 2026, Kulturní dům",
+      "orderName": null,
+      "logo": null,
+      "footer": "Vstupenka je nepřenosná"
+    }
+  },
+  "metrics": {
+    "advances": {
+      "0": 0.568,
+      "1": 0.568,
+      "2": 0.568,
+      "3": 0.568,
+      "4": 0.568,
+      "5": 0.568,
+      "6": 0.568,
+      "7": 0.568,
+      "8": 0.568,
+      "9": 0.568,
+      " ": 0.233,
+      "!": 0.28,
+      "\"": 0.33,
+      "#": 0.6,
+      "$": 0.568,
+      "%": 0.71,
+      "&": 0.636,
+      "'": 0.188,
+      "(": 0.294,
+      ")": 0.294,
+      "*": 0.568,
+      "+": 0.5,
+      ",": 0.274,
+      "-": 0.32,
+      ".": 0.228,
+      "/": 0.592,
+      ":": 0.228,
+      ";": 0.274,
+      "<": 0.5,
+      "=": 0.5,
+      ">": 0.5,
+      "?": 0.436,
+      "@": 0.733,
+      "A": 0.622,
+      "B": 0.53,
+      "C": 0.646,
+      "D": 0.632,
+      "E": 0.482,
+      "F": 0.434,
+      "G": 0.758,
+      "H": 0.662,
+      "I": 0.246,
+      "J": 0.306,
+      "K": 0.568,
+      "L": 0.358,
+      "M": 0.863,
+      "N": 0.766,
+      "O": 0.794,
+      "P": 0.456,
+      "Q": 0.794,
+      "R": 0.502,
+      "S": 0.518,
+      "T": 0.426,
+      "U": 0.646,
+      "V": 0.556,
+      "W": 0.958,
+      "X": 0.504,
+      "Y": 0.53,
+      "Z": 0.536,
+      "[": 0.29,
+      "\\": 0.597,
+      "]": 0.29,
+      "^": 0.5,
+      "_": 0.5,
+      "`": 0.5,
+      "a": 0.526,
+      "b": 0.526,
+      "c": 0.438,
+      "d": 0.526,
+      "e": 0.481,
+      "f": 0.24,
+      "g": 0.526,
+      "h": 0.47,
+      "i": 0.208,
+      "j": 0.208,
+      "k": 0.422,
+      "l": 0.208,
+      "m": 0.685,
+      "n": 0.47,
+      "o": 0.524,
+      "p": 0.526,
+      "q": 0.526,
+      "r": 0.296,
+      "s": 0.352,
+      "t": 0.214,
+      "u": 0.466,
+      "v": 0.424,
+      "w": 0.682,
+      "x": 0.454,
+      "y": 0.46,
+      "z": 0.46,
+      "{": 0.501,
+      "|": 0.5,
+      "}": 0.501,
+      "~": 0.5,
+      " ": 0.233,
+      "¡": 0.28,
+      "¢": 0.568,
+      "£": 0.568,
+      "¤": 0.586,
+      "¥": 0.568,
+      "¦": 0.5,
+      "§": 0.568,
+      "¨": 0.5,
+      "©": 0.74,
+      "ª": 0.373,
+      "«": 0.43,
+      "¬": 0.5,
+      "­": 0.32,
+      "®": 0.74,
+      "¯": 0.5,
+      "°": 0.493,
+      "±": 0.5,
+      "²": 0.35,
+      "³": 0.35,
+      "´": 0.5,
+      "µ": 0.523,
+      "¶": 0.58,
+      "·": 0.2,
+      "¸": 0.5,
+      "¹": 0.35,
+      "º": 0.374,
+      "»": 0.43,
+      "¼": 0.76,
+      "½": 0.76,
+      "¾": 0.76,
+      "¿": 0.436,
+      "À": 0.622,
+      "Á": 0.622,
+      "Â": 0.622,
+      "Ã": 0.622,
+      "Ä": 0.622,
+      "Å": 0.622,
+      "Æ": 0.9,
+      "Ç": 0.646,
+      "È": 0.482,
+      "É": 0.482,
+      "Ê": 0.482,
+      "Ë": 0.482,
+      "Ì": 0.246,
+      "Í": 0.246,
+      "Î": 0.246,
+      "Ï": 0.246,
+      "Ð": 0.632,
+      "Ñ": 0.766,
+      "Ò": 0.794,
+      "Ó": 0.794,
+      "Ô": 0.794,
+      "Õ": 0.794,
+      "Ö": 0.794,
+      "×": 0.5,
+      "Ø": 0.794,
+      "Ù": 0.646,
+      "Ú": 0.646,
+      "Û": 0.646,
+      "Ü": 0.646,
+      "Ý": 0.53,
+      "Þ": 0.456,
+      "ß": 0.532,
+      "à": 0.526,
+      "á": 0.526,
+      "â": 0.526,
+      "ã": 0.526,
+      "ä": 0.526,
+      "å": 0.526,
+      "æ": 0.774,
+      "ç": 0.438,
+      "è": 0.481,
+      "é": 0.481,
+      "ê": 0.481,
+      "ë": 0.481,
+      "ì": 0.208,
+      "í": 0.208,
+      "î": 0.208,
+      "ï": 0.208,
+      "ð": 0.524,
+      "ñ": 0.47,
+      "ò": 0.524,
+      "ó": 0.524,
+      "ô": 0.524,
+      "õ": 0.524,
+      "ö": 0.524,
+      "÷": 0.5,
+      "ø": 0.524,
+      "ù": 0.466,
+      "ú": 0.466,
+      "û": 0.466,
+      "ü": 0.466,
+      "ý": 0.46,
+      "þ": 0.526,
+      "ÿ": 0.46,
+      "Ā": 0.622,
+      "ā": 0.526,
+      "Ă": 0.622,
+      "ă": 0.526,
+      "Ą": 0.622,
+      "ą": 0.526,
+      "Ć": 0.646,
+      "ć": 0.438,
+      "Ĉ": 0.646,
+      "ĉ": 0.438,
+      "Ċ": 0.646,
+      "ċ": 0.438,
+      "Č": 0.646,
+      "č": 0.438,
+      "Ď": 0.632,
+      "ď": 0.596,
+      "Đ": 0.632,
+      "đ": 0.526,
+      "Ē": 0.482,
+      "ē": 0.481,
+      "Ė": 0.482,
+      "ė": 0.481,
+      "Ę": 0.482,
+      "ę": 0.482,
+      "Ě": 0.482,
+      "ě": 0.481,
+      "Ĝ": 0.758,
+      "ĝ": 0.526,
+      "Ğ": 0.758,
+      "ğ": 0.526,
+      "Ġ": 0.758,
+      "ġ": 0.526,
+      "Ģ": 0.758,
+      "ģ": 0.526,
+      "Ĥ": 0.662,
+      "ĥ": 0.47,
+      "Ħ": 0.662,
+      "ħ": 0.47,
+      "Ī": 0.246,
+      "ī": 0.208,
+      "Į": 0.246,
+      "į": 0.208,
+      "İ": 0.246,
+      "ı": 0.208,
+      "Ĵ": 0.306,
+      "ĵ": 0.208,
+      "Ķ": 0.568,
+      "ķ": 0.422,
+      "Ĺ": 0.358,
+      "ĺ": 0.208,
+      "Ļ": 0.358,
+      "ļ": 0.208,
+      "Ľ": 0.358,
+      "ľ": 0.278,
+      "Ŀ": 0.357,
+      "ŀ": 0.314,
+      "Ł": 0.358,
+      "ł": 0.208,
+      "Ń": 0.766,
+      "ń": 0.47,
+      "Ņ": 0.766,
+      "ņ": 0.47,
+      "Ň": 0.766,
+      "ň": 0.47,
+      "Ō": 0.794,
+      "ō": 0.524,
+      "Ŏ": 0.794,
+      "ŏ": 0.524,
+      "Ő": 0.794,
+      "ő": 0.524,
+      "Œ": 1.056,
+      "œ": 0.852,
+      "Ŕ": 0.502,
+      "ŕ": 0.296,
+      "Ŗ": 0.502,
+      "ŗ": 0.296,
+      "Ř": 0.502,
+      "ř": 0.296,
+      "Ś": 0.518,
+      "ś": 0.352,
+      "Ŝ": 0.518,
+      "ŝ": 0.352,
+      "Ş": 0.518,
+      "ş": 0.352,
+      "Š": 0.518,
+      "š": 0.352,
+      "Ţ": 0.426,
+      "ţ": 0.214,
+      "Ť": 0.426,
+      "ť": 0.276,
+      "Ũ": 0.646,
+      "ũ": 0.466,
+      "Ū": 0.646,
+      "ū": 0.466,
+      "Ŭ": 0.646,
+      "ŭ": 0.466,
+      "Ů": 0.646,
+      "ů": 0.466,
+      "Ű": 0.646,
+      "ű": 0.466,
+      "Ų": 0.646,
+      "ų": 0.466,
+      "Ÿ": 0.53,
+      "Ź": 0.536,
+      "ź": 0.46,
+      "Ż": 0.536,
+      "ż": 0.46,
+      "Ž": 0.536,
+      "ž": 0.46,
+      "Ə": 0.756,
+      "ƒ": 0.568,
+      "Ǐ": 0.246,
+      "ǐ": 0.208,
+      "ǝ": 0.482,
+      "Ǧ": 0.758,
+      "ǧ": 0.526,
+      "Ǽ": 0.9,
+      "ǽ": 0.774,
+      "Ș": 0.518,
+      "ș": 0.352,
+      "Ț": 0.426,
+      "ț": 0.214,
+      "Ȩ": 0.482,
+      "ȩ": 0.481,
+      "ȷ": 0.208,
+      "ə": 0.482,
+      "ʼ": 0.5,
+      "ˆ": 0.5,
+      "ˇ": 0.5,
+      "ˉ": 0.5,
+      "˘": 0.5,
+      "˙": 0.5,
+      "˚": 0.5,
+      "˛": 0.5,
+      "˜": 0.5,
+      "˝": 0.5,
+      "́": 0.002,
+      "Δ": 0.668,
+      "Ω": 0.668,
+      "μ": 0.523,
+      "π": 0.538,
+      "Ё": 0.482,
+      "Ђ": 0.646,
+      "Ѓ": 0.404,
+      "Є": 0.645,
+      "Ѕ": 0.518,
+      "І": 0.246,
+      "Ї": 0.246,
+      "Ј": 0.306,
+      "Љ": 0.922,
+      "Њ": 0.938,
+      "Ћ": 0.678,
+      "Ќ": 0.568,
+      "Ў": 0.568,
+      "Џ": 0.658,
+      "А": 0.622,
+      "Б": 0.53,
+      "В": 0.53,
+      "Г": 0.404,
+      "Д": 0.64,
+      "Е": 0.482,
+      "Ж": 0.81,
+      "З": 0.576,
+      "И": 0.71,
+      "Й": 0.71,
+      "К": 0.568,
+      "Л": 0.646,
+      "М": 0.863,
+      "Н": 0.662,
+      "О": 0.794,
+      "П": 0.662,
+      "Р": 0.456,
+      "С": 0.646,
+      "Т": 0.426,
+      "У": 0.568,
+      "Ф": 0.822,
+      "Х": 0.504,
+      "Ц": 0.662,
+      "Ч": 0.59,
+      "Ш": 0.922,
+      "Щ": 0.926,
+      "Ъ": 0.61,
+      "Ы": 0.71,
+      "Ь": 0.522,
+      "Э": 0.645,
+      "Ю": 0.99,
+      "Я": 0.51,
+      "а": 0.526,
+      "б": 0.524,
+      "в": 0.43,
+      "г": 0.318,
+      "д": 0.46,
+      "е": 0.481,
+      "ж": 0.596,
+      "з": 0.422,
+      "и": 0.492,
+      "й": 0.492,
+      "к": 0.422,
+      "л": 0.45,
+      "м": 0.58,
+      "н": 0.476,
+      "о": 0.524,
+      "п": 0.47,
+      "р": 0.526,
+      "с": 0.438,
+      "т": 0.348,
+      "у": 0.46,
+      "ф": 0.65,
+      "х": 0.454,
+      "ц": 0.474,
+      "ч": 0.43,
+      "ш": 0.672,
+      "щ": 0.68,
+      "ъ": 0.43,
+      "ы": 0.562,
+      "ь": 0.4,
+      "э": 0.423,
+      "ю": 0.69,
+      "я": 0.408,
+      "ё": 0.481,
+      "ђ": 0.47,
+      "ѓ": 0.318,
+      "є": 0.438,
+      "ѕ": 0.352,
+      "і": 0.208,
+      "ї": 0.208,
+      "ј": 0.208,
+      "љ": 0.642,
+      "њ": 0.668,
+      "ћ": 0.47,
+      "ќ": 0.422,
+      "ў": 0.46,
+      "џ": 0.466,
+      "Ѣ": 0.61,
+      "ѣ": 0.43,
+      "Ѳ": 0.792,
+      "ѳ": 0.524,
+      "Ѵ": 0.556,
+      "ѵ": 0.424,
+      "Ґ": 0.404,
+      "ґ": 0.328,
+      "Ғ": 0.404,
+      "ғ": 0.318,
+      "Ҕ": 0.558,
+      "ҕ": 0.43,
+      "Җ": 0.81,
+      "җ": 0.596,
+      "Ҙ": 0.576,
+      "ҙ": 0.422,
+      "Қ": 0.568,
+      "қ": 0.422,
+      "Ҝ": 0.644,
+      "ҝ": 0.45,
+      "Ҡ": 0.656,
+      "ҡ": 0.452,
+      "Ң": 0.666,
+      "ң": 0.484,
+      "Ҥ": 0.82,
+      "ҥ": 0.586,
+      "Ҫ": 0.646,
+      "ҫ": 0.438,
+      "Ү": 0.53,
+      "ү": 0.424,
+      "Ұ": 0.53,
+      "ұ": 0.424,
+      "Ҳ": 0.52,
+      "ҳ": 0.454,
+      "Ҷ": 0.594,
+      "ҷ": 0.438,
+      "Ҹ": 0.62,
+      "ҹ": 0.46,
+      "Һ": 0.59,
+      "һ": 0.47,
+      "Ӏ": 0.246,
+      "Ӂ": 0.81,
+      "ӂ": 0.596,
+      "Ӄ": 0.584,
+      "ӄ": 0.414,
+      "Ӈ": 0.662,
+      "ӈ": 0.476,
+      "Ӑ": 0.622,
+      "ӑ": 0.526,
+      "Ӓ": 0.622,
+      "ӓ": 0.526,
+      "Ӕ": 0.9,
+      "ӕ": 0.774,
+      "Ӗ": 0.482,
+      "ӗ": 0.481,
+      "Ә": 0.756,
+      "ә": 0.482,
+      "Ӛ": 0.756,
+      "ӛ": 0.482,
+      "Ӝ": 0.81,
+      "ӝ": 0.596,
+      "Ӟ": 0.576,
+      "ӟ": 0.422,
+      "Ӣ": 0.71,
+      "ӣ": 0.492,
+      "Ӥ": 0.71,
+      "ӥ": 0.492,
+      "Ӧ": 0.794,
+      "ӧ": 0.524,
+      "Ө": 0.792,
+      "ө": 0.524,
+      "Ӫ": 0.792,
+      "ӫ": 0.524,
+      "Ӯ": 0.568,
+      "ӯ": 0.46,
+      "Ӱ": 0.568,
+      "ӱ": 0.46,
+      "Ӳ": 0.568,
+      "ӳ": 0.46,
+      "Ӵ": 0.59,
+      "ӵ": 0.43,
+      "Ӹ": 0.71,
+      "ӹ": 0.562,
+      "ẞ": 0.577,
+      "‐": 0.32,
+      "‑": 0.32,
+      "‒": 0.58,
+      "–": 0.58,
+      "—": 0.8,
+      "―": 0.8,
+      "‘": 0.264,
+      "’": 0.264,
+      "‚": 0.308,
+      "“": 0.41,
+      "”": 0.41,
+      "„": 0.454,
+      "†": 0.568,
+      "‡": 0.568,
+      "•": 1,
+      "…": 0.746,
+      "‰": 1.06,
+      "‹": 0.282,
+      "›": 0.282,
+      "⁄": 0.126,
+      "₀": 0.35,
+      "₁": 0.35,
+      "₂": 0.35,
+      "₃": 0.35,
+      "₄": 0.35,
+      "₅": 0.35,
+      "₆": 0.35,
+      "₇": 0.35,
+      "₈": 0.35,
+      "₉": 0.35,
+      "€": 0.568,
+      "₴": 0.568,
+      "₶": 0.568,
+      "₷": 0.568,
+      "₸": 0.568,
+      "₹": 0.568,
+      "₺": 0.568,
+      "₻": 0.568,
+      "₼": 0.568,
+      "₽": 0.568,
+      "₾": 0.568,
+      "₿": 0.568,
+      "⃀": 0.568,
+      "⃁": 0.568,
+      "⃂": 0.568,
+      "⃃": 0.568,
+      "⃄": 0.568,
+      "⃅": 0.568,
+      "⃆": 0.568,
+      "⃇": 0.568,
+      "⃈": 0.568,
+      "⃉": 0.568,
+      "⃊": 0.568,
+      "⃋": 0.568,
+      "⃌": 0.568,
+      "⃍": 0.568,
+      "⃎": 0.568,
+      "⃏": 0.568,
+      "№": 1.02,
+      "℗": 0.74,
+      "™": 0.722,
+      "Ω": 0.668,
+      "∂": 0.524,
+      "∆": 0.668,
+      "∏": 0.698,
+      "∑": 0.686,
+      "−": 0.5,
+      "∕": 0.592,
+      "∙": 0.2,
+      "√": 0.668,
+      "∞": 0.668,
+      "∫": 0.5,
+      "≈": 0.5,
+      "≠": 0.5,
+      "≤": 0.5,
+      "≥": 0.5,
+      "⋅": 0.2,
+      "◊": 0.68,
+      "◦": 0.493,
+      "": 0.002,
+      "": 0.002,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.622,
+      "": 0.482,
+      "": 0.71,
+      "": 0.794,
+      "": 0.568,
+      "": 0.71,
+      "": 0.645,
+      "": 0.99,
+      "": 0.51,
+      "": 0.482,
+      "": 0.526,
+      "": 0.481,
+      "": 0.492,
+      "": 0.524,
+      "": 0.46,
+      "": 0.562,
+      "": 0.423,
+      "": 0.69,
+      "": 0.408,
+      "": 0.481,
+      "": 0.59,
+      "": 0.43,
+      "": 0.568,
+      "": 0.46,
+      "": 0.442,
+      "": 0.587,
+      "": 0.383,
+      "": 0.526,
+      "": 0.546,
+      "": 0.481,
+      "": 0.477,
+      "": 0.453,
+      "": 0.408,
+      "": 0.53,
+      "": 0.48,
+      "": 0.457,
+      "": 0.52,
+      "": 0.49,
+      "": 0.496,
+      "": 0.528,
+      "": 0.464,
+      "": 0.496,
+      "": 0.32,
+      "": 0.58,
+      "": 0.8,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.5,
+      "": 0.229,
+      "": 0.6,
+      "ﬁ": 0.46,
+      "ﬂ": 0.46,
+      "￿": 0.233
+    },
+    "ascent": 0.982,
+    "descent": -0.3
+  },
+  "qrMatrix": {
+    "size": 21,
+    "data": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0
+    ]
+  },
+  "presetsByType": {
+    "named": {
+      "classic": {
+        "page": {
+          "width": 212.5,
+          "height": 387.5
+        },
+        "ticketArea": {
+          "x": 6.25,
+          "y": 6.25,
+          "width": 200,
+          "height": 375
+        },
+        "elements": [
+          {
+            "id": "logo",
+            "binding": "logo",
+            "box": {
+              "x": 71.875,
+              "y": 12.5,
+              "width": 56.25,
+              "height": 56.25
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "occasionTitle",
+            "binding": "occasionTitle",
+            "box": {
+              "x": 6.25,
+              "y": 77,
+              "width": 187.5,
+              "height": 32
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12.5,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "occasionDatePlace",
+            "binding": "occasionDatePlace",
+            "box": {
+              "x": 6.25,
+              "y": 111,
+              "width": 187.5,
+              "height": 24
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 8.75,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "orderName",
+            "binding": "orderName",
+            "box": {
+              "x": 6.25,
+              "y": 151,
+              "width": 187.5,
+              "height": 32
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12.5,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "qr",
+            "binding": "qr",
+            "box": {
+              "x": 50,
+              "y": 206.25,
+              "width": 100,
+              "height": 100
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "ticketSymbol",
+            "binding": "ticketSymbol",
+            "box": {
+              "x": 10,
+              "y": 313,
+              "width": 180,
+              "height": 20
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 8.75,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "footer",
+            "binding": "footer",
+            "box": {
+              "x": 6.25,
+              "y": 348,
+              "width": 187.5,
+              "height": 20
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 6.25,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          }
+        ]
+      },
+      "compact": {
+        "page": {
+          "width": 212.5,
+          "height": 387.5
+        },
+        "ticketArea": {
+          "x": 6.25,
+          "y": 6.25,
+          "width": 200,
+          "height": 375
+        },
+        "elements": [
+          {
+            "id": "logo",
+            "binding": "logo",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 32,
+              "height": 32
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "occasionTitle",
+            "binding": "occasionTitle",
+            "box": {
+              "x": 50,
+              "y": 8,
+              "width": 142,
+              "height": 40
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 15,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "occasionDatePlace",
+            "binding": "occasionDatePlace",
+            "box": {
+              "x": 8,
+              "y": 56,
+              "width": 184,
+              "height": 30
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 9,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "orderName",
+            "binding": "orderName",
+            "box": {
+              "x": 8,
+              "y": 102,
+              "width": 184,
+              "height": 42
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 16,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "qr",
+            "binding": "qr",
+            "box": {
+              "x": 60,
+              "y": 178,
+              "width": 80,
+              "height": 80
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "ticketSymbol",
+            "binding": "ticketSymbol",
+            "box": {
+              "x": 8,
+              "y": 265,
+              "width": 184,
+              "height": 22
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 10,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "footer",
+            "binding": "footer",
+            "box": {
+              "x": 8,
+              "y": 341,
+              "width": 184,
+              "height": 24
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 7,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          }
+        ]
+      },
+      "event": {
+        "page": {
+          "width": 212.5,
+          "height": 387.5
+        },
+        "ticketArea": {
+          "x": 6.25,
+          "y": 6.25,
+          "width": 200,
+          "height": 375
+        },
+        "elements": [
+          {
+            "id": "logo",
+            "binding": "logo",
+            "box": {
+              "x": 79,
+              "y": 12,
+              "width": 42,
+              "height": 42
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "occasionTitle",
+            "binding": "occasionTitle",
+            "box": {
+              "x": 12,
+              "y": 70,
+              "width": 176,
+              "height": 58
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 20,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "occasionDatePlace",
+            "binding": "occasionDatePlace",
+            "box": {
+              "x": 12,
+              "y": 132,
+              "width": 176,
+              "height": 28
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 10,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "orderName",
+            "binding": "orderName",
+            "box": {
+              "x": 12,
+              "y": 170,
+              "width": 176,
+              "height": 32
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 14,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "qr",
+            "binding": "qr",
+            "box": {
+              "x": 52,
+              "y": 215,
+              "width": 96,
+              "height": 96
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "ticketSymbol",
+            "binding": "ticketSymbol",
+            "box": {
+              "x": 10,
+              "y": 317,
+              "width": 180,
+              "height": 20
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 10,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "footer",
+            "binding": "footer",
+            "box": {
+              "x": 6,
+              "y": 351,
+              "width": 187,
+              "height": 18
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 6,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          }
+        ]
+      }
+    },
+    "wide": {
+      "classic": {
+        "page": {
+          "width": 595.28,
+          "height": 841.89
+        },
+        "ticketArea": {
+          "x": 29.76400000000001,
+          "y": 29.764,
+          "width": 535.752,
+          "height": 267.876
+        },
+        "elements": [
+          {
+            "id": "qr",
+            "binding": "qr",
+            "box": {
+              "x": 405.16245,
+              "y": 140.63490000000002,
+              "width": 80.3628,
+              "height": 80.3628
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "ticketSymbol",
+            "binding": "ticketSymbol",
+            "box": {
+              "x": 405.16245,
+              "y": 224.9977,
+              "width": 80.3628,
+              "height": 22
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 9.375659999999998,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "spotGroup",
+            "binding": "spotGroup",
+            "box": {
+              "x": 50,
+              "y": 167.87599999999998,
+              "width": 241.08839999999998,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 8.036279999999998,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "food",
+            "binding": "food",
+            "box": {
+              "x": 50,
+              "y": 189.87599999999998,
+              "width": 241.08839999999998,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 8.036279999999998,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "note",
+            "binding": "note",
+            "box": {
+              "x": 50,
+              "y": 211.87599999999998,
+              "width": 241.08839999999998,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 8.036279999999998,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "price",
+            "binding": "price",
+            "box": {
+              "x": 50,
+              "y": 233.87599999999998,
+              "width": 241.08839999999998,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 8.036279999999998,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          }
+        ]
+      },
+      "compact": {
+        "page": {
+          "width": 595.28,
+          "height": 841.89
+        },
+        "ticketArea": {
+          "x": 29.76400000000001,
+          "y": 29.764,
+          "width": 535.752,
+          "height": 267.876
+        },
+        "elements": [
+          {
+            "id": "occasionTitle",
+            "binding": "occasionTitle",
+            "box": {
+              "x": 20,
+              "y": 12,
+              "width": 375.75199999999995,
+              "height": 42
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 18,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "occasionDatePlace",
+            "binding": "occasionDatePlace",
+            "box": {
+              "x": 20,
+              "y": 58,
+              "width": 375.75199999999995,
+              "height": 24
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "orderName",
+            "binding": "orderName",
+            "box": {
+              "x": 20,
+              "y": 90,
+              "width": 375.75199999999995,
+              "height": 32
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 14,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "qr",
+            "binding": "qr",
+            "box": {
+              "x": 435.75199999999995,
+              "y": 20,
+              "width": 80,
+              "height": 80
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "ticketSymbol",
+            "binding": "ticketSymbol",
+            "box": {
+              "x": 431.75199999999995,
+              "y": 104,
+              "width": 88,
+              "height": 22
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 9,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "spotGroup",
+            "binding": "spotGroup",
+            "box": {
+              "x": 20,
+              "y": 159.87599999999998,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "food",
+            "binding": "food",
+            "box": {
+              "x": 20,
+              "y": 181.87599999999998,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "note",
+            "binding": "note",
+            "box": {
+              "x": 20,
+              "y": 203.87599999999998,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "price",
+            "binding": "price",
+            "box": {
+              "x": 20,
+              "y": 225.87599999999998,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "footer",
+            "binding": "footer",
+            "box": {
+              "x": 20,
+              "y": 249.87599999999998,
+              "width": 375.75199999999995,
+              "height": 16
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 7,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          }
+        ]
+      },
+      "event": {
+        "page": {
+          "width": 595.28,
+          "height": 841.89
+        },
+        "ticketArea": {
+          "x": 29.76400000000001,
+          "y": 29.764,
+          "width": 535.752,
+          "height": 280
+        },
+        "elements": [
+          {
+            "id": "occasionTitle",
+            "binding": "occasionTitle",
+            "box": {
+              "x": 20,
+              "y": 12,
+              "width": 495.75199999999995,
+              "height": 42
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 24,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "occasionDatePlace",
+            "binding": "occasionDatePlace",
+            "box": {
+              "x": 20,
+              "y": 58,
+              "width": 495.75199999999995,
+              "height": 24
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "orderName",
+            "binding": "orderName",
+            "box": {
+              "x": 20,
+              "y": 90,
+              "width": 375.75199999999995,
+              "height": 32
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 14,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "qr",
+            "binding": "qr",
+            "box": {
+              "x": 419.75199999999995,
+              "y": 150,
+              "width": 96,
+              "height": 96
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 12,
+              "minFontSize": 6,
+              "maxLines": 2,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "ticketSymbol",
+            "binding": "ticketSymbol",
+            "box": {
+              "x": 415.75199999999995,
+              "y": 250,
+              "width": 104,
+              "height": 22
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 9,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "center"
+            }
+          },
+          {
+            "id": "spotGroup",
+            "binding": "spotGroup",
+            "box": {
+              "x": 20,
+              "y": 172,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "food",
+            "binding": "food",
+            "box": {
+              "x": 20,
+              "y": 194,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "note",
+            "binding": "note",
+            "box": {
+              "x": 20,
+              "y": 216,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "price",
+            "binding": "price",
+            "box": {
+              "x": 20,
+              "y": 238,
+              "width": 375.75199999999995,
+              "height": 21
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 11,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          },
+          {
+            "id": "footer",
+            "binding": "footer",
+            "box": {
+              "x": 20,
+              "y": 262,
+              "width": 375.75199999999995,
+              "height": 16
+            },
+            "visible": true,
+            "locked": false,
+            "style": {
+              "fontSize": 7,
+              "minFontSize": 6,
+              "maxLines": 1,
+              "color": "2A2A2A",
+              "align": "left"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "presets": {
+    "classic": {
+      "page": {
+        "width": 212.5,
+        "height": 387.5
+      },
+      "ticketArea": {
+        "x": 6.25,
+        "y": 6.25,
+        "width": 200,
+        "height": 375
+      },
+      "elements": [
+        {
+          "id": "logo",
+          "binding": "logo",
+          "box": {
+            "x": 71.875,
+            "y": 12.5,
+            "width": 56.25,
+            "height": 56.25
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "occasionTitle",
+          "binding": "occasionTitle",
+          "box": {
+            "x": 6.25,
+            "y": 77,
+            "width": 187.5,
+            "height": 32
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12.5,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "occasionDatePlace",
+          "binding": "occasionDatePlace",
+          "box": {
+            "x": 6.25,
+            "y": 111,
+            "width": 187.5,
+            "height": 24
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.75,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "orderName",
+          "binding": "orderName",
+          "box": {
+            "x": 6.25,
+            "y": 151,
+            "width": 187.5,
+            "height": 32
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12.5,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 50,
+            "y": 206.25,
+            "width": 100,
+            "height": 100
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 10,
+            "y": 313,
+            "width": 180,
+            "height": 20
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8.75,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "footer",
+          "binding": "footer",
+          "box": {
+            "x": 6.25,
+            "y": 348,
+            "width": 187.5,
+            "height": 20
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 6.25,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        }
+      ]
+    },
+    "compact": {
+      "page": {
+        "width": 212.5,
+        "height": 387.5
+      },
+      "ticketArea": {
+        "x": 6.25,
+        "y": 6.25,
+        "width": 200,
+        "height": 375
+      },
+      "elements": [
+        {
+          "id": "logo",
+          "binding": "logo",
+          "box": {
+            "x": 8,
+            "y": 8,
+            "width": 32,
+            "height": 32
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "occasionTitle",
+          "binding": "occasionTitle",
+          "box": {
+            "x": 50,
+            "y": 8,
+            "width": 142,
+            "height": 40
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 15,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "occasionDatePlace",
+          "binding": "occasionDatePlace",
+          "box": {
+            "x": 8,
+            "y": 56,
+            "width": 184,
+            "height": 30
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 9,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "orderName",
+          "binding": "orderName",
+          "box": {
+            "x": 8,
+            "y": 102,
+            "width": 184,
+            "height": 42
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 16,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 60,
+            "y": 178,
+            "width": 80,
+            "height": 80
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 8,
+            "y": 265,
+            "width": 184,
+            "height": 22
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 10,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "footer",
+          "binding": "footer",
+          "box": {
+            "x": 8,
+            "y": 341,
+            "width": 184,
+            "height": 24
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 7,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        }
+      ]
+    },
+    "event": {
+      "page": {
+        "width": 212.5,
+        "height": 387.5
+      },
+      "ticketArea": {
+        "x": 6.25,
+        "y": 6.25,
+        "width": 200,
+        "height": 375
+      },
+      "elements": [
+        {
+          "id": "logo",
+          "binding": "logo",
+          "box": {
+            "x": 79,
+            "y": 12,
+            "width": 42,
+            "height": 42
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "occasionTitle",
+          "binding": "occasionTitle",
+          "box": {
+            "x": 12,
+            "y": 70,
+            "width": 176,
+            "height": 58
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 20,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "occasionDatePlace",
+          "binding": "occasionDatePlace",
+          "box": {
+            "x": 12,
+            "y": 132,
+            "width": 176,
+            "height": 28
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 10,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "orderName",
+          "binding": "orderName",
+          "box": {
+            "x": 12,
+            "y": 170,
+            "width": 176,
+            "height": 32
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 14,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 52,
+            "y": 215,
+            "width": 96,
+            "height": 96
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "left"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 10,
+            "y": 317,
+            "width": 180,
+            "height": 20
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 10,
+            "minFontSize": 6,
+            "maxLines": 1,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        },
+        {
+          "id": "footer",
+          "binding": "footer",
+          "box": {
+            "x": 6,
+            "y": 351,
+            "width": 187,
+            "height": 18
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 6,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "2A2A2A",
+            "align": "center"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -48,6 +48,7 @@ async function loadHandler(name: string): Promise<EdgeHandler> {
 }
 
 const optionEntrypoints = [
+  "preview-ticket-layout",
   "cancel-reception-registration",
   "confirm-account-deletion",
   "download-ticket",
@@ -155,5 +156,10 @@ Deno.test("synchronize-orders rejects a request without system authorization", a
     method: "POST",
     body: "{}",
   }));
+  assertEquals(response.status, 401);
+});
+
+Deno.test("preview rejects missing JWT before privileged work", async () => {
+  const response = await (await loadHandler("preview-ticket-layout"))(new Request("https://edge-test.invalid", {method:"POST", body:"{}"}));
   assertEquals(response.status, 401);
 });
