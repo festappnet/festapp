@@ -111,7 +111,7 @@ dependencies:
   venue_seat_picker:
     git:
       url: https://github.com/festappnet/venue_seat_picker.git
-      ref: 3b7d57acaa6f0e0fb0980c7fa2aaf841c64150b5
+      ref: c829a33d07de9a8fa376b407658875d22abd246e
 
   cached_network_image: any
   cached_network_image_platform_interface: any
