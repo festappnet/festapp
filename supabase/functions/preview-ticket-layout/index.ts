@@ -8,6 +8,6 @@ Deno.serve(req=>handlePreview(req,{
     const {data,error}=await client.rpc('can_edit_ticket_layout',{p_occasion:occasionId});
     return !error&&data===true;
   },
-  occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,title,start_time,end_time,features,data').eq('id',id).single();if(error)throw error;return data;},
+  occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,organization,title,start_time,end_time,features,data').eq('id',id).single();if(error)throw error;return data;},
   resources:loadLayoutResources,
 }));

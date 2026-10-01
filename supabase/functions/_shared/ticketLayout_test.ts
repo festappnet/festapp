@@ -40,6 +40,9 @@ Deno.test('preview uses realistic purchased values without a live admission QR',
   assertEquals(d.note,null);
   assert(!/^[1-9X]{4}[1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY]$/.test(d.qr!));
   assert(!JSON.stringify(d).includes('VZOR'));
+  const current=sampleData('normal',{id:81,organization:3});
+  assertEquals(current.ticketSymbol,'X3817K6M8R');
+  assertEquals(current.qr,'festapp-preview:X3817K6M8R');
 });
 Deno.test('text wraps long words, shrinks, warns and never truncates ticket symbol',()=>{
   const e=preset('wide').elements.find(e=>e.binding==='note')!;

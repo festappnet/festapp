@@ -23,7 +23,11 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},product
 }
 export function sampleData(scenario='normal',occasion?:any):RenderData {
   const d=normalizeTicketData({ticket_symbol:sampleSymbol,note:null,price:370,currency_code:'CZK',order_product_ticket:[{id:1,spot_group_title:'12'},{id:2,product_type:'food',product_title:'Steak z panenky + štouch. brambory'}]},{title:'Slavnostní večer',start_time:'2026-10-01T18:00:00Z',data:{place_name:'Kulturní dům'}},{name:'Jana',surname:'Nováková'});
-  d.qr=sampleQr;
+  if(Number.isSafeInteger(occasion?.organization) && Number.isSafeInteger(occasion?.id)) {
+    const suffix=(id:number)=>String(id%100).padStart(2,'0').replaceAll('0','X');
+    d.ticketSymbol=suffix(occasion.organization)+suffix(occasion.id)+'7K6M8R';
+  }
+  d.qr='festapp-preview:'+d.ticketSymbol;
   if(scenario==='long') { d.note='Poznámka: '+('Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer ').repeat(8);d.occasionTitle='Slavnostní setkání přátel a příznivců kulturního života';d.orderName='Kateřina Šťastná Nováková'; }
   if(scenario==='missing') {d.food=null;d.note=null;d.spotGroup=null;d.orderName=null;}
   if(occasion) {
