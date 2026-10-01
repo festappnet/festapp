@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "0525e3440662d48620c71df02ae860826fc4d1bb",
+  "baseMainSha": "691ddcb6e0f3e9ce836a81b5d9bc2afde6173279",
   "release": {
     "version": "0.20.28+512",
     "note": "Complete fullscreen save and cancel and provide a visible exit fullscreen action"
