@@ -488,6 +488,24 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                       SuperEditor(
                                         editor: controller.editor,
                                         selectionLayerLinks: _selectionLinks,
+                                        documentOverlayBuilders: [
+                                          for (final overlay
+                                              in defaultSuperEditorDocumentOverlayBuilders)
+                                            if (overlay
+                                                is DefaultCaretOverlayBuilder)
+                                              DefaultCaretOverlayBuilder(
+                                                caretStyle:
+                                                    overlay.caretStyle.copyWith(
+                                                  color: Theme.of(context)
+                                                              .brightness ==
+                                                          Brightness.dark
+                                                      ? Colors.white
+                                                      : Colors.black,
+                                                ),
+                                              )
+                                            else
+                                              overlay,
+                                        ],
                                         autofocus: widget.fullscreen,
                                         focusNode: controller.focusNode,
                                         documentLayoutKey: controller.layoutKey,
