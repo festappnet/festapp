@@ -1,3 +1,5 @@
+import 'package:fstapp/components/users/widgets/google_login_panel.dart';
+import 'package:fstapp/services/google_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/user_strings.dart';
@@ -44,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    GoogleAuthService.state.addListener(_googleStateChanged);
     if (AppConfig.isWebclientSupported) {
       AuthService.tryAuthUser().then((isLoggedIn) {
         if (isLoggedIn) {
@@ -58,12 +61,24 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  void _googleStateChanged() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _checkAutoRedirect() async {
+    if (GoogleAuthService.hasCallback || GoogleAuthService.isContinuation) {
+      return;
+    }
     final loggedIn = await ensureAuthenticatedSession(
       isLoggedIn: AuthService.isLoggedIn,
       restoreSession: AuthService.tryAuthUser,
     );
-    if (!mounted || !loggedIn) return;
+    if (!mounted ||
+        !loggedIn ||
+        GoogleAuthService.hasCallback ||
+        GoogleAuthService.isContinuation) {
+      return;
+    }
     var userUnits = RightsService.currentUser()?.units;
     if (userUnits != null && userUnits.isNotEmpty) {
       await RouterService.navigateToUnitAdmin(context, userUnits.first);
@@ -79,6 +94,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    GoogleAuthService.state.removeListener(_googleStateChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -127,87 +143,95 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     children: <Widget>[
                       const SizedBox(
-                        height: 200,
+                        height: 24,
                       ),
-                      if (RightsService.occasionLinkModel?.organization
-                              ?.isRegistrationEnabled ??
-                          false)
-                        Container(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(UserStrings.firstTime,
-                                    style: TextStyle(fontSize: 18)),
-                                const SizedBox(
-                                  width: 16,
-                                ),
-                                TextButton(
-                                    onPressed: () => RouterService.navigate(
-                                        context, SignupPage.ROUTE),
-                                    child: Text(UserStrings.signUp,
-                                        style: StylesConfig.normalTextStyle))
-                              ]),
+                      GoogleLoginPanel(
+                          onAuthenticated: () =>
+                              RouterService.handlePostLoginNavigation(context,
+                                  fallbackPath: GoogleAuthService.state.value
+                                      .result['returnPath'] as String?)),
+                      if (!GoogleAuthService.isContinuation) ...[
+                        if (RightsService.occasionLinkModel?.organization
+                                ?.isRegistrationEnabled ??
+                            false)
+                          Container(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(UserStrings.firstTime,
+                                      style: TextStyle(fontSize: 18)),
+                                  const SizedBox(
+                                    width: 16,
+                                  ),
+                                  TextButton(
+                                      onPressed: () => RouterService.navigate(
+                                          context, SignupPage.ROUTE),
+                                      child: Text(UserStrings.signUp,
+                                          style: StylesConfig.normalTextStyle))
+                                ]),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          child: InternalFormFields.email(_emailController),
                         ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        child: InternalFormFields.email(_emailController),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                            left: 15.0, right: 15.0, top: 15, bottom: 0),
-                        child: PasswordField(
-                            label: UserStrings.passwordOrCode,
-                            controller: _passwordController,
-                            passwordType: AutofillHints.password),
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      ButtonsHelper.bigButton(
-                        context: context,
-                        label: UserStrings.signIn,
-                        onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            TextInput.finishAutofillContext();
-                            setState(() {
-                              _isLoading = true;
-                            });
-                            try {
-                              await AuthService.login(
-                                AppConfig.getUserPrefix(_emailController.text),
-                                _passwordController.text,
-                              );
-                              await finishSuccessfulSignIn(
-                                navigate: () => _refreshSignedInStatus(null),
-                                recoverNavigation:
-                                    _recoverAuthenticatedNavigation,
-                                showFeedback: _showSignInSuccess,
-                              );
-                            } catch (error) {
-                              _onError(error);
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              left: 15.0, right: 15.0, top: 15, bottom: 0),
+                          child: PasswordField(
+                              label: UserStrings.passwordOrCode,
+                              controller: _passwordController,
+                              passwordType: AutofillHints.password),
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        ButtonsHelper.bigButton(
+                          context: context,
+                          label: UserStrings.signIn,
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              TextInput.finishAutofillContext();
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              try {
+                                await AuthService.login(
+                                  AppConfig.getUserPrefix(
+                                      _emailController.text),
+                                  _passwordController.text,
+                                );
+                                await finishSuccessfulSignIn(
+                                  navigate: () => _refreshSignedInStatus(null),
+                                  recoverNavigation:
+                                      _recoverAuthenticatedNavigation,
+                                  showFeedback: _showSignInSuccess,
+                                );
+                              } catch (error) {
+                                _onError(error);
+                              }
+                              if (!mounted) return;
+                              setState(() {
+                                _isLoading = false;
+                              });
                             }
-                            if (!mounted) return;
-                            setState(() {
-                              _isLoading = false;
-                            });
-                          }
-                        },
-                        color: ThemeConfig.seed1,
-                        textColor: Colors.white,
-                        isEnabled: !_isLoading,
-                      ),
-                      const SizedBox(
-                        height: 8,
-                      ),
-                      Container(
-                          padding: const EdgeInsets.all(8.0),
-                          alignment: Alignment.topRight,
-                          child: TextButton(
-                              onPressed: () => RouterService.navigate(
-                                  context, ForgotPasswordPage.ROUTE),
-                              child: Text(UserStrings.forgotPassword,
-                                  style: StylesConfig.normalTextStyle))),
+                          },
+                          color: ThemeConfig.seed1,
+                          textColor: Colors.white,
+                          isEnabled: !_isLoading,
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Container(
+                            padding: const EdgeInsets.all(8.0),
+                            alignment: Alignment.topRight,
+                            child: TextButton(
+                                onPressed: () => RouterService.navigate(
+                                    context, ForgotPasswordPage.ROUTE),
+                                child: Text(UserStrings.forgotPassword,
+                                    style: StylesConfig.normalTextStyle))),
+                      ],
                     ],
                   ),
                 ),
@@ -282,7 +306,9 @@ class _LoginPageState extends State<LoginPage> {
     );
     if (!mounted) return;
     if (loggedIn) {
-      await RouterService.handlePostLoginNavigation(context);
+      await RouterService.handlePostLoginNavigation(context,
+          fallbackPath:
+              GoogleAuthService.state.value.result['returnPath'] as String?);
     }
   }
 

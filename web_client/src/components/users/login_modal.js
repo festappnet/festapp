@@ -1,4 +1,6 @@
 
+import { GoogleAuthService } from '../../services/google_auth_service.js';
+import { GOOGLE_AUTH_STYLES, GOOGLE_G } from './google_auth_styles.js';
 import { AuthService } from '../../services/auth_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { ToastHelper } from '../ui/toast.js';
@@ -9,13 +11,16 @@ import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 import { RouterService } from '../../services/router_service.js';
 // import './login_modal.css'; // Removed in favor of inline styles for test compatibility
 
-const LOGIN_MODAL_STYLES = SHARED_MODAL_STYLES;
+const LOGIN_MODAL_STYLES = SHARED_MODAL_STYLES + GOOGLE_AUTH_STYLES;
 
 export class LoginModal extends HTMLElement {
     constructor() {
         super();
         this.currentView = 'login'; // login, register, forgot
         this.isLoading = false;
+        this.googleEnabled = false;
+        this.googleResult = null;
+        this.googleError = '';
         
         // Bind methods
         this._render = this._render.bind(this);
@@ -46,7 +51,13 @@ export class LoginModal extends HTMLElement {
     connectedCallback() {
         this._handleKeyDown = this._handleKeyDown.bind(this);
         window.addEventListener('keydown', this._handleKeyDown);
+        this._previousFocus = document.activeElement;
         this._render();
+        GoogleAuthService.capability().then(enabled => {
+            if (!this.isConnected) return;
+            this.googleEnabled = enabled;
+            this._updateContent(true);
+        });
     }
     
     disconnectedCallback() {
@@ -54,6 +65,12 @@ export class LoginModal extends HTMLElement {
     }
     
     _handleKeyDown(e) {
+        if (e.key === 'Tab' && this.authContainer) {
+            const items = [...this.authContainer.querySelectorAll('button:not(:disabled),input:not(:disabled),a[href]')];
+            const first = items[0], last = items.at(-1);
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        }
         if (e.key === 'Escape') {
             // Respect the mandatory reset check inside modal.close()
             if (this.modal) this.modal.close();
@@ -74,6 +91,7 @@ export class LoginModal extends HTMLElement {
         this.modal.open();
         
         this._updateContent();
+        this.authContainer.querySelector('input,button')?.focus();
         
         const originalClose = this.modal.close.bind(this.modal);
         this.modal.close = () => {
@@ -88,14 +106,18 @@ export class LoginModal extends HTMLElement {
                 this._stickyToast = null;
             }
 
+            GoogleAuthService.cancel();
             originalClose();
+            this._previousFocus?.focus?.();
             setTimeout(() => {
                 if(this.parentNode) this.parentNode.removeChild(this);
             }, 300);
         };
     }
     
-    _updateContent() {
+    _updateContent(preserveFields = false) {
+        const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input')].map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
+
         if (!this.authContainer) return;
         
         try {
@@ -106,15 +128,25 @@ export class LoginModal extends HTMLElement {
             const isMandatoryReset = this._resetToken || this.currentView === 'reset_password';
             
             if (!isMandatoryReset) {
-                const closeBtn = document.createElement('i');
-                closeBtn.className = 'material-icons modal-close-btn';
-                closeBtn.textContent = 'close';
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'modal-close-btn';
+                closeBtn.type = 'button';
+                closeBtn.setAttribute('aria-label', CommonStrings.googleClose);
+                closeBtn.textContent = '×';
                 closeBtn.onclick = () => this.modal.close();
                 this.authContainer.appendChild(closeBtn);
             }
 
+            this.authContainer.setAttribute('role', 'dialog');
+            this.authContainer.setAttribute('aria-modal', 'true');
+            this.authContainer.setAttribute('aria-label', this.authContainer.querySelector('h2')?.textContent || CommonStrings.signIn);
+            this.authContainer.setAttribute('aria-busy', String(this.isLoading));
             this._attachListeners();
             this._initPasswordToggles();
+            for (const previous of previousFields) {
+                const input = this.authContainer.querySelector(`#${previous.id}`);
+                if (input) { input.value = previous.value; input.checked = previous.checked; if(previous.focused) input.focus(); }
+            }
         } catch (e) {
             console.error("LoginModal render error:", e);
             this.authContainer.innerHTML = `<p class="error">Error rendering form. Please try again.</p>`;
@@ -141,7 +173,7 @@ export class LoginModal extends HTMLElement {
                             autocomplete="${autocomplete}"
                         >
                         ${isPassword ? `
-                        <button type="button" class="btn-icon toggle-password" data-target="${id}" aria-label="Toggle password visibility">
+                        <button type="button" class="btn-icon toggle-password" data-target="${id}" aria-label="${CommonStrings.googlePasswordVisibility}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         </button>
                         ` : ''}
@@ -152,9 +184,16 @@ export class LoginModal extends HTMLElement {
             `;
         };
 
+        const googleAction = this.googleEnabled ? `<p class="auth-subtitle">${CommonStrings.googleSubtitle}</p><button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.googleOr}</div>` : '';
+        const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
+        if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
+        if (this.currentView === 'google_mfa') return `<h2>${CommonStrings.signIn}</h2><p>${CommonStrings.googleMfa}</p>${feedback}<form id="google-mfa-form" novalidate>${validatedField('mfa-code', CommonStrings.googleCode, 'text', true)}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.googleVerifyCode}</button></form>`;
+        if (this.currentView === 'google_proof') return `<h2>${this.googleResult?.intent === 'unlink' ? CommonStrings.googleUnlink : CommonStrings.googleLink}</h2><p class="auth-subtitle">${this.googleResult?.intent === "unlink" ? CommonStrings.googleUnlinkProof : CommonStrings.googleProof}</p>${feedback}<form id="google-proof-form" novalidate>${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'username')}${validatedField('password', CommonStrings.password, 'password', true, 0, '', 'current-password')}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${this.isLoading ? CommonStrings.loading : this.googleResult?.intent === 'unlink' ? CommonStrings.googleUnlink : CommonStrings.googleLink}</button><div class="auth-links"><button type="button" class="btn-link" id="link-forgot">${CommonStrings.forgotPassword}</button><button type="button" class="btn-link" id="google-restart">${CommonStrings.googleRetry}</button></div></form>`;
+        if (this.currentView === 'google_profile') return `<h2>${CommonStrings.googleProfile}</h2>${feedback}<form id="google-profile-form" novalidate><div class="form-row">${validatedField('firstName', CommonStrings.firstName, 'text', true, 0, '', 'given-name')}${validatedField('lastName', CommonStrings.lastName, 'text', true, 0, '', 'family-name')}</div><p id="google-profile-email"></p>${this.googleResult?.mailboxRequired ? `<p>${CommonStrings.googleMailbox}</p><button type="button" class="btn-secondary" id="google-send-code">${CommonStrings.googleSendCode}</button>${validatedField('mailbox-code',CommonStrings.googleCode,'text',false)}<button type="button" class="btn-secondary" id="google-verify-code">${CommonStrings.googleVerifyCode}</button>` : ''}<label class="auth-consent"><input type="checkbox" id="google-consent" required><span>${CommonStrings.googleConsent} <a href="${AppConfig.termsUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.googleTerms}</a> <a href="${AppConfig.privacyUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.googlePrivacy}</a></span></label><div class="google-profile-actions"><button type="submit" class="btn-primary" ${this.isLoading || this.googleResult?.mailboxRequired ? 'disabled' : ''}>${this.isLoading ? CommonStrings.loading : CommonStrings.googleCreate}</button><button type="button" class="btn-link" id="google-link">${CommonStrings.googleLink}</button></div></form>`;
         if (this.currentView === 'login') {
             return `
                 <h2>${CommonStrings.signIn}</h2>
+                ${feedback}${googleAction}
                 <form id="login-form" novalidate>
                     ${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'username')}
                     ${validatedField('password', CommonStrings.password, 'password', true, 0, '', 'current-password')}
@@ -173,6 +212,7 @@ export class LoginModal extends HTMLElement {
         } else if (this.currentView === 'register') {
              return `
                 <h2>${CommonStrings.signUp}</h2>
+                ${feedback}${googleAction}
                 <form id="register-form" novalidate>
                     ${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'email')}
                     <div class="form-row">
@@ -232,6 +272,24 @@ export class LoginModal extends HTMLElement {
             }
         };
 
+        this.authContainer.querySelector('#google-start')?.addEventListener('click', () => this._startGoogle());
+        this.authContainer.querySelector('#google-restart')?.addEventListener('click', () => this._startGoogle());
+        if (this.currentView === 'google_mfa') {
+            attach('#google-mfa-form', e => this._advanceGoogle(e, 'mfa_verify'), 'submit');
+        } else if (this.currentView === 'google_proof') {
+            attach('#google-proof-form', e => this._advanceGoogle(e, 'prove_existing'), 'submit');
+            attach('#link-forgot', () => this._setView('forgot'));
+        } else if (this.currentView === 'google_profile') {
+            const names = (this.googleResult?.name || '').split(' ');
+            this.authContainer.querySelector('#firstName').value = this._profileDraft?.name ?? names.shift() ?? '';
+            this.authContainer.querySelector('#lastName').value = this._profileDraft?.surname ?? names.join(' ');
+            this.authContainer.querySelector('#google-consent').checked = this._profileDraft?.consent === true;
+            this.authContainer.querySelector('#google-profile-email').textContent = this.googleResult?.email || '';
+            attach('#google-profile-form', e => this._advanceGoogle(e, 'register'), 'submit');
+            attach('#google-link', () => this._setView('google_proof'));
+            this.authContainer.querySelector('#google-send-code')?.addEventListener('click', e => this._advanceGoogle(e, 'mailbox_send'));
+            this.authContainer.querySelector('#google-verify-code')?.addEventListener('click', e => this._advanceGoogle(e, 'mailbox_verify'));
+        }
         if (this.currentView === 'login') {
             attach('#login-form', this._handleLogin, 'submit');
             attach('#link-forgot', (e) => { e.preventDefault(); this._setView('forgot'); });
@@ -246,7 +304,7 @@ export class LoginModal extends HTMLElement {
         }
         else if (this.currentView === 'forgot') {
             attach('#forgot-form', this._handleReset, 'submit');
-            attach('#btn-back', (e) => { e.preventDefault(); this._setView('login'); });
+            attach('#btn-back', (e) => { e.preventDefault(); this._setView(this.googleResult?.status === 'needs_account_proof' ? 'google_proof' : 'login'); });
         }
         else if (this.currentView === 'reset_password') {
             attach('#reset-password-form', this._handleChangePassword, 'submit');
@@ -414,6 +472,52 @@ export class LoginModal extends HTMLElement {
         } finally {
             this._setLoading(false);
         }
+    }
+
+    _googleErrorText() {
+        if (this.googleError === 'provider_cancelled') return CommonStrings.googleCancelled;
+        if (this.googleError === 'attempt_expired') return CommonStrings.googleExpired;
+        if (this.googleError === 'account_proof_failed') return CommonStrings.googleProofError;
+        return CommonStrings.googleError;
+    }
+
+    async _startGoogle() {
+        if (this.isLoading) return;
+        // Full redirect must not silently discard an in-progress checkout/form.
+        const otherForms = [...document.querySelectorAll('form')].filter(form => !this.authContainer.contains(form));
+        if (otherForms.some(form => [...form.elements].some(el => el.value && el.type !== 'hidden')) && !window.confirm(CommonStrings.googleLeaveDraft)) return;
+        this.isLoading = true; this.googleError = ''; this._updateContent();
+        try { await GoogleAuthService.start(); }
+        catch (error) { this.googleError = error.message; this.isLoading = false; this._updateContent(); }
+    }
+
+    showGoogleResult(result) {
+        this.googleResult = result;
+        this.googleError = '';
+        this.isLoading = false;
+        if (result.status === 'authenticated' || result.status === 'unlinked') {
+            window.location.replace(result.returnPath || '/');
+            return;
+        }
+        this._setView(result.status === 'needs_mfa' ? 'google_mfa' : result.status === 'needs_profile' ? 'google_profile' : 'google_proof');
+        this.authContainer.querySelector('input,button')?.focus();
+    }
+
+    async _advanceGoogle(event, operation) {
+        event.preventDefault();
+        if (this.isLoading) return;
+        const value = id => this.authContainer.querySelector(`#${id}`)?.value || '';
+        const payload = operation === 'prove_existing' ? { email: value('email'), password: value('password') }
+            : operation === 'register' ? { profile: { name: value('firstName'), surname: value('lastName') }, consent: this.authContainer.querySelector('#google-consent').checked }
+            : operation === 'mfa_verify' ? { mfaCode: value('mfa-code') } : { mailboxCode: value('mailbox-code') };
+        if (this.currentView === 'google_profile') this._profileDraft = { name: value('firstName'), surname: value('lastName'), consent: this.authContainer.querySelector('#google-consent').checked };
+        if (operation === 'prove_existing' && !this._validateForm('google-proof-form')) return;
+        if (operation === 'register' && (!this._validateForm('google-profile-form') || !payload.consent)) return;
+        this.isLoading = true;
+        this.authContainer.setAttribute('aria-busy', 'true');
+        this.authContainer.querySelectorAll('button').forEach(button => { button.disabled = true; });
+        try { this.showGoogleResult(await GoogleAuthService.advance(operation, payload)); }
+        catch (error) { this.googleError = error.message; this.isLoading = false; this._updateContent(); }
     }
 
     async _handleRegister(e) {
