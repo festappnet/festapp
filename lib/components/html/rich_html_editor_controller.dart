@@ -50,6 +50,7 @@ class RichHtmlEditorController extends ChangeNotifier {
   String get html => _cachedHtml ??= _codec.isUnchanged
       ? _codec.encode()
       : applyHtmlContentProfile(_codec.encode(), profile);
+  bool get hasUserChanges => !_codec.isUnchanged;
   bool get isDirty => !_codec.isUnchanged || _baselineHtml != originalHtml;
   bool get isEmpty => editor.document.every(
       (node) => node is TextNode && node.text.toPlainText().trim().isEmpty);

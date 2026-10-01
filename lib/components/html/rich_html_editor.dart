@@ -24,10 +24,14 @@ class RichHtmlEditor extends StatefulWidget {
       {required this.controller,
       this.enabled = true,
       this.fullscreen = false,
+      this.onCancel,
       super.key});
   final RichHtmlEditorController controller;
   final bool enabled;
   final bool fullscreen;
+
+  /// When supplied, the enclosing edit session owns Escape cancellation.
+  final VoidCallback? onCancel;
   @override
   State<RichHtmlEditor> createState() => _RichHtmlEditorState();
 }
@@ -541,6 +545,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                           ...defaultComponentBuilders
                                         ],
                                         keyboardActions: [
+                                          if (widget.onCancel != null)
+                                            _cancelShortcut,
                                           if (!kIsWeb) _pasteShortcut,
                                           ...defaultImeKeyboardActions.where(
                                               (action) =>
@@ -555,6 +561,15 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
 
   Widget _documentViewport(Widget document) =>
       widget.fullscreen ? Expanded(child: document) : document;
+
+  ExecutionInstruction _cancelShortcut(
+      {required SuperEditorContext editContext, required KeyEvent keyEvent}) {
+    if (keyEvent.logicalKey == LogicalKeyboardKey.escape) {
+      if (keyEvent is KeyDownEvent) widget.onCancel?.call();
+      return ExecutionInstruction.haltExecution;
+    }
+    return ExecutionInstruction.continueExecution;
+  }
 
   ExecutionInstruction _pasteShortcut(
       {required SuperEditorContext editContext, required KeyEvent keyEvent}) {
