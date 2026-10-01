@@ -3,7 +3,7 @@ import {generateNamedTicketImage} from './generateNamedTicket.ts';
 import {assertEquals,assertThrows,assert,assertRejects} from 'jsr:@std/assert@1';
 import {parseLayout,preset,pdfBox} from './ticketLayout.ts';
 import {fitText} from './ticketText.ts';
-import {normalizeTicketData,sampleData,sampleSymbol} from './ticketRenderData.ts';
+import {normalizeTicketData,sampleData,sampleSymbol,sampleQr} from './ticketRenderData.ts';
 import {fontBytes,fontMetrics,generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
 import {PDFDocument,PDFRawStream,PDFName} from 'npm:pdf-lib';
 import {inflateSync} from 'node:zlib';
@@ -28,7 +28,18 @@ Deno.test('layout rejects missing, duplicate, hidden, distorted and overlapping 
 Deno.test('normalization preserves zero, deterministic first product, public note and order name',()=>{
   const d=normalizeTicketData({ticket_symbol:'12341A2C3E',price:0,note_hidden:'NEVER PRINT',order_product_ticket:[{id:8,product:2},{id:1,product:1}]},{data:{}},{name:' Jana ',surname:' Nováková '},{food:{1:{title:'První'},2:{title:'Druhá'}}});
   assertEquals(d.food,'Večeře: První');assertEquals(d.orderName,'Jana Nováková');assert(d.price?.includes('0'));assertEquals(d.note,null);
-  assert(!/^[1-9X]{4}[1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY]$/.test(sampleSymbol));
+  assert(/^[1-9X]{4}[1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY]$/.test(sampleSymbol));
+});
+Deno.test('preview uses realistic purchased values without a live admission QR',()=>{
+  const d=sampleData();
+  assertEquals(d.ticketSymbol,sampleSymbol);
+  assertEquals(d.qr,sampleQr);
+  assertEquals(d.spotGroup,'Stůl: 12');
+  assertEquals(d.food,'Večeře: Steak z panenky + štouch. brambory');
+  assert(d.price?.includes('370'));
+  assertEquals(d.note,null);
+  assert(!/^[1-9X]{4}[1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY][1-9][ACEFGHIJKLMNPQRUVWXY]$/.test(d.qr!));
+  assert(!JSON.stringify(d).includes('VZOR'));
 });
 Deno.test('text wraps long words, shrinks, warns and never truncates ticket symbol',()=>{
   const e=preset('wide').elements.find(e=>e.binding==='note')!;

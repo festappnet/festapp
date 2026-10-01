@@ -171,3 +171,10 @@ Open PDF action, with the existing download action always available.
 QR geometry is quantized to 1/1024 pt when moved/resized. Binary-exact coordinates
 preserve its square shape across Dart Rect arithmetic and JSON validation at
 phone zoom levels; this is below printable pixel precision.
+
+
+Preview fields follow inspected Skautský ples 2026 purchases: ten-character
+code shape (X382 prefix), 200 CZK admission plus a 170 CZK dinner, and the actual
+short dinner title. Customer names/codes are not copied. The printed sample
+code looks like a normal ticket; the QR payload has a preview namespace and
+cannot match a real admission code. Preview artwork has no printed watermark.

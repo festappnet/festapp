@@ -304,7 +304,7 @@ export async function generateTicketImage(
 }
 
 export interface LayoutTicketRequest {data:RenderData;resources:Resources;template:Template;type:'wide'|'named';sample:boolean;warnings:string[]}
-async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_type:'wide'|'named'=t.page.width===595.28?'wide':'named',sample=false) {
+async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_type:'wide'|'named'=t.page.width===595.28?'wide':'named',_sample=false) {
   validateLayout({schemaVersion:1,templates:{[_type]:t}});
   const doc=await PDFDocument.create();doc.registerFontkit(fontkit);
   const font=await doc.embedFont(r.font);const page=doc.addPage([t.page.width,t.page.height]);const warnings:string[]=[];
@@ -333,6 +333,6 @@ async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_type:'wi
   const module=b.width/(qr.size+8);if(module<1.2)throw new Error('QR modules are too small for print');
   page.drawRectangle({...b,color:rgb(1,1,1)});
   for(let y=0;y<qr.size;y++)for(let x=0;x<qr.size;x++)if(qr.get(y,x))page.drawRectangle({x:b.x+(x+4)*module,y:b.y+b.height-(y+5)*module,width:module,height:module,color:color(q.style.color)});
-  if(sample)page.drawText('VZOR',{x:4,y:Math.max(1,t.page.height-6),size:5,font,color:rgb(1,0,0)});
+  // Preview status belongs to the editor chrome, not the printed artwork.
   return {bytes:await doc.save(),warnings};
 }
