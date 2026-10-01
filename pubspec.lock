@@ -2311,11 +2311,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "3b7d57acaa6f0e0fb0980c7fa2aaf841c64150b5"
-      resolved-ref: "3b7d57acaa6f0e0fb0980c7fa2aaf841c64150b5"
+      ref: c829a33d07de9a8fa376b407658875d22abd246e
+      resolved-ref: c829a33d07de9a8fa376b407658875d22abd246e
       url: "https://github.com/festappnet/venue_seat_picker.git"
     source: git
-    version: "0.1.1"
+    version: "0.1.2"
   video_player:
     dependency: transitive
     description:
@@ -2429,7 +2429,7 @@ packages:
     source: hosted
     version: "4.14.1"
   webview_flutter_android:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: webview_flutter_android
       sha256: b98656fa4461f8cc05c48a778b4d4883e60ec63e1778348f363f9bb9a477745d

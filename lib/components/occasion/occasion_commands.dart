@@ -50,7 +50,7 @@ class SupabaseOccasionCommands implements OccasionCommands {
     }
     final response = ClientCommandResponse.from(
       await _transport.invoke('create_occasion_client_sync_v1', {
-        'p_config': occasion.toJson(),
+        'p_config': occasion.toSaveJson(),
       }),
     );
     if (response.code != 200 || response.data['occasion'] is! Map) {
@@ -72,7 +72,7 @@ class SupabaseOccasionCommands implements OccasionCommands {
       await _transport.invoke('save_occasion_client_sync_v1', {
         'p_occasion': id,
         'p_expected_version': occasion.aggregateVersion,
-        'p_config': occasion.toJson(),
+        'p_config': occasion.toSaveJson(),
       }),
     );
     if (response.status == 'conflict') {

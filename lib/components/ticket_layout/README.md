@@ -1,0 +1,180 @@
+# Ticket layout editor
+
+The editor paints the bitmap background, logo, QR modules and all text locally
+in Flutter. Drag, resize, font changes, zoom, undo, cancel and Apply do not
+request or render PDF. `preview-ticket-layout` in `resolve` mode supplies the
+server-owned preset, synthetic scenarios, font bytes/advance metrics and QR
+matrix. Images are decoded once when their source changes.
+
+`generateTicketImage` and `generateNamedTicketImage` remain the PDF generators.
+An optional layout argument applies saved geometry in those existing functions.
+`ticketGeneration.ts` only resolves inputs and dispatches to them. Download,
+email and the explicit PDF preview button use that same boundary. Without a
+custom template for the selected type, the existing historical output remains.
+
+## Contract
+
+The optional `ticket.layout` contains `schemaVersion: 1` and `templates.wide`
+and/or `templates.named`. Each template stores PDF points with a top-left
+origin, a PDF page, a ticket area
+and a flat list of elements. Each element has an id, binding, box, visible,
+locked and style (fontSize, minFontSize, maxLines, color, align).
+
+Bindings: qr, ticketSymbol, spotGroup, food, note, price, occasionTitle,
+occasionDatePlace, orderName, logo, footer. Missing values leave fixed boxes
+empty; zero prices remain visible. Multiple products select the first matching
+product by order-product-ticket id. OrderName means the order's name/surname,
+not an independently verified ticket holder. Hidden notes never enter print
+content. Background references remain in the existing ticket feature, so the
+occasion media copier can replace the URL without rewriting geometry.
+
+Text uses the repository Futura PT Book bytes in both runtimes, explicit glyph
+advances, wrapping including long words, half-point shrink steps, then ellipsis
+with a warning. Unsupported glyphs are replaced with `?` in both outputs. Ticket
+symbols may never truncate. QR is square, at least 60 pt, printed as vector
+modules, with an opaque white four-module quiet zone. Its editor palette only
+contains dark high-contrast colors. Text must not overlap its protected box.
+
+## Persistence and lifecycle
+
+Apply only returns a draft to settings. The existing occasion save transport
+adds `ticket_layout_change: {expected, next}` only if layout changed. This
+command envelope is never persisted in the occasion JSON. SQL locks the row,
+preserves layout when the command is absent, validates explicit changes and
+rejects stale expected values before writing. Command versioning and receipt
+replay remain in force. Direct authenticated feature writes are revoked without
+broadening existing table/column access. Unknown layout schemas are preserved
+and cannot be edited or downgraded.
+
+On conflict the user can load the stored layout while retaining a local copy,
+and restore that copy explicitly. Upload failure restores the previous bitmap;
+Cancel never deletes stored or newly uploaded objects. Unreferenced uploads are
+left to the existing image cleanup. A changed aspect ratio offers keep positions
+or restore preset. Only one PDF request can be active; its result is ignored if
+the document, scenario or image changed before completion.
+
+## Verification and deployment
+
+Shared fixtures: `test/fixtures/ticket_layout/layouts.json` (Dart/TS/SQL) and
+`resolve.json`; reference historical PDFs use local image/font resources.
+SQL fixtures are embedded for the SQL-only runner and checked against the JSON
+by the Deno suite. Flutter tests cover controller gestures, live repaint before
+pointer up, zero implicit PDF calls and draft serialization. Deno tests cover
+schema, dispatch, normalized content, vector QR and preview authorization.
+
+Deploy separately, in order: `20261001120000_ticket_layout_editor.sql`, the
+updated `download-ticket`, `send-tickets` and new `preview-ticket-layout` plus
+shared sources/font asset, then the Flutter client for the selected tenant.
+The runtime policy and coverage matrix include preview. No tenant rollout is
+implied. Once a layout is saved, backend rollback must keep supporting it.
+
+
+## Style choices and alignment
+
+Resolve includes classic, compact and event-title layouts, plus a portrait
+layout with a ticket-sized PDF. The portrait choice clears the bitmap. The gallery renders
+local thumbnails with the same font, event data and images as the canvas.
+Selecting one copies geometry into the draft and is a single undo step; no PDF
+request or saved style identifier is involved. Historical event image references
+are distinct from geometry and must be reviewed before becoming reusable assets.
+
+Known event title/date/place override synthetic values in all preview scenarios;
+only ticket/order fields remain samples. The QR stays deliberately invalid.
+Resolve reads these fields from the authorized occasion on the canonical backend.
+Without an assigned background, custom layouts use the same plain fill in
+the editor and PDF; a failing explicitly assigned image still fails visibly.
+
+Grid (10 PDF points) and snapping are separate session controls. Snapping aligns
+edges and centers with the ticket/other elements, additionally using grid targets
+when visible. Pink guides explain the match. Alt temporarily disables snapping.
+The pointer's unsnapped drag position is retained, so slow movements can leave a
+magnet. Grid and guides do not enter the saved layout or printed PDF.
+
+Pan and zoom keep the ticket within the viewport when it fits; when zoomed in,
+pan stops at its edges instead of allowing it to disappear. Scale calculations
+use the two canvas axes, excluding the Matrix4 z-axis. Double-clicking font-size
+or line-count sliders restores that property's selected-template default as an
+undoable edit. Locked elements remain unchanged.
+
+## Local historical-reference gallery
+
+`test/components/ticket_layout/editor_preview.dart` opens the full wide editor
+immediately. Its existing template picker contains three original landscape
+backgrounds (cream, forest green and black and white) plus a plain portrait, with source metadata in
+`test/fixtures/ticket_layout/historical/`. Each thumbnail paints its own artwork
+and matching layout. Selecting a template changes artwork, geometry and colors
+without leaving the editor. Artwork selection participates in geometry undo/redo;
+Apply preserves the selected artwork when the local editor is reopened.
+The optional decoded artwork catalog is owned/disposed by editor resources.
+The named example still uses its existing geometry presets. This local catalog
+does not publish assets or change production event data.
+
+## Ticket dimensions, colors and PDF preview
+
+The editable canvas is `ticketArea`. Existing sheet layouts keep their page;
+`pageFit: "ticket"` makes the page exactly match a zero-origin ticket area.
+New named/portrait presets use this explicit mode (initially 200 x 375 pt).
+Both dimensions must remain within 60-842 pt, validated in Dart, TS and SQL.
+The optional field preserves existing saved fixed-page layouts. The dedicated
+`20261002001000_ticket_sized_pdf_pages.sql` migration adds the SQL validation.
+Portrait resizing changes page and area together; wide backgrounds remain on A4. The dimensions dialog uses millimeters; resizing fits element positions
+and uniformly scales their boxes/fonts, preserves square QR codes, and rejects
+sizes that cannot satisfy the print/QR contract. Resizing is one undo step.
+Image-backed initial layouts fit the image ratio into the sheet where printable;
+extreme ratios retain minimum space for QR/text. The dimensions dialog can
+restore the image ratio at the current width. Images use contain, never stretch.
+
+Color properties open the same `flutter_colorpicker` saturation/hue control as
+map paths. Text supports a precise hex value; QR uses visual swatches from the
+existing print-safe palette. Apply creates one undo step; Cancel changes nothing.
+
+The PDF action calls `preview-ticket-layout`, displays returned bytes in an
+embedded browser PDF viewer, and offers Download PDF. Other platforms retain
+the download action. Font overflow warnings are shown in the preview. A document
+changed during a request cannot display stale PDF output.
+
+The local preview uses `preview_server.ts` on loopback port 8769 to serve its
+Flutter build and call the actual Edge handler with fixture-only dependencies.
+Its sample data comes from resolve, so the canvas and PDF use identical fields.
+The local image upload is bounded and kept in memory; it never uploads to a live
+tenant. Production authorization and image-origin checks remain in the handler.
+
+Start the local runtime after preparing the web build and fixtures:
+
+```sh
+SUPABASE_URL=http://127.0.0.1:1 SUPABASE_SERVICE_ROLE_KEY=local-fixture \
+  deno run --allow-env --allow-read --allow-net=127.0.0.1:8769 \
+  test/components/ticket_layout/preview_server.ts /tmp/festapp-ticket-editor-web
+```
+
+Only one server may own port 8769. This replaces the old static Python server;
+that server cannot handle PDF POST requests. No production deployment is implied.
+
+The dimensions dialog preserves exact geometry when displayed rounded values
+are unchanged. Restore template dimensions and use image aspect ratio are
+separate actions. Fresh tickets without a saved layout/background open the
+internal template picker first. The scenario selector uses a compact menu
+rather than a filled form field. Production rollout must apply the page-fit
+validation migration and updated renderer before publishing the new client.
+
+
+## Phone layout
+
+Below 900 logical pixels the editor keeps a single compact toolbar and the full
+remaining canvas. Grid, snapping, pan/zoom and sample scenarios are in the tools
+menu. Elements and properties open a dismissible bottom sheet with two tabs;
+selecting an element takes the user directly to its properties. The template
+picker uses one column on phones. Color/dimension dialogs remain scrollable with
+the keyboard visible. Browsers without an embedded PDF viewer get an explicit
+Open PDF action, with the existing download action always available.
+
+QR geometry is quantized to 1/1024 pt when moved/resized. Binary-exact coordinates
+preserve its square shape across Dart Rect arithmetic and JSON validation at
+phone zoom levels; this is below printable pixel precision.
+
+
+Preview fields follow inspected Skautský ples 2026 purchases: ten-character
+code shape (X382 prefix), 200 CZK admission plus a 170 CZK dinner, and the actual
+short dinner title. Customer names/codes are not copied. The printed sample
+code looks like a normal ticket; the QR payload has a preview namespace and
+cannot match a real admission code. Preview artwork has no printed watermark.

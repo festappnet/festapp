@@ -1,6 +1,5 @@
+import { prepareTicketRenderer } from '../_shared/ticketGeneration.ts';
 import { deliverEmail, EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
-import { generateTicketImage, fetchTicketResources } from "../_shared/generateTicket.ts";
-import { generateNamedTicketImage, fetchNamedTicketResources } from "../_shared/generateNamedTicket.ts";
 import { supabaseAdmin, createUserClient } from "../_shared/supabaseUtil.ts";
 import { authorizeRequest, AuthError } from "../_shared/auth.ts";
 
@@ -83,18 +82,10 @@ Deno.serve(async (req) => {
     }> = [];
 
     if (isTicketEnabled) {
-      const isNamedTicket = ticketFeature?.ticket_type === "named";
-      const renderTicket = isNamedTicket
-        ? ((resources) => (ticket: any) =>
-          generateNamedTicketImage(ticket, resources, order.data, "cs"))(
-            await fetchNamedTicketResources(tickets[0]),
-          )
-        : ((resources) => (ticket: any) => generateTicketImage(ticket, resources))(
-            await fetchTicketResources(tickets[0]),
-          );
+      const renderTicket = await prepareTicketRenderer(occasion, tickets[0], order.data);
       for (const ticket of tickets) {
         try {
-          const pdfBytes = await renderTicket(ticket);
+          const { bytes: pdfBytes } = await renderTicket(ticket);
           attachments.push({
             filename: `ticket_${ticket.ticket_symbol}.pdf`,
             content: pdfBytes,
@@ -102,7 +93,7 @@ Deno.serve(async (req) => {
             encoding: "binary",
           });
         } catch (error) {
-          console.error(`Error generating PDF for ticket ${ticket.id}:`, error);
+          throw error; // Abort the batch; never send a partial set after a render failure.
         }
       }
       if (!attachments.length) {
