@@ -1,0 +1,4354 @@
+[
+  {
+    "screenshot": "web-login-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-light-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-dark-360.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-light-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-dark-390.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-light-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-dark-768.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "Zpět",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Odpojit Google",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Zkusit znovu",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Poslat ověřovací kód",
+          "height": 44
+        },
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "Vytvořit účet",
+          "height": 44
+        },
+        {
+          "label": "Propojit existující účet",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Ověřit kód",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-cs-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Pokračovat s Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Přihlásit se",
+          "height": 44
+        },
+        {
+          "label": "Zapomněli jste heslo?",
+          "height": 44
+        },
+        {
+          "label": "Registrovat se",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-light-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-login-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-register-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-unlink-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Disconnect Google",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-proof-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Try again",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-profile-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mailbox-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Send verification code",
+          "height": 44
+        },
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "Create account",
+          "height": 44
+        },
+        {
+          "label": "Link an existing account",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-mfa-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Verify code",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-loading-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-error-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  },
+  {
+    "screenshot": "web-cancelled-en-dark-1440.png",
+    "measurement": {
+      "overflow": false,
+      "buttons": [
+        {
+          "label": "Continue with Google",
+          "height": 46
+        },
+        {
+          "label": "",
+          "height": 44
+        },
+        {
+          "label": "Sign in",
+          "height": 44
+        },
+        {
+          "label": "Forgot Password?",
+          "height": 44
+        },
+        {
+          "label": "Sign up",
+          "height": 44
+        },
+        {
+          "label": "×",
+          "height": 44
+        }
+      ],
+      "dialog": true,
+      "focus": "BODY"
+    }
+  }
+]
