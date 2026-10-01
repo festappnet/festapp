@@ -1,3 +1,13 @@
+# Google broker endpoints validate cookie/state, verifier and one-time proofs.
+[functions.google-auth-start]
+verify_jwt = false
+[functions.google-auth-callback]
+verify_jwt = false
+[functions.google-auth-complete]
+verify_jwt = false
+[functions.exchange-login-qr]
+verify_jwt = false
+
 # For detailed configuration reference documentation, visit:
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the

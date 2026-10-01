@@ -31,6 +31,37 @@ class AuthService {
   static const REFRESH_TOKEN_KEY = 'refresh';
   static const metaLang = 'lang';
 
+  static Future<void> completeExternalLogin(Map<String, dynamic> result) async {
+    if (result['organization'] != AppConfig.organization ||
+        result['userId'] is! String) {
+      throw const AuthException('account_identity_inconsistent');
+    }
+    final session = Map<String, dynamic>.from(result['session'] as Map);
+    try {
+      DbEvents.invalidateSavedProgramMutationScope();
+      final auth =
+          await _supabase.auth.setSession(session['refresh_token'] as String);
+      if (auth.session?.user.id != result['userId']) {
+        throw const AuthException('account_identity_inconsistent');
+      }
+      final profile = await _supabase
+          .from(Tb.user_info.table)
+          .select(Tb.user_info.id)
+          .eq(Tb.user_info.id, result['userId'])
+          .eq(Tb.user_info.organization, AppConfig.organization)
+          .maybeSingle();
+      if (profile == null) {
+        throw const AuthException('account_identity_inconsistent');
+      }
+      await _finalizeLogin(auth.session!);
+    } catch (_) {
+      await _supabase.auth.signOut(scope: SignOutScope.local);
+      await _secureStorage.delete(key: REFRESH_TOKEN_KEY);
+      await OfflineDataService.clearUserData();
+      rethrow;
+    }
+  }
+
   static Future<void> login(String email, String password) async {
     DbEvents.invalidateSavedProgramMutationScope();
     var data = await _supabase.auth

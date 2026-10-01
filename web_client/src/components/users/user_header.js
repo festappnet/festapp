@@ -4,6 +4,7 @@ import './user_header.css';
 import { RightsService } from '../../services/rights_service.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { AppConfig } from '../../app_config.js';
+import { GoogleAuthService } from '../../services/google_auth_service.js';
 
 import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 
@@ -279,6 +280,24 @@ export class UserHeader extends HTMLElement {
         import('../forms/widgets/settings_widget.js').then(({ SettingsWidget }) => {
             new SettingsWidget(settingsContainer);
         });
+
+        if (this.user?.id) {
+            const userId = this.user.id;
+            GoogleAuthService.identityStatus().then(status => {
+                if (!wrapper.isConnected || this.user?.id !== userId || status.enabled !== true) return;
+                const action = document.createElement('button');
+                action.type = 'button';
+                action.className = 'popover-logout-row';
+                action.style.cssText = 'width:100%;border:0;background:transparent;color:inherit;font:inherit;text-align:left;';
+                action.textContent = status.linked ? CommonStrings.googleUnlink : CommonStrings.googleContinue;
+                action.onclick = async () => {
+                    action.disabled = true;
+                    try { await GoogleAuthService.start(status.linked ? 'unlink' : 'login'); }
+                    catch { action.disabled = false; action.textContent = CommonStrings.googleError; }
+                };
+                popover.appendChild(action);
+            }).catch(() => {});
+        }
 
         // --- Logout Section ---
         if (this.user && this.user.id) {

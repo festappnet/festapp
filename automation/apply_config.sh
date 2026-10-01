@@ -789,6 +789,10 @@ for relative in (
         plistlib.dump(data, destination, sort_keys=False)
 PY
 
+# Public certificate fingerprints are optional; an empty list disables Android verification.
+python3 "$PROJECT_ROOT/automation/google-auth-links.py" "$PROJECT_ROOT" "$WEB_LINK" \
+    "$ANDROID_APPLICATION_ID" "${ANDROID_APP_LINK_SHA256_FINGERPRINTS:-}"
+
 # 5b. Update lib/theme_config.dart (Flutter Theme — seed colors live here, not in app_config.dart).
 # Generate visible/internal iOS names while preserving the bundle ID.
 IOS_INFO_PLIST="$PROJECT_ROOT/ios/Runner/Info.plist"
