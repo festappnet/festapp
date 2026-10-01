@@ -53,6 +53,7 @@ mkdir -p "$TMP_ROOT/automation" \
          "$TMP_ROOT/assets/icons"
 
 cp "$PROJECT_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/apply_config.sh"
+cp "$PROJECT_ROOT/automation/google-auth-links.py" "$TMP_ROOT/automation/google-auth-links.py"
 cp "$PROJECT_ROOT/automation/configure_fonts.js" "$TMP_ROOT/automation/configure_fonts.js"
 mkdir -p "$TMP_ROOT/automation/fonts"
 # Font configuration inspects filenames; this fixture does not render glyphs.

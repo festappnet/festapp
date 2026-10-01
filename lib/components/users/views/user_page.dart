@@ -1,3 +1,4 @@
+import 'package:fstapp/components/users/widgets/google_account_link_setting.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -524,6 +525,7 @@ class _UserPageState extends State<UserPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(children: [
+                      const GoogleAccountLinkSetting(),
                       ListTile(
                         leading: Icon(Icons.logout,
                             color: Theme.of(context).colorScheme.primary),

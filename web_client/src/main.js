@@ -1,3 +1,6 @@
+import { GoogleAuthService } from './services/google_auth_service.js';
+import { LoginModal } from './components/users/login_modal.js';
+const googleCallback = GoogleAuthService.takeCallback();
 import './theme_config.css';
 import { AppConfig } from './app_config.js';
 import { SupabaseService } from './services/supabase_service.js';
@@ -23,6 +26,14 @@ class Main {
             });
             ThemeService.init();
             ImageLoader.init(); // Initialize Image Loader
+
+            if (googleCallback) {
+                const modal = new LoginModal();
+                document.body.appendChild(modal);
+                modal._setView('google_completing');
+                try { modal.showGoogleResult(await GoogleAuthService.complete(googleCallback)); }
+                catch (error) { modal.googleError = error.message; modal._setView('login'); }
+            }
 
             // 2. Check Routing (SPA Support)
             if (await RouterService.handleInitialLoad()) {

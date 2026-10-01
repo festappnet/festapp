@@ -43,6 +43,12 @@ const consumedPrivateInputs = [
   "FESTAPP_BACKUP_IDENTITY_FILE",
   "SMTP_USER_PASSWORD",
   "QR_RATE_SALT",
+  "GOOGLE_OIDC_CLIENT_ID",
+  "GOOGLE_OIDC_CLIENT_SECRET",
+  "GOOGLE_OIDC_CALLBACK_URL",
+  "GOOGLE_AUTH_ENCRYPTION_KEY",
+  "GOOGLE_AUTH_MAILBOX_HMAC_KEY",
+
 ];
 
 test("public private-input schema uses the exact consumer names", () => {
@@ -76,7 +82,7 @@ test("required environment names are derived from their consumers", () => {
     ...consumerText.matchAll(/['"]((?:DATABASE_URL|CF_ACCOUNT_ID|R2_[A-Z0-9_]+))['"]/g),
   ].map((match) => match[1]).filter(Boolean));
   const ignoredNonPrivateRuntimeNames = new Set([
-    "PATH", "NODE_PATH", "VERSION", "IPA_PATH", "PLAY_AAB_PATH",
+    "GITHUB_WORKSPACE", "PATH", "NODE_PATH", "VERSION", "IPA_PATH", "PLAY_AAB_PATH",
     "PLAY_CONFIRMATION", "PLAY_TARGET_TRACK", "CUTOVER_CONFIRMATION",
     "FASTLANE_ENABLE_BETA_DELIVER_SYNC_SCREENSHOTS", "READ_ONLY_TARGET_VERSION",
   ]);

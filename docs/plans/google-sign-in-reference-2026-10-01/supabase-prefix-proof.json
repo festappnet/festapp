@@ -1,0 +1,56 @@
+{
+  "auth_version": "v2.189.0",
+  "scope": "Isolated PostgreSQL + real GoTrue; repository identity writer; minimal user_info table; no Google OAuth, full app RLS or production changes",
+  "fixtures": [
+    {
+      "organization": 1,
+      "profile_email": "planner@example.com",
+      "auth_email": "1+planner@example.com",
+      "same_uuid": true,
+      "magiclink": true,
+      "replay_rejected": true,
+      "refresh": true,
+      "password_retained": true
+    },
+    {
+      "organization": 2,
+      "profile_email": "planner@example.com",
+      "auth_email": "2+planner@example.com",
+      "same_uuid": true,
+      "magiclink": true,
+      "replay_rejected": true,
+      "refresh": true,
+      "password_retained": true
+    },
+    {
+      "organization": 1,
+      "profile_email": "planner+1@example.com",
+      "auth_email": "1+planner+1@example.com",
+      "same_uuid": true,
+      "magiclink": true,
+      "replay_rejected": true,
+      "refresh": true,
+      "password_retained": true
+    },
+    {
+      "organization": 1,
+      "profile_email": "1+real@example.com",
+      "auth_email": "1+1+real@example.com",
+      "same_uuid": true,
+      "magiclink": true,
+      "replay_rejected": true,
+      "refresh": true,
+      "password_retained": true
+    }
+  ],
+  "unprefixed_password_rejected": true,
+  "absent_generate_link": {
+    "http_status": 200,
+    "created_user": true
+  },
+  "second_magiclink": {
+    "first_verify_status": 403,
+    "second_verify_status": 200,
+    "same_hash": false
+  }
+}

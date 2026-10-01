@@ -10,13 +10,19 @@ const cors = {
   "Cache-Control": "no-store",
 };
 const attempts = new Map<string, { minute: number; count: number }>();
+const authOptions = {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  global: { fetch: ((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(8000) })) as typeof fetch },
+};
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  authOptions,
 );
-const anon = createClient(
+const makeAnon = () => createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_ANON_KEY")!,
+  authOptions,
 );
 
 Deno.serve(async (req) => {
@@ -57,7 +63,7 @@ Deno.serve(async (req) => {
       headers: cors,
     });
   }
-  const session = await exchangeLoginCredential(body, admin, anon);
+  const session = await exchangeLoginCredential(body, admin, makeAnon());
   return session
     ? new Response(JSON.stringify(session), { status: 200, headers: cors })
     : new Response(JSON.stringify({ error: "invalid_credential" }), {
