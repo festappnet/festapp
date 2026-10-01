@@ -62,6 +62,13 @@ void main() {
       expect(tester.getCenter(save).dy, tester.getCenter(tools).dy);
       await tester.binding.setSurfaceSize(const Size(600, 600));
       await tester.pump();
+      expect(tester.getCenter(save).dy, tester.getCenter(tools).dy);
+      expect(tester.takeException(), isNull);
+      await tester.binding.setSurfaceSize(const Size(450, 600));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.binding.setSurfaceSize(const Size(320, 600));
+      await tester.pump();
       expect(tester.getBottomLeft(save).dy,
           lessThanOrEqualTo(tester.getTopLeft(tools).dy));
       expect(tester.takeException(), isNull);
