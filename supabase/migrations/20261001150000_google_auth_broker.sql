@@ -760,10 +760,12 @@ REVOKE ALL ON FUNCTION public.inspect_account_deletion_token(text) FROM PUBLIC, 
 GRANT EXECUTE ON FUNCTION public.inspect_account_deletion_token(text) TO anon, service_role;
 
 DO $$ BEGIN
-  IF to_regprocedure('cron.schedule(text,text,text)') IS NOT NULL THEN
+  IF current_database() = current_setting('cron.database_name', true)
+     AND EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
     PERFORM cron.schedule('festapp-external-login-cleanup-v1','0 * * * *',
       $job$SELECT public.cleanup_external_login_v1();$job$);
-  ELSE
-    RAISE EXCEPTION 'Google auth requires pg_cron for bounded TTL cleanup';
   END IF;
+  -- Canonical self-hosted targets use pg_cron in the control-plane postgres DB.
+  -- install-google-auth-cleanup.sh installs only this job in that scheduler
+  -- before tenant rows are enabled; rehearsal cron stubs must not be called.
 END $$;

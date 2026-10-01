@@ -25,7 +25,14 @@ or proof of a live end-to-end login.
 1. Rehearse migration `20261001150000_google_auth_broker.sql` on the canonical
    backend. Apply through the existing approved migration path. It creates RLS
    protected identity, attempt, rate-limit and distributed lease tables and an
-   hourly pg_cron cleanup job. No existing UUID/email backfill is performed.
+   cleanup function. No existing UUID/email backfill is performed. The canonical
+   self-hosted database has rehearsal cron stubs; its real pg_cron extension is
+   in the control-plane `postgres` database. After applying the migration, run
+   `install-google-auth-cleanup.sh` on the host with the canonical database and
+   `FESTAPP_GOOGLE_CLEANUP_INSTALL_ACK=install-google-auth-cleanup-on-canonical-database`.
+   This schedules only the Google hourly cleanup using `schedule_in_database`.
+   Verify its active row before enabling any tenant client. Do not run the broad
+   database-finalization script or enable unrelated background jobs.
 2. Provision these server-only private inputs through the approved secret manager:
    `GOOGLE_OIDC_CLIENT_ID`, `GOOGLE_OIDC_CLIENT_SECRET`,
    `GOOGLE_OIDC_CALLBACK_URL`, `GOOGLE_AUTH_ENCRYPTION_KEY`,
