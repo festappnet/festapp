@@ -2053,6 +2053,9 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "style_portrait_event": "Výrazná jmenná",
+    "style_portrait_compact": "Kompaktní jmenná",
+    "chooseTemplate": "Vybrat šablonu",
     "openPdf": "Otevřít PDF",
     "pdfExternalHint": "Tento prohlížeč otevírá PDF samostatně. Můžete ho otevřít nebo stáhnout tlačítkem nahoře.",
     "viewOptions": "Zobrazení a nástroje",
@@ -2111,9 +2114,9 @@
     "restoreDraft": "Obnovit místní návrh",
     "qrColor": "Barva QR",
     "styles": "Šablony vstupenek",
-    "style_classic": "Původní vstupenka",
-    "style_compact": "Kompaktní",
-    "style_event": "Výrazný název události",
+    "style_classic": "Klasická na šířku",
+    "style_compact": "Kompaktní na šířku",
+    "style_event": "Výrazná na šířku",
     "grid": "Mřížka",
     "snap": "Přichytávání",
     "resetSlider": "Dvojklik vrátí výchozí velikost šablony",

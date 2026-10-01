@@ -13,19 +13,25 @@ import 'ticket_layout_canvas.dart';
 class TicketSettings extends StatefulWidget {
   final TicketFeature feature;
   final int occasionId;
-  const TicketSettings(
-      {super.key, required this.feature, required this.occasionId});
+  final TicketLayoutService service;
+  TicketSettings(
+      {super.key,
+      required this.feature,
+      required this.occasionId,
+      TicketLayoutService? service})
+      : service = service ?? TicketLayoutService();
   @override
   State<TicketSettings> createState() => _TicketSettingsState();
 }
 
 class _TicketSettingsState extends State<TicketSettings> {
-  final service = TicketLayoutService();
+  TicketLayoutService get service => widget.service;
   TicketLayoutResources? thumbnail;
   TicketLayoutController? thumbnailController;
   bool busy = false;
   int generation = 0;
-  String get type => widget.feature.ticketType ?? 'named';
+  // Keep the persisted slot for compatibility; visual choices belong to templates.
+  String get type => widget.feature.ticketType == 'named' ? 'named' : 'wide';
   bool get unsupported =>
       widget.feature.layout != null &&
       widget.feature.layout!['schemaVersion'] != 1;
@@ -123,19 +129,6 @@ class _TicketSettingsState extends State<TicketSettings> {
             subtitle: Text(FeaturesStrings.descriptionShowHiddenNote),
             onChanged: (v) =>
                 setState(() => widget.feature.showHiddenNote = v)),
-        DropdownButtonFormField<String>(
-            initialValue: type,
-            decoration: InputDecoration(labelText: FeaturesStrings.ticketType),
-            items: ['named', 'wide']
-                .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                .toList(),
-            onSaved: (value) => widget.feature.ticketType = value,
-            onChanged: busy
-                ? null
-                : (v) {
-                    setState(() => widget.feature.ticketType = v);
-                    refresh();
-                  }),
         const SizedBox(height: 12),
         if (unsupported)
           Text(TicketLayoutStrings.unsupported)
@@ -173,6 +166,9 @@ class _TicketSettingsState extends State<TicketSettings> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.edit_outlined),
-            label: Text(TicketLayoutStrings.edit)),
+            label: Text(widget.feature.layout?['templates']?[type] == null &&
+                    (widget.feature.ticketBackground?.isEmpty ?? true)
+                ? TicketLayoutStrings.chooseTemplate
+                : TicketLayoutStrings.edit)),
       ]);
 }
