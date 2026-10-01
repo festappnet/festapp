@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'html_document_codec.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -125,7 +126,7 @@ class _HtmlViewState extends State<HtmlView> {
 
     Widget content = HtmlWithAppLinksWidget(
       context,
-      widget.html,
+      linkifyHtmlText(widget.html),
       renderMode: RenderMode.listView,
       textStyle: TextStyle(
         fontSize: widget.fontSize,
