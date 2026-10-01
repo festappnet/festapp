@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
+import { issueExistingUserSession } from "../_shared/issueExistingUserSession.ts";
+
 export type SignOutTarget = (accessToken: string) => Promise<void>;
 
 export async function cancelRegistration(
@@ -21,28 +23,17 @@ export async function cancelRegistration(
     };
   }
   try {
-    const { data: target, error: targetError } = await admin.auth.admin
-      .getUserById(user);
-    if (targetError || !target.user?.email) {
-      throw targetError ?? new Error("target unavailable");
-    }
-    const { data: link, error: linkError } = await admin.auth.admin
-      .generateLink({ type: "magiclink", email: target.user.email });
-    if (linkError || !link.properties?.hashed_token) {
-      throw linkError ?? new Error("link unavailable");
-    }
-    const { data: verified, error: verifyError } = await anon.auth.verifyOtp({
-      type: "magiclink",
-      token_hash: link.properties.hashed_token,
-    });
-    if (verifyError || !verified.session) {
-      throw verifyError ?? new Error("session unavailable");
-    }
-    await signOutTarget(verified.session.access_token);
-    await admin.rpc("mark_reception_auth_revoked_v1", {
+    const { data: target, error: targetError } = await admin.rpc("resolve_existing_user_session_v1", { p_user: user });
+    if (targetError || !target?.authEmail) throw new Error("target unavailable");
+    await issueExistingUserSession(
+      { targetUserId: user, expectedAuthEmail: target.authEmail }, admin, anon,
+      { purpose: "revoke", useSession: async (session) => { await signOutTarget(session.access_token); } },
+    );
+    const { error: markError } = await admin.rpc("mark_reception_auth_revoked_v1", {
       p_occasion: occasion,
       p_user: user,
     });
+    if (markError) throw new Error("revocation receipt unavailable");
     return { status: 200, body: { status: "cancelled" } };
   } catch {
     return {

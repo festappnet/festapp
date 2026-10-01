@@ -1,3 +1,4 @@
+import 'package:fstapp/services/google_auth_service.dart';
 import 'dart:async';
 
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -44,9 +45,17 @@ Future<void> main() async {
   debugProfileBuildsEnabled = true;
   configureUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
-  final initialRoute = kIsWeb
-      ? initialRouteForUri(RouterService.getCurrentBrowserUri())
-      : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+  try {
+    await GoogleAuthService.initializeLinks()
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // A missing native link/storage plugin must not block existing sign-in.
+  }
+  final initialRoute = GoogleAuthService.hasCallback
+      ? "/login"
+      : kIsWeb
+          ? initialRouteForUri(RouterService.getCurrentBrowserUri())
+          : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
   runApp(FestappBootstrap(
     initialRoute: initialRoute,
     initialize: initializeEverything,
@@ -401,6 +410,9 @@ class _MyAppState extends State<MyApp> {
   Offset _offset = Offset.zero;
 
   DeepLink _resolveDeepLink(PlatformDeepLink platformDeepLink) {
+    if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {
+      return DeepLink.path('/login', includePrefixMatches: false);
+    }
     if (platformDeepLink.initial) {
       return DeepLink.path(
         widget.initialRoute,

@@ -1,6 +1,34 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class CommonStrings {
+    static get googlePasswordVisibility() { return LocalizationService.tr("FeatureUser.googlePasswordVisibility"); }
+    static get googleUnlinkProof() { return LocalizationService.tr("FeatureUser.googleUnlinkProof"); }
+    static get googleContinue() { return LocalizationService.tr("FeatureUser.googleContinue"); }
+    static get googleSubtitle() { return LocalizationService.tr("FeatureUser.googleSubtitle"); }
+    static get googleOr() { return LocalizationService.tr("FeatureUser.googleOr"); }
+    static get googleClose() { return LocalizationService.tr("FeatureUser.googleClose"); }
+    static get googleOpening() { return LocalizationService.tr("FeatureUser.googleOpening"); }
+    static get googleCompleting() { return LocalizationService.tr("FeatureUser.googleCompleting"); }
+    static get googleProof() { return LocalizationService.tr("FeatureUser.googleProof"); }
+    static get googleLink() { return LocalizationService.tr("FeatureUser.googleLink"); }
+    static get googleProfile() { return LocalizationService.tr("FeatureUser.googleProfile"); }
+    static get googleConsent() { return LocalizationService.tr("FeatureUser.googleConsent"); }
+    static get googleCreate() { return LocalizationService.tr("FeatureUser.googleCreate"); }
+    static get googleRetry() { return LocalizationService.tr("FeatureUser.googleRetry"); }
+    static get googleCancelled() { return LocalizationService.tr("FeatureUser.googleCancelled"); }
+    static get googleExpired() { return LocalizationService.tr("FeatureUser.googleExpired"); }
+    static get googleError() { return LocalizationService.tr("FeatureUser.googleError"); }
+    static get googleProofError() { return LocalizationService.tr("FeatureUser.googleProofError"); }
+    static get googleLeaveDraft() { return LocalizationService.tr("FeatureUser.googleLeaveDraft"); }
+    static get googleMailbox() { return LocalizationService.tr("FeatureUser.googleMailbox"); }
+    static get googleSendCode() { return LocalizationService.tr("FeatureUser.googleSendCode"); }
+    static get googleVerifyCode() { return LocalizationService.tr("FeatureUser.googleVerifyCode"); }
+    static get googleCode() { return LocalizationService.tr("FeatureUser.googleCode"); }
+    static get googleUnlink() { return LocalizationService.tr("FeatureUser.googleUnlink"); }
+    static get googleMfa() { return LocalizationService.tr("FeatureUser.googleMfa"); }
+
+    static get googleTerms() { return LocalizationService.tr("FeatureUser.googleTerms"); }
+    static get googlePrivacy() { return LocalizationService.tr("FeatureUser.googlePrivacy"); }
     static get signIn() { return LocalizationService.tr("FeatureUser.signIn"); }
     static get signOut() { return LocalizationService.tr("FeatureUser.signOut"); }
     static get admin() { return LocalizationService.tr("FeatureUser.admin", {}, "Admin"); }
