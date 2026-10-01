@@ -3,16 +3,92 @@ import 'package:html/parser.dart' as parser;
 
 enum HtmlContentProfile { appContent, songContent, emailContent }
 
+/// Adds contact links to displayed text without changing attributes or styling.
+String linkifyHtmlText(String html) {
+  final fullDocument =
+      RegExp(r'<!doctype\s|<(?:html|head|body)(?:\s|>)', caseSensitive: false)
+          .hasMatch(html);
+  final dom.Node root =
+      fullDocument ? parser.parse(html) : parser.parseFragment(html);
+  return _linkifyHtmlRoot(root) ? _serialize(root) : html;
+}
+
+final _contactPattern = RegExp(
+  r'(https?://[^\s<>]+|www\.[^\s<>]+)|'
+  r'([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})|'
+  r'(?<![\w+])((?:\+|00)\d{1,3}[ \u00a0.-]?(?:\d[ \u00a0.-]?){6,11}\d|\d{3}[ \u00a0.-]?\d{3}[ \u00a0.-]?\d{3})(?![\w])',
+  caseSensitive: false,
+);
+
+bool _linkifyHtmlRoot(dom.Node root) {
+  var changed = false;
+  void visit(dom.Node parent) {
+    for (final child in List<dom.Node>.of(parent.nodes)) {
+      if (child is dom.Element) {
+        if (!{
+          'a',
+          'pre',
+          'code',
+          'style',
+          'head',
+          'script',
+          'textarea',
+          'button'
+        }.contains(child.localName)) {
+          visit(child);
+        }
+      } else if (child is dom.Text && !child.data.contains('{{')) {
+        final replacement = <dom.Node>[];
+        var offset = 0;
+        for (final match in _contactPattern.allMatches(child.data)) {
+          var value = match.group(0)!;
+          final trailing = match.group(1) != null
+              ? RegExp(r'[.,;!?)]+$').firstMatch(value)?.group(0) ?? ''
+              : '';
+          value = value.substring(0, value.length - trailing.length);
+          final String url;
+          if (match.group(1) != null) {
+            url = value.toLowerCase().startsWith('www.')
+                ? 'https://$value'
+                : value;
+          } else if (match.group(2) != null) {
+            url = 'mailto:$value';
+          } else {
+            var number = value.replaceAll(RegExp(r'[\s.-]'), '');
+            if (number.startsWith('00')) number = '+${number.substring(2)}';
+            final digits = number.replaceAll('+', '');
+            if (digits.length < 7 || digits.length > 15) continue;
+            url = 'tel:$number';
+          }
+          replacement.add(dom.Text(child.data.substring(offset, match.start)));
+          replacement.add(dom.Element.tag('a')
+            ..attributes['href'] = url
+            ..text = value);
+          if (trailing.isNotEmpty) replacement.add(dom.Text(trailing));
+          offset = match.end;
+        }
+        if (offset > 0) {
+          replacement.add(dom.Text(child.data.substring(offset)));
+          final index = parent.nodes.indexOf(child);
+          child.remove();
+          parent.nodes.insertAll(index, replacement);
+          changed = true;
+        }
+      }
+    }
+  }
+
+  visit(root);
+  return changed;
+}
+
 /// Legacy app styling/link policy applies only to an edited draft. Song and
 /// email content retain typography, whitespace and template/layout CSS.
 String applyHtmlContentProfile(String html, HtmlContentProfile profile) {
   if (profile != HtmlContentProfile.appContent) return html;
   final root = HtmlDocumentCodec.decode(html).copyRoot();
-  final pattern = RegExp(
-      r'https?://[^\s<>]+|www\.[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|\+?\d{3}[-. ]\d{3}[-. ]\d{3}',
-      caseSensitive: false);
-  void visit(dom.Node parent, bool linkable) {
-    for (final child in List<dom.Node>.of(parent.nodes)) {
+  void visit(dom.Node parent) {
+    for (final child in parent.nodes) {
       if (child is dom.Element) {
         final css = child.attributes['style'];
         if (css != null) {
@@ -28,44 +104,13 @@ String applyHtmlContentProfile(String html, HtmlContentProfile profile) {
           }
         }
         child.attributes.remove('color');
-        visit(
-            child,
-            linkable &&
-                !{'a', 'pre', 'code', 'style', 'head'}
-                    .contains(child.localName));
-      } else if (child is dom.Text && linkable && !child.data.contains('{{')) {
-        final replacement = <dom.Node>[];
-        var offset = 0;
-        for (final match in pattern.allMatches(child.data)) {
-          replacement.add(dom.Text(child.data.substring(offset, match.start)));
-          var value = match.group(0)!;
-          final trailing =
-              RegExp(r'[.,;!?)]+$').firstMatch(value)?.group(0) ?? '';
-          value = value.substring(0, value.length - trailing.length);
-          final url = value.contains('@')
-              ? 'mailto:$value'
-              : value.startsWith('www.')
-                  ? 'https://$value'
-                  : value.startsWith('http')
-                      ? value
-                      : 'tel:${value.replaceAll(RegExp(r'[-. ]'), '')}';
-          replacement.add(dom.Element.tag('a')
-            ..attributes['href'] = url
-            ..text = value);
-          if (trailing.isNotEmpty) replacement.add(dom.Text(trailing));
-          offset = match.end;
-        }
-        if (offset > 0) {
-          replacement.add(dom.Text(child.data.substring(offset)));
-          final index = parent.nodes.indexOf(child);
-          child.remove();
-          parent.nodes.insertAll(index, replacement);
-        }
+        visit(child);
       }
     }
   }
 
-  visit(root, true);
+  visit(root);
+  _linkifyHtmlRoot(root);
   return _serialize(root);
 }
 
