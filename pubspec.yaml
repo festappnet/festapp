@@ -52,6 +52,7 @@ dependencies:
   geolocator: ^14.0.2
   flutter_widget_from_html: ^0.17.1
   super_editor: 0.3.0-dev.52
+  follow_the_leader: 0.5.3
   super_editor_clipboard: 0.2.10
   super_clipboard: 0.9.1
   http_parser: ^4.1.2
