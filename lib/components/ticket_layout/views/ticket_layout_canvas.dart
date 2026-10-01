@@ -1,0 +1,445 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
+import '../ticket_layout_controller.dart';
+import '../ticket_layout_service.dart';
+import '../ticket_text.dart';
+import '../ticket_layout_strings.dart';
+
+class TicketLayoutCanvas extends StatefulWidget {
+  final TicketLayoutController controller;
+  final TicketLayoutResources resources;
+  final Map<String, String?> data;
+  final bool pan, wholePage, snap, grid;
+  final double gridStep;
+  final TransformationController transform;
+  const TicketLayoutCanvas(
+      {super.key,
+      required this.controller,
+      required this.resources,
+      required this.data,
+      required this.transform,
+      this.pan = false,
+      this.wholePage = false,
+      this.snap = true,
+      this.grid = false,
+      this.gridStep = 10});
+  @override
+  State<TicketLayoutCanvas> createState() => TicketLayoutCanvasState();
+}
+
+class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
+  final _viewport = GlobalKey();
+  final _focus = FocusNode();
+  final Set<int> _pointers = {};
+  int? _editing;
+  int? _middlePan;
+  Offset? _last;
+  bool _resize = false, _widthOnly = false, _space = false;
+  double get zoom {
+    final matrix = widget.transform.value;
+    return math.sqrt(
+        math.pow(matrix.entry(0, 0), 2) + math.pow(matrix.entry(1, 0), 2));
+  }
+
+  bool get panning => widget.pan || _space;
+  @override
+  void initState() {
+    super.initState();
+    widget.transform.addListener(constrainView);
+    WidgetsBinding.instance.addPostFrameCallback((_) => fit());
+  }
+
+  @override
+  void didUpdateWidget(covariant TicketLayoutCanvas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.wholePage != widget.wholePage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => fit());
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.transform.removeListener(constrainView);
+    _focus.dispose();
+    super.dispose();
+  }
+
+  Size get viewportSize =>
+      (_viewport.currentContext?.findRenderObject() as RenderBox?)?.size ??
+      const Size(800, 500);
+  bool _constraining = false;
+  void constrainView() {
+    if (_constraining || !mounted || _viewport.currentContext == null) return;
+    final bounds = widget.wholePage
+        ? Offset.zero & widget.controller.document.page
+        : widget.controller.document.area;
+    final size = viewportSize, matrix = widget.transform.value;
+    final scale = zoom;
+    double translation(
+        double current, double start, double end, double viewport) {
+      final inset = math.min(16.0, viewport / 4);
+      final low = viewport - inset - end * scale, high = inset - start * scale;
+      return current.clamp(math.min(low, high), math.max(low, high));
+    }
+
+    final x =
+        translation(matrix.entry(0, 3), bounds.left, bounds.right, size.width);
+    final y =
+        translation(matrix.entry(1, 3), bounds.top, bounds.bottom, size.height);
+    if ((x - matrix.entry(0, 3)).abs() < .001 &&
+        (y - matrix.entry(1, 3)).abs() < .001) {
+      return;
+    }
+    final next = matrix.clone()
+      ..setEntry(0, 3, x)
+      ..setEntry(1, 3, y);
+    _constraining = true;
+    widget.transform.value = next;
+    _constraining = false;
+  }
+
+  void fit() {
+    if (!mounted) return;
+    final doc = widget.controller.document;
+    final b = widget.wholePage ? Offset.zero & doc.page : doc.area;
+    final size = viewportSize;
+    final scale = math
+        .min((size.width - 40) / b.width, (size.height - 40) / b.height)
+        .clamp(.2, 6.0);
+    widget.transform.value = Matrix4.identity()
+      ..translateByDouble((size.width - b.width * scale) / 2 - b.left * scale,
+          (size.height - b.height * scale) / 2 - b.top * scale, 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1);
+  }
+
+  void zoomAt(double factor, [Offset? anchor]) {
+    final point = anchor ?? viewportSize.center(Offset.zero);
+    final scene = widget.transform.toScene(point);
+    final scale = (zoom * factor).clamp(.2, 6.0);
+    widget.transform.value = Matrix4.identity()
+      ..translateByDouble(
+          point.dx - scene.dx * scale, point.dy - scene.dy * scale, 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1);
+  }
+
+  void _down(PointerDownEvent event) {
+    _focus.requestFocus();
+    _pointers.add(event.pointer);
+    if (event.buttons == kMiddleMouseButton) {
+      _middlePan = event.pointer;
+      return;
+    }
+    if (_pointers.length > 1) {
+      widget.controller.cancelGesture();
+      setState(() => _editing = null);
+      return;
+    }
+    if (panning || event.buttons != kPrimaryButton) return;
+    final point = widget.transform.toScene(event.localPosition) -
+        widget.controller.document.area.topLeft;
+    final selected = widget.controller.selection;
+    final handle = 14 / zoom;
+    _resize = selected != null &&
+        !selected.locked &&
+        (point - selected.box.bottomRight).distance < handle;
+    _widthOnly = selected != null &&
+        !selected.locked &&
+        (point - Offset(selected.box.right, selected.box.center.dy)).distance <
+            handle;
+    final hit = widget.controller.document.elements.reversed
+        .where((e) => e.visible && e.box.inflate(3 / zoom).contains(point))
+        .firstOrNull;
+    if (!_resize && !_widthOnly) widget.controller.select(hit?.id);
+    if (widget.controller.selection == null ||
+        widget.controller.selection!.locked) {
+      return;
+    }
+    widget.controller.beginGesture();
+    _last = point;
+    setState(() => _editing = event.pointer);
+  }
+
+  void _move(PointerMoveEvent event) {
+    if (event.pointer == _middlePan) {
+      final next = widget.transform.value.clone();
+      next.setEntry(0, 3, next.entry(0, 3) + event.delta.dx);
+      next.setEntry(1, 3, next.entry(1, 3) + event.delta.dy);
+      widget.transform.value = next;
+      return;
+    }
+    if (event.pointer != _editing || _pointers.length != 1) return;
+    final point = widget.transform.toScene(event.localPosition) -
+        widget.controller.document.area.topLeft;
+    final delta = point - _last!;
+    _last = point;
+    if (_resize || _widthOnly) {
+      widget.controller.resize(delta, widthOnly: _widthOnly);
+    } else {
+      widget.controller.move(delta,
+          zoom: zoom,
+          snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
+          gridStep: widget.grid ? widget.gridStep : null);
+    }
+  }
+
+  void _up(PointerEvent e) {
+    _pointers.remove(e.pointer);
+    if (_middlePan == e.pointer) _middlePan = null;
+    if (_editing == e.pointer) {
+      widget.controller.endGesture();
+      setState(() => _editing = null);
+    }
+  }
+
+  KeyEventResult _key(FocusNode node, KeyEvent e) {
+    if (e.logicalKey == LogicalKeyboardKey.space) {
+      setState(() => _space = e is! KeyUpEvent);
+      return KeyEventResult.handled;
+    }
+    if (e is KeyUpEvent) return KeyEventResult.ignored;
+    final ctrl = HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed;
+    if (ctrl && e.logicalKey == LogicalKeyboardKey.keyZ) {
+      HardwareKeyboard.instance.isShiftPressed
+          ? widget.controller.redo()
+          : widget.controller.undo();
+      return KeyEventResult.handled;
+    }
+    if (ctrl && e.logicalKey == LogicalKeyboardKey.keyY) {
+      widget.controller.redo();
+      return KeyEventResult.handled;
+    }
+    if (e.logicalKey == LogicalKeyboardKey.escape) {
+      widget.controller.cancelGesture();
+      widget.controller.select(null);
+      setState(() => _editing = null);
+      return KeyEventResult.handled;
+    }
+    if (e.logicalKey == LogicalKeyboardKey.delete) {
+      final s = widget.controller.selection;
+      if (s != null && !['qr', 'ticketSymbol'].contains(s.binding)) {
+        widget.controller.change(s.copyWith(visible: false));
+      }
+      return KeyEventResult.handled;
+    }
+    final step = HardwareKeyboard.instance.isShiftPressed ? 10.0 : 1.0;
+    final delta = {
+      LogicalKeyboardKey.arrowLeft: Offset(-step, 0),
+      LogicalKeyboardKey.arrowRight: Offset(step, 0),
+      LogicalKeyboardKey.arrowUp: Offset(0, -step),
+      LogicalKeyboardKey.arrowDown: Offset(0, step)
+    }[e.logicalKey];
+    if (delta != null) {
+      widget.controller.move(delta, snap: false);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) => Focus(
+      focusNode: _focus,
+      onKeyEvent: _key,
+      child: ClipRect(
+          child: ColoredBox(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Listener(
+                  key: _viewport,
+                  onPointerDown: _down,
+                  onPointerMove: _move,
+                  onPointerUp: _up,
+                  onPointerCancel: (e) {
+                    widget.controller.cancelGesture();
+                    _up(e);
+                  },
+                  child: InteractiveViewer(
+                      transformationController: widget.transform,
+                      constrained: false,
+                      boundaryMargin: const EdgeInsets.all(double.infinity),
+                      minScale: .2,
+                      maxScale: 6,
+                      panEnabled: panning || _editing == null,
+                      scaleEnabled: true,
+                      child: RepaintBoundary(
+                          child: CustomPaint(
+                              size: widget.controller.document.page,
+                              painter: TicketLayoutPainter(widget.controller,
+                                  widget.resources, widget.data,
+                                  zoom: zoom,
+                                  gridStep: widget.grid
+                                      ? widget.gridStep
+                                      : null))))))));
+}
+
+class TicketLayoutPainter extends CustomPainter {
+  final TicketLayoutController controller;
+  final TicketLayoutResources resources;
+  final Map<String, String?> data;
+  final double zoom;
+  final double? gridStep;
+  final bool cropToTicket;
+  TicketLayoutPainter(this.controller, this.resources, this.data,
+      {this.zoom = 1, this.gridStep, this.cropToTicket = false})
+      : super(repaint: controller);
+  void _image(Canvas canvas, ui.Image image, Rect box) {
+    final fitted = applyBoxFit(BoxFit.contain,
+        Size(image.width.toDouble(), image.height.toDouble()), box.size);
+    canvas.drawImageRect(
+        image,
+        Offset.zero & Size(image.width.toDouble(), image.height.toDouble()),
+        Alignment.center.inscribe(fitted.destination, box),
+        Paint()..filterQuality = FilterQuality.medium);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final doc = controller.document;
+    canvas.save();
+    if (cropToTicket) canvas.translate(-doc.area.left, -doc.area.top);
+    canvas.drawRect(Offset.zero & doc.page, Paint()..color = Colors.white);
+    canvas.drawRect(doc.area, Paint()..color = const Color(0xffe6e6e6));
+    final artwork = resources.artworks[controller.artworkKey];
+    final background = artwork != null ? artwork.image : resources.background;
+    if (background != null) {
+      _image(canvas, background, doc.area);
+    }
+    canvas.save();
+    canvas.translate(doc.area.left, doc.area.top);
+    if (gridStep != null && gridStep! > 0) {
+      final paint = Paint()
+        ..color = Colors.blueGrey.withValues(alpha: .22)
+        ..strokeWidth = .6 / zoom;
+      for (double x = 0; x <= doc.area.width; x += gridStep!) {
+        canvas.drawLine(Offset(x, 0), Offset(x, doc.area.height), paint);
+      }
+      for (double y = 0; y <= doc.area.height; y += gridStep!) {
+        canvas.drawLine(Offset(0, y), Offset(doc.area.width, y), paint);
+      }
+    }
+    for (final e in doc.elements.where((e) => e.visible && e.binding != 'qr')) {
+      if (e.binding == 'logo') {
+        if (resources.logo != null) _image(canvas, resources.logo!, e.box);
+        continue;
+      }
+      final text = data[e.binding];
+      if (text == null) continue;
+      TicketTextFit fit;
+      try {
+        fit = fitTicketText(text, e, resources.metrics);
+      } on FormatException {
+        canvas.drawRect(
+            e.box, Paint()..color = Colors.red.withValues(alpha: .2));
+        continue;
+      }
+      canvas.save();
+      canvas.clipRect(e.box);
+      for (var i = 0; i < fit.lines.length; i++) {
+        var x = e.box.left +
+            (e.align == 'center'
+                ? (e.box.width - fit.widths[i]) / 2
+                : e.align == 'right'
+                    ? e.box.width - fit.widths[i]
+                    : 0);
+        final baseline = e.box.top +
+            resources.metrics.ascent * fit.size +
+            i * fit.size * 1.2;
+        for (final rune in fit.lines[i].runes) {
+          final c = String.fromCharCode(rune);
+          final painter = TextPainter(
+              text: TextSpan(
+                  text: c,
+                  style: TextStyle(
+                      fontFamily: 'TicketLayoutFont',
+                      fontSize: fit.size,
+                      color: Color(int.parse('ff${e.color}', radix: 16)),
+                      height: 1)),
+              textDirection: TextDirection.ltr)
+            ..layout();
+          painter.paint(
+              canvas,
+              Offset(
+                  x,
+                  baseline -
+                      painter.computeDistanceToActualBaseline(
+                          TextBaseline.alphabetic)));
+          x += resources.metrics.width(c, fit.size);
+          painter.dispose();
+        }
+      }
+      canvas.restore();
+      if (fit.overflow || fit.replaced) {
+        canvas.drawCircle(e.box.topRight, 3, Paint()..color = Colors.orange);
+      }
+    }
+    final q = doc.elements.firstWhere((e) => e.binding == 'qr');
+    final module = q.box.width / (resources.qrSize + 8);
+    canvas.drawRect(q.box, Paint()..color = Colors.white);
+    for (var y = 0; y < resources.qrSize; y++) {
+      for (var x = 0; x < resources.qrSize; x++) {
+        if (resources.qrModules[y * resources.qrSize + x] != 0) {
+          canvas.drawRect(
+              Rect.fromLTWH(q.box.left + (x + 4) * module,
+                  q.box.top + (y + 4) * module, module, module),
+              Paint()..color = Color(int.parse('ff${q.color}', radix: 16)));
+        }
+      }
+    }
+    final guide = Paint()
+      ..color = Colors.pink
+      ..strokeWidth = 1 / zoom;
+    if (controller.guideX != null) {
+      canvas.drawLine(Offset(controller.guideX!, 0),
+          Offset(controller.guideX!, doc.area.height), guide);
+    }
+    if (controller.guideY != null) {
+      canvas.drawLine(Offset(0, controller.guideY!),
+          Offset(doc.area.width, controller.guideY!), guide);
+    }
+    final selected = controller.selection;
+    if (selected != null) {
+      canvas.drawRect(
+          selected.box,
+          Paint()
+            ..color = Colors.blue
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 / zoom);
+      if (!selected.locked) {
+        final h = 10 / zoom;
+        for (final p in [
+          selected.box.bottomRight,
+          Offset(selected.box.right, selected.box.center.dy)
+        ]) {
+          canvas.drawRect(Rect.fromCenter(center: p, width: h, height: h),
+              Paint()..color = Colors.blue);
+        }
+      }
+      if (!selected.visible ||
+          data[selected.binding] == null &&
+              selected.binding != 'qr' &&
+              selected.binding != 'logo') {
+        final p = TextPainter(
+            text: TextSpan(
+                text: TicketLayoutStrings.binding(selected.binding),
+                style: const TextStyle(color: Colors.blue, fontSize: 10)),
+            textDirection: TextDirection.ltr)
+          ..layout(maxWidth: selected.box.width);
+        p.paint(canvas, selected.box.topLeft);
+        p.dispose();
+      }
+    }
+    canvas.restore();
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant TicketLayoutPainter old) =>
+      old.data != data ||
+      old.resources != resources ||
+      old.zoom != zoom ||
+      old.gridStep != gridStep ||
+      old.cropToTicket != cropToTicket ||
+      old.controller != controller;
+}
