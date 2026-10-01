@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "c8dd906b3766bcd9f6226ee1c385bfaa030832ad",
+  "baseMainSha": "b7b62b899242383cd35cd8d2145d93ea96f4aa3b",
   "release": {
-    "version": "0.20.40+524",
-    "note": "Use a white HTML editor caret in dark mode"
+    "version": "0.20.41+525",
+    "note": "Fix seat-map loading in closed-form editor previews"
   }
 }

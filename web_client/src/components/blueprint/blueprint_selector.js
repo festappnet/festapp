@@ -168,7 +168,10 @@ export class BlueprintSelector {
             
         } catch (e) {
             console.error(e);
-            content.innerHTML = `<div class="blueprint-error">Error: ${e.message}</div>`;
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'blueprint-error';
+            errorMessage.textContent = `${CommonStrings.error}: ${e.message}`;
+            content.replaceChildren(errorMessage);
             import('../ui/toast.js').then(({ Toast }) => {
                 new Toast(e.message, 'error').show();
             });
