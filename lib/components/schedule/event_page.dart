@@ -1278,7 +1278,6 @@ class _EventPageState extends State<EventPage> {
       context,
       eventId,
       saved,
-      showSuccessToast: false,
     );
     if (!mounted ||
         _event?.id != eventId ||
