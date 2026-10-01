@@ -408,15 +408,14 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             defaults: propertyDefaults,
             metrics: resources.metrics,
             data: resources.scenarios[scenario]),
-        if (widget.type == 'wide')
-          Padding(
-              padding: const EdgeInsets.all(12),
-              child: ImageArea(
-                  imageUrl: background,
-                  hint: TicketLayoutStrings.background,
-                  enabled: !imageBusy,
-                  onFileSelected: upload,
-                  onRemove: removeBackground)),
+        Padding(
+            padding: const EdgeInsets.all(12),
+            child: ImageArea(
+                imageUrl: background,
+                hint: TicketLayoutStrings.background,
+                enabled: !imageBusy,
+                onFileSelected: upload,
+                onRemove: removeBackground)),
         TextButton(
             onPressed: imageBusy
                 ? null

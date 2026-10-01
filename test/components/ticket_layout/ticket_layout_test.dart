@@ -15,6 +15,7 @@ import 'package:fstapp/components/ticket_layout/views/ticket_layout_canvas.dart'
 import 'package:fstapp/components/ticket_layout/views/ticket_layout_editor.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_layout_properties.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 
 final fixture = jsonDecode(
     File('test/fixtures/ticket_layout/resolve.json').readAsStringSync()) as Map;
@@ -29,6 +30,16 @@ TicketLayoutResources resources() => TicketLayoutResources(
     metrics: TicketFontMetrics.fromJson(fixture['metrics']),
     qrSize: fixture['qrMatrix']['size'],
     qrModules: (fixture['qrMatrix']['data'] as List).cast<int>());
+
+class SettingsService extends TicketLayoutService {
+  String? resolvedType;
+  @override
+  Future<TicketLayoutResources> resolve(int occasionId, String type,
+      Map<String, dynamic>? layout, String? background) async {
+    resolvedType = type;
+    return resources();
+  }
+}
 
 class FakeService extends TicketLayoutService {
   int pdfCalls = 0;
@@ -47,6 +58,28 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  testWidgets('settings expose templates without a second type selector',
+      (tester) async {
+    for (final type in <String?>['named', 'wide', null]) {
+      final feature = TicketFeature(code: 'ticket', ticketType: type);
+      final service = SettingsService();
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: SingleChildScrollView(
+                  child: TicketSettings(
+                      key: UniqueKey(),
+                      feature: feature,
+                      occasionId: 7,
+                      service: service)))));
+      await tester.pumpAndSettle();
+      expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+      expect(find.text('TicketLayout.chooseTemplate'), findsOneWidget);
+      expect(service.resolvedType, type == 'named' ? 'named' : 'wide');
+      expect(feature.ticketType, type);
+      expect(feature.layout, isNull);
+    }
+  });
+
   test('artwork selection and geometry share undo history', () {
     final original = document();
     final controller = TicketLayoutController(original, artworkKey: 'cream');
