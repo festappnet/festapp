@@ -182,15 +182,15 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     super.dispose();
   }
 
-  Widget _editingActions() => Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
+  Widget _editingActions() => Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
         children: [
           TextButton(
             onPressed: _saving ? null : _requestCancel,
             child: Text(CommonStrings.storno),
           ),
-          const SizedBox(width: 12),
           FilledButton(
             onPressed: _saving || !_controller!.hasUserChanges ? null : _apply,
             child: Text(CommonStrings.save),
