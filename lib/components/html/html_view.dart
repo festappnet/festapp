@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'html_document_codec.dart';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -80,6 +82,7 @@ class HtmlView extends StatefulWidget {
   final double fontSize;
   final bool isSelectable;
   final Color? color;
+  final Uint8List? Function(String source)? imageBytesResolver;
 
   /// Optional overrides; if you don’t pass them, we’ll fall back to the scope.
   final VoidCallback? twoFingersOn;
@@ -94,6 +97,7 @@ class HtmlView extends StatefulWidget {
     this.fontSize = 18,
     this.isSelectable = false,
     this.color,
+    this.imageBytesResolver,
     this.twoFingersOn,
     this.twoFingersOff,
     this.offlineOverride,
@@ -122,7 +126,7 @@ class _HtmlViewState extends State<HtmlView> {
 
     Widget content = HtmlWithAppLinksWidget(
       context,
-      widget.html,
+      linkifyHtmlText(widget.html),
       renderMode: RenderMode.listView,
       textStyle: TextStyle(
         fontSize: widget.fontSize,
@@ -157,14 +161,19 @@ class _HtmlViewState extends State<HtmlView> {
       },
       customWidgetBuilder: (el) {
         if (el.localName == 'img') {
-          final src = el.attributes['src']!;
-          final img = src.startsWith('data:image/')
-              ? Image.memory(base64Decode(src.split(',').last))
-              : CachedNetworkImage(
-                  imageUrl: src,
-                  cacheManager: DefaultCacheManager(),
-                  imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
-                );
+          final src = el.attributes['src'] ?? el.attributes['data-src'];
+          if (src == null || src.isEmpty)
+            return const Icon(Icons.broken_image_outlined);
+          final bytes = widget.imageBytesResolver?.call(src);
+          final img = bytes != null
+              ? Image.memory(bytes)
+              : src.startsWith('data:image/')
+                  ? Image.memory(base64Decode(src.split(',').last))
+                  : CachedNetworkImage(
+                      imageUrl: src,
+                      cacheManager: DefaultCacheManager(),
+                      imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
+                    );
           return Align(
             alignment: Alignment.center,
             heightFactor: 1,

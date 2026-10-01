@@ -1,5 +1,6 @@
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/components/forms/form_html_content.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
@@ -10,13 +11,16 @@ import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/html/html_view.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../form_strings.dart';
+
 import 'package:fstapp/components/_shared/common_strings.dart';
+
 import '../widgets_editor/form_fields_generator.dart';
+
 import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
 
 const double kHiddenOpacity = 0.5;
@@ -24,8 +28,11 @@ const double kHiddenOpacity = 0.5;
 class FormEditorContent extends StatefulWidget {
   final String formLink;
   final VoidCallback? onDataUpdated;
-  const FormEditorContent(
-      {super.key, required this.formLink, this.onDataUpdated});
+  const FormEditorContent({
+    super.key,
+    required this.formLink,
+    this.onDataUpdated,
+  });
 
   @override
   _FormEditorContentState createState() => _FormEditorContentState();
@@ -33,9 +40,22 @@ class FormEditorContent extends StatefulWidget {
 
 class _FormEditorContentState extends State<FormEditorContent>
     with TickerProviderStateMixin {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave,
+    child: _buildHtmlParent(context),
+  );
+
   FormEditBundle? _bundle;
   String? _formLink;
   final ScrollController _scrollController = ScrollController();
+  @override
+  void dispose() {
+    _htmlSave.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -58,14 +78,25 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Future<void> saveChanges() async {
+    await ExceptionHandler.guardVoid(
+      context,
+      futureFunction: () =>
+          _htmlSave.save(() => _performHtmlSave(), context: context),
+    );
+  }
+
+  Future<void> _performHtmlSave() async {
     // UPDATED: Check for bundle and use bundle.form
     if (_bundle == null) return;
     final form = _bundle!.form;
 
     if (form.startTime != null && form.endTime != null) {
       if (form.endTime!.isBefore(form.startTime!)) {
-        ToastHelper.Show(context, FormStrings.errorEndTimeBeforeStartTime,
-            severity: ToastSeverity.NotOk);
+        ToastHelper.Show(
+          context,
+          FormStrings.errorEndTimeBeforeStartTime,
+          severity: ToastSeverity.NotOk,
+        );
         return;
       }
     }
@@ -80,8 +111,9 @@ class _FormEditorContentState extends State<FormEditorContent>
           field.type == FormHelper.fieldTypeProductType &&
           field.productType != null &&
           field.productType!.products != null) {
-        field.productType!.products!
-            .sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+        field.productType!.products!.sort(
+          (a, b) => (a.order ?? 0).compareTo(b.order ?? 0),
+        );
         for (int i = 0; i < field.productType!.products!.length; i++) {
           field.productType!.products![i].order = i;
         }
@@ -89,20 +121,29 @@ class _FormEditorContentState extends State<FormEditorContent>
     }
 
     try {
+      await prepareFormHtml(form, _htmlSave);
       await DbForms.updateForm(form);
+      _htmlSave.markSaved();
       if (!mounted) return;
-      ToastHelper.Show(context, "${CommonStrings.saved}: ${form.link}",
-          severity: ToastSeverity.Ok);
+      ToastHelper.Show(
+        context,
+        "${CommonStrings.saved}: ${form.link}",
+        severity: ToastSeverity.Ok,
+      );
       await loadData();
       widget.onDataUpdated?.call();
     } catch (e) {
       if (!mounted) return;
-      ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
-          severity: ToastSeverity.NotOk);
+      ToastHelper.Show(
+        context,
+        e.toString().replaceFirst("Exception: ", ""),
+        severity: ToastSeverity.NotOk,
+      );
     }
   }
 
-  void cancelEdit() {
+  Future<void> cancelEdit() async {
+    if (!await confirmHtmlDiscard(context, _htmlSave) || !mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -142,11 +183,11 @@ class _FormEditorContentState extends State<FormEditorContent>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(FormStrings.availability,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        FormStrings.availability,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
                       _buildAvailabilityStatusBanner(form),
                       /*
                         (form.isOpen ?? true) ? FormStrings.formOpenMessage : FormStrings.formClosedMessage,
@@ -164,8 +205,8 @@ class _FormEditorContentState extends State<FormEditorContent>
                   value: form.isOpen ?? true,
                   onChanged: RightsService.isOrderEditor()
                       ? (val) => setState(() {
-                            form.isOpen = val;
-                          })
+                          form.isOpen = val;
+                        })
                       : null,
                 ),
               ],
@@ -175,10 +216,14 @@ class _FormEditorContentState extends State<FormEditorContent>
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
-                title: Text(FormStrings.scheduleAndLimits,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(FormStrings.autoOpenHelp,
-                    style: Theme.of(context).textTheme.bodySmall),
+                title: Text(
+                  FormStrings.scheduleAndLimits,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  FormStrings.autoOpenHelp,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 initiallyExpanded: false,
                 shape: const Border(), // Remove default borders
                 children: [
@@ -187,42 +232,51 @@ class _FormEditorContentState extends State<FormEditorContent>
                     children: [
                       Expanded(
                         child: _buildDateTimeInput(
-                            FormStrings.labelStartTime, form.startTime, (date) {
-                          setState(() {
-                            form.startTime = date;
-                            if (date == null) {
-                              form.enableCountdown = false;
-                            } else {
-                              if (form.endTime == null ||
-                                  form.endTime!.isBefore(date)) {
-                                form.endTime =
-                                    date.add(const Duration(hours: 1));
+                          FormStrings.labelStartTime,
+                          form.startTime,
+                          (date) {
+                            setState(() {
+                              form.startTime = date;
+                              if (date == null) {
+                                form.enableCountdown = false;
+                              } else {
+                                if (form.endTime == null ||
+                                    form.endTime!.isBefore(date)) {
+                                  form.endTime = date.add(
+                                    const Duration(hours: 1),
+                                  );
+                                }
                               }
-                            }
-                          });
-                        },
-                            isStart: true,
-                            enabled: RightsService.isOrderEditor()),
+                            });
+                          },
+                          isStart: true,
+                          enabled: RightsService.isOrderEditor(),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildDateTimeInput(
-                            FormStrings.labelEndTime, form.endTime, (date) {
-                          // Validation Logic: Prevent setting end time before start time
-                          // Note: UI picker is now also restricted, but this double check is safe.
-                          if (date != null &&
-                              form.startTime != null &&
-                              date.isBefore(form.startTime!)) {
-                            ToastHelper.Show(context,
+                          FormStrings.labelEndTime,
+                          form.endTime,
+                          (date) {
+                            // Validation Logic: Prevent setting end time before start time
+                            // Note: UI picker is now also restricted, but this double check is safe.
+                            if (date != null &&
+                                form.startTime != null &&
+                                date.isBefore(form.startTime!)) {
+                              ToastHelper.Show(
+                                context,
                                 FormStrings.errorEndTimeBeforeStartTime,
-                                severity: ToastSeverity.NotOk);
-                            return;
-                          }
-                          setState(() => form.endTime = date);
-                        },
-                            isEnd: true,
-                            minDate: form.startTime,
-                            enabled: RightsService.isOrderEditor()),
+                                severity: ToastSeverity.NotOk,
+                              );
+                              return;
+                            }
+                            setState(() => form.endTime = date);
+                          },
+                          isEnd: true,
+                          minDate: form.startTime,
+                          enabled: RightsService.isOrderEditor(),
+                        ),
                       ),
                     ],
                   ),
@@ -230,19 +284,22 @@ class _FormEditorContentState extends State<FormEditorContent>
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     secondary: const Icon(Icons.timer_outlined),
-                    title: Text(FormStrings.labelCountdownTimer,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text(
+                      FormStrings.labelCountdownTimer,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     subtitle: Text(
                       form.startTime == null
                           ? FormStrings.requiresStartTime
                           : FormStrings.countdownDescription,
                       style: TextStyle(
-                          color: form.startTime == null ? Colors.grey : null,
-                          fontSize: 12),
+                        color: form.startTime == null ? Colors.grey : null,
+                        fontSize: 12,
+                      ),
                     ),
                     value: form.enableCountdown,
-                    onChanged: form.startTime != null &&
-                            RightsService.isOrderEditor()
+                    onChanged:
+                        form.startTime != null && RightsService.isOrderEditor()
                         ? (val) => setState(() => form.enableCountdown = val)
                         : null,
                   ),
@@ -285,8 +342,10 @@ class _FormEditorContentState extends State<FormEditorContent>
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
-                title: Text(FormStrings.labelClosedMessage,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(
+                  FormStrings.labelClosedMessage,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 initiallyExpanded: false,
                 shape: const Border(),
                 children: [
@@ -309,11 +368,14 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Widget _buildDateTimeInput(
-      String label, DateTime? value, Function(DateTime?) onChanged,
-      {bool isStart = false,
-      bool isEnd = false,
-      DateTime? minDate,
-      bool enabled = true}) {
+    String label,
+    DateTime? value,
+    Function(DateTime?) onChanged, {
+    bool isStart = false,
+    bool isEnd = false,
+    DateTime? minDate,
+    bool enabled = true,
+  }) {
     /*
     Color? statusColor;
     String statusText = "";
@@ -343,8 +405,9 @@ class _FormEditorContentState extends State<FormEditorContent>
               final firstDate = minDate ?? DateTime(2000);
 
               // Ensure initialDate is valid (must be >= firstDate)
-              final effectiveInitialDate =
-                  initialDate.isBefore(firstDate) ? firstDate : initialDate;
+              final effectiveInitialDate = initialDate.isBefore(firstDate)
+                  ? firstDate
+                  : initialDate;
 
               final date = await showDatePicker(
                 context: context,
@@ -358,8 +421,15 @@ class _FormEditorContentState extends State<FormEditorContent>
                   initialTime: TimeOfDay.fromDateTime(value ?? DateTime.now()),
                 );
                 if (time != null) {
-                  onChanged(DateTime(
-                      date.year, date.month, date.day, time.hour, time.minute));
+                  onChanged(
+                    DateTime(
+                      date.year,
+                      date.month,
+                      date.day,
+                      time.hour,
+                      time.minute,
+                    ),
+                  );
                 }
               }
             },
@@ -367,12 +437,15 @@ class _FormEditorContentState extends State<FormEditorContent>
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
           suffixIcon: value != null && enabled
               ? IconButton(
                   icon: const Icon(Icons.clear, size: 18),
-                  onPressed: () => onChanged(null))
+                  onPressed: () => onChanged(null),
+                )
               : const Icon(Icons.calendar_today, size: 18),
         ),
         child: Column(
@@ -380,10 +453,11 @@ class _FormEditorContentState extends State<FormEditorContent>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-                value != null
-                    ? DateFormat('dd.MM.yyyy HH:mm').format(value)
-                    : FormStrings.notSet,
-                style: const TextStyle(fontSize: 14)),
+              value != null
+                  ? DateFormat('dd.MM.yyyy HH:mm').format(value)
+                  : FormStrings.notSet,
+              style: const TextStyle(fontSize: 14),
+            ),
             /*
             if (statusText.isNotEmpty)
                Padding(
@@ -407,11 +481,13 @@ class _FormEditorContentState extends State<FormEditorContent>
       color = ThemeConfig.redColor(context);
     } else if (form.startTime != null && now.isBefore(form.startTime!)) {
       text = FormStrings.scheduledWithTime(
-          DateFormat('dd.MM HH:mm').format(form.startTime!));
+        DateFormat('dd.MM HH:mm').format(form.startTime!),
+      );
       color = ThemeConfig.redColor(context);
     } else if (form.endTime != null && now.isAfter(form.endTime!)) {
       text = FormStrings.endedWithTime(
-          DateFormat('dd.MM HH:mm').format(form.endTime!));
+        DateFormat('dd.MM HH:mm').format(form.endTime!),
+      );
       color = ThemeConfig.redColor(context);
     } else {
       text = FormStrings.formOpenMessage;
@@ -425,13 +501,16 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Widget _buildHtmlFieldPreview(
-      String label, String? content, ValueChanged<String> onChanged,
-      {String? defaultText,
-      String? helpText,
-      bool showLabel = true,
-      bool minimal = false,
-      double? fontSize,
-      bool enabled = true}) {
+    String label,
+    String? content,
+    ValueChanged<String> onChanged, {
+    String? defaultText,
+    String? helpText,
+    bool showLabel = true,
+    bool minimal = false,
+    double? fontSize,
+    bool enabled = true,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -443,11 +522,15 @@ class _FormEditorContentState extends State<FormEditorContent>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (showLabel)
-                      Text(label,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        label,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     if (helpText != null)
-                      Text(helpText,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        helpText,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                   ],
                 ),
               ),
@@ -464,52 +547,22 @@ class _FormEditorContentState extends State<FormEditorContent>
                       : Colors.grey.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white24
-                          : Colors.grey.withOpacity(0.3)),
-                ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: minimal
-                    ? const EdgeInsets.fromLTRB(4, 32, 4, 0)
-                    : const EdgeInsets.fromLTRB(12, 12, 80, 12),
-                child: HtmlView(
-                  html: minimal
-                      ? "<div style='text-align: center;'>${(content?.isNotEmpty ?? false) ? content! : (defaultText ?? FormStrings.notSet)}</div>"
-                      : ((content?.isNotEmpty ?? false)
-                          ? content!
-                          : '<div style="opacity: 0.7;">${defaultText ?? FormStrings.notSet}</div>'),
-                  isSelectable: true,
-                  fontSize: fontSize ?? 13,
-                ),
-              ),
-              Positioned(
-                top: 2,
-                right: 2,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: Text(CommonStrings.edit),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: Theme.of(context).primaryColor,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white24
+                        : Colors.grey.withOpacity(0.3),
                   ),
-                  onPressed: !enabled
-                      ? null
-                      : () async {
-                          final result = await RouterService.navigatePageInfo(
-                            context,
-                            HtmlEditorRoute(content: {
-                              HtmlEditorPage.parContent: content ?? ''
-                            }, occasionId: _bundle!.form.occasionId),
-                          );
-                          if (result != null && mounted) {
-                            onChanged(result as String);
-                          }
-                        },
                 ),
-              ),
-            ],
+          child: Padding(
+            padding: EdgeInsets.all(minimal ? 4 : 12),
+            child: EditableHtmlField(
+              html: content ?? '',
+              placeholder: defaultText ?? FormStrings.notSet,
+              enabled: enabled,
+              fontSize: fontSize ?? 13,
+              coordinator: _htmlSave,
+              owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
+              onChanged: onChanged,
+            ),
           ),
         ),
       ],
@@ -535,79 +588,90 @@ class _FormEditorContentState extends State<FormEditorContent>
       builder: (BuildContext dialogContext) {
         List<Widget> resolvedItemsForDialog = [];
         if (personalInfoTypes.isNotEmpty) {
-          resolvedItemsForDialog.add(PopupMenuButton<String>(
-            tooltip: FormStrings.personalInfo,
-            offset: isWideScreen ? const Offset(160, 0) : const Offset(20, 0),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0)),
-            onSelected: (String type) {
-              Navigator.of(dialogContext).pop(type);
-            },
-            itemBuilder: (BuildContext popupContext) {
-              return personalInfoTypes.map((type) {
-                return PopupMenuItem<String>(
-                  value: type,
-                  child: Row(
-                    children: [
-                      Icon(
+          resolvedItemsForDialog.add(
+            PopupMenuButton<String>(
+              tooltip: FormStrings.personalInfo,
+              offset: isWideScreen ? const Offset(160, 0) : const Offset(20, 0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              onSelected: (String type) {
+                Navigator.of(dialogContext).pop(type);
+              },
+              itemBuilder: (BuildContext popupContext) {
+                return personalInfoTypes.map((type) {
+                  return PopupMenuItem<String>(
+                    value: type,
+                    child: Row(
+                      children: [
+                        Icon(
                           FormHelper.fieldTypeIcons[type] ??
                               Icons.circle_outlined,
                           size: 20,
-                          color: Theme.of(context).textTheme.bodyLarge?.color),
-                      const SizedBox(width: 12),
-                      Text(FormHelper.fieldTypeToLocale(type)),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-            child: ListTile(
-              leading: Icon(Icons.person_search_outlined,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(FormHelper.fieldTypeToLocale(type)),
+                      ],
+                    ),
+                  );
+                }).toList();
+              },
+              child: ListTile(
+                leading: Icon(
+                  Icons.person_search_outlined,
                   size: 20,
-                  color: Theme.of(context).textTheme.bodyLarge?.color),
-              title: Text(FormStrings.personalInfo),
-              trailing: Icon(Icons.chevron_right,
-                  color: Theme.of(context).textTheme.bodyLarge?.color),
-              dense: true,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+                title: Text(FormStrings.personalInfo),
+                trailing: Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+                dense: true,
+              ),
             ),
-          ));
+          );
           resolvedItemsForDialog.add(const Divider(height: 1, thickness: 0.5));
         }
 
-        resolvedItemsForDialog.addAll(otherTypes.map((type) {
-          return ListTile(
-            leading: Icon(
+        resolvedItemsForDialog.addAll(
+          otherTypes.map((type) {
+            return ListTile(
+              leading: Icon(
                 FormHelper.fieldTypeIcons[type] ?? Icons.circle_outlined,
                 size: 20,
-                color: Theme.of(context).textTheme.bodyLarge?.color),
-            title: Text(FormHelper.fieldTypeToLocale(type)),
-            dense: true,
-            onTap: () {
-              Navigator.of(dialogContext).pop(type);
-            },
-          );
-        }).toList());
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+              title: Text(FormHelper.fieldTypeToLocale(type)),
+              dense: true,
+              onTap: () {
+                Navigator.of(dialogContext).pop(type);
+              },
+            );
+          }).toList(),
+        );
 
         if (resolvedItemsForDialog.isEmpty) {
-          resolvedItemsForDialog.add(Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(FormStrings.noFieldsAvailable),
+          resolvedItemsForDialog.add(
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(FormStrings.noFieldsAvailable),
+              ),
             ),
-          ));
+          );
         }
 
         return AlertDialog(
           title: Text(FormStrings.addFieldTitle),
           contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
           content: SizedBox(
             width: 280,
-            child: ListView(
-              shrinkWrap: true,
-              children: resolvedItemsForDialog,
-            ),
+            child: ListView(shrinkWrap: true, children: resolvedItemsForDialog),
           ),
         );
       },
@@ -644,8 +708,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHtmlParent(BuildContext context) {
     if (_bundle == null)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
@@ -671,7 +734,9 @@ class _FormEditorContentState extends State<FormEditorContent>
             onPressed: () {
               if (_formLink != null) {
                 RouterService.navigate(
-                    context, "${FormPage.ROUTE}/$_formLink?preview=true");
+                  context,
+                  "${FormPage.ROUTE}/$_formLink?preview=true",
+                );
               }
             },
             tooltip: FormStrings.editorPreview,
@@ -694,8 +759,9 @@ class _FormEditorContentState extends State<FormEditorContent>
           : Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
+                constraints: BoxConstraints(
+                  maxWidth: StylesConfig.formMaxWidth,
+                ),
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   child: Padding(
@@ -703,41 +769,17 @@ class _FormEditorContentState extends State<FormEditorContent>
                     child: Column(
                       children: [
                         _buildFormOpenToggleAndOffTextEditor(),
-                        const Divider(
-                          thickness: 1,
-                          color: Colors.grey,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // UPDATED: Use bundle.form
-                            if (_bundle!.form.header?.isNotEmpty ?? false)
-                              HtmlView(
-                                  html: _bundle!.form.header!,
-                                  isSelectable: true),
-                            const SizedBox(height: 16),
-                            if (RightsService.isOrderEditor())
-                              Center(
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.edit),
-                                  label: Text(FormStrings.editContent),
-                                  onPressed: () async {
-                                    final result =
-                                        await RouterService.navigatePageInfo(
-                                      context,
-                                      HtmlEditorRoute(content: {
-                                        HtmlEditorPage.parContent:
-                                            _bundle!.form.header ?? ""
-                                      }, occasionId: _bundle!.form.occasionId),
-                                    );
-                                    if (result != null && mounted) {
-                                      setState(() => _bundle!.form.header =
-                                          result as String);
-                                    }
-                                  },
-                                ),
-                              ),
-                          ],
+                        const Divider(thickness: 1, color: Colors.grey),
+                        EditableHtmlField(
+                          key: const ValueKey('form-header'),
+                          html: _bundle!.form.header,
+                          enabled: RightsService.isOrderEditor(),
+                          coordinator: _htmlSave,
+                          owner: HtmlMediaOwner.occasion(
+                            _bundle!.form.occasionId,
+                          ),
+                          onChanged: (html) =>
+                              setState(() => _bundle!.form.header = html),
                         ),
                         const SizedBox(height: 24),
                         Column(
@@ -785,8 +827,11 @@ class _FormEditorContentState extends State<FormEditorContent>
 
 class _NoScalingAnimation extends FloatingActionButtonAnimator {
   @override
-  Offset getOffset(
-      {required Offset begin, required Offset end, required double progress}) {
+  Offset getOffset({
+    required Offset begin,
+    required Offset end,
+    required double progress,
+  }) {
     return end;
   }
 

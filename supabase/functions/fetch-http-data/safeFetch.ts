@@ -40,11 +40,11 @@ export function parseSafeTarget(value: unknown, base?: URL): URL {
   } catch {
     throw new UnsafeTargetError('invalid_target');
   }
-  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
   if (url.protocol !== 'https:' || url.username || url.password ||
       (url.port && url.port !== '443') || !host || host === 'localhost' ||
       host.endsWith('.localhost') || host.endsWith('.local') ||
-      host.endsWith('.internal') || ipIsPrivate(host)) {
+      host.endsWith('.internal') || host === 'image-api.festapp.net' || ipIsPrivate(host)) {
     throw new UnsafeTargetError('unsafe_target');
   }
   return url;

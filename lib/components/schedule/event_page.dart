@@ -33,7 +33,8 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_widget.dart';
 import 'package:fstapp/components/occasion/add_new_event_dialog.dart';
 import 'package:fstapp/components/schedule/event_edit_page.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/connectivity_service.dart';
@@ -72,6 +73,7 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
+  final _htmlSave = HtmlSaveCoordinator();
   final List<TimeBlockItem> _childDots = [];
   EventModel? _event;
   SpeakersBundle? _speakersBundle;
@@ -131,6 +133,7 @@ class _EventPageState extends State<EventPage> {
 
   @override
   void dispose() {
+    _htmlSave.dispose();
     PaintingBinding.instance.systemFonts.removeListener(_scheduleHeaderMeasure);
     ClientSyncRuntime.projectionEpoch.removeListener(_onProjectionChanged);
     _canSaveSavedProgram.dispose();
@@ -167,7 +170,9 @@ class _EventPageState extends State<EventPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HtmlEditingScope(coordinator: _htmlSave, child: _buildHtmlParent(context));
+
+  Widget _buildHtmlParent(BuildContext context) {
     if (_event == null) {
       return Scaffold(
         appBar: AppBar(leading: const ScheduleBackButton()),
@@ -320,15 +325,10 @@ class _EventPageState extends State<EventPage> {
                             ),
                           Visibility(
                             visible:
-                                _event != null && _event?.description != null,
+                                _event != null && (_event?.description != null || (RightsService.isGroupAdmin() && (_event!.isGroupEvent ?? false))),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
-                              child: HtmlView(
-                                html: _event?.description ?? "",
-                                isSelectable: true,
-                                twoFingersOn: onPinchStart,
-                                twoFingersOff: onPinchEnd,
-                              ),
+                              child: _buildGroupDescription(onPinchStart, onPinchEnd),
                             ),
                           ),
                           _buildSpeakersSection(
@@ -1065,6 +1065,28 @@ class _EventPageState extends State<EventPage> {
 
   /// Editor / participant actions as light tonal chips with icons in a
   /// left-aligned Wrap (matches production's redesigned action row).
+  Widget _buildGroupDescription(VoidCallback onPinchStart, VoidCallback onPinchEnd) {
+    final group = _groupInfoModel;
+    final version = group?.aggregateVersion ?? 0;
+    final eventId = _event?.id;
+    final canEdit = RightsService.isGroupAdmin() && (_event?.isGroupEvent ?? false) && group != null;
+    return EditableHtmlField(key: ValueKey('group-event-html-$eventId'), html: _event?.description,
+      enabled: canEdit,
+      owner: RightsService.isEditor() || RightsService.isOrderEditor()
+        ? HtmlMediaOwner.occasion(_event?.occasionId) : const HtmlMediaOwner.none(),
+      twoFingersOn: onPinchStart, twoFingersOff: onPinchEnd,
+      onChanged: (_) {}, onSave: (html) async {
+        if (group == null) throw StateError('Group description owner missing');
+        final snapshot = UserGroupInfoModel(id: group.id, title: group.title,
+          description: html, type: group.type, data: group.data,
+          place: group.place, placeId: group.placeId, participants: group.participants,
+          persistedPlaceId: group.persistedPlaceId, persistedPlaceWasPrivate: group.persistedPlaceWasPrivate,
+          aggregateVersion: version);
+        await DbGroups.updateUserGroupInfo(snapshot);
+        if (eventId != null && mounted) await loadData(eventId);
+      });
+  }
+
   Widget _buildActionButtons(BuildContext context, bool isEventCancelled) {
     final List<Widget> buttons = [];
 
@@ -1100,30 +1122,6 @@ class _EventPageState extends State<EventPage> {
           await signIn(context, person);
           await loadData(_event!.id!);
         }, _queriedParticipants, ScheduleStrings.signInSomeone);
-      }));
-    }
-    if (RightsService.isGroupAdmin() &&
-        _event != null &&
-        (_event!.isGroupEvent ?? false)) {
-      buttons.add(_actionButton(Icons.edit_note, CommonStrings.editContent, () {
-        RouterService.navigatePageInfo(
-                context,
-                HtmlEditorRoute(
-                    content: {HtmlEditorPage.parContent: _event!.description},
-                    occasionId: RightsService.currentOccasionId()))
-            .then((value) async {
-          if (value != null) {
-            var changed = value as String;
-            if (_groupInfoModel != null) {
-              _groupInfoModel!.description = changed;
-              await DbGroups.updateUserGroupInfo(_groupInfoModel!);
-            }
-            await loadData(_event!.id!);
-            if (mounted) {
-              ToastHelper.Show(context, CommonStrings.contentChanged);
-            }
-          }
-        });
       }));
     }
     if (RightsService.isEditor()) {
@@ -1280,7 +1278,6 @@ class _EventPageState extends State<EventPage> {
       context,
       eventId,
       saved,
-      showSuccessToast: false,
     );
     if (!mounted ||
         _event?.id != eventId ||

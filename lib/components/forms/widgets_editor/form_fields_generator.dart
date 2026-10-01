@@ -273,7 +273,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                       children: [
                         Icon(FormHelper.fieldTypeIcons[field.type]),
                         const SizedBox(width: 8),
-                        Text(FormHelper.fieldTypeToLocale(field.type!)),
+                        Expanded(
+                          child: Text(FormHelper.fieldTypeToLocale(field.type!),
+                              overflow: TextOverflow.ellipsis),
+                        ),
                       ],
                     ),
                   ),
@@ -309,7 +312,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               ),
             const Spacer(),
             if (isTicket) ...[
-              Text(CommonStrings.note, style: Theme.of(context).textTheme.bodySmall),
+              Text(CommonStrings.note,
+                  style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(width: 4),
               TicketEditorWidgets.buildTicketNoteCheckbox(context, form, () {
                 setState(() {});
@@ -332,7 +336,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             const SizedBox(width: 16),
             Row(
               children: [
-                Text(FormStrings.show, style: Theme.of(context).textTheme.bodySmall),
+                Text(FormStrings.show,
+                    style: Theme.of(context).textTheme.bodySmall),
                 Switch(
                   value: !(field.isHidden ?? false),
                   onChanged:
@@ -354,9 +359,9 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 } else if (value == "show_deposit_description") {
                   setState(() {
                     field.data ??= {};
-                    var current = field
-                            .data![TicketHolder.metaShowDepositDescription] ??
-                        true;
+                    var current =
+                        field.data![TicketHolder.metaShowDepositDescription] ??
+                            true;
                     field.data![TicketHolder.metaShowDepositDescription] =
                         !current;
                   });
@@ -444,13 +449,18 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         if (isEditable) {
           return Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: TextFormField(
-              decoration: InputDecoration(
-                border: const UnderlineInputBorder(),
-                hintText: FormStrings.answerText,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                border: UnderlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 8),
               ),
-              style: Theme.of(context).textTheme.bodyLarge,
+              child: Text(
+                FormStrings.answerText,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(color: Theme.of(context).hintColor),
+              ),
             ),
           );
         } else {

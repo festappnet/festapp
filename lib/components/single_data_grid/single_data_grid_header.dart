@@ -1,3 +1,4 @@
+import 'package:fstapp/services/exception_handler.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -76,6 +77,7 @@ class SingleDataGridHeader<T extends ITrinaRowModel> extends StatefulWidget {
 class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     extends State<SingleDataGridHeader<T>> {
   final SingleDataGridController<T> controller;
+  bool _isSaving = false;
 
   _SingleDataGridHeaderState(this.controller);
 
@@ -108,12 +110,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
                 actionsController.areAllActionsEnabled != null &&
                 !actionsController.areAllActionsEnabled!()
             ? null
-            : () {
-                actionsController?.saveAction?.action == null
-                    ? _saveChanges()
-                    : actionsController!.saveAction!.action!(
-                        controller, _saveChanges);
-              },
+            : (_isSaving ? null : _runSave),
         child: Text(
             actionsController?.saveAction?.name ?? CommonStrings.saveChanges),
       ),
@@ -216,6 +213,22 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     }
   }
 
+  Future<void> _runSave() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    await ExceptionHandler.guardVoid(context, futureFunction: () async {
+      await controller.htmlSave.save(() async {
+      final action = controller.actionsExtended?.saveAction?.action;
+      if (action == null) { await _saveChanges(); }
+      else {
+        await controller.prepareHtmlRows();
+        await action(controller, _saveChanges);
+      }
+      }, context: context);
+    });
+    if (mounted) setState(() => _isSaving = false);
+  }
+
   Future<void> _saveChanges() async {
     var toDelete = controller.deletedRows.toList();
     controller.updatedRows.removeAll(toDelete);
@@ -234,6 +247,8 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
         return;
       }
     }
+
+    await controller.prepareHtmlRows();
 
     var updatedSet = Set<T>.from(
       controller.updatedRows.map((x) => controller.fromPlutoJson(x.toJson())),
@@ -275,6 +290,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     );
 
     if (success) {
+      controller.htmlSave.markSaved();
       await controller.reloadData();
     }
   }
@@ -288,6 +304,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     if (!result) {
       return;
     }
+    controller.htmlSave.markSaved();
     // This was controller.loadData() but should be controller.reloadData()
     // to ensure UI consistency with how save works or loadDataOnly and apply.
     // Or, if loadData() implies full reload and state reset, it's fine.

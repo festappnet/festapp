@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "a1f6d6a67df38b310434c608d6cfa88a9bc7017e",
+  "baseMainSha": "e7d798cdca92f391d1ef4df6fa3e45445c2a2aa7",
   "release": {
-    "version": "0.20.37+521",
-    "note": "Recover mobile homepage startup independently of cached modules"
+    "version": "0.20.38+522",
+    "note": "Complete canonical HTML editor rollout"
   }
 }
