@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
@@ -161,8 +163,21 @@ void main() {
 
   testWidgets('inline Information Save persists edited HTML and leaves editing',
       (tester) async {
-    final information = (await DbInformation.getAllActiveInformation())
-        .singleWhere((info) => info.id == 12);
+    final loaded = await DbInformation.getAllActiveInformation();
+    final List<InformationModel> cached;
+    if (kIsWeb) {
+      cached = (await tester.runAsync(() async {
+        await OfflineDataService.saveAllInfo(loaded);
+        return OfflineDataService.getAllInfo();
+      }))!;
+    } else {
+      // Same JSON codec as the persistent cache; web runs the real store.
+      cached = (jsonDecode(jsonEncode(loaded)) as List)
+          .map((row) => InformationModel.fromJson(row as Map<String, dynamic>))
+          .toList();
+    }
+    final information = cached.singleWhere((info) => info.id == 12);
+    expect(information.aggregateVersion, 7);
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(
             body: EditableHtmlField(

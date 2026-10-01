@@ -34,7 +34,7 @@ void _ignoreHtml(String _) {}
 
 void main() {
   testWidgets(
-    'inline actions stay above content and Save tracks actual changes',
+    'inline actions share the toolbar on desktop and Save tracks changes',
     (tester) async {
       var writes = 0;
       await tester.pumpWidget(
@@ -58,14 +58,15 @@ void main() {
           tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
       final save = find.widgetWithText(FilledButton, 'Common.save');
       expect(tester.widget<FilledButton>(save).onPressed, isNull);
-      expect(
-        tester.getBottomLeft(save).dy,
-        lessThan(tester.getTopLeft(find.byType(RichHtmlEditor)).dy),
-      );
-      expect(
-        tester.getBottomLeft(find.text('Common.storno')).dy,
-        lessThan(tester.getTopLeft(find.byType(RichHtmlEditor)).dy),
-      );
+      final tools = find.byIcon(Icons.format_bold).first;
+      expect(tester.getCenter(save).dy, tester.getCenter(tools).dy);
+      await tester.binding.setSurfaceSize(const Size(600, 600));
+      await tester.pump();
+      expect(tester.getBottomLeft(save).dy,
+          lessThanOrEqualTo(tester.getTopLeft(tools).dy));
+      expect(tester.takeException(), isNull);
+      await tester.binding.setSurfaceSize(null);
+      await tester.pump();
       insert(controller, ' changed');
       await tester.pump();
       expect(tester.widget<FilledButton>(save).onPressed, isNotNull);
@@ -364,8 +365,8 @@ void main() {
     final expandButton = find.byIcon(Icons.open_in_full);
     expect(tester.getCenter(expandButton).dx, greaterThan(1100));
     expect(
-      tester.getBottomLeft(expandButton).dy,
-      lessThan(tester.getTopLeft(find.byType(RichHtmlEditor)).dy),
+      tester.getCenter(expandButton).dy,
+      tester.getCenter(find.byIcon(Icons.format_bold).first).dy,
     );
     await tester.tap(find.byIcon(Icons.open_in_full));
     await tester.pump();
