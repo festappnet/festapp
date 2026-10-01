@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.20.35+519
+version: 0.20.36+520
 
 environment:
   sdk: '>=3.0.0 <3.32.8'
@@ -111,7 +111,7 @@ dependencies:
   venue_seat_picker:
     git:
       url: https://github.com/festappnet/venue_seat_picker.git
-      ref: 3b7d57acaa6f0e0fb0980c7fa2aaf841c64150b5
+      ref: c829a33d07de9a8fa376b407658875d22abd246e
 
   cached_network_image: any
   cached_network_image_platform_interface: any
@@ -150,10 +150,6 @@ dependency_overrides:
     git:
       url: https://github.com/miakh/flutter-vector-map-tiles.git
       ref: 429de4cda07a6dfa7141a9f044aa5f7576765c5b
-  # The Quill editor fork still declares Android WebView 3.x, but only uses
-  # APIs retained by 4.x. Keep one WebView implementation for the current
-  # YouTube player until the editor updates its dependency constraint.
-  webview_flutter_android: ^4.12.0
   maplibre_android:
     path: packages/maplibre_android
   maplibre_ios:

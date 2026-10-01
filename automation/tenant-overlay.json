@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "691ddcb6e0f3e9ce836a81b5d9bc2afde6173279",
+  "baseMainSha": "36f49593380efe829993a90570156a3b1a1cdfdb",
   "release": {
-    "version": "0.20.28+512",
-    "note": "Complete fullscreen save and cancel and provide a visible exit fullscreen action"
+    "version": "0.20.36+520",
+    "note": "Ticket layout editor, responsive controls and shared PDF preview"
   }
 }

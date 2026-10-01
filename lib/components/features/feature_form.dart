@@ -1,3 +1,5 @@
+import 'ticket_feature.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/theme_config.dart';
 
@@ -64,7 +66,12 @@ class _FeatureFormState extends State<FeatureForm> {
   /// Builds additional fields based on the feature type.
   List<Widget> _buildFeatureFields(BuildContext context) {
     return [
-      widget.feature.buildFormField(context),
+      widget.feature is TicketFeature
+          ? TicketSettings(
+              key: ValueKey((widget.feature as TicketFeature).layout),
+              feature: widget.feature as TicketFeature,
+              occasionId: widget.occasion)
+          : widget.feature.buildFormField(context),
     ];
   }
 }

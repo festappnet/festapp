@@ -46,6 +46,7 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `send-reset-password-link` | Self-service "Forgot Password" flow. Looks up by `email_readonly` and uses the same delivery resolver. |
 | `send-ticket-order` | Creates/replaces an order through one receipted RPC; confirmation effects are queued transactionally. |
 | `send-tickets` | Generates and emails PDF tickets (standard or named) for an order. |
+| `preview-ticket-layout` | Unit-editor JWT only; resolves local editor resources or explicitly generates a synthetic PDF through the existing ticket functions, without writes. |
 | `download-ticket` | Returns a single ticket PDF as Base64 JSON for in-app download. |
 | `fetch-transactions` | Syncs bank transactions from FIO API for an occasion. |
 | `synchronize-orders` | Batch-syncs transactions across all fetchable accounts (cron). Matches to orders and triggers confirmation emails. |

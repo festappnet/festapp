@@ -34,6 +34,37 @@ void _ignoreHtml(String _) {}
 
 void main() {
   testWidgets(
+      'caret follows light and dark theme in inline and fullscreen editor',
+      (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final controller = RichHtmlEditorController(
+      initialHtml: '<p>Text</p>',
+      owner: const HtmlMediaOwner.none(),
+    );
+    addTearDown(controller.dispose);
+    for (final fullscreen in [false, true]) {
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        await tester.pumpWidget(MaterialApp(
+          theme: ThemeData(brightness: brightness),
+          home: Scaffold(
+            body:
+                RichHtmlEditor(controller: controller, fullscreen: fullscreen),
+          ),
+        ));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        final caret = tester
+            .widget<CaretDocumentOverlay>(find.byType(CaretDocumentOverlay));
+        expect(caret.caretStyle.color,
+            brightness == Brightness.dark ? Colors.white : Colors.black);
+      }
+    }
+    await tester.pumpWidget(const SizedBox());
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets(
     'inline actions share the toolbar on desktop and Save tracks changes',
     (tester) async {
       var writes = 0;

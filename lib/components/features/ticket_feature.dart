@@ -1,17 +1,11 @@
 // ticket_feature.dart
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/images/db_images.dart';
-import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/services/dialog_helper.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
-import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/components/images/image_area.dart';
+import 'package:collection/collection.dart';
+import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 import 'feature.dart';
-import 'package:fstapp/components/features/features_strings.dart';
 import 'feature_constants.dart';
 
-/// Feature for tickets with extra UI color fields.
+/// Ticket settings and the saved layout draft.
 class TicketFeature extends Feature {
   String? ticketLightColor;
   String? ticketDarkColor;
@@ -43,7 +37,13 @@ class TicketFeature extends Feature {
       ticketType: json[FeatureConstants.ticketType],
       canScanManually: json[FeatureConstants.ticketCanScanManually] ?? false,
       showHiddenNote: json[FeatureConstants.ticketShowHiddenNote] ?? false,
-    );
+    )
+      ..layout = json[FeatureConstants.ticketLayout] == null
+          ? null
+          : copyTicketJson(json[FeatureConstants.ticketLayout])
+      .._savedLayout = json[FeatureConstants.ticketLayout] == null
+          ? null
+          : copyTicketJson(json[FeatureConstants.ticketLayout]);
   }
 
   @override
@@ -52,119 +52,48 @@ class TicketFeature extends Feature {
       FeatureConstants.metaCode: code,
       FeatureConstants.metaIsEnabled: isEnabled,
     };
-    if (ticketLightColor != null)
+    if (ticketLightColor != null) {
       data[FeatureConstants.ticketLightColor] = ticketLightColor!;
-    if (ticketDarkColor != null)
+    }
+    if (ticketDarkColor != null) {
       data[FeatureConstants.ticketDarkColor] = ticketDarkColor!;
-    if (ticketBackground != null)
+    }
+    if (ticketBackground != null) {
       data[FeatureConstants.ticketBackground] = ticketBackground!;
+    }
     if (ticketType != null) data[FeatureConstants.ticketType] = ticketType!;
-    if (canScanManually != null)
+    if (canScanManually != null) {
       data[FeatureConstants.ticketCanScanManually] = canScanManually!;
-    if (showHiddenNote != null)
+    }
+    if (showHiddenNote != null) {
       data[FeatureConstants.ticketShowHiddenNote] = showHiddenNote!;
+    }
+    if (layout != null) data[FeatureConstants.ticketLayout] = layout!;
     return data;
   }
 
-  /// Builds the ticket UI block.
-  /// will need to be updated to include `occasionId` in this method's signature.
   @override
-  Widget buildFormField(BuildContext context) {
-    return StatefulBuilder(builder: (ctx, setLocal) {
-      final lightCtrl =
-          TextEditingController(text: ticketLightColor ?? 'FFFFFF');
-      final darkCtrl = TextEditingController(text: ticketDarkColor ?? '000000');
+  Widget buildFormField(BuildContext context) => const SizedBox.shrink();
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CheckboxListTile(
-            value: canScanManually ?? false,
-            title: Text(FeaturesStrings.enableManualTicketScan),
-            subtitle: Text(FeaturesStrings.enableManualTicketScanDescription),
-            onChanged: (val) => setLocal(() {
-              canScanManually = val;
-            }),
-          ),
-          CheckboxListTile(
-            value: showHiddenNote ?? false,
-            title: Text(FeaturesStrings.labelShowHiddenNote),
-            subtitle: Text(FeaturesStrings.descriptionShowHiddenNote),
-            onChanged: (val) => setLocal(() {
-              showHiddenNote = val;
-            }),
-          ),
-          DropdownButtonFormField<String>(
-            initialValue: ticketType ?? 'named',
-            decoration: InputDecoration(labelText: FeaturesStrings.ticketType),
-            items: ['named', 'wide']
-                .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                .toList(),
-            onChanged: (val) => setLocal(() {
-              ticketType = val;
-            }),
-            onSaved: (val) => ticketType = val,
-          ),
-          if (ticketType == 'wide') ...[
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: lightCtrl,
-              decoration:
-                  InputDecoration(labelText: FeaturesStrings.backgroundColor),
-              onSaved: (val) => ticketLightColor = val,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: darkCtrl,
-              decoration:
-                  InputDecoration(labelText: FeaturesStrings.fontColor),
-              onSaved: (val) => ticketDarkColor = val,
-            ),
-            const SizedBox(height: 16),
-            ImageArea(
-              hint: FeaturesStrings.backgroundImageHint,
-              imageUrl: ticketBackground,
-              onFileSelected: (file) async {
-                try {
-                  final bytes = await file.readAsBytes();
-                  var compressedImageData =
-                      await ImageCompressionHelper.compress(bytes, 1600);
-                  final url = await DbImages.uploadImage(compressedImageData,
-                      RightsService.currentOccasionId(), null);
-                  setLocal(() => ticketBackground = url);
-                  ToastHelper.Show(
-                      context, FeaturesStrings.uploadImageSuccess);
-                } catch (e) {
-                  ToastHelper.Show(context, FeaturesStrings.uploadImageError);
-                }
-                return null;
-              },
-              onRemove: () async {
-                final imageUrl = ticketBackground;
-                if (imageUrl != null && imageUrl.isNotEmpty) {
-                  final confirmation =
-                      await DialogHelper.showConfirmationDialog(
-                    context,
-                    CommonStrings.confirmRemoval,
-                    FeaturesStrings.deleteImageConfirm,
-                  );
-                  if (confirmation == true) {
-                    try {
-                      await DbImages.removeImage(imageUrl);
-                      setLocal(() => ticketBackground = null);
-                      ToastHelper.Show(
-                          context, FeaturesStrings.removeImageSuccess);
-                    } catch (e) {
-                      ToastHelper.Show(
-                          context, FeaturesStrings.removeImageError);
-                    }
-                  }
-                }
-              },
-            ),
-          ],
-        ],
-      );
-    });
+  Map<String, dynamic>? layout;
+  Map<String, dynamic>? _savedLayout;
+  Map<String, dynamic>? conflictDraft;
+  void loadSavedLayout(Map<String, dynamic>? saved) {
+    conflictDraft = layout == null ? null : copyTicketJson(layout!);
+    layout = saved == null ? null : copyTicketJson(saved);
+    markLayoutSaved();
+  }
+
+  void restoreConflictDraft() {
+    if (conflictDraft != null) layout = copyTicketJson(conflictDraft!);
+    conflictDraft = null;
+  }
+
+  Map<String, dynamic>? get layoutChange =>
+      const DeepCollectionEquality().equals(layout, _savedLayout)
+          ? null
+          : {'expected': _savedLayout, 'next': layout};
+  void markLayoutSaved() {
+    _savedLayout = layout == null ? null : copyTicketJson(layout!);
   }
 }

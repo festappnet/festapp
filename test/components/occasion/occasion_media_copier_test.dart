@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
@@ -10,6 +12,9 @@ void main() {
       code: FeatureConstants.ticket,
       ticketBackground: 'https://img.festapp.net/images/ticket.jpg',
     );
+    final layout = jsonDecode(File('test/fixtures/ticket_layout/layouts.json')
+        .readAsStringSync())['valid'][0] as Map<String, dynamic>;
+    ticket.layout = layout;
     final occasion = OccasionModel(
       id: 42,
       unit: 7,
@@ -28,6 +33,7 @@ void main() {
 
     expect(owners, [(42, null), (42, null)]);
     expect(ticket.ticketBackground, endsWith('-copy'));
+    expect(ticket.layout, layout);
     expect(occasion.data!['image'], endsWith('-copy'));
   });
 }
