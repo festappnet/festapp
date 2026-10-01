@@ -91,11 +91,12 @@ Deno.test('historical generators preserve all reference drawing and resource str
  const streams=async(bytes:Uint8Array)=>{const doc=await PDFDocument.load(bytes);return doc.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFRawStream).map(([,o])=>Array.from((o as PDFRawStream).getContents()));};
  for(const type of ['wide','named'] as const)assertEquals(await streams(outputs[type]),await streams(await Deno.readFile(`test/fixtures/ticket_layout/historical-${type}.pdf`)));
 });
-Deno.test('all style choices validate and retain historical classic geometry at extreme image ratios',async()=>{
+Deno.test('one gallery supports both storage slots and ticket-sized pages at extreme image ratios',async()=>{
   const {ticketPresets}=await import('./ticketLayout.ts');
   for(const type of ['wide','named'] as const)for(const [w,h] of [[1600,800],[3200,80],[20,3000]]){
-    const styles=ticketPresets(type,w,h);assertEquals(styles.classic,preset(type,w,h));
-    assertEquals(Object.keys(styles).length,type==='wide'?4:3);
+    const styles=ticketPresets(w,h);
+    assertEquals(Object.keys(styles).length,6);
+    for(const t of Object.values(styles)) {assertEquals(t.pageFit,'ticket');assertEquals(t.page,{width:t.ticketArea.width,height:t.ticketArea.height});}
     for(const t of Object.values(styles))parseLayout({schemaVersion:1,templates:{[type]:t}});
     assert(JSON.stringify(styles.compact)!==JSON.stringify(styles.event));
   }
@@ -105,7 +106,7 @@ Deno.test('every named and bitmap style renders through the existing generators'
   const {loadLayoutResources}=await import('./ticketGeneration.ts');
   const background=await loadLayoutResources({features:[{code:'ticket',ticket_type:'wide'}],data:{}});
   assertEquals(background.background,undefined);
-  for(const type of ['named','wide'] as const)for(const template of Object.values(ticketPresets(type))){
+  for(const type of ['named','wide'] as const)for(const template of Object.values(ticketPresets())){
     const result=await generateTicketPdf(sampleData('long'),background,template,type,true);
     const doc=await PDFDocument.load(result.bytes);assertEquals(doc.getPageCount(),1);
   }

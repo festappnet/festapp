@@ -17,8 +17,7 @@ export async function loadLayoutResources(occasion:any,featureOverride?:any):Pro
   const feature=featureOverride??occasion.features?.find((f:any)=>f.code==='ticket');
   const font=await fontBytes();
   const read=async(url:string)=> (await fetchPublicImage(url)).bytes;
-  const background=feature?.ticket_type==='named'?undefined:feature?.background;
-  const backgroundBytes=feature?.ticket_type==='named'?undefined:background?await read(background):undefined;
+  const backgroundBytes=feature?.background?await read(feature.background):undefined;
   return {font,metrics:fontMetrics(font),background:backgroundBytes,logo:occasion.data?.logo?await read(occasion.data.logo):undefined};
 }
 export function activeTemplate(occasion:any):Template|undefined {

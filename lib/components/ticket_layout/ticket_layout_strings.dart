@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get chooseTemplate => 'TicketLayout.chooseTemplate'.tr();
   static String get pdfExternalHint => 'TicketLayout.pdfExternalHint'.tr();
   static String get openPdf => 'TicketLayout.openPdf'.tr();
   static String get viewOptions => 'TicketLayout.viewOptions'.tr();
