@@ -2119,7 +2119,7 @@
               "minFontSize": 6,
               "maxLines": 1,
               "color": "2A2A2A",
-              "align": "left"
+              "align": "center"
             }
           },
           {

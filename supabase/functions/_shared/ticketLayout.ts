@@ -45,7 +45,7 @@ export function preset(type: 'wide'|'named', imageWidth=1600, imageHeight=800): 
   const width=named?200:Math.max(240,Math.min(535.752,782.362*imageWidth/imageHeight));
   const height=named?375:Math.min(782.362, width*imageHeight/imageWidth);
   const area:Box={x:named?0:(595.28-width)/2,y:named?0:29.764,width,height};
-  const element=(binding:Binding,x:number,y:number,w:number,h:number,size=12,lines=2):Element=>({id:binding,binding,box:{x,y,width:w,height:h},visible:true,locked:false,style:{fontSize:size,minFontSize:6,maxLines:lines,color:'2A2A2A',align:named?'center':'left'}});
+  const element=(binding:Binding,x:number,y:number,w:number,h:number,size=12,lines=2):Element=>({id:binding,binding,box:{x,y,width:w,height:h},visible:true,locked:false,style:{fontSize:size,minFontSize:6,maxLines:lines,color:'2A2A2A',align:named||binding==='ticketSymbol'?'center':'left'}});
   let elements:Element[];
   if(named) elements=[element('logo',71.875,12.5,56.25,56.25),element('occasionTitle',6.25,77,187.5,32,12.5),element('occasionDatePlace',6.25,111,187.5,24,8.75),element('orderName',6.25,151,187.5,32,12.5),element('qr',50,206.25,100,100),element('ticketSymbol',10,313,180,20,8.75,1),element('footer',6.25,348,187.5,20,6.25)];
   else {

@@ -56,7 +56,7 @@
             "minFontSize": 6,
             "maxLines": 1,
             "color": "643617",
-            "align": "left"
+            "align": "center"
           }
         },
         {
@@ -195,7 +195,7 @@
             "minFontSize": 6,
             "maxLines": 1,
             "color": "FFFFFF",
-            "align": "left"
+            "align": "center"
           }
         },
         {
@@ -336,7 +336,7 @@
             "minFontSize": 6,
             "maxLines": 1,
             "color": "000000",
-            "align": "left"
+            "align": "center"
           }
         },
         {

@@ -53,6 +53,33 @@ class TicketLayoutProperties extends StatelessWidget {
                         style: const TextStyle(color: Colors.orange)),
                   Text(TicketLayoutStrings.binding(e.binding),
                       style: Theme.of(context).textTheme.titleMedium),
+                  if (text) ...[
+                    const SizedBox(height: 12),
+                    Text(TicketLayoutStrings.align),
+                    const SizedBox(height: 6),
+                    SegmentedButton<String>(
+                        showSelectedIcon: false,
+                        segments: [
+                          ButtonSegment(
+                              value: 'left',
+                              tooltip: TicketLayoutStrings.left,
+                              icon: const Icon(Icons.format_align_left)),
+                          ButtonSegment(
+                              value: 'center',
+                              tooltip: TicketLayoutStrings.center,
+                              icon: const Icon(Icons.format_align_center)),
+                          ButtonSegment(
+                              value: 'right',
+                              tooltip: TicketLayoutStrings.right,
+                              icon: const Icon(Icons.format_align_right)),
+                        ],
+                        selected: {e.align},
+                        onSelectionChanged: e.locked
+                            ? null
+                            : (values) => controller
+                                .change(e.copyWith(align: values.single))),
+                    const SizedBox(height: 8),
+                  ],
                   SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(TicketLayoutStrings.visible),
@@ -111,19 +138,6 @@ class TicketLayoutProperties extends StatelessWidget {
                                     ? null
                                     : (v) => controller
                                         .change(e.copyWith(fontSize: v))))),
-                    DropdownButtonFormField<String>(
-                        initialValue: e.align,
-                        key: ValueKey('${e.id}_${e.align}'),
-                        decoration: InputDecoration(
-                            labelText: TicketLayoutStrings.align),
-                        items: ['left', 'center', 'right']
-                            .map((v) => DropdownMenuItem(
-                                value: v,
-                                child: Text(TicketLayoutStrings.binding(v))))
-                            .toList(),
-                        onChanged: e.locked
-                            ? null
-                            : (v) => controller.change(e.copyWith(align: v))),
                     const SizedBox(height: 12),
                     Text('${TicketLayoutStrings.maxLines}: ${e.maxLines}'),
                     Tooltip(

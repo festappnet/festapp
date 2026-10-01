@@ -550,4 +550,21 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
+  testWidgets('text alignment controls update selected text and support undo',
+      (tester) async {
+    final c = TicketLayoutController(document())..select('ticketSymbol');
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: TicketLayoutProperties(controller: c)))));
+    for (final align in ['left', 'right', 'center']) {
+      await tester.tap(find.byTooltip('TicketLayout.$align'));
+      await tester.pump();
+      expect(c.selection!.align, align);
+    }
+    c.undo();
+    expect(c.selection!.align, 'right');
+    await tester.pumpWidget(const SizedBox());
+    c.dispose();
+  });
 }

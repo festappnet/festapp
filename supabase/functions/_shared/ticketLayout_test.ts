@@ -12,7 +12,7 @@ const png=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA
 const r={font,metrics,background:png,logo:png};
 Deno.test('both presets round trip and stay printable at extreme aspect ratios',()=>{
   for(const type of ['wide','named'] as const)for(const [w,h] of [[1600,800],[3200,80],[20,3000]]) {
-    const t=preset(type,w,h);const layout={schemaVersion:1,templates:{[type]:t}};
+    const t=preset(type,w,h);assertEquals(t.elements.find(e=>e.binding==='ticketSymbol')!.style.align,'center');const layout={schemaVersion:1,templates:{[type]:t}};
     assertEquals(parseLayout(layout),layout);
     const q=t.elements.find(e=>e.binding==='qr')!;const b=pdfBox(t,q.box);
     assertEquals(b.y,t.page.height-t.ticketArea.y-q.box.y-q.box.height);
