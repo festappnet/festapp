@@ -25,10 +25,12 @@ class RichHtmlEditor extends StatefulWidget {
       this.enabled = true,
       this.fullscreen = false,
       this.onCancel,
+      this.toolbarActions,
       super.key});
   final RichHtmlEditorController controller;
   final bool enabled;
   final bool fullscreen;
+  final Widget? toolbarActions;
 
   /// When supplied, the enclosing edit session owns Escape cancellation.
   final VoidCallback? onCancel;
@@ -360,9 +362,12 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   @override
   Widget build(BuildContext context) {
     if (!widget.enabled)
-      return HtmlView(
-          html: controller.html,
-          imageBytesResolver: controller.media.previewBytes);
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (widget.toolbarActions != null) widget.toolbarActions!,
+        HtmlView(
+            html: controller.html,
+            imageBytesResolver: controller.media.previewBytes),
+      ]);
     return OverlayPortal(
         controller: _selectionToolbar,
         overlayChildBuilder: _floatingToolbar,
@@ -373,7 +378,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                       widget.fullscreen ? Axis.horizontal : Axis.vertical,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(
+                    _toolbarLayout(SizedBox(
                         width: widget.fullscreen ? 56 : null,
                         child: SingleChildScrollView(
                             scrollDirection: widget.fullscreen
@@ -467,7 +472,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                   value: item.$1,
                                                   child: Text(item.$2)),
                                           ]),
-                                ]))),
+                                ])))),
                     _documentViewport(ConstrainedBox(
                         constraints: const BoxConstraints(minHeight: 180),
                         child: SuperEditorAndroidControlsScope(
@@ -557,6 +562,20 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                     ]))))),
                   ],
                 )));
+  }
+
+  Widget _toolbarLayout(Widget tools) {
+    final actions = widget.toolbarActions;
+    if (actions == null || widget.fullscreen) return tools;
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth >= 800) {
+        return Row(children: [Expanded(child: tools), actions]);
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [actions, tools],
+      );
+    });
   }
 
   Widget _documentViewport(Widget document) =>

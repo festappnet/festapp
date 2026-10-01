@@ -182,6 +182,27 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     super.dispose();
   }
 
+  Widget _editingActions() => Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton(
+            onPressed: _saving ? null : _requestCancel,
+            child: Text(CommonStrings.storno),
+          ),
+          const SizedBox(width: 12),
+          FilledButton(
+            onPressed: _saving || !_controller!.hasUserChanges ? null : _apply,
+            child: Text(CommonStrings.save),
+          ),
+          IconButton(
+            tooltip: HtmlStrings.expand,
+            onPressed: _saving ? null : _expand,
+            icon: const Icon(Icons.open_in_full),
+          ),
+        ],
+      );
+
   @override
   Widget build(BuildContext context) {
     if (!_active) {
@@ -225,31 +246,13 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: _saving ? null : _requestCancel,
-                  child: Text(CommonStrings.storno),
-                ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed:
-                      _saving || !_controller!.hasUserChanges ? null : _apply,
-                  child: Text(CommonStrings.save),
-                ),
-                IconButton(
-                  tooltip: HtmlStrings.expand,
-                  onPressed: _saving ? null : _expand,
-                  icon: const Icon(Icons.open_in_full),
-                ),
-              ],
-            ),
+            if (_expanded) _editingActions(),
             const SizedBox(height: 8),
             if (!_expanded)
               RichHtmlEditor(
                 controller: _controller!,
                 onCancel: _requestCancel,
+                toolbarActions: _editingActions(),
                 enabled: !_saving && widget.enabled,
               ),
           ],
