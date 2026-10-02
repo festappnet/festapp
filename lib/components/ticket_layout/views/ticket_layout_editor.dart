@@ -322,20 +322,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           builder: (context) => AlertDialog(
                   title: Text(TicketLayoutStrings.styles),
                   content: SizedBox(
-                      width: 760,
+                      width: 960,
                       height: math.min(
-                          440, MediaQuery.sizeOf(context).height * .65),
+                          620, MediaQuery.sizeOf(context).height * .75),
                       child: GridView.extent(
                           maxCrossAxisExtent:
-                              MediaQuery.sizeOf(context).width < 600
-                                  ? 500
-                                  : resources.artworks.isEmpty
-                                      ? 250
-                                      : 220,
+                              MediaQuery.sizeOf(context).width < 600 ? 500 : 360,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio:
-                              resources.artworks.isEmpty ? .9 : 1.35,
+                          childAspectRatio: 1.05,
                           children: previews.entries
                               .map((entry) => Card(
                                   clipBehavior: Clip.antiAlias,
@@ -367,7 +362,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                                     .artworks[entry.key]
                                                     ?.label ??
                                                 TicketLayoutStrings.binding(
-                                                    'style_${entry.key}')))
+                                                    'style_${entry.key}'),
+                                                textAlign: TextAlign.center))
                                       ]))))
                               .toList())),
                   actions: [

@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "fea89efd2b9884f38ed5c457659e7d4f9142ddc8",
-  "release": {
-    "version": "0.20.46+530",
-    "note": "Google login authenticated context hydration, email prefill and account action order"
-  }
+  "baseMainSha": "ad032f28276c0d594f57a12149fd7a78f4547fc1"
 }
