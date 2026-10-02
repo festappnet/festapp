@@ -116,7 +116,7 @@ class _TicketSettingsState extends State<TicketSettings> {
 
   @override
   Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
         CheckboxListTile(
             value: widget.feature.canScanManually ?? false,
             title: Text(FeaturesStrings.enableManualTicketScan),
@@ -130,20 +130,13 @@ class _TicketSettingsState extends State<TicketSettings> {
             onChanged: (v) =>
                 setState(() => widget.feature.showHiddenNote = v)),
         const SizedBox(height: 12),
-        if (unsupported)
-          Text(TicketLayoutStrings.unsupported)
-        else
-          Text((widget.feature.layout?['templates'] as Map?)
-                      ?.containsKey(type) ==
-                  true
-              ? TicketLayoutStrings.custom
-              : TicketLayoutStrings.defaultLayout),
+        if (unsupported) Text(TicketLayoutStrings.unsupported),
         if (thumbnail != null && !unsupported)
           SizedBox(
               height: 160,
               child: FittedBox(
                   fit: BoxFit.contain,
-                  alignment: Alignment.centerLeft,
+                  alignment: Alignment.center,
                   child: CustomPaint(
                       size: thumbnail!.template.area.size,
                       painter: TicketLayoutPainter(thumbnailController!,
