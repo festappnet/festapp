@@ -592,7 +592,22 @@
     "cleaningCrew": "Cleaning crew",
     "cleaningBlocked": "Cleaning report ban",
     "receptionist": "Receptionist",
-    "group": "Group"
+    "group": "Group",
+    "administratorHelp": "Manages this occasion and its users, including assigning permissions. This is an occasion administrator, not an administrator of the entire application. Orders use separate permissions.",
+    "editorHelp": "Edits this occasion’s content, such as its schedule and information, and can manage event participation. This role alone does not allow changing user permissions or editing orders.",
+    "readOnlyHelp": "Allows viewing this occasion’s administration without permission to edit its content. Other assigned permissions may allow editing. Order viewing has a separate column.",
+    "editOrdersHelp": "Allows editing orders and sales settings for this occasion. This permission alone does not allow managing users or editing the schedule.",
+    "readOrdersHelp": "Allows viewing orders and related sales data for this occasion. This permission alone does not allow editing them; other assigned roles may allow it.",
+    "unitAdministratorHelp": "Manages users of this organizational unit and assigns their unit permissions. This scope differs from administering a single occasion or the entire application.",
+    "unitEditorHelp": "Allows editing within this organizational unit and managing orders for its occasions. Unit user permissions are assigned by the unit administrator.",
+    "unitReadOnlyHelp": "Allows viewing administration and orders within this organizational unit. This role alone does not allow editing them; other assigned permissions may allow it.",
+    "approverHelp": "Allows checking participants using an entry code or scanner and verifying their participation. This role alone does not allow editing the schedule or orders.",
+    "approvedHelp": "Marks approved participation in this occasion. This is a participant status, not an administrator permission. Approval is also required to report cleaning issues.",
+    "receptionistHelp": "When reception is enabled, allows receiving participants, creating reception registrations and issuing login QR codes. This role alone does not grant general editor or administrator permissions.",
+    "cleaningCrewHelp": "Gives the cleaning crew access to reports, their history and marking places as cleaned. Crew members can receive notifications about new reports.",
+    "cleaningBlockedHelp": "Prevents this user from submitting cleaning reports for this occasion. It does not block sign-in or remove other permissions.",
+    "volunteerHelp": "Marks the user as a volunteer for this occasion. Some occasions are configured to automatically grant volunteers the approver permission.",
+    "invitedHelp": "Shows whether an invitation was sent to the user. This records sending, not confirmed delivery or user sign-in."
   },
   "OrderHistory": {
     "noHistoryFound": "No history found.",

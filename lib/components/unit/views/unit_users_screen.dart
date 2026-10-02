@@ -75,6 +75,7 @@ class _UnitUsersScreenState extends State<UnitUsersScreen> {
             isEnabled: RightsService.canUpdateUnitUsers,
           ),
         ],
+        columnHelp: UserColumns.columnHelp,
         columns: UserColumns.generateColumns(columnIdentifiers));
 
     return SingleTableDataGrid<UnitUserModel>(controller!);
