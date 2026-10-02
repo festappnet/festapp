@@ -277,15 +277,29 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   Future<void> editDimensions() async {
     final artwork = resources.artworks[controller.artworkKey];
+    final original = controller.document;
+    controller.beginGesture();
     final next = await showDialog<TicketTemplate>(
         context: context,
         builder: (_) => TicketDimensionsDialog(
-            document: controller.document,
+            document: original,
             defaults: propertyDefaults,
             type: widget.type,
-            image: artwork != null ? artwork.image : resources.background));
-    if (next != null && mounted) {
-      controller.replace(next);
+            image: artwork != null ? artwork.image : resources.background,
+            onPreview: (size) {
+              controller.previewResize(size);
+              setState(() {});
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) canvas.currentState?.fit();
+              });
+            }));
+    if (mounted) {
+      if (next == null) {
+        controller.cancelGesture();
+      } else {
+        controller.previewResize(next.area.size);
+        controller.endGesture();
+      }
       setState(() {});
       WidgetsBinding.instance
           .addPostFrameCallback((_) => canvas.currentState?.fit());
@@ -554,17 +568,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       },
       child: Scaffold(
         appBar: AppBar(
-            automaticallyImplyLeading: false,
+            leading: IconButton(
+                tooltip: TicketLayoutStrings.cancel,
+                onPressed: cancel,
+                icon: const Icon(Icons.close)),
             title: Text(TicketLayoutStrings.title,
                 maxLines: 1, overflow: TextOverflow.ellipsis),
             actions: [
-              IconButton(
-                  tooltip: TicketLayoutStrings.cancel,
-                  onPressed: cancel,
-                  icon: const Icon(Icons.close)),
-              FilledButton(
-                  onPressed: imageBusy ? null : apply,
-                  child: Text(TicketLayoutStrings.apply)),
+              Center(
+                child: TextButton.icon(
+                    onPressed: imageBusy ? null : apply,
+                    icon: const Icon(Icons.check),
+                    label: Text(TicketLayoutStrings.apply)),
+              ),
               const SizedBox(width: 8)
             ]),
         body: SafeArea(

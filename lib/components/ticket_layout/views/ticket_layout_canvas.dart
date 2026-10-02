@@ -298,7 +298,10 @@ class TicketLayoutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final doc = controller.document;
     canvas.save();
-    if (cropToTicket) canvas.translate(-doc.area.left, -doc.area.top);
+    if (cropToTicket) {
+      canvas.clipRect(Offset.zero & size);
+      canvas.translate(-doc.area.left, -doc.area.top);
+    }
     canvas.drawRect(Offset.zero & doc.page, Paint()..color = Colors.white);
     canvas.drawRect(doc.area, Paint()..color = const Color(0xffe6e6e6));
     final artwork = resources.artworks[controller.artworkKey];
