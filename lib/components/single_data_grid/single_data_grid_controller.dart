@@ -50,6 +50,9 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   final List<DataGridAction>? headerChildren;
   final ExportOptions? exportOptions;
 
+  /// Localized plain-text explanations, keyed by column field.
+  final Map<String, String> columnHelp;
+
   String firstColumnTypeId = "delete0";
 
   SingleDataGridController({
@@ -64,7 +67,8 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     this.getNewObject,
     this.copyObject,
     this.exportOptions,
-  });
+    Map<String, String> columnHelp = const {},
+  }) : columnHelp = Map.unmodifiable(columnHelp);
 
   String getCsvSeparator(Locale locale) {
     final format = NumberFormat.decimalPattern(locale.toString());

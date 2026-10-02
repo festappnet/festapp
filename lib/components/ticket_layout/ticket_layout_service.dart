@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/ticket_layout.dart';
 import '../images/db_images.dart';
 import 'ticket_text.dart';
+import 'ticket_background_image.dart';
 
 class TicketLayoutArtwork {
   final String? label, background;
@@ -16,6 +17,7 @@ class TicketLayoutArtwork {
 
 class TicketLayoutResources {
   final TicketTemplate template, preset;
+  final bool missingBackground;
   final Map<String, TicketLayoutArtwork> artworks;
   final String? initialArtworkKey;
   final Map<String, TicketTemplate> presets;
@@ -38,6 +40,7 @@ class TicketLayoutResources {
       required this.metrics,
       this.fonts = const {}, this.fontLabels = const {},
       this.background,
+      this.missingBackground = false,
       this.logo,
       required this.qrSize,
       required this.qrModules});
@@ -69,7 +72,10 @@ class TicketLayoutService {
   }
 
   Future<String?> uploadBackground(Uint8List bytes, int occasionId) =>
-      DbImages.uploadImage(bytes, occasionId, null);
+      DbImages.uploadImage(bytes, occasionId, null,
+          maxEdge: TicketBackgroundImage.maxEdge,
+          maxBytes: TicketBackgroundImage.maxBytes,
+          quality: TicketBackgroundImage.jpegQuality);
 
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background) async {
@@ -124,6 +130,7 @@ class TicketLayoutService {
           fonts: fonts.map((key, value) => MapEntry(key as String, TicketFontMetrics.fromJson(value['metrics']))),
           fontLabels: fonts.map((key, value) => MapEntry(key as String, value['label'] as String)),
           background: bg,
+          missingBackground: j['missingBackground'] == true,
           logo: logo,
           qrSize: j['qrMatrix']['size'],
           qrModules: (j['qrMatrix']['data'] as List).cast<int>());

@@ -35,8 +35,9 @@ BEGIN
     VALUES (v_org_id, v_unit_id, 'Persistence Test Occasion', v_occasion_link, now(), now() + interval '1 day', false)
     RETURNING id INTO v_occasion_id;
 
-    SELECT id INTO v_user_id FROM auth.users LIMIT 1;
-    PERFORM assert_not_null(v_user_id, 'An auth fixture user is required');
+    PERFORM create_user_for_test('short_title_editor', 'short-title@test.local');
+    v_user_id := get_user_id('short_title_editor');
+    UPDATE public.user_info SET organization = v_org_id WHERE id = v_user_id;
     PERFORM set_config('request.jwt.claim.sub', v_user_id::text, true);
     INSERT INTO public.occasion_users (
         occasion, "user", is_editor_order, is_editor_order_view

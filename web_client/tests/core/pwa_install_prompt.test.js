@@ -10,9 +10,9 @@ const indexTemplate = readFileSync(
     resolve(testDirectory, '../../../web/index.html'),
     'utf8'
 );
-const installPromptScript = indexTemplate.match(
-    /<script>\s*\/\/ Disable swipe back gesture globally([\s\S]*?)<\/script>/
-)?.[0];
+const installPromptScript = [...indexTemplate.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+    .map(match => match[0])
+    .find(script => script.includes("window.addEventListener('beforeinstallprompt'"));
 
 function bootInstallPromptBridge() {
     assert.ok(installPromptScript, 'PWA install bridge script must exist');

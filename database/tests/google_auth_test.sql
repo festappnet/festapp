@@ -8,8 +8,8 @@ DECLARE org bigint:=970001; other_org bigint:=970002; usr uuid; other_usr uuid;
 BEGIN
   PERFORM set_config('request.jwt.claim.role','service_role',true);
   INSERT INTO public.organizations(id,title,data) VALUES(org,'Google proof','{"IS_REGISTRATION_ENABLED":true}'),(other_org,'Other proof','{}');
-  INSERT INTO public.external_login_clients(client_id,organization,platform,origin,redirect_uri,enabled)
-  VALUES('google-sql-proof',org,'web','https://proof.invalid','https://proof.invalid/google-auth',true);
+  INSERT INTO public.external_login_clients(client_id,organization,platform,origin,redirect_uri,provisioned,enabled)
+  VALUES('google-sql-proof',org,'web','https://proof.invalid','https://proof.invalid/google-auth',true,true);
   PERFORM assert_eq(public.format_auth_email(1,' Jan@Example.com '),'1+jan@example.com','raw normalization');
   PERFORM assert_eq(public.format_auth_email(1,'1+jan@example.com'),'1+1+jan@example.com','raw numeric plus preserved');
   PERFORM assert_eq(public.format_auth_email(1,'jan+1@example.com'),'1+jan+1@example.com','alias preserved');

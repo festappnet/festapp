@@ -2,7 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show PointerDeviceKind;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/users/occasion_user_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -33,10 +38,16 @@ TicketLayoutResources resources() => TicketLayoutResources(
 
 class SettingsService extends TicketLayoutService {
   String? resolvedType;
+  int resolveCalls = 0;
+  Completer<TicketLayoutResources>? pendingResolve;
+  @override
+  Future<bool> openTemplatePickerOnce(int occasionId, String userId, {required bool configured}) async => false;
   @override
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background) async {
     resolvedType = type;
+    resolveCalls++;
+    if (pendingResolve != null) return pendingResolve!.future;
     return resources();
   }
 }
@@ -79,14 +90,82 @@ void main() {
       expect(ticketQrColorReadable(color), isFalse);
     }
   });
+  testWidgets('mobile palettes align left and scroll on one row', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final c = TicketLayoutController(document())..select('occasionTitle');
+    await tester.pumpWidget(MaterialApp(theme: ThemeData(useMaterial3: false),
+      home: Scaffold(body: SingleChildScrollView(child: TicketLayoutProperties(controller: c)))));
+    await tester.tap(find.text('TicketLayout.color'));
+    await tester.pumpAndSettle();
+    final first = find.byTooltip('#000000').last;
+    final last = find.byTooltip('#FFFFFF').last;
+    expect(tester.getTopLeft(first).dy, tester.getTopLeft(last).dy);
+    expect(tester.getTopLeft(find.text('TicketLayout.usedColors')).dx,
+        tester.getTopLeft(find.text('TicketLayout.basicColors')).dx);
+    final row = find.ancestor(of: last, matching: find.byType(SingleChildScrollView)).first;
+    final previousX = tester.getCenter(last).dx;
+    await tester.drag(row, const Offset(-220, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(last).dx, lessThan(previousX));
+    await tester.tap(last);
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'FFFFFF');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    c.dispose();
+  });
+  testWidgets('palette paints its colors in Material 2 and 3, light and dark', (tester) async {
+    for (final material3 in [false, true]) {
+      for (final brightness in Brightness.values) {
+        final c = TicketLayoutController(document())..select('occasionTitle');
+        final boundaryKey = GlobalKey();
+        await tester.pumpWidget(RepaintBoundary(key: boundaryKey, child: MaterialApp(
+          theme: ThemeData(useMaterial3: material3, brightness: brightness),
+          home: Scaffold(body: SingleChildScrollView(child: TicketLayoutProperties(controller: c))))));
+        await tester.tap(find.text('TicketLayout.color'));
+        await tester.pumpAndSettle();
+        final boundary = boundaryKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = (await tester.runAsync(() => boundary.toImage()))!;
+        final pixels = (await tester.runAsync(() => image.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
+        for (final hex in ticketQrColors) {
+          final rect = tester.getRect(find.byTooltip('#$hex').last);
+          final point = boundary.globalToLocal(Offset(rect.center.dx, rect.top + 12));
+          final offset = (point.dy.toInt() * image.width + point.dx.toInt()) * 4;
+          final rgb = (pixels.getUint8(offset) << 16) | (pixels.getUint8(offset + 1) << 8) | pixels.getUint8(offset + 2);
+          expect(rgb, int.parse(hex, radix: 16), reason: '$hex material3=$material3 brightness=$brightness');
+        }
+        image.dispose();
+        await tester.tap(find.byTooltip('#17365D').last);
+        await tester.pump();
+        expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '17365D');
+        await tester.pumpWidget(const SizedBox());
+        c.dispose();
+      }
+    }
+  });
   testWidgets('text and QR share the color picker and HEX entry', (tester) async {
     for (final binding in ['qr', 'occasionTitle']) {
       final c = TicketLayoutController(document())..select(binding);
+      final recorder = ui.PictureRecorder();
+      Canvas(recorder).drawColor(const Color(0xFF204060), BlendMode.src);
+      final picture = recorder.endRecording();
+      final image = (await tester.runAsync(() => picture.toImage(8, 8)))!;
+      picture.dispose();
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
-          child: TicketLayoutProperties(controller: c)))));
-      await tester.tap(find.text(binding == 'qr' ? 'TicketLayout.qrColor' : 'TicketLayout.color'));
+          child: TicketLayoutProperties(controller: c, backgroundImage: image)))));
+      await tester.tap(find.text(binding == 'qr' ? 'TicketLayout.qrColors' : 'TicketLayout.color'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pumpAndSettle();
       expect(find.byType(ColorPicker), findsOneWidget);
+      expect(find.text('TicketLayout.usedColors'), findsOneWidget);
+      expect(find.text('TicketLayout.imageColors'), findsOneWidget);
+      await tester.tap(find.byTooltip('#204060'));
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '204060');
       await tester.enterText(find.byType(TextField), 'FFFFFF');
       await tester.pump();
       final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply');
@@ -94,7 +173,7 @@ void main() {
       await tester.enterText(find.byType(TextField), '445566'); await tester.pump();
       await tester.tap(apply); await tester.pumpAndSettle();
       expect(c.selection!.color, '445566');
-      await tester.pumpWidget(const SizedBox()); c.dispose();
+      await tester.pumpWidget(const SizedBox()); c.dispose(); image.dispose();
     }
   });
   test('styled text fitting matches the PDF renderer fixtures', () {
@@ -212,6 +291,51 @@ void main() {
       expect(feature.ticketType, type);
       expect(feature.layout, isNull);
     }
+  });
+
+  testWidgets('returning from the editor keeps its button ready while only changed thumbnails reload', (tester) async {
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        unitUser: OccasionUserModel(isEditor: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+    final service = SettingsService();
+    final feature = TicketFeature(code: 'ticket', ticketType: 'named');
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
+      child: TicketSettings(feature: feature, occasionId: 7, service: service)))));
+    await tester.pumpAndSettle();
+    final edit = find.widgetWithText(FilledButton, 'TicketLayout.edit');
+    expect(service.resolveCalls, 1);
+    await tester.tap(edit); await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(TicketLayoutEditor), findsOneWidget,
+        reason: 'system back must not dismiss a clean editor');
+    await tester.tap(find.byTooltip('TicketLayout.cancel').first);
+    await tester.pumpAndSettle();
+    expect(service.resolveCalls, 2, reason: 'cancel does not reload the thumbnail');
+    expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.tap(edit); await tester.pumpAndSettle();
+    final editorController = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    editorController.replace(document().withFont('roboto'));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(TicketLayoutEditor), findsOneWidget);
+    expect(find.text('TicketLayout.discard'), findsNothing,
+        reason: 'back gestures must not interrupt editing with a discard prompt');
+    service.pendingResolve = Completer<TicketLayoutResources>();
+    final changed = document().withFont('roboto');
+    Navigator.of(tester.element(find.byType(TicketLayoutEditor)))
+        .pop(TicketLayoutResult(changed, null));
+    await tester.pumpAndSettle();
+    expect(service.resolveCalls, 4);
+    expect(tester.widget<FilledButton>(edit).onPressed, isNotNull,
+        reason: 'thumbnail refresh must not block editing');
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    service.pendingResolve!.complete(resources());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
   });
 
   test('artwork selection and geometry share undo history', () {
@@ -804,6 +928,90 @@ void main() {
     c.dispose();
   });
 
+  testWidgets('sidebar eyes toggle visibility without changing selection and support undo', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
+      occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpAndSettle();
+    final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    c.select('logo');
+    await tester.pump();
+    final titleRow = find.widgetWithText(ListTile, 'TicketLayout.occasionTitle');
+    final eye = find.descendant(of: titleRow, matching: find.byType(IconButton));
+    bool titleVisible() => c.document.elements.singleWhere((e) => e.id == 'occasionTitle').visible;
+    await tester.tap(eye);
+    await tester.pump();
+    expect(titleVisible(), isFalse);
+    expect(c.selectedIds, {'logo'});
+    expect(find.descendant(of: titleRow, matching: find.byIcon(Icons.visibility_off)), findsOneWidget);
+    c.undo();
+    await tester.pump();
+    expect(titleVisible(), isTrue);
+    await tester.tap(eye);
+    await tester.pump();
+    await tester.tap(eye);
+    await tester.pump();
+    expect(titleVisible(), isTrue);
+    await tester.tap(find.descendant(of: titleRow, matching: find.byType(Text)));
+    await tester.pump();
+    expect(c.selectedIds, {'occasionTitle'});
+    for (final binding in ['qr', 'ticketSymbol']) {
+      final button = find.descendant(
+        of: find.widgetWithText(ListTile, 'TicketLayout.$binding'),
+        matching: find.byType(IconButton));
+      expect(tester.widget<IconButton>(button).onPressed, isNull);
+    }
+  });
+
+  testWidgets('editor history shortcuts work from properties and preserve text field history', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
+      occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpAndSettle();
+    final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    c.select('occasionTitle');
+    await tester.pump();
+    final original = c.selection!.bold;
+    await tester.tap(find.byIcon(Icons.format_bold));
+    await tester.pump();
+    Focus.of(tester.element(find.byIcon(Icons.format_bold))).requestFocus();
+    await tester.pump();
+    Future<void> shortcut(LogicalKeyboardKey modifier, LogicalKeyboardKey key, {bool shift = false}) async {
+      await tester.sendKeyDownEvent(modifier);
+      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(key);
+      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(modifier);
+      await tester.pump();
+    }
+    expect(c.selection!.bold, !original);
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, original);
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyY);
+    expect(c.selection!.bold, !original);
+    await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, original);
+    await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ, shift: true);
+    expect(c.selection!.bold, !original);
+    await tester.tap(find.text('TicketLayout.color'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), '123456');
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, !original);
+    await tester.tap(find.text('TicketLayout.cancel'));
+    await tester.pumpAndSettle();
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, original);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('ticket font selection updates the document, metrics and undo', (tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1;
@@ -827,6 +1035,44 @@ void main() {
     canvas.controller.undo();await tester.pumpAndSettle();
     expect(canvas.controller.document.font,'futura');
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('QR foreground and background edit atomically on mobile with contrast and undo', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final c=TicketLayoutController(document())..select('qr');
+    final initial=c.document.toJson();
+    await tester.pumpWidget(MaterialApp(home:Scaffold(body:SingleChildScrollView(
+      child:TicketLayoutProperties(controller:c)))));
+    await tester.tap(find.text('TicketLayout.qrColors'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(TextField));
+    await tester.enterText(find.byType(TextField),'FFFFFF');
+    await tester.pump();
+    final apply=find.widgetWithText(FilledButton,'TicketLayout.apply');
+    expect(tester.widget<FilledButton>(apply).onPressed,isNull);
+    final background=find.text('TicketLayout.qrBackground');
+    await tester.ensureVisible(background);
+    await tester.tap(background);await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(TextField));
+    await tester.enterText(find.byType(TextField),'17365D');await tester.pump();
+    expect(tester.widget<FilledButton>(apply).onPressed,isNotNull);
+    expect(c.document.toJson(),initial);
+    await tester.tap(apply);await tester.pumpAndSettle();
+    expect(c.selection!.color,'FFFFFF');
+    expect(c.document.qrAppearance['background'],'17365D');
+    expect(c.document.qrAppearance['opacity'],1);
+    expect(c.document.validate('named'),isEmpty);
+    expect(TicketTemplate.fromJson(c.document.toJson()).qrAppearance['background'],'17365D');
+    c.undo();await tester.pumpAndSettle();expect(c.document.toJson(),initial);
+    await tester.tap(find.text('TicketLayout.qrColors'));await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('TicketLayout.swapColors'));await tester.pump();
+    await tester.tap(find.text('TicketLayout.cancel'));await tester.pumpAndSettle();
+    expect(c.document.toJson(),initial);
+    expect(tester.takeException(),isNull);
+    await tester.pumpWidget(const SizedBox());c.dispose();
   });
 
 }
