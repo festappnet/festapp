@@ -16,12 +16,14 @@ class BlueprintControlsBar extends StatefulWidget {
   final BlueprintModel? blueprint;
   final VenueSeatController<BlueprintObjectModel, Object> seatLayoutController;
   final bool canEdit;
+  final bool allowRemoteUpload;
 
   const BlueprintControlsBar({
     super.key,
     required this.blueprint,
     required this.seatLayoutController,
     required this.canEdit,
+    this.allowRemoteUpload = true,
   });
 
   @override
@@ -127,7 +129,7 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
             }
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
+            if (widget.allowRemoteUpload) PopupMenuItem<String>(
               value: 'svg',
               child: Text(BlueprintStrings.uploadSVG),
             ),

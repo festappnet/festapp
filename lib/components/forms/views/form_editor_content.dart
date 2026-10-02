@@ -16,11 +16,8 @@ import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../form_strings.dart';
-
 import 'package:fstapp/components/_shared/common_strings.dart';
-
 import '../widgets_editor/form_fields_generator.dart';
-
 import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
 
 const double kHiddenOpacity = 0.5;
@@ -28,11 +25,20 @@ const double kHiddenOpacity = 0.5;
 class FormEditorContent extends StatefulWidget {
   final String formLink;
   final VoidCallback? onDataUpdated;
-  const FormEditorContent({
+  final FormEditBundle? prototypeBundle;
+  final ValueChanged<FormEditBundle>? onPrototypeSave;
+  const FormEditorContent(
+      {super.key, required this.formLink, this.onDataUpdated})
+      : prototypeBundle = null,
+        onPrototypeSave = null;
+
+  const FormEditorContent.prototype({
     super.key,
-    required this.formLink,
-    this.onDataUpdated,
-  });
+    required FormEditBundle bundle,
+    required this.onPrototypeSave,
+  })  : formLink = '',
+        onDataUpdated = null,
+        prototypeBundle = bundle;
 
   @override
   _FormEditorContentState createState() => _FormEditorContentState();
@@ -43,16 +49,29 @@ class _FormEditorContentState extends State<FormEditorContent>
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave,
-    child: _buildHtmlParent(context),
-  );
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   FormEditBundle? _bundle;
   String? _formLink;
   final ScrollController _scrollController = ScrollController();
+  bool _prototypeSaved = false;
+  bool get _prototype => widget.prototypeBundle != null;
+  bool get _canEdit => _prototype || RightsService.isOrderEditor();
+  bool get _canSeeReservations =>
+      !_prototype && RightsService.canSeeReservations();
+
+  @override
+  void initState() {
+    super.initState();
+    _bundle = widget.prototypeBundle;
+  }
+
   @override
   void dispose() {
     _htmlSave.dispose();
+    if (_prototype && !_prototypeSaved && _bundle != null) {
+      widget.onPrototypeSave?.call(_bundle!);
+    }
     _scrollController.dispose();
     super.dispose();
   }
@@ -60,6 +79,7 @@ class _FormEditorContentState extends State<FormEditorContent>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_prototype) return;
     final newFormLink = widget.formLink;
     if (newFormLink != _formLink) {
       _formLink = newFormLink;
@@ -78,11 +98,8 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Future<void> saveChanges() async {
-    await ExceptionHandler.guardVoid(
-      context,
-      futureFunction: () =>
-          _htmlSave.save(() => _performHtmlSave(), context: context),
-    );
+    await ExceptionHandler.guardVoid(context, futureFunction: () =>
+      _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
@@ -92,11 +109,8 @@ class _FormEditorContentState extends State<FormEditorContent>
 
     if (form.startTime != null && form.endTime != null) {
       if (form.endTime!.isBefore(form.startTime!)) {
-        ToastHelper.Show(
-          context,
-          FormStrings.errorEndTimeBeforeStartTime,
-          severity: ToastSeverity.NotOk,
-        );
+        ToastHelper.Show(context, FormStrings.errorEndTimeBeforeStartTime,
+            severity: ToastSeverity.NotOk);
         return;
       }
     }
@@ -111,9 +125,8 @@ class _FormEditorContentState extends State<FormEditorContent>
           field.type == FormHelper.fieldTypeProductType &&
           field.productType != null &&
           field.productType!.products != null) {
-        field.productType!.products!.sort(
-          (a, b) => (a.order ?? 0).compareTo(b.order ?? 0),
-        );
+        field.productType!.products!
+            .sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
         for (int i = 0; i < field.productType!.products!.length; i++) {
           field.productType!.products![i].order = i;
         }
@@ -121,24 +134,24 @@ class _FormEditorContentState extends State<FormEditorContent>
     }
 
     try {
+      if (_prototype) {
+        _prototypeSaved = true;
+        widget.onPrototypeSave?.call(_bundle!);
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
       await prepareFormHtml(form, _htmlSave);
       await DbForms.updateForm(form);
       _htmlSave.markSaved();
       if (!mounted) return;
-      ToastHelper.Show(
-        context,
-        "${CommonStrings.saved}: ${form.link}",
-        severity: ToastSeverity.Ok,
-      );
+      ToastHelper.Show(context, "${CommonStrings.saved}: ${form.link}",
+          severity: ToastSeverity.Ok);
       await loadData();
       widget.onDataUpdated?.call();
     } catch (e) {
       if (!mounted) return;
-      ToastHelper.Show(
-        context,
-        e.toString().replaceFirst("Exception: ", ""),
-        severity: ToastSeverity.NotOk,
-      );
+      ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
+          severity: ToastSeverity.NotOk);
     }
   }
 
@@ -183,11 +196,11 @@ class _FormEditorContentState extends State<FormEditorContent>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        FormStrings.availability,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
+                      Text(FormStrings.availability,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold)),
                       _buildAvailabilityStatusBanner(form),
                       /*
                         (form.isOpen ?? true) ? FormStrings.formOpenMessage : FormStrings.formClosedMessage,
@@ -202,28 +215,24 @@ class _FormEditorContentState extends State<FormEditorContent>
                   ),
                 ),
                 Switch(
-                  value: form.isOpen ?? true,
-                  onChanged: RightsService.isOrderEditor()
+                  value: _prototype ? false : form.isOpen ?? true,
+                  onChanged: _canEdit && !_prototype
                       ? (val) => setState(() {
-                          form.isOpen = val;
-                        })
+                            form.isOpen = val;
+                          })
                       : null,
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            if (RightsService.canSeeReservations()) ...[
+            if (_canSeeReservations) ...[
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
-                title: Text(
-                  FormStrings.scheduleAndLimits,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  FormStrings.autoOpenHelp,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                title: Text(FormStrings.scheduleAndLimits,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(FormStrings.autoOpenHelp,
+                    style: Theme.of(context).textTheme.bodySmall),
                 initiallyExpanded: false,
                 shape: const Border(), // Remove default borders
                 children: [
@@ -232,51 +241,40 @@ class _FormEditorContentState extends State<FormEditorContent>
                     children: [
                       Expanded(
                         child: _buildDateTimeInput(
-                          FormStrings.labelStartTime,
-                          form.startTime,
-                          (date) {
-                            setState(() {
-                              form.startTime = date;
-                              if (date == null) {
-                                form.enableCountdown = false;
-                              } else {
-                                if (form.endTime == null ||
-                                    form.endTime!.isBefore(date)) {
-                                  form.endTime = date.add(
-                                    const Duration(hours: 1),
-                                  );
-                                }
+                            FormStrings.labelStartTime, form.startTime, (date) {
+                          setState(() {
+                            form.startTime = date;
+                            if (date == null) {
+                              form.enableCountdown = false;
+                            } else {
+                              if (form.endTime == null ||
+                                  form.endTime!.isBefore(date)) {
+                                form.endTime =
+                                    date.add(const Duration(hours: 1));
                               }
-                            });
-                          },
-                          isStart: true,
-                          enabled: RightsService.isOrderEditor(),
-                        ),
+                            }
+                          });
+                        }, isStart: true, enabled: _canEdit),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildDateTimeInput(
-                          FormStrings.labelEndTime,
-                          form.endTime,
-                          (date) {
-                            // Validation Logic: Prevent setting end time before start time
-                            // Note: UI picker is now also restricted, but this double check is safe.
-                            if (date != null &&
-                                form.startTime != null &&
-                                date.isBefore(form.startTime!)) {
-                              ToastHelper.Show(
-                                context,
+                            FormStrings.labelEndTime, form.endTime, (date) {
+                          // Validation Logic: Prevent setting end time before start time
+                          // Note: UI picker is now also restricted, but this double check is safe.
+                          if (date != null &&
+                              form.startTime != null &&
+                              date.isBefore(form.startTime!)) {
+                            ToastHelper.Show(context,
                                 FormStrings.errorEndTimeBeforeStartTime,
-                                severity: ToastSeverity.NotOk,
-                              );
-                              return;
-                            }
-                            setState(() => form.endTime = date);
-                          },
-                          isEnd: true,
-                          minDate: form.startTime,
-                          enabled: RightsService.isOrderEditor(),
-                        ),
+                                severity: ToastSeverity.NotOk);
+                            return;
+                          }
+                          setState(() => form.endTime = date);
+                        },
+                            isEnd: true,
+                            minDate: form.startTime,
+                            enabled: _canEdit),
                       ),
                     ],
                   ),
@@ -284,22 +282,18 @@ class _FormEditorContentState extends State<FormEditorContent>
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     secondary: const Icon(Icons.timer_outlined),
-                    title: Text(
-                      FormStrings.labelCountdownTimer,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
+                    title: Text(FormStrings.labelCountdownTimer,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(
                       form.startTime == null
                           ? FormStrings.requiresStartTime
                           : FormStrings.countdownDescription,
                       style: TextStyle(
-                        color: form.startTime == null ? Colors.grey : null,
-                        fontSize: 12,
-                      ),
+                          color: form.startTime == null ? Colors.grey : null,
+                          fontSize: 12),
                     ),
                     value: form.enableCountdown,
-                    onChanged:
-                        form.startTime != null && RightsService.isOrderEditor()
+                    onChanged: form.startTime != null && _canEdit
                         ? (val) => setState(() => form.enableCountdown = val)
                         : null,
                   ),
@@ -321,7 +315,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                             showLabel: false,
                             minimal: true,
                             fontSize: 20,
-                            enabled: RightsService.isOrderEditor(),
+                            enabled: _canEdit,
                           ),
                           Transform.scale(
                             scale: 0.8,
@@ -342,10 +336,8 @@ class _FormEditorContentState extends State<FormEditorContent>
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
-                title: Text(
-                  FormStrings.labelClosedMessage,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                title: Text(FormStrings.labelClosedMessage,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
                 initiallyExpanded: false,
                 shape: const Border(),
                 children: [
@@ -356,7 +348,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                     helpText: FormStrings.helperClosedMessage,
                     defaultText: FormStrings.reservationUnavailableMessage,
                     showLabel: false,
-                    enabled: RightsService.isOrderEditor(),
+                    enabled: _canEdit,
                   ),
                 ],
               ),
@@ -368,14 +360,11 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Widget _buildDateTimeInput(
-    String label,
-    DateTime? value,
-    Function(DateTime?) onChanged, {
-    bool isStart = false,
-    bool isEnd = false,
-    DateTime? minDate,
-    bool enabled = true,
-  }) {
+      String label, DateTime? value, Function(DateTime?) onChanged,
+      {bool isStart = false,
+      bool isEnd = false,
+      DateTime? minDate,
+      bool enabled = true}) {
     /*
     Color? statusColor;
     String statusText = "";
@@ -405,9 +394,8 @@ class _FormEditorContentState extends State<FormEditorContent>
               final firstDate = minDate ?? DateTime(2000);
 
               // Ensure initialDate is valid (must be >= firstDate)
-              final effectiveInitialDate = initialDate.isBefore(firstDate)
-                  ? firstDate
-                  : initialDate;
+              final effectiveInitialDate =
+                  initialDate.isBefore(firstDate) ? firstDate : initialDate;
 
               final date = await showDatePicker(
                 context: context,
@@ -421,15 +409,8 @@ class _FormEditorContentState extends State<FormEditorContent>
                   initialTime: TimeOfDay.fromDateTime(value ?? DateTime.now()),
                 );
                 if (time != null) {
-                  onChanged(
-                    DateTime(
-                      date.year,
-                      date.month,
-                      date.day,
-                      time.hour,
-                      time.minute,
-                    ),
-                  );
+                  onChanged(DateTime(
+                      date.year, date.month, date.day, time.hour, time.minute));
                 }
               }
             },
@@ -437,15 +418,12 @@ class _FormEditorContentState extends State<FormEditorContent>
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           suffixIcon: value != null && enabled
               ? IconButton(
                   icon: const Icon(Icons.clear, size: 18),
-                  onPressed: () => onChanged(null),
-                )
+                  onPressed: () => onChanged(null))
               : const Icon(Icons.calendar_today, size: 18),
         ),
         child: Column(
@@ -453,11 +431,10 @@ class _FormEditorContentState extends State<FormEditorContent>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              value != null
-                  ? DateFormat('dd.MM.yyyy HH:mm').format(value)
-                  : FormStrings.notSet,
-              style: const TextStyle(fontSize: 14),
-            ),
+                value != null
+                    ? DateFormat('dd.MM.yyyy HH:mm').format(value)
+                    : FormStrings.notSet,
+                style: const TextStyle(fontSize: 14)),
             /*
             if (statusText.isNotEmpty)
                Padding(
@@ -481,13 +458,11 @@ class _FormEditorContentState extends State<FormEditorContent>
       color = ThemeConfig.redColor(context);
     } else if (form.startTime != null && now.isBefore(form.startTime!)) {
       text = FormStrings.scheduledWithTime(
-        DateFormat('dd.MM HH:mm').format(form.startTime!),
-      );
+          DateFormat('dd.MM HH:mm').format(form.startTime!));
       color = ThemeConfig.redColor(context);
     } else if (form.endTime != null && now.isAfter(form.endTime!)) {
       text = FormStrings.endedWithTime(
-        DateFormat('dd.MM HH:mm').format(form.endTime!),
-      );
+          DateFormat('dd.MM HH:mm').format(form.endTime!));
       color = ThemeConfig.redColor(context);
     } else {
       text = FormStrings.formOpenMessage;
@@ -501,16 +476,13 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Widget _buildHtmlFieldPreview(
-    String label,
-    String? content,
-    ValueChanged<String> onChanged, {
-    String? defaultText,
-    String? helpText,
-    bool showLabel = true,
-    bool minimal = false,
-    double? fontSize,
-    bool enabled = true,
-  }) {
+      String label, String? content, ValueChanged<String> onChanged,
+      {String? defaultText,
+      String? helpText,
+      bool showLabel = true,
+      bool minimal = false,
+      double? fontSize,
+      bool enabled = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -522,15 +494,11 @@ class _FormEditorContentState extends State<FormEditorContent>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (showLabel)
-                      Text(
-                        label,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      Text(label,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                     if (helpText != null)
-                      Text(
-                        helpText,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      Text(helpText,
+                          style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -547,19 +515,15 @@ class _FormEditorContentState extends State<FormEditorContent>
                       : Colors.grey.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white24
-                        : Colors.grey.withOpacity(0.3),
-                  ),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white24
+                          : Colors.grey.withOpacity(0.3)),
                 ),
           child: Padding(
             padding: EdgeInsets.all(minimal ? 4 : 12),
             child: EditableHtmlField(
-              html: content ?? '',
-              placeholder: defaultText ?? FormStrings.notSet,
-              enabled: enabled,
-              fontSize: fontSize ?? 13,
-              coordinator: _htmlSave,
+              html: content ?? '', placeholder: defaultText ?? FormStrings.notSet, enabled: enabled && !_prototype,
+              fontSize: fontSize ?? 13, coordinator: _htmlSave,
               owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
               onChanged: onChanged,
             ),
@@ -588,90 +552,79 @@ class _FormEditorContentState extends State<FormEditorContent>
       builder: (BuildContext dialogContext) {
         List<Widget> resolvedItemsForDialog = [];
         if (personalInfoTypes.isNotEmpty) {
-          resolvedItemsForDialog.add(
-            PopupMenuButton<String>(
-              tooltip: FormStrings.personalInfo,
-              offset: isWideScreen ? const Offset(160, 0) : const Offset(20, 0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              onSelected: (String type) {
-                Navigator.of(dialogContext).pop(type);
-              },
-              itemBuilder: (BuildContext popupContext) {
-                return personalInfoTypes.map((type) {
-                  return PopupMenuItem<String>(
-                    value: type,
-                    child: Row(
-                      children: [
-                        Icon(
+          resolvedItemsForDialog.add(PopupMenuButton<String>(
+            tooltip: FormStrings.personalInfo,
+            offset: isWideScreen ? const Offset(160, 0) : const Offset(20, 0),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0)),
+            onSelected: (String type) {
+              Navigator.of(dialogContext).pop(type);
+            },
+            itemBuilder: (BuildContext popupContext) {
+              return personalInfoTypes.map((type) {
+                return PopupMenuItem<String>(
+                  value: type,
+                  child: Row(
+                    children: [
+                      Icon(
                           FormHelper.fieldTypeIcons[type] ??
                               Icons.circle_outlined,
                           size: 20,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(FormHelper.fieldTypeToLocale(type)),
-                      ],
-                    ),
-                  );
-                }).toList();
-              },
-              child: ListTile(
-                leading: Icon(
-                  Icons.person_search_outlined,
+                          color: Theme.of(context).textTheme.bodyLarge?.color),
+                      const SizedBox(width: 12),
+                      Text(FormHelper.fieldTypeToLocale(type)),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+            child: ListTile(
+              leading: Icon(Icons.person_search_outlined,
                   size: 20,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-                title: Text(FormStrings.personalInfo),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-                dense: true,
-              ),
+                  color: Theme.of(context).textTheme.bodyLarge?.color),
+              title: Text(FormStrings.personalInfo),
+              trailing: Icon(Icons.chevron_right,
+                  color: Theme.of(context).textTheme.bodyLarge?.color),
+              dense: true,
             ),
-          );
+          ));
           resolvedItemsForDialog.add(const Divider(height: 1, thickness: 0.5));
         }
 
-        resolvedItemsForDialog.addAll(
-          otherTypes.map((type) {
-            return ListTile(
-              leading: Icon(
+        resolvedItemsForDialog.addAll(otherTypes.map((type) {
+          return ListTile(
+            leading: Icon(
                 FormHelper.fieldTypeIcons[type] ?? Icons.circle_outlined,
                 size: 20,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-              title: Text(FormHelper.fieldTypeToLocale(type)),
-              dense: true,
-              onTap: () {
-                Navigator.of(dialogContext).pop(type);
-              },
-            );
-          }).toList(),
-        );
+                color: Theme.of(context).textTheme.bodyLarge?.color),
+            title: Text(FormHelper.fieldTypeToLocale(type)),
+            dense: true,
+            onTap: () {
+              Navigator.of(dialogContext).pop(type);
+            },
+          );
+        }).toList());
 
         if (resolvedItemsForDialog.isEmpty) {
-          resolvedItemsForDialog.add(
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(FormStrings.noFieldsAvailable),
-              ),
+          resolvedItemsForDialog.add(Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(FormStrings.noFieldsAvailable),
             ),
-          );
+          ));
         }
 
         return AlertDialog(
           title: Text(FormStrings.addFieldTitle),
           contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
           content: SizedBox(
             width: 280,
-            child: ListView(shrinkWrap: true, children: resolvedItemsForDialog),
+            child: ListView(
+              shrinkWrap: true,
+              children: resolvedItemsForDialog,
+            ),
           ),
         );
       },
@@ -708,6 +661,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     });
   }
 
+
   Widget _buildHtmlParent(BuildContext context) {
     if (_bundle == null)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -718,32 +672,33 @@ class _FormEditorContentState extends State<FormEditorContent>
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          FloatingActionButton(
-            heroTag: "viewFormFab",
-            onPressed: () {
-              if (_formLink != null) {
-                RouterService.navigate(context, "${FormPage.ROUTE}/$_formLink");
-              }
-            },
-            tooltip: FormStrings.publicView,
-            child: const Icon(Icons.remove_red_eye_outlined),
-          ),
-          const SizedBox.square(dimension: 12),
-          FloatingActionButton(
-            heroTag: "previewFormFab",
-            onPressed: () {
-              if (_formLink != null) {
-                RouterService.navigate(
-                  context,
-                  "${FormPage.ROUTE}/$_formLink?preview=true",
-                );
-              }
-            },
-            tooltip: FormStrings.editorPreview,
-            child: const Icon(Icons.developer_mode),
-          ),
-          const SizedBox.square(dimension: 12),
-          if (RightsService.isOrderEditor())
+          if (!_prototype)
+            FloatingActionButton(
+              heroTag: "viewFormFab",
+              onPressed: () {
+                if (_formLink != null) {
+                  RouterService.navigate(
+                      context, "${FormPage.ROUTE}/$_formLink");
+                }
+              },
+              tooltip: FormStrings.publicView,
+              child: const Icon(Icons.remove_red_eye_outlined),
+            ),
+          if (!_prototype) const SizedBox.square(dimension: 12),
+          if (!_prototype)
+            FloatingActionButton(
+              heroTag: "previewFormFab",
+              onPressed: () {
+                if (_formLink != null) {
+                  RouterService.navigate(
+                      context, "${FormPage.ROUTE}/$_formLink?preview=true");
+                }
+              },
+              tooltip: FormStrings.editorPreview,
+              child: const Icon(Icons.developer_mode),
+            ),
+          if (!_prototype) const SizedBox.square(dimension: 12),
+          if (_canEdit)
             FloatingActionButton(
               heroTag: "addFieldFab",
               onPressed: _addNewField,
@@ -759,9 +714,8 @@ class _FormEditorContentState extends State<FormEditorContent>
           : Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: StylesConfig.formMaxWidth,
-                ),
+                constraints:
+                    BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   child: Padding(
@@ -769,17 +723,16 @@ class _FormEditorContentState extends State<FormEditorContent>
                     child: Column(
                       children: [
                         _buildFormOpenToggleAndOffTextEditor(),
-                        const Divider(thickness: 1, color: Colors.grey),
+                        const Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
                         EditableHtmlField(
                           key: const ValueKey('form-header'),
                           html: _bundle!.form.header,
-                          enabled: RightsService.isOrderEditor(),
-                          coordinator: _htmlSave,
-                          owner: HtmlMediaOwner.occasion(
-                            _bundle!.form.occasionId,
-                          ),
-                          onChanged: (html) =>
-                              setState(() => _bundle!.form.header = html),
+                          enabled: _canEdit && !_prototype, coordinator: _htmlSave,
+                          owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
+                          onChanged: (html) => setState(() => _bundle!.form.header = html),
                         ),
                         const SizedBox(height: 24),
                         Column(
@@ -809,12 +762,13 @@ class _FormEditorContentState extends State<FormEditorContent>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                onPressed: RightsService.isOrderEditor() ? cancelEdit : null,
-                child: Text(CommonStrings.storno),
+                onPressed: _canEdit ? cancelEdit : null,
+                child: Text(
+                    _prototype ? CommonStrings.back : CommonStrings.storno),
               ),
               const SizedBox(width: 16),
               ElevatedButton(
-                onPressed: RightsService.isOrderEditor() ? saveChanges : null,
+                onPressed: _canEdit ? saveChanges : null,
                 child: Text(CommonStrings.save),
               ),
             ],
@@ -827,11 +781,8 @@ class _FormEditorContentState extends State<FormEditorContent>
 
 class _NoScalingAnimation extends FloatingActionButtonAnimator {
   @override
-  Offset getOffset({
-    required Offset begin,
-    required Offset end,
-    required double progress,
-  }) {
+  Offset getOffset(
+      {required Offset begin, required Offset end, required double progress}) {
     return end;
   }
 
