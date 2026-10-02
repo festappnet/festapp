@@ -4,6 +4,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../ticket_layout_controller.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_text.dart';
+import '../ticket_image_palette.dart';
 import '../ticket_layout_strings.dart';
 
 class TicketLayoutProperties extends StatelessWidget {
@@ -228,30 +229,23 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-        const Rect.fromLTWH(0, 0, 32, 32), Paint());
+        const Rect.fromLTWH(0, 0, 96, 96), Paint());
     final picture = recorder.endRecording();
-    final sample = await picture.toImage(32, 32);
+    final sample = await picture.toImage(96, 96);
     picture.dispose();
     final bytes = await sample.toByteData(format: ui.ImageByteFormat.rawRgba);
     sample.dispose();
     if (bytes == null || !mounted) return;
-    final counts = <int, int>{};
-    for (var i = 0; i < bytes.lengthInBytes; i += 4) {
-      if (bytes.getUint8(i + 3) < 128) continue;
-      final rgb = ((bytes.getUint8(i) ~/ 32 * 32) << 16) |
-          ((bytes.getUint8(i + 1) ~/ 32 * 32) << 8) |
-          (bytes.getUint8(i + 2) ~/ 32 * 32);
-      counts[rgb] = (counts[rgb] ?? 0) + 1;
-    }
-    final ranked = counts.keys.toList()..sort((a, b) => counts[b]!.compareTo(counts[a]!));
-    setState(() => imageColors = ranked.take(5).map((v) => v.toRadixString(16).padLeft(6, '0').toUpperCase()).toList());
+    setState(() => imageColors = ticketImagePalette(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes)));
   }
 
   Widget swatches(String label, Iterable<String> colors) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Text(label, style: Theme.of(context).textTheme.labelMedium),
-      Wrap(spacing: 8, runSpacing: 8, children: colors.map((v) => v.toUpperCase()).toSet().map((v) =>
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(spacing: 8, children: colors.map((v) => v.toUpperCase()).toSet().map((v) =>
         IconButton(
           tooltip: '#$v',
           onPressed: () { focus.unfocus(); pick(Color(int.parse('ff$v', radix: 16))); },
@@ -269,7 +263,7 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
               color: Color(int.parse('ff$v', radix: 16)).computeLuminance() > .5
                   ? Colors.black : Colors.white) : null,
           ),
-        )).toList()),
+        )).toList())),
       const SizedBox(height: 12),
     ]);
 
