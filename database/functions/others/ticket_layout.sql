@@ -20,8 +20,9 @@ BEGIN
     IF kind NOT IN ('wide','named') OR jsonb_typeof(t->'elements') IS DISTINCT FROM 'array'
       OR jsonb_array_length(t->'elements') NOT BETWEEN 2 AND 11
       OR (t ? 'pageFit' AND t->'pageFit' IS DISTINCT FROM '"ticket"'::jsonb)
-      OR (NOT (t ? 'pageFit') AND kind='wide' AND t->'page' IS DISTINCT FROM '{"width":595.28,"height":841.89}'::jsonb)
-      OR (NOT (t ? 'pageFit') AND kind='named' AND t->'page' IS DISTINCT FROM '{"width":212.5,"height":387.5}'::jsonb)
+      OR (NOT (t ? 'pageFit')
+          AND t->'page' IS DISTINCT FROM '{"width":595.28,"height":841.89}'::jsonb
+          AND t->'page' IS DISTINCT FROM '{"width":212.5,"height":387.5}'::jsonb)
     THEN RAISE EXCEPTION 'Invalid ticket template'; END IF;
     IF t->>'pageFit'='ticket' THEN
       IF jsonb_typeof(t->'page'->'width') IS DISTINCT FROM 'number'

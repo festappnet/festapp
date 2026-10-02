@@ -58,6 +58,14 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  test('A4 template stays printable in the legacy named slot', () {
+    final layouts = jsonDecode(File('test/fixtures/ticket_layout/layouts.json').readAsStringSync());
+    final layout = TicketTemplate.fromJson(layouts['valid'][0]['templates']['wide']);
+    expect(layout.page, const Size(595.28, 841.89));
+    expect(layout.validate('named'), isEmpty);
+    expect(layout.fitPageToTicket, isFalse);
+  });
+
   testWidgets('settings expose templates without a second type selector',
       (tester) async {
     for (final type in <String?>['named', 'wide', null]) {
