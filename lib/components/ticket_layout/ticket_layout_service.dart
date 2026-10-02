@@ -17,6 +17,7 @@ class TicketLayoutArtwork {
 
 class TicketLayoutResources {
   final TicketTemplate template, preset;
+  final bool missingBackground;
   final Map<String, TicketLayoutArtwork> artworks;
   final String? initialArtworkKey;
   final Map<String, TicketTemplate> presets;
@@ -39,6 +40,7 @@ class TicketLayoutResources {
       required this.metrics,
       this.fonts = const {}, this.fontLabels = const {},
       this.background,
+      this.missingBackground = false,
       this.logo,
       required this.qrSize,
       required this.qrModules});
@@ -128,6 +130,7 @@ class TicketLayoutService {
           fonts: fonts.map((key, value) => MapEntry(key as String, TicketFontMetrics.fromJson(value['metrics']))),
           fontLabels: fonts.map((key, value) => MapEntry(key as String, value['label'] as String)),
           background: bg,
+          missingBackground: j['missingBackground'] == true,
           logo: logo,
           qrSize: j['qrMatrix']['size'],
           qrModules: (j['qrMatrix']['data'] as List).cast<int>());
