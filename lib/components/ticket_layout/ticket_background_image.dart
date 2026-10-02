@@ -6,7 +6,7 @@ import 'package:image/image.dart' as img;
 /// stores the prepared bytes without a second, lower-quality transformation.
 class TicketBackgroundImage {
   static const maxEdge = 1080;
-  static const maxBytes = 1024 * 1024;
+  static const maxBytes = 800 * 1024;
   static const jpegQuality = 85;
 
   static Future<Uint8List> prepare(Uint8List bytes) => compute(_prepare, bytes);
