@@ -5,10 +5,12 @@ import sys
 
 path = pathlib.Path(sys.argv[1])
 source = path.read_text()
-option = '      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/font.ttf"],'
+option = '      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/*.ttf"],'
 anchor = '    const worker = await EdgeRuntime.userWorkers.create({\n'
+old_option = '      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/font.ttf"],'
+source = source.replace(old_option, option)
 if option not in source:
     if source.count(anchor) != 1 or 'staticPatterns' in source:
         raise SystemExit('upstream Function static-files contract changed')
     source = source.replace(anchor, anchor + option + '\n')
-    path.write_text(source)
+path.write_text(source)

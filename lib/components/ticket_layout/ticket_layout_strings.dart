@@ -55,6 +55,7 @@ class TicketLayoutStrings {
   static String get normal => 'TicketLayout.normal'.tr();
   static String get long => 'TicketLayout.long'.tr();
   static String get missing => 'TicketLayout.missing'.tr();
+  static String get fontFamily => 'TicketLayout.fontFamily'.tr();
   static String get fontSize => 'TicketLayout.fontSize'.tr();
   static String get visible => 'TicketLayout.visible'.tr();
   static String get locked => 'TicketLayout.locked'.tr();
