@@ -676,10 +676,14 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                               onPressed: () =>
                                   canvas.currentState?.zoomAt(1 / 1.2),
                               icon: const Icon(Icons.remove)),
-                          ValueListenableBuilder(
-                              valueListenable: transform,
-                              builder: (c, m, _) => Text(
-                                  '${(math.sqrt(math.pow(m.entry(0, 0), 2) + math.pow(m.entry(1, 0), 2)) * 100).round()}%')),
+                          SizedBox(
+                              width: 64 * MediaQuery.textScalerOf(context).scale(1),
+                              child: ValueListenableBuilder(
+                                  valueListenable: transform,
+                                  builder: (c, m, _) => Text(
+                                      '${(math.sqrt(math.pow(m.entry(0, 0), 2) + math.pow(m.entry(1, 0), 2)) * 100).round()}%',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontFeatures: [ui.FontFeature.tabularFigures()])))),
                           IconButton(
                               tooltip: TicketLayoutStrings.zoomIn,
                               onPressed: () => canvas.currentState?.zoomAt(1.2),
