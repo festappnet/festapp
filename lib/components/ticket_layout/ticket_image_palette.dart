@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'package:flutter/painting.dart';
 
 /// Representative artwork colors, ordered by coverage and perceptual diversity.
 /// Transparent pixels and tiny isolated details do not compete with the artwork.
@@ -87,4 +88,30 @@ class _PaletteColor {
   double distance(_PaletteColor other) => math.sqrt(
       List.generate(3, (i) => math.pow(lab[i] - other.lab[i], 2).toDouble())
           .reduce((a, b) => a + b));
+}
+
+/// Keep representative artwork colors, then add color-wheel harmonies.
+/// Neutrals have no meaningful hue, so never invent colorful suggestions for them.
+List<String> ticketArtworkSuggestions(Uint8List rgba) {
+  final palette = ticketImagePalette(rgba);
+  HSLColor? anchor;
+  for (final hex in palette) {
+    final hsl = HSLColor.fromColor(Color(int.parse('ff$hex', radix: 16)));
+    if (hsl.saturation >= .20 && hsl.lightness >= .08 && hsl.lightness <= .92) {
+      anchor = hsl;
+      break;
+    }
+  }
+  if (anchor == null) return palette;
+  final suggestions = palette.toSet();
+  for (final rotation in [-30, 30, 180]) {
+    final color = anchor.withHue((anchor.hue + rotation) % 360).toColor();
+    suggestions.add(color
+        .toARGB32()
+        .toRadixString(16)
+        .padLeft(8, '0')
+        .substring(2)
+        .toUpperCase());
+  }
+  return suggestions.toList();
 }

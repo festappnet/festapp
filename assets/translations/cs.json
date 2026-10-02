@@ -2054,7 +2054,7 @@
   },
   "TicketLayout": {
     "usedColors": "Použité na vstupence",
-    "imageColors": "Z podkladového obrázku",
+    "imageColors": "Doporučené k podkladu",
     "basicColors": "Základní barvy",
     "qrColors": "Barvy QR kódu",
     "qrForeground": "Kód",

@@ -2052,7 +2052,7 @@
   },
   "TicketLayout": {
     "usedColors": "Used on this ticket",
-    "imageColors": "From background image",
+    "imageColors": "Suggested for the background",
     "basicColors": "Basic colors",
     "qrColors": "QR code colors",
     "qrForeground": "Code",

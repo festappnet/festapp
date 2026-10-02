@@ -7,6 +7,20 @@ void main() {
         for (final (count, rgba) in groups)
           for (var i = 0; i < count; i++) ...rgba,
       ]);
+  test(
+      'color wheel adds analogous and complementary hues without tinting neutrals',
+      () {
+    expect(
+        ticketArtworkSuggestions(pixels([
+          (100, [255, 0, 0, 255])
+        ])),
+        ['FF0000', 'FF0080', 'FF8000', '00FFFF']);
+    expect(
+        ticketArtworkSuggestions(pixels([
+          (100, [120, 120, 120, 255])
+        ])),
+        ['787878']);
+  });
   test('preserves exact solid color and ignores transparent pixels', () {
     expect(
         ticketImagePalette(pixels([

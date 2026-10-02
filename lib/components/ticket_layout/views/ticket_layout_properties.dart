@@ -236,7 +236,7 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
     final bytes = await sample.toByteData(format: ui.ImageByteFormat.rawRgba);
     sample.dispose();
     if (bytes == null || !mounted) return;
-    setState(() => imageColors = ticketImagePalette(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes)));
+    setState(() => imageColors = ticketArtworkSuggestions(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes)));
   }
 
   Widget swatches(String label, Iterable<String> colors) => Column(
