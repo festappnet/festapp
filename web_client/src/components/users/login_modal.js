@@ -184,7 +184,7 @@ export class LoginModal extends HTMLElement {
             `;
         };
 
-        const googleAction = this.googleEnabled ? `<p class="auth-subtitle">${CommonStrings.googleSubtitle}</p><button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.googleOr}</div>` : '';
+        const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.googleOr}</div>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
         if (this.currentView === 'google_mfa') return `<h2>${CommonStrings.signIn}</h2><p>${CommonStrings.googleMfa}</p>${feedback}<form id="google-mfa-form" novalidate>${validatedField('mfa-code', CommonStrings.googleCode, 'text', true)}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.googleVerifyCode}</button></form>`;
@@ -203,7 +203,6 @@ export class LoginModal extends HTMLElement {
                     <div class="auth-links">
                         <button type="button" class="btn-link" id="link-forgot">${CommonStrings.forgotPassword}</button>
                         ${this._isRegistrationEnabled() ? `
-                        <span>|</span>
                         <button type="button" class="btn-link" id="link-register">${CommonStrings.signUp}</button>
                         ` : ''}
                     </div>
@@ -277,6 +276,9 @@ export class LoginModal extends HTMLElement {
         if (this.currentView === 'google_mfa') {
             attach('#google-mfa-form', e => this._advanceGoogle(e, 'mfa_verify'), 'submit');
         } else if (this.currentView === 'google_proof') {
+            const email = this.authContainer.querySelector('#email');
+            email.value = this._proofEmail ?? this.googleResult?.email ?? '';
+            email.addEventListener('input', () => { this._proofEmail = email.value; });
             attach('#google-proof-form', e => this._advanceGoogle(e, 'prove_existing'), 'submit');
             attach('#link-forgot', () => this._setView('forgot'));
         } else if (this.currentView === 'google_profile') {
@@ -486,6 +488,7 @@ export class LoginModal extends HTMLElement {
         // Full redirect must not silently discard an in-progress checkout/form.
         const otherForms = [...document.querySelectorAll('form')].filter(form => !this.authContainer.contains(form));
         if (otherForms.some(form => [...form.elements].some(el => el.value && el.type !== 'hidden')) && !window.confirm(CommonStrings.googleLeaveDraft)) return;
+        this._proofEmail = null;
         this.isLoading = true; this.googleError = ''; this._updateContent();
         try { await GoogleAuthService.start(); }
         catch (error) { this.googleError = error.message; this.isLoading = false; this._updateContent(); }

@@ -88,8 +88,13 @@ Selecting one copies geometry into the draft and is a single undo step; no PDF
 request or saved style identifier is involved. Historical event image references
 are distinct from geometry and must be reviewed before becoming reusable assets.
 
-Known event title/date/place override synthetic values in all preview scenarios;
-only ticket/order fields remain samples. The QR stays deliberately invalid.
+Known event title/date/place override synthetic values in all preview scenarios.
+After authorization, preview reads the occasion's product catalog and selects
+the first visible admission product (by id) and a dinner in the same currency.
+The displayed price is their sum and dinner uses its short title when present.
+An empty or unusable catalog uses the illustrative dinner and price fallback;
+a real catalog without dinner leaves that field empty. Names and table numbers
+remain illustrative. The QR stays deliberately invalid.
 Resolve reads these fields from the authorized occasion on the canonical backend.
 Without an assigned background, custom layouts use the same plain fill in
 the editor and PDF; a failing explicitly assigned image still fails visibly.
@@ -200,3 +205,21 @@ assets are reported separately and never substituted. Run reviewed SQL through
 protects concurrent edits, validates the layout and is safe to repeat. Unconfigured
 events still get the first-open gallery. The save RPC rejects older clients that
 would discard the migrated font/appearance contract; reload the deployed editor.
+
+## Background upload quality
+
+`TicketBackgroundImage` owns the print-artwork preparation policy: 1080 px on
+the longer edge, JPEG quality 85, and an 800 KiB output budget below the existing
+10 MiB upload/PDF limit. Suitable PNG/JPEG inputs are kept byte-for-byte; PNG
+transparency is preserved. Oversized images scale down without upscaling or a
+second JPEG pass. The upload service passes the same limits to the Worker so its
+ordinary 1200 px / quality 70 defaults do not recompress prepared ticket artwork.
+EXIF orientation is baked when necessary, and other decoded formats become PNG
+for the shared PDF renderer. Native platforms prepare in a compute isolate.
+
+QR colors are edited together in the shared color picker: foreground/background
+selection, HEX entry, paired preview and a swap action. Contrast gates Apply,
+not individual color changes, so inversion is possible in one undoable edit.
+A changed background becomes opaque; otherwise imported opacity/quiet margins
+remain intact. These values persist through the existing layout contract and
+are consumed by both the canvas and the sole PDF renderer.

@@ -17,6 +17,11 @@ class AdministrationStrings {
   static String get oneSignalSecretManagedServerSide =>
       'Administration.oneSignalSecretManagedServerSide'.tr();
 
+  static String get googleLoginEnabled =>
+      'Administration.googleLoginEnabled'.tr();
+  static String get googleLoginDescription =>
+      'Administration.googleLoginDescription'.tr();
+
   // New Strings for Occasion Creation
   static String get myFestival =>
       'Administration.myFestival'.tr(); // "myfestival"

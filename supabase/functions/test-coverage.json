@@ -6,7 +6,8 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/preview-ticket-layout/preview_test.ts"
+        "supabase/functions/preview-ticket-layout/preview_test.ts",
+        "supabase/functions/preview-ticket-layout/products_test.ts"
       ]
     },
     "bank-mail-parser": {

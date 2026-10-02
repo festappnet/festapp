@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "f6eedc4408320cc97001906bad84e589cad0071f",
+  "baseMainSha": "b581da858e0d1636aa66bc49df2ff859bf138d12",
   "release": {
-    "version": "0.20.49+533",
-    "note": "Match inline and fullscreen HTML editor typography"
+    "version": "0.20.57+541",
+    "note": "Unified current main, shared column help and remaining workspace changes"
   }
 }

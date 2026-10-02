@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:fstapp/components/images/image_area.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
+import '../ticket_background_image.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_layout_controller.dart';
@@ -93,6 +94,28 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     transform.dispose();
     resources.dispose();
     super.dispose();
+  }
+
+  KeyEventResult _historyKey(FocusNode node, KeyEvent event) {
+    final keyboard = HardwareKeyboard.instance;
+    if (event is KeyUpEvent || keyboard.isAltPressed ||
+        !(keyboard.isControlPressed || keyboard.isMetaPressed)) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.keyZ && key != LogicalKeyboardKey.keyY) {
+      return KeyEventResult.ignored;
+    }
+    // Let text fields keep their own editing history, including when empty.
+    final focusContext = FocusManager.instance.primaryFocus?.context;
+    if (focusContext?.findAncestorWidgetOfExactType<EditableText>() != null) {
+      return KeyEventResult.ignored;
+    }
+    if (!imageBusy && event is KeyDownEvent) {
+      key == LogicalKeyboardKey.keyY || keyboard.isShiftPressed
+          ? controller.redo() : controller.undo();
+    }
+    return KeyEventResult.handled;
   }
 
   Map<String, dynamic> get draftLayout => {
@@ -188,7 +211,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     bool staged = false, committed = false;
     await ExceptionHandler.guard(context, futureFunction: () async {
       final bytes =
-          await ImageCompressionHelper.compress(await file.readAsBytes(), 1600);
+          await TicketBackgroundImage.prepare(await file.readAsBytes());
       final codec = await ui.instantiateImageCodec(bytes);
       final image = (await codec.getNextFrame()).image;
       codec.dispose();
@@ -395,8 +418,17 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   dense: true,
                   selected: controller.selectedIds.contains(e.id),
                   title: Text(TicketLayoutStrings.binding(e.binding)),
-                  leading:
-                      Icon(e.visible ? Icons.visibility : Icons.visibility_off),
+                  leading: Semantics(
+                      toggled: e.visible,
+                      child: IconButton(
+                          tooltip: TicketLayoutStrings.visible,
+                          icon: Icon(e.visible
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                          onPressed: ['qr', 'ticketSymbol'].contains(e.binding)
+                              ? null
+                              : () => controller
+                                  .change(e.copyWith(visible: !e.visible)))),
                   trailing: e.locked ? const Icon(Icons.lock, size: 16) : null,
                   onTap: () {
                     controller.select(e.id, additive: additiveSelection);
@@ -428,6 +460,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           TicketLayoutProperties(
             controller: controller,
             defaults: propertyDefaults,
+            backgroundImage: resources.artworks.containsKey(controller.artworkKey)
+                ? resources.artworks[controller.artworkKey]!.image : resources.background,
             metrics: resources.metricsFor(controller.document),
             data: resources.scenarios[scenario])),
         Padding(
@@ -454,7 +488,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => DefaultTabController(
+      builder: (context) => Focus(autofocus: true, onKeyEvent: _historyKey,
+        child: DefaultTabController(
           initialIndex: tab,
           length: 2,
           child: SizedBox(
@@ -473,7 +508,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       icon: const Icon(Icons.close)),
                 ]),
                 Expanded(
-                    child: TabBarView(children: [
+                    child: TabBarView(physics: const NeverScrollableScrollPhysics(), children: [
                   Builder(
                       builder: (tabContext) => SingleChildScrollView(
                           child: elements(
@@ -482,7 +517,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                       .animateTo(1)))),
                   panel(includeElements: false),
                 ])),
-              ]))));
+              ])))));
 
   Widget mobileToolbar() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -576,11 +611,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       ]));
 
   @override
-  Widget build(BuildContext context) => PopScope(
+  Widget build(BuildContext context) => Focus(
+      autofocus: true, onKeyEvent: _historyKey,
+      child: PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) cancel();
-      },
       child: Scaffold(
         appBar: AppBar(
             leading: IconButton(
@@ -601,6 +635,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         body: SafeArea(
             top: false,
             child: Column(children: [
+              if (resources.missingBackground && (background?.isNotEmpty ?? false))
+                Padding(padding: const EdgeInsets.all(12), child: Text(TicketLayoutStrings.missingBackground)),
               if (MediaQuery.sizeOf(context).width < 900)
                 mobileToolbar()
               else
@@ -651,10 +687,14 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                               onPressed: () =>
                                   canvas.currentState?.zoomAt(1 / 1.2),
                               icon: const Icon(Icons.remove)),
-                          ValueListenableBuilder(
-                              valueListenable: transform,
-                              builder: (c, m, _) => Text(
-                                  '${(math.sqrt(math.pow(m.entry(0, 0), 2) + math.pow(m.entry(1, 0), 2)) * 100).round()}%')),
+                          SizedBox(
+                              width: 64 * MediaQuery.textScalerOf(context).scale(1),
+                              child: ValueListenableBuilder(
+                                  valueListenable: transform,
+                                  builder: (c, m, _) => Text(
+                                      '${(math.sqrt(math.pow(m.entry(0, 0), 2) + math.pow(m.entry(1, 0), 2)) * 100).round()}%',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontFeatures: [ui.FontFeature.tabularFigures()])))),
                           IconButton(
                               tooltip: TicketLayoutStrings.zoomIn,
                               onPressed: () => canvas.currentState?.zoomAt(1.2),
@@ -783,5 +823,5 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       ]);
               })),
             ])),
-      ));
+      )));
 }

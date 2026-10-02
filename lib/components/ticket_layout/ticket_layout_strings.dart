@@ -1,6 +1,16 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get missingBackground => 'TicketLayout.missingBackground'.tr();
+  static String get usedColors => 'TicketLayout.usedColors'.tr();
+  static String get imageColors => 'TicketLayout.imageColors'.tr();
+  static String get basicColors => 'TicketLayout.basicColors'.tr();
+  static String get qrColors => 'TicketLayout.qrColors'.tr();
+  static String get qrForeground => 'TicketLayout.qrForeground'.tr();
+  static String get qrBackground => 'TicketLayout.qrBackground'.tr();
+  static String get swapColors => 'TicketLayout.swapColors'.tr();
+  static String get qrBackgroundHint => 'TicketLayout.qrBackgroundHint'.tr();
+
   static String get qrContrast => 'TicketLayout.qrContrast'.tr();
   static String get multiSelect => 'TicketLayout.multiSelect'.tr();
   static String get selectedElements => 'TicketLayout.selectedElements'.tr();
