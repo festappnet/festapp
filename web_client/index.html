@@ -52,7 +52,7 @@
     <script>
         // This handshake must not depend on the module it unlocks. A resumed
         // mobile worker can forget the client generation before loading JS.
-        window.__FESTAPP_BUILD_VERSION__ = "0.20.40+524";
+        window.__FESTAPP_BUILD_VERSION__ = "0.20.41+525";
         const startupCopy = navigator.language.startsWith('cs') || navigator.language.startsWith('sk')
             ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
             : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
@@ -104,7 +104,8 @@
             }
         };
         window.addEventListener('error', function(event) {
-            if (event.target?.id === 'festapp-web-entry') {
+            if (event.target?.tagName === 'SCRIPT' && event.target.type === 'module' &&
+                event.target.src && new URL(event.target.src).origin === location.origin) {
                 window.failFestappWebClientStartup('web-module-error');
             }
         }, true);
@@ -176,7 +177,7 @@
     <div id="form-page-container" style="display: none;"></div>
 
     <!-- Application Entry (Module) -->
-    <script id="festapp-web-entry" type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/main.js"></script>
     <script type="module">
         async function persistUsedFontResources() {
             await navigator.serviceWorker.ready;
