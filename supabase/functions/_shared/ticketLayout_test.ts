@@ -136,3 +136,12 @@ Deno.test('styled text fitting agrees with the shared editor fixtures',async()=>
  const fixture=JSON.parse(await Deno.readTextFile('test/fixtures/ticket_layout/resolve.json'));
  for(const item of cases)assertEquals(fitText(item.text,item.element,fixture.metrics),item.expected);
 });
+
+Deno.test('custom QR colors validate and render beyond the suggested palette',async()=>{
+ const {qrColorReadable}=await import('./ticketLayout.ts');
+ for(const color of ['445566','5A245A','003F88','767676'])assert(qrColorReadable(color));
+ for(const color of ['777777','FFFFFF','FFFF00','oops'])assert(!qrColorReadable(color));
+ const t=preset('named');t.elements.find(e=>e.binding==='qr')!.style.color='445566';
+ const output=await generateTicketPdf(sampleData('normal'),r,t);
+ assert(output.bytes.length>1000);
+});

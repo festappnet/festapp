@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get qrContrast => 'TicketLayout.qrContrast'.tr();
   static String get multiSelect => 'TicketLayout.multiSelect'.tr();
   static String get selectedElements => 'TicketLayout.selectedElements'.tr();
   static String get groupMoveHint => 'TicketLayout.groupMoveHint'.tr();
