@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS public.external_login_clients (
   platform text NOT NULL CHECK(platform IN ('web','flutter-web','android','ios')),
   origin text NOT NULL CHECK(origin ~ '^https://[^/?#]+$'),
   redirect_uri text NOT NULL CHECK(redirect_uri ~ '^https://[^?#]+$'),
-  enabled boolean NOT NULL DEFAULT false
+  provisioned boolean NOT NULL DEFAULT false,
+  enabled boolean NOT NULL DEFAULT false,
+  CONSTRAINT external_login_client_requires_provisioning CHECK (NOT enabled OR provisioned)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS user_info_external_login_org_key ON public.user_info(id,organization);
 CREATE TABLE IF NOT EXISTS public.external_login_identities (
