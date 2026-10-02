@@ -145,9 +145,10 @@ class _TicketSettingsState extends State<TicketSettings> {
                   fit: BoxFit.contain,
                   alignment: Alignment.centerLeft,
                   child: CustomPaint(
-                      size: thumbnail!.template.page,
+                      size: thumbnail!.template.area.size,
                       painter: TicketLayoutPainter(thumbnailController!,
-                          thumbnail!, thumbnail!.scenarios['normal']!)))),
+                          thumbnail!, thumbnail!.scenarios['normal']!,
+                          cropToTicket: true)))),
         const SizedBox(height: 8),
         if (widget.feature.conflictDraft != null)
           TextButton(
@@ -166,9 +167,6 @@ class _TicketSettingsState extends State<TicketSettings> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.edit_outlined),
-            label: Text(widget.feature.layout?['templates']?[type] == null &&
-                    (widget.feature.ticketBackground?.isEmpty ?? true)
-                ? TicketLayoutStrings.chooseTemplate
-                : TicketLayoutStrings.edit)),
+            label: Text(TicketLayoutStrings.edit)),
       ]);
 }

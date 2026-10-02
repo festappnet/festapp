@@ -39,6 +39,12 @@ class TicketLayoutController extends ChangeNotifier {
     }
   }
 
+  void previewResize(Size size) {
+    beginGesture();
+    document = _gesture!.resizeArea(size);
+    notifyListeners();
+  }
+
   void endGesture() {
     guideX = guideY = null;
     final before = _gesture;
