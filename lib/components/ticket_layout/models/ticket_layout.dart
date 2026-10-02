@@ -3,14 +3,19 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 const ticketQrColors = ['000000', '2A2A2A', '17365D', '123B20', '401529'];
-bool ticketQrColorReadable(String color) {
+bool ticketQrColorReadable(String color, [String background = 'FFFFFF']) {
   if (!RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(color)) return false;
   final channels = [0, 2, 4].map((i) {
     final c = int.parse(color.substring(i, i + 2), radix: 16) / 255;
     return c <= .04045 ? c / 12.92 : math.pow((c + .055) / 1.055, 2.4).toDouble();
   }).toList();
   final luminance = channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
-  return 1.05 / (luminance + .05) >= 4.5;
+  final bg = [0, 2, 4].map((i) {
+    final c = int.parse(background.substring(i, i + 2), radix: 16) / 255;
+    return c <= .04045 ? c / 12.92 : math.pow((c + .055) / 1.055, 2.4).toDouble();
+  }).toList();
+  final back = bg[0] * .2126 + bg[1] * .7152 + bg[2] * .0722;
+  return (math.max(luminance, back) + .05) / (math.min(luminance, back) + .05) >= 4.5;
 }
 
 const ticketBindings = [
@@ -113,12 +118,31 @@ Map<String, dynamic> boxJson(Rect b) =>
     {'x': b.left, 'y': b.top, 'width': b.width, 'height': b.height};
 
 class TicketTemplate {
+  final Map<String, dynamic> appearance;
+  String get font => appearance['font'] as String? ?? 'futura';
+  Map get qrAppearance => appearance['qrAppearance'] as Map? ?? const {};
+  List<TicketElement> positionedElements(Map<String, String?> data) {
+    final flow = (appearance['flow'] as List? ?? const [])
+        .map((b) => elements.where((e) => e.binding == b).firstOrNull)
+        .whereType<TicketElement>().toList();
+    final positions = <String, TicketElement>{};
+    double shift = 0;
+    for (var i = 0; i < flow.length; i++) {
+      final e = flow[i];
+      positions[e.id] = e.copyWith(box: e.box.shift(Offset(0, -shift)));
+      if (!e.visible || (data[e.binding]?.isEmpty ?? true)) {
+        shift += (appearance['flowStep'] as num?)?.toDouble() ?? e.box.height;
+      }
+    }
+    return elements.map((e) => positions[e.id] ?? e).toList();
+  }
   final bool fitPageToTicket;
   final Size page;
   final Rect area;
   final List<TicketElement> elements;
   TicketTemplate(
       {this.fitPageToTicket = false,
+      this.appearance = const {},
       required this.page,
       required this.area,
       required List<TicketElement> elements})
@@ -130,6 +154,7 @@ class TicketTemplate {
     final p = j['page'], a = j['ticketArea'];
     return TicketTemplate(
         fitPageToTicket: j['pageFit'] == 'ticket',
+        appearance: {for (final key in ['font', 'flow', 'flowStep', 'qrAppearance', 'border']) if (j.containsKey(key)) key: j[key]},
         page: Size(
             (p['width'] as num).toDouble(), (p['height'] as num).toDouble()),
         area: Rect.fromLTWH(
@@ -141,8 +166,12 @@ class TicketTemplate {
             .map((e) => TicketElement.fromJson(e))
             .toList());
   }
+  TicketTemplate withFont(String value) => TicketTemplate(
+      fitPageToTicket: fitPageToTicket, page: page, area: area,
+      appearance: {...appearance, 'font': value}, elements: elements);
   TicketTemplate replace(TicketElement e) => TicketTemplate(
       fitPageToTicket: fitPageToTicket,
+        appearance: appearance,
       page: page,
       area: area,
       elements: elements.map((old) => old.id == e.id ? e : old).toList());
@@ -161,6 +190,7 @@ class TicketTemplate {
     double coordinate(double value) => (value * 1024).round() / 1024;
     return TicketTemplate(
         fitPageToTicket: fitPageToTicket,
+        appearance: {...appearance, if (appearance['flowStep'] != null) 'flowStep': (appearance['flowStep'] as num) * scale},
         page: fitPageToTicket ? size : page,
         area: Rect.fromLTWH(fitPageToTicket ? 0 : area.left,
             fitPageToTicket ? 0 : area.top, size.width, size.height),
@@ -176,6 +206,7 @@ class TicketTemplate {
   }
 
   Map<String, dynamic> toJson() => {
+        ...appearance,
         if (fitPageToTicket) 'pageFit': 'ticket',
         'page': {'width': page.width, 'height': page.height},
         'ticketArea': boxJson(area),
@@ -204,6 +235,7 @@ class TicketTemplate {
         elements.length > 11) {
       errors.add('geometry');
     }
+    if (!['futura', 'robotoSlab', 'roboto', 'russoOne'].contains(font)) errors.add('font');
     final ids = <String>{}, bindings = <String>{};
     TicketElement? qr;
     for (final e in elements) {
@@ -231,7 +263,7 @@ class TicketTemplate {
         qr = e;
         if (e.box.width != e.box.height ||
             e.box.width < 60 ||
-            !ticketQrColorReadable(e.color)) {
+            !ticketQrColorReadable(e.color, qrAppearance['background'] as String? ?? 'FFFFFF')) {
           errors.add(e.id);
         }
       }

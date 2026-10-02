@@ -107,8 +107,14 @@ export async function fetchPublicImage(
     }
     if (!response.ok) throw new UnsafeTargetError(`upstream_${response.status}`);
     const contentType = response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase();
-    if (!contentType?.startsWith('image/')) throw new UnsafeTargetError('invalid_content_type');
-    return { bytes: await readLimited(response), contentType };
+    if (!contentType?.startsWith('image/') && contentType !== 'application/octet-stream') throw new UnsafeTargetError('invalid_content_type');
+    const bytes=await readLimited(response);
+    // Some existing image objects were uploaded with the generic storage MIME.
+    // Accept only raster signatures that the ticket decoder actually supports.
+    const png=bytes.length>=8 && [137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v);
+    const jpeg=bytes.length>=3 && bytes[0]===255 && bytes[1]===216 && bytes[2]===255;
+    if(contentType==='application/octet-stream' && !png && !jpeg)throw new UnsafeTargetError('invalid_content_type');
+    return { bytes, contentType:contentType==='application/octet-stream'?(png?'image/png':'image/jpeg'):contentType };
   }
   throw new UnsafeTargetError('unsafe_redirect');
 }

@@ -780,4 +780,53 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     c.dispose();
   });
+  test('imported appearance round trips and compact rows retain editable geometry', () {
+    final source = jsonDecode(File('test/fixtures/ticket_layout/imported.json').readAsStringSync()) as Map;
+    final t = TicketTemplate.fromJson(source);
+    expect(t.validate('wide'), isEmpty);
+    expect(t.toJson()['qrAppearance'], source['qrAppearance']);
+    expect(t.toJson()['flow'], source['flow']);
+    expect(TicketTemplate.fromJson(t.toJson()).validate('wide'), isEmpty);
+    expect(t.font, 'robotoSlab');
+    final data = <String, String?>{'food':'Večeře', 'price':'Cena', 'spotGroup':'Stůl'};
+    final visible = t.positionedElements(data);
+    final food = visible.firstWhere((e) => e.binding == 'food');
+    final price = visible.firstWhere((e) => e.binding == 'price');
+    expect(price.box.top-food.box.top, closeTo(t.appearance['flowStep'] as double, .001));
+    final c = TicketLayoutController(t)..select('price');
+    c.move(const Offset(0, 5), snap: false);
+    expect(c.document.positionedElements(data).firstWhere((e) => e.binding == 'price').box.top, closeTo(price.box.top+5, .001));
+    c.replace(c.document.withFont('roboto'));
+    expect(c.document.font, 'roboto');
+    c.undo();expect(c.document.font,'robotoSlab');
+    final resized=t.resizeArea(Size(t.area.width*.9,t.area.height*.9));
+    expect(resized.appearance['flowStep'],closeTo((t.appearance['flowStep'] as num)*.9,.001));
+    c.dispose();
+  });
+
+  testWidgets('ticket font selection updates the document, metrics and undo', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r=resources();
+    final fonts={'futura':r.metrics,'roboto':r.metrics};
+    final withFonts=TicketLayoutResources(template:r.template,preset:r.preset,
+      scenarios:r.scenarios,metrics:r.metrics,fonts:fonts,
+      fontLabels:const {'futura':'Futura PT','roboto':'Roboto'},
+      qrSize:r.qrSize,qrModules:r.qrModules);
+    await tester.pumpWidget(MaterialApp(home:TicketLayoutEditor(
+      occasionId:1,type:'named',resources:withFonts,service:FakeService())));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Futura PT').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Roboto').last);
+    await tester.pumpAndSettle();
+    final canvas=tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
+    expect(canvas.controller.document.font,'roboto');
+    canvas.controller.undo();await tester.pumpAndSettle();
+    expect(canvas.controller.document.font,'futura');
+    await tester.pumpWidget(const SizedBox());
+  });
+
 }

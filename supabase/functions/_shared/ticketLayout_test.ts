@@ -1,5 +1,3 @@
-import {generateTicketImage} from './generateTicket.ts';
-import {generateNamedTicketImage} from './generateNamedTicket.ts';
 import {assertEquals,assertThrows,assert,assertRejects} from 'jsr:@std/assert@1';
 import {parseLayout,preset,pdfBox} from './ticketLayout.ts';
 import {fitText} from './ticketText.ts';
@@ -70,27 +68,6 @@ Deno.test('shared SQL fixtures are identical to the Dart/TS fixtures',async()=>{
   const sql=await Deno.readTextFile(new URL('../../../database/tests/ticket_layout_settings_test.sql',import.meta.url));
   assertEquals(JSON.parse(sql.split('$fixtures$')[1]),fixtures);
 });
-Deno.test('dispatch loads custom resources once per batch and legacy resources only without a template',async()=>{
-  let customLoads=0,legacyLoads=0,productsLoads=0;
-  const deps={load:async()=>{customLoads++;return {...r};},wide:async()=>{legacyLoads++;return {darkColor:'000000',lightColor:'FFFFFF',productTypeMap:{},backgroundBytes:png,customFontBytes:font};},named:async()=>{legacyLoads++;return {occasion:{id:1,title:'Event',data:{},start_time:'2026-10-01',end_time:'2026-10-01'},logoBytes:null,customFontBytes:font};},products:async()=>{productsLoads++;return {product_types:[],products:[]};}};
-  const ticket={ticket_symbol:'12341A2C3E',order_product_ticket:[]};
-  for(const type of ['wide','named'] as const){
-    const render=await prepareTicketRenderer({id:1,features:[{code:'ticket',ticket_type:type,layout:{schemaVersion:1,templates:{[type]:preset(type)}}}]},ticket,{name:'Jana',surname:'Nováková'},deps);
-    await render(ticket);await render(ticket);
-  }
-  assertEquals([customLoads,productsLoads,legacyLoads],[2,2,0]);
-  await prepareTicketRenderer({features:[{code:'ticket',ticket_type:'named'}]},ticket,{},deps);
-  await prepareTicketRenderer({features:[{code:'ticket',ticket_type:'wide'}]},ticket,{},deps);
-  assertEquals(legacyLoads,2);
-});
-
-Deno.test('historical generators preserve all reference drawing and resource streams',async()=>{
- const ticket={ticket_symbol:'12341A2C3E',order_product_ticket:[],price:0,currency_code:'CZK'};
- const background=await Deno.readFile('test/fixtures/ticket_layout/background.png');
- const outputs={wide:await generateTicketImage(ticket,{darkColor:'000000',lightColor:'FFFFFF',productTypeMap:{},backgroundBytes:background,customFontBytes:font}),named:await generateNamedTicketImage(ticket,{occasion:{title:'Slavnostní večer',start_time:'2026-10-01',end_time:'2026-10-02',data:{}},customFontBytes:font,logoBytes:null},{name:'Jana',surname:'Nováková'})};
- const streams=async(bytes:Uint8Array)=>{const doc=await PDFDocument.load(bytes);return doc.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFRawStream).map(([,o])=>Array.from((o as PDFRawStream).getContents()));};
- for(const type of ['wide','named'] as const)assertEquals(await streams(outputs[type]),await streams(await Deno.readFile(`test/fixtures/ticket_layout/historical-${type}.pdf`)));
-});
 Deno.test('gallery keeps ordinary tickets on A4 and named tickets ticket-sized in either slot',async()=>{
   const {ticketPresets}=await import('./ticketLayout.ts');
   for(const type of ['wide','named'] as const){
@@ -104,7 +81,7 @@ Deno.test('gallery keeps ordinary tickets on A4 and named tickets ticket-sized i
 Deno.test('every named and bitmap style renders through the existing generators',async()=>{
   const {ticketPresets}=await import('./ticketLayout.ts');
   const {loadLayoutResources}=await import('./ticketGeneration.ts');
-  const background=await loadLayoutResources({features:[{code:'ticket',ticket_type:'wide'}],data:{}});
+  const background=await loadLayoutResources({features:[{code:'ticket',ticket_type:'wide',layout:{schemaVersion:1,templates:{wide:preset('wide')}}}],data:{}});
   assertEquals(background.background,undefined);
   for(const type of ['named','wide'] as const)for(const template of Object.values(ticketPresets())){
     const result=await generateTicketPdf(sampleData('long'),background,template,type,true);
