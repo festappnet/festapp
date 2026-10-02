@@ -48,6 +48,7 @@ async function loadHandler(name: string): Promise<EdgeHandler> {
 }
 
 const optionEntrypoints = [
+  "preview-ticket-layout",
   "cancel-reception-registration",
   "confirm-account-deletion",
   "download-ticket",
@@ -157,3 +158,18 @@ Deno.test("synchronize-orders rejects a request without system authorization", a
   }));
   assertEquals(response.status, 401);
 });
+
+Deno.test("preview rejects missing JWT before privileged work", async () => {
+  const response = await (await loadHandler("preview-ticket-layout"))(new Request("https://edge-test.invalid", {method:"POST", body:"{}"}));
+  assertEquals(response.status, 401);
+});
+
+for (const name of ["google-auth-start", "google-auth-callback", "google-auth-complete"]) {
+  Deno.test(`${name} registers but stays unavailable without private OAuth inputs`, async () => {
+    const handler = await loadHandler(name);
+    const response = await handler(new Request("https://edge-test.invalid", { method: "POST", body: "{}" }));
+    assertEquals(response.status, 400);
+    assertEquals(await response.json(), { error: "provider_unavailable" });
+    assertEquals(response.headers.get("Cache-Control"), "no-store");
+  });
+}

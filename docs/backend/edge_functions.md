@@ -46,6 +46,7 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `send-reset-password-link` | Self-service "Forgot Password" flow. Looks up by `email_readonly` and uses the same delivery resolver. |
 | `send-ticket-order` | Creates/replaces an order through one receipted RPC; confirmation effects are queued transactionally. |
 | `send-tickets` | Generates and emails PDF tickets (standard or named) for an order. |
+| `preview-ticket-layout` | Unit-editor JWT only; resolves local editor resources or explicitly generates a synthetic PDF through the existing ticket functions, without writes. |
 | `download-ticket` | Returns a single ticket PDF as Base64 JSON for in-app download. |
 | `fetch-transactions` | Syncs bank transactions from FIO API for an occasion. |
 | `synchronize-orders` | Batch-syncs transactions across all fetchable accounts (cron). Matches to orders and triggers confirmation emails. |
@@ -148,3 +149,19 @@ pre-merge source ID), and optional `ACCOUNT_DELETION_CONFIRMATION_URL`.
 credential lives only in `organization_notification_secrets` and is readable
 through the service-role-only delivery-config RPC. Never log tokens, UUIDs,
 email addresses, or delivery credentials.
+
+## Google OIDC broker
+
+`google-auth-start`, `google-auth-callback`, and `google-auth-complete` share
+`_shared/googleAuthFlow.ts`. They are anonymous proof endpoints with exact client
+registry/origin, cookie, Google signature/nonce, one-use handoff and continuation
+checks. Their routes are explicitly exempted in the pinned runtime router; no
+other Function becomes anonymous. Identity/attempt/lease writes remain service
+role only. Capability stays hidden until all private inputs and an enabled client
+row exist. Google is not configured as a parallel GoTrue OAuth provider.
+
+The common `_shared/issueExistingUserSession.ts` also owns QR login and cancellation
+revocation recovery minting, with database leases and UUID checks. Google MFA
+uses an encrypted proof session and real GoTrue challenge, never OTP-derived AAL2.
+See [the operation guide](../operations/auth/google-sign-in.md) for configuration,
+rollout, cleanup, native links and rollback.

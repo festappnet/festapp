@@ -6,6 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "x-operationRequirements": {
+    "googleSignInBroker": ["GOOGLE_OIDC_CLIENT_ID", "GOOGLE_OIDC_CLIENT_SECRET", "GOOGLE_OIDC_CALLBACK_URL", "GOOGLE_AUTH_ENCRYPTION_KEY", "GOOGLE_AUTH_MAILBOX_HMAC_KEY"],
     "supabaseManagement": ["SUPABASE_ACCESS_TOKEN"],
     "databaseAdministration": ["DATABASE_URL"],
     "cloudflareDeploy": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"],
@@ -31,6 +32,12 @@
     "clientSyncPrivateLoad": ["FESTAPP_TEST_ACCESS_TOKEN"]
   },
   "properties": {
+    "GOOGLE_OIDC_CLIENT_ID": {"type": "string", "minLength": 1},
+    "GOOGLE_OIDC_CLIENT_SECRET": {"type": "string", "minLength": 1},
+    "GOOGLE_OIDC_CALLBACK_URL": {"type": "string", "minLength": 1},
+    "GOOGLE_AUTH_ENCRYPTION_KEY": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "GOOGLE_AUTH_MAILBOX_HMAC_KEY": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+
     "SUPABASE_ACCESS_TOKEN": { "type": "string", "minLength": 1 },
     "SUPABASE_DB_PASSWORD": { "type": "string", "minLength": 1 },
     "SUPABASE_SERVICE_ROLE_KEY": { "type": "string", "minLength": 1 },
