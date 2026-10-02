@@ -104,7 +104,8 @@
             }
         };
         window.addEventListener('error', function(event) {
-            if (event.target?.tagName === 'SCRIPT' && event.target.type === 'module') {
+            if (event.target?.tagName === 'SCRIPT' && event.target.type === 'module' &&
+                event.target.src && new URL(event.target.src).origin === location.origin) {
                 window.failFestappWebClientStartup('web-module-error');
             }
         }, true);
