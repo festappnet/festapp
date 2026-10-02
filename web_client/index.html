@@ -104,7 +104,7 @@
             }
         };
         window.addEventListener('error', function(event) {
-            if (event.target?.tagName === 'SCRIPT' && event.target.type === 'module') {
+            if (event.target?.id === 'festapp-web-entry') {
                 window.failFestappWebClientStartup('web-module-error');
             }
         }, true);
@@ -176,7 +176,7 @@
     <div id="form-page-container" style="display: none;"></div>
 
     <!-- Application Entry (Module) -->
-    <script type="module" src="/src/main.js"></script>
+    <script id="festapp-web-entry" type="module" src="/src/main.js"></script>
     <script type="module">
         async function persistUsedFontResources() {
             await navigator.serviceWorker.ready;
