@@ -255,10 +255,20 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
         IconButton(
           tooltip: '#$v',
           onPressed: () { focus.unfocus(); pick(Color(int.parse('ff$v', radix: 16))); },
-          style: IconButton.styleFrom(backgroundColor: Color(int.parse('ff$v', radix: 16)),
-              side: const BorderSide(color: Colors.grey)),
-          icon: Icon(value == v ? Icons.check : Icons.circle,
-            color: value == v ? (Color(int.parse('ff$v', radix: 16)).computeLuminance() > .5 ? Colors.black : Colors.white) : Colors.transparent),
+          // IconButton.style is ignored by Material 2, used by the app.
+          // Paint the swatch itself so both themes show the actual color.
+          iconSize: 32,
+          icon: Container(
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+              color: Color(int.parse('ff$v', radix: 16)),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey),
+            ),
+            child: value == v ? Icon(Icons.check, size: 22,
+              color: Color(int.parse('ff$v', radix: 16)).computeLuminance() > .5
+                  ? Colors.black : Colors.white) : null,
+          ),
         )).toList()),
       const SizedBox(height: 12),
     ]);
