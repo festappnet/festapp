@@ -353,6 +353,11 @@ class TicketLayoutPainter extends CustomPainter {
     }
     canvas.drawRect(Offset.zero & doc.page, Paint()..color = Colors.white);
     canvas.drawRect(doc.area, Paint()..color = const Color(0xffe6e6e6));
+    final artwork = resources.artworks[controller.artworkKey];
+    final background = artwork != null ? artwork.image : resources.background;
+    if (background != null) {
+      _image(canvas, background, doc.area);
+    }
     if (doc.appearance['border'] == true) {
       final paint = Paint()..color = const Color(0xffe0e0e0)..strokeWidth = 1;
       for (double x = doc.area.left; x < doc.area.right; x += 5) {
@@ -365,11 +370,6 @@ class TicketLayoutPainter extends CustomPainter {
           canvas.drawLine(Offset(x,y),Offset(x,math.min(y+3.75,doc.area.bottom)),paint);
         }
       }
-    }
-    final artwork = resources.artworks[controller.artworkKey];
-    final background = artwork != null ? artwork.image : resources.background;
-    if (background != null) {
-      _image(canvas, background, doc.area);
     }
     canvas.save();
     canvas.translate(doc.area.left, doc.area.top);
