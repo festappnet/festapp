@@ -87,9 +87,8 @@ function styleVariants(type: TicketType): Record<string,Template> {
       t.ticketArea.height=Math.max(id==='compact'?260:320,t.ticketArea.height);
       const w=t.ticketArea.width,h=t.ticketArea.height,left=w-156;
       const qr=id==='compact'?make('qr',w-100,20,80,80):make('qr',w-116,id==='classic'?Math.round((h-96)/2):h-130,96,96);
-      const title=make('occasionTitle',20,18,id==='event'?w-40:left,id==='event'?64:54,id==='event'?32:id==='classic'?24:20);
       const details=(['spotGroup','food','note','price'] as Binding[]).map((binding,i)=>make(binding,20,h-108+i*21,left,20,binding==='spotGroup'||binding==='price'?12:10,1));
-      t.elements=[title,make('occasionDatePlace',20,id==='event'?90:80,id==='event'?w-40:left,28,11),make('orderName',20,id==='event'?128:118,left,30,16),qr,make('ticketSymbol',qr.box.x-4,qr.box.y+qr.box.height+5,qr.box.width+8,22,10,1,'center'),...details,make('footer',20,h-18,left,16,7,1)];
+      t.elements=[qr,make('ticketSymbol',qr.box.x-4,qr.box.y+qr.box.height+5,qr.box.width+8,22,10,1,'center'),...details];
     }
   }
   for(const t of [classic,compact,event]) {
