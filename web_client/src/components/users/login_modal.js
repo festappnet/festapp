@@ -277,6 +277,9 @@ export class LoginModal extends HTMLElement {
         if (this.currentView === 'google_mfa') {
             attach('#google-mfa-form', e => this._advanceGoogle(e, 'mfa_verify'), 'submit');
         } else if (this.currentView === 'google_proof') {
+            const email = this.authContainer.querySelector('#email');
+            email.value = this._proofEmail ?? this.googleResult?.email ?? '';
+            email.addEventListener('input', () => { this._proofEmail = email.value; });
             attach('#google-proof-form', e => this._advanceGoogle(e, 'prove_existing'), 'submit');
             attach('#link-forgot', () => this._setView('forgot'));
         } else if (this.currentView === 'google_profile') {
@@ -486,6 +489,7 @@ export class LoginModal extends HTMLElement {
         // Full redirect must not silently discard an in-progress checkout/form.
         const otherForms = [...document.querySelectorAll('form')].filter(form => !this.authContainer.contains(form));
         if (otherForms.some(form => [...form.elements].some(el => el.value && el.type !== 'hidden')) && !window.confirm(CommonStrings.googleLeaveDraft)) return;
+        this._proofEmail = null;
         this.isLoading = true; this.googleError = ''; this._updateContent();
         try { await GoogleAuthService.start(); }
         catch (error) { this.googleError = error.message; this.isLoading = false; this._updateContent(); }
