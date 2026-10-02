@@ -208,6 +208,26 @@ test('RouterService.Sanitization', async (t) => {
 });
 
 
+test('Google callback stays in its web adapter for app-supported tenants', async () => {
+    const { RouterService } = await import('../../src/services/router_service.js');
+    const { AppConfig } = await import('../../src/app_config.js');
+    const { RightsService } = await import('../../src/services/rights_service.js');
+    const originalWindow = global.window;
+    const originalSupported = AppConfig.isAppSupported;
+    const originalUpdate = RightsService.updateAppData;
+    global.window = { location: { pathname: '/google-auth', href: 'https://live.festapp.net/google-auth' } };
+    AppConfig.isAppSupported = true;
+    RightsService.updateAppData = () => { throw new Error('callback must not route through occasion selection'); };
+    try {
+        assert.strictEqual(await RouterService.handleInitialLoad(), true);
+        assert.strictEqual(window.location.pathname, '/google-auth');
+    } finally {
+        global.window = originalWindow;
+        AppConfig.isAppSupported = originalSupported;
+        RightsService.updateAppData = originalUpdate;
+    }
+});
+
 test('RouterService.handleInitialLoad', async (t) => {
     // Reset window for this block
     global.window = {
