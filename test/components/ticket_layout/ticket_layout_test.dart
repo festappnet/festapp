@@ -81,6 +81,33 @@ void main() {
       expect(ticketQrColorReadable(color), isFalse);
     }
   });
+  testWidgets('mobile palettes align left and scroll on one row', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final c = TicketLayoutController(document())..select('occasionTitle');
+    await tester.pumpWidget(MaterialApp(theme: ThemeData(useMaterial3: false),
+      home: Scaffold(body: SingleChildScrollView(child: TicketLayoutProperties(controller: c)))));
+    await tester.tap(find.text('TicketLayout.color'));
+    await tester.pumpAndSettle();
+    final first = find.byTooltip('#000000').last;
+    final last = find.byTooltip('#FFFFFF').last;
+    expect(tester.getTopLeft(first).dy, tester.getTopLeft(last).dy);
+    expect(tester.getTopLeft(find.text('TicketLayout.usedColors')).dx,
+        tester.getTopLeft(find.text('TicketLayout.basicColors')).dx);
+    final row = find.ancestor(of: last, matching: find.byType(SingleChildScrollView)).first;
+    final previousX = tester.getCenter(last).dx;
+    await tester.drag(row, const Offset(-220, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(last).dx, lessThan(previousX));
+    await tester.tap(last);
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'FFFFFF');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    c.dispose();
+  });
   testWidgets('palette paints its colors in Material 2 and 3, light and dark', (tester) async {
     for (final material3 in [false, true]) {
       for (final brightness in Brightness.values) {
