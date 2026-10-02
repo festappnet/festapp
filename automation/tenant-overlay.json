@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "a9d5d328eeb5db045910ab10f146fa1646707ce4",
+  "baseMainSha": "c06f171ac3fc948f37ead8919040f82504ccdd39",
   "release": {
-    "version": "0.20.52+536",
-    "note": "Enable Google login for vstupenky.online web clients and prefill account proof email"
+    "version": "0.20.53+537",
+    "note": "Organization setting controls Google sign-in without enabling unprovisioned clients"
   }
 }
