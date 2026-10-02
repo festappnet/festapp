@@ -188,6 +188,7 @@ class _UsersTabState extends State<UsersTab> {
         areAllActionsEnabled: RightsService.canUpdateUsers,
       ),
       headerChildren: headerActions,
+      columnHelp: UserColumns.columnHelp,
       columns: UserColumns.generateColumns(
         getColumnIdentifiers(),
         data: {UserColumns.ACCOMMODATION: _accommodations},
