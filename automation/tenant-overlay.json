@@ -1,5 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "f2d1d1ba2dbbdc094193326b99281c0370ababdc"
+  "baseMainSha": "0e2c4b2f52bb8a2269d9257fe27157a2b3a91bfa",
+  "release": {
+    "version": "0.20.39+523",
+    "note": "Google callback continuation on app-supported tenants"
+  }
 }
