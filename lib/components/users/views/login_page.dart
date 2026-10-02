@@ -149,7 +149,8 @@ class _LoginPageState extends State<LoginPage> {
                           onAuthenticated: () =>
                               RouterService.handlePostLoginNavigation(context,
                                   fallbackPath: GoogleAuthService.state.value
-                                      .result['returnPath'] as String?)),
+                                      .result['returnPath'] as String?,
+                                  useReplacement: true)),
                       if (!GoogleAuthService.isContinuation) ...[
                         if (RightsService.occasionLinkModel?.organization
                                 ?.isRegistrationEnabled ??

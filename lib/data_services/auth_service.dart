@@ -53,6 +53,12 @@ class AuthService {
       if (profile == null) {
         throw const AuthException('account_identity_inconsistent');
       }
+      // Bootstrap can still hold anonymous data after the OAuth round trip.
+      // Load the installed identity's full context before publishing success.
+      await RightsService.updateAppData(force: true, refreshOffline: false);
+      if (RightsService.currentUser()?.id != result['userId']) {
+        throw const AuthException('account_identity_inconsistent');
+      }
       await _finalizeLogin(auth.session!);
     } catch (_) {
       await _supabase.auth.signOut(scope: SignOutScope.local);

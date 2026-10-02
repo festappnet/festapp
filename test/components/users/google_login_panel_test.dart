@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
@@ -56,9 +57,16 @@ void main() {
     final states = <String, GoogleLoginState>{
       'login': const GoogleLoginState(GoogleLoginStatus.idle),
       'proof': const GoogleLoginState(GoogleLoginStatus.needsAccountProof,
-          result: {'status': 'needs_account_proof'}),
+          result: {
+            'status': 'needs_account_proof',
+            'email': 'jana@example.com'
+          }),
       'unlink': const GoogleLoginState(GoogleLoginStatus.needsAccountProof,
-          result: {'status': 'needs_account_proof', 'intent': 'unlink'}),
+          result: {
+            'status': 'needs_account_proof',
+            'email': 'jana@example.com',
+            'intent': 'unlink'
+          }),
       'profile':
           const GoogleLoginState(GoogleLoginStatus.needsProfile, result: {
         'status': 'needs_profile',
@@ -76,6 +84,7 @@ void main() {
       'mfa': const GoogleLoginState(GoogleLoginStatus.needsMfa,
           result: {'status': 'needs_mfa'}),
       'loading': const GoogleLoginState(GoogleLoginStatus.completing),
+      'authenticated': const GoogleLoginState(GoogleLoginStatus.authenticated),
       'error': const GoogleLoginState(GoogleLoginStatus.retryableError,
           error: 'attempt_expired'),
       'cancelled': const GoogleLoginState(GoogleLoginStatus.cancelled,
@@ -88,11 +97,15 @@ void main() {
         for (final dark in [false, true]) {
           for (final entry in states.entries) {
             await tester.pumpWidget(const SizedBox.shrink());
-            GoogleAuthService.state.value =
-                const GoogleLoginState(GoogleLoginStatus.idle);
+            GoogleAuthService.state.value = entry.key == 'proof'
+                ? entry.value
+                : const GoogleLoginState(GoogleLoginStatus.idle);
             final boundary = GlobalKey();
+            final navigation = Completer<void>();
+            GoogleAuthService.navigationClaimed = false;
             final panel = GoogleLoginPanel(
-                capability: () async => true, onAuthenticated: () async {});
+                capability: () async => true,
+                onAuthenticated: () => navigation.future);
             final content = RepaintBoundary(
                 key: boundary,
                 child: Scaffold(
@@ -136,6 +149,30 @@ void main() {
               expect(find.byType(OutlinedButton), findsOneWidget,
                   reason:
                       '$width $language $dark state=${GoogleAuthService.state.value.status}');
+            }
+            if (entry.key == 'proof') {
+              final fields =
+                  tester.widgetList<TextField>(find.byType(TextField));
+              expect(fields.first.controller!.text, 'jana@example.com');
+              fields.first.controller!.text = 'chosen@example.com';
+              GoogleAuthService.state.value = GoogleLoginState(
+                  GoogleLoginStatus.completing,
+                  result: entry.value.result);
+              GoogleAuthService.state.value = entry.value;
+              await tester.pump();
+              expect(fields.first.controller!.text, 'chosen@example.com');
+            }
+            if (entry.key == 'authenticated') {
+              expect(GoogleAuthService.isContinuation, isTrue);
+              expect(find.byType(CircularProgressIndicator), findsOneWidget);
+              expect(find.byType(OutlinedButton), findsNothing);
+            }
+            if (entry.key == 'authenticated') {
+              navigation.complete();
+              await tester.pump();
+              expect(
+                  GoogleAuthService.state.value.status, GoogleLoginStatus.idle);
+              expect(GoogleAuthService.isContinuation, isFalse);
             }
             if (export) {
               await tester.runAsync(() async {
