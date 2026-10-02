@@ -279,6 +279,13 @@ class GoogleAuthService {
         result: result);
   }
 
+  static void resetCompletedNavigation() {
+    if (state.value.status == GoogleLoginStatus.authenticated) {
+      navigationClaimed = false;
+      state.value = const GoogleLoginState(GoogleLoginStatus.idle);
+    }
+  }
+
   static void showAccountProof() {
     state.value = GoogleLoginState(GoogleLoginStatus.needsAccountProof,
         result: {...state.value.result, 'status': 'needs_account_proof'});
@@ -292,6 +299,7 @@ class GoogleAuthService {
   static bool get isContinuation =>
       state.value.status == GoogleLoginStatus.openingGoogle ||
       state.value.status == GoogleLoginStatus.completing ||
+      state.value.status == GoogleLoginStatus.authenticated ||
       state.value.status == GoogleLoginStatus.needsAccountProof ||
       state.value.status == GoogleLoginStatus.needsProfile ||
       state.value.status == GoogleLoginStatus.needsMfa ||
