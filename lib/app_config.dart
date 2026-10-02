@@ -23,7 +23,7 @@ class AppConfig {
   static const String backendActivationCanonicalAnonKey = '';
   static const int backendActivationCanonicalOrganizationId = 0;
   static const String backendActivationCanonicalProfileSha256 = '';
-  static const String clientSyncTenantId = '';
+  static const String clientSyncTenantId = 'default';
   static const String appName = 'Festapp';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
@@ -32,7 +32,7 @@ class AppConfig {
   static const bool isNotificationsSupported = true;
   static const bool isWebNotificationsSupported = true;
   static const String oneSignalAppId = '';
-  static const String oneSignalWebAppId = '';
+  static const String oneSignalWebAppId = '73f77f22-961a-4ded-9647-e33a7ac14f90';
   static const String pushAppGeneration = '';
   static const String effectivePushAppGeneration = String.fromEnvironment(
     'FESTAPP_PUSH_APP_GENERATION',
