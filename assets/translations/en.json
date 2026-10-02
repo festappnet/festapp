@@ -1447,6 +1447,8 @@
     "selectAccount": "Select Account",
     "description": "Manage bank accounts for this organization. You can create new accounts, link existing ones, and set their priority.",
     "addBankAccount": "Add Bank Account",
+    "lastFioFetchTime": "Last successful fetch via FIO API",
+    "fioFetchNever": "Not yet fetched",
     "lastFetchTime": "Last Fetch Time",
     "leaveEmptyToKeepToken": "Leave empty to keep current token",
     "currencyCodeLabel": "Code (3 letters)",

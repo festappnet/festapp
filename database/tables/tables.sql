@@ -108,6 +108,7 @@ create table if not exists eshop.bank_accounts (
   type text not null default 'FIO'::text,
   min_fetch_wait_seconds bigint null,
   last_fetch_time timestamp with time zone null,
+  last_fio_fetch_time timestamp with time zone null,
   is_fetch_enabled boolean not null default true,
   supported_currencies text[] null default array['CZK'::text],
   pairing_code TEXT unique DEFAULT encode(gen_random_bytes(5), 'hex'),

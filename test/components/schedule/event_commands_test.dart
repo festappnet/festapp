@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // GoTrue initializes its PKCE storage even with session persistence disabled.
+  SharedPreferences.setMockInitialValues({});
   tzdata.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Europe/Prague'));
   test(

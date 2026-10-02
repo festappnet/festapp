@@ -35,7 +35,17 @@ enum BlueprintSelectionMode {
 }
 
 class BlueprintTab extends StatefulWidget {
-  const BlueprintTab({super.key});
+  const BlueprintTab({super.key, this.prototypeBlueprint, this.onPrototypeSave});
+
+  /// Runs the existing editor against an in-memory plan for the setup demo.
+  const BlueprintTab.prototype({
+    super.key,
+    required this.prototypeBlueprint,
+    required this.onPrototypeSave,
+  });
+
+  final BlueprintModel? prototypeBlueprint;
+  final ValueChanged<BlueprintModel>? onPrototypeSave;
 
   @override
   State<BlueprintTab> createState() => _BlueprintTabState();
@@ -56,6 +66,9 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
   // State for Create New Order feature
   final Set<BlueprintSeat> _selectedSeatsForOrder = {};
+  bool _initialLoadStarted = false;
+  bool get _isPrototype => widget.prototypeBlueprint != null;
+  bool get _canEdit => _isPrototype || RightsService.canEditOccasion();
 
   @override
   void initState() {
@@ -68,6 +81,13 @@ class _BlueprintTabState extends State<BlueprintTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_isPrototype) {
+      if (!_initialLoadStarted) {
+        _initialLoadStarted = true;
+        loadData();
+      }
+      return;
+    }
     if (occasionLink == null && context.routeData.params.isNotEmpty) {
       occasionLink =
           context.routeData.params.getString(AppRouter.linkFormatted);
@@ -77,6 +97,11 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
   @override
   void dispose() {
+    if (_isPrototype && blueprint != null) {
+      blueprint!.objects =
+          _seatLayoutController.slots.map((s) => s.seat).nonNulls.toList();
+      widget.onPrototypeSave?.call(blueprint!);
+    }
     _seatLayoutController.dispose();
     super.dispose();
   }
@@ -133,6 +158,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
       selectedCount: _selectedSeatsForOrder.length,
       onConfirmOrder: _processNewOrder,
       stateCounts: stateCounts,
+      allowOrderActions: !_isPrototype,
     );
   }
 
@@ -147,7 +173,8 @@ class _BlueprintTabState extends State<BlueprintTab> {
             : BlueprintControlsBar(
                 blueprint: blueprint,
                 seatLayoutController: _seatLayoutController,
-                canEdit: RightsService.canEditOccasion(),
+                canEdit: _canEdit,
+                allowRemoteUpload: !_isPrototype,
               ),
         const SizedBox(height: 16),
         Flexible(
@@ -170,7 +197,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
   /// Right Panel: The Groups List
   Widget _buildRightPanel() {
-    final bool canEdit = RightsService.canEditOccasion();
+    final bool canEdit = _canEdit;
     return BlueprintGroupsPanel(
       blueprint: blueprint,
       currentGroup: currentGroup,
@@ -178,7 +205,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
       onGroupSelected: _onGroupSelected,
       onAddGroup: canEdit ? addGroup : null,
       onDeleteGroup: canEdit ? deleteGroup : null,
-      onEditGroupProduct: canEdit ? _editGroupProduct : null,
+      onEditGroupProduct: canEdit && !_isPrototype ? _editGroupProduct : null,
     );
   }
 
@@ -212,7 +239,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             TextButton(
-              onPressed: RightsService.canEditOccasion() ? loadData : null,
+              onPressed: _canEdit ? loadData : null,
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
               ),
@@ -220,7 +247,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
             ),
             const SizedBox(width: 16),
             ElevatedButton(
-              onPressed: RightsService.canEditOccasion() ? saveChanges : null,
+              onPressed: _canEdit ? saveChanges : null,
               child: Text(CommonStrings.save),
             ),
           ],
@@ -243,6 +270,9 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
   /// Handles mode changes. Toggles off if the same mode is clicked.
   void _handleModeSelected(BlueprintSelectionMode mode) {
+    if (_isPrototype &&
+        (mode == BlueprintSelectionMode.createNewOrder ||
+            mode == BlueprintSelectionMode.swapSeats)) return;
     // 1. If clicking the SAME mode, toggle it OFF.
     if (currentSelectionMode == mode) {
       _resetAllSelections();
@@ -670,7 +700,11 @@ class _BlueprintTabState extends State<BlueprintTab> {
         }
       }
 
-      await DbForms.updateBlueprint(blueprint!);
+      if (_isPrototype) {
+        widget.onPrototypeSave?.call(blueprint!);
+      } else {
+        await DbForms.updateBlueprint(blueprint!);
+      }
       ToastHelper.Show(context, CommonStrings.saved,
           severity: ToastSeverity.Ok);
       await loadData();
@@ -682,7 +716,9 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
   Future<void> loadData() async {
     _resetAllSelections(); // Ensure clean state
-    blueprint = await DbForms.getBlueprintForEdit(occasionLink!);
+    blueprint = _isPrototype
+        ? widget.prototypeBlueprint
+        : await DbForms.getBlueprintForEdit(occasionLink!);
     if (blueprint != null) {
       _seatLayoutController.loadPlan(
         rows: blueprint!.configuration?.height ?? 1,
