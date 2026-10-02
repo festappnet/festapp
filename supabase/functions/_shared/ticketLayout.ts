@@ -10,12 +10,12 @@ export function validateLayout(value: unknown): asserts value is TicketLayout {
   const v = value as TicketLayout;
   const fail = () => { throw new Error('Invalid ticket layout'); };
   if (!v || JSON.stringify(v).length > 32768 || v.schemaVersion !== 1 || !v.templates || Array.isArray(v.templates) || !Object.keys(v.templates).length || Object.keys(v.templates).some(k => !['wide', 'named'].includes(k))) fail();
-  for (const [type, t] of Object.entries(v.templates)) {
+  for (const t of Object.values(v.templates)) {
     if (!t || (t.pageFit!==undefined && t.pageFit!=='ticket')) fail();
     if(t.pageFit==='ticket') {
       if(![t.page?.width,t.page?.height].every(v=>Number.isFinite(v)&&v>=60&&v<=842) ||
           t.ticketArea?.x!==0 || t.ticketArea?.y!==0 || t.ticketArea?.width!==t.page.width || t.ticketArea?.height!==t.page.height) fail();
-    } else if(t.page?.width !== (type === 'wide' ? 595.28 : 212.5) || t.page?.height !== (type === 'wide' ? 841.89 : 387.5)) fail();
+    } else if(!((t.page?.width===595.28 && t.page?.height===841.89) || (t.page?.width===212.5 && t.page?.height===387.5))) fail();
     const checkBox = (b: Box, w: number, h: number) => {
       if (!b || ![b.x,b.y,b.width,b.height].every(Number.isFinite) || b.x < 0 || b.y < 0 || b.width < 1 || b.height < 1 || b.x+b.width > w+.001 || b.y+b.height > h+.001) fail();
     };
@@ -88,17 +88,10 @@ function legacyStyleVariants(type: TicketType, imageWidth=1600, imageHeight=800)
   return result;
 }
 
-// The public gallery is independent of the legacy storage slot. Every new
-// choice is a complete ticket-sized PDF, valid in either slot. Existing saved
-// and unsaved legacy layouts keep their page geometry until a style is chosen.
+// The storage slot does not determine the PDF format: ordinary templates stay
+// on A4, while named templates use the physical ticket size.
 export function ticketPresets(imageWidth=1600, imageHeight=800): Record<string,Template> {
   const wide=legacyStyleVariants('wide',imageWidth,imageHeight);
   const named=legacyStyleVariants('named');
-  const result:Record<string,Template>={classic:wide.classic,compact:wide.compact,event:wide.event,portrait:named.classic,portrait_compact:named.compact,portrait_event:named.event};
-  for(const t of Object.values(result)) {
-    t.pageFit='ticket';
-    t.page={width:t.ticketArea.width,height:t.ticketArea.height};
-    t.ticketArea={...t.ticketArea,x:0,y:0};
-  }
-  return result;
+  return {classic:wide.classic,compact:wide.compact,event:wide.event,portrait:named.classic,portrait_compact:named.compact,portrait_event:named.event};
 }
