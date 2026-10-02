@@ -2053,7 +2053,7 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
-    "qrContrast": "Pro čitelný QR kód zvolte tmavší barvu.",
+    "qrContrast": "Zvolte barvu s dostatečným kontrastem vůči pozadí QR kódu.",
     "multiSelect": "Přidávat do výběru",
     "selectedElements": "Vybrané prvky",
     "groupMoveHint": "Tažením posunete vybrané prvky společně. Zamčené prvky zůstanou na místě. Pro formátování vyberte jeden prvek.",
