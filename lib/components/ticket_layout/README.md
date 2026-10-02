@@ -88,8 +88,13 @@ Selecting one copies geometry into the draft and is a single undo step; no PDF
 request or saved style identifier is involved. Historical event image references
 are distinct from geometry and must be reviewed before becoming reusable assets.
 
-Known event title/date/place override synthetic values in all preview scenarios;
-only ticket/order fields remain samples. The QR stays deliberately invalid.
+Known event title/date/place override synthetic values in all preview scenarios.
+After authorization, preview reads the occasion's product catalog and selects
+the first visible admission product (by id) and a dinner in the same currency.
+The displayed price is their sum and dinner uses its short title when present.
+An empty or unusable catalog uses the illustrative dinner and price fallback;
+a real catalog without dinner leaves that field empty. Names and table numbers
+remain illustrative. The QR stays deliberately invalid.
 Resolve reads these fields from the authorized occasion on the canonical backend.
 Without an assigned background, custom layouts use the same plain fill in
 the editor and PDF; a failing explicitly assigned image still fails visibly.
