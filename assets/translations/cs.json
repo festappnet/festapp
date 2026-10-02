@@ -2053,6 +2053,7 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "missingBackground": "Původní podkladový obrázek už není dostupný. V editoru nahrajte nový nebo podklad odeberte. Do té doby nelze vytvořit PDF.",
     "usedColors": "Použité na vstupence",
     "imageColors": "Doporučené k podkladu",
     "basicColors": "Základní barvy",

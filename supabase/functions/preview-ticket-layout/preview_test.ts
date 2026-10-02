@@ -101,3 +101,28 @@ Deno.test('portrait artwork cannot turn landscape gallery templates into portrai
  }
  assertEquals(withImage.background,btoa(String.fromCharCode(...background)));
 });
+
+Deno.test('deleted background resolves for repair but never silently renders PDF',async()=>{
+  const {loadLayoutResources}=await import('../_shared/ticketGeneration.ts');
+  const {UnsafeTargetError}=await import('../fetch-http-data/safeFetch.ts');
+  const occasion={id:13,organization:3,features:[{code:'ticket',ticket_type:'wide',background:'https://img.festapp.net/editor/skautskyples2025.jpeg'}]};
+  const missing=async()=>{throw new UnsafeTargetError('upstream_404');};
+  const deps:PreviewDependencies={authorize:async()=>true,occasion:async()=>occasion,
+    resources:(o,f,options)=>loadLayoutResources(o,f,options,missing)};
+  const input={occasionId:13,mode:'resolve',type:'wide'};
+  const response=await handlePreview(req(input),deps);
+  assertEquals(response.status,200);
+  const resolved=await response.json();
+  assertEquals(resolved.missingBackground,true);
+  assertEquals(resolved.background,null);
+  assertEquals(resolved.backgroundUrl,occasion.features[0].background);
+  assert(resolved.template.elements.some((e:any)=>e.binding==='qr'));
+  assertEquals((await handlePreview(req({...input,mode:'pdf'}),deps)).status,400);
+  let rejected=false;
+  try {await loadLayoutResources(occasion,undefined,{},missing);} catch {rejected=true;}
+  assert(rejected,'production renderer remains strict');
+  for(const error of ['unsafe_target','upstream_403','upstream_500','invalid_content_type']) {
+    deps.resources=(o,f,options)=>loadLayoutResources(o,f,options,async()=>{throw new UnsafeTargetError(error);});
+    assertEquals((await handlePreview(req(input),deps)).status,400,error);
+  }
+});

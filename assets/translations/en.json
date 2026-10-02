@@ -2052,6 +2052,7 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "missingBackground": "The original background image is no longer available. Upload a replacement or remove the background in the editor before generating a PDF.",
     "usedColors": "Used on this ticket",
     "imageColors": "Suggested for the background",
     "basicColors": "Basic colors",
