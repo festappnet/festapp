@@ -70,6 +70,8 @@ install_runtime_file "$SCRIPT_DIR/promote-production-runtime.sh" "$COMPOSE_DIR/p
 install_runtime_file "$SCRIPT_DIR/set-production-target-write-barrier.sh" "$COMPOSE_DIR/set-production-target-write-barrier.sh"
 install_runtime_file "$SCRIPT_DIR/validate-operational-readiness.mjs" "$COMPOSE_DIR/validate-operational-readiness.mjs"
 install_runtime_file "$SCRIPT_DIR/install-production-function-bundle.sh" "$COMPOSE_DIR/install-production-function-bundle.sh"
+install_runtime_file "$SCRIPT_DIR/patch-function-proof-routes.py" "$COMPOSE_DIR/patch-function-proof-routes.py"
+install_runtime_file "$SCRIPT_DIR/install-google-auth-cleanup.sh" "$COMPOSE_DIR/install-google-auth-cleanup.sh"
 install_runtime_file "$SCRIPT_DIR/finalize-canonical-database-operations.sh" "$COMPOSE_DIR/finalize-canonical-database-operations.sh"
 install_runtime_file "$SCRIPT_DIR/upgrade-installed-production-runtime.sh" "$COMPOSE_DIR/upgrade-installed-production-runtime.sh"
 install_runtime_file "$SCRIPT_DIR/activate-admin-dashboard.sh" "$COMPOSE_DIR/activate-admin-dashboard.sh"
@@ -94,7 +96,7 @@ readonly INSTALLED_STATE="$(printf '%s|%s' \
 for dependency in install-runtime-registries.mjs validate-production-promotion.mjs \
   promote-production-runtime.sh upgrade-installed-production-runtime.sh \
   set-production-target-write-barrier.sh validate-operational-readiness.mjs \
-  install-production-function-bundle.sh \
+  install-production-function-bundle.sh patch-function-proof-routes.py install-google-auth-cleanup.sh \
   finalize-canonical-database-operations.sh \
   activate-admin-dashboard.sh Caddyfile docker-compose.festapp.yml \
   studio-customization/entrypoint.sh studio-customization/install-logout.mjs \
