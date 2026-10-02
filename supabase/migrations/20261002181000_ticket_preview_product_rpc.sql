@@ -1,3 +1,4 @@
+-- Preserve the public-only API boundary while providing real ticket preview prices.
 CREATE OR REPLACE FUNCTION public.get_products_and_types(p_occasion_id bigint)
 RETURNS json
 SET search_path = public, extensions AS $$
