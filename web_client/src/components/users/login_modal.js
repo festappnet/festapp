@@ -184,7 +184,7 @@ export class LoginModal extends HTMLElement {
             `;
         };
 
-        const googleAction = this.googleEnabled ? `<p class="auth-subtitle">${CommonStrings.googleSubtitle}</p><button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.googleOr}</div>` : '';
+        const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.googleOr}</div>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
         if (this.currentView === 'google_mfa') return `<h2>${CommonStrings.signIn}</h2><p>${CommonStrings.googleMfa}</p>${feedback}<form id="google-mfa-form" novalidate>${validatedField('mfa-code', CommonStrings.googleCode, 'text', true)}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.googleVerifyCode}</button></form>`;
@@ -203,7 +203,6 @@ export class LoginModal extends HTMLElement {
                     <div class="auth-links">
                         <button type="button" class="btn-link" id="link-forgot">${CommonStrings.forgotPassword}</button>
                         ${this._isRegistrationEnabled() ? `
-                        <span>|</span>
                         <button type="button" class="btn-link" id="link-register">${CommonStrings.signUp}</button>
                         ` : ''}
                     </div>

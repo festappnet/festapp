@@ -1,4 +1,5 @@
 import 'package:fstapp/services/google_auth_service.dart';
+import 'package:fstapp/services/auth_session_storage.dart';
 import 'dart:async';
 
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -239,7 +240,7 @@ Future<void> initializeEverything() async {
       url: resolvedBackend.supabaseUrl,
       publishableKey: resolvedBackend.anonKey,
       authOptions: FlutterAuthClientOptions(
-        localStorage: SharedPreferencesLocalStorage(
+        localStorage: AuthSessionStorage(
           persistSessionKey: AppConfig.supabaseAuthStorageKey,
         ),
       ),
