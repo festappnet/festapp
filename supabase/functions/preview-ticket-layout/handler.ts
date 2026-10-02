@@ -40,7 +40,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     let template=layout?.templates[type as TicketType];
     let width=1600,height=900;
     if(resources.background){const doc=await PDFDocument.create();let img;try{img=await doc.embedPng(resources.background);}catch{img=await doc.embedJpg(resources.background);}width=img.width;height=img.height;}
-    const choices=ticketPresets(width,height);
+    const choices=ticketPresets();
     const initial=preset(type,width,height);
     if(/^[0-9A-Fa-f]{6}$/.test(feature.darkColor??'')) {
       const colored=[...Object.entries(choices).filter(([key])=>!key.startsWith('portrait')).map(([,t])=>t),...(type==='wide'?[initial]:[])];

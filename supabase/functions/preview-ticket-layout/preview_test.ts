@@ -83,3 +83,21 @@ Deno.test('conference2024 empty stored background resolves without parsing an em
   assertEquals(response.status,200);
   assertEquals((await response.json()).backgroundUrl,null);
 });
+
+Deno.test('portrait artwork cannot turn landscape gallery templates into portrait tickets',async()=>{
+ const s=setup();
+ const blank=await (await handlePreview(req({...body,type:'wide'}),s.deps)).json();
+ const background=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAIAAAAGCAIAAABmRdhlAAAADklEQVR4nGP4DwYMhCkA8VQj3S7lL6QAAAAASUVORK5CYII='),c=>c.charCodeAt(0));
+ s.deps.resources=async()=>({font,metrics,background});
+ const withImage=await (await handlePreview(req({...body,type:'wide'}),s.deps)).json();
+ for(const key of ['classic','compact','event']) {
+   const t=withImage.presets[key];
+   assert(t.ticketArea.width>t.ticketArea.height,`${key} must stay landscape`);
+   assertEquals(t,blank.presets[key]);
+   assertEquals(t.page,{width:595.28,height:841.89});
+ }
+ for(const key of ['portrait','portrait_compact','portrait_event']) {
+   const t=withImage.presets[key];assert(t.ticketArea.height>t.ticketArea.width);
+ }
+ assertEquals(withImage.background,btoa(String.fromCharCode(...background)));
+});

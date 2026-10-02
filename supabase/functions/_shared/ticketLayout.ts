@@ -74,8 +74,8 @@ export function parseLayout(value: unknown): TicketLayout { validateLayout(value
 
 // Gallery presets establish a clear hierarchy while leaving saved layouts and
 // the historical first-edit fallback untouched.
-function styleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Record<string,Template> {
-  const base=preset(type,imageWidth,imageHeight);
+function styleVariants(type: TicketType): Record<string,Template> {
+  const base=preset(type);
   const make=(binding:Binding,x:number,y:number,width:number,height:number,fontSize=12,maxLines=2,align:'left'|'center'='left'):Element=>({id:binding,binding,box:{x,y,width,height},visible:true,locked:false,style:{fontSize,minFontSize:6,maxLines,color:'202020',align}});
   const classic=structuredClone(base),compact=structuredClone(base),event=structuredClone(base);
   if(type==='named') {
@@ -103,9 +103,10 @@ function styleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Reco
 }
 
 // The storage slot does not determine the PDF format: ordinary templates stay
-// on A4, while named templates use the physical ticket size.
-export function ticketPresets(imageWidth=1600, imageHeight=800): Record<string,Template> {
-  const wide=styleVariants('wide',imageWidth,imageHeight);
+// on A4, while named templates use the physical ticket size. Gallery geometry
+// is independent of artwork; renderers contain the image within the ticket.
+export function ticketPresets(): Record<string,Template> {
+  const wide=styleVariants('wide');
   const named=styleVariants('named');
   return {classic:wide.classic,compact:wide.compact,event:wide.event,portrait:named.classic,portrait_compact:named.compact,portrait_event:named.event};
 }
