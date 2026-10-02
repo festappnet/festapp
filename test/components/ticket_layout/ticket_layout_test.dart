@@ -59,8 +59,10 @@ class FakeService extends TicketLayoutService {
 
 void main() {
   test('A4 template stays printable in the legacy named slot', () {
-    final layouts = jsonDecode(File('test/fixtures/ticket_layout/layouts.json').readAsStringSync());
-    final layout = TicketTemplate.fromJson(layouts['valid'][0]['templates']['wide']);
+    final layouts = jsonDecode(
+        File('test/fixtures/ticket_layout/layouts.json').readAsStringSync());
+    final layout =
+        TicketTemplate.fromJson(layouts['valid'][0]['templates']['wide']);
     expect(layout.page, const Size(595.28, 841.89));
     expect(layout.validate('named'), isEmpty);
     expect(layout.fitPageToTicket, isFalse);
@@ -81,7 +83,12 @@ void main() {
                       service: service)))));
       await tester.pumpAndSettle();
       expect(find.byType(DropdownButtonFormField<String>), findsNothing);
-      expect(find.text('TicketLayout.chooseTemplate'), findsOneWidget);
+      expect(find.text('TicketLayout.edit'), findsOneWidget);
+      final paint = tester
+          .widgetList<CustomPaint>(find.byType(CustomPaint))
+          .firstWhere((paint) => paint.painter is TicketLayoutPainter);
+      expect(paint.size, document().area.size);
+      expect((paint.painter as TicketLayoutPainter).cropToTicket, isTrue);
       expect(service.resolvedType, type == 'named' ? 'named' : 'wide');
       expect(feature.ticketType, type);
       expect(feature.layout, isNull);
@@ -147,6 +154,52 @@ void main() {
     await tester.tap(find.text('TicketLayout.apply'));
     await tester.pumpAndSettle();
     expect(result!.toJson(), template.toJson());
+  });
+  testWidgets(
+      'default dimensions preview immediately and cancel restores the ticket',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
+    await tester.pumpAndSettle();
+    final view =
+        tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
+    final original = view.controller.document;
+    final resized = original.resizeArea(original.area.size * .95);
+    view.controller.replace(resized);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TicketLayout.canvasSize').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TicketLayout.defaultDimensions'));
+    await tester.pumpAndSettle();
+    expect(view.controller.document.area.size, original.area.size);
+    await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('TicketLayout.cancel')));
+    await tester.pumpAndSettle();
+    expect(view.controller.document.toJson(), resized.toJson());
+    view.controller.undo();
+    expect(view.controller.document.toJson(), original.toJson());
+    view.controller.replace(resized);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TicketLayout.canvasSize').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TicketLayout.defaultDimensions'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('TicketLayout.apply')));
+    await tester.pumpAndSettle();
+    expect(view.controller.document.area.size, original.area.size);
+    view.controller.undo();
+    expect(view.controller.document.toJson(), resized.toJson());
   });
   testWidgets('new ticket opens the template picker first', (tester) async {
     await tester.pumpWidget(MaterialApp(

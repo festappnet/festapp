@@ -8,12 +8,14 @@ class TicketDimensionsDialog extends StatefulWidget {
   final String type;
   final TicketTemplate defaults;
   final ui.Image? image;
+  final ValueChanged<Size>? onPreview;
   const TicketDimensionsDialog(
       {super.key,
       required this.document,
       required this.type,
       required this.defaults,
-      this.image});
+      this.image,
+      this.onPreview});
   @override
   State<TicketDimensionsDialog> createState() => _TicketDimensionsDialogState();
 }
@@ -33,12 +35,22 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
       preciseSize = size;
       error = null;
     });
+    preview();
   }
 
-  void edited(String _) => setState(() {
-        preciseSize = null;
-        error = null;
-      });
+  void edited(String _) {
+    setState(() {
+      preciseSize = null;
+      error = null;
+    });
+    preview();
+  }
+
+  void preview() {
+    final candidate = validated();
+    if (candidate != null) widget.onPreview?.call(candidate.area.size);
+  }
+
   @override
   void dispose() {
     width.dispose();
@@ -66,7 +78,7 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
     setDimensions(Size(w, h));
   }
 
-  void apply() {
+  TicketTemplate? validated() {
     final w = double.tryParse(width.text.replaceAll(',', '.'));
     final h = double.tryParse(height.text.replaceAll(',', '.'));
     if (w == null ||
@@ -76,7 +88,7 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
         w <= 0 ||
         h <= 0) {
       setState(() => error = TicketLayoutStrings.invalidCanvas);
-      return;
+      return null;
     }
     final candidate = widget.document
         .resizeArea(preciseSize ?? Size(w * pointsPerMm, h * pointsPerMm));
@@ -85,9 +97,14 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
       setState(() => error = errors.contains('geometry')
           ? TicketLayoutStrings.canvasTooLarge
           : TicketLayoutStrings.canvasTooSmall);
-      return;
+      return null;
     }
-    Navigator.pop(context, candidate);
+    return candidate;
+  }
+
+  void apply() {
+    final candidate = validated();
+    if (candidate != null) Navigator.pop(context, candidate);
   }
 
   @override
