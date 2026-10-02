@@ -13,12 +13,12 @@ void main() {
     }
   });
   test('large landscape and portrait artwork scale down by the longer edge', () async {
-    for(final size in [(4000,40),(40,4000)]) {
+    for(final size in [(4320,80),(80,4320)]) {
       final image=img.Image(width:size.$1,height:size.$2,numChannels:4);
       img.fill(image,color:img.ColorRgba8(25,120,200,80));
       final result=await TicketBackgroundImage.prepare(Uint8List.fromList(img.encodePng(image)));
       final decoded=img.decodePng(result)!;
-      expect((decoded.width,decoded.height),size.$1>size.$2?(3200,32):(32,3200));
+      expect((decoded.width,decoded.height),size.$1>size.$2?(1080,20):(20,1080));
       expect(decoded.getPixel(0,0).a,80);
       expect(result.length,lessThanOrEqualTo(TicketBackgroundImage.maxBytes));
     }
@@ -27,7 +27,7 @@ void main() {
     final image=img.Image(width:4000,height:100);
     final bytes=await TicketBackgroundImage.prepare(Uint8List.fromList(img.encodeJpg(image,quality:98)));
     final decoded=img.decodeJpg(bytes)!;
-    expect((decoded.width,decoded.height),(3200,80));
+    expect((decoded.width,decoded.height),(1080,27));
   });
   test('invalid image fails before upload', () async {
     await expectLater(TicketBackgroundImage.prepare(Uint8List.fromList([1,2,3])),throwsFormatException);
