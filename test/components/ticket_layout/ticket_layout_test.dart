@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show PointerDeviceKind;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,11 +83,23 @@ void main() {
   testWidgets('text and QR share the color picker and HEX entry', (tester) async {
     for (final binding in ['qr', 'occasionTitle']) {
       final c = TicketLayoutController(document())..select(binding);
+      final recorder = ui.PictureRecorder();
+      Canvas(recorder).drawColor(const Color(0xFF204060), BlendMode.src);
+      final picture = recorder.endRecording();
+      final image = (await tester.runAsync(() => picture.toImage(8, 8)))!;
+      picture.dispose();
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
-          child: TicketLayoutProperties(controller: c)))));
-      await tester.tap(find.text(binding == 'qr' ? 'TicketLayout.qrColor' : 'TicketLayout.color'));
+          child: TicketLayoutProperties(controller: c, backgroundImage: image)))));
+      await tester.tap(find.text(binding == 'qr' ? 'TicketLayout.qrColors' : 'TicketLayout.color'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pumpAndSettle();
       expect(find.byType(ColorPicker), findsOneWidget);
+      expect(find.text('TicketLayout.usedColors'), findsOneWidget);
+      expect(find.text('TicketLayout.imageColors'), findsOneWidget);
+      await tester.tap(find.byTooltip('#204060'));
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '204060');
       await tester.enterText(find.byType(TextField), 'FFFFFF');
       await tester.pump();
       final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply');
@@ -94,7 +107,7 @@ void main() {
       await tester.enterText(find.byType(TextField), '445566'); await tester.pump();
       await tester.tap(apply); await tester.pumpAndSettle();
       expect(c.selection!.color, '445566');
-      await tester.pumpWidget(const SizedBox()); c.dispose();
+      await tester.pumpWidget(const SizedBox()); c.dispose(); image.dispose();
     }
   });
   test('styled text fitting matches the PDF renderer fixtures', () {
@@ -827,6 +840,44 @@ void main() {
     canvas.controller.undo();await tester.pumpAndSettle();
     expect(canvas.controller.document.font,'futura');
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('QR foreground and background edit atomically on mobile with contrast and undo', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final c=TicketLayoutController(document())..select('qr');
+    final initial=c.document.toJson();
+    await tester.pumpWidget(MaterialApp(home:Scaffold(body:SingleChildScrollView(
+      child:TicketLayoutProperties(controller:c)))));
+    await tester.tap(find.text('TicketLayout.qrColors'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(TextField));
+    await tester.enterText(find.byType(TextField),'FFFFFF');
+    await tester.pump();
+    final apply=find.widgetWithText(FilledButton,'TicketLayout.apply');
+    expect(tester.widget<FilledButton>(apply).onPressed,isNull);
+    final background=find.text('TicketLayout.qrBackground');
+    await tester.ensureVisible(background);
+    await tester.tap(background);await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(TextField));
+    await tester.enterText(find.byType(TextField),'17365D');await tester.pump();
+    expect(tester.widget<FilledButton>(apply).onPressed,isNotNull);
+    expect(c.document.toJson(),initial);
+    await tester.tap(apply);await tester.pumpAndSettle();
+    expect(c.selection!.color,'FFFFFF');
+    expect(c.document.qrAppearance['background'],'17365D');
+    expect(c.document.qrAppearance['opacity'],1);
+    expect(c.document.validate('named'),isEmpty);
+    expect(TicketTemplate.fromJson(c.document.toJson()).qrAppearance['background'],'17365D');
+    c.undo();await tester.pumpAndSettle();expect(c.document.toJson(),initial);
+    await tester.tap(find.text('TicketLayout.qrColors'));await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('TicketLayout.swapColors'));await tester.pump();
+    await tester.tap(find.text('TicketLayout.cancel'));await tester.pumpAndSettle();
+    expect(c.document.toJson(),initial);
+    expect(tester.takeException(),isNull);
+    await tester.pumpWidget(const SizedBox());c.dispose();
   });
 
 }

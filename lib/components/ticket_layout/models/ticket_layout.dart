@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
-const ticketQrColors = ['000000', '2A2A2A', '17365D', '123B20', '401529'];
+const ticketQrColors = ['000000', '2A2A2A', '17365D', '123B20', '401529', 'FFFFFF'];
 bool ticketQrColorReadable(String color, [String background = 'FFFFFF']) {
   if (!RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(color)) return false;
   final channels = [0, 2, 4].map((i) {
@@ -166,6 +166,13 @@ class TicketTemplate {
             .map((e) => TicketElement.fromJson(e))
             .toList());
   }
+  TicketTemplate withQrColors(String foreground, String background) => TicketTemplate(
+      fitPageToTicket: fitPageToTicket, page: page, area: area,
+      appearance: {...appearance, 'qrAppearance': {
+        'margin': 4, 'opacity': 1, ...qrAppearance, 'background': background,
+        if (background != (qrAppearance['background'] ?? 'FFFFFF')) 'opacity': 1,
+      }},
+      elements: elements.map((e) => e.binding == 'qr' ? e.copyWith(color: foreground) : e).toList());
   TicketTemplate withFont(String value) => TicketTemplate(
       fitPageToTicket: fitPageToTicket, page: page, area: area,
       appearance: {...appearance, 'font': value}, elements: elements);

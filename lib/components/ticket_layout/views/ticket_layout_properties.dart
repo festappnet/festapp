@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../ticket_layout_controller.dart';
@@ -8,12 +9,14 @@ import '../ticket_layout_strings.dart';
 class TicketLayoutProperties extends StatelessWidget {
   final TicketLayoutController controller;
   final TicketTemplate? defaults;
+  final ui.Image? backgroundImage;
   final TicketFontMetrics? metrics;
   final Map<String, String?>? data;
   const TicketLayoutProperties(
       {super.key,
       required this.controller,
       this.metrics,
+      this.backgroundImage,
       this.data,
       this.defaults});
   @override
@@ -111,28 +114,34 @@ class TicketLayoutProperties extends StatelessWidget {
                     ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(e.binding == 'qr'
-                            ? TicketLayoutStrings.qrColor
+                            ? TicketLayoutStrings.qrColors
                             : TicketLayoutStrings.color),
-                        subtitle: Text('#${e.color.toUpperCase()}'),
+                        subtitle: Text(e.binding == 'qr'
+                            ? '${TicketLayoutStrings.qrForeground}: #${e.color.toUpperCase()}\n${TicketLayoutStrings.qrBackground}: #${controller.document.qrAppearance['background'] ?? 'FFFFFF'}'
+                            : '#${e.color.toUpperCase()}'),
                         trailing: Container(
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
                                 color:
-                                    Color(int.parse('ff${e.color}', radix: 16)),
+                                    Color(int.parse('ff${e.binding == 'qr' ? controller.document.qrAppearance['background'] ?? 'FFFFFF' : e.color}', radix: 16)),
                                 borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.grey))),
+                                border: Border.all(color: Colors.grey)),
+                            child: e.binding == 'qr' ? Icon(Icons.qr_code_2, color: Color(int.parse('ff${e.color}', radix: 16))) : null),
                         onTap: e.locked
                             ? null
                             : () async {
-                                final color = await showDialog<String>(
+                                final color = await showDialog<({String foreground, String background})>(
                                     context: context,
                                     builder: (_) =>
-                                        _TicketColorDialog(element: e, background: controller.document.qrAppearance['background'] as String? ?? 'FFFFFF'));
-                                if (context.mounted &&
-                                    color != null &&
-                                    color != e.color) {
-                                  controller.change(e.copyWith(color: color));
+                                        _TicketColorDialog(element: e, usedColors: controller.document.elements.map((e) => e.color).toSet().toList(), backgroundImage: backgroundImage, background: controller.document.qrAppearance['background'] as String? ?? 'FFFFFF'));
+                                if (!context.mounted || color == null) return;
+                                if (e.binding == 'qr') {
+                                  if (color.foreground != e.color || color.background != (controller.document.qrAppearance['background'] ?? 'FFFFFF')) {
+                                    controller.replace(controller.document.withQrColors(color.foreground, color.background));
+                                  }
+                                } else if (color.foreground != e.color) {
+                                  controller.change(e.copyWith(color: color.foreground));
                                 }
                               }),
                   if (text) ...[
@@ -194,13 +203,76 @@ class TicketLayoutProperties extends StatelessWidget {
 class _TicketColorDialog extends StatefulWidget {
   final TicketElement element;
   final String background;
-  const _TicketColorDialog({required this.element, required this.background});
+  final List<String> usedColors;
+  final ui.Image? backgroundImage;
+  const _TicketColorDialog({required this.element, required this.background, required this.usedColors, this.backgroundImage});
   @override
   State<_TicketColorDialog> createState() => _TicketColorDialogState();
 }
 
 class _TicketColorDialogState extends State<_TicketColorDialog> {
-  late Color color = Color(int.parse('ff${widget.element.color}', radix: 16));
+  late Color foreground = Color(int.parse('ff${widget.element.color}', radix: 16));
+  late Color background = Color(int.parse('ff${widget.background}', radix: 16));
+  bool editingBackground = false;
+  List<String> imageColors = [];
+  @override
+  void initState() {
+    super.initState();
+    extractImageColors();
+  }
+
+  Future<void> extractImageColors() async {
+    final image = widget.backgroundImage;
+    if (image == null) return;
+    // Sample a tiny raster, never read the full-resolution artwork into Dart.
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+        const Rect.fromLTWH(0, 0, 32, 32), Paint());
+    final picture = recorder.endRecording();
+    final sample = await picture.toImage(32, 32);
+    picture.dispose();
+    final bytes = await sample.toByteData(format: ui.ImageByteFormat.rawRgba);
+    sample.dispose();
+    if (bytes == null || !mounted) return;
+    final counts = <int, int>{};
+    for (var i = 0; i < bytes.lengthInBytes; i += 4) {
+      if (bytes.getUint8(i + 3) < 128) continue;
+      final rgb = ((bytes.getUint8(i) ~/ 32 * 32) << 16) |
+          ((bytes.getUint8(i + 1) ~/ 32 * 32) << 8) |
+          (bytes.getUint8(i + 2) ~/ 32 * 32);
+      counts[rgb] = (counts[rgb] ?? 0) + 1;
+    }
+    final ranked = counts.keys.toList()..sort((a, b) => counts[b]!.compareTo(counts[a]!));
+    setState(() => imageColors = ranked.take(5).map((v) => v.toRadixString(16).padLeft(6, '0').toUpperCase()).toList());
+  }
+
+  Widget swatches(String label, Iterable<String> colors) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: Theme.of(context).textTheme.labelMedium),
+      Wrap(spacing: 8, runSpacing: 8, children: colors.map((v) => v.toUpperCase()).toSet().map((v) =>
+        IconButton(
+          tooltip: '#$v',
+          onPressed: () { focus.unfocus(); pick(Color(int.parse('ff$v', radix: 16))); },
+          style: IconButton.styleFrom(backgroundColor: Color(int.parse('ff$v', radix: 16)),
+              side: const BorderSide(color: Colors.grey)),
+          icon: Icon(value == v ? Icons.check : Icons.circle,
+            color: value == v ? (Color(int.parse('ff$v', radix: 16)).computeLuminance() > .5 ? Colors.black : Colors.white) : Colors.transparent),
+        )).toList()),
+      const SizedBox(height: 12),
+    ]);
+
+  bool get isQr => widget.element.binding == 'qr';
+  Color get color => editingBackground ? background : foreground;
+  String colorHex(Color value) => value.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase();
+  bool get readable => ticketQrColorReadable(colorHex(foreground), colorHex(background));
+  void selectBackground(bool selected) => setState(() {
+    focus.unfocus(); editingBackground = selected; hex.text = value;
+  });
+  void swapColors() => setState(() {
+    focus.unfocus(); final previous = foreground; foreground = background; background = previous; hex.text = value;
+  });
   late final hex =
       TextEditingController(text: widget.element.color.toUpperCase());
   final focus = FocusNode();
@@ -218,7 +290,7 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
   }
 
   void pick(Color c, {bool fromHex = false}) => setState(() {
-        color = c;
+        if (editingBackground) { background = c; } else { foreground = c; }
         if (!fromHex) {
           hex.text = value;
         }
@@ -226,21 +298,34 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
           title: Text(widget.element.binding == 'qr'
-              ? TicketLayoutStrings.qrColor
+              ? TicketLayoutStrings.qrColors
               : TicketLayoutStrings.color),
           content: SizedBox(
               width: 300,
               child: SingleChildScrollView(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Wrap(spacing: 8, runSpacing: 8, children: ticketQrColors.map((v) =>
-                  IconButton(
-                    tooltip: '#$v',
-                    onPressed: () { focus.unfocus(); pick(Color(int.parse('ff$v', radix: 16))); },
-                    style: IconButton.styleFrom(backgroundColor: Color(int.parse('ff$v', radix: 16))),
-                    icon: Icon(value == v ? Icons.check : Icons.circle,
-                      color: value == v ? Colors.white : Colors.transparent),
-                  )).toList()),
-                const SizedBox(height: 12),
+                if (isQr) ...[
+                  Container(padding: const EdgeInsets.all(8), color: background,
+                    child: Icon(Icons.qr_code_2, size: 56, color: foreground)),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(child: SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(value: false, label: Text(TicketLayoutStrings.qrForeground)),
+                        ButtonSegment(value: true, label: Text(TicketLayoutStrings.qrBackground)),
+                      ],
+                      selected: {editingBackground},
+                      onSelectionChanged: (value) => selectBackground(value.single))),
+                    IconButton(onPressed: swapColors, tooltip: TicketLayoutStrings.swapColors,
+                      icon: const Icon(Icons.swap_horiz)),
+                  ]),
+                  const SizedBox(height: 8),
+                  Text(TicketLayoutStrings.qrBackgroundHint),
+                  const SizedBox(height: 12),
+                ],
+                swatches(TicketLayoutStrings.usedColors, widget.usedColors),
+                if (imageColors.isNotEmpty) swatches(TicketLayoutStrings.imageColors, imageColors),
+                swatches(TicketLayoutStrings.basicColors, ticketQrColors),
                   ColorPicker(
                       pickerColor: color,
                       enableAlpha: false,
@@ -261,7 +346,7 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
                           setState(() {});
                         }
                       }),
-                if (widget.element.binding == 'qr' && !ticketQrColorReadable(value, widget.background))
+                if (isQr && !readable)
                   Text(TicketLayoutStrings.qrContrast,
                       style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ]))),
@@ -271,8 +356,8 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
                 child: Text(TicketLayoutStrings.cancel)),
             FilledButton(
                 onPressed: !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(hex.text) ||
-                    widget.element.binding == 'qr' && !ticketQrColorReadable(value, widget.background)
-                    ? null : () => Navigator.pop(context, value),
+                    isQr && !readable
+                    ? null : () => Navigator.pop(context, (foreground: colorHex(foreground), background: colorHex(background))),
                 child: Text(TicketLayoutStrings.apply)),
           ]);
 }
