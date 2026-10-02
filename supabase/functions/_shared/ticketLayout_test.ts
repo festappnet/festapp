@@ -145,3 +145,17 @@ Deno.test('custom QR colors validate and render beyond the suggested palette',as
  const output=await generateTicketPdf(sampleData('normal'),r,t);
  assert(output.bytes.length>1000);
 });
+
+Deno.test('landscape gallery contains only variable ticket data; named templates retain event and person details',async()=>{
+ const {ticketPresets}=await import('./ticketLayout.ts');
+ for(const [key,t] of Object.entries(ticketPresets())) {
+   const bindings=t.elements.map(e=>e.binding);
+   if(key.startsWith('portrait')) {
+     for(const binding of ['occasionTitle','occasionDatePlace','orderName'])assert(bindings.includes(binding as any));
+   } else {
+     assertEquals([...bindings].sort(),['qr','ticketSymbol','spotGroup','food','note','price'].sort());
+     const result=await generateTicketPdf(sampleData('normal'),r,t);
+     assert(result.bytes.length>1000);
+   }
+ }
+});
