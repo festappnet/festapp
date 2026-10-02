@@ -18,6 +18,16 @@ void main() {
     );
   });
 
+  test('Google callback resumes login after its query was consumed', () {
+    for (final path in [
+      '/app/google-auth',
+      '/app/google-auth?google_error=provider_cancelled'
+    ]) {
+      expect(initialRouteForUri(Uri.parse('https://live.festapp.net$path')),
+          '/login');
+    }
+  });
+
   test('unit admin deep links own their context load', () {
     expect(
       isUnitAdminStartupRoute(

@@ -1,6 +1,35 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class UserStrings {
+  static String get googlePasswordVisibility =>
+      'FeatureUser.googlePasswordVisibility'.tr();
+  static String get googleUnlinkProof => 'FeatureUser.googleUnlinkProof'.tr();
+  static String get googleTerms => 'FeatureUser.googleTerms'.tr();
+  static String get googlePrivacy => 'FeatureUser.googlePrivacy'.tr();
+  static String get googleContinue => 'FeatureUser.googleContinue'.tr();
+  static String get googleSubtitle => 'FeatureUser.googleSubtitle'.tr();
+  static String get googleOr => 'FeatureUser.googleOr'.tr();
+  static String get googleClose => 'FeatureUser.googleClose'.tr();
+  static String get googleOpening => 'FeatureUser.googleOpening'.tr();
+  static String get googleCompleting => 'FeatureUser.googleCompleting'.tr();
+  static String get googleProof => 'FeatureUser.googleProof'.tr();
+  static String get googleLink => 'FeatureUser.googleLink'.tr();
+  static String get googleProfile => 'FeatureUser.googleProfile'.tr();
+  static String get googleConsent => 'FeatureUser.googleConsent'.tr();
+  static String get googleCreate => 'FeatureUser.googleCreate'.tr();
+  static String get googleRetry => 'FeatureUser.googleRetry'.tr();
+  static String get googleCancelled => 'FeatureUser.googleCancelled'.tr();
+  static String get googleExpired => 'FeatureUser.googleExpired'.tr();
+  static String get googleError => 'FeatureUser.googleError'.tr();
+  static String get googleProofError => 'FeatureUser.googleProofError'.tr();
+  static String get googleLeaveDraft => 'FeatureUser.googleLeaveDraft'.tr();
+  static String get googleMailbox => 'FeatureUser.googleMailbox'.tr();
+  static String get googleSendCode => 'FeatureUser.googleSendCode'.tr();
+  static String get googleVerifyCode => 'FeatureUser.googleVerifyCode'.tr();
+  static String get googleCode => 'FeatureUser.googleCode'.tr();
+  static String get googleUnlink => 'FeatureUser.googleUnlink'.tr();
+  static String get googleMfa => 'FeatureUser.googleMfa'.tr();
+
   static String get receptionist => 'UserColumns.receptionist'.tr();
   // Column Titles
   static String get id => 'UserColumns.id'.tr();

@@ -1,0 +1,24 @@
+{
+  "projectId": "festapp-d23ef",
+  "clientId": "290305817656-dhd1gnsptabfmenkee6a5n429v2air6r.apps.googleusercontent.com",
+  "clientType": "Web application",
+  "callback": "https://api.festapp.net/functions/v1/google-auth-callback",
+  "authorizedDomains": [
+    "vstupenky.online",
+    "festapp.net"
+  ],
+  "brand": "FestApp",
+  "supportEmail": "bujnmi@gmail.com",
+  "credentialsCommitted": false,
+  "credentialsDeployed": false,
+  "publishingStatus": "In production",
+  "audience": "External",
+  "scopes": [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile"
+  ],
+  "sensitiveScopes": [],
+  "restrictedScopes": [],
+  "logoUploaded": false
+}

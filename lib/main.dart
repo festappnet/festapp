@@ -1,3 +1,4 @@
+import 'package:fstapp/services/google_auth_service.dart';
 import 'dart:async';
 
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -44,9 +45,17 @@ Future<void> main() async {
   debugProfileBuildsEnabled = true;
   configureUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
-  final initialRoute = kIsWeb
-      ? initialRouteForUri(RouterService.getCurrentBrowserUri())
-      : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+  try {
+    await GoogleAuthService.initializeLinks()
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // A missing native link/storage plugin must not block existing sign-in.
+  }
+  final initialRoute = GoogleAuthService.hasCallback
+      ? "/login"
+      : kIsWeb
+          ? initialRouteForUri(RouterService.getCurrentBrowserUri())
+          : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
   runApp(FestappBootstrap(
     initialRoute: initialRoute,
     initialize: initializeEverything,
@@ -65,6 +74,7 @@ Future<void> main() async {
 NotificationReconnectCoordinator? _notificationReconnectCoordinator;
 
 String initialRouteForUri(Uri uri) {
+  if (uri.path == '/app/google-auth') return '/login';
   final path = uri.path == '/' && AppConfig.forceOccasionLink != null
       ? '/${AppConfig.forceOccasionLink}'
       : uri.path;
@@ -152,11 +162,11 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
 Future<void> initializeEverything() async {
   AppLogger.debug('Initialization started');
 
-  // The unit editor fetches its own unit context. Loading the default occasion
-  // here can continue after the startup timeout and block that fetch in
-  // RightsService's serialized update queue.
-  final skipInitialOccasion =
-      kIsWeb && isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri());
+  // Unit editors and Google returns own their context. A default occasion
+  // fetch can outlive startup and block their work in the serialized queue.
+  final skipInitialOccasion = kIsWeb &&
+      (isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri()) ||
+          RouterService.getCurrentBrowserUri().path == '/app/google-auth');
 
   WidgetsFlutterBinding.ensureInitialized();
   AppLogger.debug('Widgets binding initialized');
@@ -401,6 +411,9 @@ class _MyAppState extends State<MyApp> {
   Offset _offset = Offset.zero;
 
   DeepLink _resolveDeepLink(PlatformDeepLink platformDeepLink) {
+    if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {
+      return DeepLink.path('/login', includePrefixMatches: false);
+    }
     if (platformDeepLink.initial) {
       return DeepLink.path(
         widget.initialRoute,

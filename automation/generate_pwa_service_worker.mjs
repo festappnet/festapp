@@ -448,6 +448,18 @@ self.addEventListener('fetch', (event) => {
   }
   if (url.origin !== self.location.origin) return;
 
+  // Google handoffs are online proofs. Never cache them or substitute a
+  // different platform's shell, even when an older shell is available offline.
+  if (url.pathname === '/google-auth' || url.pathname === '/app/google-auth') {
+    const callbackClient = event.resultingClientId || event.clientId;
+    if (request.mode === 'navigate' && callbackClient) {
+      clientCacheNames.delete(callbackClient);
+      recordClientVersion(callbackClient, BUILD_VERSION);
+    }
+    event.respondWith(fetch(request, { cache: 'no-store' }));
+    return;
+  }
+
   // A transition release must observe this document from the deployment, not
   // from an app-shell generation. It is deliberately absent from PRECACHE_URLS
   // and has no offline fallback: the client itself keeps legacy until it sees

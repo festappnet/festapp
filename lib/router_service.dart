@@ -128,6 +128,14 @@ class RouterService {
     context.router.replacePath(getCurrentLink() + path);
   }
 
+  static Future<void> goToApplicationHome(StackRouter rootRouter) async {
+    if (kIsWeb) {
+      await LaunchUrlService.openExternalUrl('/', inCurrentWindow: true);
+    } else {
+      await rootRouter.replaceAll([OrganizationRoute()]);
+    }
+  }
+
   static void popOrHome(BuildContext context) {
     if (context.router.canPop()) {
       context.router.maybePop();
@@ -426,7 +434,14 @@ class RouterService {
     if (adminUnit != null) {
       AppLogger.debug(
           "[RouterService] Post-Login: User has units. Navigating to UnitAdmin.");
-      await navigateToUnitAdmin(context, adminUnit);
+      if (useReplacement) {
+        final rootRouter = context.router.root;
+        await RightsService.updateAppData(
+            unitId: adminUnit.id, force: true, refreshOffline: false);
+        await rootRouter.replaceAll([UnitAdminRoute(id: adminUnit.id)]);
+      } else {
+        await navigateToUnitAdmin(context, adminUnit);
+      }
       return;
     }
 

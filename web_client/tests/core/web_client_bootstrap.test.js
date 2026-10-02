@@ -54,3 +54,22 @@ test('usable application removes the startup surface and reports readiness', (t)
     dom.window.markFestappAppReady();
     assert.equal(ready, 1);
 });
+
+
+test('an optional analytics module cannot reload a Google continuation', (t) => {
+    const { dom } = boot();
+    t.after(() => dom.window.close());
+    const { document, Event } = dom.window;
+    let recoveries = 0;
+    dom.window.recoverFestappStartup = async () => { recoveries++; };
+    const analytics = document.createElement('script');
+    analytics.type = 'module';
+    analytics.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    document.head.appendChild(analytics);
+    analytics.dispatchEvent(new Event('error'));
+    assert.equal(recoveries, 0);
+    assert.equal(dom.window.__FESTAPP_WEB_STARTUP_FAILURE__, undefined);
+    const entry = [...document.querySelectorAll('script[type="module"][src]')].find(script => new URL(script.src).origin === dom.window.location.origin);
+    entry.dispatchEvent(new Event('error'));
+    assert.equal(recoveries, 1, 'the actual entry module must retain bounded recovery');
+});
