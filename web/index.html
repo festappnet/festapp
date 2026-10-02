@@ -301,6 +301,8 @@
 <body>
 
 <script>
+  // Suppress browser swipe navigation on the root scrolling element as well.
+  document.documentElement.style.overscrollBehaviorX = "none";
   // Disable swipe back gesture globally
   document.body.style.overscrollBehaviorX = "none";
   document.body.style.overscrollBehaviorY = "none";
