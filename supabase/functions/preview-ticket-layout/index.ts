@@ -9,5 +9,11 @@ Deno.serve(req=>handlePreview(req,{
     return !error&&data===true;
   },
   occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,organization,title,start_time,end_time,features,data').eq('id',id).single();if(error)throw error;return data;},
+  products:async id=>{
+    const {data,error}=await supabaseAdmin.schema('eshop').from('product_types')
+      .select('type,products(id,title,data,price,currency_code,is_hidden)').eq('occasion',id);
+    if(error)throw error;
+    return (data??[]).flatMap(group=>group.products.map(product=>({...product,type:group.type})));
+  },
   resources:loadLayoutResources,
 }));

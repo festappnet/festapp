@@ -2,12 +2,13 @@ import QRCode from 'npm:qrcode';
 import { Buffer } from 'node:buffer';
 import { PDFDocument } from 'npm:pdf-lib';
 import { parseLayout, preset, ticketPresets, TicketType } from '../_shared/ticketLayout.ts';
-import { sampleData } from '../_shared/ticketRenderData.ts';
+import { sampleData, type PreviewProduct } from '../_shared/ticketRenderData.ts';
 import { loadLayoutResources, generateTicketPdf, resolveTicketTemplate, ticketFonts } from '../_shared/ticketGeneration.ts';
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Cache-Control':'no-store'};
 export interface PreviewDependencies {
   authorize(header:string,occasionId:number):Promise<boolean>;
   occasion(id:number):Promise<any>;
+  products(id:number):Promise<PreviewProduct[]>;
   resources:typeof loadLayoutResources;
 }
 const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
@@ -25,6 +26,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     if(!Number.isSafeInteger(occasionId)||occasionId<1||!['resolve','pdf'].includes(mode)||!['wide','named'].includes(type)||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
     if(!await deps.authorize(auth,occasionId))return reply(403,{error:'Forbidden'});
     const occasion=await deps.occasion(occasionId);
+    const products=await deps.products(occasionId);
     const feature={...(occasion.features?.find((f:any)=>f.code==='ticket')??{}),ticket_type:type};
     // Keep an unchanged persisted source; new client-supplied sources must be
     // uploaded image objects. All image reads still pass public-DNS/SSRF checks.
@@ -50,9 +52,9 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
       for(const t of colored)for(const e of t.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
     }
     template??=initial;
-    const data=sampleData(scenario,occasion);
+    const data=sampleData(scenario,occasion,products);
     const qr=QRCode.create(data.qr!,{errorCorrectionLevel:'M'}).modules;
-    if(mode==='resolve') return reply(200,{missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([key,f])=>[key,{label:ticketFonts[key as keyof typeof ticketFonts],font:Buffer.from(f.font).toString('base64'),metrics:f.metrics}])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
+    if(mode==='resolve') return reply(200,{missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([key,f])=>[key,{label:ticketFonts[key as keyof typeof ticketFonts],font:Buffer.from(f.font).toString('base64'),metrics:f.metrics}])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion,products)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
     const result=await generateTicketPdf(data,resources,template,type,true);
     return reply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});
   }catch {return reply(400,{error:'Ticket preview rejected. Check layout and image resources.'});}
