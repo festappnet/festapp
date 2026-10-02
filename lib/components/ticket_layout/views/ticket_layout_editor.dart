@@ -428,7 +428,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           TicketLayoutProperties(
             controller: controller,
             defaults: propertyDefaults,
-            backgroundImage: resources.artworks[controller.artworkKey]?.image ?? resources.background,
+            backgroundImage: resources.artworks.containsKey(controller.artworkKey)
+                ? resources.artworks[controller.artworkKey]!.image : resources.background,
             metrics: resources.metricsFor(controller.document),
             data: resources.scenarios[scenario])),
         Padding(
