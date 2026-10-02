@@ -15,6 +15,7 @@ import 'package:super_editor_clipboard/super_editor_clipboard.dart';
 
 import 'html_editor_document.dart';
 import 'html_strings.dart';
+import 'html_text_style.dart';
 import 'html_view.dart';
 import 'rich_html_editor_controller.dart';
 import 'rich_html_editor_dialog.dart';
@@ -24,12 +25,14 @@ class RichHtmlEditor extends StatefulWidget {
       {required this.controller,
       this.enabled = true,
       this.fullscreen = false,
+      this.textStyle,
       this.onCancel,
       this.toolbarActions,
       super.key});
   final RichHtmlEditorController controller;
   final bool enabled;
   final bool fullscreen;
+  final TextStyle? textStyle;
   final Widget? toolbarActions;
 
   /// When supplied, the enclosing edit session owns Escape cancellation.
@@ -529,32 +532,39 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                         Styles.textStyle:
                                                             htmlBlockTextStyler(
                                                                 node,
-                                                                Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyLarge!
+                                                                (widget.textStyle ??
+                                                                        htmlTextStyle(
+                                                                            context))
                                                                     .copyWith(
-                                                                        height:
-                                                                            1.4,
-                                                                        fontSize:
-                                                                            switch (node.getMetadataValue(
-                                                                                'blockType')) {
-                                                                          final type
-                                                                              when type == header1Attribution =>
-                                                                            30,
-                                                                          final type
-                                                                              when type == header2Attribution =>
-                                                                            24,
-                                                                          final type
-                                                                              when type == header3Attribution =>
-                                                                            20,
-                                                                          _ =>
-                                                                            null,
-                                                                        },
-                                                                        fontFamily: node.getMetadataValue('blockType') ==
-                                                                                const NamedAttribution('pre')
-                                                                            ? 'monospace'
-                                                                            : null)),
+                                                                  fontSize: (widget.textStyle ??
+                                                                              htmlTextStyle(
+                                                                                  context))
+                                                                          .fontSize! *
+                                                                      switch (node
+                                                                          .getMetadataValue(
+                                                                              'blockType')) {
+                                                                        final type
+                                                                            when type ==
+                                                                                header1Attribution =>
+                                                                          2.0,
+                                                                        final type
+                                                                            when type ==
+                                                                                header2Attribution =>
+                                                                          1.5,
+                                                                        final type
+                                                                            when type ==
+                                                                                header3Attribution =>
+                                                                          1.17,
+                                                                        _ =>
+                                                                          1.0,
+                                                                      },
+                                                                  fontFamily: node.getMetadataValue(
+                                                                              'blockType') ==
+                                                                          const NamedAttribution(
+                                                                              'pre')
+                                                                      ? 'monospace'
+                                                                      : null,
+                                                                )),
                                                         Styles.padding:
                                                             const CascadingPadding
                                                                 .symmetric(
