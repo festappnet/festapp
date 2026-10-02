@@ -1,4 +1,9 @@
 export const qrColors = ['000000','2A2A2A','17365D','123B20','401529'];
+export function qrColorReadable(color:string):boolean {
+  if(!/^[0-9a-fA-F]{6}$/.test(color))return false;
+  const channels=[0,2,4].map(i=>{const c=parseInt(color.slice(i,i+2),16)/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;});
+  return 1.05/(channels[0]*.2126+channels[1]*.7152+channels[2]*.0722+.05)>=4.5;
+}
 export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'food', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'orderName', 'logo', 'footer'] as const;
 export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
@@ -30,7 +35,7 @@ export function validateLayout(value: unknown): asserts value is TicketLayout {
       if(s && ['bold','italic','underline'].some(key=>key in s && typeof (s as any)[key]!=='boolean')) fail();
       if (!s || !Number.isFinite(s.fontSize) || !Number.isFinite(s.minFontSize) || s.minFontSize < 6 || s.fontSize < s.minFontSize || s.fontSize > 72 || !Number.isInteger(s.maxLines) || s.maxLines < 1 || s.maxLines > 12 || !/^[0-9A-Fa-f]{6}$/.test(s.color) || !['left','center','right'].includes(s.align)) fail();
       if (['qr','ticketSymbol'].includes(e.binding) && !e.visible) fail();
-      if (e.binding === 'qr' && (e.box.width !== e.box.height || e.box.width < 60 || !qrColors.includes(s.color.toUpperCase()))) fail();
+      if (e.binding === 'qr' && (e.box.width !== e.box.height || e.box.width < 60 || !qrColorReadable(s.color))) fail();
     }
     if (!seen.has('qr') || !seen.has('ticketSymbol')) fail();
     const q=t.elements.find(e=>e.binding==='qr')!.box;
@@ -67,32 +72,40 @@ export function portraitPreset(): Template { return preset('named'); }
 
 export function parseLayout(value: unknown): TicketLayout { validateLayout(value); return structuredClone(value); }
 
-// Named/mobile and image-backed layouts share the original generators' pages.
-// Selecting a style copies ordinary geometry; no second template/render contract.
-function legacyStyleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Record<string,Template> {
-  const classic=preset(type,imageWidth,imageHeight);
-  const make=(binding:Binding,x:number,y:number,width:number,height:number,fontSize=12,maxLines=2,align:'left'|'center'='left'):Element=>({id:binding,binding,box:{x,y,width,height},visible:true,locked:false,style:{fontSize,minFontSize:6,maxLines,color:'2A2A2A',align}});
-  const compact=structuredClone(classic), event=structuredClone(classic);
+// Gallery presets establish a clear hierarchy while leaving saved layouts and
+// the historical first-edit fallback untouched.
+function styleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Record<string,Template> {
+  const base=preset(type,imageWidth,imageHeight);
+  const make=(binding:Binding,x:number,y:number,width:number,height:number,fontSize=12,maxLines=2,align:'left'|'center'='left'):Element=>({id:binding,binding,box:{x,y,width,height},visible:true,locked:false,style:{fontSize,minFontSize:6,maxLines,color:'202020',align}});
+  const classic=structuredClone(base),compact=structuredClone(base),event=structuredClone(base);
   if(type==='named') {
-    compact.elements=[make('logo',8,8,32,32),make('occasionTitle',50,8,142,40,15),make('occasionDatePlace',8,56,184,30,9),make('orderName',8,102,184,42,16,2,'center'),make('qr',60,178,80,80),make('ticketSymbol',8,265,184,22,10,1,'center'),make('footer',8,341,184,24,7,2,'center')];
-    event.elements=[make('logo',79,12,42,42),make('occasionTitle',12,70,176,58,20,2,'center'),make('occasionDatePlace',12,132,176,28,10,2,'center'),make('orderName',12,170,176,32,14,2,'center'),make('qr',52,215,96,96),make('ticketSymbol',10,317,180,20,10,1,'center'),make('footer',6,351,187,18,6,2,'center')];
+    classic.elements=[make('occasionTitle',12,18,176,58,22,2,'center'),make('logo',80,86,40,40),make('occasionDatePlace',12,136,176,30,10,2,'center'),make('orderName',12,180,176,36,18,2,'center'),make('qr',52,228,96,96),make('ticketSymbol',12,330,176,20,11,1,'center'),make('footer',12,356,176,14,7,1,'center')];
+    compact.elements=[make('logo',12,20,56,56),make('qr',112,16,72,72),make('ticketSymbol',100,93,96,18,9,1,'center'),make('occasionTitle',12,120,176,54,20),make('occasionDatePlace',12,188,176,32,10),make('orderName',12,250,176,60,26),make('footer',12,342,176,24,8)];
+    event.elements=[make('occasionTitle',12,20,176,76,28,2,'center'),make('logo',84,106,32,32),make('occasionDatePlace',12,146,176,28,10,2,'center'),make('orderName',12,186,176,30,17,2,'center'),make('qr',52,228,96,96),make('ticketSymbol',12,330,176,20,11,1,'center'),make('footer',12,356,176,14,7,1,'center')];
   } else {
-    for(const [id,t] of [['compact',compact],['event',event]] as const) {
-      t.ticketArea.height=Math.max(id==='event'?280:240,t.ticketArea.height);
-      const w=t.ticketArea.width,h=t.ticketArea.height,left=w-160;
-      const qr=id==='compact'?make('qr',w-100,20,80,80):make('qr',w-116,h-130,96,96);
-      t.elements=[make('occasionTitle',20,12,id==='compact'?left:w-40,42,id==='compact'?18:24),make('occasionDatePlace',20,58,id==='compact'?left:w-40,24,11),make('orderName',20,90,left,32,14),qr,make('ticketSymbol',qr.box.x-4,qr.box.y+qr.box.height+4,qr.box.width+8,22,9,1,'center'),...(['spotGroup','food','note','price'] as Binding[]).map((binding,i)=>make(binding,20,h-108+i*22,left,21,11,1)),make('footer',20,h-18,left,16,7,1)];
+    for(const [id,t] of [['classic',classic],['compact',compact],['event',event]] as const) {
+      t.ticketArea.height=Math.max(id==='compact'?260:320,t.ticketArea.height);
+      const w=t.ticketArea.width,h=t.ticketArea.height,left=w-156;
+      const qr=id==='compact'?make('qr',w-100,20,80,80):make('qr',w-116,id==='classic'?Math.round((h-96)/2):h-130,96,96);
+      const title=make('occasionTitle',20,18,id==='event'?w-40:left,id==='event'?64:54,id==='event'?32:id==='classic'?24:20);
+      const details=(['spotGroup','food','note','price'] as Binding[]).map((binding,i)=>make(binding,20,h-108+i*21,left,20,binding==='spotGroup'||binding==='price'?12:10,1));
+      t.elements=[title,make('occasionDatePlace',20,id==='event'?90:80,id==='event'?w-40:left,28,11),make('orderName',20,id==='event'?128:118,left,30,16),qr,make('ticketSymbol',qr.box.x-4,qr.box.y+qr.box.height+5,qr.box.width+8,22,10,1,'center'),...details,make('footer',20,h-18,left,16,7,1)];
     }
   }
-  const result:Record<string,Template>={classic,compact,event,...(type==='wide'?{portrait:portraitPreset()}: {})};
-  for(const t of Object.values(result))validateLayout({schemaVersion:1,templates:{[type]:t}});
-  return result;
+  for(const t of [classic,compact,event]) {
+    for(const e of t.elements) {
+      if(['occasionTitle','orderName','ticketSymbol','spotGroup','price'].includes(e.binding))e.style.bold=true;
+      if(e.binding==='footer')e.style.italic=true;
+    }
+    validateLayout({schemaVersion:1,templates:{[type]:t}});
+  }
+  return {classic,compact,event};
 }
 
 // The storage slot does not determine the PDF format: ordinary templates stay
 // on A4, while named templates use the physical ticket size.
 export function ticketPresets(imageWidth=1600, imageHeight=800): Record<string,Template> {
-  const wide=legacyStyleVariants('wide',imageWidth,imageHeight);
-  const named=legacyStyleVariants('named');
+  const wide=styleVariants('wide',imageWidth,imageHeight);
+  const named=styleVariants('named');
   return {classic:wide.classic,compact:wide.compact,event:wide.event,portrait:named.classic,portrait_compact:named.compact,portrait_event:named.event};
 }
