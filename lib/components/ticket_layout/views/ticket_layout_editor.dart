@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import '../ticket_background_image.dart';
@@ -93,6 +94,28 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     transform.dispose();
     resources.dispose();
     super.dispose();
+  }
+
+  KeyEventResult _historyKey(FocusNode node, KeyEvent event) {
+    final keyboard = HardwareKeyboard.instance;
+    if (event is KeyUpEvent || keyboard.isAltPressed ||
+        !(keyboard.isControlPressed || keyboard.isMetaPressed)) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.keyZ && key != LogicalKeyboardKey.keyY) {
+      return KeyEventResult.ignored;
+    }
+    // Let text fields keep their own editing history, including when empty.
+    final focusContext = FocusManager.instance.primaryFocus?.context;
+    if (focusContext?.findAncestorWidgetOfExactType<EditableText>() != null) {
+      return KeyEventResult.ignored;
+    }
+    if (!imageBusy && event is KeyDownEvent) {
+      key == LogicalKeyboardKey.keyY || keyboard.isShiftPressed
+          ? controller.redo() : controller.undo();
+    }
+    return KeyEventResult.handled;
   }
 
   Map<String, dynamic> get draftLayout => {
@@ -456,7 +479,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => DefaultTabController(
+      builder: (context) => Focus(autofocus: true, onKeyEvent: _historyKey,
+        child: DefaultTabController(
           initialIndex: tab,
           length: 2,
           child: SizedBox(
@@ -475,7 +499,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       icon: const Icon(Icons.close)),
                 ]),
                 Expanded(
-                    child: TabBarView(children: [
+                    child: TabBarView(physics: const NeverScrollableScrollPhysics(), children: [
                   Builder(
                       builder: (tabContext) => SingleChildScrollView(
                           child: elements(
@@ -484,7 +508,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                       .animateTo(1)))),
                   panel(includeElements: false),
                 ])),
-              ]))));
+              ])))));
 
   Widget mobileToolbar() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -578,11 +602,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       ]));
 
   @override
-  Widget build(BuildContext context) => PopScope(
+  Widget build(BuildContext context) => Focus(
+      autofocus: true, onKeyEvent: _historyKey,
+      child: PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) cancel();
-      },
       child: Scaffold(
         appBar: AppBar(
             leading: IconButton(
@@ -785,5 +808,5 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       ]);
               })),
             ])),
-      ));
+      )));
 }

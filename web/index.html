@@ -290,7 +290,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.49+533";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.50+534";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -301,6 +301,8 @@
 <body>
 
 <script>
+  // Suppress browser swipe navigation on the root scrolling element as well.
+  document.documentElement.style.overscrollBehaviorX = "none";
   // Disable swipe back gesture globally
   document.body.style.overscrollBehaviorX = "none";
   document.body.style.overscrollBehaviorY = "none";
