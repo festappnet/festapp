@@ -43,6 +43,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
 
   // Flags
   bool _isRegistrationEnabled = false;
+  bool _isGoogleLoginEnabled = false;
   bool _isUnitCreationEnabled = false;
   bool _isAppSupported = false;
 
@@ -71,6 +72,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
         _phonePrefixesController.text = org.phonePrefixes?.join(', ') ?? '';
 
         _isRegistrationEnabled = org.isRegistrationEnabled ?? false;
+        _isGoogleLoginEnabled = org.isGoogleLoginEnabled ?? false;
         _isUnitCreationEnabled = org.isUnitCreationEnabled ?? false;
         _isAppSupported = org.isAppSupported ?? false;
 
@@ -109,6 +111,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
         representativeOccasion:
             int.tryParse(_representativeOccasionController.text),
         isRegistrationEnabled: _isRegistrationEnabled,
+        isGoogleLoginEnabled: _isGoogleLoginEnabled,
         isUnitCreationEnabled: _isUnitCreationEnabled,
         isAppSupported: _isAppSupported,
         platforms: _platforms,
@@ -222,6 +225,15 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                               value: _isRegistrationEnabled,
                               onChanged: (val) =>
                                   setState(() => _isRegistrationEnabled = val),
+                            ),
+                            SwitchListTile(
+                              title: Text(
+                                  AdministrationStrings.googleLoginEnabled),
+                              subtitle: Text(
+                                  AdministrationStrings.googleLoginDescription),
+                              value: _isGoogleLoginEnabled,
+                              onChanged: (val) =>
+                                  setState(() => _isGoogleLoginEnabled = val),
                             ),
                             SwitchListTile(
                               title: const Text(

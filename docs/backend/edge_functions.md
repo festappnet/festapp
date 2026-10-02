@@ -160,6 +160,16 @@ other Function becomes anonymous. Identity/attempt/lease writes remain service
 role only. Capability stays hidden until all private inputs and an enabled client
 row exist. Google is not configured as a parallel GoTrue OAuth provider.
 
+Organization admins control `organizations.data.IS_GOOGLE_LOGIN_ENABLED` through
+`update_organization_admin`. That writer atomically projects the flag onto each
+client's `enabled` capability. Operators approve a client with `provisioned=true`;
+when provisioning, set `enabled` to the organization's current flag. The schema
+rejects enabled but unprovisioned clients, so an organization switch cannot expose
+unfinished native or other clients. Backfill preserves previously enabled clients.
+Turning the switch off blocks new attempts and subsequent broker transitions but
+keeps linked identities. `IS_REGISTRATION_ENABLED` continues to govern new users
+independently of Google sign-in.
+
 The common `_shared/issueExistingUserSession.ts` also owns QR login and cancellation
 revocation recovery minting, with database leases and UUID checks. Google MFA
 uses an encrypted proof session and real GoTrue challenge, never OTP-derived AAL2.

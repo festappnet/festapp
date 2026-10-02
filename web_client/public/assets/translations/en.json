@@ -866,7 +866,9 @@
     "storageUsage": "Browser usage: {usage} MiB of {quota} MiB",
     "storageBlocked": "The app will not remove anything right now. Your data remains safe.",
     "storageReady": "Retained versions: {retained}; deletable: {deletable}",
-    "oneSignalSecretManagedServerSide": "The OneSignal REST API key is managed in the server-only notification secret store."
+    "oneSignalSecretManagedServerSide": "The OneSignal REST API key is managed in the server-only notification secret store.",
+    "googleLoginEnabled": "Allow Google sign-in",
+    "googleLoginDescription": "Users can sign in or link their account with Google. Creating new accounts depends on whether registration is enabled."
   },
   "GroupStrings": {
     "newGroup": "New Group",

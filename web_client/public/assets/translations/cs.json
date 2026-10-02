@@ -866,7 +866,9 @@
     "storageUsage": "Využití prohlížeče: {usage} MiB z {quota} MiB",
     "storageBlocked": "Aplikace teď nic neodstraní. Vaše data zůstávají v bezpečí.",
     "storageReady": "Zachované verze: {retained}; k odstranění: {deletable}",
-    "oneSignalSecretManagedServerSide": "OneSignal REST API klíč je spravovaný v serverovém úložišti tajných údajů pro oznámení."
+    "oneSignalSecretManagedServerSide": "OneSignal REST API klíč je spravovaný v serverovém úložišti tajných údajů pro oznámení.",
+    "googleLoginEnabled": "Povolit přihlášení přes Google",
+    "googleLoginDescription": "Uživatelé se mohou přihlásit nebo propojit svůj účet s Google. Vytváření nových účtů se řídí povolením registrace."
   },
   "GroupStrings": {
     "newGroup": "Nová skupina",
