@@ -56,9 +56,13 @@ test('every Edge Function and Worker entrypoint has a fail-closed cutover classi
   const report = evaluateRuntimeWriterPolicy(policy);
   assert.equal(report.status, 'pass');
   assert.deepEqual(report.blockers, []);
-  assert.equal(report.edge_functions, 20);
+  assert.equal(report.edge_functions, 24);
   assert.equal(report.worker_entrypoints, 6);
-  assert.equal(report.mutating_surfaces, 18);
+  assert.equal(report.mutating_surfaces, 21);
+  assert.equal(policy.edge_functions['preview-ticket-layout'].mutates_authority, false);
+  for (const name of ['google-auth-start', 'google-auth-callback', 'google-auth-complete']) {
+    assert.equal(policy.edge_functions[name].mutates_authority, true);
+  }
   assert.equal(report.canonical_security_blockers.length, 0);
   assert.match(report.canonical_exclusions[0], /instance-install/);
   assert.equal(report.activation_requirements.length, 4);

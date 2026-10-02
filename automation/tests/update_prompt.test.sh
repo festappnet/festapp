@@ -93,6 +93,18 @@ echo "--- emit_version_manifest.sh writes festapp-version.json + stamped main --
 
 BUILD_DIR="$TMP_ROOT/build/web"
 mkdir -p "$BUILD_DIR/web-assets"
+write_client_sync_fixture() {
+    node --input-type=module - "$1" "$2" "$BUILD_DIR/client-sync-config.json" <<'NODE'
+import { readFileSync, writeFileSync } from 'node:fs';
+const [configPath, tenantId, output] = process.argv.slice(2);
+const config = readFileSync(configPath, 'utf8');
+const value = key => config.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1].trim().replace(/^(['"])(.*)\1$/, '$2');
+writeFileSync(output, JSON.stringify({ schemaVersion: 1, tenantId,
+    syncHeadOrigin: value('SYNC_HEAD_ORIGIN'), syncAssetOrigin: value('SYNC_ASSET_ORIGIN') }));
+NODE
+}
+printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><div id="web-client-startup">Loading</div>\n' \
+  > "$BUILD_DIR/webclient"
 CONFIG_ANON_KEY="$(sed -n 's/^SUPABASE_ANON_KEY=//p' "$PROJECT_ROOT/automation/project.conf")"
 CONFIG_SUPABASE_URL="$(sed -n 's/^SUPABASE_URL=//p' "$PROJECT_ROOT/automation/project.conf")"
 CONFIG_PROJECT_REF="$(sed -n 's#^SUPABASE_URL=https://\([^.]*\)\.supabase\.co/*#\1#p' \
@@ -111,6 +123,7 @@ CONFIG_CANONICAL_ORGANIZATION_ID="$(sed -n \
 CONFIG_CANONICAL_ACTIVATION_SHA=''
 CONFIG_CANONICAL_PROFILE_SHA=''
 if [ -n "$CONFIG_ACTIVATION_TENANT_ID" ]; then
+  write_client_sync_fixture "$PROJECT_ROOT/automation/project.conf" "$CONFIG_ACTIVATION_TENANT_ID"
   CONFIG_CANONICAL_ACTIVATION_SHA="$(printf '%s\n' \
     "{\"schemaVersion\":1,\"tenantId\":\"$CONFIG_ACTIVATION_TENANT_ID\",\"generation\":1,\"backend\":\"canonical\"}" \
     | shasum -a 256 | awk '{print $1}')"
@@ -177,8 +190,15 @@ for page in privacy privacy/choices terms support; do
       > "$BUILD_DIR/$page/index.html"
 done
 mkdir -p "$BUILD_DIR/delete-account"
-printf '<title>Delete | %s</title>%s<h1>Smazání účtu</h1><a href="/privacy/choices/">Choices</a>\n' \
-  "$CONFIG_APP_NAME" "$LEGAL_NAV" > "$BUILD_DIR/delete-account/index.html"
+DELETE_ACCOUNT_ORIGIN="$CONFIG_SUPABASE_URL"
+DELETE_ACCOUNT_KEY="$CONFIG_ANON_KEY"
+if [ "$CONFIG_ACTIVATION_PHASE" = canonical ]; then
+    DELETE_ACCOUNT_ORIGIN="$CONFIG_CANONICAL_URL"
+    DELETE_ACCOUNT_KEY="$CONFIG_CANONICAL_KEY"
+fi
+printf '<title>Delete | %s</title>%s<h1>Smazání účtu</h1><a href="/privacy/choices/">Choices</a><script>const endpoint="%s/functions/v1/confirm-account-deletion"; const anonKey="%s";</script>\n' \
+  "$CONFIG_APP_NAME" "$LEGAL_NAV" "$DELETE_ACCOUNT_ORIGIN" "$DELETE_ACCOUNT_KEY" \
+  > "$BUILD_DIR/delete-account/index.html"
 if node "$PROJECT_ROOT/automation/verify_web_build.mjs" "$BUILD_DIR" "1.2.3+456" > /dev/null; then
     echo "  ok: coherent web release passes the build gate"
 else
@@ -206,6 +226,7 @@ for entry in \
 done
 PROFILE_SHA="$(node "$PROJECT_ROOT/automation/release/generate_backend_profile_fingerprint.mjs" \
   fixture-transition https://api.festapp.net "$CANONICAL_KEY" 12)"
+write_client_sync_fixture "$ACTIVATION_ROOT/automation/project.conf" fixture-transition
 printf '%s\n' '{"schemaVersion":1,"tenantId":"fixture-transition","generation":0,"backend":"legacy"}' \
   > "$BUILD_DIR/backend-activation.json"
 CANONICAL_ACTIVATION_SHA="$(printf '%s\n' \

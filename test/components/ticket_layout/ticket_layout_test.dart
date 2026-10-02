@@ -928,6 +928,44 @@ void main() {
     c.dispose();
   });
 
+  testWidgets('sidebar eyes toggle visibility without changing selection and support undo', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
+      occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpAndSettle();
+    final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    c.select('logo');
+    await tester.pump();
+    final titleRow = find.widgetWithText(ListTile, 'TicketLayout.occasionTitle');
+    final eye = find.descendant(of: titleRow, matching: find.byType(IconButton));
+    bool titleVisible() => c.document.elements.singleWhere((e) => e.id == 'occasionTitle').visible;
+    await tester.tap(eye);
+    await tester.pump();
+    expect(titleVisible(), isFalse);
+    expect(c.selectedIds, {'logo'});
+    expect(find.descendant(of: titleRow, matching: find.byIcon(Icons.visibility_off)), findsOneWidget);
+    c.undo();
+    await tester.pump();
+    expect(titleVisible(), isTrue);
+    await tester.tap(eye);
+    await tester.pump();
+    await tester.tap(eye);
+    await tester.pump();
+    expect(titleVisible(), isTrue);
+    await tester.tap(find.descendant(of: titleRow, matching: find.byType(Text)));
+    await tester.pump();
+    expect(c.selectedIds, {'occasionTitle'});
+    for (final binding in ['qr', 'ticketSymbol']) {
+      final button = find.descendant(
+        of: find.widgetWithText(ListTile, 'TicketLayout.$binding'),
+        matching: find.byType(IconButton));
+      expect(tester.widget<IconButton>(button).onPressed, isNull);
+    }
+  });
+
   testWidgets('editor history shortcuts work from properties and preserve text field history', (tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1;
