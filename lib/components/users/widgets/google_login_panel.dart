@@ -26,9 +26,11 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
       _surname = TextEditingController(),
       _code = TextEditingController();
   bool _suggested = false;
+  String? _suggestedEmail;
   @override
   void initState() {
     super.initState();
+    _suggestProfile(GoogleAuthService.state.value);
     GoogleAuthService.state.addListener(_changed);
     (widget.capability ?? GoogleAuthService.capability)().then((value) {
       if (mounted) setState(() => _enabled = value);
@@ -46,19 +48,42 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
         GoogleAuthService.finishPending();
       });
     }
+    _suggestProfile(state);
+    if (state.status == GoogleLoginStatus.authenticated &&
+        !GoogleAuthService.navigationClaimed &&
+        ModalRoute.of(context)?.isCurrent != false) {
+      GoogleAuthService.navigationClaimed = true;
+      _navigateAuthenticated();
+    }
+    setState(() {});
+  }
+
+  Future<void> _navigateAuthenticated() async {
+    try {
+      await widget.onAuthenticated();
+      GoogleAuthService.resetCompletedNavigation();
+    } catch (_) {
+      GoogleAuthService.navigationClaimed = false;
+      if (mounted) setState(() => _navigationFailed = true);
+    }
+  }
+
+  bool _navigationFailed = false;
+
+  void _suggestProfile(GoogleLoginState state) {
+    final email = state.result['email'];
+    if (email is String && email.isNotEmpty && email != _suggestedEmail) {
+      if (_email.text.isEmpty || _email.text == _suggestedEmail) {
+        _email.text = email;
+      }
+      _suggestedEmail = email;
+    }
     if (!_suggested && state.result['name'] is String) {
       final names = (state.result['name'] as String).split(' ');
       _name.text = names.first;
       _surname.text = names.skip(1).join(' ');
       _suggested = true;
     }
-    if (state.status == GoogleLoginStatus.authenticated &&
-        !GoogleAuthService.navigationClaimed &&
-        ModalRoute.of(context)?.isCurrent != false) {
-      GoogleAuthService.navigationClaimed = true;
-      widget.onAuthenticated();
-    }
-    setState(() {});
   }
 
   @override
@@ -106,7 +131,8 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
       return const SizedBox.shrink();
     }
     final busy = state.status == GoogleLoginStatus.openingGoogle ||
-        state.status == GoogleLoginStatus.completing;
+        state.status == GoogleLoginStatus.completing ||
+        state.status == GoogleLoginStatus.authenticated;
     final profile = state.status == GoogleLoginStatus.needsProfile ||
         (state.status == GoogleLoginStatus.retryableError &&
             state.result['status'] == 'needs_profile');
@@ -134,7 +160,15 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
                             padding: const EdgeInsets.only(bottom: 16),
                             child: Text(_error(state.error),
                                 textAlign: TextAlign.center))),
-                  if (busy)
+                  if (_navigationFailed)
+                    TextButton(
+                        onPressed: () {
+                          setState(() => _navigationFailed = false);
+                          GoogleAuthService.navigationClaimed = true;
+                          _navigateAuthenticated();
+                        },
+                        child: Text(UserStrings.googleRetry))
+                  else if (busy)
                     Padding(
                         padding: const EdgeInsets.all(16),
                         child: Semantics(
