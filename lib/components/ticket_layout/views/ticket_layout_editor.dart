@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:fstapp/components/images/image_area.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
+import '../ticket_background_image.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_layout_controller.dart';
@@ -188,7 +188,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     bool staged = false, committed = false;
     await ExceptionHandler.guard(context, futureFunction: () async {
       final bytes =
-          await ImageCompressionHelper.compress(await file.readAsBytes(), 1600);
+          await TicketBackgroundImage.prepare(await file.readAsBytes());
       final codec = await ui.instantiateImageCodec(bytes);
       final image = (await codec.getNextFrame()).image;
       codec.dispose();

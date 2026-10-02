@@ -2051,7 +2051,7 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
-    "qrContrast": "Choose a darker color to keep the QR code readable.",
+    "qrContrast": "Choose a color with sufficient contrast against the QR background.",
     "multiSelect": "Add to selection",
     "selectedElements": "Selected elements",
     "groupMoveHint": "Drag to move selected elements together. Locked elements stay in place. Select one element to format it.",

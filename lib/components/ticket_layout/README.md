@@ -200,3 +200,14 @@ assets are reported separately and never substituted. Run reviewed SQL through
 protects concurrent edits, validates the layout and is safe to repeat. Unconfigured
 events still get the first-open gallery. The save RPC rejects older clients that
 would discard the migrated font/appearance contract; reload the deployed editor.
+
+## Background upload quality
+
+`TicketBackgroundImage` owns the print-artwork preparation policy: 3200 px on
+the longer edge, JPEG quality 92, and an 8 MiB output budget below the existing
+10 MiB upload/PDF limit. Suitable PNG/JPEG inputs are kept byte-for-byte; PNG
+transparency is preserved. Oversized images scale down without upscaling or a
+second JPEG pass. The upload service passes the same limits to the Worker so its
+ordinary 1200 px / quality 70 defaults do not recompress prepared ticket artwork.
+EXIF orientation is baked when necessary, and other decoded formats become PNG
+for the shared PDF renderer. Native platforms prepare in a compute isolate.

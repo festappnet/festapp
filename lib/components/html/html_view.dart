@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'html_document_codec.dart';
+import 'html_text_style.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -128,13 +129,8 @@ class _HtmlViewState extends State<HtmlView> {
       context,
       linkifyHtmlText(widget.html),
       renderMode: RenderMode.listView,
-      textStyle: TextStyle(
-        fontSize: widget.fontSize,
-        fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily ??
-            ThemeConfig.fontFamily,
-        color: textColor,
-        inherit: false,
-      ),
+      textStyle:
+          htmlTextStyle(context, fontSize: widget.fontSize, color: textColor),
       customStylesBuilder: (el) {
         // Handle alignment classes from rich text editors like Quill.js
         if (el.attributes['class'] != null) {
