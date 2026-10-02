@@ -216,9 +216,9 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
     super.dispose();
   }
 
-  void pick(Color c) => setState(() {
+  void pick(Color c, {bool fromHex = false}) => setState(() {
         color = c;
-        if (!focus.hasFocus) {
+        if (!fromHex) {
           hex.text = value;
         }
       });
@@ -231,14 +231,15 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
               width: 300,
               child: SingleChildScrollView(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                if (widget.element.binding == 'qr')
-                  BlockPicker(
-                      pickerColor: color,
-                      availableColors: ticketQrColors
-                          .map((v) => Color(int.parse('ff$v', radix: 16)))
-                          .toList(),
-                      onColorChanged: pick)
-                else ...[
+                Wrap(spacing: 8, runSpacing: 8, children: ticketQrColors.map((v) =>
+                  IconButton(
+                    tooltip: '#$v',
+                    onPressed: () { focus.unfocus(); pick(Color(int.parse('ff$v', radix: 16))); },
+                    style: IconButton.styleFrom(backgroundColor: Color(int.parse('ff$v', radix: 16))),
+                    icon: Icon(value == v ? Icons.check : Icons.circle,
+                      color: value == v ? Colors.white : Colors.transparent),
+                  )).toList()),
+                const SizedBox(height: 12),
                   ColorPicker(
                       pickerColor: color,
                       enableAlpha: false,
@@ -254,17 +255,23 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
                           prefixText: '#', labelText: 'HEX'),
                       onChanged: (v) {
                         if (RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(v)) {
-                          pick(Color(int.parse('ff$v', radix: 16)));
+                          pick(Color(int.parse('ff$v', radix: 16)), fromHex: true);
+                        } else {
+                          setState(() {});
                         }
                       }),
-                ],
+                if (widget.element.binding == 'qr' && !ticketQrColorReadable(value))
+                  Text(TicketLayoutStrings.qrContrast,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ]))),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(TicketLayoutStrings.cancel)),
             FilledButton(
-                onPressed: () => Navigator.pop(context, value),
+                onPressed: !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(hex.text) ||
+                    widget.element.binding == 'qr' && !ticketQrColorReadable(value)
+                    ? null : () => Navigator.pop(context, value),
                 child: Text(TicketLayoutStrings.apply)),
           ]);
 }
