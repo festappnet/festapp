@@ -264,7 +264,7 @@ class OrderModel extends ITrinaRowModel {
               : ""),
       EshopColumns.ORDER_DATA: TrinaCell(value: toCustomerData()),
       EshopColumns.ORDER_EMAIL:
-          TrinaCell(value: data?[TbEshop.orders.data_email]),
+          TrinaCell(value: data?[TbEshop.orders.data_email] ?? ""),
       EshopColumns.TICKET_PRODUCTS: TrinaCell(
           value: relatedProducts != null
               ? relatedProducts!.map((p) => p.toBasicString()).join(" | ")

@@ -19,6 +19,7 @@ body.dark .auth-container .google-button, body.dark-mode .auth-container .google
 .auth-container .auth-consent { display:flex; align-items:flex-start; gap: 8px; margin: 16px 0; line-height: 1.4; font-size: 13px; }
 .auth-container .auth-consent input { width: 18px; height: 18px; flex-shrink: 0; }
 .auth-container .google-profile-actions { display: flex; flex-direction: column; gap: 12px; }
+.auth-container .auth-links { flex-wrap: wrap; align-items: center; gap: 4px 20px; }
 .auth-container .form-row > * { min-width: 0; }
 @media(max-width:390px) { .auth-container { padding: 20px; } .auth-container .form-row { flex-direction: column; gap: 0; } }
 @media(prefers-reduced-motion:reduce) { .auth-container * { transition:none !important; } }
