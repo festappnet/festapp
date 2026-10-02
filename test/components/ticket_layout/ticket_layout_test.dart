@@ -58,6 +58,32 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  test('custom QR colors use white-background contrast rather than a palette', () {
+    for (final color in ['445566', '5A245A', '003F88', '767676']) {
+      expect(ticketQrColorReadable(color), isTrue);
+    }
+    for (final color in ['777777', 'FFFFFF', 'FFFF00', 'oops']) {
+      expect(ticketQrColorReadable(color), isFalse);
+    }
+  });
+  testWidgets('text and QR share the color picker and HEX entry', (tester) async {
+    for (final binding in ['qr', 'occasionTitle']) {
+      final c = TicketLayoutController(document())..select(binding);
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
+          child: TicketLayoutProperties(controller: c)))));
+      await tester.tap(find.text(binding == 'qr' ? 'TicketLayout.qrColor' : 'TicketLayout.color'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ColorPicker), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'FFFFFF');
+      await tester.pump();
+      final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply');
+      expect(tester.widget<FilledButton>(apply).onPressed == null, binding == 'qr');
+      await tester.enterText(find.byType(TextField), '445566'); await tester.pump();
+      await tester.tap(apply); await tester.pumpAndSettle();
+      expect(c.selection!.color, '445566');
+      await tester.pumpWidget(const SizedBox()); c.dispose();
+    }
+  });
   test('styled text fitting matches the PDF renderer fixtures', () {
     final cases = jsonDecode(File('test/fixtures/ticket_layout/text-emphasis.json').readAsStringSync()) as List;
     final r = resources();

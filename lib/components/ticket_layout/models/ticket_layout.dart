@@ -1,7 +1,18 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:ui';
 
 const ticketQrColors = ['000000', '2A2A2A', '17365D', '123B20', '401529'];
+bool ticketQrColorReadable(String color) {
+  if (!RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(color)) return false;
+  final channels = [0, 2, 4].map((i) {
+    final c = int.parse(color.substring(i, i + 2), radix: 16) / 255;
+    return c <= .04045 ? c / 12.92 : math.pow((c + .055) / 1.055, 2.4).toDouble();
+  }).toList();
+  final luminance = channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+  return 1.05 / (luminance + .05) >= 4.5;
+}
+
 const ticketBindings = [
   'qr',
   'ticketSymbol',
@@ -220,7 +231,7 @@ class TicketTemplate {
         qr = e;
         if (e.box.width != e.box.height ||
             e.box.width < 60 ||
-            !ticketQrColors.contains(e.color.toUpperCase())) {
+            !ticketQrColorReadable(e.color)) {
           errors.add(e.id);
         }
       }

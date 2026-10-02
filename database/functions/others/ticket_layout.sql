@@ -11,7 +11,7 @@ GRANT EXECUTE ON FUNCTION public.can_edit_ticket_layout(bigint) TO authenticated
 CREATE OR REPLACE FUNCTION public.validate_ticket_layout(p_layout jsonb)
 RETURNS void LANGUAGE plpgsql IMMUTABLE
 SET search_path = public, extensions AS $$
-DECLARE t jsonb; e jsonb; b jsonb; s jsonb; a jsonb; q jsonb; kind text; k text; ids text[]; bindings text[];
+DECLARE t jsonb; e jsonb; b jsonb; s jsonb; a jsonb; q jsonb; kind text; k text; ids text[]; bindings text[]; luminance double precision;
 BEGIN
   IF p_layout IS NULL OR jsonb_typeof(p_layout) <> 'object' OR p_layout->'schemaVersion' IS DISTINCT FROM '1'::jsonb
     OR jsonb_typeof(p_layout->'templates') IS DISTINCT FROM 'object' OR p_layout->'templates'='{}'::jsonb OR octet_length(p_layout::text)>32768
@@ -69,7 +69,10 @@ BEGIN
       IF e->>'binding' IN ('qr','ticketSymbol') AND e->'visible'<>'true'::jsonb THEN RAISE EXCEPTION 'Required ticket element hidden'; END IF;
       IF e->>'binding'='qr' THEN
         q:=b;
-        IF b->'width'<>b->'height' OR (b->>'width')::numeric<60 OR upper(s->>'color') NOT IN ('000000','2A2A2A','17365D','123B20','401529') THEN RAISE EXCEPTION 'Invalid QR dimensions'; END IF;
+        SELECT sum((CASE WHEN channel<=.04045 THEN channel/12.92 ELSE power((channel+.055)/1.055,2.4) END)*weight)
+          INTO luminance FROM (SELECT get_byte(decode(s->>'color','hex'),i)/255.0 AS channel, weight
+            FROM (VALUES (0,.2126),(1,.7152),(2,.0722)) AS rgb(i,weight)) AS linear;
+        IF b->'width'<>b->'height' OR (b->>'width')::numeric<60 OR 1.05/(luminance+.05)<4.5 THEN RAISE EXCEPTION 'Invalid QR dimensions or contrast'; END IF;
       END IF;
     END LOOP;
     IF NOT bindings @> ARRAY['qr','ticketSymbol'] THEN RAISE EXCEPTION 'Missing required ticket elements'; END IF;
