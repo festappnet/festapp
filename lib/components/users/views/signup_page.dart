@@ -110,7 +110,8 @@ class _SignupPageState extends State<SignupPage> {
                           GoogleLoginPanel(
                               onAuthenticated: () =>
                                   RouterService.handlePostLoginNavigation(
-                                      context)),
+                                      context,
+                                      useReplacement: true)),
                           if (!GoogleAuthService.isContinuation) ...[
                             ...FormHelper.getAllFormFields(context,
                                 formHolder!.controller!.globalKey, formHolder!),
