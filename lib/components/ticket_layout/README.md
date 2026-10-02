@@ -211,3 +211,10 @@ second JPEG pass. The upload service passes the same limits to the Worker so its
 ordinary 1200 px / quality 70 defaults do not recompress prepared ticket artwork.
 EXIF orientation is baked when necessary, and other decoded formats become PNG
 for the shared PDF renderer. Native platforms prepare in a compute isolate.
+
+QR colors are edited together in the shared color picker: foreground/background
+selection, HEX entry, paired preview and a swap action. Contrast gates Apply,
+not individual color changes, so inversion is possible in one undoable edit.
+A changed background becomes opaque; otherwise imported opacity/quiet margins
+remain intact. These values persist through the existing layout contract and
+are consumed by both the canvas and the sole PDF renderer.
