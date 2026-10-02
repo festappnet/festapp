@@ -146,6 +146,8 @@ class _TicketSettingsState extends State<TicketSettings> {
                 setState(() => widget.feature.showHiddenNote = v)),
         const SizedBox(height: 12),
         if (unsupported) Text(TicketLayoutStrings.unsupported),
+        if (thumbnail?.missingBackground == true)
+          Padding(padding: const EdgeInsets.all(12), child: Text(TicketLayoutStrings.missingBackground)),
         if (thumbnail != null && !unsupported)
           SizedBox(
               height: 160,

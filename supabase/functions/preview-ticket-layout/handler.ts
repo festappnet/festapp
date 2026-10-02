@@ -38,7 +38,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
 
     const layout=body.layout===undefined?(feature.layout===undefined?undefined:parseLayout(feature.layout)):parseLayout(body.layout);
     if(layout)feature.layout=layout;
-    const resources=await deps.resources(occasion,feature);
+    const resources=await deps.resources(occasion,feature,{allowMissingBackground:mode==='resolve'});
     let template=layout?.templates[type as TicketType];
     let width=1600,height=900;
     if(resources.background){const doc=await PDFDocument.create();let img;try{img=await doc.embedPng(resources.background);}catch{img=await doc.embedJpg(resources.background);}width=img.width;height=img.height;}
@@ -52,7 +52,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     template??=initial;
     const data=sampleData(scenario,occasion);
     const qr=QRCode.create(data.qr!,{errorCorrectionLevel:'M'}).modules;
-    if(mode==='resolve') return reply(200,{fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([key,f])=>[key,{label:ticketFonts[key as keyof typeof ticketFonts],font:Buffer.from(f.font).toString('base64'),metrics:f.metrics}])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
+    if(mode==='resolve') return reply(200,{missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([key,f])=>[key,{label:ticketFonts[key as keyof typeof ticketFonts],font:Buffer.from(f.font).toString('base64'),metrics:f.metrics}])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
     const result=await generateTicketPdf(data,resources,template,type,true);
     return reply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});
   }catch {return reply(400,{error:'Ticket preview rejected. Check layout and image resources.'});}

@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "c06f171ac3fc948f37ead8919040f82504ccdd39",
-  "release": {
-    "version": "0.20.53+537",
-    "note": "Organization setting controls Google sign-in without enabling unprovisioned clients"
-  }
+  "baseMainSha": "8f69e814860b5ca0c1b3df10032123a691d12c26"
 }

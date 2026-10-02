@@ -626,6 +626,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         body: SafeArea(
             top: false,
             child: Column(children: [
+              if (resources.missingBackground && (background?.isNotEmpty ?? false))
+                Padding(padding: const EdgeInsets.all(12), child: Text(TicketLayoutStrings.missingBackground)),
               if (MediaQuery.sizeOf(context).width < 900)
                 mobileToolbar()
               else
