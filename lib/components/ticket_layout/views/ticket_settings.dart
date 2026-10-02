@@ -79,14 +79,20 @@ class _TicketSettingsState extends State<TicketSettings> {
         r.dispose();
         return;
       }
+      final showTemplatePicker = await service.openTemplatePickerOnce(
+          widget.occasionId, RightsService.currentUser()?.id ?? 'editor',
+          configured: widget.feature.layout?['templates']?[type] != null ||
+              (widget.feature.ticketBackground?.isNotEmpty ?? false));
+      if (!mounted) {
+        r.dispose();
+        return;
+      }
       final result = await showDialog<TicketLayoutResult>(
           context: context,
           useSafeArea: false,
           builder: (c) => Dialog.fullscreen(
               child: TicketLayoutEditor(
-                  showTemplatePicker:
-                      widget.feature.layout?['templates']?[type] == null &&
-                          (widget.feature.ticketBackground?.isEmpty ?? true),
+                  showTemplatePicker: showTemplatePicker,
                   occasionId: widget.occasionId,
                   type: type,
                   layout: widget.feature.layout == null

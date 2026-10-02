@@ -58,6 +58,19 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  test('template picker opens once per user and occasion, including after cancelling', () async {
+    final preferences = <String, String>{};
+    TicketLayoutService service() => TicketLayoutService(
+        readPreference: (key) async => preferences[key],
+        writePreference: (key, value) async { preferences[key] = value; });
+    expect(await service().openTemplatePickerOnce(7, 'user', configured: false), isTrue);
+    // A new service instance models leaving and reopening the settings page.
+    expect(await service().openTemplatePickerOnce(7, 'user', configured: false), isFalse);
+    expect(await service().openTemplatePickerOnce(8, 'user', configured: true), isFalse);
+    expect(await service().openTemplatePickerOnce(8, 'user', configured: false), isFalse);
+    expect(await service().openTemplatePickerOnce(9, 'user', configured: false), isTrue);
+    expect(await service().openTemplatePickerOnce(7, 'another-user', configured: false), isTrue);
+  });
   test('custom QR colors use white-background contrast rather than a palette', () {
     for (final color in ['445566', '5A245A', '003F88', '767676']) {
       expect(ticketQrColorReadable(color), isTrue);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
+import 'package:fstapp/services/storage_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/ticket_layout.dart';
 import '../images/db_images.dart';
@@ -47,7 +48,22 @@ class TicketLayoutResources {
 
 class TicketLayoutService {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? transport;
-  TicketLayoutService({this.transport});
+  final Future<String?> Function(String) _readPreference;
+  final Future<void> Function(String, String) _writePreference;
+  TicketLayoutService({this.transport,
+      Future<String?> Function(String)? readPreference,
+      Future<void> Function(String, String)? writePreference})
+      : _readPreference = readPreference ?? ((key) => StorageHelper.get(key)),
+        _writePreference = writePreference ?? ((key, value) => StorageHelper.set(key, value));
+
+  Future<bool> openTemplatePickerOnce(int occasionId, String userId,
+      {required bool configured}) async {
+    final key = 'ticket-editor-opened:$userId:$occasionId';
+    final opened = await _readPreference(key) == 'true';
+    if (!opened) await _writePreference(key, 'true');
+    return !configured && !opened;
+  }
+
   Future<String?> uploadBackground(Uint8List bytes, int occasionId) =>
       DbImages.uploadImage(bytes, occasionId, null);
 
