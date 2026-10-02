@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui' show PointerDeviceKind;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -78,6 +79,35 @@ void main() {
     }
     for (final color in ['777777', 'FFFFFF', 'FFFF00', 'oops']) {
       expect(ticketQrColorReadable(color), isFalse);
+    }
+  });
+  testWidgets('palette paints its colors in Material 2 and 3, light and dark', (tester) async {
+    for (final material3 in [false, true]) {
+      for (final brightness in Brightness.values) {
+        final c = TicketLayoutController(document())..select('occasionTitle');
+        final boundaryKey = GlobalKey();
+        await tester.pumpWidget(RepaintBoundary(key: boundaryKey, child: MaterialApp(
+          theme: ThemeData(useMaterial3: material3, brightness: brightness),
+          home: Scaffold(body: SingleChildScrollView(child: TicketLayoutProperties(controller: c))))));
+        await tester.tap(find.text('TicketLayout.color'));
+        await tester.pumpAndSettle();
+        final boundary = boundaryKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = (await tester.runAsync(() => boundary.toImage()))!;
+        final pixels = (await tester.runAsync(() => image.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
+        for (final hex in ticketQrColors) {
+          final rect = tester.getRect(find.byTooltip('#$hex').last);
+          final point = boundary.globalToLocal(Offset(rect.center.dx, rect.top + 12));
+          final offset = (point.dy.toInt() * image.width + point.dx.toInt()) * 4;
+          final rgb = (pixels.getUint8(offset) << 16) | (pixels.getUint8(offset + 1) << 8) | pixels.getUint8(offset + 2);
+          expect(rgb, int.parse(hex, radix: 16), reason: '$hex material3=$material3 brightness=$brightness');
+        }
+        image.dispose();
+        await tester.tap(find.byTooltip('#17365D').last);
+        await tester.pump();
+        expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '17365D');
+        await tester.pumpWidget(const SizedBox());
+        c.dispose();
+      }
     }
   });
   testWidgets('text and QR share the color picker and HEX entry', (tester) async {
