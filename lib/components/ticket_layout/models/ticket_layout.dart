@@ -162,8 +162,6 @@ class TicketTemplate {
       };
   List<String> validate(String type) {
     final errors = <String>[];
-    final expected =
-        type == 'wide' ? const Size(595.28, 841.89) : const Size(212.5, 387.5);
     bool inside(Rect b, Size size) =>
         [b.left, b.top, b.width, b.height].every((v) => v.isFinite) &&
         b.left >= 0 &&
@@ -177,7 +175,8 @@ class TicketTemplate {
                 .every((v) => v.isFinite && v >= 60 && v <= 842) &&
             area.topLeft == Offset.zero &&
             area.size == page
-        : page == expected;
+        : page == const Size(595.28, 841.89) ||
+            page == const Size(212.5, 387.5);
     if (!pageValid ||
         !inside(area, page) ||
         elements.length < 2 ||
