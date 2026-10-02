@@ -249,16 +249,6 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
           .where((e) => e.visible).map((e) => e.id));
       return KeyEventResult.handled;
     }
-    if (ctrl && e.logicalKey == LogicalKeyboardKey.keyZ) {
-      HardwareKeyboard.instance.isShiftPressed
-          ? widget.controller.redo()
-          : widget.controller.undo();
-      return KeyEventResult.handled;
-    }
-    if (ctrl && e.logicalKey == LogicalKeyboardKey.keyY) {
-      widget.controller.redo();
-      return KeyEventResult.handled;
-    }
     if (e.logicalKey == LogicalKeyboardKey.escape) {
       widget.controller.cancelGesture();
       widget.controller.select(null);

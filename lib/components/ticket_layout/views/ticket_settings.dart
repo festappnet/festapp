@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/features/features_strings.dart';
@@ -87,6 +89,10 @@ class _TicketSettingsState extends State<TicketSettings> {
         r.dispose();
         return;
       }
+      final initialTemplate = jsonEncode(r.template.toJson());
+      final initialBackground = widget.feature.ticketBackground;
+      // Loading the editor and refreshing its thumbnail are separate operations.
+      setState(() => busy = false);
       final result = await showDialog<TicketLayoutResult>(
           context: context,
           useSafeArea: false,
@@ -114,8 +120,11 @@ class _TicketSettingsState extends State<TicketSettings> {
           };
           widget.feature.ticketBackground = result.background;
         });
+        if (jsonEncode(result.template.toJson()) != initialTemplate ||
+            result.background != initialBackground) {
+          unawaited(refresh());
+        }
       }
-      await refresh();
     });
     if (mounted) setState(() => busy = false);
   }

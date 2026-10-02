@@ -5,6 +5,9 @@ import 'dart:ui' show PointerDeviceKind;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/users/occasion_user_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -35,10 +38,16 @@ TicketLayoutResources resources() => TicketLayoutResources(
 
 class SettingsService extends TicketLayoutService {
   String? resolvedType;
+  int resolveCalls = 0;
+  Completer<TicketLayoutResources>? pendingResolve;
+  @override
+  Future<bool> openTemplatePickerOnce(int occasionId, String userId, {required bool configured}) async => false;
   @override
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background) async {
     resolvedType = type;
+    resolveCalls++;
+    if (pendingResolve != null) return pendingResolve!.future;
     return resources();
   }
 }
@@ -282,6 +291,51 @@ void main() {
       expect(feature.ticketType, type);
       expect(feature.layout, isNull);
     }
+  });
+
+  testWidgets('returning from the editor keeps its button ready while only changed thumbnails reload', (tester) async {
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        unitUser: OccasionUserModel(isEditor: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+    final service = SettingsService();
+    final feature = TicketFeature(code: 'ticket', ticketType: 'named');
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
+      child: TicketSettings(feature: feature, occasionId: 7, service: service)))));
+    await tester.pumpAndSettle();
+    final edit = find.widgetWithText(FilledButton, 'TicketLayout.edit');
+    expect(service.resolveCalls, 1);
+    await tester.tap(edit); await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(TicketLayoutEditor), findsOneWidget,
+        reason: 'system back must not dismiss a clean editor');
+    await tester.tap(find.byTooltip('TicketLayout.cancel').first);
+    await tester.pumpAndSettle();
+    expect(service.resolveCalls, 2, reason: 'cancel does not reload the thumbnail');
+    expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.tap(edit); await tester.pumpAndSettle();
+    final editorController = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    editorController.replace(document().withFont('roboto'));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(TicketLayoutEditor), findsOneWidget);
+    expect(find.text('TicketLayout.discard'), findsNothing,
+        reason: 'back gestures must not interrupt editing with a discard prompt');
+    service.pendingResolve = Completer<TicketLayoutResources>();
+    final changed = document().withFont('roboto');
+    Navigator.of(tester.element(find.byType(TicketLayoutEditor)))
+        .pop(TicketLayoutResult(changed, null));
+    await tester.pumpAndSettle();
+    expect(service.resolveCalls, 4);
+    expect(tester.widget<FilledButton>(edit).onPressed, isNotNull,
+        reason: 'thumbnail refresh must not block editing');
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    service.pendingResolve!.complete(resources());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
   });
 
   test('artwork selection and geometry share undo history', () {
@@ -872,6 +926,52 @@ void main() {
     final resized=t.resizeArea(Size(t.area.width*.9,t.area.height*.9));
     expect(resized.appearance['flowStep'],closeTo((t.appearance['flowStep'] as num)*.9,.001));
     c.dispose();
+  });
+
+  testWidgets('editor history shortcuts work from properties and preserve text field history', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
+      occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpAndSettle();
+    final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    c.select('occasionTitle');
+    await tester.pump();
+    final original = c.selection!.bold;
+    await tester.tap(find.byIcon(Icons.format_bold));
+    await tester.pump();
+    Focus.of(tester.element(find.byIcon(Icons.format_bold))).requestFocus();
+    await tester.pump();
+    Future<void> shortcut(LogicalKeyboardKey modifier, LogicalKeyboardKey key, {bool shift = false}) async {
+      await tester.sendKeyDownEvent(modifier);
+      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(key);
+      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(modifier);
+      await tester.pump();
+    }
+    expect(c.selection!.bold, !original);
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, original);
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyY);
+    expect(c.selection!.bold, !original);
+    await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, original);
+    await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ, shift: true);
+    expect(c.selection!.bold, !original);
+    await tester.tap(find.text('TicketLayout.color'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), '123456');
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, !original);
+    await tester.tap(find.text('TicketLayout.cancel'));
+    await tester.pumpAndSettle();
+    await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
+    expect(c.selection!.bold, original);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('ticket font selection updates the document, metrics and undo', (tester) async {
