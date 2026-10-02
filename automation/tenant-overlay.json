@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "03e659b5cd6e84bf9f19fec69ece7d7cd3f6d514",
-  "release": {
-    "version": "0.20.42+526",
-    "note": "Logout home navigation and Flutter Google callback recovery"
-  }
+  "baseMainSha": "a0003d05e72bb70fb1758b9e8a0d78cbcc4a457d"
 }
