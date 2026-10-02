@@ -4,7 +4,6 @@ import { importTicketTemplate } from './ticketTemplateImport.ts';
 import { validateLayout, pdfBox, type Template, type TicketLayout } from './ticketLayout.ts';
 import { normalizeTicketData, type RenderData } from './ticketRenderData.ts';
 import { type FontMetrics } from './ticketText.ts';
-import { supabaseAdmin } from './supabaseUtil.ts';
 import { fetchPublicImage, UnsafeTargetError } from '../fetch-http-data/safeFetch.ts';
 const fontFiles:Record<string,string>={futura:'font.ttf',robotoSlab:'roboto-slab.ttf',roboto:'roboto.ttf',russoOne:'russo-one.ttf'};
 export const fontBytes=(name='futura')=>{
@@ -54,7 +53,10 @@ export async function resolveTicketTemplate(occasion:any,resources:Resources):Pr
 }
 export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={}, dependencies = {
   load: loadLayoutResources,
-  products: async(id:number)=>{ const {data,error}=await supabaseAdmin.rpc('get_products_and_types',{p_occasion_id:id});if(error)throw new Error('Failed to load ticket products');return data; }
+  products: async(id:number)=>{
+    const { supabaseAdmin } = await import('./supabaseUtil.ts');
+    const {data,error}=await supabaseAdmin.rpc('get_products_and_types',{p_occasion_id:id});if(error)throw new Error('Failed to load ticket products');return data;
+  }
 }) {
   const resources=await dependencies.load(occasion);
   const template=await resolveTicketTemplate(occasion,resources);
