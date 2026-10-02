@@ -60,6 +60,7 @@ class AppRouter extends RootStackRouter {
             page: ResetPasswordRoute.page, path: sl(ResetPasswordPage.ROUTE)),
         AutoRoute(
             page: ForgotPasswordRoute.page, path: sl(ForgotPasswordPage.ROUTE)),
+        RedirectRoute(path: '/app/google-auth', redirectTo: '/login'),
         AutoRoute(page: LoginRoute.page, path: sl(LoginPage.ROUTE)),
         AutoRoute(
             page: LoginQrScannerRoute.page, path: sl(LoginQrScannerPage.ROUTE)),
@@ -252,6 +253,7 @@ class AppRouter extends RootStackRouter {
       FormPage.ROUTE,
       ScanPage.ROUTE,
       TransferPage.ROUTE,
+      'app',
       'privacy',
       'terms',
       'support',
