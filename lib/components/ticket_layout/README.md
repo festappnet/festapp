@@ -204,7 +204,7 @@ would discard the migrated font/appearance contract; reload the deployed editor.
 ## Background upload quality
 
 `TicketBackgroundImage` owns the print-artwork preparation policy: 1080 px on
-the longer edge, JPEG quality 85, and a 1 MiB output budget below the existing
+the longer edge, JPEG quality 85, and an 800 KiB output budget below the existing
 10 MiB upload/PDF limit. Suitable PNG/JPEG inputs are kept byte-for-byte; PNG
 transparency is preserved. Oversized images scale down without upscaling or a
 second JPEG pass. The upload service passes the same limits to the Worker so its
