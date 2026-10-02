@@ -1,3 +1,19 @@
+-- Preserve the current capability while exposing an organization-owned switch.
+ALTER TABLE public.external_login_clients
+  ADD COLUMN provisioned boolean NOT NULL DEFAULT false;
+UPDATE public.external_login_clients SET provisioned = enabled;
+ALTER TABLE public.external_login_clients
+  ADD CONSTRAINT external_login_client_requires_provisioning CHECK (NOT enabled OR provisioned);
+UPDATE public.organizations o
+SET data = coalesce(o.data, '{}'::jsonb) || jsonb_build_object(
+  'IS_GOOGLE_LOGIN_ENABLED', EXISTS (
+    SELECT 1 FROM public.external_login_clients c WHERE c.organization=o.id AND c.enabled
+  ))
+WHERE NOT coalesce(o.data, '{}'::jsonb) ? 'IS_GOOGLE_LOGIN_ENABLED';
+UPDATE public.external_login_clients c
+SET enabled = c.provisioned AND (o.data->>'IS_GOOGLE_LOGIN_ENABLED')::boolean IS TRUE
+FROM public.organizations o WHERE o.id=c.organization;
+
 CREATE OR REPLACE FUNCTION public.update_organization_admin(
   organization_id bigint,
   title text,
