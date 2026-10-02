@@ -525,7 +525,6 @@ class _UserPageState extends State<UserPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(children: [
-                      const GoogleAccountLinkSetting(),
                       ListTile(
                         leading: Icon(Icons.logout,
                             color: Theme.of(context).colorScheme.primary),
@@ -563,6 +562,8 @@ class _UserPageState extends State<UserPage> {
                             ? null
                             : () => _requestPasswordReset(userData?.email),
                       ),
+                      const Divider(height: 1, indent: 56),
+                      const GoogleAccountLinkSetting(),
                       const Divider(height: 1, indent: 56),
                       ListTile(
                         leading: Icon(Icons.delete_outline,
