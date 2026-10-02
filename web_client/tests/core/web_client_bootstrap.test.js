@@ -69,7 +69,7 @@ test('an optional analytics module cannot reload a Google continuation', (t) => 
     analytics.dispatchEvent(new Event('error'));
     assert.equal(recoveries, 0);
     assert.equal(dom.window.__FESTAPP_WEB_STARTUP_FAILURE__, undefined);
-    const entry = document.getElementById('festapp-web-entry');
+    const entry = [...document.querySelectorAll('script[type="module"][src]')].find(script => new URL(script.src).origin === dom.window.location.origin);
     entry.dispatchEvent(new Event('error'));
     assert.equal(recoveries, 1, 'the actual entry module must retain bounded recovery');
 });

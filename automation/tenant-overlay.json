@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "7b329eb4a0bc73a4eaa25eff43b9d44f37851eaf",
+  "baseMainSha": "9702ec9fe50960f6684dd7b80c9beecd8bcad1d0",
   "release": {
-    "version": "0.20.40+524",
-    "note": "Preserve Google continuation during optional analytics errors"
+    "version": "0.20.41+525",
+    "note": "Google callback routing and production startup recovery"
   }
 }
