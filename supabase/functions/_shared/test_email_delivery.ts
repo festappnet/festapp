@@ -8,6 +8,7 @@ import {
   EmailDeliveryError,
   EmailTemplateNotFoundError,
 } from "./emailDelivery.ts";
+import { csTranslations } from "./translations/translations.cs.ts";
 
 function createDependencies(
   overrides: Partial<EmailDeliveryDependencies> = {},
@@ -62,7 +63,7 @@ Deno.test("deliverEmail resolves, wraps, sends, and logs through one path", asyn
     from: input.from,
     to: input.to,
     subject: "Hello Ada",
-    html: "<main><p>Hi Ada</p></main>",
+    html: "<main><p>Hi  Ada</p>\n</main>",
     replyTo: input.replyTo,
     attachments: input.attachments,
   }]);
@@ -76,6 +77,36 @@ Deno.test("deliverEmail resolves, wraps, sends, and logs through one path", asyn
     recipient_user: input.recipientUser,
   }]);
   assertEquals(result, { templateId: 42, logged: true });
+});
+
+Deno.test("deliverEmail sends generated payment HTML without postprocessing", async () => {
+  const balanceReasoning = csTranslations.unpaid(
+    "100 Kč", "2502719268/2010", "CZ45 2010 0000 0025 0271 9268",
+    "2781", "09. 10. 2026", "formal",
+  );
+  const template = '<p style="white-space: pre-wrap">Hello  {{name}}\n</p>\n' +
+    '{{balanceReasoning}}\n<a href="mailto:help@example.org">Contact</a>';
+  const wrapper = '<html>\n<body>\n{{content}}\n</body>\n</html>';
+  const { dependencies, sentMessages } = createDependencies({
+    resolveTemplateAndWrapper: () => Promise.resolve({
+      template: { id: 42, subject: "Payment", html: template },
+      wrapper: { html: wrapper },
+    }),
+  });
+  await createEmailDelivery(dependencies)({
+    ...input,
+    substitutions: { name: "Ada", balanceReasoning },
+  });
+  assertEquals(
+    sentMessages[0].html,
+    wrapper.replace("{{content}}", template.replace("{{name}}", "Ada")
+      .replace("{{balanceReasoning}}", balanceReasoning)),
+  );
+  const html = String(sentMessages[0].html);
+  assertEquals(html.replace(/<[^>]*>/g, "").includes("2502719268/2010"), true);
+  assertEquals(/[\u200B-\u200D\uFEFF]/.test(html), false);
+  assertEquals(html.includes("tel:"), false);
+  assertEquals(html.includes('href="mailto:help@example.org"'), true);
 });
 
 Deno.test("deliverEmail preserves an inline template and adds the resolved wrapper", async () => {
