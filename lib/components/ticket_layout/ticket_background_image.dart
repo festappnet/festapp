@@ -5,9 +5,9 @@ import 'package:image/image.dart' as img;
 /// Print artwork policy. The upload Worker receives these same bounds so it
 /// stores the prepared bytes without a second, lower-quality transformation.
 class TicketBackgroundImage {
-  static const maxEdge = 3200;
-  static const maxBytes = 8 * 1024 * 1024;
-  static const jpegQuality = 92;
+  static const maxEdge = 1080;
+  static const maxBytes = 1024 * 1024;
+  static const jpegQuality = 85;
 
   static Future<Uint8List> prepare(Uint8List bytes) => compute(_prepare, bytes);
 
