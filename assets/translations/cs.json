@@ -2053,6 +2053,13 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "multiSelect": "Přidávat do výběru",
+    "selectedElements": "Vybrané prvky",
+    "groupMoveHint": "Tažením posunete vybrané prvky společně. Zamčené prvky zůstanou na místě. Pro formátování vyberte jeden prvek.",
+    "textStyle": "Styl písma",
+    "bold": "Tučné",
+    "italic": "Kurzíva",
+    "underline": "Podtržené",
     "style_portrait_event": "Výrazná jmenná",
     "style_portrait_compact": "Kompaktní jmenná",
     "chooseTemplate": "Vybrat šablonu",

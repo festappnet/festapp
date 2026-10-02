@@ -2051,6 +2051,13 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "multiSelect": "Add to selection",
+    "selectedElements": "Selected elements",
+    "groupMoveHint": "Drag to move selected elements together. Locked elements stay in place. Select one element to format it.",
+    "textStyle": "Font style",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
     "style_portrait_event": "Bold name ticket",
     "style_portrait_compact": "Compact name ticket",
     "chooseTemplate": "Choose template",

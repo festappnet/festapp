@@ -3,7 +3,7 @@ export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'food', 'note', 'pri
 export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
-export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right' } }
+export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
 export interface Template { pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 1; templates: { wide?: Template; named?: Template } }
 export function validateLayout(value: unknown): asserts value is TicketLayout {
@@ -27,6 +27,7 @@ export function validateLayout(value: unknown): asserts value is TicketLayout {
       ids.add(e.id); seen.add(e.binding);
       checkBox(e.box,t.ticketArea.width,t.ticketArea.height);
       const s=e.style;
+      if(s && ['bold','italic','underline'].some(key=>key in s && typeof (s as any)[key]!=='boolean')) fail();
       if (!s || !Number.isFinite(s.fontSize) || !Number.isFinite(s.minFontSize) || s.minFontSize < 6 || s.fontSize < s.minFontSize || s.fontSize > 72 || !Number.isInteger(s.maxLines) || s.maxLines < 1 || s.maxLines > 12 || !/^[0-9A-Fa-f]{6}$/.test(s.color) || !['left','center','right'].includes(s.align)) fail();
       if (['qr','ticketSymbol'].includes(e.binding) && !e.visible) fail();
       if (e.binding === 'qr' && (e.box.width !== e.box.height || e.box.width < 60 || !qrColors.includes(s.color.toUpperCase()))) fail();

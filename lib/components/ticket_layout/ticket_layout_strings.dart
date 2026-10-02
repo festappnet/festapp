@@ -1,6 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get multiSelect => 'TicketLayout.multiSelect'.tr();
+  static String get selectedElements => 'TicketLayout.selectedElements'.tr();
+  static String get groupMoveHint => 'TicketLayout.groupMoveHint'.tr();
+  static String get textStyle => 'TicketLayout.textStyle'.tr();
+  static String get bold => 'TicketLayout.bold'.tr();
+  static String get italic => 'TicketLayout.italic'.tr();
+  static String get underline => 'TicketLayout.underline'.tr();
   static String get chooseTemplate => 'TicketLayout.chooseTemplate'.tr();
   static String get pdfExternalHint => 'TicketLayout.pdfExternalHint'.tr();
   static String get openPdf => 'TicketLayout.openPdf'.tr();

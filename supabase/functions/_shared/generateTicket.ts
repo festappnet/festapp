@@ -1,12 +1,12 @@
 import { validateLayout, pdfBox, type Template } from './ticketLayout.ts';
-import { fitText } from './ticketText.ts';
+import { fitText, textInsets } from './ticketText.ts';
 import type { RenderData } from './ticketRenderData.ts';
 import type { Resources } from './ticketGeneration.ts';
 import { formatCurrency } from "../_shared/utilities.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import QRCode from "npm:qrcode";
-import { PDFDocument, rgb } from "npm:pdf-lib";
+import { PDFDocument, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
 // Import all exports from fontkit (do not try to import a default)
 import * as fontkit from "npm:fontkit";
 import * as path from "https://deno.land/std/path/mod.ts";
@@ -322,11 +322,21 @@ async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_type:'wi
     if(e.binding==='logo') {if(r.logo)await image(r.logo,b);continue;}
     const text=data[e.binding];if(!text)continue;
     const fit=fitText(text,e,r.metrics);if(fit.overflow||fit.replaced)warnings.push(e.binding);
+    page.pushOperators(pushGraphicsState(),rectangle(b.x,b.y,b.width,b.height),clip(),endPath());
     fit.lines.forEach((line,i)=>{
       let x=b.x+(e.style.align==='center'?(b.width-fit.widths[i])/2:e.style.align==='right'?b.width-fit.widths[i]:0);
+      x+=textInsets(e,r.metrics).left*fit.size;
+      const start=x;
       const y=t.page.height-t.ticketArea.y-e.box.y-r.metrics.ascent*fit.size-i*fit.size*1.2;
-      for(const c of Array.from(line)) {page.drawText(c,{x,y,size:fit.size,font,color:color(e.style.color)});x+=(r.metrics.advances[c]??r.metrics.advances['?'])*fit.size;}
+      const ink=color(e.style.color);
+      page.pushOperators(pushGraphicsState(),setLineWidth(fit.size*.04),
+        setStrokingRgbColor(ink.red,ink.green,ink.blue),
+        setTextRenderingMode(e.style.bold?TextRenderingMode.FillAndOutline:TextRenderingMode.Fill));
+      for(const c of Array.from(line)) {page.drawText(c,{x,y,size:fit.size,font,color:ink,ySkew:degrees(e.style.italic?12:0)});x+=(r.metrics.advances[c]??r.metrics.advances['?'])*fit.size;}
+      page.pushOperators(popGraphicsState());
+      if(e.style.underline)page.drawLine({start:{x:start,y:y-fit.size*.1},end:{x,y:y-fit.size*.1},thickness:fit.size*.05,color:ink});
     });
+    page.pushOperators(popGraphicsState());
   }
   const q=t.elements.find(e=>e.binding==='qr')!;const b=pdfBox(t,q.box);
   const qr=QRCode.create(data.qr!,{errorCorrectionLevel:'M'}).modules;

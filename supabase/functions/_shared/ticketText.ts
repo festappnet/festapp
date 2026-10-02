@@ -1,9 +1,15 @@
 import type { Element } from './ticketLayout.ts';
 export interface FontMetrics { advances: Record<string,number>; ascent:number; descent:number }
+// Match the Canvas outline width and 12-degree shear using the bundled font.
+export function textInsets(e:Element,m:FontMetrics) {
+  return {left:(e.style.bold? .02:0)+(e.style.italic?-m.descent*.2125565616700221:0),
+    right:(e.style.bold? .02:0)+(e.style.italic?m.ascent*.2125565616700221:0)};
+}
 export function fitText(text:string,e:Element,m:FontMetrics) {
   const replaced=Array.from(text).some(c=>c!=='\n' && m.advances[c]===undefined);
   text=Array.from(text).map(c=>c==='\n'||m.advances[c]!==undefined?c:'?').join('');
-  const width=(s:string,size:number)=>Array.from(s).reduce((n,c)=>n+(m.advances[c]??m.advances['?'])*size,0);
+  const inset=textInsets(e,m);
+  const width=(s:string,size:number)=> (s.length?(inset.left+inset.right)*size:0)+Array.from(s).reduce((n,c)=>n+(m.advances[c]??m.advances['?'])*size,0);
   const wrap=(size:number)=>{
     const lines:string[]=[];let line='';
     for(const c of Array.from(text)) {
