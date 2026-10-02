@@ -2052,6 +2052,11 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "qrColors": "Barvy QR kódu",
+    "qrForeground": "Kód",
+    "qrBackground": "Pozadí",
+    "swapColors": "Prohodit barvy",
+    "qrBackgroundHint": "Pozadí QR je samostatná plocha, nezávislá na obrázku vstupenky.",
     "qrContrast": "Zvolte barvu s dostatečným kontrastem vůči pozadí QR kódu.",
     "multiSelect": "Přidávat do výběru",
     "selectedElements": "Vybrané prvky",

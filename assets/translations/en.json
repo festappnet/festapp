@@ -2052,6 +2052,11 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "qrColors": "QR code colors",
+    "qrForeground": "Code",
+    "qrBackground": "Background",
+    "swapColors": "Swap colors",
+    "qrBackgroundHint": "The QR background is separate from the ticket background image.",
     "qrContrast": "Choose a color with sufficient contrast against the QR background.",
     "multiSelect": "Add to selection",
     "selectedElements": "Selected elements",
