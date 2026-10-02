@@ -26,7 +26,16 @@ class TicketTextFit {
       this.size, this.lines, this.widths, this.overflow, this.replaced);
 }
 
+// Synthetic emphasis uses the bundled font in both Canvas and PDF, with the
+// same outline width and 12-degree shear. Reserve its overhang during fitting.
+({double left, double right}) ticketTextInsets(TicketElement e, TicketFontMetrics m) => (
+  left: (e.bold ? .02 : 0) + (e.italic ? -m.descent * .2125565616700221 : 0),
+  right: (e.bold ? .02 : 0) + (e.italic ? m.ascent * .2125565616700221 : 0));
+
 TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
+  final inset = ticketTextInsets(e, m);
+  double width(String text, double size) => m.width(text, size) +
+      (text.isEmpty ? 0 : (inset.left + inset.right) * size);
   final replaced = text.runes
       .any((r) => r != 10 && !m.advances.containsKey(String.fromCharCode(r)));
   text = text.runes
@@ -44,7 +53,7 @@ TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
         line = '';
         continue;
       }
-      if (m.width(line + c, size) > e.box.width && line.isNotEmpty) {
+      if (width(line + c, size) > e.box.width && line.isNotEmpty) {
         final split = line.lastIndexOf(' ');
         if (split > 0) {
           lines.add(line.substring(0, split));
@@ -67,7 +76,7 @@ TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
       (lines.isEmpty ||
           ((lines.length - 1) * 1.2 + m.ascent - m.descent) * size <=
               e.box.height) &&
-      lines.every((l) => m.width(l, size) <= e.box.width + .001);
+      lines.every((l) => width(l, size) <= e.box.width + .001);
   while (!fits() && size > e.minFontSize) {
     size = math.max(e.minFontSize, size - .5);
     lines = wrap(size);
@@ -85,16 +94,16 @@ TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
                 ((e.box.height / size - m.ascent + m.descent) / 1.2).floor() +
                     1)))
         .toList();
-    if (lines.isEmpty || m.width('…', size) > e.box.width) {
+    if (lines.isEmpty || width('…', size) > e.box.width) {
       lines = [];
     } else {
       var last = lines.removeLast();
-      while (last.isNotEmpty && m.width('$last…', size) > e.box.width) {
+      while (last.isNotEmpty && width('$last…', size) > e.box.width) {
         last = String.fromCharCodes(last.runes.take(last.runes.length - 1));
       }
       lines.add('$last…');
     }
   }
-  return TicketTextFit(size, lines, lines.map((l) => m.width(l, size)).toList(),
+  return TicketTextFit(size, lines, lines.map((l) => width(l, size)).toList(),
       overflow, replaced);
 }

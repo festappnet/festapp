@@ -21,7 +21,7 @@ Map<String, dynamic> copyTicketJson(Map value) =>
 class TicketElement {
   final String id, binding, color, align;
   final Rect box;
-  final bool visible, locked;
+  final bool visible, locked, bold, italic, underline;
   final double fontSize, minFontSize;
   final int maxLines;
   const TicketElement(
@@ -34,7 +34,8 @@ class TicketElement {
       this.minFontSize = 6,
       this.maxLines = 3,
       this.color = '2A2A2A',
-      this.align = 'left'});
+      this.align = 'left',
+      this.bold = false, this.italic = false, this.underline = false});
   factory TicketElement.fromJson(Map j) {
     final b = j['box'] as Map, s = j['style'] as Map;
     return TicketElement(
@@ -51,7 +52,10 @@ class TicketElement {
         minFontSize: (s['minFontSize'] as num).toDouble(),
         maxLines: s['maxLines'],
         color: s['color'],
-        align: s['align']);
+        align: s['align'],
+        bold: s['bold'] as bool? ?? false,
+        italic: s['italic'] as bool? ?? false,
+        underline: s['underline'] as bool? ?? false);
   }
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -64,13 +68,17 @@ class TicketElement {
           'minFontSize': minFontSize,
           'maxLines': maxLines,
           'color': color,
-          'align': align
+          'align': align,
+          if (bold) 'bold': true,
+          if (italic) 'italic': true,
+          if (underline) 'underline': true
         }
       };
   TicketElement copyWith(
           {Rect? box,
           bool? visible,
           bool? locked,
+          bool? bold, bool? italic, bool? underline,
           double? fontSize,
           String? color,
           String? align,
@@ -85,7 +93,9 @@ class TicketElement {
           minFontSize: minFontSize,
           maxLines: maxLines ?? this.maxLines,
           color: color ?? this.color,
-          align: align ?? this.align);
+          align: align ?? this.align,
+          bold: bold ?? this.bold, italic: italic ?? this.italic,
+          underline: underline ?? this.underline);
 }
 
 Map<String, dynamic> boxJson(Rect b) =>

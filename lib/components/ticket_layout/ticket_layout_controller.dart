@@ -14,7 +14,11 @@ class TicketLayoutController extends ChangeNotifier {
       (document: document, artworkKey: artworkKey);
   final TicketTemplate initial;
   TicketTemplate document;
-  String? selected;
+  final Set<String> selectedIds = {};
+  String? get selected => selectedIds.length == 1 ? selectedIds.single : null;
+  Rect? selectionRect;
+  List<TicketElement> get selections => document.elements
+      .where((e) => selectedIds.contains(e.id)).toList();
   double? guideX, guideY;
   final List<({TicketTemplate document, String? artworkKey})> _undo = [],
       _redo = [];
@@ -27,8 +31,14 @@ class TicketLayoutController extends ChangeNotifier {
   bool get canRedo => _redo.isNotEmpty;
   TicketElement? get selection =>
       document.elements.where((e) => e.id == selected).firstOrNull;
-  void select(String? id) {
-    selected = id;
+  void select(String? id, {bool additive = false}) {
+    if (!additive) selectedIds.clear();
+    if (id != null && !selectedIds.add(id)) selectedIds.remove(id);
+    notifyListeners();
+  }
+
+  void selectAll(Iterable<String> ids) {
+    selectedIds..clear()..addAll(ids);
     notifyListeners();
   }
 
@@ -72,7 +82,7 @@ class TicketLayoutController extends ChangeNotifier {
     document = next;
     this.artworkKey = artworkKey ?? this.artworkKey;
     guideX = guideY = null;
-    if (!document.elements.any((e) => e.id == selected)) selected = null;
+    selectedIds.removeWhere((id) => !document.elements.any((e) => e.id == id));
     notifyListeners();
   }
 
@@ -98,20 +108,19 @@ class TicketLayoutController extends ChangeNotifier {
 
   void move(Offset delta,
       {double zoom = 1, bool snap = true, double? gridStep}) {
-    final e = selection;
-    if (e == null || e.locked) return;
+    final moving = (_gesture ?? document).elements
+        .where((e) => selectedIds.contains(e.id) && !e.locked).toList();
+    if (moving.isEmpty) return;
     if (_gesture != null) _dragOffset += delta;
-    final original =
-        _gesture?.elements.where((item) => item.id == e.id).firstOrNull;
-    var b =
-        original == null ? e.box.shift(delta) : original.box.shift(_dragOffset);
+    final bounds = moving.map((e) => e.box).reduce((a, b) => a.expandToInclude(b));
+    var b = bounds.shift(_gesture == null ? delta : _dragOffset);
     final area = document.area.size;
     guideX = guideY = null;
     if (snap) {
       final xs = <double>[0, area.width / 2, area.width],
           ys = <double>[0, area.height / 2, area.height];
       for (final other
-          in document.elements.where((o) => o.id != e.id && o.visible)) {
+          in document.elements.where((o) => !selectedIds.contains(o.id) && o.visible)) {
         xs.addAll([other.box.left, other.box.center.dx, other.box.right]);
         ys.addAll([other.box.top, other.box.center.dy, other.box.bottom]);
       }
@@ -145,7 +154,16 @@ class TicketLayoutController extends ChangeNotifier {
     }
     b = Rect.fromLTWH(b.left.clamp(0, area.width - b.width),
         b.top.clamp(0, area.height - b.height), b.width, b.height);
-    change(e.copyWith(box: b));
+    final shift = Offset(((b.left - bounds.left) * 1024).round() / 1024,
+        ((b.top - bounds.top) * 1024).round() / 1024);
+    if (_gesture == null) {
+      _undo.add(_snapshot);
+      _redo.clear();
+    }
+    for (final element in moving) {
+      document = document.replace(element.copyWith(box: element.box.shift(shift)));
+    }
+    notifyListeners();
   }
 
   void resize(Offset delta, {bool widthOnly = false}) {

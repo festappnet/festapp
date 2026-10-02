@@ -21,6 +21,15 @@ class TicketLayoutProperties extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final e = controller.selection;
+        if (controller.selectedIds.length > 1) {
+          return Padding(padding: const EdgeInsets.all(12), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${TicketLayoutStrings.selectedElements}: ${controller.selectedIds.length}',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Text(TicketLayoutStrings.groupMoveHint),
+            ]));
+        }
         if (e == null) return const SizedBox.shrink();
         final text = !['qr', 'logo'].contains(e.binding);
         var overflow = false;
@@ -55,6 +64,24 @@ class TicketLayoutProperties extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium),
                   if (text) ...[
                     const SizedBox(height: 12),
+                    Text(TicketLayoutStrings.textStyle),
+                    const SizedBox(height: 6),
+                    SegmentedButton<String>(
+                      multiSelectionEnabled: true, emptySelectionAllowed: true,
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(value: 'bold', tooltip: TicketLayoutStrings.bold,
+                            icon: const Icon(Icons.format_bold)),
+                        ButtonSegment(value: 'italic', tooltip: TicketLayoutStrings.italic,
+                            icon: const Icon(Icons.format_italic)),
+                        ButtonSegment(value: 'underline', tooltip: TicketLayoutStrings.underline,
+                            icon: const Icon(Icons.format_underlined)),
+                      ],
+                      selected: {if (e.bold) 'bold', if (e.italic) 'italic', if (e.underline) 'underline'},
+                      onSelectionChanged: e.locked ? null : (values) => controller.change(e.copyWith(
+                        bold: values.contains('bold'), italic: values.contains('italic'),
+                        underline: values.contains('underline')))),
+                    const SizedBox(height: 12),
                     Text(TicketLayoutStrings.align),
                     const SizedBox(height: 6),
                     SegmentedButton<String>(
@@ -80,19 +107,6 @@ class TicketLayoutProperties extends StatelessWidget {
                                 .change(e.copyWith(align: values.single))),
                     const SizedBox(height: 8),
                   ],
-                  SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(TicketLayoutStrings.visible),
-                      value: e.visible,
-                      onChanged: ['qr', 'ticketSymbol'].contains(e.binding)
-                          ? null
-                          : (v) => controller.change(e.copyWith(visible: v))),
-                  SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(TicketLayoutStrings.locked),
-                      value: e.locked,
-                      onChanged: (v) =>
-                          controller.change(e.copyWith(locked: v))),
                   if (text || e.binding == 'qr')
                     ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -158,7 +172,21 @@ class TicketLayoutProperties extends StatelessWidget {
                                     ? null
                                     : (v) => controller.change(
                                         e.copyWith(maxLines: v.round()))))),
-                  ]
+                  ],
+                  const Divider(),
+                  SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(TicketLayoutStrings.visible),
+                      value: e.visible,
+                      onChanged: ['qr', 'ticketSymbol'].contains(e.binding)
+                          ? null
+                          : (v) => controller.change(e.copyWith(visible: v))),
+                  SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(TicketLayoutStrings.locked),
+                      value: e.locked,
+                      onChanged: (v) =>
+                          controller.change(e.copyWith(locked: v))),
                 ]));
       });
 }
