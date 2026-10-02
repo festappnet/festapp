@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/html/html_media_service.dart';
+import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
@@ -33,6 +34,52 @@ void insert(RichHtmlEditorController controller, String text) {
 void _ignoreHtml(String _) {}
 
 void main() {
+  testWidgets('HTML typography survives inline and fullscreen editing',
+      (tester) async {
+    for (final fontSize in [18.0, 24.0]) {
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          textTheme: const TextTheme(
+            bodyMedium: TextStyle(fontFamily: 'Futura'),
+            bodyLarge: TextStyle(fontFamily: 'Roboto', letterSpacing: 0.5),
+          ),
+        ),
+        home: Scaffold(
+          body: EditableHtmlField(
+            html: '<p>Original</p>',
+            fontSize: fontSize,
+            onChanged: _ignoreHtml,
+          ),
+        ),
+      ));
+      final displayed = tester
+          .widget<HtmlWithAppLinksWidget>(find.byType(HtmlWithAppLinksWidget))
+          .textStyle!;
+      void expectSameTypography() {
+        final edited = tester
+            .widget<ParagraphComponent>(find.byType(ParagraphComponent).first)
+            .viewModel
+            .textStyleBuilder({});
+        expect(edited.fontSize, displayed.fontSize);
+        expect(edited.fontFamily, displayed.fontFamily);
+        expect(edited.color, displayed.color);
+        expect(edited.letterSpacing, displayed.letterSpacing);
+        expect(edited.height, displayed.height);
+      }
+
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pump();
+      expectSameTypography();
+      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.pumpAndSettle();
+      expectSameTypography();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
   testWidgets(
       'caret follows light and dark theme in inline and fullscreen editor',
       (tester) async {

@@ -4,6 +4,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
 import 'html_strings.dart';
+import 'html_text_style.dart';
 import 'html_view.dart';
 import 'rich_html_editor.dart';
 import 'rich_html_editor_controller.dart';
@@ -159,7 +160,8 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     setState(() => _expanded = true);
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    final action = await RichHtmlEditorDialog.expand(context, _controller!);
+    final action = await RichHtmlEditorDialog.expand(context, _controller!,
+        textStyle: htmlTextStyle(context, fontSize: widget.fontSize));
     if (!mounted) return;
     setState(() => _expanded = false);
     if (action == HtmlEditorFullscreenAction.save) {
@@ -251,6 +253,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
             if (!_expanded)
               RichHtmlEditor(
                 controller: _controller!,
+                textStyle: htmlTextStyle(context, fontSize: widget.fontSize),
                 onCancel: _requestCancel,
                 toolbarActions: _editingActions(),
                 enabled: !_saving && widget.enabled,

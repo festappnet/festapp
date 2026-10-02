@@ -14,11 +14,13 @@ class RichHtmlEditorDialog extends StatefulWidget {
   const RichHtmlEditorDialog._({
     required this.controller,
     this.title,
+    this.textStyle,
     this.ownsController = true,
     this.fullPage = false,
   });
   final RichHtmlEditorController controller;
   final String? title;
+  final TextStyle? textStyle;
   final bool ownsController;
   final bool fullPage;
 
@@ -65,8 +67,9 @@ class RichHtmlEditorDialog extends StatefulWidget {
 
   static Future<HtmlEditorFullscreenAction> expand(
     BuildContext context,
-    RichHtmlEditorController controller,
-  ) async {
+    RichHtmlEditorController controller, {
+    TextStyle? textStyle,
+  }) async {
     final route = PageRouteBuilder<HtmlEditorFullscreenAction>(
       transitionDuration: Duration.zero,
       reverseTransitionDuration: Duration.zero,
@@ -75,6 +78,7 @@ class RichHtmlEditorDialog extends StatefulWidget {
         controller: controller,
         ownsController: false,
         fullPage: true,
+        textStyle: textStyle,
       ),
     );
     final action = await Navigator.of(
@@ -199,6 +203,7 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                     padding: const EdgeInsets.all(12),
                     child: RichHtmlEditor(
                       controller: widget.controller,
+                      textStyle: widget.textStyle,
                       onCancel: _requestCancel,
                       fullscreen: true,
                     ),
@@ -214,6 +219,7 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                           padding: const EdgeInsets.all(12),
                           child: RichHtmlEditor(
                               controller: widget.controller,
+                              textStyle: widget.textStyle,
                               onCancel: _requestCancel),
                         ),
                       ),
