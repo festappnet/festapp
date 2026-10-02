@@ -146,7 +146,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     if (panning || event.buttons != kPrimaryButton) return;
     final point = widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
-    final selected = widget.controller.selection;
+    final selected = widget.controller.document.positionedElements(widget.data).where((e) => e.id == widget.controller.selected).firstOrNull;
     final handle = 14 / zoom;
     _resize = selected != null &&
         !selected.locked &&
@@ -155,7 +155,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         !selected.locked &&
         (point - Offset(selected.box.right, selected.box.center.dy)).distance <
             handle;
-    final hit = widget.controller.document.elements.reversed
+    final hit = widget.controller.document.positionedElements(widget.data).reversed
         .where((e) => e.visible && e.box.inflate(3 / zoom).contains(point))
         .firstOrNull;
     final additive = widget.additiveSelection ||
@@ -201,7 +201,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       final rect = Rect.fromPoints(_marqueeStart!, point);
       widget.controller.selectionRect = rect;
       widget.controller.selectAll({..._selectionBeforeMarquee,
-        ...widget.controller.document.elements
+        ...widget.controller.document.positionedElements(widget.data)
             .where((e) => e.visible && rect.overlaps(e.box)).map((e) => e.id)});
       return;
     }
@@ -353,6 +353,19 @@ class TicketLayoutPainter extends CustomPainter {
     }
     canvas.drawRect(Offset.zero & doc.page, Paint()..color = Colors.white);
     canvas.drawRect(doc.area, Paint()..color = const Color(0xffe6e6e6));
+    if (doc.appearance['border'] == true) {
+      final paint = Paint()..color = const Color(0xffe0e0e0)..strokeWidth = 1;
+      for (double x = doc.area.left; x < doc.area.right; x += 5) {
+        for (final y in [doc.area.top, doc.area.bottom]) {
+          canvas.drawLine(Offset(x,y),Offset(math.min(x+3.75,doc.area.right),y),paint);
+        }
+      }
+      for (double y = doc.area.top; y < doc.area.bottom; y += 5) {
+        for (final x in [doc.area.left,doc.area.right]) {
+          canvas.drawLine(Offset(x,y),Offset(x,math.min(y+3.75,doc.area.bottom)),paint);
+        }
+      }
+    }
     final artwork = resources.artworks[controller.artworkKey];
     final background = artwork != null ? artwork.image : resources.background;
     if (background != null) {
@@ -371,7 +384,7 @@ class TicketLayoutPainter extends CustomPainter {
         canvas.drawLine(Offset(0, y), Offset(doc.area.width, y), paint);
       }
     }
-    for (final e in doc.elements.where((e) => e.visible && e.binding != 'qr')) {
+    for (final e in doc.positionedElements(data).where((e) => e.visible && e.binding != 'qr')) {
       if (e.binding == 'logo') {
         if (resources.logo != null) _image(canvas, resources.logo!, e.box);
         continue;
@@ -380,7 +393,7 @@ class TicketLayoutPainter extends CustomPainter {
       if (text == null) continue;
       TicketTextFit fit;
       try {
-        fit = fitTicketText(text, e, resources.metrics);
+        fit = fitTicketText(text, e, resources.metricsFor(doc));
       } on FormatException {
         canvas.drawRect(
             e.box, Paint()..color = Colors.red.withValues(alpha: .2));
@@ -395,10 +408,10 @@ class TicketLayoutPainter extends CustomPainter {
                 : e.align == 'right'
                     ? e.box.width - fit.widths[i]
                     : 0);
-        x += ticketTextInsets(e, resources.metrics).left * fit.size;
+        x += ticketTextInsets(e, resources.metricsFor(doc)).left * fit.size;
         final lineStart = x;
         final baseline = e.box.top +
-            resources.metrics.ascent * fit.size +
+            resources.metricsFor(doc).ascent * fit.size +
             i * fit.size * 1.2;
         for (final rune in fit.lines[i].runes) {
           final c = String.fromCharCode(rune);
@@ -410,7 +423,7 @@ class TicketLayoutPainter extends CustomPainter {
           for (final outline in [if (e.bold) true, false]) {
             final painter = TextPainter(
                 text: TextSpan(text: c, style: TextStyle(
-                  fontFamily: 'TicketLayoutFont', fontSize: fit.size, height: 1,
+                  fontFamily: 'TicketLayoutFont-${doc.font}', fontSize: fit.size, height: 1,
                   foreground: Paint()..color = Color(int.parse('ff${e.color}', radix: 16))
                     ..style = outline ? PaintingStyle.stroke : PaintingStyle.fill
                     ..strokeWidth = fit.size * .04)),
@@ -419,7 +432,7 @@ class TicketLayoutPainter extends CustomPainter {
             painter.dispose();
           }
           canvas.restore();
-          x += resources.metrics.width(c, fit.size);
+          x += resources.metricsFor(doc).width(c, fit.size);
         }
         if (e.underline) {
           canvas.drawLine(Offset(lineStart, baseline + fit.size * .1),
@@ -434,14 +447,15 @@ class TicketLayoutPainter extends CustomPainter {
       }
     }
     final q = doc.elements.firstWhere((e) => e.binding == 'qr');
-    final module = q.box.width / (resources.qrSize + 8);
-    canvas.drawRect(q.box, Paint()..color = Colors.white);
+    final margin = (doc.qrAppearance['margin'] as num?)?.toDouble() ?? 4;
+    final module = q.box.width / (resources.qrSize + 2 * margin);
+    canvas.drawRect(q.box, Paint()..color = Color(int.parse('ff${doc.qrAppearance['background'] ?? 'FFFFFF'}', radix: 16)).withValues(alpha: (doc.qrAppearance['opacity'] as num?)?.toDouble() ?? 1));
     for (var y = 0; y < resources.qrSize; y++) {
       for (var x = 0; x < resources.qrSize; x++) {
         if (resources.qrModules[y * resources.qrSize + x] != 0) {
           canvas.drawRect(
-              Rect.fromLTWH(q.box.left + (x + 4) * module,
-                  q.box.top + (y + 4) * module, module, module),
+              Rect.fromLTWH(q.box.left + (x + margin) * module,
+                  q.box.top + (y + margin) * module, module, module),
               Paint()..color = Color(int.parse('ff${q.color}', radix: 16)));
         }
       }
@@ -462,7 +476,7 @@ class TicketLayoutPainter extends CustomPainter {
       canvas.drawRect(rect, Paint()..color = Colors.blue
         ..style = PaintingStyle.stroke..strokeWidth = 1 / zoom);
     }
-    for (final selected in controller.selections) {
+    for (final selected in doc.positionedElements(data).where((e) => controller.selectedIds.contains(e.id))) {
       canvas.drawRect(
           selected.box,
           Paint()

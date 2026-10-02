@@ -128,7 +128,7 @@ class TicketLayoutProperties extends StatelessWidget {
                                 final color = await showDialog<String>(
                                     context: context,
                                     builder: (_) =>
-                                        _TicketColorDialog(element: e));
+                                        _TicketColorDialog(element: e, background: controller.document.qrAppearance['background'] as String? ?? 'FFFFFF'));
                                 if (context.mounted &&
                                     color != null &&
                                     color != e.color) {
@@ -193,7 +193,8 @@ class TicketLayoutProperties extends StatelessWidget {
 
 class _TicketColorDialog extends StatefulWidget {
   final TicketElement element;
-  const _TicketColorDialog({required this.element});
+  final String background;
+  const _TicketColorDialog({required this.element, required this.background});
   @override
   State<_TicketColorDialog> createState() => _TicketColorDialogState();
 }
@@ -260,7 +261,7 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
                           setState(() {});
                         }
                       }),
-                if (widget.element.binding == 'qr' && !ticketQrColorReadable(value))
+                if (widget.element.binding == 'qr' && !ticketQrColorReadable(value, widget.background))
                   Text(TicketLayoutStrings.qrContrast,
                       style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ]))),
@@ -270,7 +271,7 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
                 child: Text(TicketLayoutStrings.cancel)),
             FilledButton(
                 onPressed: !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(hex.text) ||
-                    widget.element.binding == 'qr' && !ticketQrColorReadable(value)
+                    widget.element.binding == 'qr' && !ticketQrColorReadable(value, widget.background)
                     ? null : () => Navigator.pop(context, value),
                 child: Text(TicketLayoutStrings.apply)),
           ]);

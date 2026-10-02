@@ -125,7 +125,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     final symbol = controller.document.elements
         .firstWhere((e) => e.binding == 'ticketSymbol');
     try {
-      fitTicketText('XXXX9W9W9W', symbol, resources.metrics);
+      fitTicketText('XXXX9W9W9W', symbol, resources.metricsFor(controller.document));
     } on FormatException {
       errors.add('ticketSymbol');
     }
@@ -413,12 +413,23 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm'),
                 trailing: const Icon(Icons.tune),
                 onTap: imageBusy ? null : editDimensions)),
+        if (resources.fontLabels.isNotEmpty)
+          ListenableBuilder(listenable: controller, builder: (context, _) =>
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: DropdownButtonFormField<String>(
+                initialValue: controller.document.font,
+                isExpanded: true,
+                decoration: InputDecoration(labelText: TicketLayoutStrings.fontFamily),
+                items: resources.fontLabels.entries.map((entry) => DropdownMenuItem(
+                  value: entry.key, child: Text(entry.value))).toList(),
+                onChanged: (value) { if (value != null) controller.replace(controller.document.withFont(value)); }))),
         if (includeElements) elements(),
-        TicketLayoutProperties(
+        ListenableBuilder(listenable: controller, builder: (context, _) =>
+          TicketLayoutProperties(
             controller: controller,
             defaults: propertyDefaults,
-            metrics: resources.metrics,
-            data: resources.scenarios[scenario]),
+            metrics: resources.metricsFor(controller.document),
+            data: resources.scenarios[scenario])),
         Padding(
             padding: const EdgeInsets.all(12),
             child: ImageArea(

@@ -84,3 +84,10 @@ Deno.test("public image response is bounded and returned with its media type", a
   assertEquals([...result.bytes], [1, 2, 3]);
   assertEquals(result.contentType, "image/png");
 });
+
+Deno.test('generic storage MIME accepts PNG/JPEG signatures but never arbitrary content',async()=>{
+ for(const [bytes,valid] of [[new Uint8Array([137,80,78,71,13,10,26,10]),true],[new Uint8Array([255,216,255]),true],[new TextEncoder().encode('<html>error</html>'),false]] as const){
+  const read=()=>fetchPublicImage('https://images.example/object',{resolveDns:async()=>['203.0.113.1'],fetch:async()=>new Response(bytes,{headers:{'content-type':'application/octet-stream'}})});
+  if(valid)assertEquals((await read()).bytes,bytes);else await assertRejects(read,UnsafeTargetError);
+ }
+});
