@@ -66,6 +66,25 @@ class UserStrings {
   static String get approved => 'UserColumns.approved'.tr();
   static String get invited => 'UserColumns.invited'.tr();
 
+  // Role and status column help
+  static String get administratorHelp => 'UserColumns.administratorHelp'.tr();
+  static String get editorHelp => 'UserColumns.editorHelp'.tr();
+  static String get readOnlyHelp => 'UserColumns.readOnlyHelp'.tr();
+  static String get editOrdersHelp => 'UserColumns.editOrdersHelp'.tr();
+  static String get readOrdersHelp => 'UserColumns.readOrdersHelp'.tr();
+  static String get unitAdministratorHelp =>
+      'UserColumns.unitAdministratorHelp'.tr();
+  static String get unitEditorHelp => 'UserColumns.unitEditorHelp'.tr();
+  static String get unitReadOnlyHelp => 'UserColumns.unitReadOnlyHelp'.tr();
+  static String get approverHelp => 'UserColumns.approverHelp'.tr();
+  static String get approvedHelp => 'UserColumns.approvedHelp'.tr();
+  static String get receptionistHelp => 'UserColumns.receptionistHelp'.tr();
+  static String get cleaningCrewHelp => 'UserColumns.cleaningCrewHelp'.tr();
+  static String get cleaningBlockedHelp =>
+      'UserColumns.cleaningBlockedHelp'.tr();
+  static String get volunteerHelp => 'UserColumns.volunteerHelp'.tr();
+  static String get invitedHelp => 'UserColumns.invitedHelp'.tr();
+
   // FeatureUser
   static String get signIn => 'FeatureUser.signIn'.tr();
   static String get signOut => 'FeatureUser.signOut'.tr();

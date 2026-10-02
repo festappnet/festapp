@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "b581da858e0d1636aa66bc49df2ff859bf138d12",
+  "baseMainSha": "e0b14ccade70f74ee84a51693f4066f6cc81195e",
   "release": {
-    "version": "0.20.57+541",
-    "note": "Unified current main, shared column help and remaining workspace changes"
+    "version": "0.20.58+542",
+    "note": "User role and status explanations through data-grid info buttons"
   }
 }
