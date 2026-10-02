@@ -13,7 +13,7 @@ test('font enters the actual worker options without altering auth or routing',()
   fs.writeFileSync(file,source);
   assert.equal(spawnSync('python3',[patch,file]).status,0);
   const result=fs.readFileSync(file,'utf8');
-  assert.equal(result.replace('      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/font.ttf"],\n',''),source);
+  assert.equal(result.replace('      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/*.ttf"],\n',''),source);
   assert.equal(spawnSync('python3',[patch,file]).status,0);
   assert.equal(fs.readFileSync(file,'utf8'),result);
   fs.writeFileSync(file,'unrecognized router');
