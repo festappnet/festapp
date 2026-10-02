@@ -111,3 +111,28 @@ Deno.test('every named and bitmap style renders through the existing generators'
     const doc=await PDFDocument.load(result.bytes);assertEquals(doc.getPageCount(),1);
   }
 });
+
+Deno.test('emphasis is optional, strictly boolean and rendered into actual PDF text operations',async()=>{
+  const t=preset('named');
+  const title=t.elements.find(e=>e.binding==='occasionTitle')!;
+  for(const key of ['bold','italic','underline']) {
+    const invalid=structuredClone(t); (invalid.elements.find(e=>e.binding==='occasionTitle')!.style as any)[key]='true';
+    assertThrows(()=>parseLayout({schemaVersion:1,templates:{named:invalid}}));
+  }
+  Object.assign(title.style,{bold:true,italic:true,underline:true});
+  const layout={schemaVersion:1 as const,templates:{named:t}};
+  assertEquals(parseLayout(layout),layout);
+  const output=await generateTicketPdf(sampleData('normal'),r,t);
+  const doc=await PDFDocument.load(output.bytes);
+  const streams=doc.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFRawStream).map(([,o])=>o as PDFRawStream);
+  const ops=streams.filter(s=>s.dict.get(PDFName.of('Filter'))?.toString()==='/FlateDecode').map(s=>new TextDecoder().decode(inflateSync(s.getContents()))).join('\n');
+  assert(ops.includes('2 Tr'),'bold must use fill and outline in the PDF');
+  assert(ops.includes('0.212556'),'italic must shear the actual PDF glyphs');
+  assert(ops.includes(' l\nS'),'underline must draw a stroked line');
+});
+
+Deno.test('styled text fitting agrees with the shared editor fixtures',async()=>{
+ const cases=JSON.parse(await Deno.readTextFile('test/fixtures/ticket_layout/text-emphasis.json'));
+ const fixture=JSON.parse(await Deno.readTextFile('test/fixtures/ticket_layout/resolve.json'));
+ for(const item of cases)assertEquals(fitText(item.text,item.element,fixture.metrics),item.expected);
+});
