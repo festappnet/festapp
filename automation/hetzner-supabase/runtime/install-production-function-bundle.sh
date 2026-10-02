@@ -44,6 +44,7 @@ install -d -o root -g root -m 0755 "$STAGE"
 tar --no-xattrs --no-same-owner --no-same-permissions -C "$STAGE" -xzf "$ARTIFACT"
 cp -a volumes/functions/main "$STAGE/main"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-proof-routes.py" "$STAGE/main/index.ts"
+python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-static-assets.py" "$STAGE/main/index.ts"
 if grep -Eq '^[[:space:]]*const memoryLimitMb = 150;?$' "$STAGE/main/index.ts"; then
   sed -Ei 's/(const memoryLimitMb = )150;?$/\1512/' "$STAGE/main/index.ts"
 elif ! grep -Eq '^[[:space:]]*const memoryLimitMb = 512;?$' "$STAGE/main/index.ts"; then
