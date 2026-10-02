@@ -6,11 +6,21 @@ request or render PDF. `preview-ticket-layout` in `resolve` mode supplies the
 server-owned preset, synthetic scenarios, font bytes/advance metrics and QR
 matrix. Images are decoded once when their source changes.
 
-`generateTicketImage` and `generateNamedTicketImage` remain the PDF generators.
-An optional layout argument applies saved geometry in those existing functions.
-`ticketGeneration.ts` only resolves inputs and dispatches to them. Download,
-email and the explicit PDF preview button use that same boundary. Without a
-custom template for the selected type, the existing historical output remains.
+`ticketGeneration.ts` resolves saved layout data and resources; `drawLayoutTicket`
+(in `generateTicket.ts`) is the sole PDF renderer. Download, email and PDF preview
+all use it. The separate named and image-relative PDF implementations are removed.
+`ticketTemplateImport.ts` is a one-way data adapter for existing feature records
+without a layout. It imports geometry, bundled original font, QR foreground and
+background/opacity/quiet margin, named border, and compact optional rows. It never
+renders PDFs. Saved edits take precedence. The adapter remains for unmigrated
+organizations and may be removed once their configured ticket features all store
+layouts; blank events use the ordinary preset. Unknown historical font URLs fail
+explicitly rather than silently substituting a font.
+
+Bundled fonts (`futura`, `robotoSlab`, `roboto`, `russoOne`) are selected once per
+ticket. The server supplies the same font bytes and metrics to Flutter and PDF.
+Templates can store `flow` bindings and `flowStep` to compact missing detail rows;
+all ordinary presets retain fixed positions. QR contrast compares both colors.
 
 ## Contract
 
@@ -22,7 +32,7 @@ locked and style (fontSize, minFontSize, maxLines, color, align).
 
 Bindings: qr, ticketSymbol, spotGroup, food, note, price, occasionTitle,
 occasionDatePlace, orderName, logo, footer. Missing values leave fixed boxes
-empty; zero prices remain visible. Multiple products select the first matching
+empty unless their template explicitly enables compact flow; zero prices remain visible. Multiple products select the first matching
 product by order-product-ticket id. OrderName means the order's name/surname,
 not an independently verified ticket holder. Hidden notes never enter print
 content. Background references remain in the existing ticket feature, so the
@@ -178,3 +188,15 @@ code shape (X382 prefix), 200 CZK admission plus a 170 CZK dinner, and the actua
 short dinner title. Customer names/codes are not copied. The printed sample
 code looks like a normal ticket; the QR payload has a preview namespace and
 cannot match a real admission code. Preview artwork has no printed watermark.
+
+## Existing-layout import operation
+
+`automation/tickets/import-layouts.ts inventory.json plan.sql ORGANIZATION`
+creates a reviewable forward-only transaction from an explicit tenant inventory
+(`id`, `organization`, `features`, `data.font`, `features_hash=md5(features::text)`).
+It only imports configured artwork/named tickets without saved layouts. Missing
+assets are reported separately and never substituted. Run reviewed SQL through
+`access-sql.py`; every write checks the full feature hash and original font,
+protects concurrent edits, validates the layout and is safe to repeat. Unconfigured
+events still get the first-open gallery. The save RPC rejects older clients that
+would discard the migrated font/appearance contract; reload the deployed editor.

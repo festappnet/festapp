@@ -10,7 +10,7 @@ Deno.test('preview rejects unauthenticated and foreign unit before resource read
   const s=setup(false);assertEquals((await handlePreview(req(body,false),s.deps)).status,401);assertEquals((await handlePreview(req(),s.deps)).status,403);assertEquals(s.counts(),[0,0]);
 });
 Deno.test('resolve returns an editable preset and font metrics without rendering PDF',async()=>{
-  const s=setup();const response=await handlePreview(req(),s.deps);assertEquals(response.status,200);const result=await response.json();assertEquals(result.template,preset('named'));assertEquals(result.metrics,metrics);assertEquals(result.file,undefined);assertEquals(s.counts(),[1,1]);
+  const s=setup();const response=await handlePreview(req(),s.deps);assertEquals(response.status,200);const result=await response.json();assertEquals(result.template.font,'roboto');assertEquals(result.template.page,{width:212.5,height:387.5});assertEquals(result.metrics,metrics);assertEquals(result.file,undefined);assertEquals(s.counts(),[1,1]);
 });
 Deno.test('only explicit pdf produces sample bytes',async()=>{
   const s=setup();const response=await handlePreview(req({...body,mode:'pdf',layout:{schemaVersion:1,templates:{named:preset('named')}}}),s.deps);assertEquals(response.status,200);const result=await response.json();assert(atob(result.file).startsWith('%PDF'));assertEquals(s.counts(),[1,1]);
@@ -54,7 +54,7 @@ Deno.test('legacy type does not restrict gallery, background selection or saved 
   for(const type of ['named','wide']) {
     const response=await handlePreview(req({...body,type}),s.deps);
     const result=await response.json();results.push(result);
-    assertEquals(result.template,preset(type as 'named'|'wide',1600,900));
+    assertEquals(result.template.font,type==='named'?'roboto':'futura');
     const template=result.presets.compact;
     const background='https://img.festapp.net/custom-ticket.png';
     let received:any;

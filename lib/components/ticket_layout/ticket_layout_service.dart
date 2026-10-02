@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
+import 'package:fstapp/services/storage_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/ticket_layout.dart';
 import '../images/db_images.dart';
@@ -20,6 +21,9 @@ class TicketLayoutResources {
   final Map<String, TicketTemplate> presets;
   final Map<String, Map<String, String?>> scenarios;
   final TicketFontMetrics metrics;
+  final Map<String, TicketFontMetrics> fonts;
+  final Map<String, String> fontLabels;
+  TicketFontMetrics metricsFor(TicketTemplate template) => fonts[template.font] ?? metrics;
   ui.Image? background;
   final ui.Image? logo;
   final int qrSize;
@@ -32,6 +36,7 @@ class TicketLayoutResources {
       this.initialArtworkKey,
       required this.scenarios,
       required this.metrics,
+      this.fonts = const {}, this.fontLabels = const {},
       this.background,
       this.logo,
       required this.qrSize,
@@ -47,7 +52,22 @@ class TicketLayoutResources {
 
 class TicketLayoutService {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? transport;
-  TicketLayoutService({this.transport});
+  final Future<String?> Function(String) _readPreference;
+  final Future<void> Function(String, String) _writePreference;
+  TicketLayoutService({this.transport,
+      Future<String?> Function(String)? readPreference,
+      Future<void> Function(String, String)? writePreference})
+      : _readPreference = readPreference ?? ((key) => StorageHelper.get(key)),
+        _writePreference = writePreference ?? ((key, value) => StorageHelper.set(key, value));
+
+  Future<bool> openTemplatePickerOnce(int occasionId, String userId,
+      {required bool configured}) async {
+    final key = 'ticket-editor-opened:$userId:$occasionId';
+    final opened = await _readPreference(key) == 'true';
+    if (!opened) await _writePreference(key, 'true');
+    return !configured && !opened;
+  }
+
   Future<String?> uploadBackground(Uint8List bytes, int occasionId) =>
       DbImages.uploadImage(bytes, occasionId, null);
 
@@ -60,9 +80,12 @@ class TicketLayoutService {
       if (layout != null) 'layout': layout,
       'background': background
     });
-    final loader = FontLoader('TicketLayoutFont')
-      ..addFont(Future.value(ByteData.sublistView(base64Decode(j['font']))));
-    await loader.load();
+    final fonts = (j['fonts'] as Map? ?? {j['template']['font'] ?? 'futura': {'font': j['font'], 'metrics': j['metrics'], 'label': 'Futura PT'}});
+    for (final entry in fonts.entries) {
+      final loader = FontLoader('TicketLayoutFont-${entry.key}')
+        ..addFont(Future.value(ByteData.sublistView(base64Decode(entry.value['font']))));
+      await loader.load();
+    }
     ui.Image? bg, logo;
     Future<ui.Image?> decode(String? b) async {
       if (b == null) return null;
@@ -98,6 +121,8 @@ class TicketLayoutService {
           scenarios: (j['scenarios'] as Map).map((k, v) =>
               MapEntry(k as String, (v as Map).cast<String, String?>())),
           metrics: TicketFontMetrics.fromJson(j['metrics']),
+          fonts: fonts.map((key, value) => MapEntry(key as String, TicketFontMetrics.fromJson(value['metrics']))),
+          fontLabels: fonts.map((key, value) => MapEntry(key as String, value['label'] as String)),
           background: bg,
           logo: logo,
           qrSize: j['qrMatrix']['size'],
