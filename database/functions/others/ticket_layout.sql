@@ -11,7 +11,7 @@ GRANT EXECUTE ON FUNCTION public.can_edit_ticket_layout(bigint) TO authenticated
 CREATE OR REPLACE FUNCTION public.validate_ticket_layout(p_layout jsonb)
 RETURNS void LANGUAGE plpgsql IMMUTABLE
 SET search_path = public, extensions AS $$
-DECLARE t jsonb; e jsonb; b jsonb; s jsonb; a jsonb; q jsonb; kind text; k text; ids text[]; bindings text[]; luminance double precision;
+DECLARE t jsonb; e jsonb; b jsonb; s jsonb; a jsonb; q jsonb; kind text; k text; ids text[]; bindings text[]; luminance double precision; background_luminance double precision;
 BEGIN
   IF p_layout IS NULL OR jsonb_typeof(p_layout) <> 'object' OR p_layout->'schemaVersion' IS DISTINCT FROM '1'::jsonb
     OR jsonb_typeof(p_layout->'templates') IS DISTINCT FROM 'object' OR p_layout->'templates'='{}'::jsonb OR octet_length(p_layout::text)>32768
@@ -35,6 +35,23 @@ BEGIN
         OR t->'ticketArea'->'width' IS DISTINCT FROM t->'page'->'width'
         OR t->'ticketArea'->'height' IS DISTINCT FROM t->'page'->'height'
       THEN RAISE EXCEPTION 'Ticket page must match ticket area'; END IF;
+    END IF;
+    IF t ? 'font' AND COALESCE(t->>'font','') NOT IN ('futura','robotoSlab','roboto','russoOne') THEN RAISE EXCEPTION 'Invalid ticket font'; END IF;
+    IF t ? 'border' AND jsonb_typeof(t->'border') IS DISTINCT FROM 'boolean' THEN RAISE EXCEPTION 'Invalid ticket border'; END IF;
+    IF t ? 'flowStep' AND (jsonb_typeof(t->'flowStep') IS DISTINCT FROM 'number' OR (t->>'flowStep')::numeric NOT BETWEEN 1 AND 842) THEN RAISE EXCEPTION 'Invalid ticket flow spacing'; END IF;
+    IF t ? 'flow' THEN
+      IF jsonb_typeof(t->'flow') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'Invalid ticket flow'; END IF;
+      IF EXISTS(SELECT 1 FROM jsonb_array_elements_text(t->'flow') v WHERE v NOT IN ('spotGroup','food','note','price'))
+        OR (SELECT count(*)<>count(DISTINCT v) FROM jsonb_array_elements_text(t->'flow') v)
+      THEN RAISE EXCEPTION 'Invalid ticket flow'; END IF;
+    END IF;
+    IF t ? 'qrAppearance' THEN
+      IF jsonb_typeof(t->'qrAppearance') IS DISTINCT FROM 'object'
+        OR COALESCE(t->'qrAppearance'->>'background','') !~ '^[a-fA-F0-9]{6}$'
+        OR jsonb_typeof(t->'qrAppearance'->'opacity') IS DISTINCT FROM 'number'
+        OR jsonb_typeof(t->'qrAppearance'->'margin') IS DISTINCT FROM 'number'
+      THEN RAISE EXCEPTION 'Invalid QR appearance'; END IF;
+      IF (t->'qrAppearance'->>'opacity')::numeric NOT BETWEEN 0 AND 1 OR (t->'qrAppearance'->>'margin')::numeric NOT BETWEEN 0 AND 8 THEN RAISE EXCEPTION 'Invalid QR appearance'; END IF;
     END IF;
     a:=t->'ticketArea'; ids:='{}'; bindings:='{}';
     FOR b IN SELECT a UNION ALL SELECT value->'box' FROM jsonb_array_elements(t->'elements') LOOP
@@ -72,7 +89,10 @@ BEGIN
         SELECT sum((CASE WHEN channel<=.04045 THEN channel/12.92 ELSE power((channel+.055)/1.055,2.4) END)*weight)
           INTO luminance FROM (SELECT get_byte(decode(s->>'color','hex'),i)/255.0 AS channel, weight
             FROM (VALUES (0,.2126),(1,.7152),(2,.0722)) AS rgb(i,weight)) AS linear;
-        IF b->'width'<>b->'height' OR (b->>'width')::numeric<60 OR 1.05/(luminance+.05)<4.5 THEN RAISE EXCEPTION 'Invalid QR dimensions or contrast'; END IF;
+        SELECT sum((CASE WHEN channel<=.04045 THEN channel/12.92 ELSE power((channel+.055)/1.055,2.4) END)*weight)
+          INTO background_luminance FROM (SELECT get_byte(decode(COALESCE(t->'qrAppearance'->>'background','FFFFFF'),'hex'),i)/255.0 AS channel, weight
+            FROM (VALUES (0,.2126),(1,.7152),(2,.0722)) AS rgb(i,weight)) AS linear;
+        IF b->'width'<>b->'height' OR (b->>'width')::numeric<60 OR (greatest(luminance,background_luminance)+.05)/(least(luminance,background_luminance)+.05)<4.5 THEN RAISE EXCEPTION 'Invalid QR dimensions or contrast'; END IF;
       END IF;
     END LOOP;
     IF NOT bindings @> ARRAY['qr','ticketSymbol'] THEN RAISE EXCEPTION 'Missing required ticket elements'; END IF;
@@ -106,6 +126,11 @@ BEGIN
     -- A client must not downgrade a schema it does not understand.
     IF old_layout IS NOT NULL AND old_layout->'schemaVersion' IS DISTINCT FROM '1'::jsonb THEN RAISE EXCEPTION 'Unsupported ticket layout'; END IF;
     next_layout:=p_change->'next'; PERFORM public.validate_ticket_layout(next_layout);
+    -- Old clients discard appearance fields they do not understand. Fail closed
+    -- instead of turning a migrated original back into an approximate preset.
+    IF EXISTS(SELECT 1 FROM jsonb_each(COALESCE(old_layout->'templates','{}'::jsonb)) old
+      WHERE old.value ? 'font' AND NOT COALESCE(next_layout->'templates'->old.key ? 'font',false))
+    THEN RAISE EXCEPTION 'Ticket editor update required'; END IF;
   END IF;
   FOR f IN SELECT * FROM jsonb_array_elements(p_next) LOOP
     IF f->>'code'='ticket' THEN

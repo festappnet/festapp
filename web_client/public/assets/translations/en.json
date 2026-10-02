@@ -2085,6 +2085,7 @@
     "normal": "Sample data",
     "long": "Long text",
     "missing": "Missing values",
+    "fontFamily": "Ticket font",
     "fontSize": "Font size",
     "visible": "Visible",
     "locked": "Locked",

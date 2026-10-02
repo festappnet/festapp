@@ -1,21 +1,29 @@
 export const qrColors = ['000000','2A2A2A','17365D','123B20','401529'];
-export function qrColorReadable(color:string):boolean {
+export function qrColorReadable(color:string,background='FFFFFF'):boolean {
   if(!/^[0-9a-fA-F]{6}$/.test(color))return false;
   const channels=[0,2,4].map(i=>{const c=parseInt(color.slice(i,i+2),16)/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;});
-  return 1.05/(channels[0]*.2126+channels[1]*.7152+channels[2]*.0722+.05)>=4.5;
+  const foreground=channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+  const bg=[0,2,4].map(i=>{const c=parseInt(background.slice(i,i+2),16)/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;});
+  const back=bg[0]*.2126+bg[1]*.7152+bg[2]*.0722;
+  return (Math.max(foreground,back)+.05)/(Math.min(foreground,back)+.05)>=4.5;
 }
 export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'food', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'orderName', 'logo', 'footer'] as const;
 export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
 export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface Template { font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 1; templates: { wide?: Template; named?: Template } }
 export function validateLayout(value: unknown): asserts value is TicketLayout {
   const v = value as TicketLayout;
   const fail = () => { throw new Error('Invalid ticket layout'); };
   if (!v || JSON.stringify(v).length > 32768 || v.schemaVersion !== 1 || !v.templates || Array.isArray(v.templates) || !Object.keys(v.templates).length || Object.keys(v.templates).some(k => !['wide', 'named'].includes(k))) fail();
   for (const t of Object.values(v.templates)) {
+    if(t?.font!==undefined && !['futura','robotoSlab','roboto','russoOne'].includes(t.font)) fail();
+    if(t?.flowStep!==undefined && (!Number.isFinite(t.flowStep)||t.flowStep<1||t.flowStep>842))fail();
+    if(t?.border!==undefined && typeof t.border!=='boolean')fail();
+    if(t?.flow!==undefined && (!Array.isArray(t.flow)||new Set(t.flow).size!==t.flow.length||t.flow.some(b=>!['spotGroup','food','note','price'].includes(b))))fail();
+    if(t?.qrAppearance!==undefined && (!t.qrAppearance||!/^[0-9a-fA-F]{6}$/.test(t.qrAppearance.background)||!Number.isFinite(t.qrAppearance.opacity)||t.qrAppearance.opacity<0||t.qrAppearance.opacity>1||!Number.isFinite(t.qrAppearance.margin)||t.qrAppearance.margin<0||t.qrAppearance.margin>8))fail();
     if (!t || (t.pageFit!==undefined && t.pageFit!=='ticket')) fail();
     if(t.pageFit==='ticket') {
       if(![t.page?.width,t.page?.height].every(v=>Number.isFinite(v)&&v>=60&&v<=842) ||
@@ -35,7 +43,7 @@ export function validateLayout(value: unknown): asserts value is TicketLayout {
       if(s && ['bold','italic','underline'].some(key=>key in s && typeof (s as any)[key]!=='boolean')) fail();
       if (!s || !Number.isFinite(s.fontSize) || !Number.isFinite(s.minFontSize) || s.minFontSize < 6 || s.fontSize < s.minFontSize || s.fontSize > 72 || !Number.isInteger(s.maxLines) || s.maxLines < 1 || s.maxLines > 12 || !/^[0-9A-Fa-f]{6}$/.test(s.color) || !['left','center','right'].includes(s.align)) fail();
       if (['qr','ticketSymbol'].includes(e.binding) && !e.visible) fail();
-      if (e.binding === 'qr' && (e.box.width !== e.box.height || e.box.width < 60 || !qrColorReadable(s.color))) fail();
+      if (e.binding === 'qr' && (e.box.width !== e.box.height || e.box.width < 60 || !qrColorReadable(s.color,t.qrAppearance?.background))) fail();
     }
     if (!seen.has('qr') || !seen.has('ticketSymbol')) fail();
     const q=t.elements.find(e=>e.binding==='qr')!.box;
@@ -72,10 +80,9 @@ export function portraitPreset(): Template { return preset('named'); }
 
 export function parseLayout(value: unknown): TicketLayout { validateLayout(value); return structuredClone(value); }
 
-// Gallery presets establish a clear hierarchy while leaving saved layouts and
-// the historical first-edit fallback untouched.
-function styleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Record<string,Template> {
-  const base=preset(type,imageWidth,imageHeight);
+// Gallery presets establish a clear hierarchy independently of the importer.
+function styleVariants(type: TicketType): Record<string,Template> {
+  const base=preset(type);
   const make=(binding:Binding,x:number,y:number,width:number,height:number,fontSize=12,maxLines=2,align:'left'|'center'='left'):Element=>({id:binding,binding,box:{x,y,width,height},visible:true,locked:false,style:{fontSize,minFontSize:6,maxLines,color:'202020',align}});
   const classic=structuredClone(base),compact=structuredClone(base),event=structuredClone(base);
   if(type==='named') {
@@ -87,12 +94,12 @@ function styleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Reco
       t.ticketArea.height=Math.max(id==='compact'?260:320,t.ticketArea.height);
       const w=t.ticketArea.width,h=t.ticketArea.height,left=w-156;
       const qr=id==='compact'?make('qr',w-100,20,80,80):make('qr',w-116,id==='classic'?Math.round((h-96)/2):h-130,96,96);
-      const title=make('occasionTitle',20,18,id==='event'?w-40:left,id==='event'?64:54,id==='event'?32:id==='classic'?24:20);
       const details=(['spotGroup','food','note','price'] as Binding[]).map((binding,i)=>make(binding,20,h-108+i*21,left,20,binding==='spotGroup'||binding==='price'?12:10,1));
-      t.elements=[title,make('occasionDatePlace',20,id==='event'?90:80,id==='event'?w-40:left,28,11),make('orderName',20,id==='event'?128:118,left,30,16),qr,make('ticketSymbol',qr.box.x-4,qr.box.y+qr.box.height+5,qr.box.width+8,22,10,1,'center'),...details,make('footer',20,h-18,left,16,7,1)];
+      t.elements=[qr,make('ticketSymbol',qr.box.x-4,qr.box.y+qr.box.height+5,qr.box.width+8,22,10,1,'center'),...details];
     }
   }
   for(const t of [classic,compact,event]) {
+    t.font='futura';
     for(const e of t.elements) {
       if(['occasionTitle','orderName','ticketSymbol','spotGroup','price'].includes(e.binding))e.style.bold=true;
       if(e.binding==='footer')e.style.italic=true;
@@ -103,9 +110,22 @@ function styleVariants(type: TicketType, imageWidth=1600, imageHeight=800): Reco
 }
 
 // The storage slot does not determine the PDF format: ordinary templates stay
-// on A4, while named templates use the physical ticket size.
-export function ticketPresets(imageWidth=1600, imageHeight=800): Record<string,Template> {
-  const wide=styleVariants('wide',imageWidth,imageHeight);
+// on A4, while named templates use the physical ticket size. Gallery geometry
+// is independent of artwork; renderers contain the image within the ticket.
+export function ticketPresets(): Record<string,Template> {
+  const wide=styleVariants('wide');
   const named=styleVariants('named');
   return {classic:wide.classic,compact:wide.compact,event:wide.event,portrait:named.classic,portrait_compact:named.compact,portrait_event:named.event};
+}
+
+export function positionedElements(t:Template,data:Partial<Record<Binding,string|null>>):Element[] {
+  let shift=0;
+  const positions=new Map<string,Element>();
+  const flow=(t.flow??[]).map(b=>t.elements.find(e=>e.binding===b)).filter((e):e is Element=>!!e);
+  for(let i=0;i<flow.length;i++) {
+    const e=flow[i];
+    positions.set(e.id,{...e,box:{...e.box,y:e.box.y-shift}});
+    if(!e.visible||!data[e.binding])shift+=t.flowStep??e.box.height;
+  }
+  return t.elements.map(e=>positions.get(e.id)??e);
 }

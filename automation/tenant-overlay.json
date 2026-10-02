@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "2067ef7ae170dc97238d6e54be79f06d4ec0b310",
+  "baseMainSha": "f6eedc4408320cc97001906bad84e589cad0071f",
   "release": {
-    "version": "0.20.48+532",
-    "note": "Correct canonical Festapp spelling in login subtitles"
+    "version": "0.20.49+533",
+    "note": "Match inline and fullscreen HTML editor typography"
   }
 }

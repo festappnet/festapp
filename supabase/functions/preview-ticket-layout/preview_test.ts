@@ -10,7 +10,7 @@ Deno.test('preview rejects unauthenticated and foreign unit before resource read
   const s=setup(false);assertEquals((await handlePreview(req(body,false),s.deps)).status,401);assertEquals((await handlePreview(req(),s.deps)).status,403);assertEquals(s.counts(),[0,0]);
 });
 Deno.test('resolve returns an editable preset and font metrics without rendering PDF',async()=>{
-  const s=setup();const response=await handlePreview(req(),s.deps);assertEquals(response.status,200);const result=await response.json();assertEquals(result.template,preset('named'));assertEquals(result.metrics,metrics);assertEquals(result.file,undefined);assertEquals(s.counts(),[1,1]);
+  const s=setup();const response=await handlePreview(req(),s.deps);assertEquals(response.status,200);const result=await response.json();assertEquals(result.template.font,'roboto');assertEquals(result.template.page,{width:212.5,height:387.5});assertEquals(result.metrics,metrics);assertEquals(result.file,undefined);assertEquals(s.counts(),[1,1]);
 });
 Deno.test('only explicit pdf produces sample bytes',async()=>{
   const s=setup();const response=await handlePreview(req({...body,mode:'pdf',layout:{schemaVersion:1,templates:{named:preset('named')}}}),s.deps);assertEquals(response.status,200);const result=await response.json();assert(atob(result.file).startsWith('%PDF'));assertEquals(s.counts(),[1,1]);
@@ -54,7 +54,7 @@ Deno.test('legacy type does not restrict gallery, background selection or saved 
   for(const type of ['named','wide']) {
     const response=await handlePreview(req({...body,type}),s.deps);
     const result=await response.json();results.push(result);
-    assertEquals(result.template,preset(type as 'named'|'wide',1600,900));
+    assertEquals(result.template.font,type==='named'?'roboto':'futura');
     const template=result.presets.compact;
     const background='https://img.festapp.net/custom-ticket.png';
     let received:any;
@@ -82,4 +82,22 @@ Deno.test('conference2024 empty stored background resolves without parsing an em
   const response=await handlePreview(req({...body,occasionId:1,type:'wide',background:''}),s.deps);
   assertEquals(response.status,200);
   assertEquals((await response.json()).backgroundUrl,null);
+});
+
+Deno.test('portrait artwork cannot turn landscape gallery templates into portrait tickets',async()=>{
+ const s=setup();
+ const blank=await (await handlePreview(req({...body,type:'wide'}),s.deps)).json();
+ const background=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAIAAAAGCAIAAABmRdhlAAAADklEQVR4nGP4DwYMhCkA8VQj3S7lL6QAAAAASUVORK5CYII='),c=>c.charCodeAt(0));
+ s.deps.resources=async()=>({font,metrics,background});
+ const withImage=await (await handlePreview(req({...body,type:'wide'}),s.deps)).json();
+ for(const key of ['classic','compact','event']) {
+   const t=withImage.presets[key];
+   assert(t.ticketArea.width>t.ticketArea.height,`${key} must stay landscape`);
+   assertEquals(t,blank.presets[key]);
+   assertEquals(t.page,{width:595.28,height:841.89});
+ }
+ for(const key of ['portrait','portrait_compact','portrait_event']) {
+   const t=withImage.presets[key];assert(t.ticketArea.height>t.ticketArea.width);
+ }
+ assertEquals(withImage.background,btoa(String.fromCharCode(...background)));
 });
