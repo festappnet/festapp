@@ -58,6 +58,86 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  test('styled text fitting matches the PDF renderer fixtures', () {
+    final cases = jsonDecode(File('test/fixtures/ticket_layout/text-emphasis.json').readAsStringSync()) as List;
+    final r = resources();
+    for (final item in cases) {
+      final e = TicketElement.fromJson(item['element']);
+      final fit = fitTicketText(item['text'], e, r.metrics);
+      expect(fit.size, item['expected']['size']);
+      expect(fit.lines, item['expected']['lines']);
+      for (var i = 0; i < fit.widths.length; i++) {
+        expect(fit.widths[i], closeTo(item['expected']['widths'][i], .000001));
+      }
+    }
+    r.dispose();
+  });
+  test('group movement preserves relative placement, bounds and one undo step', () {
+    final c = TicketLayoutController(document());
+    c.select('qr'); c.select('ticketSymbol', additive: true);
+    final before = {for (final e in c.selections) e.id: e.box};
+    c.beginGesture();
+    c.move(const Offset(-10, -10), snap: false);
+    c.move(const Offset(-1000, -1000), snap: false);
+    c.endGesture();
+    final shifts = c.selections.map((e) => e.box.topLeft - before[e.id]!.topLeft).toSet();
+    expect(shifts.length, 1);
+    for (final e in c.selections) { expect(e.box.left, greaterThanOrEqualTo(0)); expect(e.box.top, greaterThanOrEqualTo(0)); }
+    final q = c.document.elements.firstWhere((e) => e.binding == 'qr');
+    expect(q.box.width, q.box.height);
+    c.undo(); expect(c.document.toJson(), document().toJson());
+    expect(c.canUndo, isFalse);
+    c.redo(); expect(c.document.toJson(), isNot(document().toJson()));
+    c.dispose();
+  });
+  testWidgets('selection marquee and shift-click move QR and code together', (tester) async {
+    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
+        occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpAndSettle();
+    final state = tester.state<TicketLayoutCanvasState>(find.byType(TicketLayoutCanvas));
+    final c = state.widget.controller;
+    Offset screen(Offset p) => tester.getTopLeft(find.byType(InteractiveViewer)) +
+        MatrixUtils.transformPoint(state.widget.transform.value, c.document.area.topLeft + p);
+    final qr = c.document.elements.firstWhere((e) => e.binding == 'qr');
+    final code = c.document.elements.firstWhere((e) => e.binding == 'ticketSymbol');
+    await tester.tapAt(screen(qr.box.center));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.tapAt(screen(code.box.center));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    expect(c.selectedIds, {'qr', 'ticketSymbol'});
+    final drag = await tester.startGesture(screen(qr.box.center));
+    await drag.moveBy(const Offset(-5, -5)); await drag.up(); await tester.pump();
+    expect(c.selectedIds, {'qr', 'ticketSymbol'});
+    expect(c.document.elements.firstWhere((e) => e.id == qr.id).box, isNot(qr.box));
+    c.undo(); c.select(null); await tester.pump();
+    final bounds = qr.box.expandToInclude(code.box).inflate(2);
+    final marquee = await tester.startGesture(screen(bounds.topLeft));
+    await marquee.moveTo(screen(bounds.bottomRight)); await marquee.up(); await tester.pump();
+    expect(c.selectedIds, containsAll(['qr', 'ticketSymbol']));
+    await tester.tap(find.byTooltip('TicketLayout.viewOptions'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TicketLayout.multiSelect'));
+    await tester.pumpAndSettle();
+    final previous = c.document;
+    final touchDrag = await tester.startGesture(screen(qr.box.center));
+    await touchDrag.moveBy(const Offset(-8, -8)); await touchDrag.up(); await tester.pump();
+    expect(c.selectedIds, containsAll(['qr', 'ticketSymbol']));
+    expect(c.document.toJson(), isNot(previous.toJson()));
+
+  });
+  testWidgets('text emphasis round trips, updates the editor and supports undo', (tester) async {
+    final c = TicketLayoutController(document())..select('occasionTitle');
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
+        child: TicketLayoutProperties(controller: c)))));
+    for (final style in ['bold', 'italic', 'underline']) {
+      await tester.tap(find.byTooltip('TicketLayout.$style')); await tester.pump();
+      expect(c.selection!.toJson()['style'][style], isTrue);
+    }
+    final restored = TicketElement.fromJson(c.selection!.toJson());
+    expect(restored.bold && restored.italic && restored.underline, isTrue);
+    c.undo(); expect(c.selection!.underline, isFalse);
+    await tester.pumpWidget(const SizedBox()); c.dispose();
+  });
   test('A4 template stays printable in the legacy named slot', () {
     final layouts = jsonDecode(
         File('test/fixtures/ticket_layout/layouts.json').readAsStringSync());

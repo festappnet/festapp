@@ -56,6 +56,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   set background(String? value) => _background = value;
   final transform = TransformationController();
   final canvas = GlobalKey<TicketLayoutCanvasState>();
+  bool additiveSelection = false;
   bool pan = false, wholePage = false, pdfBusy = false, imageBusy = false;
   bool snap = true, grid = false;
   late TicketTemplate _propertyDefaults = resources.preset;
@@ -396,13 +397,13 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           children: controller.document.elements
               .map((e) => ListTile(
                   dense: true,
-                  selected: controller.selected == e.id,
+                  selected: controller.selectedIds.contains(e.id),
                   title: Text(TicketLayoutStrings.binding(e.binding)),
                   leading:
                       Icon(e.visible ? Icons.visibility : Icons.visibility_off),
                   trailing: e.locked ? const Icon(Icons.lock, size: 16) : null,
                   onTap: () {
-                    controller.select(e.id);
+                    controller.select(e.id, additive: additiveSelection);
                     onSelected?.call();
                   }))
               .toList()));
@@ -513,6 +514,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             tooltip: TicketLayoutStrings.viewOptions,
             onSelected: (value) => setState(() {
                   switch (value) {
+                    case 'multi':
+                      additiveSelection = !additiveSelection;
+                      pan = false;
                     case 'pan':
                       pan = !pan;
                     case 'page':
@@ -530,6 +534,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   }
                 }),
             itemBuilder: (_) => [
+                  CheckedPopupMenuItem(
+                      value: 'multi',
+                      checked: additiveSelection,
+                      child: Text(TicketLayoutStrings.multiSelect)),
                   CheckedPopupMenuItem(
                       value: 'pan',
                       checked: pan,
@@ -618,6 +626,14 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                               isSelected: !pan,
                               onPressed: () => setState(() => pan = false),
                               icon: const Icon(Icons.near_me_outlined)),
+                          IconButton(
+                              tooltip: TicketLayoutStrings.multiSelect,
+                              isSelected: additiveSelection,
+                              onPressed: () => setState(() {
+                                additiveSelection = !additiveSelection;
+                                pan = false;
+                              }),
+                              icon: const Icon(Icons.select_all)),
                           IconButton(
                               tooltip: TicketLayoutStrings.pan,
                               isSelected: pan,
@@ -724,6 +740,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     data: resources.scenarios[scenario]!,
                     transform: transform,
                     pan: pan,
+                    additiveSelection: additiveSelection,
                     wholePage: wholePage,
                     snap: snap,
                     grid: grid);
