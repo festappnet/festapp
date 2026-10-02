@@ -622,10 +622,13 @@ class _UserPageState extends State<UserPage> {
   }
 
   Future<void> _logout() async {
+    final rootRouter = context.router.root;
     var trPrefix = RightsService.currentUser()?.getGenderPrefix();
     await AuthService.logout();
-    ToastHelper.Show(context, ScheduleStrings.youHaveBeenSignedOut(trPrefix));
-    RouterService.popOrHome(context);
+    if (mounted) {
+      ToastHelper.Show(context, ScheduleStrings.youHaveBeenSignedOut(trPrefix));
+    }
+    await RouterService.goToApplicationHome(rootRouter);
   }
 
   Future<void> _requestAccountDeletion() async {

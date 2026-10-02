@@ -74,6 +74,7 @@ Future<void> main() async {
 NotificationReconnectCoordinator? _notificationReconnectCoordinator;
 
 String initialRouteForUri(Uri uri) {
+  if (uri.path == '/app/google-auth') return '/login';
   final path = uri.path == '/' && AppConfig.forceOccasionLink != null
       ? '/${AppConfig.forceOccasionLink}'
       : uri.path;
@@ -161,11 +162,11 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
 Future<void> initializeEverything() async {
   AppLogger.debug('Initialization started');
 
-  // The unit editor fetches its own unit context. Loading the default occasion
-  // here can continue after the startup timeout and block that fetch in
-  // RightsService's serialized update queue.
-  final skipInitialOccasion =
-      kIsWeb && isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri());
+  // Unit editors and Google returns own their context. A default occasion
+  // fetch can outlive startup and block their work in the serialized queue.
+  final skipInitialOccasion = kIsWeb &&
+      (isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri()) ||
+          RouterService.getCurrentBrowserUri().path == '/app/google-auth');
 
   WidgetsFlutterBinding.ensureInitialized();
   AppLogger.debug('Widgets binding initialized');

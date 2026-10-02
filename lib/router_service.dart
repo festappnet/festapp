@@ -128,6 +128,14 @@ class RouterService {
     context.router.replacePath(getCurrentLink() + path);
   }
 
+  static Future<void> goToApplicationHome(StackRouter rootRouter) async {
+    if (kIsWeb) {
+      await LaunchUrlService.openExternalUrl('/', inCurrentWindow: true);
+    } else {
+      await rootRouter.replaceAll([OrganizationRoute()]);
+    }
+  }
+
   static void popOrHome(BuildContext context) {
     if (context.router.canPop()) {
       context.router.maybePop();
