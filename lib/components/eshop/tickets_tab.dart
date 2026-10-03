@@ -33,8 +33,8 @@ class _TicketsTabState extends State<TicketsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink =
-        context.routeData.params.getString(AppRouter.linkFormatted);
+    final newOccasionLink = context.routeData.inheritedPathParams
+        .getString(AppRouter.linkFormatted);
     // Initialize only once when the link is available
     if (occasionLink == null) {
       occasionLink = newOccasionLink;

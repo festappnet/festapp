@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "8e757ca1a757a88af64370d2737760006a512084",
+  "baseMainSha": "e26951bb85b226ea433c5b636a5daa180a7e5e9a",
   "release": {
-    "version": "0.20.72+556",
-    "note": "Clarify ticket edit modes and stabilize handle size across zoom"
+    "version": "0.20.79+563",
+    "note": "Approved navigation, modal and report presentation"
   }
 }

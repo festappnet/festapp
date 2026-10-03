@@ -1,3 +1,5 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -73,78 +75,115 @@ class _TicketSettingsState extends State<TicketSettings> {
     });
   }
 
+  bool _editorOpen = false;
+  bool _restoredPanel = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final root =
+        context.findAncestorWidgetOfExactType<RouterScope>()?.controller.root;
+    final panel = root == null
+        ? null
+        : Uri.parse(root.currentUrl).queryParameters['panel'];
+    if (!_restoredPanel &&
+        !_editorOpen &&
+        widget.feature.layout != null &&
+        MediaQuery.sizeOf(context).width < 900 &&
+        (panel == 'elements' || panel == 'properties')) {
+      _restoredPanel = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) edit();
+      });
+    }
+  }
+
   Future<void> edit() async {
-    if (busy || unsupported) return;
+    if (busy || unsupported || _editorOpen) return;
+    _editorOpen = true;
     setState(() => busy = true);
-    await ExceptionHandler.guard(context, futureFunction: () async {
-      final r = await service.resolve(widget.occasionId, type,
-          widget.feature.layout, widget.feature.ticketBackground);
-      if (!mounted) {
-        r.dispose();
-        return;
-      }
-      final showTemplatePicker = await service.openTemplatePickerOnce(
-          widget.occasionId, RightsService.currentUser()?.id ?? 'editor',
-          configured: widget.feature.layout?['templates']?[type] != null ||
-              (widget.feature.ticketBackground?.isNotEmpty ?? false));
-      if (!mounted) {
-        r.dispose();
-        return;
-      }
-      final initialTemplate = jsonEncode(r.template.toJson());
-      final initialBackground = widget.feature.ticketBackground;
-      // Loading the editor and refreshing its thumbnail are separate operations.
-      setState(() => busy = false);
-      final result = await showDialog<TicketLayoutResult>(
-          context: context,
-          useSafeArea: false,
-          builder: (c) => Dialog.fullscreen(
-              child: TicketLayoutEditor(
-                  showTemplatePicker: showTemplatePicker,
-                  onSave: widget.onSave == null
-                      ? null
-                      : (result) async {
-                          final draft =
-                              TicketFeature.fromJson(widget.feature.toJson());
-                          draft.ticketType = type;
-                          draft.ticketBackground = result.background;
-                          draft.layout = upgradeTicketLayout({
-                            'schemaVersion': 1,
-                            'templates': {
-                              ...?(widget.feature.layout?['templates'] as Map?),
-                              type: result.template.toJson(),
-                            }
-                          });
-                          await widget.onSave!(draft);
-                        },
-                  occasionId: widget.occasionId,
-                  type: type,
-                  layout: widget.feature.layout == null
-                      ? null
-                      : copyTicketJson(widget.feature.layout!),
-                  background: widget.feature.ticketBackground,
-                  resources: r,
-                  service: service)));
-      if (!mounted) return;
-      if (result != null) {
-        setState(() {
-          widget.feature.ticketType = type;
-          widget.feature.layout = upgradeTicketLayout({
-            'schemaVersion': 1,
-            'templates': {
-              ...?(widget.feature.layout?['templates'] as Map?),
-              type: result.template.toJson()
-            }
-          });
-          widget.feature.ticketBackground = result.background;
-          if (widget.onSave != null) widget.feature.markLayoutSaved();
-        });
-        if (jsonEncode(result.template.toJson()) != initialTemplate ||
-            result.background != initialBackground) {
-          unawaited(refresh());
+    try {
+      await ExceptionHandler.guard(context, futureFunction: () async {
+        final r = await service.resolve(widget.occasionId, type,
+            widget.feature.layout, widget.feature.ticketBackground);
+        if (!mounted) {
+          r.dispose();
+          return;
         }
-      }
-    });
+        final showTemplatePicker = await service.openTemplatePickerOnce(
+            widget.occasionId, RightsService.currentUser()?.id ?? 'editor',
+            configured: widget.feature.layout?['templates']?[type] != null ||
+                (widget.feature.ticketBackground?.isNotEmpty ?? false));
+        if (!mounted) {
+          r.dispose();
+          return;
+        }
+        final initialTemplate = jsonEncode(r.template.toJson());
+        final initialBackground = widget.feature.ticketBackground;
+        // Loading the editor and refreshing its thumbnail are separate operations.
+        setState(() => busy = false);
+        final routeRouter = context
+            .findAncestorWidgetOfExactType<RouterScope>()
+            ?.controller
+            .root;
+        final result = await showDialog<TicketLayoutResult>(
+            context: context,
+            useSafeArea: false,
+            builder: (c) => Dialog.fullscreen(
+                child: TicketLayoutEditor(
+                    routeRouter: routeRouter,
+                    showTemplatePicker: showTemplatePicker,
+                    onSave: widget.onSave == null
+                        ? null
+                        : (result) async {
+                            final draft =
+                                TicketFeature.fromJson(widget.feature.toJson());
+                            draft.ticketType = type;
+                            draft.ticketBackground = result.background;
+                            draft.layout = upgradeTicketLayout({
+                              'schemaVersion': 1,
+                              'templates': {
+                                ...?(widget.feature.layout?['templates']
+                                    as Map?),
+                                type: result.template.toJson(),
+                              }
+                            });
+                            await widget.onSave!(draft);
+                          },
+                    occasionId: widget.occasionId,
+                    type: type,
+                    layout: widget.feature.layout == null
+                        ? null
+                        : copyTicketJson(widget.feature.layout!),
+                    background: widget.feature.ticketBackground,
+                    resources: r,
+                    service: service)));
+        if (!mounted) return;
+        if (result != null) {
+          setState(() {
+            widget.feature.ticketType = type;
+            widget.feature.layout = upgradeTicketLayout({
+              'schemaVersion': 1,
+              'templates': {
+                ...?(widget.feature.layout?['templates'] as Map?),
+                type: result.template.toJson()
+              }
+            });
+            widget.feature.ticketBackground = result.background;
+            if (widget.onSave != null) widget.feature.markLayoutSaved();
+          });
+          if (jsonEncode(result.template.toJson()) != initialTemplate ||
+              result.background != initialBackground) {
+            unawaited(refresh());
+          }
+        }
+      });
+    } finally {
+      _editorOpen = false;
+      final root =
+          context.findAncestorWidgetOfExactType<RouterScope>()?.controller.root;
+      if (root != null && mounted)
+        await DayRouteSelection.write(root, 'panel', null, replace: true);
+    }
     if (mounted) setState(() => busy = false);
   }
 

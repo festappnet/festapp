@@ -28,7 +28,8 @@ DECLARE
     v_paid numeric;
     v_deposit_amount numeric;
     v_amount numeric;
-    v_report text;
+    v_report jsonb;
+    v_report_user uuid;
 BEGIN
     -- ==================================================================
     -- Setup: Two products - one with deposit, one without
@@ -158,24 +159,23 @@ BEGIN
         -- ==================================================================
         -- Step 4: Verify financial report shows deposit/remaining split
         -- ==================================================================
-        SELECT get_report_for_occasion(v_occasion_id) INTO v_report;
-        RAISE NOTICE 'Report output: %', v_report;
+        PERFORM create_user_for_test('report_integration', 'report-integration@test.local');
+        v_report_user := get_user_id('report_integration');
+        UPDATE public.user_info SET organization=v_org_id WHERE id=v_report_user;
+        INSERT INTO public.occasion_users (occasion,"user",is_editor_order_view) VALUES (v_occasion_id,v_report_user,true);
+        PERFORM set_config('request.jwt.claim.sub',v_report_user::text,true);
+        PERFORM set_config('test.report_link',(SELECT link FROM public.occasions WHERE id=v_occasion_id),true);
+        SET LOCAL ROLE authenticated;
+        v_report := public.get_report_ws(current_setting('test.report_link',true));
+        RESET ROLE;
+        PERFORM assert_eq((v_report->>'code')::int,200,'Report succeeds through authorized RPC');
+        PERFORM assert_eq((v_report->'report'->'money_by_currency'->0->>'deposit_received_gross')::numeric,
+          500::numeric,'Report deposit split');
+        PERFORM assert_eq((v_report->'report'->'money_by_currency'->0->>'beyond_deposit_received_gross')::numeric,
+          500::numeric,'Report beyond-deposit split excludes non-deposit orders');
+        PERFORM assert_eq((v_report->'report'->'money_by_currency'->0->>'received')::numeric,
+          1800::numeric,'Report received from payment workflow');
 
-        -- Report should contain deposit and remaining lines
-        PERFORM assert_true(
-            v_report LIKE '%Zálohy (deposits)%',
-            'Step 4: Report should contain deposit line'
-        );
-        PERFORM assert_true(
-            v_report LIKE '%Doplatky (remaining)%',
-            'Step 4: Report should contain remaining line'
-        );
-        -- Deposit paid = LEAST(paid, deposit_amount) = LEAST(1000, 500) = 500
-        PERFORM assert_true(
-            v_report LIKE '%500.00%',
-            'Step 4: Report should contain 500.00 (deposit amount)'
-        );
-        RAISE NOTICE 'Step 4 PASSED: Report shows deposit/remaining split';
     END;
 
     RAISE NOTICE '=============================================';

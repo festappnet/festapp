@@ -35,7 +35,8 @@ enum BlueprintSelectionMode {
 }
 
 class BlueprintTab extends StatefulWidget {
-  const BlueprintTab({super.key, this.prototypeBlueprint, this.onPrototypeSave});
+  const BlueprintTab(
+      {super.key, this.prototypeBlueprint, this.onPrototypeSave});
 
   /// Runs the existing editor against an in-memory plan for the setup demo.
   const BlueprintTab.prototype({
@@ -88,9 +89,10 @@ class _BlueprintTabState extends State<BlueprintTab> {
       }
       return;
     }
-    if (occasionLink == null && context.routeData.params.isNotEmpty) {
-      occasionLink =
-          context.routeData.params.getString(AppRouter.linkFormatted);
+    if (occasionLink == null &&
+        context.routeData.inheritedPathParams.isNotEmpty) {
+      occasionLink = context.routeData.inheritedPathParams
+          .getString(AppRouter.linkFormatted);
     }
     loadData();
   }
