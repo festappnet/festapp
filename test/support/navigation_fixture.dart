@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/navigation/occasion_administration_boundary.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
@@ -41,13 +42,26 @@ class FixtureRouter extends RootStackRouter {
   @override
   List<AutoRouteGuard> get guards => [RetainedDraftGuard.instance];
   AutoRoute page(String name, String path, WidgetBuilder builder,
-          {List<AutoRoute>? children}) =>
-      CustomRoute(
-          transitionsBuilder: TransitionsBuilders.noTransition,
-          usesPathAsKey: name == ReservationsRoute.name,
-          page: PageInfo(name, builder: (data) => Builder(builder: builder)),
-          path: path,
-          children: children);
+      {List<AutoRoute>? children}) {
+    final info = PageInfo(name, builder: (data) => Builder(builder: builder));
+    if (name == FormDetailRoute.name) {
+      Iterable<RouteMatch> flatten(List<RouteMatch> routes) sync* {
+        for (final route in routes) {
+          yield route;
+          yield* flatten(route.children ?? []);
+        }
+      }
+      // Use production's entry transition while keeping backend-free content.
+      final entry = flatten(AppRouter().matcher.match(
+          '/occasion-a/reservations/forms/form-0/editor',
+          includePrefixMatches: false)!).singleWhere((route) => route.name == name);
+      return AutoRoute(page: info, path: path, type: entry.type, children: children);
+    }
+    return CustomRoute(
+        transitionsBuilder: TransitionsBuilders.noTransition,
+        usesPathAsKey: name == ReservationsRoute.name,
+        page: info, path: path, children: children);
+  }
   @override
   List<AutoRoute> get routes => [
         page(
