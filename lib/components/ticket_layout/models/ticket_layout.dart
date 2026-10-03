@@ -192,6 +192,7 @@ class TicketTemplate {
             'flowStep',
             'qrAppearance',
             'backgroundTransform',
+            'pageMargin',
             'border'
           ])
             if (j.containsKey(key)) key: j[key]
@@ -238,17 +239,26 @@ class TicketTemplate {
               'y': offset.dy
             }
           });
-  TicketTemplate withPaper(bool ticket) => TicketTemplate(
+  double get pageMargin => appearance['pageMargin'] is num
+      ? (appearance['pageMargin'] as num).toDouble()
+      : 0;
+  TicketTemplate withPaper(bool ticket, {double margin = 0}) => TicketTemplate(
       fitPageToTicket: ticket,
-      page: ticket ? area.size : const Size(595.28, 841.89),
+      page: ticket
+          ? Size(area.width + 2 * margin, area.height + 2 * margin)
+          : const Size(595.28, 841.89),
       area: ticket
-          ? Offset.zero & area.size
+          ? Rect.fromLTWH(margin, margin, area.width, area.height)
           : Rect.fromLTWH(
               math.max(0, (595.28 - area.width) / 2),
               math.min(29.764, math.max(0, 841.89 - area.height)),
               area.width,
               area.height),
-      appearance: appearance,
+      appearance: {
+        for (final entry in appearance.entries)
+          if (entry.key != 'pageMargin') entry.key: entry.value,
+        if (ticket && margin != 0) 'pageMargin': margin
+      },
       elements: elements);
   TicketTemplate withQrColors(String foreground, String background) =>
       TicketTemplate(
@@ -306,9 +316,11 @@ class TicketTemplate {
           if (appearance['flowStep'] != null)
             'flowStep': (appearance['flowStep'] as num) * scale
         },
-        page: fitPageToTicket ? size : page,
-        area: Rect.fromLTWH(fitPageToTicket ? 0 : area.left,
-            fitPageToTicket ? 0 : area.top, size.width, size.height),
+        page: fitPageToTicket
+            ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
+            : page,
+        area: Rect.fromLTWH(fitPageToTicket ? pageMargin : area.left,
+            fitPageToTicket ? pageMargin : area.top, size.width, size.height),
         elements: elements
             .map((e) => e.copyWith(
                 box: Rect.fromLTWH(
@@ -343,6 +355,12 @@ class TicketTemplate {
             (transform['y'] as num).abs() > 10)) {
       errors.add('background');
     }
+    if (appearance.containsKey('pageMargin') &&
+        (!fitPageToTicket ||
+            appearance['pageMargin'] is! num ||
+            !pageMargin.isFinite ||
+            pageMargin < 0 ||
+            pageMargin > 72)) errors.add('geometry');
     if (!validFont(fontId)) errors.add('font');
     bool inside(Rect b, Size size) =>
         [b.left, b.top, b.width, b.height].every((v) => v.isFinite) &&
@@ -355,8 +373,9 @@ class TicketTemplate {
     final pageValid = fitPageToTicket
         ? [page.width, page.height]
                 .every((v) => v.isFinite && v >= 60 && v <= 842) &&
-            area.topLeft == Offset.zero &&
-            area.size == page
+            area.topLeft == Offset(pageMargin, pageMargin) &&
+            (area.width + 2 * pageMargin - page.width).abs() < .001 &&
+            (area.height + 2 * pageMargin - page.height).abs() < .001
         : page == const Size(595.28, 841.89) ||
             page == const Size(212.5, 387.5);
     if (!pageValid ||

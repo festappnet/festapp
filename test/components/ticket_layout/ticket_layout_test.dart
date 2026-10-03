@@ -8,6 +8,8 @@ import 'dart:io';
 import 'dart:ui' show PointerDeviceKind;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:fstapp/theme_config.dart';
+import 'package:fstapp/components/ticket_layout/ticket_snapping.dart';
 import 'package:flutter/rendering.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
@@ -31,29 +33,31 @@ import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 final fixture = jsonDecode(
     File('test/fixtures/ticket_layout/resolve.json').readAsStringSync()) as Map;
 TicketTemplate document() => TicketTemplate.fromJson(fixture['template']);
-TicketLayoutResources resources() => TicketLayoutResources(
-    fonts: legacyTicketFontIds.map((name, id) => MapEntry(
-        id,
-        TicketFontResource(
+TicketLayoutResources resources({ui.Image? background}) =>
+    TicketLayoutResources(
+        background: background,
+        fonts: legacyTicketFontIds.map((name, id) => MapEntry(
             id,
-            {
-              'futura': 'Futura PT',
-              'robotoSlab': 'Roboto Slab (legacy)',
-              'roboto': 'Roboto (legacy)',
-              'russoOne': 'Russo One (legacy)'
-            }[name]!,
-            400,
-            TicketFontMetrics.fromJson(fixture['metrics']),
-            'TicketFont_${id.split(':').last}'))),
-    template: document(),
-    preset: document(),
-    presets: (fixture['presets'] as Map).map((key, value) =>
-        MapEntry(key as String, TicketTemplate.fromJson(value))),
-    scenarios: (fixture['scenarios'] as Map).map(
-        (k, v) => MapEntry(k as String, (v as Map).cast<String, String?>())),
-    metrics: TicketFontMetrics.fromJson(fixture['metrics']),
-    qrSize: fixture['qrMatrix']['size'],
-    qrModules: (fixture['qrMatrix']['data'] as List).cast<int>());
+            TicketFontResource(
+                id,
+                {
+                  'futura': 'Futura PT',
+                  'robotoSlab': 'Roboto Slab (legacy)',
+                  'roboto': 'Roboto (legacy)',
+                  'russoOne': 'Russo One (legacy)'
+                }[name]!,
+                400,
+                TicketFontMetrics.fromJson(fixture['metrics']),
+                'TicketFont_${id.split(':').last}'))),
+        template: document(),
+        preset: document(),
+        presets: (fixture['presets'] as Map).map((key, value) =>
+            MapEntry(key as String, TicketTemplate.fromJson(value))),
+        scenarios: (fixture['scenarios'] as Map).map((k, v) =>
+            MapEntry(k as String, (v as Map).cast<String, String?>())),
+        metrics: TicketFontMetrics.fromJson(fixture['metrics']),
+        qrSize: fixture['qrMatrix']['size'],
+        qrModules: (fixture['qrMatrix']['data'] as List).cast<int>());
 
 class SettingsService extends TicketLayoutService {
   String? resolvedType;
@@ -114,6 +118,37 @@ void main() {
             'Editor tests must resolve real translations without warnings.');
   });
   testWidgets(
+      'selected tools and dimensions dialog use the editor dark palette',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.runAsync(TicketFontCatalog.load);
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeConfig.darkTheme(ThemeConfig.baseTheme()),
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'wide',
+            resources: resources(),
+            service: FakeService())));
+    await tester.pumpAndSettle();
+    final button = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'TicketLayout.snap'.tr()));
+    final foreground = button.style!.foregroundColor!.resolve({})!;
+    final background = button.style!.backgroundColor!.resolve({})!;
+    final a = foreground.computeLuminance(), b = background.computeLuminance();
+    expect(((a > b ? a : b) + .05) / ((a < b ? a : b) + .05),
+        greaterThanOrEqualTo(4.5));
+    final editorTheme = Theme.of(tester.element(find.byType(Scaffold)));
+    await tester.tap(find.text('TicketLayout.canvasSize'.tr()).first);
+    await tester.pumpAndSettle();
+    final dialogTheme =
+        Theme.of(tester.element(find.byType(TicketDimensionsDialog)));
+    expect(dialogTheme.colorScheme, editorTheme.colorScheme);
+    expect(dialogTheme.useMaterial3, isTrue);
+  });
+  testWidgets(
       'paper dialog previews ticket-sized output without moving elements',
       (tester) async {
     final original = document().withPaper(false);
@@ -122,18 +157,135 @@ void main() {
         home: Scaffold(
             body: TicketDimensionsDialog(
                 document: original,
-                defaults: original,
                 type: 'wide',
                 onPreview: (value) => preview = value))));
     await tester.tap(find.text('TicketLayout.paperTicket'.tr()));
     await tester.pumpAndSettle();
     expect(preview!.fitPageToTicket, isTrue);
-    expect(preview!.page, original.area.size);
+    expect(preview!.page.width,
+        closeTo(original.area.width + 6 * 72 / 25.4, .001));
+    expect(preview!.area.left, closeTo(3 * 72 / 25.4, .001));
     expect(preview!.elements, original.elements);
+    await tester.enterText(
+        find.widgetWithText(TextField, 'TicketLayout.marginMm'.tr()), '5');
+    await tester.pumpAndSettle();
+    expect(preview!.pageMargin, closeTo(5 * 72 / 25.4, .001));
+    expect(preview!.elements, original.elements);
+    final lastValid = preview;
+    await tester.enterText(
+        find.widgetWithText(TextField, 'TicketLayout.marginMm'.tr()), '-1');
+    await tester.pumpAndSettle();
+    expect(preview, same(lastValid));
+    expect(find.text('TicketLayout.invalidMargin'.tr()), findsOneWidget);
     await tester.tap(find.text('TicketLayout.paperA4'.tr()));
     await tester.pumpAndSettle();
     expect(preview!.page, const Size(595.28, 841.89));
     expect(preview!.fitPageToTicket, isFalse);
+  });
+  test(
+      'paper margins round-trip, preserve content, and reject invalid contracts',
+      () {
+    final original = document();
+    final bordered = original.withPaper(true, margin: 9);
+    expect(bordered.validate('wide'), isEmpty);
+    expect(bordered.area.topLeft, const Offset(9, 9));
+    expect(bordered.page,
+        Size(original.area.width + 18, original.area.height + 18));
+    expect(bordered.elements, original.elements);
+    expect(
+        TicketTemplate.fromJson(bordered.toJson()).toJson(), bordered.toJson());
+    final resized = bordered.resizeArea(bordered.area.size * .9);
+    expect(resized.validate('wide'), isEmpty);
+    expect(resized.page.width, resized.area.width + 18);
+    expect(bordered.withPaper(false).appearance.containsKey('pageMargin'),
+        isFalse);
+    for (final value in [-1, 73, '9', null]) {
+      expect(
+          TicketTemplate.fromJson(bordered.toJson()..['pageMargin'] = value)
+              .validate('wide'),
+          contains('geometry'));
+    }
+  });
+  test(
+      'all image handles preserve aspect and opposite anchor with one undo step',
+      () {
+    const image = Size(400, 200);
+    for (var corner = 0; corner < 4; corner++) {
+      final c = TicketLayoutController(document());
+      final original = c.document;
+      final box = original.backgroundRect(image);
+      final corners = [
+        box.topLeft,
+        box.topRight,
+        box.bottomRight,
+        box.bottomLeft
+      ];
+      final anchor = corners[(corner + 2) % 4];
+      final drag = (anchor - corners[corner]) * .1;
+      c.beginGesture();
+      c.transformBackground(image, drag, corner: corner, snap: false);
+      c.transformBackground(image, drag, corner: corner, snap: false);
+      c.endGesture();
+      final next = c.document.backgroundRect(image);
+      expect(next.width, closeTo(box.width * .8, .001));
+      expect(next.width / next.height, closeTo(2, .001));
+      expect(
+          ([
+                    next.topLeft,
+                    next.topRight,
+                    next.bottomRight,
+                    next.bottomLeft
+                  ][(corner + 2) % 4] -
+                  anchor)
+              .distance,
+          lessThan(.001));
+      expect(c.document.elements, original.elements);
+      c.undo();
+      expect(c.document.toJson(), original.toJson());
+      c.redo();
+      c.beginGesture();
+      c.transformBackground(image, drag, corner: corner, snap: false);
+      c.cancelGesture();
+      expect(c.document.backgroundRect(image), next);
+      c.dispose();
+    }
+  });
+  test('image snapping accumulates slow drag and respects disabled magnets',
+      () {
+    const image = Size(400, 200);
+    final c = TicketLayoutController(document());
+    final box = c.document.backgroundRect(image);
+    c.beginGesture();
+    c.transformBackground(image, const Offset(2, 0), zoom: 1);
+    expect(c.document.backgroundRect(image).left, closeTo(box.left, .001));
+    for (var i = 0; i < 12; i++) {
+      c.transformBackground(image, const Offset(1, 0), zoom: 1);
+    }
+    expect(c.document.backgroundRect(image).left, greaterThan(box.left + 5));
+    c.cancelGesture();
+    c.beginGesture();
+    c.transformBackground(image, const Offset(2, 0), snap: false);
+    expect(c.document.backgroundRect(image).left, closeTo(box.left + 2, .001));
+    c.cancelGesture();
+    c.dispose();
+  });
+  test(
+      'shared resize magnets snap to elements and grid while preserving aspect',
+      () {
+    final element = snapTicketBox(const Rect.fromLTWH(0, 0, 98, 49),
+        const Size(500, 300), [const Rect.fromLTWH(100, 100, 40, 30)],
+        zoom: 1, anchor: Offset.zero);
+    expect(element.box, const Rect.fromLTWH(0, 0, 100, 50));
+    expect(element.x, 100);
+    final grid = snapTicketBox(
+        const Rect.fromLTWH(12, 13, 86, 43), const Size(500, 300), [],
+        zoom: 1, gridStep: 20, anchor: const Offset(12, 13));
+    expect(grid.box.right, 100);
+    expect(grid.box.width / grid.box.height, 2);
+    final zoomed = snapTicketBox(const Rect.fromLTWH(0, 0, 98, 49),
+        const Size(500, 300), [const Rect.fromLTWH(100, 100, 40, 30)],
+        zoom: 4, anchor: Offset.zero);
+    expect(zoomed.box.width, 98);
   });
   test('paper and artwork edits retain element geometry and undo together', () {
     final original = document();
@@ -179,13 +331,20 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.runAsync(TicketFontCatalog.load);
+    final image = await tester.runAsync(() async {
+      final codec = await ui.instantiateImageCodec(
+          File('test/fixtures/ticket_layout/background.png').readAsBytesSync());
+      final image = (await codec.getNextFrame()).image;
+      codec.dispose();
+      return image;
+    });
     await tester.pumpWidget(MaterialApp(
         theme: ThemeData.dark(),
         home: TicketLayoutEditor(
             occasionId: 1,
             type: 'wide',
             background: 'fixture.png',
-            resources: resources(),
+            resources: resources(background: image),
             service: FakeService())));
     await tester.pumpAndSettle();
     expect(Theme.of(tester.element(find.byType(Scaffold))).brightness,
@@ -203,6 +362,22 @@ void main() {
         before);
     state.controller.undo();
     expect(state.controller.document.backgroundOffset, Offset.zero);
+    await tester.pumpAndSettle();
+    final view =
+        tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
+    final box = view.controller.document
+        .backgroundRect(Size(image!.width.toDouble(), image.height.toDouble()));
+    final scene = box.bottomRight + view.controller.document.area.topLeft;
+    final point = MatrixUtils.transformPoint(view.transform.value, scene) +
+        tester.getTopLeft(find.byType(TicketLayoutCanvas));
+    await tester.dragFrom(point, const Offset(-60, -30));
+    await tester.pumpAndSettle();
+    expect(view.controller.document.backgroundScale, lessThan(1));
+    expect(view.controller.document.elements.map((e) => e.toJson()).toList(),
+        before);
+    view.controller.undo();
+    expect(view.controller.document.backgroundScale, 1);
+    await tester.pumpWidget(const SizedBox());
   });
   testWidgets('editor shows one font picker and a contrasting Apply action',
       (tester) async {
@@ -803,9 +978,7 @@ void main() {
                       result = await showDialog<TicketTemplate>(
                           context: context,
                           builder: (_) => TicketDimensionsDialog(
-                              document: template,
-                              defaults: template,
-                              type: 'wide'));
+                              document: template, type: 'wide'));
                     },
                     child: const Text('dimensions'))))));
     await tester.tap(find.text('dimensions'));
@@ -815,7 +988,7 @@ void main() {
     expect(result!.toJson(), template.toJson());
   });
   testWidgets(
-      'default dimensions preview immediately and cancel restores the ticket',
+      'dimension edits preview immediately and cancel restores the ticket',
       (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1;
@@ -836,9 +1009,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('TicketLayout.canvasSize'.tr()).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.defaultDimensions'.tr()));
+    await tester.enterText(
+        find.widgetWithText(TextField, 'TicketLayout.widthMm'.tr()), '70');
     await tester.pumpAndSettle();
-    expect(view.controller.document.area.size, original.area.size);
+    expect(view.controller.document.area.width, closeTo(70 * 72 / 25.4, .001));
     await tester.tap(find.descendant(
         of: find.byType(AlertDialog),
         matching: find.text('TicketLayout.cancel'.tr())));
@@ -850,13 +1024,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('TicketLayout.canvasSize'.tr()).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.defaultDimensions'.tr()));
+    await tester.enterText(
+        find.widgetWithText(TextField, 'TicketLayout.widthMm'.tr()), '70');
     await tester.pumpAndSettle();
     await tester.tap(find.descendant(
         of: find.byType(AlertDialog),
         matching: find.text('TicketLayout.apply'.tr())));
     await tester.pumpAndSettle();
-    expect(view.controller.document.area.size, original.area.size);
+    expect(view.controller.document.area.width, closeTo(70 * 72 / 25.4, .001));
     view.controller.undo();
     expect(view.controller.document.toJson(), resized.toJson());
   });
