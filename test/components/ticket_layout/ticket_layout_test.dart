@@ -1,3 +1,4 @@
+import 'package:fstapp/components/ticket_layout/views/ticket_canvas_color_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:easy_localization/src/localization.dart';
 import 'package:easy_localization/src/translations.dart';
@@ -598,9 +599,9 @@ void main() {
     final before =
         state.controller.document.elements.map((e) => e.toJson()).toList();
     final positionButton =
-        find.widgetWithText(OutlinedButton, 'TicketLayout.positionImage'.tr());
+        find.widgetWithText(TextButton, 'TicketLayout.positionImage'.tr());
     final cropButton =
-        find.widgetWithText(OutlinedButton, 'TicketLayout.cropImage'.tr());
+        find.widgetWithText(TextButton, 'TicketLayout.cropImage'.tr());
     final positionRect = tester.getRect(positionButton),
         cropRect = tester.getRect(cropButton);
     expect(cropRect.top - positionRect.bottom, greaterThanOrEqualTo(12));
@@ -633,9 +634,9 @@ void main() {
     expect(view.controller.document.backgroundScale, 1);
     await tester.pumpAndSettle();
     await tester.ensureVisible(
-        find.widgetWithText(OutlinedButton, 'TicketLayout.cropImage'.tr()));
-    await tester.tap(
-        find.widgetWithText(OutlinedButton, 'TicketLayout.cropImage'.tr()));
+        find.widgetWithText(TextButton, 'TicketLayout.cropImage'.tr()).last);
+    await tester
+        .tap(find.widgetWithText(TextButton, 'TicketLayout.cropImage'.tr()).last);
     await tester.pumpAndSettle();
     final cropPoint = MatrixUtils.transformPoint(view.transform.value, scene) +
         tester.getTopLeft(find.byType(TicketLayoutCanvas));
@@ -1170,10 +1171,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.byType(TicketLayoutEditor), findsOneWidget,
-        reason: 'system back must not dismiss a clean editor');
-    await tester.tap(find.byTooltip('TicketLayout.cancel'.tr()).first);
-    await tester.pumpAndSettle();
+    expect(find.byType(TicketLayoutEditor), findsNothing,
+        reason: 'system back closes a clean editor');
     expect(service.resolveCalls, 2,
         reason: 'cancel does not reload the thumbnail');
     expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
@@ -1188,9 +1187,10 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutEditor), findsOneWidget);
-    expect(find.text('TicketLayout.discard'.tr()), findsNothing,
-        reason:
-            'back gestures must not interrupt editing with a discard prompt');
+    expect(find.text('TicketLayout.discard'.tr()), findsWidgets);
+    await tester
+        .tap(find.widgetWithText(TextButton, 'TicketLayout.cancel'.tr()).last);
+    await tester.pumpAndSettle();
     service.pendingResolve = Completer<TicketLayoutResources>();
     final changed = document().withFont('roboto');
     Navigator.of(tester.element(find.byType(TicketLayoutEditor)))
@@ -1280,6 +1280,54 @@ void main() {
     c.undo();
     expect(c.document.toJson(), base.toJson());
     c.dispose();
+  });
+
+  test('canvas colors round-trip, validate and share undo', () {
+    final original = document();
+    final c = TicketLayoutController(original);
+    for (final color in ['123ABC', 'transparent', 'FFFFFF']) {
+      final next = original.withCanvasColor(color);
+      expect(next.validate('named'), isEmpty);
+      expect(TicketTemplate.fromJson(next.toJson()).canvasColor, color);
+      c.replace(next);
+      c.undo();
+      expect(c.document.toJson(), original.toJson());
+    }
+    for (final value in ['#FFFFFF', 'FF00', '', 'transparentx']) {
+      expect(original.withCanvasColor(value).validate('named'),
+          contains('canvasColor'));
+    }
+    c.dispose();
+  });
+
+  testWidgets('canvas color dialog cancels with Escape or outside click',
+      (tester) async {
+    String? result;
+    await tester.pumpWidget(MaterialApp(
+        home: Builder(
+            builder: (context) => Scaffold(
+                body: TextButton(
+                    child: const Text('choose canvas'),
+                    onPressed: () async {
+                      result = await showDialog<String>(
+                          context: context,
+                          builder: (_) =>
+                              const TicketCanvasColorDialog(value: 'FFFFFF'));
+                    })))));
+    for (final escape in [true, false]) {
+      await tester.tap(find.text('choose canvas'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      if (escape) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      } else {
+        await tester.tapAt(const Offset(5, 5));
+      }
+      await tester.pumpAndSettle();
+      expect(find.byType(TicketCanvasColorDialog), findsNothing);
+      expect(result, isNull);
+    }
   });
 
   test('ticket height can shrink while a minimum-size QR remains printable',
