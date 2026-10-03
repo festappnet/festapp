@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "88af597ceb99bb3a31c645d0ea9d54b5b18f05b9",
+  "baseMainSha": "3912447c88f070910cfcf64e2a93c53191284430",
   "release": {
-    "version": "0.20.65+549",
-    "note": "Align breadcrumb baselines, clarify enabled actions and fix direct program URL startup"
+    "version": "0.20.66+550",
+    "note": "Keep administration tabs left aligned at all screen widths"
   }
 }
