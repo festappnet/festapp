@@ -1,3 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/src/localization.dart';
+import 'package:easy_localization/src/translations.dart';
 import 'package:fstapp/components/fonts/ticket_font_ids.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -86,6 +89,23 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  final localizationWarnings = <String>[];
+  final originalPrinter = EasyLocalization.logger.printer;
+  setUp(() {
+    localizationWarnings.clear();
+    EasyLocalization.logger.printer = (object, {name, stackTrace, level}) {
+      if (level.toString().contains('warning') ||
+          level.toString().contains('error')) {
+        localizationWarnings.add(object.toString());
+      }
+      originalPrinter?.call(object, name: name, stackTrace: stackTrace, level: level);
+    };
+  });
+  tearDown(() {
+    EasyLocalization.logger.printer = originalPrinter;
+    expect(localizationWarnings, isEmpty,
+        reason: 'Editor tests must resolve real translations without warnings.');
+  });
   testWidgets('editor shows one font picker and a contrasting Apply action',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
@@ -109,12 +129,19 @@ void main() {
     expect(find.byType(FontFamilyPicker), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     final button = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'TicketLayout.apply'));
+        find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr()));
     expect(button.onPressed, isNotNull);
-    expect(button.style!.backgroundColor!.resolve({}), Colors.white);
-    expect(button.style!.foregroundColor!.resolve({}), Colors.black87);
-    expect(find.text('TicketLayout.elementFont'), findsNothing);
-    expect(find.text('TicketLayout.downloadPdf'), findsNothing);
+    final buttonContext = tester.element(
+        find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr()));
+    final style = button.defaultStyleOf(buttonContext);
+    final background = style.backgroundColor!.resolve({})!;
+    final foreground = style.foregroundColor!.resolve({})!;
+    final light = foreground.computeLuminance();
+    final dark = background.computeLuminance();
+    expect((light + .05) / (dark + .05), greaterThanOrEqualTo(4.5));
+    expect(background, isNot(Theme.of(buttonContext).appBarTheme.backgroundColor));
+    expect(find.text('TicketLayout.elementFont'.tr()), findsNothing);
+    expect(find.text('TicketLayout.downloadPdf'.tr()), findsNothing);
   });
   testWidgets(
       'font A/B race preserves draft, commits one undo step, isolates editors, blocks pending PDF and Apply',
@@ -307,13 +334,13 @@ void main() {
         home: Scaffold(
             body: SingleChildScrollView(
                 child: TicketLayoutProperties(controller: c)))));
-    await tester.tap(find.text('TicketLayout.color'));
+    await tester.tap(find.text('TicketLayout.color'.tr()));
     await tester.pumpAndSettle();
     final first = find.byTooltip('#000000').last;
     final last = find.byTooltip('#FFFFFF').last;
     expect(tester.getTopLeft(first).dy, tester.getTopLeft(last).dy);
-    expect(tester.getTopLeft(find.text('TicketLayout.usedColors')).dx,
-        tester.getTopLeft(find.text('TicketLayout.basicColors')).dx);
+    expect(tester.getTopLeft(find.text('TicketLayout.usedColors'.tr())).dx,
+        tester.getTopLeft(find.text('TicketLayout.basicColors'.tr())).dx);
     final row = find
         .ancestor(of: last, matching: find.byType(SingleChildScrollView))
         .first;
@@ -343,15 +370,20 @@ void main() {
                 home: Scaffold(
                     body: SingleChildScrollView(
                         child: TicketLayoutProperties(controller: c))))));
-        await tester.tap(find.text('TicketLayout.color'));
+        await tester.tap(find.text('TicketLayout.color'.tr()));
         await tester.pumpAndSettle();
         final boundary = boundaryKey.currentContext!.findRenderObject()!
             as RenderRepaintBoundary;
-        final image = (await tester.runAsync(() => boundary.toImage()))!;
-        final pixels = (await tester.runAsync(
-            () => image.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
         for (final hex in ticketQrColors) {
-          final rect = tester.getRect(find.byTooltip('#$hex').last);
+          final swatch = find.byTooltip('#$hex').last;
+          // Real translations change the dialog width. Bring each horizontally
+          // scrollable swatch into view before sampling its painted pixels.
+          await tester.ensureVisible(swatch);
+          await tester.pumpAndSettle();
+          final image = (await tester.runAsync(() => boundary.toImage()))!;
+          final pixels = (await tester.runAsync(
+              () => image.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
+          final rect = tester.getRect(swatch);
           final point =
               boundary.globalToLocal(Offset(rect.center.dx, rect.top + 12));
           final offset =
@@ -361,8 +393,10 @@ void main() {
               pixels.getUint8(offset + 2);
           expect(rgb, int.parse(hex, radix: 16),
               reason: '$hex material3=$material3 brightness=$brightness');
+          image.dispose();
         }
-        image.dispose();
+        await tester.ensureVisible(find.byTooltip('#17365D').last);
+        await tester.pumpAndSettle();
         await tester.tap(find.byTooltip('#17365D').last);
         await tester.pump();
         expect(
@@ -388,21 +422,21 @@ void main() {
                   child: TicketLayoutProperties(
                       controller: c, backgroundImage: image)))));
       await tester.tap(find.text(
-          binding == 'qr' ? 'TicketLayout.qrColors' : 'TicketLayout.color'));
+          binding == 'qr' ? 'TicketLayout.qrColors'.tr() : 'TicketLayout.color'.tr()));
       await tester.pumpAndSettle();
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pumpAndSettle();
       expect(find.byType(ColorPicker), findsOneWidget);
-      expect(find.text('TicketLayout.usedColors'), findsOneWidget);
-      expect(find.text('TicketLayout.imageColors'), findsOneWidget);
+      expect(find.text('TicketLayout.usedColors'.tr()), findsOneWidget);
+      expect(find.text('TicketLayout.imageColors'.tr()), findsOneWidget);
       await tester.tap(find.byTooltip('#204060'));
       await tester.pump();
       expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
           '204060');
       await tester.enterText(find.byType(TextField), 'FFFFFF');
       await tester.pump();
-      final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply');
+      final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr());
       expect(tester.widget<FilledButton>(apply).onPressed == null,
           binding == 'qr');
       await tester.enterText(find.byType(TextField), '445566');
@@ -497,9 +531,9 @@ void main() {
     await marquee.up();
     await tester.pump();
     expect(c.selectedIds, containsAll(['qr', 'ticketSymbol']));
-    await tester.tap(find.byTooltip('TicketLayout.viewOptions'));
+    await tester.tap(find.byTooltip('TicketLayout.viewOptions'.tr()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.multiSelect'));
+    await tester.tap(find.text('TicketLayout.multiSelect'.tr()));
     await tester.pumpAndSettle();
     final previous = c.document;
     final touchDrag = await tester.startGesture(screen(qr.box.center));
@@ -517,7 +551,7 @@ void main() {
             body: SingleChildScrollView(
                 child: TicketLayoutProperties(controller: c)))));
     for (final style in ['bold', 'italic', 'underline']) {
-      await tester.tap(find.byTooltip('TicketLayout.$style'));
+      await tester.tap(find.byTooltip('TicketLayout.$style'.tr()));
       await tester.pump();
       expect(c.selection!.toJson()['style'][style], isTrue);
     }
@@ -553,7 +587,7 @@ void main() {
                       service: service)))));
       await tester.pumpAndSettle();
       expect(find.byType(DropdownButtonFormField<String>), findsNothing);
-      expect(find.text('TicketLayout.edit'), findsOneWidget);
+      expect(find.text('TicketLayout.edit'.tr()), findsOneWidget);
       final paint = tester
           .widgetList<CustomPaint>(find.byType(CustomPaint))
           .firstWhere((paint) => paint.painter is TicketLayoutPainter);
@@ -579,7 +613,7 @@ void main() {
                 child: TicketSettings(
                     feature: feature, occasionId: 7, service: service)))));
     await tester.pumpAndSettle();
-    final edit = find.widgetWithText(FilledButton, 'TicketLayout.edit');
+    final edit = find.widgetWithText(FilledButton, 'TicketLayout.edit'.tr());
     expect(service.resolveCalls, 1);
     await tester.tap(edit);
     await tester.pumpAndSettle();
@@ -587,7 +621,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutEditor), findsOneWidget,
         reason: 'system back must not dismiss a clean editor');
-    await tester.tap(find.byTooltip('TicketLayout.cancel').first);
+    await tester.tap(find.byTooltip('TicketLayout.cancel'.tr()).first);
     await tester.pumpAndSettle();
     expect(service.resolveCalls, 2,
         reason: 'cancel does not reload the thumbnail');
@@ -603,7 +637,7 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutEditor), findsOneWidget);
-    expect(find.text('TicketLayout.discard'), findsNothing,
+    expect(find.text('TicketLayout.discard'.tr()), findsNothing,
         reason:
             'back gestures must not interrupt editing with a discard prompt');
     service.pendingResolve = Completer<TicketLayoutResources>();
@@ -677,7 +711,7 @@ void main() {
                     child: const Text('dimensions'))))));
     await tester.tap(find.text('dimensions'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.apply'));
+    await tester.tap(find.text('TicketLayout.apply'.tr()));
     await tester.pumpAndSettle();
     expect(result!.toJson(), template.toJson());
   });
@@ -701,27 +735,27 @@ void main() {
     final resized = original.resizeArea(original.area.size * .95);
     view.controller.replace(resized);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.canvasSize').first);
+    await tester.tap(find.text('TicketLayout.canvasSize'.tr()).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.defaultDimensions'));
+    await tester.tap(find.text('TicketLayout.defaultDimensions'.tr()));
     await tester.pumpAndSettle();
     expect(view.controller.document.area.size, original.area.size);
     await tester.tap(find.descendant(
         of: find.byType(AlertDialog),
-        matching: find.text('TicketLayout.cancel')));
+        matching: find.text('TicketLayout.cancel'.tr())));
     await tester.pumpAndSettle();
     expect(view.controller.document.toJson(), resized.toJson());
     view.controller.undo();
     expect(view.controller.document.toJson(), original.toJson());
     view.controller.replace(resized);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.canvasSize').first);
+    await tester.tap(find.text('TicketLayout.canvasSize'.tr()).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.defaultDimensions'));
+    await tester.tap(find.text('TicketLayout.defaultDimensions'.tr()));
     await tester.pumpAndSettle();
     await tester.tap(find.descendant(
         of: find.byType(AlertDialog),
-        matching: find.text('TicketLayout.apply')));
+        matching: find.text('TicketLayout.apply'.tr())));
     await tester.pumpAndSettle();
     expect(view.controller.document.area.size, original.area.size);
     view.controller.undo();
@@ -737,7 +771,7 @@ void main() {
             showTemplatePicker: true)));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.text('TicketLayout.style_compact'), findsOneWidget);
+    expect(find.text('TicketLayout.style_compact'.tr()), findsOneWidget);
   });
   test('canvas resize preserves square QR and shares geometry undo', () {
     final original = document();
@@ -761,17 +795,17 @@ void main() {
     final before = controller.selection!.color;
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(body: TicketLayoutProperties(controller: controller))));
-    await tester.tap(find.text('TicketLayout.color'));
+    await tester.tap(find.text('TicketLayout.color'.tr()));
     await tester.pumpAndSettle();
     expect(find.byType(ColorPicker), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'AA1122');
-    await tester.tap(find.text('TicketLayout.cancel'));
+    await tester.tap(find.text('TicketLayout.cancel'.tr()));
     await tester.pumpAndSettle();
     expect(controller.selection!.color, before);
-    await tester.tap(find.text('TicketLayout.color'));
+    await tester.tap(find.text('TicketLayout.color'.tr()));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'AA1122');
-    await tester.tap(find.text('TicketLayout.apply'));
+    await tester.tap(find.text('TicketLayout.apply'.tr()));
     await tester.pumpAndSettle();
     expect(controller.selection!.color, 'AA1122');
     controller.undo();
@@ -780,6 +814,11 @@ void main() {
     controller.dispose();
   });
   setUpAll(() async {
+    // Load the same catalog used by the app. An uninitialized translator returns
+    // raw keys and floods otherwise passing widget tests with missing-key warnings.
+    Localization.load(const Locale('cs'), translations: Translations(
+        jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+            as Map<String, dynamic>));
     final bytes =
         await File('supabase/functions/_shared/ticket-assets/font.ttf')
             .readAsBytes();
@@ -949,7 +988,7 @@ void main() {
     await touch.up();
     await second.up();
     await tester.pump();
-    await tester.tap(find.text('TicketLayout.apply'));
+    await tester.tap(find.text('TicketLayout.apply'.tr()));
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutEditor), findsNothing);
     expect(service.pdfCalls, 0);
@@ -966,7 +1005,7 @@ void main() {
             service: service)));
     await tester.pumpAndSettle();
     expect(service.pdfCalls, 0);
-    await tester.tap(find.byTooltip('TicketLayout.pdf'));
+    await tester.tap(find.byTooltip('TicketLayout.pdf'.tr()));
     await tester.pumpAndSettle();
     expect(service.pdfCalls, 1);
     expect(find.byType(TicketLayoutCanvas), findsOneWidget);
@@ -1013,7 +1052,7 @@ void main() {
             resources: resources(),
             service: service)));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('TicketLayout.pdf'));
+    await tester.tap(find.byTooltip('TicketLayout.pdf'.tr()));
     await tester.pump();
     final c = tester
         .widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas))
@@ -1095,22 +1134,22 @@ void main() {
             resources: resources(),
             service: service)));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('TicketLayout.viewOptions'));
+    await tester.tap(find.byTooltip('TicketLayout.viewOptions'.tr()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.grid'));
+    await tester.tap(find.text('TicketLayout.grid'.tr()));
     await tester.pump();
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('TicketLayout.viewOptions'));
+    await tester.tap(find.byTooltip('TicketLayout.viewOptions'.tr()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.snap'));
+    await tester.tap(find.text('TicketLayout.snap'.tr()));
     await tester.pump();
     final view =
         tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
     expect(view.grid, isTrue);
     expect(view.snap, isFalse);
-    await tester.tap(find.text('TicketLayout.styles'));
+    await tester.tap(find.text('TicketLayout.styles'.tr()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.style_compact'));
+    await tester.tap(find.text('TicketLayout.style_compact'.tr()));
     await tester.pumpAndSettle();
     expect(view.controller.document.toJson(), fixture['presets']['compact']);
     expect(view.controller.canUndo, isTrue);
@@ -1155,17 +1194,17 @@ void main() {
             showTemplatePicker: true)));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await tester.tap(find.text('TicketLayout.style_classic'));
+    await tester.tap(find.text('TicketLayout.style_classic'.tr()));
     await tester.pumpAndSettle();
     expect(tester.getSize(find.byType(TicketLayoutCanvas)).height,
         greaterThan(400));
-    await tester.tap(find.text('TicketLayout.elements'));
+    await tester.tap(find.text('TicketLayout.elements'.tr()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('TicketLayout.occasionTitle'));
+    await tester.tap(find.text('TicketLayout.occasionTitle'.tr()));
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutProperties).hitTestable(), findsOneWidget);
-    expect(find.text('TicketLayout.color').hitTestable(), findsOneWidget);
-    await tester.tap(find.text('TicketLayout.color'));
+    expect(find.text('TicketLayout.color'.tr()).hitTestable(), findsOneWidget);
+    await tester.tap(find.text('TicketLayout.color'.tr()));
     await tester.pumpAndSettle();
     expect(find.byType(ColorPicker), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -1179,7 +1218,7 @@ void main() {
             body: SingleChildScrollView(
                 child: TicketLayoutProperties(controller: c)))));
     for (final align in ['left', 'right', 'center']) {
-      await tester.tap(find.byTooltip('TicketLayout.$align'));
+      await tester.tap(find.byTooltip('TicketLayout.$align'.tr()));
       await tester.pump();
       expect(c.selection!.align, align);
     }
@@ -1248,7 +1287,7 @@ void main() {
     c.select('logo');
     await tester.pump();
     final titleRow =
-        find.widgetWithText(ListTile, 'TicketLayout.occasionTitle');
+        find.widgetWithText(ListTile, 'TicketLayout.occasionTitle'.tr());
     final eye =
         find.descendant(of: titleRow, matching: find.byType(IconButton));
     bool titleVisible() =>
@@ -1275,7 +1314,7 @@ void main() {
     expect(c.selectedIds, {'occasionTitle'});
     for (final binding in ['qr', 'ticketSymbol']) {
       final button = find.descendant(
-          of: find.widgetWithText(ListTile, 'TicketLayout.$binding'),
+          of: find.widgetWithText(ListTile, 'TicketLayout.$binding'.tr()),
           matching: find.byType(IconButton));
       expect(tester.widget<IconButton>(button).onPressed, isNull);
     }
@@ -1325,13 +1364,13 @@ void main() {
     await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ,
         shift: true);
     expect(c.selection!.bold, !original);
-    await tester.tap(find.text('TicketLayout.color'));
+    await tester.tap(find.text('TicketLayout.color'.tr()));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(TextField));
     await tester.enterText(find.byType(TextField), '123456');
     await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
     expect(c.selection!.bold, !original);
-    await tester.tap(find.text('TicketLayout.cancel'));
+    await tester.tap(find.text('TicketLayout.cancel'.tr()));
     await tester.pumpAndSettle();
     await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
     expect(c.selection!.bold, original);
@@ -1351,14 +1390,14 @@ void main() {
         home: Scaffold(
             body: SingleChildScrollView(
                 child: TicketLayoutProperties(controller: c)))));
-    await tester.tap(find.text('TicketLayout.qrColors'));
+    await tester.tap(find.text('TicketLayout.qrColors'.tr()));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byType(TextField));
     await tester.enterText(find.byType(TextField), 'FFFFFF');
     await tester.pump();
-    final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply');
+    final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr());
     expect(tester.widget<FilledButton>(apply).onPressed, isNull);
-    final background = find.text('TicketLayout.qrBackground');
+    final background = find.text('TicketLayout.qrBackground'.tr());
     await tester.ensureVisible(background);
     await tester.tap(background);
     await tester.pumpAndSettle();
@@ -1379,11 +1418,11 @@ void main() {
     c.undo();
     await tester.pumpAndSettle();
     expect(c.document.toJson(), initial);
-    await tester.tap(find.text('TicketLayout.qrColors'));
+    await tester.tap(find.text('TicketLayout.qrColors'.tr()));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('TicketLayout.swapColors'));
+    await tester.tap(find.byTooltip('TicketLayout.swapColors'.tr()));
     await tester.pump();
-    await tester.tap(find.text('TicketLayout.cancel'));
+    await tester.tap(find.text('TicketLayout.cancel'.tr()));
     await tester.pumpAndSettle();
     expect(c.document.toJson(), initial);
     expect(tester.takeException(), isNull);
