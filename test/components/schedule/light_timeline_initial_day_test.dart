@@ -27,7 +27,7 @@ class _EmptyAssetLoader extends AssetLoader {
 }
 
 Widget _testApp(List<TimeBlockItem> events, int occasionId,
-        {bool advanced = false}) =>
+        {bool advanced = false, ThemeData? theme}) =>
     EasyLocalization(
       supportedLocales: const [Locale('cs')],
       path: 'assets/translations',
@@ -35,7 +35,7 @@ Widget _testApp(List<TimeBlockItem> events, int occasionId,
       fallbackLocale: const Locale('cs'),
       child: Builder(
         builder: (context) => MaterialApp(
-          theme: ThemeConfig.theme(),
+          theme: theme ?? ThemeConfig.theme(),
           locale: context.locale,
           supportedLocales: context.supportedLocales,
           localizationsDelegates: context.localizationDelegates,
@@ -81,6 +81,34 @@ void main() {
     timezone_data.initializeTimeZones();
     timezone.setLocalLocation(timezone.getLocation('Europe/Prague'));
     await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets(
+      'day header matches Material 2 dimensions without an added divider',
+      (tester) async {
+    final events =
+        List.generate(3, (index) => _eventOn(DateTime(2026, 12, 12 + index)));
+    for (final brightness in Brightness.values) {
+      await tester.pumpWidget(_testApp(events, 91023,
+          advanced: true,
+          theme: ThemeData(
+              useMaterial3: false,
+              brightness: brightness,
+              fontFamily: ThemeConfig.fontFamily)));
+      await tester.pumpAndSettle();
+      final previousBar = tester.getSize(find.byType(TabBar));
+      final previousWeekday = tester.getSize(find.text('SO'));
+      final previousDate = tester.getSize(find.text('12. 12.'));
+      await tester.pumpWidget(_testApp(events, 91023,
+          advanced: true, theme: ThemeConfig.theme(brightness: brightness)));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(find.byType(TabBar)), previousBar);
+      expect(tester.getSize(find.text('SO')), previousWeekday);
+      expect(tester.getSize(find.text('12. 12.')), previousDate);
+      final context = tester.element(find.byType(TabBar));
+      expect(TabBarTheme.of(context).dividerHeight, 0);
+      expect(TabBarTheme.of(context).dividerColor, Colors.transparent);
+    }
   });
 
   for (final advanced in [false, true]) {
