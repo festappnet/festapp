@@ -252,5 +252,5 @@ client. The migration only extends validation and does not rewrite saved layouts
 
 `pageMargin` is optional in points (0-72), valid only with `pageFit: ticket`.
 The ticket origin equals the margin and the PDF page adds twice the margin on
-each axis. Deploy `20261003130000_ticket_pdf_margins.sql` and the shared function
+each axis. Deploy `20261003154500_ticket_pdf_margins.sql` and the shared function
 bundle before the client; existing saved templates need no rewriting.
