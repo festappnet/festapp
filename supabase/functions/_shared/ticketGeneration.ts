@@ -1,30 +1,24 @@
-import * as fontkit from 'npm:fontkit';
 import { drawLayoutTicket } from './generateTicket.ts';
 import { importTicketTemplate } from './ticketTemplateImport.ts';
 import { validateLayout, pdfBox, type Template, type TicketLayout } from './ticketLayout.ts';
 import { normalizeTicketData, type RenderData } from './ticketRenderData.ts';
 import { type FontMetrics } from './ticketText.ts';
 import { fetchPublicImage, UnsafeTargetError } from '../fetch-http-data/safeFetch.ts';
-const fontFiles:Record<string,string>={futura:'font.ttf',robotoSlab:'roboto-slab.ttf',roboto:'roboto.ttf',russoOne:'russo-one.ttf'};
-export const fontBytes=(name='futura')=>{
-  if(!Object.hasOwn(fontFiles,name))throw new Error('Unknown ticket font');
-  return Deno.readFile(new URL('./ticket-assets/'+fontFiles[name],import.meta.url));
-};
-export function fontMetrics(bytes:Uint8Array):FontMetrics {
-  const f=fontkit.create(bytes);const advances:Record<string,number>={};
-  for(const c of f.characterSet) advances[String.fromCodePoint(c)]=f.glyphForCodePoint(c).advanceWidth/f.unitsPerEm;
-  return {advances,ascent:f.ascent/f.unitsPerEm,descent:f.descent/f.unitsPerEm};
-}
-export interface TicketFont {font:Uint8Array;metrics:FontMetrics}
-export const ticketFonts={futura:'Futura PT',robotoSlab:'Roboto Slab',roboto:'Roboto',russoOne:'Russo One'};
-export interface Resources { fonts?:Record<string,TicketFont>; font:Uint8Array; metrics:FontMetrics; background?:Uint8Array; missingBackground?:boolean; logo?:Uint8Array; productTypeMap?:any }
-export async function loadLayoutResources(occasion:any,featureOverride?:any,options:{allowMissingBackground?:boolean}={},readImage=fetchPublicImage):Promise<Resources> {
+import {futuraId,legacyFontIds,legacyNamedFontId,type TicketFont} from './ticketFonts.ts';
+import {resolveTicketFont,parseRegisteredTicketLayout} from './ticketFontStorage.ts';
+import {effectiveFontId,layoutFontIds} from './ticketLayout.ts';
+export interface Resources { fonts?:Record<string,TicketFont>;registeredIds?:ReadonlySet<string>;font:Uint8Array;metrics:FontMetrics;background?:Uint8Array;missingBackground?:boolean;logo?:Uint8Array;productTypeMap?:any }
+export async function loadLayoutResources(occasion:any,featureOverride?:any,options:{allowMissingBackground?:boolean;legacyFontProtocol?:boolean}={},readImage=fetchPublicImage):Promise<Resources> {
   const feature=featureOverride??occasion.features?.find((f:any)=>f.code==='ticket');
   const type=feature?.ticket_type==='named'?'named':'wide';
   const template=feature?.layout?.templates?.[type];
-  const namedFont=occasion.data?.font==='https://fonts.cdnfonts.com/s/15876/RussoOne-Regular.woff'?'russoOne':'roboto';
-  if(!template && type==='named' && occasion.data?.font && !['https://fonts.cdnfonts.com/s/12165/Roboto-Regular.woff','https://fonts.cdnfonts.com/s/15876/RussoOne-Regular.woff'].includes(occasion.data.font))throw new Error('Ticket font requires import');
-  const font=await fontBytes(template ? (template.font??'futura') : (type==='named'?namedFont:'robotoSlab'));
+  const defaultId=template?effectiveFontId(template):type==='named'?legacyNamedFontId(occasion.data?.font):feature?.background?legacyFontIds.robotoSlab:futuraId;
+  const ids=new Set<string>([defaultId]);
+  if(options.legacyFontProtocol)for(const id of Object.values(legacyFontIds))ids.add(id);
+  if(options.allowMissingBackground)ids.add(futuraId); // concurrently rendered preset gallery
+  for(const e of template?.elements??[])if(e.visible&&!['qr','logo'].includes(e.binding))ids.add(effectiveFontId(template,e));
+  const fonts:Record<string,TicketFont>={};await Promise.all([...ids].map(async id=>{fonts[id]=await resolveTicketFont(id);}));
+  const selected=fonts[defaultId];const font=selected.bytes;
   const read=async(url:string)=> (await readImage(url)).bytes;
   const backgroundUrl=template?feature?.background:type==='named'?null:feature?.background;
   let backgroundBytes:Uint8Array|undefined;
@@ -39,17 +33,16 @@ export async function loadLayoutResources(occasion:any,featureOverride?:any,opti
       else throw error;
     }
   }
-  const fonts=Object.fromEntries(await Promise.all(Object.keys(ticketFonts).map(async name=>{const font=await fontBytes(name);return [name,{font,metrics:fontMetrics(font)}];})));
-  return {font,metrics:fontMetrics(font),fonts,background:backgroundBytes,missingBackground,logo:occasion.data?.logo?await read(occasion.data.logo):undefined};
+  return {registeredIds:layoutFontIds(feature?.layout),font,metrics:selected.metrics,fonts,background:backgroundBytes,missingBackground,logo:occasion.data?.logo?await read(occasion.data.logo):undefined};
 }
-export function activeTemplate(occasion:any):Template|undefined {
+export function activeTemplate(occasion:any,registeredIds?:ReadonlySet<string>):Template|undefined {
   const f=occasion.features?.find((f:any)=>f.code==='ticket');
   if(f?.layout==null)return undefined;
-  validateLayout(f.layout);
+  validateLayout(f.layout,registeredIds);
   return (f.layout as TicketLayout).templates[f.ticket_type==='named'?'named':'wide'];
 }
 export async function resolveTicketTemplate(occasion:any,resources:Resources):Promise<Template> {
-  return activeTemplate(occasion) ?? await importTicketTemplate(occasion,resources);
+  return activeTemplate(occasion,resources.registeredIds) ?? await importTicketTemplate(occasion,resources);
 }
 export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={}, dependencies = {
   load: loadLayoutResources,
@@ -58,6 +51,8 @@ export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={
     const {data,error}=await supabaseAdmin.rpc('get_products_and_types',{p_occasion_id:id});if(error)throw new Error('Failed to load ticket products');return data;
   }
 }) {
+  const layout=occasion.features?.find((f:any)=>f.code==='ticket')?.layout;
+  if(layout)await parseRegisteredTicketLayout(layout);
   const resources=await dependencies.load(occasion);
   const template=await resolveTicketTemplate(occasion,resources);
   const products=await dependencies.products(occasion.id);
@@ -67,6 +62,5 @@ export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={
   return async(t:any)=>generateTicketPdf(normalizeTicketData(t,occasion,order,resources.productTypeMap),resources,template);
 }
 export async function generateTicketPdf(data:RenderData,r:Resources,t:Template,type:'wide'|'named'=t.page.width===595.28?'wide':'named',sample=false) {
-  const selected=r.fonts?.[t.font??'futura'];
-  return await drawLayoutTicket(data,selected?{...r,...selected}:r,t,type,sample);
+  return await drawLayoutTicket(data,r,t,type,sample);
 }

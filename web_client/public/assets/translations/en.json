@@ -2168,6 +2168,9 @@
     "ticketPdfHint": "PDF size will match the ticket exactly.",
     "canvasTooLarge": "The size exceeds the supported format. Reduce the dimensions.",
     "canvasTooSmall": "There is too little room for the elements or a readable QR. Increase the dimensions.",
-    "sampleData": "Sample data"
+    "sampleData": "Sample data",
+    "templateFont": "Template font",
+    "elementFont": "Element font override",
+    "missingGlyphs": "Some characters are missing from this font and are replaced with ?."
   }
 }

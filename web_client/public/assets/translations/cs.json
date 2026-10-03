@@ -2169,6 +2169,9 @@
     "ticketPdfHint": "PDF bude mít přesně rozměry vstupenky.",
     "canvasTooLarge": "Velikost přesahuje povolený formát. Zmenšete rozměry.",
     "canvasTooSmall": "Pro prvky nebo čitelný QR zbývá příliš málo místa. Zvětšete rozměry.",
-    "sampleData": "Ukázkové údaje"
+    "sampleData": "Ukázkové údaje",
+    "templateFont": "Písmo šablony",
+    "elementFont": "Písmo prvku (výjimka)",
+    "missingGlyphs": "Písmo neobsahuje některé znaky. Jsou nahrazeny znakem ?."
   }
 }

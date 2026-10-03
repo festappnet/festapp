@@ -178,6 +178,7 @@ flutter:
         - asset: fonts/Gill Sans Bold.otf
           weight: 700
   assets:
+    - assets/fonts/
     - assets/icons/
     - assets/translations/
     - packages/timezone/data/latest.tzf

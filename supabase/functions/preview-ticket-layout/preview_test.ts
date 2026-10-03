@@ -1,10 +1,11 @@
+import type {PDFDict as PDFDictType, PDFRawStream as PDFRawStreamType} from 'npm:pdf-lib';
+import {fontMetrics} from '../_shared/ticketFonts.ts';
 import {assertEquals,assert} from 'jsr:@std/assert@1';
 import {handlePreview,type PreviewDependencies} from './handler.ts';
-import {fontBytes,fontMetrics} from '../_shared/ticketGeneration.ts';
 import {preset} from '../_shared/ticketLayout.ts';
 import {sampleData, type PreviewProduct} from '../_shared/ticketRenderData.ts';
 import {formatCurrency} from '../_shared/utilities.ts';
-const font=await fontBytes();const metrics=fontMetrics(font);
+const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');const metrics=fontMetrics(font);
 const body={occasionId:7,mode:'resolve',type:'named'};
 const req=(value:unknown=body,auth=true)=>new Request('https://test.invalid',{method:'POST',headers:auth?{Authorization:'Bearer test'}:{},body:JSON.stringify(value)});
 const offered:PreviewProduct[]=[
@@ -175,4 +176,51 @@ Deno.test('deleted background resolves for repair but never silently renders PDF
     deps.resources=(o,f,options)=>loadLayoutResources(o,f,options,async()=>{throw new UnsafeTargetError(error);});
     assertEquals((await handlePreview(req(input),deps)).status,400,error);
   }
+});
+
+Deno.test('font mode authorizes before resolver, does not load images or occasion, and returns safe error code',async()=>{
+ const {futuraId,TicketFontError}=await import('../_shared/ticketFonts.ts');
+ const s=setup(false);let loads=0;s.deps.font=async()=>{loads++;return {id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400};};
+ const request={occasionId:7,mode:'font',fontProtocol:2,fontId:futuraId};
+ assertEquals((await handlePreview(req(request),s.deps)).status,403);assertEquals(loads,0);
+ s.deps.authorize=async()=>true;assertEquals((await handlePreview(req(request),s.deps)).status,200);assertEquals(s.counts(),[0,0,0]);assertEquals(loads,1);
+ s.deps.font=async()=>{throw new TicketFontError('font_storage_read');};
+ assertEquals(await (await handlePreview(req(request),s.deps)).json(),{error:'font_storage_read'});
+});
+Deno.test('v2 requires explicit protocol; invalid draft is rejected before loading, selected draft owns resources',async()=>{
+ const {futuraId}=await import('../_shared/ticketFonts.ts');const s=setup();const t={...preset('named'),fontId:futuraId};
+ const layout={schemaVersion:2,templates:{named:t}};
+ assertEquals((await handlePreview(req({...body,layout}),s.deps)).status,400);assertEquals(s.counts(),[1,0,1]);
+ let captured:any;s.deps.resources=async(_occasion,feature)=>{captured=feature.layout.templates.named;assertEquals(feature.layout,layout);return {font,metrics,fonts:{[futuraId]:{id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400}}};};
+ const response=await handlePreview(req({...body,fontProtocol:2,layout}),s.deps);assertEquals(response.status,200);assertEquals(captured,t);const result=await response.json();assertEquals(result.fonts[futuraId].font,(await import('node:buffer')).Buffer.from(font).toString('base64'));
+});
+Deno.test('warm font cache never skips authorization',async()=>{
+ const {futuraId,TicketFontResolver}=await import('../_shared/ticketFonts.ts');let bundled=0;
+ const resolver=new TicketFontResolver({fetch:async()=>{throw Error('network');},store:{read:async()=>null,create:async()=>true},bundled:async()=>{bundled++;return font;}});
+ const s=setup();let auth=0;s.deps.authorize=async()=>++auth===1;s.deps.font=id=>resolver.resolve(id);
+ const value={occasionId:7,mode:'font',fontProtocol:2,fontId:futuraId};
+ assertEquals((await handlePreview(req(value),s.deps)).status,200);assertEquals((await handlePreview(req(value),s.deps)).status,403);assertEquals([auth,bundled],[2,1]);
+});
+Deno.test('font selection, draft canvas resources, preview and shared download/email renderer use identical pinned bytes',async()=>{
+ const {TicketFontResolver,fontCatalog,futuraId,digest}=await import('../_shared/ticketFonts.ts');
+ const {prepareTicketRenderer}=await import('../_shared/ticketGeneration.ts');
+ const {PDFDocument,PDFDict,PDFName,PDFRawStream}=await import('npm:pdf-lib');
+ const {inflateSync}=await import('node:zlib');
+ const asset=fontCatalog.find(a=>a.family==='Roboto Slab')!;
+ const bytes=await Deno.readFile('test/fixtures/ticket_fonts/Roboto-Slab.ttf');
+ const resolver=new TicketFontResolver({fetch:async()=>{throw Error('network');},store:{read:async()=>null,create:async()=>true},bundled:async a=>a.id===futuraId?font:bytes});
+ const selected=await resolver.resolve(asset.id),base=await resolver.resolve(futuraId);
+ const resources={fonts:{[asset.id]:selected,[futuraId]:base},font,metrics};
+ const t={...preset('named'),fontId:asset.id};const layout={schemaVersion:2 as const,templates:{named:t}};
+ const occasion={id:7,features:[{code:'ticket',ticket_type:'named',layout}],data:{}};
+ const s=setup();s.deps.font=id=>resolver.resolve(id);s.deps.occasion=async()=>occasion;s.deps.resources=async()=>resources;
+ const selectedReply=await (await handlePreview(req({occasionId:7,mode:'font',fontProtocol:2,fontId:asset.id}),s.deps)).json();
+ const resolved=await (await handlePreview(req({...body,layout,fontProtocol:2}),s.deps)).json();
+ const decoded=(text:string)=>Uint8Array.from(atob(text),c=>c.charCodeAt(0));
+ assertEquals(await digest(decoded(selectedReply.font)),asset.sha256);assertEquals(resolved.fonts[asset.id].font,selectedReply.font);assertEquals(resolved.fonts[asset.id].metrics,selected.metrics);
+ const preview=await (await handlePreview(req({...body,mode:'pdf',layout,fontProtocol:2}),s.deps)).json();
+ const renderer=await prepareTicketRenderer(occasion,{}, {},{load:async()=>resources,products:async()=>({})});
+ const embeddedHashes=async(bytes:Uint8Array)=>{const doc=await PDFDocument.load(bytes);const descriptors=doc.context.enumerateIndirectObjects().map(([,o])=>o).filter(o=>o instanceof PDFDict&&o.has(PDFName.of('FontFile2'))) as PDFDictType[];return await Promise.all(descriptors.map(async d=>{const stream=doc.context.lookup(d.get(PDFName.of('FontFile2'))) as PDFRawStreamType;return await digest(inflateSync(stream.getContents()));}));};
+ const ticket={ticket_symbol:'12341A2C3E'};
+ for(const pdf of [decoded(preview.file),(await renderer(ticket)).bytes,(await renderer(ticket)).bytes])assertEquals(await embeddedHashes(pdf),[asset.sha256]);
 });
