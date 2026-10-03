@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "a9db5cb931b2106255610e445016cd4021126004",
+  "baseMainSha": "4c212bdd4dfb24a5c2371cccd104265358440e62",
   "release": {
-    "version": "0.20.61+545",
-    "note": "Restore configured Festapp wordmark above web loading indicator"
+    "version": "0.20.62+546",
+    "note": "Enable grid save and discard only for pending changes and show write failures"
   }
 }

@@ -263,3 +263,8 @@ normalized x/y/width/height within the original artwork; absent means the full
 image. Flutter and PDF intersect this crop with the ticket area while retaining
 the original image transform and element geometry. Deploy
 `20261003163000_ticket_background_crop.sql` and the function bundle before the client.
+
+Crop editing uses L-shaped corner marks. The faded original is visible only
+while editing the crop. Placement, resizing, snapping and the sidebar thumbnail
+use the visible crop bounds, with the original full-image transform retained
+for PDF rendering and restoring the crop.
