@@ -194,7 +194,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       ];
       _canvasHandle = null;
       for (var i = 0; i < handles.length; i++) {
-        if ((point - handles[i]).distance < 16 / zoom) {
+        if ((point - handles[i]).distance < 22 / zoom) {
           _canvasHandle = i;
           break;
         }
@@ -453,7 +453,9 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
                       maxScale: 6,
                       panEnabled: panning || _editing == null,
                       scaleEnabled: true,
-                      child: RepaintBoundary(
+                      child: ListenableBuilder(
+                          listenable: widget.transform,
+                          builder: (context, _) => RepaintBoundary(
                           child: CustomPaint(
                               size: widget.controller.document.page,
                               painter: TicketLayoutPainter(widget.controller,
@@ -464,7 +466,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
                                   cropBackground: widget.cropBackground,
                                   gridStep: widget.grid
                                       ? widget.gridStep
-                                      : null))))))));
+                                      : null)))))))));
 }
 
 class TicketLayoutPainter extends CustomPainter {
@@ -726,8 +728,10 @@ class TicketLayoutPainter extends CustomPainter {
         rect.topRight,
         rect.bottomLeft,
       ]) {
-        canvas.drawCircle(point, 7 / zoom, Paint()..color = Colors.blue);
-        canvas.drawCircle(point, 4 / zoom, Paint()..color = Colors.white);
+        canvas.drawCircle(point, 12 / zoom,
+            Paint()..color = Colors.blue.withValues(alpha: .18));
+        canvas.drawCircle(point, 9 / zoom, Paint()..color = Colors.blue);
+        canvas.drawCircle(point, 6 / zoom, Paint()..color = Colors.white);
       }
     }
     if (editBackground && background != null) {
@@ -791,7 +795,7 @@ class TicketLayoutPainter extends CustomPainter {
     }
     for (final selected in doc
         .positionedElements(data)
-        .where((e) => controller.selectedIds.contains(e.id))) {
+        .where((e) => !editCanvas && !editBackground && controller.selectedIds.contains(e.id))) {
       canvas.drawRect(
           selected.box,
           Paint()
