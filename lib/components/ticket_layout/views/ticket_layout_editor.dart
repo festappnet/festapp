@@ -1,3 +1,4 @@
+import 'ticket_canvas_color_dialog.dart';
 import '../../_shared/common_strings.dart';
 import 'dart:convert';
 import '../../fonts/font_family_picker.dart';
@@ -120,6 +121,11 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   KeyEventResult _historyKey(FocusNode node, KeyEvent event) {
     if (saving) return KeyEventResult.handled;
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
+      cancel();
+      return KeyEventResult.handled;
+    }
     final keyboard = HardwareKeyboard.instance;
     if (event is KeyUpEvent ||
         keyboard.isAltPressed ||
@@ -607,11 +613,46 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     );
   }
 
+  Widget panelHeading(String title) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(title,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w600))));
+
+  Future<void> editCanvasColor() async {
+    final color = await showDialog<String>(
+        context: editorContext,
+        builder: (_) =>
+            TicketCanvasColorDialog(value: controller.document.canvasColor));
+    if (mounted && color != null && color != controller.document.canvasColor) {
+      controller.replace(controller.document.withCanvasColor(color));
+    }
+  }
+
   Widget panel({bool includeElements = true}) => SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListenableBuilder(
             listenable: controller,
+            builder: (context, _) => TicketLayoutProperties(
+                controller: controller,
+                fontControl: elementFontControl(),
+                defaults: propertyDefaults,
+                backgroundImage:
+                    resources.artworks.containsKey(controller.artworkKey)
+                        ? resources.artworks[controller.artworkKey]!.image
+                        : resources.background,
+                metrics: resources.metricsFor(
+                    controller.document, controller.selection),
+                data: resources.scenarios[scenario])),
+        panelHeading(TicketLayoutStrings.canvasSection),
+        ListenableBuilder(
+            listenable: controller,
             builder: (context, _) => ListTile(
+                dense: true,
                 title: Text(TicketLayoutStrings.canvasSize),
                 subtitle: Text(
                     '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket ? TicketLayoutStrings.paperTicket : controller.document.page == const Size(595.28, 841.89) ? TicketLayoutStrings.paperA4 : TicketLayoutStrings.paperOriginal}'),
@@ -621,7 +662,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
+                child: TextButton.icon(
                     icon: const Icon(Icons.aspect_ratio),
                     label: Text(TicketLayoutStrings.resizeCanvas),
                     onPressed: imageBusy
@@ -637,26 +678,40 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                               Navigator.pop(context);
                           }))),
         ListenableBuilder(
+            listenable: controller,
+            builder: (context, _) {
+              final value = controller.document.canvasColor;
+              return ListTile(
+                  dense: true,
+                  title: Text(TicketLayoutStrings.canvasColor),
+                  subtitle: Text(value == 'transparent'
+                      ? TicketLayoutStrings.transparent
+                      : '#${value.toUpperCase()}'),
+                  trailing: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                          color: value == 'transparent'
+                              ? null
+                              : Color(int.parse('ff$value', radix: 16)),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: Theme.of(context).dividerColor)),
+                      child: value == 'transparent'
+                          ? const Icon(Icons.grid_on, size: 22)
+                          : null),
+                  onTap: editCanvasColor);
+            }),
+        panelHeading(TicketLayoutStrings.textSection),
+        ListenableBuilder(
             listenable: controller, builder: (context, _) => fontPicker()),
         const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Divider()),
         if (includeElements) elements(),
-        ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) => TicketLayoutProperties(
-                controller: controller,
-                fontControl: elementFontControl(),
-                defaults: propertyDefaults,
-                backgroundImage:
-                    resources.artworks.containsKey(controller.artworkKey)
-                        ? resources.artworks[controller.artworkKey]!.image
-                        : resources.background,
-                metrics: resources.metricsFor(
-                    controller.document, controller.selection),
-                data: resources.scenarios[scenario])),
+        panelHeading(TicketLayoutStrings.imageSection),
         Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: ImageArea(
                 imageUrl: background,
                 preview: ListenableBuilder(
@@ -665,9 +720,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       final image =
                           resources.artworks[controller.artworkKey]?.image ??
                               resources.background;
-                      if (image == null) return const SizedBox(height: 200);
+                      if (image == null) return const SizedBox(height: 112);
                       return SizedBox(
-                          height: 200,
+                          height: 112,
                           width: double.infinity,
                           child: CustomPaint(
                               painter: TicketBackgroundPreviewPainter(
@@ -683,7 +738,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (background?.isNotEmpty ?? false)
-                    OutlinedButton.icon(
+                    TextButton.icon(
                         icon: const Icon(Icons.open_with),
                         label: Text(TicketLayoutStrings.positionImage),
                         onPressed: imageBusy
@@ -702,7 +757,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                               }),
                   const SizedBox(height: 12),
                   if (background?.isNotEmpty ?? false)
-                    OutlinedButton.icon(
+                    TextButton.icon(
                         icon: const Icon(Icons.crop),
                         label: Text(TicketLayoutStrings.cropImage),
                         onPressed: imageBusy
@@ -718,7 +773,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                 if (MediaQuery.sizeOf(context).width < 900)
                                   Navigator.pop(context);
                               }),
-                  const SizedBox(height: 8),
+                  const Divider(height: 24),
                   TextButton(
                       onPressed: imageBusy
                           ? null
@@ -1063,6 +1118,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       onKeyEvent: _historyKey,
       child: PopScope(
           canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && !saving) cancel();
+          },
           child: Scaffold(
             appBar: AppBar(
                 leading: IconButton(
@@ -1312,6 +1370,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     final narrow = constraints.maxWidth < 900;
                     final view = TicketLayoutCanvas(
                         key: canvas,
+                        onDismiss: cancel,
                         controller: controller,
                         resources: resources,
                         data: resources.scenarios[scenario]!,

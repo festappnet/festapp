@@ -13,6 +13,13 @@ BEGIN
   END LOOP;
   PERFORM assert_eq(public.scan_ticket('VZOR:NEPLATNY','preview-only')->>'code','404','scanner rejects the synthetic preview QR');
   layout:=fixtures->'valid'->0;
+  PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,canvasColor}','"transparent"'));
+  PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,canvasColor}','"FF0000"'));
+  BEGIN
+    PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,canvasColor}','"#FFFFFF"'));
+    RAISE EXCEPTION 'accepted invalid canvas color';
+  EXCEPTION WHEN OTHERS THEN IF SQLERRM='accepted invalid canvas color' THEN RAISE; END IF; END;
+
   v_features:=jsonb_build_array(jsonb_build_object('code','ticket','is_enabled',true,'layout',layout));
   PERFORM assert_eq(public.merge_ticket_layout_features(v_features,'[{"code":"ticket","is_enabled":false}]')#>'{0,layout}',layout,'old client retains layout when disabled');
   PERFORM assert_eq(public.merge_ticket_layout_features(v_features,'[]')#>'{0,layout}',layout,'missing ticket feature retains disabled layout');
