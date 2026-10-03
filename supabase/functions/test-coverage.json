@@ -194,6 +194,14 @@
         "supabase/functions/_shared/googleAuthProtocol_test.ts",
         "supabase/functions/_shared/issueExistingUserSession_test.ts"
       ]
+    },
+    "report-exchange-rates": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/report-exchange-rates/handler_test.ts"
+      ]
     }
   },
   "excluded": {

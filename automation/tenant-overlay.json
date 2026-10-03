@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "c2b46817dcfc7bb9244869a60f77bf904ba63d7f",
+  "baseMainSha": "cfd471f2da9625fa762c7f2a6ce198b6202406a0",
   "release": {
-    "version": "0.20.70+554",
-    "note": "Stable administration tab and detail deep links with native history and full login return"
+    "version": "0.20.71+555",
+    "note": "Daily order/payment history, exact indicative CNB currency conversion and hover help"
   }
 }
