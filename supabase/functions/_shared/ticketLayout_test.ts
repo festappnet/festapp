@@ -1,6 +1,6 @@
 import {fontMetrics} from './ticketFonts.ts';
 import {assertEquals,assertThrows,assert,assertRejects} from 'jsr:@std/assert@1';
-import {parseLayout,preset,pdfBox,backgroundBox} from './ticketLayout.ts';
+import {parseLayout,preset,pdfBox,backgroundBox,croppedBackgroundBox} from './ticketLayout.ts';
 import {fitText} from './ticketText.ts';
 import {normalizeTicketData,sampleData,sampleSymbol,sampleQr} from './ticketRenderData.ts';
 import {generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
@@ -171,4 +171,20 @@ Deno.test('ticket paper margins preserve design coordinates and render a larger 
  for(const value of [-1,73,null,'9',Infinity])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,pageMargin:value}}}));
  assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,ticketArea:{...t.ticketArea,x:0}}}}));
  assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,pageFit:undefined}}}));
+});
+
+Deno.test('image crop masks PDF artwork without rescaling it or moving ticket data',async()=>{
+ const t=preset('wide');t.backgroundCrop={x:.2,y:.1,width:.5,height:.6};
+ const full=backgroundBox(t,1,1),crop=croppedBackgroundBox(t,1,1);
+ assertEquals(crop,{x:full.x+.2*full.width,y:full.y+.1*full.height,width:full.width*.5,height:full.height*.6});
+ const original=structuredClone(t.elements);
+ const output=await generateTicketPdf(sampleData(),r,t);
+ assertEquals(t.elements,original);
+ const pdf=await PDFDocument.load(output.bytes);
+ const ops=pdf.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFRawStream).map(([,o])=>o as PDFRawStream)
+   .filter(s=>s.dict.get(PDFName.of('Filter'))?.toString()==='/FlateDecode').map(s=>new TextDecoder().decode(inflateSync(s.getContents()))).join('\n');
+ const expected=pdfBox(t,crop);
+ const clips=[...ops.matchAll(/(-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) re\nW\nn/g)].map(m=>m.slice(1).map(Number));
+ assert(clips.some(([x,y,w,h])=>Math.abs(x-expected.x)<.001&&Math.abs(y-expected.y)<.001&&Math.abs(w-expected.width)<.001&&Math.abs(h-expected.height)<.001),'PDF must clip the original image to the selected crop');
+ for(const bad of [null,{}, {x:-.1,y:0,width:1,height:1},{x:0,y:0,width:0,height:1},{x:.5,y:0,width:1,height:1}])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,backgroundCrop:bad}}}));
 });

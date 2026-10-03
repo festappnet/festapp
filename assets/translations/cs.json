@@ -2074,6 +2074,9 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "resetCrop": "Zobrazit celý obrázek",
+    "cropImageHint": "Tažením rohů vyberte výřez. Uvnitř jej můžete posunout.",
+    "cropImage": "Oříznout obrázek",
     "originalPaperHint": "Zůstane zachovaný původní formát papíru této šablony.",
     "invalidMargin": "Zadejte okraj od 0 do 25,4 mm.",
     "marginHint": "Bílý okraj ze všech stran, navíc k rozměrům vstupenky. 0-25,4 mm.",

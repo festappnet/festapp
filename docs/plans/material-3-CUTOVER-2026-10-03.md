@@ -83,3 +83,35 @@ The cutover includes upstream main `1695ebf847cc69f949082245105a6a30dde644b6`
 the Festapp production overlay is replayed over this canonical main using only
 its allowlisted tenant paths. Release build, drift validation and the canonical
 post-deployment verifier must pass before reporting deployment complete.
+
+## Web feedback corrections
+
+The first live release changed navigation height from 56 to 80 logical pixels
+and added a filled selection capsule. The follow-up retains M3 widgets while
+restoring the 56 px bar, transparent indicator, colored selected icon/label,
+14/12 px selected/unselected labels and original grey inactive items. Safe-area
+handling and routing/reselection contracts remain with NavigationBar/the shell.
+
+Secondary tabs retain the previous 14 px regular Futura type, natural font line
+metrics, zero letter spacing, start alignment and full-tab 2 px underline.
+The chrome compatibility test loads the actual Futura font and compares label
+size and bar height against the previous theme. Admin tab height is 40 px at
+normal text size and grows when enlarged text needs it.
+
+A reproducible HTML editor bug came from preserved blocks rendering an Edit
+button that reopened exactly the same preserved block in another dialog.
+Preserved decorations now render directly without that recursive action.
+Standalone line breaks and empty inline wrappers become editable text slots;
+untouched HTML and undo preserve their original representation. The regression
+loop verifies absence of the nested button, text entry and undo, including
+HTML table content. The offline smoke fixture can open the production dialog
+with `<br><span></span>` to reproduce the originally reported blank editor.
+
+Follow-up verification: 888 Flutter tests passed (one existing skip), web tests,
+100 local SQL tests, 213 Deno tests, automation checks and three integration
+tests passed (27 integration tests require private inputs and were skipped).
+Targeted analysis has no errors or warnings; existing style notices remain.
+The isolated browser captured all 40 screen states plus four production editor
+dialog variants (320/1280 widths, 100%/200% text), with no nested Edit button and
+zero JavaScript errors. The first follow-up reproductions failed on 80-versus-56
+navigation height, enlarged tab text metrics and the nested Edit button.

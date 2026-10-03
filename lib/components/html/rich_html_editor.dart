@@ -18,7 +18,6 @@ import 'html_strings.dart';
 import 'html_text_style.dart';
 import 'html_view.dart';
 import 'rich_html_editor_controller.dart';
-import 'rich_html_editor_dialog.dart';
 
 class RichHtmlEditor extends StatefulWidget {
   const RichHtmlEditor(
@@ -573,8 +572,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                             ]),
                                         componentBuilders: [
                                           _DraftImageBuilder(controller),
-                                          _PreservedBuilder(
-                                              controller, _editPreserved),
+                                          _PreservedBuilder(controller),
                                           ...defaultComponentBuilders
                                         ],
                                         keyboardActions: [
@@ -634,21 +632,6 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
       return ExecutionInstruction.haltExecution;
     }
     return ExecutionInstruction.continueExecution;
-  }
-
-  Future<void> _editPreserved(PreservedHtmlNode node) async {
-    final html = await RichHtmlEditorDialog.show(context,
-        initialHtml: node.html,
-        owner: controller.owner,
-        profile: controller.profile,
-        media: controller.media);
-    if (html != null && mounted) {
-      controller.editor.execute([
-        ReplaceNodeRequest(
-            existingNodeId: node.id,
-            newNode: PreservedHtmlNode(id: node.id, html: html))
-      ]);
-    }
   }
 }
 
@@ -735,9 +718,8 @@ class _AuthorizedImagePreviewState extends State<_AuthorizedImagePreview> {
 }
 
 class _PreservedBuilder implements ComponentBuilder {
-  _PreservedBuilder(this.controller, this.edit);
+  _PreservedBuilder(this.controller);
   final RichHtmlEditorController controller;
-  final Future<void> Function(PreservedHtmlNode) edit;
   @override
   SingleColumnLayoutComponentViewModel? createViewModel(
           Document document, DocumentNode node) =>
@@ -752,14 +734,8 @@ class _PreservedBuilder implements ComponentBuilder {
     if (node is! PreservedHtmlNode) return null;
     return BoxComponent(
         key: context.componentKey,
-        child: Column(children: [
-          HtmlView(
-              html: node.html,
-              imageBytesResolver: controller.media.previewBytes),
-          TextButton.icon(
-              onPressed: () => edit(node),
-              icon: const Icon(Icons.edit),
-              label: Text(CommonStrings.edit)),
-        ]));
+        child: HtmlView(
+            html: node.html,
+            imageBytesResolver: controller.media.previewBytes));
   }
 }
