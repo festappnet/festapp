@@ -361,8 +361,10 @@ class TicketTemplate {
   /// Resize the surface, not its content. Hidden boxes stay contract-valid.
   TicketTemplate resizeCanvasArea(Size size,
       {Size? backgroundImage, Offset origin = Offset.zero}) {
-    if (size == area.size && origin == Offset.zero) return this;
     final bounds = origin & size;
+    if (size == area.size && origin == Offset.zero &&
+        elements.every((e) => e.box.left >= 0 && e.box.top >= 0 &&
+            e.box.right <= size.width && e.box.bottom <= size.height)) return this;
     final required =
         elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
     if (!size.width.isFinite ||

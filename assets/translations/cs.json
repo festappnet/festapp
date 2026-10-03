@@ -2083,7 +2083,7 @@
     "marginMm": "Okraj papíru (mm)",
     "saveDirectHint": "Uložit zapíše úpravy vstupenky přímo do události.",
     "canvasBlocked": "Dál zmenšit nelze. Přesuňte zvýrazněné povinné prvky",
-    "canvasHidden": "Mimo plátno, automaticky skryto (vrátíte krokem Zpět)",
+    "canvasHidden": "Mimo plátno, automaticky skryto (vrátí se při zvětšení plátna)",
     "checkElements": "Upravte označené prvky: nesmí se překrývat s QR ani přesahovat plátno",
     "canvasColor": "Barva plátna",
     "transparency": "Průhlednost",
