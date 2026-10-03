@@ -41,7 +41,9 @@ class _BankAccountsNavigationViewState
               key: ValueKey(_listRevision),
               child: widget.listBuilder?.call(context) ??
                   UnitBankAccountsScreen(unitId: unit.id!)),
-          navigator,
+          // The empty native list route must not intercept its underlay's
+          // edit/add buttons. Detail routes keep their normal pointer handling.
+          IgnorePointer(ignoring: !hasDetail, child: navigator),
         ]);
       });
 }

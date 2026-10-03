@@ -14,6 +14,9 @@ import 'package:fstapp/components/forms/views/form_settings_content.dart';
 import '../form_strings.dart';
 import 'package:fstapp/components/forms/views/form_design_content.dart';
 import '../db_forms.dart';
+import 'form_creation_helper.dart';
+import 'package:fstapp/components/_shared/breadcrumb_row.dart';
+import 'package:fstapp/styles/styles_config.dart';
 
 @RoutePage()
 class FormDetailPage extends StatefulWidget {
@@ -100,33 +103,102 @@ class _FormDetailPageState extends State<FormDetailPage> {
         child: Scaffold(
             appBar: AppBar(
                 automaticallyImplyLeading: false,
-                leading: IconButton(
-                    icon: const Icon(Icons.arrow_back), onPressed: _back),
-                title: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(children: [
-                      TextButton(
-                          onPressed: _back,
-                          child: Text(FormStrings.formsTitle)),
-                      const Icon(Icons.chevron_right),
-                      PopupMenuButton<FormModel>(
-                          onSelected: (form) {
-                            if (form.link != widget.formLink)
-                              RetainedDraftGuard.instance.leaveOwner(
-                                  context,
-                                  () => context.router.navigate(
-                                      FormDetailRoute(formLink: form.link!)));
-                          },
-                          itemBuilder: (_) => _forms
-                              .map((form) => PopupMenuItem(
-                                  value: form, child: Text(form.toString())))
-                              .toList(),
-                          child: Text(_forms
-                              .firstWhere(
-                                  (form) => form.link == widget.formLink)
-                              .toString()))
-                    ]))),
+                centerTitle: false,
+                elevation: 0,
+                toolbarHeight: 44,
+                title: _buildBreadcrumbs(),
+                actions: [
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 4),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.add, size: 18),
+                        label: Text(FormStrings.createNewForm),
+                        onPressed: () => RetainedDraftGuard.instance.leaveOwner(
+                            context,
+                            () => FormCreationHelper.showCreateOrCopyFormDialog(
+                                context,
+                                occasionLink: _link!,
+                                onFormCreated: _back)),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    StylesConfig.commonRoundness))),
+                      )),
+                  const SizedBox(width: 8),
+                ]),
             body: AutoRouter(key: ValueKey(widget.formLink))));
+  }
+
+  Widget _buildBreadcrumbs() {
+    final color = Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
+    final selected = _forms.firstWhere((form) => form.link == widget.formLink);
+    final title = Text(selected.toString(),
+        style: TextStyle(
+            fontSize: 16,
+            color: color,
+            fontWeight:
+                _forms.length <= 1 ? FontWeight.bold : FontWeight.normal));
+    return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: BreadcrumbRow(children: [
+          InkWell(
+              onTap: _back,
+              borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                IgnoreBaseline(
+                    child:
+                        Icon(Icons.article_outlined, size: 20, color: color)),
+                const SizedBox(width: 6),
+                Text(FormStrings.formsTitle,
+                    style: TextStyle(fontSize: 16, color: color)),
+              ])),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text('/',
+                  style:
+                      TextStyle(fontSize: 14, color: color.withOpacity(0.4)))),
+          if (_forms.length <= 1)
+            title
+          else
+            PopupMenuButton<FormModel>(
+                elevation: 0,
+                onSelected: (form) {
+                  if (form.link != widget.formLink)
+                    RetainedDraftGuard.instance.leaveOwner(
+                        context,
+                        () => context.router
+                            .navigate(FormDetailRoute(formLink: form.link!)));
+                },
+                itemBuilder: (_) => _forms
+                    .map((form) => PopupMenuItem(
+                        value: form,
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(form.toString()),
+                              if (form.id == selected.id)
+                                Icon(Icons.check,
+                                    color:
+                                        Theme.of(context).colorScheme.primary),
+                            ])))
+                    .toList(),
+                child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      title,
+                      const SizedBox(width: 8),
+                      Transform.scale(
+                          scaleY: 0.8,
+                          child: Icon(Icons.unfold_more_rounded,
+                              size: 20, color: color.withOpacity(0.7))),
+                    ]))),
+        ]));
   }
 }
 
