@@ -1520,6 +1520,79 @@ void main() {
     },
   );
 
+  test('canvas handles respond immediately after reversing at a limit', () {
+    final c = TicketLayoutController(document().withPaper(true, margin: 6.25));
+    c.beginGesture();
+    c.resizeCanvas(const Offset(0, -1000), handle: 1, snap: false);
+    final limitedHeight = c.document.area.height;
+    c.resizeCanvas(const Offset(0, 10), handle: 1, snap: false);
+    expect(c.document.area.height, closeTo(limitedHeight + 10, .001));
+    c.dispose();
+  });
+
+  test('canvas restores automatically hidden content after a new drag', () {
+    final original = document().withPaper(true, margin: 6.25);
+    final footer = original.elements.firstWhere((e) => e.binding == 'footer');
+    final c = TicketLayoutController(original);
+    c.beginGesture();
+    c.resizeCanvas(const Offset(0, -35), handle: 1, snap: false);
+    c.endGesture();
+    expect(c.document.elements.firstWhere((e) => e.id == footer.id).visible, isFalse);
+    c.beginGesture();
+    c.resizeCanvas(const Offset(0, 35), handle: 1, snap: false);
+    c.endGesture();
+    final restored = c.document.elements.firstWhere((e) => e.id == footer.id);
+    expect(restored.visible, isTrue);
+    expect(restored.box, footer.box);
+    c.dispose();
+  });
+
+  test('every canvas handle releases both hard limits without a dead zone', () {
+    for (var handle = 0; handle < 8; handle++) {
+      for (final direction in [-1.0, 1.0]) {
+        final c = TicketLayoutController(document().withPaper(true, margin: 6.25));
+        c.beginGesture();
+        c.resizeCanvas(Offset(2000 * direction, 2000 * direction), handle: handle, snap: false);
+        final atLimit = c.document.area.size;
+        c.resizeCanvas(Offset(-20 * direction, -20 * direction), handle: handle, snap: false);
+        if (![1, 4].contains(handle)) {
+          expect((c.document.area.width - atLimit.width).abs(), closeTo(20, .002), reason: 'handle $handle, direction $direction');
+        }
+        if (![0, 3].contains(handle)) {
+          expect((c.document.area.height - atLimit.height).abs(), closeTo(20, .002), reason: 'handle $handle, direction $direction');
+        }
+        expect(c.document.validate('named'), isEmpty);
+        c.dispose();
+      }
+    }
+  });
+
+  test('canvas recovery preserves manual hiding, left/top positions and history', () {
+    var original = document().withPaper(true, margin: 6.25);
+    final footer = original.elements.firstWhere((e) => e.binding == 'footer');
+    original = original.replace(footer.copyWith(visible: false));
+    final c = TicketLayoutController(original);
+    c.beginGesture();
+    c.resizeCanvas(const Offset(9, 100), handle: 5, snap: false);
+    c.endGesture();
+    final smaller = c.document;
+    c.undo();
+    c.redo();
+    expect(c.document.toJson(), smaller.toJson());
+    c.beginGesture();
+    c.resizeCanvas(const Offset(-9, -100), handle: 5, snap: false);
+    expect(c.document.elements.map((e) => e.toJson()), original.elements.map((e) => e.toJson()));
+    c.cancelGesture();
+    expect(c.document.toJson(), smaller.toJson());
+    // An unrelated color edit must not discard off-canvas recovery data.
+    c.replace(c.document.withCanvasColor('FFFFFF'));
+    c.beginGesture();
+    c.resizeCanvas(const Offset(-9, -100), handle: 5, snap: false);
+    c.endGesture();
+    expect(c.document.elements.map((e) => e.toJson()), original.elements.map((e) => e.toJson()));
+    c.dispose();
+  });
+
   testWidgets('ticket canvas edge handles resize the design live',
       (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);

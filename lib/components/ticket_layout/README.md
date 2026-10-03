@@ -316,3 +316,10 @@ Canvas resizing supports all four edges and corners. Left/top changes rebase
 element and artwork coordinates without scaling or moving visible content;
 required QR/code bounds still limit shrinking. Attempting to move an element
 in this mode pulses Done and explains how to return to element editing.
+
+Canvas gestures discard pointer overshoot at hard bounds while retaining small
+movements needed to escape magnetic snapping. Automatically hidden elements
+keep their original geometry in editor-only recovery data tied to immutable
+documents, so enlarging the canvas restores them across drags and undo/redo.
+Manually hidden or subsequently edited elements are not automatically restored.
+Recovery data is not serialized; reopening a saved layout uses its saved state.
