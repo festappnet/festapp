@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/administration_loading_shell.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
@@ -158,8 +159,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
           onPressed: () => _load(force: true), child: Text(CommonStrings.retry))
     ])));
     if (_failed && _unit == null) return failure;
-    if (_unit == null)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_unit == null) return const AdministrationLoadingShell(unit: true);
     final waiting = _access.currentUnit?.id != widget.id || _access.hasOccasion;
     final denied = _failed || !_access.canAccess;
     return Stack(fit: StackFit.expand, children: [
@@ -171,11 +171,14 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
                   unit: _unit!,
                   occasions: _occasions,
                   onUpdated: () => _load(force: true),
-                  child: const AutoRouter()))),
+                  // Initial nested routes are installed after the first frame.
+                  child: AutoRouter(
+                      placeholder: (_) =>
+                          const AdministrationLoadingShell(unit: true))))),
       if (denied)
         failure
       else if (waiting)
-        const Scaffold(body: Center(child: CircularProgressIndicator())),
+        const AdministrationLoadingShell(unit: true),
     ]);
   }
 }

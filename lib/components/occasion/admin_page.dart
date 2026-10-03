@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/administration_loading_shell.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,14 @@ class AdminPage extends StatelessWidget {
   Widget build(BuildContext context) {
     Localizations.localeOf(context);
     return OccasionAdministrationBoundary(
-        reservations: false, builder: (_) => const AutoRouter());
+        reservations: false,
+        loadingBuilder: (_) =>
+            const AdministrationLoadingShell(reservations: false),
+        // AutoRouter defers its initial routes until the next frame. Keep
+        // the same chrome during that frame too, after access has resolved.
+        builder: (_) => AutoRouter(
+            placeholder: (_) =>
+                const AdministrationLoadingShell(reservations: false)));
   }
 }
 
