@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/components/_shared/breadcrumb_row.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -133,8 +134,7 @@ class _FormsTabState extends State<FormsTab> {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: BreadcrumbRow(
         children: [
           InkWell(
             onTap: _navigateToFormsHome,
@@ -142,7 +142,9 @@ class _FormsTabState extends State<FormsTab> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.article_outlined, size: 20, color: onAppBarColor),
+                IgnoreBaseline(
+                    child: Icon(Icons.article_outlined,
+                        size: 20, color: onAppBarColor)),
                 const SizedBox(width: 6),
                 Text(
                   FormStrings.formsTitle,

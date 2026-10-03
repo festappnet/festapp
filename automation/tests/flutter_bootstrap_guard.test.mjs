@@ -56,4 +56,13 @@ assert.ok(
   'the runtime guard must run before Flutter injects its loader and entrypoint',
 );
 
+const engineConfigSource = index.match(/initializeEngine\((\{[\s\S]*?\})\)/)[1];
+for (const baseURI of ['https://live.festapp.net/', 'https://example.com/app/']) {
+  const engineConfig = vm.runInNewContext(`(${engineConfigSource})`, {
+    URL, document: { baseURI },
+  });
+  // Flutter appends assets/ itself, independently of the deep-link pathname.
+  assert.equal(new URL('assets/FontManifest.json', engineConfig.assetBase).href,
+    `${baseURI}assets/FontManifest.json`);
+}
 console.log('flutter_bootstrap_guard.test: ok');
