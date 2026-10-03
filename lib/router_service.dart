@@ -292,16 +292,6 @@ class RouterService {
   /// Outside a shell, keep the existing product default.
   static Future<void> navigateToOccasionAdministration(BuildContext context,
       {String? occasionLink, OccasionModel? occasion}) async {
-    // If occasion is provided, prioritize it for feature checks
-    if (occasion != null) {
-      if (FeatureService.isFeatureEnabled(FeatureConstants.form,
-          features: occasion.features)) {
-        await navigateToOccasionReservationsByLink(
-            context, occasion.link ?? occasionLink!);
-        return;
-      }
-    }
-
     String? resolvedLink = occasionLink ?? occasion?.link;
 
     // Get the link from arguments or route parameters.
@@ -317,18 +307,32 @@ class RouterService {
       return;
     }
 
-    if (!AppConfig.isAppSupported) {
-      await navigateToOccasionReservationsByLink(context, resolvedLink);
+    // Preserve static section/subtab paths, but never carry an object's ID
+    // into another occasion. Read the active router, since the breadcrumb's
+    // BuildContext may belong to the outer shell rather than its selected tab.
+    final active = context.router.root.currentSegments;
+    final shellIndex = active.indexWhere((route) =>
+        route.name == AdminRoute.name || route.name == ReservationsRoute.name);
+    if (shellIndex >= 0) {
+      final shell = active[shellIndex].name == ReservationsRoute.name
+          ? ReservationsPage.ROUTE
+          : AdminPage.ROUTE;
+      final suffix = <String>[];
+      for (final route in active.skip(shellIndex + 1)) {
+        if (route.path.contains(':') || route.path.contains('*')) break;
+        suffix.addAll(route.path.split('/').where((part) => part.isNotEmpty));
+      }
+      await navigate(
+          context,
+          '/$resolvedLink/$shell'
+          '${suffix.isEmpty ? '' : '/${suffix.join('/')}'}');
       return;
     }
 
-    // 1. Decide destination based on the current widget type.
-    if (context.routeData.breadcrumbs
-        .any((route) => route.name == AdminRoute.name)) {
-      await navigateToOccasionByLink(context, resolvedLink);
-      return;
-    } else if (context.routeData.breadcrumbs
-        .any((route) => route.name == ReservationsRoute.name)) {
+    if (!AppConfig.isAppSupported ||
+        (occasion != null &&
+            FeatureService.isFeatureEnabled(FeatureConstants.form,
+                features: occasion.features))) {
       await navigateToOccasionReservationsByLink(context, resolvedLink);
       return;
     }

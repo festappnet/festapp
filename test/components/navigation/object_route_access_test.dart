@@ -24,6 +24,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 
 class ObjectFixture extends RootStackRouter {
   bool realBankGeneral = false;
+  WidgetBuilder? bankListBuilder;
   final unitVisible = ValueNotifier(true);
   Future<List<FormModel>> Function(String) forms = (_) async => [
         FormModel(id: 1, link: 'first', title: 'First', occasionId: 1),
@@ -49,6 +50,7 @@ class ObjectFixture extends RootStackRouter {
       AutoRoute(
           page: PageInfo(name, builder: builder),
           path: path,
+          initial: path.isEmpty,
           children: children);
   AutoRoute text(String name, String path, String value) =>
       page(name, path, (_) => Text(value));
@@ -123,7 +125,9 @@ class ObjectFixture extends RootStackRouter {
                   UnitBankAccountsNavigationRoute.name,
                   'bank-accounts',
                   (_) => BankAccountsNavigationView(
-                      listBuilder: (_) => const Text('ACCOUNT LIST')),
+                      listBuilder: (context) =>
+                          bankListBuilder?.call(context) ??
+                          const Text('ACCOUNT LIST')),
                   children: [
                     page(UnitBankAccountsListRoute.name, '',
                         (_) => const UnitBankAccountsListPage()),
@@ -137,6 +141,7 @@ class ObjectFixture extends RootStackRouter {
                           page(BankAccountTabsRoute.name, '',
                               (_) => const BankAccountTabsPage(),
                               children: [
+                                RedirectRoute(path: '', redirectTo: 'general'),
                                 page(
                                     BankAccountGeneralRoute.name,
                                     'general',
@@ -164,6 +169,28 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets('bank list edit click opens and reopens the routed dialog',
+      (tester) async {
+    final router = ObjectFixture();
+    router.bankListBuilder = (context) => Center(
+        child: IconButton(
+            key: const Key('edit-account'),
+            icon: const Icon(Icons.edit),
+            onPressed: () => unawaited(
+                context.router.push(BankAccountDetailRoute(accountId: '9')))));
+    await mount(tester, router, '/unit/5/edit/bank-accounts');
+    await tester.tap(find.byKey(const Key('edit-account')));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(router.currentUrl, '/unit/5/edit/bank-accounts/9/general');
+    expect(find.text('ACCOUNT GENERAL'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'BankAccount.cancel'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('edit-account')));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+  });
+
   setUp(() {
     RightsService.currentLink = 'occasion-a';
     RightsService.occasionLinkModelNotifier.value =
@@ -181,7 +208,11 @@ void main() {
         tester, router, '/occasion-a/reservations/forms/second/responses');
     expect(find.text('FORM RESPONSES'), findsOneWidget);
     expect(find.text('Second'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back));
+    final header = tester.widget<AppBar>(find.byType(AppBar).last);
+    expect(header.toolbarHeight, 44);
+    expect(header.leading, isNull);
+    expect(find.byIcon(Icons.unfold_more_rounded), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.article_outlined));
     await tester.pumpAndSettle();
     expect(router.currentUrl, '/occasion-a/reservations/forms?list=true');
     expect(find.text('FORM LIST'), findsOneWidget);

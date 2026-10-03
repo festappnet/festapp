@@ -40,6 +40,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
   bool _failed = false;
   int _generation = 0;
   bool _loading = false;
+  bool _loadFailed = false;
   StackRouter? _root;
   @override
   void initState() {
@@ -66,7 +67,10 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
 
   void _contextChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _loading || !isVisibleRouteInstance(context)) return;
+      if (!mounted ||
+          _loading ||
+          _loadFailed ||
+          !isVisibleRouteInstance(context)) return;
       if (_access.currentUnit?.id != widget.id || _access.hasOccasion)
         _load(force: true);
       else if (!_access.isSignedIn)
@@ -100,6 +104,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
   Future<void> _load({bool force = false}) async {
     final generation = ++_generation;
     _loading = true;
+    _loadFailed = false;
     final id = widget.id;
     if (id == null) {
       setState(() => _failed = true);
@@ -119,7 +124,10 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
       if (!mounted || generation != _generation) return;
       final unit = _access.currentUnit;
       if (unit?.id != id || !_access.canAccess) {
-        setState(() => _failed = true);
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
         return;
       }
       final occasions = await _access.occasions(id);
@@ -130,7 +138,11 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
         _failed = false;
       });
     } catch (_) {
-      if (mounted && generation == _generation) setState(() => _failed = true);
+      if (mounted && generation == _generation)
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
     } finally {
       if (generation == _generation) _loading = false;
     }
@@ -160,10 +172,10 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
                   occasions: _occasions,
                   onUpdated: () => _load(force: true),
                   child: const AutoRouter()))),
-      if (waiting)
-        const Scaffold(body: Center(child: CircularProgressIndicator()))
-      else if (denied)
-        failure,
+      if (denied)
+        failure
+      else if (waiting)
+        const Scaffold(body: Center(child: CircularProgressIndicator())),
     ]);
   }
 }

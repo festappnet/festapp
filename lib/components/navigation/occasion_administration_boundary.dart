@@ -2,6 +2,7 @@ import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -58,6 +59,7 @@ class _OccasionAdministrationBoundaryState
   bool _ready = false;
   bool _denied = false;
   bool _loading = false;
+  bool _loadFailed = false;
   @override
   void initState() {
     super.initState();
@@ -90,7 +92,10 @@ class _OccasionAdministrationBoundaryState
 
   void _contextChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _link == null || !isVisibleRouteInstance(context)) return;
+      if (!mounted ||
+          _link == null ||
+          _loadFailed ||
+          !isVisibleRouteInstance(context)) return;
       if (widget.access.loadedLink == _link &&
           !widget.access.canAccess(reservations: widget.reservations)) {
         if (!_denied)
@@ -111,6 +116,7 @@ class _OccasionAdministrationBoundaryState
 
   Future<void> _load(String link, int generation) async {
     _loading = true;
+    _loadFailed = false;
     if (!widget.access.isSignedIn) {
       final intended = _root!.urlState.uri.toString();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -125,11 +131,17 @@ class _OccasionAdministrationBoundaryState
           await widget.access.load(link, reservations: widget.reservations);
       if (!mounted || generation != _generation) return;
       setState(() {
-        _ready = allowed && widget.access.loadedLink == link;
-        _denied = !_ready;
+        final ready = allowed && widget.access.loadedLink == link;
+        _ready = _ready || ready;
+        _denied = !ready;
+        _loadFailed = !ready;
       });
     } catch (_) {
-      if (mounted && generation == _generation) setState(() => _denied = true);
+      if (mounted && generation == _generation)
+        setState(() {
+          _denied = true;
+          _loadFailed = true;
+        });
     } finally {
       if (generation == _generation) _loading = false;
     }
@@ -145,8 +157,17 @@ class _OccasionAdministrationBoundaryState
 
   @override
   Widget build(BuildContext context) {
-    if (_denied && !_ready)
-      return const Scaffold(body: Center(child: Text('Access denied')));
+    final failure = Scaffold(
+        body: Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Text('Access denied'),
+      TextButton(
+          onPressed: () {
+            if (!_loading) _load(_link!, ++_generation);
+          },
+          child: Text(CommonStrings.retry)),
+    ])));
+    if (_denied && !_ready) return failure;
     if (!_ready)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final waiting = widget.access.loadedLink != _link;
@@ -160,10 +181,10 @@ class _OccasionAdministrationBoundaryState
               enabled: !_denied && !waiting,
               child: KeyedSubtree(
                   key: ValueKey(_link), child: widget.builder(context)))),
-      if (waiting)
-        const Scaffold(body: Center(child: CircularProgressIndicator()))
-      else if (_denied)
-        const Scaffold(body: Center(child: Text('Access denied'))),
+      if (_denied)
+        failure
+      else if (waiting)
+        const Scaffold(body: Center(child: CircularProgressIndicator())),
     ]);
   }
 }

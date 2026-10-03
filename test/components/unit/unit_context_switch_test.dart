@@ -20,11 +20,18 @@ class UnitAccess extends ChangeNotifier implements UnitAdministrationAccess {
   @override
   bool get hasOccasion => false;
   bool allowed = true;
+  bool unresolved = false;
   @override
   bool get canAccess => allowed;
   @override
   Future<void> load(int unitId, {required bool force}) async {
     requests.add(unitId);
+    if (unresolved) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      currentUnit = null;
+      notifyListeners();
+      throw StateError('Denied unit without metadata');
+    }
     currentUnit = UnitModel(id: unitId);
     notifyListeners();
   }
@@ -34,6 +41,27 @@ class UnitAccess extends ChangeNotifier implements UnitAdministrationAccess {
 }
 
 void main() {
+  testWidgets('failed unit context does not repeatedly reload', (tester) async {
+    final access = UnitAccess()..unresolved = true;
+    final router = RootStackRouter.build(routes: [
+      AutoRoute(
+          page: PageInfo(UnitAdminRoute.name,
+              builder: (_) => UnitAdminPage(id: 1, access: access)),
+          path: '/unit/1/edit',
+          usesPathAsKey: true)
+    ]);
+    await tester.pumpWidget(MaterialApp.router(
+        routerConfig: router.config(
+            deepLinkBuilder: (_) => DeepLink.path('/unit/1/edit'))));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(access.requests, [1]);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(TextButton), findsOneWidget);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+  });
+
   testWidgets('breadcrumb unit switch and Back load only the visible unit',
       (tester) async {
     final access = UnitAccess();
