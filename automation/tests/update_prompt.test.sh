@@ -131,8 +131,10 @@ if [ -n "$CONFIG_ACTIVATION_TENANT_ID" ]; then
     "$PROJECT_ROOT/automation/release/generate_backend_profile_fingerprint.mjs" \
     "$CONFIG_ACTIVATION_TENANT_ID" "$CONFIG_CANONICAL_URL" "$CONFIG_CANONICAL_KEY" \
     "$CONFIG_CANONICAL_ORGANIZATION_ID")"
+  CONFIG_ACTIVATION_GENERATION=0
+  if [ "$CONFIG_ACTIVATION_PHASE" = canonical ]; then CONFIG_ACTIVATION_GENERATION=1; fi
   printf '%s\n' \
-    "{\"schemaVersion\":1,\"tenantId\":\"$CONFIG_ACTIVATION_TENANT_ID\",\"generation\":0,\"backend\":\"$CONFIG_ACTIVATION_PHASE\"}" \
+    "{\"schemaVersion\":1,\"tenantId\":\"$CONFIG_ACTIVATION_TENANT_ID\",\"generation\":$CONFIG_ACTIVATION_GENERATION,\"backend\":\"$CONFIG_ACTIVATION_PHASE\"}" \
     > "$BUILD_DIR/backend-activation.json"
 fi
 printf '// fake compiled app\n%s\n%s\n%s\n%s\n%s\n' \
@@ -224,6 +226,11 @@ for entry in \
   sed -i.bak "s#^${key}=.*#${entry}#" "$ACTIVATION_ROOT/automation/project.conf"
   rm -f "$ACTIVATION_ROOT/automation/project.conf.bak"
 done
+# This fixture switches back to the legacy phase. Its public deletion page
+# must follow that profile too, rather than retaining the canonical fixture.
+printf '<title>Delete | %s</title>%s<h1>Smazání účtu</h1><a href="/privacy/choices/">Choices</a><script>const endpoint="%s/functions/v1/confirm-account-deletion"; const anonKey="%s";</script>\n' \
+  "$CONFIG_APP_NAME" "$LEGAL_NAV" "$CONFIG_SUPABASE_URL" "$CONFIG_ANON_KEY" \
+  > "$BUILD_DIR/delete-account/index.html"
 PROFILE_SHA="$(node "$PROJECT_ROOT/automation/release/generate_backend_profile_fingerprint.mjs" \
   fixture-transition https://api.festapp.net "$CANONICAL_KEY" 12)"
 write_client_sync_fixture "$ACTIVATION_ROOT/automation/project.conf" fixture-transition
