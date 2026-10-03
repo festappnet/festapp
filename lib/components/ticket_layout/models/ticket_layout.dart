@@ -333,7 +333,21 @@ class TicketTemplate {
     }
     if (size == area.size) return this;
     final sx = size.width / area.width, sy = size.height / area.height;
-    final scale = sx < sy ? sx : sy;
+    final qr = elements.where((e) => e.binding == 'qr').firstOrNull;
+    final scale =
+        math.max(math.min(sx, sy), qr == null ? 0.0 : 60 / qr.box.width);
+    // Transform the design as one group: no new overlaps when aspect changes.
+    // Keep QR printable, consuming surrounding whitespace before rejecting size.
+    final bounds =
+        elements.map((e) => e.box).reduce((a, b) => a.expandToInclude(b));
+    double shift(double target, double original, double start, double end) {
+      final preferred = (target - original * scale) / 2;
+      final low = -start * scale, high = target - end * scale;
+      return low <= high ? preferred.clamp(low, high) : low;
+    }
+
+    final dx = shift(size.width, area.width, bounds.left, bounds.right);
+    final dy = shift(size.height, area.height, bounds.top, bounds.bottom);
     // Binary-exact coordinates keep Rect.width/height identical for square QR
     // after right-left subtraction and JSON serialization at arbitrary mm sizes.
     double coordinate(double value) => (value * 1024).round() / 1024;
@@ -352,8 +366,8 @@ class TicketTemplate {
         elements: elements
             .map((e) => e.copyWith(
                 box: Rect.fromLTWH(
-                    coordinate(e.box.left * sx),
-                    coordinate(e.box.top * sy),
+                    coordinate(e.box.left * scale + dx),
+                    coordinate(e.box.top * scale + dy),
                     coordinate(e.box.width * scale),
                     coordinate(e.box.height * scale)),
                 fontSize: (e.fontSize * scale).clamp(e.minFontSize, 72)))
