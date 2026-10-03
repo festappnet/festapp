@@ -126,7 +126,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.runAsync(TicketFontCatalog.load);
     await tester.pumpWidget(MaterialApp(
-        theme: ThemeConfig.darkTheme(ThemeConfig.baseTheme()),
+        theme: ThemeConfig.theme(brightness: Brightness.dark),
         home: TicketLayoutEditor(
             occasionId: 1,
             type: 'wide',
