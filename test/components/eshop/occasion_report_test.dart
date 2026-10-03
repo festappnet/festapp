@@ -1,3 +1,9 @@
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/features/feature_constants.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/views/report_text.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:fstapp/components/eshop/models/report_period.dart';
@@ -112,6 +118,90 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+
+  for (final ticketMode in [false, true]) {
+    testWidgets(
+        'report distinguishes registration and ticket mode: $ticketMode',
+        (tester) async {
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          occasion: OccasionModel(
+              id: 1,
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [
+            TicketFeature(code: FeatureConstants.ticket, isEnabled: ticketMode),
+          ]));
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      await tester.pumpWidget(app((_) async => reportFixture()));
+      await tester.pumpAndSettle();
+      expect(find.text(ReportStrings.tickets),
+          ticketMode ? findsWidgets : findsNothing);
+      expect(
+          formatReportText(reportFixture())
+              .contains('${ReportStrings.tickets}:'),
+          ticketMode);
+      if (!ticketMode) {
+        expect(find.text(OrdersStrings.applications), findsWidgets);
+        expect(formatReportText(reportFixture()),
+            contains('${OrdersStrings.applications}: 3'));
+      }
+    });
+  }
+
+  for (final layout in [(320.0, 1.0), (800.0, 1.0), (320.0, 2.0)]) {
+    testWidgets('moving across chart values keeps positions stable: $layout',
+        (tester) async {
+      final start = DateTime.utc(2026, 1, 1), end = DateTime.utc(2026, 1, 2);
+      await tester.pumpWidget(MaterialApp(
+          builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(layout.$2)),
+              child: child!),
+          home: Scaffold(
+              body: SingleChildScrollView(
+                  child: Align(
+                      alignment: Alignment.topLeft,
+                      child: SizedBox(
+                          width: layout.$1,
+                          child: ReportTimelineChart(
+                              start: start,
+                              end: end,
+                              cumulative: false,
+                              series: [
+                                ReportTimelineSeries(
+                                    'Přijaté platby',
+                                    Colors.green,
+                                    {
+                                      start: BigInt.one,
+                                      end: BigInt.parse('123456789012345')
+                                    },
+                                    currency: 'CZK'),
+                                ReportTimelineSeries(
+                                    'Vráceno',
+                                    Colors.red,
+                                    {
+                                      start: BigInt.zero,
+                                      end: BigInt.parse('98765432109876')
+                                    },
+                                    currency: 'CZK'),
+                              ])))))));
+      await tester.pumpAndSettle();
+      final plot = find.descendant(
+          of: find.byType(ReportTimelineChart),
+          matching: find.byType(CustomPaint));
+      await tester.ensureVisible(plot);
+      await tester.pumpAndSettle();
+      final plotBefore = tester.getRect(plot);
+      final legendBefore =
+          tester.getTopLeft(find.text('Vráceno: 987654321098,76 CZK'));
+      await tester.tapAt(Offset(plotBefore.left + 1, plotBefore.center.dy));
+      await tester.pump();
+      expect(tester.getRect(plot), plotBefore);
+      expect(tester.getTopLeft(find.text('Vráceno: 0,00 CZK')), legendBefore);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('nested report loads the occasion from its parent route',
       (tester) async {

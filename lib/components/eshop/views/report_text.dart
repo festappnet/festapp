@@ -16,7 +16,7 @@ String formatReportText(OccasionReport report) {
   }
 
   counts(ReportStrings.orders, report.orders);
-  counts(ReportStrings.tickets, report.tickets);
+  if (ReportStrings.hasTickets) counts(ReportStrings.tickets, report.tickets);
   text
     ..writeln(
         '${ReportStrings.spots}: ${report.spotsOccupied} / ${report.spotsTotal}')
