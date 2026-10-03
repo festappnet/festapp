@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "1444f263e969fb83d4692114b12182038efcfc41",
+  "baseMainSha": "56c29a739f1ffa45475cd616d8ecb5b4d13ebed0",
   "release": {
-    "version": "0.20.69+553",
-    "note": "Resize canvas from all edges and explain editing mode"
+    "version": "0.20.70+554",
+    "note": "Recover canvas drag at limits and restore off-canvas elements"
   }
 }
