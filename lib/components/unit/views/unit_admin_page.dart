@@ -1,253 +1,237 @@
+import 'package:fstapp/components/navigation/route_visibility.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
+import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
 import 'package:fstapp/components/_shared/red_strip_widget.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
-import 'package:fstapp/data_services/update_service.dart';
-import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/unit/views/occasions_screen.dart';
-import 'package:fstapp/components/occasion/db_occasions.dart';
+import 'package:fstapp/components/navigation/unit_administration_access.dart';
 import 'package:fstapp/components/unit/views/quotes_tab.dart';
 import 'package:fstapp/components/unit/views/unit_users_screen.dart';
 import 'package:fstapp/router_service.dart';
-
 import 'package:fstapp/components/unit/views/unit_settings_screen.dart';
 import 'package:fstapp/components/email_templates/views/email_templates_tab.dart';
 import '../../occasion/occasion_model.dart';
-import 'unit_page.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 @RoutePage()
 class UnitAdminPage extends StatefulWidget {
-  int? id;
-  static const double contentMaxWidth = 1000.0;
-
-  UnitAdminPage({@pathParam required this.id, super.key});
-
+  final int? id;
+  final UnitAdministrationAccess? access;
+  static const double contentMaxWidth = 1000;
+  const UnitAdminPage({super.key, @pathParam required this.id, this.access});
   @override
-  _UnitAdminPageState createState() => _UnitAdminPageState();
+  State<UnitAdminPage> createState() => _UnitAdminPageState();
 }
 
 class _UnitAdminPageState extends State<UnitAdminPage> {
-  UnitModel? _currentUnit;
+  UnitAdministrationAccess get _access =>
+      widget.access ?? const RightsUnitAdministrationAccess();
+  UnitModel? _unit;
   List<OccasionModel>? _occasions;
-  Widget _currentScreen = const Center(child: CircularProgressIndicator());
-  String _currentMenu = "";
-  bool _isLoading = false;
-  int? _loadingId;
-  bool _reloadAfterCurrent = false;
-  bool _forceAfterCurrent = false;
-
-  void _setCurrentScreen(Widget screen, String menu) {
-    if (mounted) {
-      setState(() {
-        _currentScreen = screen;
-        _currentMenu = menu;
-      });
-    }
-  }
-
+  bool _failed = false;
+  int _generation = 0;
+  bool _loading = false;
+  bool _loadFailed = false;
+  StackRouter? _root;
   @override
   void initState() {
     super.initState();
-    RightsService.occasionLinkModelNotifier.addListener(_onRightsChanged);
-  }
-
-  @override
-  void dispose() {
-    RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
-    super.dispose();
-  }
-
-  void _onRightsChanged() {
-    if (!_isLoading && RightsService.currentUnit()?.id == widget.id) {
-      _loadOrganization(force: false);
-    }
-  }
-
-  int? _loadedId;
-
-  @override
-  void didUpdateWidget(UnitAdminPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.id != oldWidget.id) {
-      _loadOrganization();
-    }
+    _access.changes.addListener(_contextChanged);
+    _load();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.id == null && context.routeData.hasPendingChildren) {
-      widget.id = context.routeData.pendingChildren[0].params.getInt("id");
+    ModalRoute.of(
+        context); // Reload retained context when native Back reveals it.
+    Localizations.localeOf(context);
+    context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
+    final root = context.router.root;
+    if (_root != root) {
+      _root?.removeListener(_contextChanged);
+      _root = root;
+      root.addListener(_contextChanged);
     }
-    if (widget.id != null && widget.id != _loadedId) {
-      _loadOrganization();
+    _contextChanged();
+  }
+
+  void _contextChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _loading ||
+          _loadFailed ||
+          !isVisibleRouteInstance(context)) return;
+      if (_access.currentUnit?.id != widget.id || _access.hasOccasion)
+        _load(force: true);
+      else if (!_access.isSignedIn)
+        _load();
+      else {
+        final failed = !_access.canAccess;
+        if (_failed != failed) setState(() => _failed = failed);
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  @override
+  void dispose() {
+    ++_generation;
+    _root?.removeListener(_contextChanged);
+    _access.changes.removeListener(_contextChanged);
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(UnitAdminPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.id != widget.id) {
+      _unit = null;
+      _occasions = null;
+      _load();
     }
   }
 
-  Future<void> _loadOrganization({bool force = false}) async {
+  Future<void> _load({bool force = false}) async {
+    final generation = ++_generation;
+    _loading = true;
+    _loadFailed = false;
     final id = widget.id;
-    if (id == null) return;
-    if (_isLoading) {
-      if (force || _loadingId != id) {
-        _reloadAfterCurrent = true;
-        _forceAfterCurrent |= force;
-      }
+    if (id == null) {
+      setState(() => _failed = true);
+      _loading = false;
       return;
     }
-    _isLoading = true;
-    _loadingId = id;
-    try {
-      await UpdateService.versionCheck(context);
-      if (RightsService.currentUnit()?.id != id || force) {
-        await RightsService.updateAppData(
-                unitId: id, force: force, refreshOffline: false)
-            .timeout(const Duration(seconds: 20));
-      }
-      if (!mounted || widget.id != id) return;
-      _currentUnit = RightsService.currentUnit();
-      if (_currentUnit != null) {
-        _occasions = await DbOccasions.getAllOccasionsForEdit(id)
-            .timeout(const Duration(seconds: 20));
-      }
-      if (!mounted || widget.id != id) return;
-      _loadedId = id;
-      if (_currentUnit != null) {
-        if (_currentMenu.isEmpty || _currentMenu == "Occasions") {
-          _setCurrentScreen(
-              OccasionsScreen(
-                  unit: _currentUnit!, initialOccasions: _occasions),
-              "Occasions");
-        } else if (_currentMenu == "Settings") {
-          _setCurrentScreen(
-              UnitSettingsScreen(
-                  unit: _currentUnit!, onUnitUpdated: _handleUnitUpdate),
-              "Settings");
-        } else if (_currentMenu == "EmailTemplates") {
-          _setCurrentScreen(
-              EmailTemplatesTab(unitId: _currentUnit!.id!), "EmailTemplates");
-        }
-      } else {
-        _showLoadFailure();
-      }
-    } catch (e) {
-      AppLogger.error("Error loading unit edit data: $e");
-      if (mounted && widget.id == id) {
-        _loadedId = id;
-        _showLoadFailure();
-      }
-    } finally {
-      _isLoading = false;
-      _loadingId = null;
-      if (mounted && (_reloadAfterCurrent || widget.id != id)) {
-        final retryForce = _forceAfterCurrent;
-        _reloadAfterCurrent = false;
-        _forceAfterCurrent = false;
-        _loadOrganization(force: retryForce);
-      }
+    if (!_access.isSignedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted)
+          context.router.root.replace(LoginRoute(
+              redirect: context.router.root.urlState.uri.toString()));
+      });
+      return;
     }
-  }
-
-  void _showLoadFailure() {
-    _setCurrentScreen(
-      Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(UnitStrings.loadUnitFailed),
-            TextButton(
-              onPressed: () => _loadOrganization(force: true),
-              child: Text(CommonStrings.retry),
-            ),
-          ],
-        ),
-      ),
-      "",
-    );
-  }
-
-  void _handleUnitUpdate() {
-    _loadOrganization(force: true);
+    try {
+      await _access.load(id, force: force || _access.hasOccasion);
+      if (!mounted || generation != _generation) return;
+      final unit = _access.currentUnit;
+      if (unit?.id != id || !_access.canAccess) {
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
+        return;
+      }
+      final occasions = await _access.occasions(id);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _unit = unit;
+        _occasions = occasions;
+        _failed = false;
+      });
+    } catch (_) {
+      if (mounted && generation == _generation)
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
+    } finally {
+      if (generation == _generation) _loading = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SafeArea(
-          bottom: false,
-          child: RedStripWidget(),
-        ),
-        Expanded(
-          child: Scaffold(
-            appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context),
-            body: SafeArea(
-              top: false, // Top padding is now handled above
-              child: Stack(
-                children: [
-                  Row(
-                    children: [
-                      const SizedBox(width: SideMenu.collapsedWidth),
-                      Expanded(
-                        // Conditionally apply the width constraint ONLY for the "Occasions" screen.
-                        child: (_currentMenu == "Occasions")
-                            ? Center(
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                      maxWidth: UnitAdminPage.contentMaxWidth),
-                                  child: _currentScreen,
-                                ),
-                              )
-                            : _currentScreen, // Other screens take the full available width.
-                      ),
-                    ],
-                  ),
-                  SideMenu(
-                    onMenuItemSelected: _setCurrentScreen,
-                    unit: _currentUnit,
-                    currentMenu: _currentMenu,
-                    onUnitUpdated: _handleUnitUpdate,
-                  ),
-                ],
-              ),
-            ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                RouterService.navigate(
-                        context, "${UnitPage.ROUTE}/${widget.id}")
-                    .then((_) => _loadOrganization());
-              },
-              child: const Icon(Icons.remove_red_eye_rounded),
-            ),
-          ),
-        ),
-      ],
-    );
+    final failure = Scaffold(
+        body: Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(UnitStrings.loadUnitFailed),
+      TextButton(
+          onPressed: () => _load(force: true), child: Text(CommonStrings.retry))
+    ])));
+    if (_failed && _unit == null) return failure;
+    if (_unit == null)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final waiting = _access.currentUnit?.id != widget.id || _access.hasOccasion;
+    final denied = _failed || !_access.canAccess;
+    return Stack(fit: StackFit.expand, children: [
+      Offstage(
+          offstage: denied || waiting,
+          child: TickerMode(
+              enabled: !denied && !waiting,
+              child: UnitAdministrationScope(
+                  unit: _unit!,
+                  occasions: _occasions,
+                  onUpdated: () => _load(force: true),
+                  child: const AutoRouter()))),
+      if (denied)
+        failure
+      else if (waiting)
+        const Scaffold(body: Center(child: CircularProgressIndicator())),
+    ]);
   }
 }
 
-class SideMenu extends StatefulWidget {
-  final Function(Widget, String) onMenuItemSelected;
-  final UnitModel? unit;
-  final String currentMenu;
-  final VoidCallback onUnitUpdated;
+class UnitAdministrationScope extends InheritedWidget {
+  final UnitModel unit;
+  final List<OccasionModel>? occasions;
+  final VoidCallback onUpdated;
+  const UnitAdministrationScope(
+      {super.key,
+      required this.unit,
+      required this.occasions,
+      required this.onUpdated,
+      required super.child});
+  static UnitAdministrationScope of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<UnitAdministrationScope>()!;
+  @override
+  bool updateShouldNotify(UnitAdministrationScope oldWidget) =>
+      oldWidget.unit != unit || oldWidget.occasions != occasions;
+}
 
-  static const double collapsedWidth = 56.0;
-  static const double expandedWidth = 220.0;
-
-  const SideMenu({
+class UnitAdministrationBody extends StatelessWidget {
+  final List<RoutedTabDefinition> tabs;
+  final TabController controller;
+  final Widget child;
+  const UnitAdministrationBody({
     super.key,
-    required this.onMenuItemSelected,
-    required this.unit,
-    required this.currentMenu,
-    required this.onUnitUpdated,
+    required this.tabs,
+    required this.controller,
+    required this.child,
   });
 
+  @override
+  Widget build(BuildContext context) => Stack(
+        fit: StackFit.expand,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: SideMenu.collapsedWidth),
+            child: child,
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: SideMenu(tabs: tabs, controller: controller),
+          ),
+        ],
+      );
+}
+
+class SideMenu extends StatefulWidget {
+  final List<RoutedTabDefinition> tabs;
+  final TabController controller;
+  static const double collapsedWidth = 56;
+  static const double expandedWidth = 220;
+  const SideMenu({super.key, required this.tabs, required this.controller});
   @override
   State<SideMenu> createState() => _SideMenuState();
 }
@@ -255,135 +239,33 @@ class SideMenu extends StatefulWidget {
 class _SideMenuState extends State<SideMenu> {
   bool _isExpanded = false;
   String? _hoveredLabel;
-
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        if (!_isExpanded) setState(() => _isExpanded = true);
-      },
-      onExit: (_) {
-        if (_isExpanded) setState(() => _isExpanded = false);
-      },
+  Widget build(BuildContext context) => MouseRegion(
+      onEnter: (_) => setState(() => _isExpanded = true),
+      onExit: (_) => setState(() => _isExpanded = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-        width: _isExpanded ? SideMenu.expandedWidth : SideMenu.collapsedWidth,
-        decoration: BoxDecoration(
+          duration: const Duration(milliseconds: 150),
+          width: _isExpanded ? SideMenu.expandedWidth : SideMenu.collapsedWidth,
           color: Theme.of(context).canvasColor,
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  _buildMenuItem(
-                    context: context,
-                    icon: Icons.calendar_month,
-                    label: CommonStrings.events,
-                    isSelected: widget.currentMenu == "Occasions",
-                    isExpanded: _isExpanded,
-                    isHovered: _hoveredLabel == CommonStrings.events,
-                    onHover: (label) => setState(() => _hoveredLabel = label),
-                    onTap: () {
-                      if (widget.unit != null) {
-                        widget.onMenuItemSelected(
-                          OccasionsScreen(unit: widget.unit!),
-                          "Occasions",
-                        );
-                      }
-                    },
-                  ),
-                  if (RightsService.canSeeUnitUsers())
-                    _buildMenuItem(
-                      context: context,
-                      icon: Icons.people,
-                      label: CommonStrings.users,
-                      isSelected: widget.currentMenu == "Users",
-                      isExpanded: _isExpanded,
-                      isHovered: _hoveredLabel == CommonStrings.users,
-                      onHover: (label) => setState(() => _hoveredLabel = label),
-                      onTap: () {
-                        if (widget.unit != null) {
-                          widget.onMenuItemSelected(
-                            UnitUsersScreen(unit: widget.unit!),
-                            "Users",
-                          );
-                        }
-                      },
-                    ),
-                  if (widget.unit != null &&
-                      FeatureService.isFeatureEnabled(FeatureConstants.quotes,
-                          features: widget.unit!.features))
-                    _buildMenuItem(
-                      context: context,
-                      icon: Icons.format_quote,
-                      label: UnitStrings.quotes,
-                      isSelected: widget.currentMenu == "Quotes",
-                      isExpanded: _isExpanded,
-                      isHovered: _hoveredLabel == UnitStrings.quotes,
-                      onHover: (label) => setState(() => _hoveredLabel = label),
-                      onTap: () {
-                        widget.onMenuItemSelected(
-                          QuotesTab(unitId: widget.unit!.id!),
-                          "Quotes",
-                        );
-                      },
-                    ),
-                  if (RightsService.canSeeUnitUsers())
-                    _buildMenuItem(
-                      context: context,
-                      icon: Icons.email,
-                      label: UnitStrings.emailTemplates,
-                      isSelected: widget.currentMenu == "EmailTemplates",
-                      isExpanded: _isExpanded,
-                      isHovered: _hoveredLabel == UnitStrings.emailTemplates,
-                      onHover: (label) => setState(() => _hoveredLabel = label),
-                      onTap: () {
-                        if (widget.unit != null) {
-                          widget.onMenuItemSelected(
-                            EmailTemplatesTab(unitId: widget.unit!.id!),
-                            "EmailTemplates",
-                          );
-                        }
-                      },
-                    ),
-                  if (RightsService.canSeeUnitUsers())
-                    _buildMenuItem(
-                      context: context,
-                      icon: Icons.settings,
-                      label: CommonStrings.settings,
-                      isSelected: widget.currentMenu == "Settings",
-                      isExpanded: _isExpanded,
-                      isHovered: _hoveredLabel == CommonStrings.settings,
-                      onHover: (label) => setState(() => _hoveredLabel = label),
-                      onTap: () {
-                        if (widget.unit != null) {
-                          widget.onMenuItemSelected(
-                            UnitSettingsScreen(
-                              unit: widget.unit!,
-                              onUnitUpdated: widget.onUnitUpdated,
-                            ),
-                            "Settings",
-                          );
-                        }
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+          child: AnimatedBuilder(
+              animation: widget.controller,
+              builder: (context, _) =>
+                  ListView(padding: EdgeInsets.zero, children: [
+                    for (var i = 0; i < widget.tabs.length; i++)
+                      _buildMenuItem(
+                          context: context,
+                          icon: widget.tabs[i].icon,
+                          label: widget.tabs[i].label,
+                          isSelected: widget.controller.index == i,
+                          isExpanded: _isExpanded,
+                          isHovered: _hoveredLabel == widget.tabs[i].label,
+                          onHover: (label) =>
+                              setState(() => _hoveredLabel = label),
+                          onTap: () {
+                            if (widget.controller.index != i)
+                              widget.controller.index = i;
+                          })
+                  ]))));
   Widget _buildMenuItem({
     required BuildContext context,
     required IconData icon,
@@ -449,5 +331,126 @@ class _SideMenuState extends State<SideMenu> {
         ),
       ),
     );
+  }
+}
+
+@RoutePage()
+class UnitOccasionsPage extends StatelessWidget {
+  const UnitOccasionsPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return Center(
+        child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: UnitAdminPage.contentMaxWidth),
+            child: OccasionsScreen(
+                unit: scope.unit, initialOccasions: scope.occasions)));
+  }
+}
+
+@RoutePage()
+class UnitUsersPage extends StatelessWidget {
+  const UnitUsersPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return UnitUsersScreen(unit: scope.unit);
+  }
+}
+
+@RoutePage()
+class UnitEmailTemplatesPage extends StatelessWidget {
+  const UnitEmailTemplatesPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return EmailTemplatesTab(unitId: scope.unit.id!);
+  }
+}
+
+@RoutePage()
+class UnitSettingsPage extends StatelessWidget {
+  const UnitSettingsPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return UnitSettingsScreen(unit: scope.unit, onUnitUpdated: scope.onUpdated);
+  }
+}
+
+@RoutePage()
+class UnitQuotesPage extends StatelessWidget {
+  const UnitQuotesPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return QuotesTab(unitId: scope.unit.id!);
+  }
+}
+
+@RoutePage()
+class UnitAdministrationTabsPage extends StatelessWidget {
+  const UnitAdministrationTabsPage({super.key});
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+      listenable: RightsService.occasionLinkModelNotifier,
+      builder: (context, _) => _build(context));
+  Widget _build(BuildContext context) {
+    Localizations.localeOf(context);
+    context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
+    final scope = UnitAdministrationScope.of(context);
+    final tabs = <RoutedTabDefinition>[
+      RoutedTabDefinition(
+          slug: NavigationPaths.occasions,
+          route: const UnitOccasionsRoute(),
+          label: CommonStrings.events,
+          icon: Icons.calendar_month),
+      if (RightsService.canSeeUnitUsers()) ...[
+        RoutedTabDefinition(
+            slug: NavigationPaths.users,
+            route: const UnitUsersRoute(),
+            label: CommonStrings.users,
+            icon: Icons.people),
+        RoutedTabDefinition(
+            slug: NavigationPaths.emailTemplates,
+            route: const UnitEmailTemplatesRoute(),
+            label: UnitStrings.emailTemplates,
+            icon: Icons.email),
+        RoutedTabDefinition(
+            slug: NavigationPaths.settings,
+            route: const UnitSettingsRoute(),
+            label: CommonStrings.settings,
+            icon: Icons.settings)
+      ],
+      if (FeatureService.isFeatureEnabled(FeatureConstants.quotes,
+          features: scope.unit.features))
+        RoutedTabDefinition(
+            slug: NavigationPaths.quotes,
+            route: const UnitQuotesRoute(),
+            label: UnitStrings.quotes,
+            icon: Icons.format_quote),
+      if (RightsService.isUnitEditor())
+        RoutedTabDefinition(
+            slug: NavigationPaths.bankAccounts,
+            route: const UnitBankAccountsNavigationRoute(),
+            label: BankAccountStrings.bankAccountsTitle,
+            icon: Icons.account_balance),
+    ];
+    return RoutedTabScaffold(
+        key: ValueKey(scope.unit.id),
+        tabs: tabs,
+        builder: (context, child, controller) => Column(children: [
+              const SafeArea(bottom: false, child: RedStripWidget()),
+              Expanded(
+                  child: Scaffold(
+                      appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context),
+                      body: UnitAdministrationBody(
+                          tabs: tabs, controller: controller, child: child),
+                      floatingActionButton: FloatingActionButton(
+                          onPressed: () => RouterService.navigate(
+                              context, 'unit/${scope.unit.id}'),
+                          child: const Icon(Icons.remove_red_eye_rounded))))
+            ]));
   }
 }

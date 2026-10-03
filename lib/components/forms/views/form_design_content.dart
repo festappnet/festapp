@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/views/form_design_settings.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
@@ -78,7 +79,10 @@ class _FormDesignContentState extends State<FormDesignContent> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => NavigationDraftBoundary(
+      isDirty: () => _hasChanges, child: _buildContent(context));
+
+  Widget _buildContent(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }

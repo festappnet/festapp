@@ -25,8 +25,8 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink =
-        context.routeData.params.getString(AppRouter.linkFormatted);
+    final newOccasionLink = context.routeData.inheritedPathParams
+        .getString(AppRouter.linkFormatted);
     if (occasionLink == null) {
       occasionLink = newOccasionLink;
       _initializeController();
