@@ -163,6 +163,9 @@ assert_contains "$TMP_ROOT/web/index.html" "app_generation: 'test_generation_v1'
 assert_contains "$TMP_ROOT/web/index.html" "occasion: 'test-occasion'"
 assert_contains "$TMP_ROOT/web/index.html" '<img class="initial-logo" src="android-chrome-192x192.png"'
 assert_missing "$TMP_ROOT/web/index.html" '<svg class="initial-logo"'
+assert_contains "$TMP_ROOT/web/index.html" '      --festapp-loading-accent: #445566;'
+assert_contains "$TMP_ROOT/web/index.html" 'border-color: var(--festapp-loading-accent) #0000;'
+assert_missing "$TMP_ROOT/web/index.html" '#fd6206'
 cmp "$TMP_ROOT/web/loading-logo.svg" "$TMP_ROOT/assets/icons/fstapplogo.dark.svg" || { echo "Loading logo must match the configured dark brand logo"; exit 1; }
 # Selecting the generated wordmark must not replace the PWA installation icon.
 python3 - "$TMP_ROOT/automation/project.conf" <<'LOADING_CONFIG'

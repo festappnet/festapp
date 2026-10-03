@@ -290,7 +290,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.62+546";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.63+547";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -486,6 +486,7 @@
       margin: 0px;
     }
     .main-content {
+      --festapp-loading-accent: #80BDF2;
       position: fixed;
       inset: 0;
       z-index: 1000;
@@ -527,7 +528,7 @@
     border-radius: 50%;
   }
   .loader::before {
-    border-color: #fd6206 #0000;
+    border-color: var(--festapp-loading-accent) #0000;
     animation: inherit;
     animation-duration: .5s;
     animation-direction: reverse;
