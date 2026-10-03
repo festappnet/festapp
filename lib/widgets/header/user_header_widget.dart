@@ -83,7 +83,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                 },
                 icon: Icon(
                   Icons.translate,
-                  color: ThemeConfig.bottomNavSelectedItemColor(context),
+                  color: ThemeConfig.brandAccentColor,
                 ),
               ),
             ],
@@ -240,12 +240,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color:
-                                ThemeConfig.bottomNavSelectedItemColor(context),
+                            color: ThemeConfig.brandAccentColor,
                             width: 2,
                           ),
-                          color:
-                              ThemeConfig.bottomNavSelectedItemColor(context),
+                          color: ThemeConfig.brandAccentColor,
                         ),
                         child: Center(
                           child: Text(
@@ -379,10 +377,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: ThemeConfig.bottomNavSelectedItemColor(context),
+            color: ThemeConfig.brandAccentColor,
             width: 2,
           ),
-          color: ThemeConfig.bottomNavSelectedItemColor(context),
+          color: ThemeConfig.brandAccentColor,
         ),
         child: Center(
           child: Text(

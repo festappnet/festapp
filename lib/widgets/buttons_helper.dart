@@ -61,9 +61,12 @@ class ButtonsHelper {
                 Icon(icon, size: 20, color: fg),
                 const SizedBox(width: 8),
               ],
-              Text(label,
-                  style: TextStyle(
-                      color: fg, fontWeight: FontWeight.bold, fontSize: 15)),
+              Flexible(
+                child: Text(label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: fg, fontWeight: FontWeight.bold, fontSize: 15)),
+              ),
             ],
           ),
         ),
@@ -76,14 +79,14 @@ class ButtonsHelper {
     required String label,
     VoidCallback? onPressed,
     Color? color,
-    Color textColor = Colors.black,
+    Color? textColor,
     bool isEnabled = true,
     double height = 50.0,
     double width = 250.0,
   }) {
     color ??= ThemeConfig.bigButtonColor(context);
     return Container(
-      height: height,
+      constraints: BoxConstraints(minHeight: height),
       width: width,
       decoration: BoxDecoration(
         color: isEnabled ? color : ThemeConfig.grey380(context),
@@ -93,7 +96,11 @@ class ButtonsHelper {
         onPressed: isEnabled ? onPressed : null,
         child: Text(
           label,
-          style: TextStyle(color: textColor, fontSize: 25),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: textColor ?? ThemeConfig.textColorForBackground(color),
+            fontSize: 25,
+          ),
         ),
       ),
     );
@@ -174,8 +181,8 @@ class ButtonsHelper {
     Widget? suffixIcon,
     bool? isEnabled,
   }) {
-    return SizedBox(
-      height: height,
+    return Container(
+      constraints: BoxConstraints(minHeight: height),
       width: width ?? double.infinity,
       child: ElevatedButton(
         onPressed: (isEnabled ?? true) && !isLoading ? onPressed : null,
@@ -204,11 +211,14 @@ class ButtonsHelper {
                     prefixIcon,
                     const SizedBox(width: 8.0),
                   ],
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   if (suffixIcon != null) ...[
