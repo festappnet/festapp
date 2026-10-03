@@ -1,100 +1,214 @@
+import '../models/inventory_pools_list_bundle.dart';
+import '../models/inventory_pool_model.dart';
+import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/inventory/views/spot_management_view.dart';
-import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'inventory_pool_settings_view.dart';
 import 'inventory_strings.dart';
 import 'resource_editor_view.dart';
+import '../db_inventory_pools.dart';
 
-class InventoryPoolDetailView extends StatefulWidget {
-  final int poolId;
-  final VoidCallback? onDeleteCompleted;
-  final VoidCallback?
-      onDataUpdated; // This will now be the _refreshDataForCurrentGroup function
-
-  const InventoryPoolDetailView({
-    super.key,
-    required this.poolId,
-    this.onDeleteCompleted,
-    this.onDataUpdated,
-  });
-
+@RoutePage()
+class InventoryPoolDetailPage extends StatefulWidget {
+  final String poolId;
+  final Future<InventoryPoolsListBundle> Function(String)? loadPools;
+  const InventoryPoolDetailPage(
+      {super.key, @PathParam('poolId') required this.poolId, this.loadPools});
   @override
-  _InventoryPoolDetailViewState createState() =>
-      _InventoryPoolDetailViewState();
+  State<InventoryPoolDetailPage> createState() =>
+      _InventoryPoolDetailPageState();
 }
 
-class _InventoryPoolDetailViewState extends State<InventoryPoolDetailView>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final GlobalKey<SpotManagementViewState> _spotManagementKey = GlobalKey();
-
+class _InventoryPoolDetailPageState extends State<InventoryPoolDetailPage> {
+  bool _ready = false;
+  bool _failed = false;
+  int _generation = 0;
+  String? _link;
+  List<InventoryPoolModel> _pools = [];
+  final _occupancyKey = GlobalKey<SpotManagementViewState>();
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final link = context.routeData.inheritedPathParams
+        .getString(AppRouter.linkFormatted);
+    if (_link != link) {
+      _link = link;
+      _load();
+    }
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  void didUpdateWidget(InventoryPoolDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.poolId != widget.poolId) {
+      _ready = false;
+      _failed = false;
+      _load();
+    }
   }
 
-  /// This function is passed as a callback to child tabs.
-  /// When a child tab saves data, this function is called to trigger a reload
-  /// in the parent (InventoryPoolsTab) and the matrix view.
-  void _handleDataUpdate() {
-    // Access the state via the key and call its public loadData method.
-    _spotManagementKey.currentState?.fetchGridData();
-    // Also notify the parent widget that data has been updated.
-    widget.onDataUpdated?.call();
+  Future<void> _load() async {
+    final generation = ++_generation;
+    final link = _link!;
+    if (int.tryParse(widget.poolId) == null) {
+      setState(() => _failed = true);
+      return;
+    }
+    try {
+      final objects = await (widget.loadPools ??
+          DbInventoryPools.getInventoryPoolsByOccasionLink)(link);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _pools = objects.pools;
+        _ready = RightsService.currentLink == link &&
+            objects.pools.any((p) => p.id == int.tryParse(widget.poolId));
+        _failed = !_ready;
+      });
+    } catch (_) {
+      if (mounted && generation == _generation) setState(() => _failed = true);
+    }
+  }
+
+  void _updated() {
+    _occupancyKey.currentState?.fetchGridData();
+    _load();
+  }
+
+  void _back() {
+    RetainedDraftGuard.instance.leaveOwner(context,
+        () => context.router.replaceAll([const InventoryPoolsListRoute()]));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          color: ThemeConfig.backgroundColor(context),
-          alignment: Alignment.centerLeft,
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-              tabAlignment: TabAlignment.start,
-            tabs: [
-              DataGridHelper.buildTab(context, Icons.grid_view,
-                  InventoryStrings.detailTabOccupancy),
-              DataGridHelper.buildTab(
-                  context, Icons.house_siding, InventoryStrings.detailTabRooms),
-              DataGridHelper.buildTab(
-                  context, Icons.settings, InventoryStrings.detailTabSettings),
-            ],
-          ),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              SpotManagementView(
-                key: _spotManagementKey,
-                inventoryPoolId: widget.poolId,
-              ),
-              ResourceEditorView(
-                inventoryPoolId: widget.poolId,
-              ),
-              InventoryPoolSettingsView(
-                poolId: widget.poolId,
-                // The settings view correctly calls the update handler.
-                onPoolUpdated: _handleDataUpdate,
-                // The delete action correctly calls the "go home" handler.
-                onPoolDeleted: widget.onDeleteCompleted,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+    if (_failed)
+      return Scaffold(
+        appBar: AppBar(
+            leading: IconButton(
+                icon: const Icon(Icons.arrow_back), onPressed: _back)),
+        body: const Center(child: Text('Not found or access denied')),
+      );
+    if (!_ready) return const Center(child: CircularProgressIndicator());
+    return InventoryPoolRouteScope(
+        identity: int.parse(widget.poolId),
+        onDeleted: _back,
+        onUpdated: _updated,
+        occupancyKey: _occupancyKey,
+        child: Scaffold(
+            appBar: AppBar(
+                automaticallyImplyLeading: false,
+                leading: IconButton(
+                    icon: const Icon(Icons.arrow_back), onPressed: _back),
+                title: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: [
+                      TextButton(
+                          onPressed: _back,
+                          child: Text(InventoryStrings.tabTitle)),
+                      const Icon(Icons.chevron_right),
+                      PopupMenuButton<InventoryPoolModel>(
+                          onSelected: (pool) {
+                            if (pool.id.toString() != widget.poolId)
+                              RetainedDraftGuard.instance.leaveOwner(
+                                  context,
+                                  () => context.router.navigate(
+                                      InventoryPoolDetailRoute(
+                                          poolId: pool.id.toString())));
+                          },
+                          itemBuilder: (_) => _pools
+                              .map((pool) => PopupMenuItem(
+                                  value: pool, child: Text(pool.toString())))
+                              .toList(),
+                          child: Text(_pools
+                              .firstWhere(
+                                  (pool) => pool.id.toString() == widget.poolId)
+                              .toString()))
+                    ]))),
+            body: AutoRouter(key: ValueKey(widget.poolId))));
+  }
+}
+
+class InventoryPoolRouteScope extends InheritedWidget {
+  final int identity;
+  final GlobalKey<SpotManagementViewState> occupancyKey;
+  final VoidCallback onDeleted;
+  final VoidCallback onUpdated;
+  const InventoryPoolRouteScope(
+      {super.key,
+      required this.identity,
+      required this.onDeleted,
+      required this.onUpdated,
+      required this.occupancyKey,
+      required super.child});
+  static InventoryPoolRouteScope of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<InventoryPoolRouteScope>()!;
+  @override
+  bool updateShouldNotify(InventoryPoolRouteScope oldWidget) =>
+      oldWidget.identity != identity;
+}
+
+@RoutePage(name: 'InventoryPoolTabsRoute')
+class InventoryPoolDetailView extends StatelessWidget {
+  const InventoryPoolDetailView({super.key});
+  @override
+  Widget build(BuildContext context) {
+    Localizations.localeOf(context);
+    return RoutedTabScaffold(tabs: [
+      RoutedTabDefinition(
+          slug: NavigationPaths.occupancy,
+          route: const InventoryPoolOccupancyRoute(),
+          label: InventoryStrings.detailTabOccupancy,
+          icon: Icons.grid_view),
+      RoutedTabDefinition(
+          slug: NavigationPaths.rooms,
+          route: const InventoryPoolRoomsRoute(),
+          label: InventoryStrings.detailTabRooms,
+          icon: Icons.house_siding),
+      RoutedTabDefinition(
+          slug: NavigationPaths.settings,
+          route: const InventoryPoolSettingsRoute(),
+          label: InventoryStrings.detailTabSettings,
+          icon: Icons.settings),
+    ]);
+  }
+}
+
+@RoutePage()
+class InventoryPoolOccupancyPage extends StatelessWidget {
+  const InventoryPoolOccupancyPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = InventoryPoolRouteScope.of(context);
+    return SpotManagementView(
+        key: scope.occupancyKey, inventoryPoolId: scope.identity);
+  }
+}
+
+@RoutePage()
+class InventoryPoolRoomsPage extends StatelessWidget {
+  const InventoryPoolRoomsPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = InventoryPoolRouteScope.of(context);
+    return ResourceEditorView(inventoryPoolId: scope.identity);
+  }
+}
+
+@RoutePage()
+class InventoryPoolSettingsPage extends StatelessWidget {
+  const InventoryPoolSettingsPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = InventoryPoolRouteScope.of(context);
+    return InventoryPoolSettingsView(
+        poolId: scope.identity,
+        onPoolUpdated: scope.onUpdated,
+        onPoolDeleted: scope.onDeleted);
   }
 }

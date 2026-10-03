@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
@@ -51,6 +52,46 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('nested report loads the occasion from its parent route',
+      (tester) async {
+    String? loadedLink;
+    final router = RootStackRouter.build(routes: [
+      AutoRoute(
+          page: PageInfo('OccasionReportRoot',
+              builder: (_) => const AutoRouter()),
+          path: '/:{occasionLink}/reservations',
+          children: [
+            AutoRoute(
+                page: PageInfo('OccasionReportLeaf',
+                    builder: (_) => ReportTab(
+                        identityKey: 'synthetic/editor',
+                        loader: (link) async {
+                          loadedLink = link;
+                          return reportFixture();
+                        })),
+                path: 'report'),
+          ]),
+    ]);
+    await tester.pumpWidget(EasyLocalization(
+      supportedLocales: const [Locale('cs')],
+      path: 'assets/translations',
+      assetLoader: const _ReportAssetLoader(),
+      startLocale: const Locale('cs'),
+      child: Builder(
+          builder: (context) => MaterialApp.router(
+                locale: context.locale,
+                supportedLocales: context.supportedLocales,
+                localizationsDelegates: context.localizationDelegates,
+                routerConfig: router.config(
+                    deepLinkBuilder: (_) =>
+                        const DeepLink.path('/occasion-a/reservations/report')),
+              )),
+    ));
+    await tester.pumpAndSettle();
+    expect(loadedLink, 'occasion-a');
+    expect(tester.takeException(), isNull);
   });
 
   test('contract preserves decimal precision and rejects unavailable reports',
