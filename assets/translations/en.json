@@ -320,7 +320,9 @@
     "editorPreview": "Editor Preview",
     "labelShowPaymentQr": "Show payment QR after ordering",
     "helperShowPaymentQr": "After an order is placed, shows the payment QR code and details right on the confirmation screen.",
-    "seatSelection": "Seat selection"
+    "seatSelection": "Seat selection",
+    "moreFonts": "More fonts",
+    "fontSearchHint": "Search by font name. Browse samples on Google Fonts and copy a name here, for example Roboto Slab. Your selection appears in the preview."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -2171,6 +2173,8 @@
     "sampleData": "Sample data",
     "templateFont": "Template font",
     "elementFont": "Element font override",
-    "missingGlyphs": "Some characters are missing from this font and are replaced with ?."
+    "missingGlyphs": "Some characters are missing from this font and are replaced with ?.",
+    "fontForText": "Different font for this text",
+    "inheritFont": "Use ticket font"
   }
 }
