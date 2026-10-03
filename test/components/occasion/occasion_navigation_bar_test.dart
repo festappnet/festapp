@@ -32,7 +32,8 @@ void main() {
           var active = 0;
           final taps = <int>[];
           await tester.pumpWidget(MaterialApp(
-            theme: dark ? ThemeConfig.theme(brightness: Brightness.dark) : light,
+            theme:
+                dark ? ThemeConfig.theme(brightness: Brightness.dark) : light,
             home: MediaQuery(
               data: MediaQueryData(
                 size: Size(width, 900),
@@ -117,7 +118,8 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         final light = ThemeConfig.theme();
-        final theme = dark ? ThemeConfig.theme(brightness: Brightness.dark) : light;
+        final theme =
+            dark ? ThemeConfig.theme(brightness: Brightness.dark) : light;
         await tester.pumpWidget(MaterialApp(
           theme: theme,
           home: MediaQuery(
@@ -146,6 +148,8 @@ void main() {
           ),
         ));
         final tabs = tester.widget<TabBar>(find.byType(TabBar));
+        expect(tester.getTopLeft(find.byType(TabBar)).dx, 0);
+        expect(tester.getSize(find.byType(TabBar)).width, width);
         expect(tabs.labelColor, theme.appBarTheme.foregroundColor);
         expect(tabs.preferredSize.height, greaterThan(kTextTabBarHeight));
         expect(tester.takeException(), isNull);
