@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get fontForText => 'TicketLayout.fontForText'.tr();
+  static String get inheritFont => 'TicketLayout.inheritFont'.tr();
   static String get templateFont => 'TicketLayout.templateFont'.tr();
   static String get elementFont => 'TicketLayout.elementFont'.tr();
   static String get missingGlyphs => 'TicketLayout.missingGlyphs'.tr();
