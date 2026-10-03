@@ -68,8 +68,10 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final doc = widget.controller.document;
     var bounds = widget.wholePage ? Offset.zero & doc.page : doc.area;
     if (widget.editBackground && backgroundSize != null) {
-      bounds = bounds.expandToInclude(
-          doc.backgroundRect(backgroundSize!).shift(doc.area.topLeft));
+      bounds = bounds.expandToInclude((widget.cropBackground
+              ? doc.backgroundRect(backgroundSize!)
+              : doc.croppedBackgroundRect(backgroundSize!))
+          .shift(doc.area.topLeft));
     }
     return bounds;
   }
@@ -86,7 +88,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   void didUpdateWidget(covariant TicketLayoutCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.wholePage != widget.wholePage ||
-        oldWidget.editBackground != widget.editBackground) {
+        oldWidget.editBackground != widget.editBackground ||
+        oldWidget.cropBackground != widget.cropBackground) {
       WidgetsBinding.instance.addPostFrameCallback((_) => fit());
     }
   }
@@ -173,9 +176,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         widget.controller.document.area.topLeft;
     if (widget.editBackground) {
       if (backgroundSize == null) return;
-      final rect = widget.cropBackground
-          ? widget.controller.document.croppedBackgroundRect(backgroundSize!)
-          : widget.controller.document.backgroundRect(backgroundSize!);
+      final rect =
+          widget.controller.document.croppedBackgroundRect(backgroundSize!);
       final corners = [
         rect.topLeft,
         rect.topRight,
@@ -445,7 +447,7 @@ class TicketLayoutPainter extends CustomPainter {
     final artwork = resources.artworks[controller.artworkKey];
     final background = artwork != null ? artwork.image : resources.background;
     if (background != null) {
-      if (editBackground) {
+      if (editBackground && cropBackground) {
         _image(
             canvas,
             background,
@@ -617,26 +619,52 @@ class TicketLayoutPainter extends CustomPainter {
     if (editBackground && background != null) {
       final imageSize =
           Size(background.width.toDouble(), background.height.toDouble());
-      final rect = cropBackground
-          ? doc.croppedBackgroundRect(imageSize)
-          : doc.backgroundRect(imageSize);
+      final rect = doc.croppedBackgroundRect(imageSize);
       canvas.drawRect(
           rect,
           Paint()
             ..color = Colors.blue
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5 / zoom);
-      final h = 10 / zoom;
-      for (final point in [
+      final corners = [
         rect.topLeft,
         rect.topRight,
         rect.bottomRight,
         rect.bottomLeft
-      ]) {
-        canvas.drawRect(Rect.fromCenter(center: point, width: h, height: h),
-            Paint()..color = Colors.blue);
+      ];
+      if (cropBackground) {
+        final length =
+            math.min(18 / zoom, math.min(rect.width, rect.height) / 3);
+        for (var i = 0; i < corners.length; i++) {
+          final point = corners[i];
+          final dx = i == 0 || i == 3 ? length : -length;
+          final dy = i < 2 ? length : -length;
+          final path = Path()
+            ..moveTo(point.dx + dx, point.dy)
+            ..lineTo(point.dx, point.dy)
+            ..lineTo(point.dx, point.dy + dy);
+          canvas.drawPath(
+              path,
+              Paint()
+                ..color = Colors.black54
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 6 / zoom);
+          canvas.drawPath(
+              path,
+              Paint()
+                ..color = Colors.white
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 3 / zoom);
+        }
+      } else {
+        final h = 10 / zoom;
+        for (final point in corners) {
+          canvas.drawRect(Rect.fromCenter(center: point, width: h, height: h),
+              Paint()..color = Colors.blue);
+        }
       }
     }
+
     if (controller.selectionRect case final Rect rect) {
       canvas.drawRect(
           rect, Paint()..color = Colors.blue.withValues(alpha: .12));
@@ -694,4 +722,29 @@ class TicketLayoutPainter extends CustomPainter {
       old.gridStep != gridStep ||
       old.cropToTicket != cropToTicket ||
       old.controller != controller;
+}
+
+/// Sidebar thumbnail uses the saved crop, rather than the uncropped source URL.
+class TicketBackgroundPreviewPainter extends CustomPainter {
+  final ui.Image image;
+  final Rect crop;
+  TicketBackgroundPreviewPainter(this.image, this.crop);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final source = Rect.fromLTWH(
+        crop.left * image.width,
+        crop.top * image.height,
+        crop.width * image.width,
+        crop.height * image.height);
+    final fit = applyBoxFit(BoxFit.contain, source.size, size);
+    canvas.drawImageRect(
+        image,
+        source,
+        Alignment.center.inscribe(fit.destination, Offset.zero & size),
+        Paint()..filterQuality = FilterQuality.medium);
+  }
+
+  @override
+  bool shouldRepaint(covariant TicketBackgroundPreviewPainter old) =>
+      old.image != image || old.crop != crop;
 }

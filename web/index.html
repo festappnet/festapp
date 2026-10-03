@@ -491,16 +491,20 @@
       z-index: 1000;
       background: #242424;
       display: flex;
+      flex-direction: column;
+      gap: 24px;
       align-items: center;
       justify-content: center;
       transition: opacity 0.4s ease-out;
     }
 
   img.initial-logo {
-    margin-top: -80px;
+    display: block;
+    width: calc(100vw - 48px);
     max-width: 320px;
     max-height: 120px;
-    position: absolute;
+    height: auto;
+    object-fit: contain;
   }
 
   /* HTML: <div class="loader"></div> */
@@ -537,7 +541,7 @@
 </style>
 
   <div class="main-content" id="loader-content">
-    <img class="initial-logo" src="android-chrome-192x192.png" alt="">
+    <img class="initial-logo" src="loading-logo.svg" alt="">
     <div class="loader" role="status" aria-label="Načítání aplikace"></div>
   </div>
 </body>

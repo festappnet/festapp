@@ -95,6 +95,7 @@ cp "$PROJECT_ROOT/web/.well-known/apple-app-site-association" "$TMP_ROOT/web/.we
 touch "$TMP_ROOT/assets/icons/fstapplogo.svg" \
       "$TMP_ROOT/assets/icons/fstapplogo.dark.svg" \
       "$TMP_ROOT/web/android-chrome-192x192.png"
+printf '<svg xmlns="http://www.w3.org/2000/svg"><text>Configured loading brand</text></svg>\n' > "$TMP_ROOT/assets/icons/fstapplogo.dark.svg"
 
 # theme_config.css is optional but typically present.
 if [ -f "$PROJECT_ROOT/web_client/src/theme_config.css" ]; then
@@ -162,6 +163,18 @@ assert_contains "$TMP_ROOT/web/index.html" "app_generation: 'test_generation_v1'
 assert_contains "$TMP_ROOT/web/index.html" "occasion: 'test-occasion'"
 assert_contains "$TMP_ROOT/web/index.html" '<img class="initial-logo" src="android-chrome-192x192.png"'
 assert_missing "$TMP_ROOT/web/index.html" '<svg class="initial-logo"'
+cmp "$TMP_ROOT/web/loading-logo.svg" "$TMP_ROOT/assets/icons/fstapplogo.dark.svg" || { echo "Loading logo must match the configured dark brand logo"; exit 1; }
+# Selecting the generated wordmark must not replace the PWA installation icon.
+python3 - "$TMP_ROOT/automation/project.conf" <<'LOADING_CONFIG'
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+p.write_text(p.read_text().replace('WEB_LOADING_LOGO_ASSET=android-chrome-192x192.png', 'WEB_LOADING_LOGO_ASSET=loading-logo.svg'))
+LOADING_CONFIG
+bash "$TMP_ROOT/automation/apply_config.sh" > "$TMP_ROOT/apply-loading-logo.log" 2>&1
+assert_contains "$TMP_ROOT/web/index.html" '<img class="initial-logo" src="loading-logo.svg"'
+[ -f "$TMP_ROOT/web/android-chrome-192x192.png" ] || { echo "PWA icon was removed"; exit 1; }
+
 assert_missing "$TMP_ROOT/web/index.html" 'CSM Ostrava 2026'
 
 echo

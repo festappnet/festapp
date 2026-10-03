@@ -607,53 +607,76 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             padding: const EdgeInsets.all(12),
             child: ImageArea(
                 imageUrl: background,
+                preview: ListenableBuilder(
+                    listenable: controller,
+                    builder: (context, _) {
+                      final image =
+                          resources.artworks[controller.artworkKey]?.image ??
+                              resources.background;
+                      if (image == null) return const SizedBox(height: 200);
+                      return SizedBox(
+                          height: 200,
+                          width: double.infinity,
+                          child: CustomPaint(
+                              painter: TicketBackgroundPreviewPainter(
+                                  image, controller.document.backgroundCrop)));
+                    }),
                 hint: TicketLayoutStrings.background,
                 enabled: !imageBusy,
                 onFileSelected: upload,
                 onRemove: removeBackground)),
-        if (background?.isNotEmpty ?? false)
-          OutlinedButton.icon(
-              icon: const Icon(Icons.crop),
-              label: Text(TicketLayoutStrings.positionImage),
-              onPressed: imageBusy
-                  ? null
-                  : () {
-                      setState(() {
-                        editBackground = true;
-                        cropBackground = false;
-                        pan = false;
-                      });
-                      controller.select(null);
-                      if (MediaQuery.sizeOf(context).width < 900) {
-                        Navigator.pop(context);
-                      }
-                    }),
-        if (background?.isNotEmpty ?? false)
-          OutlinedButton.icon(
-              icon: const Icon(Icons.crop),
-              label: Text(TicketLayoutStrings.cropImage),
-              onPressed: imageBusy
-                  ? null
-                  : () {
-                      setState(() {
-                        editBackground = true;
-                        cropBackground = true;
-                        pan = false;
-                      });
-                      controller.select(null);
-                      if (MediaQuery.sizeOf(context).width < 900)
-                        Navigator.pop(context);
-                    }),
-        TextButton(
-            onPressed: imageBusy
-                ? null
-                : () {
-                    final preset = resources.presets[controller.artworkKey] ??
-                        resources.preset;
-                    setState(() => propertyDefaults = preset);
-                    controller.replace(preset);
-                  },
-            child: Text(TicketLayoutStrings.reset))
+        Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (background?.isNotEmpty ?? false)
+                    OutlinedButton.icon(
+                        icon: const Icon(Icons.open_with),
+                        label: Text(TicketLayoutStrings.positionImage),
+                        onPressed: imageBusy
+                            ? null
+                            : () {
+                                setState(() {
+                                  editBackground = true;
+                                  cropBackground = false;
+                                  pan = false;
+                                });
+                                controller.select(null);
+                                if (MediaQuery.sizeOf(context).width < 900) {
+                                  Navigator.pop(context);
+                                }
+                              }),
+                  const SizedBox(height: 12),
+                  if (background?.isNotEmpty ?? false)
+                    OutlinedButton.icon(
+                        icon: const Icon(Icons.crop),
+                        label: Text(TicketLayoutStrings.cropImage),
+                        onPressed: imageBusy
+                            ? null
+                            : () {
+                                setState(() {
+                                  editBackground = true;
+                                  cropBackground = true;
+                                  pan = false;
+                                });
+                                controller.select(null);
+                                if (MediaQuery.sizeOf(context).width < 900)
+                                  Navigator.pop(context);
+                              }),
+                  const SizedBox(height: 8),
+                  TextButton(
+                      onPressed: imageBusy
+                          ? null
+                          : () {
+                              final preset =
+                                  resources.presets[controller.artworkKey] ??
+                                      resources.preset;
+                              setState(() => propertyDefaults = preset);
+                              controller.replace(preset);
+                            },
+                      child: Text(TicketLayoutStrings.reset))
+                ])),
       ]));
   Widget backgroundTools() => ListenableBuilder(
       listenable: controller,
