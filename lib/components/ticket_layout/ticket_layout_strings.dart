@@ -6,6 +6,12 @@ class TicketLayoutStrings {
   static String get resetCrop => 'TicketLayout.resetCrop'.tr();
   static String get designSize => 'TicketLayout.designSize'.tr();
   static String get saveDirectHint => 'TicketLayout.saveDirectHint'.tr();
+  static String get canvasColor => 'TicketLayout.canvasColor'.tr();
+  static String get transparent => 'TicketLayout.transparent'.tr();
+  static String get transparentHint => 'TicketLayout.transparentHint'.tr();
+  static String get canvasSection => 'TicketLayout.canvasSection'.tr();
+  static String get textSection => 'TicketLayout.textSection'.tr();
+  static String get imageSection => 'TicketLayout.imageSection'.tr();
   static String get canvasBlocked => 'TicketLayout.canvasBlocked'.tr();
   static String get canvasHidden => 'TicketLayout.canvasHidden'.tr();
   static String get checkElements => 'TicketLayout.checkElements'.tr();

@@ -148,6 +148,13 @@ class TicketTemplate {
   final Map<String, dynamic> appearance;
   String? get fontId => appearance['fontId'] as String?;
   String get font => appearance['font'] as String? ?? 'futura';
+  String get canvasColor => appearance['canvasColor'] as String? ?? 'E6E6E6';
+  TicketTemplate withCanvasColor(String color) => TicketTemplate(
+      fitPageToTicket: fitPageToTicket,
+      page: page,
+      area: area,
+      elements: elements,
+      appearance: {...appearance, 'canvasColor': color});
   Map get qrAppearance => appearance['qrAppearance'] as Map? ?? const {};
   List<TicketElement> positionedElements(Map<String, String?> data) {
     final flow = (appearance['flow'] as List? ?? const [])
@@ -193,6 +200,7 @@ class TicketTemplate {
             'qrAppearance',
             'backgroundTransform',
             'backgroundCrop',
+            'canvasColor',
             'pageMargin',
             'border'
           ])
@@ -426,6 +434,11 @@ class TicketTemplate {
       };
   List<String> validate(String type) {
     final errors = <String>[];
+    if (appearance.containsKey('canvasColor') &&
+        (appearance['canvasColor'] is! String ||
+            (canvasColor != 'transparent' &&
+                !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(canvasColor))))
+      errors.add('canvasColor');
     bool validFont(String? id) =>
         id == null ||
         RegExp(r'^(gf:|builtin:[a-z0-9-]+:)[a-f0-9]{64}$').hasMatch(id);
