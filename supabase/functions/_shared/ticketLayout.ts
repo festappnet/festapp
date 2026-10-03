@@ -13,7 +13,7 @@ export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
 export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface Template { pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 1 | 2; templates: { wide?: Template; named?: Template } }
 export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=new Set()): asserts value is TicketLayout {
   const v = value as TicketLayout;
@@ -29,9 +29,11 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
     if(t?.flow!==undefined && (!Array.isArray(t.flow)||new Set(t.flow).size!==t.flow.length||t.flow.some(b=>!['spotGroup','food','note','price'].includes(b))))fail();
     if(t?.qrAppearance!==undefined && (!t.qrAppearance||!/^[0-9a-fA-F]{6}$/.test(t.qrAppearance.background)||!Number.isFinite(t.qrAppearance.opacity)||t.qrAppearance.opacity<0||t.qrAppearance.opacity>1||!Number.isFinite(t.qrAppearance.margin)||t.qrAppearance.margin<0||t.qrAppearance.margin>8))fail();
     if (!t || (t.pageFit!==undefined && t.pageFit!=='ticket')) fail();
+    if(t.pageMargin!==undefined && (t.pageFit!=='ticket'||!Number.isFinite(t.pageMargin)||t.pageMargin<0||t.pageMargin>72))fail();
     if(t.pageFit==='ticket') {
+      const margin=t.pageMargin??0;
       if(![t.page?.width,t.page?.height].every(v=>Number.isFinite(v)&&v>=60&&v<=842) ||
-          t.ticketArea?.x!==0 || t.ticketArea?.y!==0 || t.ticketArea?.width!==t.page.width || t.ticketArea?.height!==t.page.height) fail();
+          t.ticketArea?.x!==margin || t.ticketArea?.y!==margin || Math.abs(t.ticketArea?.width+2*margin-t.page.width)>.001 || Math.abs(t.ticketArea?.height+2*margin-t.page.height)>.001) fail();
     } else if(!((t.page?.width===595.28 && t.page?.height===841.89) || (t.page?.width===212.5 && t.page?.height===387.5))) fail();
     const checkBox = (b: Box, w: number, h: number) => {
       if (!b || ![b.x,b.y,b.width,b.height].every(Number.isFinite) || b.x < 0 || b.y < 0 || b.width < 1 || b.height < 1 || b.x+b.width > w+.001 || b.y+b.height > h+.001) fail();

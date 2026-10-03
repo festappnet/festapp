@@ -154,3 +154,21 @@ Deno.test('background placement supports inset artwork and cropped output with b
    assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,backgroundTransform:bad}}}));
  }
 });
+
+Deno.test('ticket paper margins preserve design coordinates and render a larger PDF',async()=>{
+ const t=preset('wide'); const original=structuredClone(t.elements); const margin=9;
+ t.pageFit='ticket';t.pageMargin=margin;
+ t.page={width:t.ticketArea.width+2*margin,height:t.ticketArea.height+2*margin};
+ t.ticketArea={...t.ticketArea,x:margin,y:margin};
+ const layout={schemaVersion:1 as const,templates:{wide:t}};
+ assertEquals(parseLayout(layout),layout);
+ assertEquals(t.elements,original);
+ const qr=t.elements.find(e=>e.binding==='qr')!;
+ assertEquals(pdfBox(t,qr.box).x,qr.box.x+margin);
+ assertEquals(pdfBox(t,qr.box).y,t.page.height-margin-qr.box.y-qr.box.height);
+ const result=await generateTicketPdf(sampleData(),r,t,'wide',true);
+ const pdf=await PDFDocument.load(result.bytes);assertEquals(pdf.getPage(0).getSize(),t.page);
+ for(const value of [-1,73,null,'9',Infinity])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,pageMargin:value}}}));
+ assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,ticketArea:{...t.ticketArea,x:0}}}}));
+ assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,pageFit:undefined}}}));
+});

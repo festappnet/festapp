@@ -57,6 +57,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   set background(String? value) => _background = value;
   final transform = TransformationController();
+  final _themeKey = GlobalKey();
+  BuildContext get editorContext => _themeKey.currentContext ?? context;
   final canvas = GlobalKey<TicketLayoutCanvasState>();
   bool additiveSelection = false;
   bool editBackground = false,
@@ -141,7 +143,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (mounted) setState(() => fontBusy = false);
     if (dirty) {
       final discard = await showDialog<bool>(
-          context: context,
+          context: editorContext,
           builder: (c) =>
               AlertDialog(title: Text(TicketLayoutStrings.discard), actions: [
                 TextButton(
@@ -189,7 +191,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           widget.occasionId, widget.type, layout, scenario, background);
       if (!mounted || signature != captured) return;
       await showDialog<void>(
-          context: context,
+          context: editorContext,
           builder: (c) => Dialog.fullscreen(
               child: Scaffold(
                   appBar:
@@ -262,7 +264,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       controller.replace(controller.document, artworkKey: 'classic');
       if (ratioChanged) {
         final reset = await showDialog<bool>(
-            context: context,
+            context: editorContext,
             builder: (c) => AlertDialog(
                     content: Text(TicketLayoutStrings.aspectChange),
                     actions: [
@@ -311,16 +313,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Future<void> editDimensions() async {
-    final artwork = resources.artworks[controller.artworkKey];
     final original = controller.document;
+    final previousWholePage = wholePage;
+    setState(() => wholePage = true);
     controller.beginGesture();
     final next = await showDialog<TicketTemplate>(
-        context: context,
+        context: editorContext,
         builder: (_) => TicketDimensionsDialog(
             document: original,
-            defaults: propertyDefaults,
             type: widget.type,
-            image: artwork != null ? artwork.image : resources.background,
             onPreview: (candidate) {
               controller.previewDocument(candidate);
               setState(() {});
@@ -329,6 +330,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
               });
             }));
     if (mounted) {
+      wholePage = previousWholePage;
       if (next == null) {
         controller.cancelGesture();
       } else {
@@ -352,7 +354,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     String? selected;
     try {
       selected = await showDialog<String>(
-          context: context,
+          context: editorContext,
           builder: (context) => AlertDialog(
                   title: Text(TicketLayoutStrings.styles),
                   content: SizedBox(
@@ -654,18 +656,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(TicketLayoutStrings.dragImage),
-                  SizedBox(
-                      width: 180,
-                      child: Slider(
-                          label: '${(doc.backgroundScale * 100).round()}%',
-                          value: doc.backgroundScale,
-                          min: .1,
-                          max: 10,
-                          onChangeStart: (_) => controller.beginGesture(),
-                          onChangeEnd: (_) => controller.endGesture(),
-                          onChanged: (v) => controller.changeBackground(
-                              v, doc.backgroundOffset))),
-                  Text('${(doc.backgroundScale * 100).round()}%'),
                   TextButton(
                       onPressed: () => fitImage(false),
                       child: Text(TicketLayoutStrings.containImage)),
@@ -683,7 +673,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       });
 
   Future<void> showMobilePanel(int tab) => showModalBottomSheet<void>(
-      context: context,
+      context: editorContext,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
@@ -816,7 +806,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   @override
   Widget build(BuildContext context) => Theme(
       data: _editorTheme(Theme.of(context)),
-      child: Builder(builder: _buildEditor));
+      child: Builder(key: _themeKey, builder: _buildEditor));
 
   ThemeData _editorTheme(ThemeData inherited) {
     final colors = ColorScheme.fromSeed(
@@ -907,21 +897,20 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   Widget _toolToggle(String label, IconData icon, bool selected,
           ValueChanged<bool> onChanged) =>
-      Semantics(
-          toggled: selected,
-          child: TextButton.icon(
-            style: TextButton.styleFrom(
-              backgroundColor: selected
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : null,
-              foregroundColor: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            onPressed: () => onChanged(!selected),
-            icon: Icon(selected ? Icons.check : icon, size: 18),
-            label: Text(label),
-          ));
+      Builder(builder: (context) {
+        final colors = Theme.of(context).colorScheme;
+        return Semantics(
+            toggled: selected,
+            child: TextButton.icon(
+                style: TextButton.styleFrom(
+                    backgroundColor: selected ? colors.primaryContainer : null,
+                    foregroundColor: selected
+                        ? colors.onPrimaryContainer
+                        : colors.onSurfaceVariant),
+                onPressed: () => onChanged(!selected),
+                icon: Icon(selected ? Icons.check : icon, size: 18),
+                label: Text(label)));
+      });
 
   Widget _toolDivider() =>
       const SizedBox(height: 24, child: VerticalDivider(width: 20));

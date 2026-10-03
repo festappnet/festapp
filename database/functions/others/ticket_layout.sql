@@ -28,16 +28,21 @@ BEGIN
           AND t->'page' IS DISTINCT FROM '{"width":595.28,"height":841.89}'::jsonb
           AND t->'page' IS DISTINCT FROM '{"width":212.5,"height":387.5}'::jsonb)
     THEN RAISE EXCEPTION 'Invalid ticket template'; END IF;
+    IF t ? 'pageMargin' THEN
+      IF t->>'pageFit' IS DISTINCT FROM 'ticket' OR jsonb_typeof(t->'pageMargin') IS DISTINCT FROM 'number'
+      THEN RAISE EXCEPTION 'Invalid ticket page margin'; END IF;
+      IF (t->>'pageMargin')::numeric NOT BETWEEN 0 AND 72 THEN RAISE EXCEPTION 'Invalid ticket page margin'; END IF;
+    END IF;
     IF t->>'pageFit'='ticket' THEN
       IF jsonb_typeof(t->'page'->'width') IS DISTINCT FROM 'number'
         OR jsonb_typeof(t->'page'->'height') IS DISTINCT FROM 'number'
       THEN RAISE EXCEPTION 'Invalid ticket page'; END IF;
       IF (t->'page'->>'width')::numeric NOT BETWEEN 60 AND 842
         OR (t->'page'->>'height')::numeric NOT BETWEEN 60 AND 842
-        OR t->'ticketArea'->'x' IS DISTINCT FROM '0'::jsonb
-        OR t->'ticketArea'->'y' IS DISTINCT FROM '0'::jsonb
-        OR t->'ticketArea'->'width' IS DISTINCT FROM t->'page'->'width'
-        OR t->'ticketArea'->'height' IS DISTINCT FROM t->'page'->'height'
+        OR t->'ticketArea'->'x' IS DISTINCT FROM COALESCE(t->'pageMargin','0'::jsonb)
+        OR t->'ticketArea'->'y' IS DISTINCT FROM COALESCE(t->'pageMargin','0'::jsonb)
+        OR abs((t->'ticketArea'->>'width')::numeric+2*COALESCE((t->>'pageMargin')::numeric,0)-(t->'page'->>'width')::numeric)>.001
+        OR abs((t->'ticketArea'->>'height')::numeric+2*COALESCE((t->>'pageMargin')::numeric,0)-(t->'page'->>'height')::numeric)>.001
       THEN RAISE EXCEPTION 'Ticket page must match ticket area'; END IF;
     END IF;
     IF t ? 'font' AND COALESCE(t->>'font','') NOT IN ('futura','robotoSlab','roboto','russoOne') THEN RAISE EXCEPTION 'Invalid ticket font'; END IF;

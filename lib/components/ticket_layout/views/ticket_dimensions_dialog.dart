@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_layout_strings.dart';
@@ -6,16 +5,9 @@ import '../ticket_layout_strings.dart';
 class TicketDimensionsDialog extends StatefulWidget {
   final TicketTemplate document;
   final String type;
-  final TicketTemplate defaults;
-  final ui.Image? image;
   final ValueChanged<TicketTemplate>? onPreview;
   const TicketDimensionsDialog(
-      {super.key,
-      required this.document,
-      required this.type,
-      required this.defaults,
-      this.image,
-      this.onPreview});
+      {super.key, required this.document, required this.type, this.onPreview});
   @override
   State<TicketDimensionsDialog> createState() => _TicketDimensionsDialogState();
 }
@@ -33,11 +25,12 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
       !widget.document.fitPageToTicket &&
       widget.document.page != const Size(595.28, 841.89);
   String? error;
-  void setDimensions(Size size) {
-    width.text = (size.width / pointsPerMm).toStringAsFixed(1);
-    height.text = (size.height / pointsPerMm).toStringAsFixed(1);
+  late final margin = TextEditingController(
+      text: (widget.document.pageMargin / pointsPerMm).toStringAsFixed(1));
+  late double? preciseMargin = widget.document.pageMargin;
+  void marginEdited(String _) {
     setState(() {
-      preciseSize = size;
+      preciseMargin = null;
       error = null;
     });
     preview();
@@ -60,28 +53,8 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
   void dispose() {
     width.dispose();
     height.dispose();
+    margin.dispose();
     super.dispose();
-  }
-
-  void fromImage() {
-    final image = widget.image!;
-    final current =
-        paperChanged ? widget.document.withPaper(ticketPaper) : widget.document;
-    var w = (double.tryParse(width.text.replaceAll(',', '.')) ??
-            current.area.width / pointsPerMm) *
-        pointsPerMm;
-    if (!w.isFinite) w = current.area.width;
-    w = w.clamp(1,
-        current.fitPageToTicket ? 842 : current.page.width - current.area.left);
-    var h = w * image.height / image.width;
-    final maxHeight = current.fitPageToTicket
-        ? 842.0
-        : current.page.height - current.area.top;
-    if (h > maxHeight) {
-      h = maxHeight;
-      w = h * image.width / image.height;
-    }
-    setDimensions(Size(w, h));
   }
 
   TicketTemplate? validated() {
@@ -96,10 +69,32 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
       setState(() => error = TicketLayoutStrings.invalidCanvas);
       return null;
     }
-    final base =
-        paperChanged ? widget.document.withPaper(ticketPaper) : widget.document;
-    final candidate =
-        base.resizeArea(preciseSize ?? Size(w * pointsPerMm, h * pointsPerMm));
+    if (w * pointsPerMm > 842 || h * pointsPerMm > 842) {
+      setState(() => error = TicketLayoutStrings.canvasTooLarge);
+      return null;
+    }
+    final m = preciseMargin ??
+        (double.tryParse(margin.text.replaceAll(',', '.')) ?? double.nan) *
+            pointsPerMm;
+    if (ticketPaper && (!m.isFinite || m < 0 || m > 72)) {
+      setState(() => error = TicketLayoutStrings.invalidMargin);
+      return null;
+    }
+    var candidate = widget.document.resizeArea(preciseSize ??
+        Size(
+            width.text ==
+                    (widget.document.area.width / pointsPerMm)
+                        .toStringAsFixed(1)
+                ? widget.document.area.width
+                : w * pointsPerMm,
+            height.text ==
+                    (widget.document.area.height / pointsPerMm)
+                        .toStringAsFixed(1)
+                ? widget.document.area.height
+                : h * pointsPerMm));
+    if (ticketPaper || paperChanged || (!legacyPaper && preciseSize == null)) {
+      candidate = candidate.withPaper(ticketPaper, margin: ticketPaper ? m : 0);
+    }
     final errors = candidate.validate(widget.type);
     if (errors.isNotEmpty) {
       setState(() => error = errors.contains('geometry')
@@ -122,6 +117,27 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
               width: 340,
               child: SingleChildScrollView(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(TicketLayoutStrings.designSize,
+                        style: Theme.of(context).textTheme.titleMedium)),
+                TextField(
+                    controller: width,
+                    onChanged: edited,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                        labelText: TicketLayoutStrings.widthMm)),
+                TextField(
+                    controller: height,
+                    onChanged: edited,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                        labelText: TicketLayoutStrings.heightMm)),
+                const SizedBox(height: 12),
+                Text(TicketLayoutStrings.designSizeHint),
+                const Divider(height: 32),
                 Text(TicketLayoutStrings.paperFormat),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
@@ -148,35 +164,34 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
                       setState(() {
                         ticketPaper = values.single == 'ticket';
                         paperChanged = values.single != 'original';
+                        if (ticketPaper &&
+                            !widget.document.fitPageToTicket &&
+                            margin.text == '0.0') {
+                          margin.text = '3.0';
+                          preciseMargin = 3 * pointsPerMm;
+                        }
+                        error = null;
                       });
                       preview();
                     }),
                 const SizedBox(height: 16),
-                TextField(
-                    controller: width,
-                    onChanged: edited,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                        labelText: TicketLayoutStrings.widthMm)),
-                TextField(
-                    controller: height,
-                    onChanged: edited,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                        labelText: TicketLayoutStrings.heightMm)),
+                if (ticketPaper) ...[
+                  TextField(
+                      controller: margin,
+                      onChanged: marginEdited,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                          labelText: TicketLayoutStrings.marginMm,
+                          helperText: TicketLayoutStrings.marginHint,
+                          helperMaxLines: 3)),
+                  const SizedBox(height: 12),
+                  Text(TicketLayoutStrings.ticketPdfHint),
+                ] else
+                  Text(legacyPaper && !paperChanged
+                      ? TicketLayoutStrings.originalPaperHint
+                      : TicketLayoutStrings.canvasHint),
                 const SizedBox(height: 12),
-                Text(ticketPaper
-                    ? TicketLayoutStrings.ticketPdfHint
-                    : TicketLayoutStrings.canvasHint),
-                TextButton(
-                    onPressed: () => setDimensions(widget.defaults.area.size),
-                    child: Text(TicketLayoutStrings.defaultDimensions)),
-                if (widget.image != null)
-                  TextButton(
-                      onPressed: fromImage,
-                      child: Text(TicketLayoutStrings.fromImage)),
                 if (error != null)
                   Text(error!,
                       style: TextStyle(

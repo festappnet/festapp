@@ -36,7 +36,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   final _viewport = GlobalKey();
   final _focus = FocusNode();
   final Set<int> _pointers = {};
-  int? _editing;
+  int? _editing, _imageCorner;
   int? _middlePan;
   Offset? _last, _marqueeStart, _dragStart;
   String? _pendingToggle;
@@ -46,6 +46,25 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final matrix = widget.transform.value;
     return math.sqrt(
         math.pow(matrix.entry(0, 0), 2) + math.pow(matrix.entry(1, 0), 2));
+  }
+
+  ui.Image? get backgroundImage {
+    final artwork = widget.resources.artworks[widget.controller.artworkKey];
+    return artwork != null ? artwork.image : widget.resources.background;
+  }
+
+  Size? get backgroundSize => backgroundImage == null
+      ? null
+      : Size(backgroundImage!.width.toDouble(),
+          backgroundImage!.height.toDouble());
+  Rect get viewBounds {
+    final doc = widget.controller.document;
+    var bounds = widget.wholePage ? Offset.zero & doc.page : doc.area;
+    if (widget.editBackground && backgroundSize != null) {
+      bounds = bounds.expandToInclude(
+          doc.backgroundRect(backgroundSize!).shift(doc.area.topLeft));
+    }
+    return bounds;
   }
 
   bool get panning => widget.pan || _space;
@@ -59,7 +78,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   @override
   void didUpdateWidget(covariant TicketLayoutCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.wholePage != widget.wholePage) {
+    if (oldWidget.wholePage != widget.wholePage ||
+        oldWidget.editBackground != widget.editBackground) {
       WidgetsBinding.instance.addPostFrameCallback((_) => fit());
     }
   }
@@ -77,9 +97,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   bool _constraining = false;
   void constrainView() {
     if (_constraining || !mounted || _viewport.currentContext == null) return;
-    final bounds = widget.wholePage
-        ? Offset.zero & widget.controller.document.page
-        : widget.controller.document.area;
+    final bounds = viewBounds;
     final size = viewportSize, matrix = widget.transform.value;
     final scale = zoom;
     double translation(
@@ -107,12 +125,11 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
 
   void fit() {
     if (!mounted) return;
-    final doc = widget.controller.document;
-    final b = widget.wholePage ? Offset.zero & doc.page : doc.area;
+    final b = viewBounds;
     final size = viewportSize;
     final scale = math
         .min((size.width - 40) / b.width, (size.height - 40) / b.height)
-        .clamp(.2, 6.0);
+        .clamp(widget.editBackground ? .02 : .2, 6.0);
     widget.transform.value = Matrix4.identity()
       ..translateByDouble((size.width - b.width * scale) / 2 - b.left * scale,
           (size.height - b.height * scale) / 2 - b.top * scale, 0, 1)
@@ -122,7 +139,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   void zoomAt(double factor, [Offset? anchor]) {
     final point = anchor ?? viewportSize.center(Offset.zero);
     final scene = widget.transform.toScene(point);
-    final scale = (zoom * factor).clamp(.2, 6.0);
+    final scale = (zoom * factor).clamp(widget.editBackground ? .02 : .2, 6.0);
     widget.transform.value = Matrix4.identity()
       ..translateByDouble(
           point.dx - scene.dx * scale, point.dy - scene.dy * scale, 0, 1)
@@ -148,6 +165,22 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final point = widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
     if (widget.editBackground) {
+      if (backgroundSize == null) return;
+      final rect = widget.controller.document.backgroundRect(backgroundSize!);
+      final corners = [
+        rect.topLeft,
+        rect.topRight,
+        rect.bottomRight,
+        rect.bottomLeft
+      ];
+      _imageCorner = null;
+      for (var i = 0; i < corners.length; i++) {
+        if ((point - corners[i]).distance < 14 / zoom) {
+          _imageCorner = i;
+          break;
+        }
+      }
+      if (_imageCorner == null && !rect.contains(point)) return;
       widget.controller.beginGesture();
       _last = point;
       setState(() => _editing = event.pointer);
@@ -212,12 +245,11 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final point = widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
     if (widget.editBackground && _last != null) {
-      final doc = widget.controller.document;
-      final delta = point - _last!;
-      widget.controller.changeBackground(
-          doc.backgroundScale,
-          doc.backgroundOffset +
-              Offset(delta.dx / doc.area.width, delta.dy / doc.area.height));
+      widget.controller.transformBackground(backgroundSize!, point - _last!,
+          corner: _imageCorner,
+          zoom: zoom,
+          snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
+          gridStep: widget.grid ? widget.gridStep : null);
       _last = point;
       return;
     }
@@ -240,7 +272,11 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final delta = point - _last!;
     _last = point;
     if (_resize || _widthOnly) {
-      widget.controller.resize(delta, widthOnly: _widthOnly);
+      widget.controller.resize(delta,
+          widthOnly: _widthOnly,
+          zoom: zoom,
+          snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
+          gridStep: widget.grid ? widget.gridStep : null);
     } else {
       widget.controller.move(delta,
           zoom: zoom,
@@ -337,7 +373,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
                       transformationController: widget.transform,
                       constrained: false,
                       boundaryMargin: const EdgeInsets.all(double.infinity),
-                      minScale: .2,
+                      minScale: widget.editBackground ? .02 : .2,
                       maxScale: 6,
                       panEnabled: panning || _editing == null,
                       scaleEnabled: true,
@@ -347,6 +383,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
                               painter: TicketLayoutPainter(widget.controller,
                                   widget.resources, widget.data,
                                   zoom: zoom,
+                                  editBackground: widget.editBackground,
                                   gridStep: widget.grid
                                       ? widget.gridStep
                                       : null))))))));
@@ -358,18 +395,23 @@ class TicketLayoutPainter extends CustomPainter {
   final Map<String, String?> data;
   final double zoom;
   final double? gridStep;
-  final bool cropToTicket;
+  final bool cropToTicket, editBackground;
   TicketLayoutPainter(this.controller, this.resources, this.data,
-      {this.zoom = 1, this.gridStep, this.cropToTicket = false})
+      {this.zoom = 1,
+      this.gridStep,
+      this.cropToTicket = false,
+      this.editBackground = false})
       : super(repaint: controller);
-  void _image(Canvas canvas, ui.Image image, Rect box) {
+  void _image(Canvas canvas, ui.Image image, Rect box, {double opacity = 1}) {
     final fitted = applyBoxFit(BoxFit.contain,
         Size(image.width.toDouble(), image.height.toDouble()), box.size);
     canvas.drawImageRect(
         image,
         Offset.zero & Size(image.width.toDouble(), image.height.toDouble()),
         Alignment.center.inscribe(fitted.destination, box),
-        Paint()..filterQuality = FilterQuality.medium);
+        Paint()
+          ..color = Colors.white.withValues(alpha: opacity)
+          ..filterQuality = FilterQuality.medium);
   }
 
   @override
@@ -385,6 +427,16 @@ class TicketLayoutPainter extends CustomPainter {
     final artwork = resources.artworks[controller.artworkKey];
     final background = artwork != null ? artwork.image : resources.background;
     if (background != null) {
+      if (editBackground) {
+        _image(
+            canvas,
+            background,
+            doc
+                .backgroundRect(Size(
+                    background.width.toDouble(), background.height.toDouble()))
+                .shift(doc.area.topLeft),
+            opacity: .2);
+      }
       canvas.save();
       canvas.clipRect(doc.area);
       _image(
@@ -540,6 +592,26 @@ class TicketLayoutPainter extends CustomPainter {
       canvas.drawLine(Offset(0, controller.guideY!),
           Offset(doc.area.width, controller.guideY!), guide);
     }
+    if (editBackground && background != null) {
+      final rect = doc.backgroundRect(
+          Size(background.width.toDouble(), background.height.toDouble()));
+      canvas.drawRect(
+          rect,
+          Paint()
+            ..color = Colors.blue
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 / zoom);
+      final h = 10 / zoom;
+      for (final point in [
+        rect.topLeft,
+        rect.topRight,
+        rect.bottomRight,
+        rect.bottomLeft
+      ]) {
+        canvas.drawRect(Rect.fromCenter(center: point, width: h, height: h),
+            Paint()..color = Colors.blue);
+      }
+    }
     if (controller.selectionRect case final Rect rect) {
       canvas.drawRect(
           rect, Paint()..color = Colors.blue.withValues(alpha: .12));
@@ -589,6 +661,7 @@ class TicketLayoutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant TicketLayoutPainter old) =>
+      old.editBackground != editBackground ||
       old.data != data ||
       old.resources != resources ||
       old.zoom != zoom ||
