@@ -137,10 +137,15 @@ export class RouterService {
                                  path === '/index.html' ||
                                  path.startsWith(RouterService.FORM_PATH_PREFIX);
 
-        const isFlutterRoute = RouterService.flutterRoutes.some(r => path.startsWith(r));
+        const isFlutterRoute = RouterService.flutterRoutes.some(r => path.startsWith(r)) ||
+            /^\/[^/]+\/(?:admin|reservations)(?:\/|$)/.test(path);
 
         let shouldRedirectToFlutter = false;
-        let redirectPath = path;
+        const requested = new URL(fullUrl);
+        const legacyRoute = requested.hash.startsWith('#/')
+            ? new URL(requested.hash.slice(1), requested.origin) : null;
+        const query = legacyRoute?.search || requested.search;
+        let redirectPath = `${path}${query}`;
 
         // 2. Data-Driven Decision Logic (Mirrors Flutter AppRouter.getDefaultLink)
         if (AppConfig.isAppSupported) {
@@ -190,7 +195,7 @@ export class RouterService {
                          } else {
                              // Target is (likely) an Event Occasion link (e.g. /my-fest) or Unit -> Redirect to Flutter
                              shouldRedirectToFlutter = true;
-                             redirectPath = defaultLink;
+                             redirectPath = `${defaultLink}${query}`;
                          }
                      } else {
                          // Stay at root

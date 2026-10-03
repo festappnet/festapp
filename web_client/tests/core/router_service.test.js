@@ -304,6 +304,24 @@ test('RouterService.handleInitialLoad', async (t) => {
         assert.ok(redirectUrl.includes('redirect=%2Flogin'));
     });
 
+    for (const path of [
+        '/event-a/admin/events/suspicious?day=2026-10-03',
+        '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10',
+        '/unit/5/edit/bank-accounts/9/users?panel=properties',
+    ]) {
+        await t.test(`Flutter handoff preserves the complete nested target ${path}`, async () => {
+            AppConfig.isAppSupported = false;
+            global.window.location.pathname = path.split('?')[0];
+            global.window.location.href = `https://vstupenky.online${path}`;
+            let redirectUrl = '';
+            global.window.location.replace = (url) => { redirectUrl = url; };
+            assert.equal(await RouterService.handleInitialLoad(), true);
+            const bridge = new URL(redirectUrl, 'https://vstupenky.online');
+            const params = new URLSearchParams(bridge.hash.slice(1) || bridge.search);
+            assert.equal(params.get('redirect'), path);
+        });
+    }
+
     await t.test('should redirect unknown path to Home when isAppSupported=false', async () => {
         AppConfig.isAppSupported = false;
         global.window.location.pathname = '/unknown-path';

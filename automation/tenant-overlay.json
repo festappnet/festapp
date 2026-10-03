@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "c84030bfc28563aa28bf32d09ea123ef00d2083d",
+  "baseMainSha": "c2b46817dcfc7bb9244869a60f77bf904ba63d7f",
   "release": {
-    "version": "0.20.69+553",
-    "note": "Release graphical occasion report with one authorized snapshot RPC"
+    "version": "0.20.70+554",
+    "note": "Stable administration tab and detail deep links with native history and full login return"
   }
 }

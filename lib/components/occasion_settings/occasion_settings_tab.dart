@@ -82,9 +82,10 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (occasionLink == null && context.routeData.params.isNotEmpty) {
-      occasionLink =
-          context.routeData.params.getString(AppRouter.linkFormatted);
+    if (occasionLink == null &&
+        context.routeData.inheritedPathParams.isNotEmpty) {
+      occasionLink = context.routeData.inheritedPathParams
+          .getString(AppRouter.linkFormatted);
       _loadData();
     }
   }

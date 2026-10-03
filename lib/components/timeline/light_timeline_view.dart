@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ import 'package:fstapp/theme_config.dart';
 /// identity, and target index so tab state regenerates correctly when events
 /// load asynchronously.
 class LightTimelineView extends StatefulWidget {
+  final String dayParameter;
   final List<TimeBlockItem> events;
   final int? sessionOccasionId;
   final void Function(int eventId)? onEventPressed;
@@ -31,6 +33,7 @@ class LightTimelineView extends StatefulWidget {
 
   const LightTimelineView({
     super.key,
+    this.dayParameter = 'day',
     required this.events,
     this.sessionOccasionId,
     this.onEventPressed,
@@ -80,13 +83,14 @@ class _LightTimelineViewState extends State<LightTimelineView> {
 
     return Container(
       color: ThemeConfig.whiteColor(context),
-      child: DefaultTabController(
+      child: RoutedDayTabs(
         key: ValueKey<String>(
           'LightTimelineView_TabController_${widget.sessionOccasionId}_'
           '${days.map((day) => day.dateTime?.millisecondsSinceEpoch ?? 0).join('_')}_'
           '$initialIndex',
         ),
-        length: days.length,
+        days: days.map((day) => day.dateTime!).toList(),
+        parameter: widget.dayParameter,
         initialIndex: initialIndex,
         child: _LightTabSelectionObserver(
           onChanged: (index) {

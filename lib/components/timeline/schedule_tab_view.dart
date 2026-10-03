@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'schedule_timeline.dart';
 import 'schedule_helper.dart';
 
 class ScheduleTabView extends StatefulWidget {
+  final String dayParameter;
   final DateTime? defaultDateTime;
   final Function(int)? onEventPressed;
   final List<TimeBlockItem> events;
@@ -17,6 +19,7 @@ class ScheduleTabView extends StatefulWidget {
 
   const ScheduleTabView({
     super.key,
+    this.dayParameter = 'day',
     required this.events,
     this.onAddNewEvent,
     this.showAddNewEventButton,
@@ -63,13 +66,16 @@ class _ScheduleTabViewState extends State<ScheduleTabView> {
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
-      child: DefaultTabController(
+      child: RoutedDayTabs(
         initialIndex: getInitialIndex(),
-        length: datedEvents.length,
+        days: datedEvents.map((day) => day.dateTime!).toList(),
+        parameter: widget.dayParameter,
         child: Scaffold(
           appBar: TabBar(
             isScrollable: datedEvents.length > 4,
-            tabAlignment: datedEvents.length > 4 ? TabAlignment.center : TabAlignment.fill,
+            tabAlignment: datedEvents.length > 4
+                ? TabAlignment.center
+                : TabAlignment.fill,
             unselectedLabelColor: Colors.grey,
             labelColor: ThemeConfig.timelineTabLabelColor(context),
             indicatorColor: ThemeConfig.timelineTabIndicatorColor(context),

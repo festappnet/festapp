@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 // advanced_timeline_tab.dart
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,11 +10,13 @@ import 'advanced_timeline_view.dart';
 import 'schedule_helper.dart'; // Assuming this is a local file
 
 class AdvancedTimelineTab extends StatefulWidget {
+  final String dayParameter;
   final DateTime? defaultDateTime;
   final AdvancedTimelineController controller;
 
   const AdvancedTimelineTab({
     super.key,
+    this.dayParameter = 'preview-day',
     required this.controller,
     this.defaultDateTime,
   });
@@ -50,10 +53,11 @@ class _AdvancedTimelineTabState extends State<AdvancedTimelineTab> {
       ));
     }
 
-    return DefaultTabController(
-      length: datedEvents.length,
+    return RoutedDayTabs(
+      days: datedEvents.map((day) => day.dateTime!).toList(),
+      parameter: widget.dayParameter,
       initialIndex: TimeHelper.getTimeNowIndexFromDays(
-          datedEvents.map((e) => e.events.first.startTime.weekday)),
+          datedEvents.map((e) => e.dateTime!.weekday)),
       child: Builder(builder: (ctx) {
         final controller = DefaultTabController.of(ctx);
         return Scaffold(

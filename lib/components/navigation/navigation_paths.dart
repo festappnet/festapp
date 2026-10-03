@@ -1,0 +1,45 @@
+/// Stable path segments shared by declarations and presentation metadata.
+abstract final class NavigationPaths {
+  static const bankAccounts = 'bank-accounts';
+  static const blueprint = 'blueprint';
+  static const changes = 'changes';
+  static const checkpoints = 'checkpoints';
+  static const connection = 'connection';
+  static const current = 'current';
+  static const design = 'design';
+  static const editor = 'editor';
+  static const emailTemplates = 'email-templates';
+  static const events = 'events';
+  static const exclusivity = 'exclusivity';
+  static const feedback = 'feedback';
+  static const forms = 'forms';
+  static const game = 'game';
+  static const general = 'general';
+  static const groups = 'groups';
+  static const history = 'history';
+  static const icons = 'icons';
+  static const info = 'info';
+  static const information = 'information';
+  static const inventoryPools = 'inventory-pools';
+  static const list = 'list';
+  static const occasions = 'occasions';
+  static const occupancy = 'occupancy';
+  static const orders = 'orders';
+  static const paths = 'paths';
+  static const places = 'places';
+  static const products = 'products';
+  static const quotes = 'quotes';
+  static const report = 'report';
+  static const responses = 'responses';
+  static const rooms = 'rooms';
+  static const schedule = 'schedule';
+  static const services = 'services';
+  static const settings = 'settings';
+  static const songbook = 'songbook';
+  static const speakers = 'speakers';
+  static const suspicious = 'suspicious';
+  static const tickets = 'tickets';
+  static const types = 'types';
+  static const users = 'users';
+  static const volunteers = 'volunteers';
+}
