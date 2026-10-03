@@ -50,7 +50,11 @@ class TicketLayoutEditor extends StatefulWidget {
 
 class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   late final controller = TicketLayoutController(widget.resources.template,
-      artworkKey: widget.resources.initialArtworkKey);
+      artworkKey: widget.resources.initialArtworkKey,
+      prepareDocument: (doc) => ensureTicketCodeFits(
+          doc,
+          resources.metricsFor(doc,
+              doc.elements.firstWhere((e) => e.binding == 'ticketSymbol'))));
   late TicketLayoutResources resources = widget.resources;
   late String? _background = widget.background;
   String? get background {
@@ -90,6 +94,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   @override
   void initState() {
     super.initState();
+    controller.document = controller.prepareDocument!(controller.document);
     _lastArtworkKey = controller.artworkKey;
     controller.addListener(_refreshArtwork);
     if (widget.showTemplatePicker) {
@@ -168,6 +173,13 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   Future<void> apply() async {
     if (fontBusy || saving) return;
+    final repaired = ensureTicketCodeFits(
+        controller.document,
+        resources.metricsFor(
+            controller.document,
+            controller.document.elements
+                .firstWhere((e) => e.binding == 'ticketSymbol')));
+    if (!identical(repaired, controller.document)) controller.replace(repaired);
     final errors = controller.document.validate(widget.type);
     final symbol = controller.document.elements
         .firstWhere((e) => e.binding == 'ticketSymbol');
@@ -176,14 +188,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       fitTicketText('XXXX9W9W9W', symbol,
           resources.metricsFor(controller.document, symbol));
     } on FormatException {
-      errors.add('ticketSymbol');
+      errors.add(symbol.id);
     }
     if (errors.isNotEmpty) {
       controller.select(errors.firstWhere(
           (id) => controller.document.elements.any((e) => e.id == id),
           orElse: () => symbol.id));
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(TicketLayoutStrings.invalid)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              '${TicketLayoutStrings.checkElements}: ${controller.document.elements.where((e) => errors.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}')));
       return;
     }
     final result = TicketLayoutResult(controller.document, background);
@@ -344,6 +357,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         context: editorContext,
         builder: (_) => TicketDimensionsDialog(
             document: original,
+            backgroundImage: canvas.currentState?.backgroundSize,
             type: widget.type,
             onPreview: (candidate) {
               controller.previewDocument(candidate);
@@ -1271,6 +1285,16 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(TicketLayoutStrings.resizeCanvasHint),
+                                  if (controller.canvasBlockers.isNotEmpty)
+                                    Text(
+                                        '${TicketLayoutStrings.canvasBlocked}: ${controller.document.elements.where((e) => controller.canvasBlockers.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}',
+                                        style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .error)),
+                                  if (controller.canvasHidden.isNotEmpty)
+                                    Text(
+                                        '${TicketLayoutStrings.canvasHidden}: ${controller.document.elements.where((e) => controller.canvasHidden.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}'),
                                   Text(
                                       '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm'),
                                   TextButton(
