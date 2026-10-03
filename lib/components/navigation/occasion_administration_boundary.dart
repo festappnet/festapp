@@ -40,10 +40,12 @@ class RightsAdministrationAccess implements AdministrationAccess {
 class OccasionAdministrationBoundary extends StatefulWidget {
   final bool reservations;
   final WidgetBuilder builder;
+  final WidgetBuilder? loadingBuilder;
   final AdministrationAccess access;
   const OccasionAdministrationBoundary(
       {super.key,
       required this.builder,
+      this.loadingBuilder,
       this.reservations = false,
       this.access = const RightsAdministrationAccess()});
   @override
@@ -168,8 +170,9 @@ class _OccasionAdministrationBoundaryState
           child: Text(CommonStrings.retry)),
     ])));
     if (_denied && !_ready) return failure;
-    if (!_ready)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final loading = widget.loadingBuilder?.call(context) ??
+        const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (!_ready) return loading;
     final waiting = widget.access.loadedLink != _link;
     // Previously authorized retained editors stay mounted behind the denial
     // screen. Initial denial never creates them; restored access keeps the same
@@ -184,7 +187,7 @@ class _OccasionAdministrationBoundaryState
       if (_denied)
         failure
       else if (waiting)
-        const Scaffold(body: Center(child: CircularProgressIndicator())),
+        loading,
     ]);
   }
 }

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "e26951bb85b226ea433c5b636a5daa180a7e5e9a",
+  "baseMainSha": "5749650ade5259c6fa7f3fcec09f4d40c2799f18",
   "release": {
-    "version": "0.20.79+563",
-    "note": "Approved navigation, modal and report presentation"
+    "version": "0.20.80+564",
+    "note": "Preserve navigation chrome, remove extra form transition and enable scanner"
   }
 }
