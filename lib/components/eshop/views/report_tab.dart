@@ -1,3 +1,5 @@
+import 'report_text.dart';
+import '../models/report_period.dart';
 import '../models/report_exchange_rates.dart';
 
 import 'dart:async';
@@ -148,7 +150,7 @@ class _ReportTabState extends State<ReportTab> {
         await FileSaver.instance.saveFile(
           name:
               'report_${title.isEmpty ? report.occasionId : title.substring(0, title.length.clamp(0, 80))}',
-          bytes: Uint8List.fromList(utf8.encode(report.text)),
+          bytes: Uint8List.fromList(utf8.encode(formatReportText(report))),
           fileExtension: 'txt',
           mimeType: MimeType.text,
         );
@@ -181,7 +183,7 @@ class _ReportTabState extends State<ReportTab> {
   }
 
   int _rangeDays = 0;
-  bool _cumulative = false;
+  bool _cumulative = true;
   String? _currency;
 
   Widget _section(
@@ -220,8 +222,12 @@ class _ReportTabState extends State<ReportTab> {
   List<Widget> _timelines(OccasionReport report) {
     if (!report.hasTimeline) return [Text(ReportStrings.timelineUnavailable)];
     final dates = [
-      ...report.orderDays.map((d) => d.day),
-      ...report.paymentDays.map((d) => d.day),
+      ...report.orderDays.where((d) => d.count > 0).map((d) => d.day),
+      ...report.paymentDays
+          .where((d) =>
+              reportMinorUnits(d.received) > BigInt.zero ||
+              reportMinorUnits(d.returned) > BigInt.zero)
+          .map((d) => d.day),
     ]..sort();
     if (dates.isEmpty) {
       return [
@@ -230,9 +236,15 @@ class _ReportTabState extends State<ReportTab> {
         ]),
       ];
     }
-    final generated = report.generatedAt.toUtc();
-    final today = DateTime.utc(generated.year, generated.month, generated.day);
-    final end = dates.last.isAfter(today) ? dates.last : today;
+    final occasion = RightsService.currentOccasion();
+    final occasionEnd = occasion?.id?.toString() == report.occasionId
+        ? occasion?.endTime
+        : null;
+    final end = reportTimelineEnd(
+      today: reportDay(report.generatedAt),
+      lastActivity: dates.last,
+      occasionEnd: occasionEnd == null ? null : reportDay(occasionEnd),
+    );
     final start = _rangeDays == 0
         ? dates.first
         : end.subtract(Duration(days: _rangeDays - 1));
@@ -452,57 +464,137 @@ class _ReportTabState extends State<ReportTab> {
         ),
       );
 
-  Widget _moneyDetails(List<ReportMoney> money) => LayoutBuilder(
+  Widget _moneyCard(ReportMoney money) => _section(
+        money.currency,
+        ReportStrings.moneyHelp,
+        [
+          for (final amount in money.amounts.entries)
+            if (money.hasDeposits || !amount.key.contains('deposit'))
+              _value(ReportStrings.metric(amount.key),
+                  '${amount.value} ${money.currency}'),
+        ],
+        details: ReportStrings.moneyDetails,
+      );
+
+  Widget _overview(OccasionReport report) => LayoutBuilder(
         builder: (context, constraints) {
-          final columns = constraints.maxWidth >= 850 &&
-                  MediaQuery.textScalerOf(context).scale(1) <= 1.4
-              ? 2
-              : 1;
-          final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
-          return Wrap(
-            spacing: 12,
+          final orders = _states(ReportStrings.orders, report.orders);
+          final tickets = _states(ReportStrings.tickets, report.tickets);
+          final spots = report.spotsTotal == 0
+              ? null
+              : _section(ReportStrings.spots, ReportStrings.spotsHelp, [
+                  _value(ReportStrings.spots,
+                      '${report.spotsOccupied} / ${report.spotsTotal}'),
+                  _value(ReportStrings.free, '${report.spotsFree}'),
+                  Semantics(
+                    label:
+                        '${ReportStrings.spots}: ${report.spotsOccupied} / ${report.spotsTotal}',
+                    child: LinearProgressIndicator(
+                      value: report.spotsOccupied / report.spotsTotal,
+                      minHeight: 6,
+                    ),
+                  ),
+                ]);
+          final money = report.money.map(_moneyCard).toList();
+          final columns = MediaQuery.textScalerOf(context).scale(1) > 1.4
+              ? 1
+              : constraints.maxWidth >= 1100
+                  ? 3
+                  : constraints.maxWidth >= 700
+                      ? 2
+                      : 1;
+          final groups = columns == 3
+              ? [
+                  [orders, if (spots != null) spots],
+                  [tickets],
+                  money
+                ]
+              : columns == 2
+                  ? [
+                      [orders, tickets],
+                      [if (spots != null) spots, ...money]
+                    ]
+                  : [
+                      [orders, tickets, if (spots != null) spots, ...money]
+                    ];
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final m in money)
-                SizedBox(
-                  width: width,
-                  child: _section(
-                      m.currency,
-                      ReportStrings.moneyHelp,
-                      [
-                        for (final a in m.amounts.entries)
-                          if (m.hasDeposits || !a.key.contains('deposit'))
-                            _value(
-                              ReportStrings.metric(a.key),
-                              '${a.value} ${m.currency}',
-                            ),
-                      ],
-                      details: ReportStrings.moneyDetails),
-                ),
+              for (var i = 0; i < groups.length; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(
+                    child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: groups[i],
+                )),
+              ],
             ],
           );
         },
       );
 
+  String _stateLabel(String state) => ReportStrings.state(state);
+
   Widget _states(String title, ReportCounts counts) =>
       _section(title, ReportStrings.statesHelp, [
         _value(title, '${counts.total}'),
-        for (final entry in counts.states.entries)
-          Semantics(
-            label: '${entry.key}: ${entry.value} / ${counts.total}',
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('${entry.key}: ${entry.value}'),
-                  LinearProgressIndicator(
-                    value: counts.total == 0 ? 0 : entry.value / counts.total,
-                    minHeight: 5,
+        LayoutBuilder(builder: (context, constraints) {
+          final scale = MediaQuery.textScalerOf(context).scale(1);
+          final columns = math.max(
+              1,
+              math.min(counts.states.length,
+                  (constraints.maxWidth / (90 * scale)).floor()));
+          final width = constraints.maxWidth / columns;
+          final colors = Theme.of(context).colorScheme;
+          return Wrap(
+            runSpacing: 16,
+            children: [
+              for (final entry in counts.states.entries)
+                Semantics(
+                  label:
+                      '${_stateLabel(entry.key)}: ${entry.value} / ${counts.total}',
+                  child: ExcludeSemantics(
+                    child: SizedBox(
+                      width: width,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 100,
+                              alignment: Alignment.bottomCenter,
+                              decoration: BoxDecoration(
+                                  border: Border(
+                                bottom:
+                                    BorderSide(color: colors.outlineVariant),
+                              )),
+                              child: Container(
+                                width: math.min(40, width * .45),
+                                height: counts.total == 0
+                                    ? 0
+                                    : 100 * entry.value / counts.total,
+                                decoration: BoxDecoration(
+                                  color: colors.primary,
+                                  borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(4)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text('${entry.value}',
+                                style: Theme.of(context).textTheme.titleSmall),
+                            Text(_stateLabel(entry.key),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodySmall),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                ),
+            ],
+          );
+        }),
       ]);
 
   @override
@@ -576,7 +668,7 @@ class _ReportTabState extends State<ReportTab> {
                   ),
                   if (_loading) const LinearProgressIndicator(),
                   if (_error) Text(ReportStrings.error),
-                  if (r != null && _text) SelectableText(r.text),
+                  if (r != null && _text) SelectableText(formatReportText(r)),
                   if (r != null && !_text) ...[
                     LayoutBuilder(
                       builder: (context, constraints) {
@@ -631,27 +723,7 @@ class _ReportTabState extends State<ReportTab> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    if (r.spotsTotal > 0)
-                      _section(ReportStrings.spots, ReportStrings.spotsHelp, [
-                        _value(
-                          ReportStrings.spots,
-                          '${r.spotsOccupied} / ${r.spotsTotal}',
-                        ),
-                        _value(ReportStrings.free, '${r.spotsFree}'),
-                        Semantics(
-                          label:
-                              '${ReportStrings.spots}: ${r.spotsOccupied} / ${r.spotsTotal}',
-                          child: LinearProgressIndicator(
-                            value: r.spotsOccupied / r.spotsTotal,
-                            minHeight: 6,
-                          ),
-                        ),
-                      ]),
-                    _columns([
-                      _states(ReportStrings.orders, r.orders),
-                      _states(ReportStrings.tickets, r.tickets),
-                    ]),
-                    _moneyDetails(r.money),
+                    _overview(r),
                     for (final w in r.warnings.entries)
                       Semantics(
                         liveRegion: true,
