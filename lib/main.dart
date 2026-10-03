@@ -148,7 +148,10 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
   @override
   Widget build(BuildContext context) {
     if (_isReady) return widget.buildReadyApp();
+    final baseTheme = ThemeConfig.theme();
     return MaterialApp(
+      theme: baseTheme,
+      darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
       key: const ValueKey('festapp-startup-material-app'),
       debugShowCheckedModeBanner: false,
       initialRoute: _initialRoute,
@@ -443,12 +446,10 @@ class _MyAppState extends State<MyApp> {
       });
     };
 
-    var baseTheme = ThemeConfig.baseTheme();
+    var baseTheme = ThemeConfig.theme();
     return AdaptiveTheme(
-      light: ThemeConfig.baseTheme(),
-      dark: ThemeConfig.isDarkModeEnabled
-          ? ThemeConfig.darkTheme(baseTheme)
-          : baseTheme,
+      light: baseTheme,
+      dark: ThemeConfig.theme(brightness: Brightness.dark),
       initial: ThemeConfig.defaultThemeMode,
       builder: (theme, darkTheme) => MaterialApp.router(
         routerConfig: RouterService.router.config(

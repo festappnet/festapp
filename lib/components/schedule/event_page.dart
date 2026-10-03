@@ -59,6 +59,7 @@ import 'package:fstapp/components/speakers/counseling_page.dart';
 import 'package:fstapp/components/speakers/counseling_picker.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import '../map/map_navigation.dart';
+import 'event_metadata_item.dart';
 import '../map/public_map_session.dart';
 
 @RoutePage()
@@ -1010,17 +1011,12 @@ class _EventPageState extends State<EventPage> {
 
   Widget _metaItem(IconData icon, String text, Color fg,
       [double iconSize = 20, double fontSize = 15]) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: fg, size: iconSize),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: TextStyle(
-              color: fg, fontWeight: FontWeight.bold, fontSize: fontSize),
-        ),
-      ],
+    return EventMetadataItem(
+      icon: icon,
+      text: text,
+      color: fg,
+      iconSize: iconSize,
+      fontSize: fontSize,
     );
   }
 
@@ -1215,22 +1211,13 @@ class _EventPageState extends State<EventPage> {
           await loadData(_event!.id!);
         }
       },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.location_on_outlined, color: fg, size: iconSize),
-          const SizedBox(width: 6),
-          Text(text,
-              style: TextStyle(
-                  color: fg,
-                  fontWeight: FontWeight.bold,
-                  fontSize: fontSize,
-                  decoration: TextDecoration.underline,
-                  decorationColor: fg.withValues(alpha: 0.7),
-                  decorationThickness: 2.0)),
-          const SizedBox(width: 2),
-          Icon(Icons.chevron_right, color: fg, size: iconSize),
-        ],
+      child: EventMetadataItem(
+        icon: Icons.location_on_outlined,
+        text: text,
+        color: fg,
+        iconSize: iconSize,
+        fontSize: fontSize,
+        isLink: true,
       ),
     );
   }
