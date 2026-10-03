@@ -446,6 +446,78 @@ void main() {
           contains('background'));
     }
   });
+  test('cropped artwork resizes around its visible opposite corner', () {
+    const image = Size(400, 200), crop = Rect.fromLTWH(.2, .1, .5, .6);
+    for (var corner = 0; corner < 4; corner++) {
+      final c = TicketLayoutController(document().withBackgroundCrop(crop));
+      final visible = c.document.croppedBackgroundRect(image);
+      final corners = [
+        visible.topLeft,
+        visible.topRight,
+        visible.bottomRight,
+        visible.bottomLeft
+      ];
+      final anchor = corners[(corner + 2) % 4];
+      c.beginGesture();
+      c.transformBackground(image, (corners[corner] - anchor) * .5,
+          corner: corner, snap: false);
+      c.endGesture();
+      final next = c.document.croppedBackgroundRect(image);
+      expect(next.width, closeTo(visible.width * 1.5, .000001));
+      expect(
+          ([
+                    next.topLeft,
+                    next.topRight,
+                    next.bottomRight,
+                    next.bottomLeft
+                  ][(corner + 2) % 4] -
+                  anchor)
+              .distance,
+          lessThan(.000001));
+      expect(c.document.backgroundCrop, crop);
+      c.undo();
+      expect(c.document.croppedBackgroundRect(image), visible);
+      c.dispose();
+    }
+  });
+  testWidgets('moving cropped artwork does not paint discarded pixels',
+      (tester) async {
+    final recorder = ui.PictureRecorder();
+    Canvas(recorder)
+        .drawRect(const Rect.fromLTWH(0, 0, 8, 8), Paint()..color = Colors.red);
+    final picture = recorder.endRecording();
+    final source = (await tester.runAsync(() => picture.toImage(8, 8)))!;
+    picture.dispose();
+    final json = document().toJson();
+    for (final element in json['elements']) {
+      element['visible'] = false;
+    }
+    final doc = TicketTemplate.fromJson(json)
+        .withBackgroundCrop(const Rect.fromLTWH(.25, .25, .5, .5));
+    final c = TicketLayoutController(doc);
+    final r = resources(background: source);
+    final paintRecorder = ui.PictureRecorder();
+    TicketLayoutPainter(c, r, {}, editBackground: true)
+        .paint(Canvas(paintRecorder), doc.page);
+    final resultPicture = paintRecorder.endRecording();
+    final rendered = (await tester.runAsync(() =>
+        resultPicture.toImage(doc.page.width.ceil(), doc.page.height.ceil())))!;
+    final bytes = (await tester.runAsync(
+        () => rendered.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
+    final full = doc.backgroundRect(const Size(8, 8)).shift(doc.area.topLeft);
+    List<int> pixel(Offset point) {
+      final i = (point.dy.floor() * rendered.width + point.dx.floor()) * 4;
+      return bytes.buffer.asUint8List().sublist(i, i + 3);
+    }
+
+    expect(pixel(full.topLeft + Offset(full.width * .1, full.height * .1)),
+        [230, 230, 230]);
+    expect(pixel(full.center), [244, 67, 54]);
+    rendered.dispose();
+    resultPicture.dispose();
+    r.dispose();
+    c.dispose();
+  });
   test('crop magnets snap to ticket edges and can be disabled', () {
     const image = Size(400, 200);
     final c = TicketLayoutController(document().withBackground(2, Offset.zero));
@@ -525,6 +597,15 @@ void main() {
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     final before =
         state.controller.document.elements.map((e) => e.toJson()).toList();
+    final positionButton =
+        find.widgetWithText(OutlinedButton, 'TicketLayout.positionImage'.tr());
+    final cropButton =
+        find.widgetWithText(OutlinedButton, 'TicketLayout.cropImage'.tr());
+    final positionRect = tester.getRect(positionButton),
+        cropRect = tester.getRect(cropButton);
+    expect(cropRect.top - positionRect.bottom, greaterThanOrEqualTo(12));
+    expect(cropRect.left, positionRect.left);
+    expect(cropRect.width, positionRect.width);
     await tester.ensureVisible(find.text('TicketLayout.positionImage'.tr()));
     await tester.tap(find.text('TicketLayout.positionImage'.tr()));
     await tester.pumpAndSettle();
@@ -551,6 +632,8 @@ void main() {
     view.controller.undo();
     expect(view.controller.document.backgroundScale, 1);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(
+        find.widgetWithText(OutlinedButton, 'TicketLayout.cropImage'.tr()));
     await tester.tap(
         find.widgetWithText(OutlinedButton, 'TicketLayout.cropImage'.tr()));
     await tester.pumpAndSettle();
@@ -559,6 +642,11 @@ void main() {
     await tester.dragFrom(cropPoint, const Offset(-60, -30));
     await tester.pumpAndSettle();
     expect(view.controller.document.backgroundCrop.width, lessThan(1));
+    final thumbnail = tester.widget<CustomPaint>(find.byWidgetPredicate((w) =>
+        w is CustomPaint && w.painter is TicketBackgroundPreviewPainter));
+    expect((thumbnail.painter! as TicketBackgroundPreviewPainter).crop,
+        view.controller.document.backgroundCrop);
+
     expect(view.controller.document.backgroundScale, 1);
     expect(view.controller.document.elements.map((e) => e.toJson()).toList(),
         before);
