@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import '../../support/navigation_fixture.dart';
 import 'dart:async';
@@ -9,33 +11,71 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/navigation/occasion_administration_boundary.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 
-Future<void> mount(
-    WidgetTester tester, FixtureRouter router, String path) async {
-  await tester.pumpWidget(MaterialApp.router(
-      routerConfig: router.config(
-          deepLinkBuilder: (link) => link.initial
-              ? DeepLink.path(path, includePrefixMatches: false)
-              : link)));
+Future<void> mount(WidgetTester tester, FixtureRouter router, String path,
+    {GlobalKey? frameKey}) async {
+  await tester.pumpWidget(RepaintBoundary(
+      key: frameKey,
+      child: MaterialApp.router(
+          theme: ThemeData(
+              appBarTheme:
+                  const AppBarTheme(backgroundColor: Color(0xff101828))),
+          routerConfig: router.config(
+              deepLinkBuilder: (link) => link.initial
+                  ? DeepLink.path(path, includePrefixMatches: false)
+                  : link))));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('occasion switch keeps header visible while destination loads', (tester) async {
+  testWidgets('occasion switch keeps header visible while destination loads',
+      (tester) async {
     final pending = Completer<void>();
-    final access = Access()..beforeLoad = (link) => link == 'occasion-b' ? pending.future : Future.value();
-    final router = FixtureRouter(access)..showHeader = true
-      ..loadingBuilder = (_) => Scaffold(appBar: AppBar(automaticallyImplyLeading: false, title: const Text('ADMIN HEADER')),
+    final access = Access()
+      ..beforeLoad =
+          (link) => link == 'occasion-b' ? pending.future : Future.value();
+    final router = FixtureRouter(access)
+      ..showHeader = true
+      ..loadingBuilder = (_) => Scaffold(
+          appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text('ADMIN HEADER')),
           body: const Center(child: CircularProgressIndicator()));
-    await mount(tester, router, '/occasion-a/reservations/orders/history');
+    final frameKey = GlobalKey();
+    await mount(tester, router, '/occasion-a/reservations/orders/history',
+        frameKey: frameKey);
+    Future<void> expectPaintedHeader(String phase, int frame) async {
+      final pixel = await tester.runAsync(() async {
+        final boundary = frameKey.currentContext!.findRenderObject()
+            as RenderRepaintBoundary;
+        final image = await boundary.toImage();
+        final pixels =
+            await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        final offset = (10 * image.width + 10) * 4;
+        final rgba = pixels!.buffer.asUint8List(offset, 4).toList();
+        image.dispose();
+        return rgba;
+      });
+      expect(pixel, [16, 24, 40, 255],
+          reason: 'Header must remain painted on $phase frame $frame');
+    }
+
     final header = tester.getRect(find.text('ADMIN HEADER'));
     unawaited(RouterService.navigateToOccasionAdministration(
-        tester.element(find.text('HISTORY CONTENT')), occasionLink: 'occasion-b'));
-    for (var i = 0; i < 10; i++) { await tester.pump(const Duration(milliseconds: 50)); }
+        tester.element(find.text('HISTORY CONTENT')),
+        occasionLink: 'occasion-b'));
+    for (var frame = 0; frame < 32; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      await expectPaintedHeader('context switch', frame);
+    }
     expect(find.text('ADMIN HEADER'), findsOneWidget);
     expect(tester.getRect(find.text('ADMIN HEADER')), header);
     expect(find.text('HISTORY CONTENT'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     pending.complete();
+    for (var frame = 0; frame < 24; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      await expectPaintedHeader('loading completion', frame);
+    }
     await tester.pumpAndSettle();
     expect(find.text('ADMIN HEADER'), findsOneWidget);
     expect(find.text('HISTORY CONTENT'), findsOneWidget);

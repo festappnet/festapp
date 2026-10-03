@@ -44,21 +44,47 @@ class UnitAccess extends ChangeNotifier implements UnitAdministrationAccess {
 }
 
 void main() {
-  testWidgets('unit switch uses navigation chrome while destination is pending', (tester) async {
+  testWidgets('unit switch uses navigation chrome while destination is pending',
+      (tester) async {
     final pending = Completer<void>();
-    final access = UnitAccess()..beforeLoad = (id) => id == 2 ? pending.future : Future.value();
-    final router = RootStackRouter.build(routes: [AutoRoute(
-      page: PageInfo(UnitAdminRoute.name, builder: (data) => UnitAdminPage(id: data.params.getInt('id'), access: access)),
-      path: '/unit/:id/edit', usesPathAsKey: true, children: [AutoRoute(
-        page: PageInfo('UnitContent', builder: (_) => Builder(builder: (context) => Text('UNIT ${UnitAdministrationScope.of(context).unit.id}'))), path: '', initial: true)])]);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config(deepLinkBuilder: (_) => DeepLink.path('/unit/1/edit'))));
+    final access = UnitAccess()
+      ..beforeLoad = (id) => id == 2 ? pending.future : Future.value();
+    final router = RootStackRouter.build(routes: [
+      AutoRoute(
+          page: PageInfo(UnitAdminRoute.name,
+              builder: (data) =>
+                  UnitAdminPage(id: data.params.getInt('id'), access: access)),
+          path: '/unit/:id/edit',
+          usesPathAsKey: true,
+          children: [
+            AutoRoute(
+                page: PageInfo('UnitContent',
+                    builder: (_) => Builder(
+                        builder: (context) => Text(
+                            'UNIT ${UnitAdministrationScope.of(context).unit.id}'))),
+                path: '',
+                initial: true)
+          ])
+    ]);
+    await tester.pumpWidget(MaterialApp.router(
+        routerConfig: router.config(
+            deepLinkBuilder: (_) => DeepLink.path('/unit/1/edit'))));
     await tester.pumpAndSettle();
-    unawaited(RouterService.navigateToUnitAdmin(tester.element(find.text('UNIT 1')), UnitModel(id: 2)));
-    for (var i = 0; i < 10; i++) { await tester.pump(const Duration(milliseconds: 50)); }
+    unawaited(RouterService.navigateToUnitAdmin(
+        tester.element(find.text('UNIT 1')), UnitModel(id: 2)));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
     expect(find.byType(AdministrationLoadingShell), findsOneWidget);
-    expect(tester.getRect(find.byType(AdministrationLoadingShell)), const Rect.fromLTWH(0, 0, 800, 600));
+    expect(tester.getRect(find.byType(AdministrationLoadingShell)),
+        const Rect.fromLTWH(0, 0, 800, 600));
     expect(find.text('UNIT 2'), findsNothing);
     pending.complete();
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(
+        find.byType(AdministrationLoadingShell).hitTestable(), findsOneWidget,
+        reason:
+            'The initial nested router frame must retain navigation chrome');
     await tester.pumpAndSettle();
     expect(find.text('UNIT 2'), findsOneWidget);
     expect(access.requests, [1, 2]);

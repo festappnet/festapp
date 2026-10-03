@@ -53,17 +53,23 @@ class FixtureRouter extends RootStackRouter {
           yield* flatten(route.children ?? []);
         }
       }
+
       // Use production's entry transition while keeping backend-free content.
       final entry = flatten(AppRouter().matcher.match(
-          '/occasion-a/reservations/forms/form-0/editor',
-          includePrefixMatches: false)!).singleWhere((route) => route.name == name);
-      return AutoRoute(page: info, path: path, type: entry.type, children: children);
+              '/occasion-a/reservations/forms/form-0/editor',
+              includePrefixMatches: false)!)
+          .singleWhere((route) => route.name == name);
+      return AutoRoute(
+          page: info, path: path, type: entry.type, children: children);
     }
     return CustomRoute(
         transitionsBuilder: TransitionsBuilders.noTransition,
         usesPathAsKey: name == ReservationsRoute.name,
-        page: info, path: path, children: children);
+        page: info,
+        path: path,
+        children: children);
   }
+
   @override
   List<AutoRoute> get routes => [
         page(
@@ -73,33 +79,39 @@ class FixtureRouter extends RootStackRouter {
                 access: access,
                 reservations: true,
                 loadingBuilder: loadingBuilder,
-                builder: (context) => showHeader
-                    ? Scaffold(appBar: AppBar(automaticallyImplyLeading: false, title: const Text('ADMIN HEADER')), body: const AutoRouter())
-                    : const AutoRouter()),
+                builder: (context) => AutoRouter(placeholder: loadingBuilder)),
             children: [
               page(
                   ReservationsTabsRoute.name,
                   '',
                   (context) => ListenableBuilder(
                       listenable: access,
-                      builder: (context, _) => RoutedTabScaffold(tabs: [
-                            const RoutedTabDefinition(
-                                slug: 'orders',
-                                route: OrdersTabsRoute(),
-                                label: 'Orders',
-                                icon: Icons.shopping_cart),
-                            const RoutedTabDefinition(
-                                slug: 'report',
-                                route: ReportSectionRoute(),
-                                label: 'Report',
-                                icon: Icons.bar_chart),
-                            if (extra)
-                              const RoutedTabDefinition(
-                                  slug: 'forms',
-                                  route: FormsNavigationRoute(),
-                                  label: 'Forms',
-                                  icon: Icons.article),
-                          ])),
+                      builder: (context, _) => RoutedTabScaffold(
+                              builder: showHeader
+                                  ? (context, child, controller) => Scaffold(
+                                      appBar: AppBar(
+                                          automaticallyImplyLeading: false,
+                                          title: const Text('ADMIN HEADER')),
+                                      body: child)
+                                  : null,
+                              tabs: [
+                                const RoutedTabDefinition(
+                                    slug: 'orders',
+                                    route: OrdersTabsRoute(),
+                                    label: 'Orders',
+                                    icon: Icons.shopping_cart),
+                                const RoutedTabDefinition(
+                                    slug: 'report',
+                                    route: ReportSectionRoute(),
+                                    label: 'Report',
+                                    icon: Icons.bar_chart),
+                                if (extra)
+                                  const RoutedTabDefinition(
+                                      slug: 'forms',
+                                      route: FormsNavigationRoute(),
+                                      label: 'Forms',
+                                      icon: Icons.article),
+                              ])),
                   children: [
                     RedirectRoute(path: '', redirectTo: 'orders'),
                     page(
