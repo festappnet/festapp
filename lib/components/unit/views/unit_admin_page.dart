@@ -71,10 +71,10 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
         _load(force: true);
       else if (!_access.isSignedIn)
         _load();
-      else
-        setState(() {
-          _failed = !_access.canAccess;
-        });
+      else {
+        final failed = !_access.canAccess;
+        if (_failed != failed) setState(() => _failed = failed);
+      }
     });
     WidgetsBinding.instance.ensureVisualUpdate();
   }
@@ -146,22 +146,24 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
           onPressed: () => _load(force: true), child: Text(CommonStrings.retry))
     ])));
     if (_failed && _unit == null) return failure;
-    if (_unit == null ||
-        _access.currentUnit?.id != widget.id ||
-        _access.hasOccasion)
+    if (_unit == null)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final waiting = _access.currentUnit?.id != widget.id || _access.hasOccasion;
     final denied = _failed || !_access.canAccess;
     return Stack(fit: StackFit.expand, children: [
       Offstage(
-          offstage: denied,
+          offstage: denied || waiting,
           child: TickerMode(
-              enabled: !denied,
+              enabled: !denied && !waiting,
               child: UnitAdministrationScope(
                   unit: _unit!,
                   occasions: _occasions,
                   onUpdated: () => _load(force: true),
                   child: const AutoRouter()))),
-      if (denied) failure,
+      if (waiting)
+        const Scaffold(body: Center(child: CircularProgressIndicator()))
+      else if (denied)
+        failure,
     ]);
   }
 }

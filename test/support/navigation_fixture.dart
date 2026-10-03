@@ -42,7 +42,9 @@ class FixtureRouter extends RootStackRouter {
   List<AutoRouteGuard> get guards => [RetainedDraftGuard.instance];
   AutoRoute page(String name, String path, WidgetBuilder builder,
           {List<AutoRoute>? children}) =>
-      AutoRoute(
+      CustomRoute(
+          transitionsBuilder: TransitionsBuilders.noTransition,
+          usesPathAsKey: name == ReservationsRoute.name,
           page: PageInfo(name, builder: (data) => Builder(builder: builder)),
           path: path,
           children: children);

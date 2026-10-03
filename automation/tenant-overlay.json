@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "6b0070c985ec11a1fdf4d7634b41523284728e03",
+  "baseMainSha": "947ca195c3ca8920ba7e917630e9cae4fdaf70bf",
   "release": {
-    "version": "0.20.75+559",
-    "note": "Restore bank editing dialog and stop breadcrumb organization reload loops"
+    "version": "0.20.76+560",
+    "note": "Restore breadcrumb contexts after browser Back and preserve nested routers"
   }
 }

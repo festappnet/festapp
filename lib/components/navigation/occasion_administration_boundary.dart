@@ -90,7 +90,7 @@ class _OccasionAdministrationBoundaryState
 
   void _contextChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _link == null) return;
+      if (!mounted || _link == null || !isVisibleRouteInstance(context)) return;
       if (widget.access.loadedLink == _link &&
           !widget.access.canAccess(reservations: widget.reservations)) {
         if (!_denied)
@@ -100,10 +100,9 @@ class _OccasionAdministrationBoundaryState
         return;
       }
       if (widget.access.loadedLink != _link || (!_ready && !_loading)) {
-        if (_ready) setState(() => _ready = false);
         if (!_loading && isVisibleRouteInstance(context))
           _load(_link!, ++_generation);
-      } else if (_ready && isVisibleRouteInstance(context)) {
+      } else if (_ready && _denied) {
         setState(() => _denied = false);
       }
     });
@@ -148,19 +147,23 @@ class _OccasionAdministrationBoundaryState
   Widget build(BuildContext context) {
     if (_denied && !_ready)
       return const Scaffold(body: Center(child: Text('Access denied')));
-    if (!_ready || widget.access.loadedLink != _link)
+    if (!_ready)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final waiting = widget.access.loadedLink != _link;
     // Previously authorized retained editors stay mounted behind the denial
     // screen. Initial denial never creates them; restored access keeps the same
     // native nested route stack and unsaved draft.
     return Stack(fit: StackFit.expand, children: [
       Offstage(
-          offstage: _denied,
+          offstage: _denied || waiting,
           child: TickerMode(
-              enabled: !_denied,
+              enabled: !_denied && !waiting,
               child: KeyedSubtree(
                   key: ValueKey(_link), child: widget.builder(context)))),
-      if (_denied) const Scaffold(body: Center(child: Text('Access denied'))),
+      if (waiting)
+        const Scaffold(body: Center(child: CircularProgressIndicator()))
+      else if (_denied)
+        const Scaffold(body: Center(child: Text('Access denied'))),
     ]);
   }
 }
