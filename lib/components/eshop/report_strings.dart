@@ -1,7 +1,12 @@
+import 'orders_strings.dart';
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/features/feature_constants.dart';
 import 'models/order_model.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ReportStrings {
+  static bool get hasTickets =>
+      FeatureService.isFeatureEnabled(FeatureConstants.ticket);
   static String state(String? state) =>
       OrderModel.stateToLocale(state == 'unknown' ? null : state);
   static String get ratesUnavailable => 'OccasionReport.ratesUnavailable'.tr();
@@ -9,9 +14,12 @@ class ReportStrings {
       'OccasionReport.compareCurrencies'.tr();
   static String get currencyComparisonHelp =>
       'OccasionReport.currencyComparisonHelp'.tr();
-  static String get orderTimeline => 'OccasionReport.orderTimeline'.tr();
-  static String get orderTimelineHelp =>
-      'OccasionReport.orderTimelineHelp'.tr();
+  static String get orderTimeline => hasTickets
+      ? 'OccasionReport.orderTimeline'.tr()
+      : 'OccasionReport.applicationTimeline'.tr();
+  static String get orderTimelineHelp => hasTickets
+      ? 'OccasionReport.orderTimelineHelp'.tr()
+      : 'OccasionReport.applicationTimelineHelp'.tr();
   static String get paymentTimeline => 'OccasionReport.paymentTimeline'.tr();
   static String get paymentTimelineHelp =>
       'OccasionReport.paymentTimelineHelp'.tr();
@@ -38,7 +46,8 @@ class ReportStrings {
   static String get close => 'OccasionReport.close'.tr();
   static String get error => 'OccasionReport.error'.tr();
   static String get exportError => 'OccasionReport.exportError'.tr();
-  static String get orders => 'OccasionReport.orders'.tr();
+  static String get orders =>
+      hasTickets ? 'OccasionReport.orders'.tr() : OrdersStrings.applications;
   static String get tickets => 'OccasionReport.tickets'.tr();
   static String get spots => 'OccasionReport.spots'.tr();
   static String get free => 'OccasionReport.free'.tr();

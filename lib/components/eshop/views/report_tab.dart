@@ -506,16 +506,21 @@ class _ReportTabState extends State<ReportTab> {
           final groups = columns == 3
               ? [
                   [orders, if (spots != null) spots],
-                  [tickets],
+                  if (ReportStrings.hasTickets) [tickets],
                   money
                 ]
               : columns == 2
                   ? [
-                      [orders, tickets],
+                      [orders, if (ReportStrings.hasTickets) tickets],
                       [if (spots != null) spots, ...money]
                     ]
                   : [
-                      [orders, tickets, if (spots != null) spots, ...money]
+                      [
+                        orders,
+                        if (ReportStrings.hasTickets) tickets,
+                        if (spots != null) spots,
+                        ...money
+                      ]
                     ];
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,11 +699,12 @@ class _ReportTabState extends State<ReportTab> {
                               '${r.orders.total}',
                               width,
                             ),
-                            _summary(
-                              ReportStrings.tickets,
-                              '${r.tickets.total}',
-                              width,
-                            ),
+                            if (ReportStrings.hasTickets)
+                              _summary(
+                                ReportStrings.tickets,
+                                '${r.tickets.total}',
+                                width,
+                              ),
                             if (r.spotsTotal > 0)
                               _summary(
                                 ReportStrings.spots,
