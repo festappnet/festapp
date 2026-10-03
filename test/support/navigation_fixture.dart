@@ -34,6 +34,8 @@ class Access extends ChangeNotifier implements AdministrationAccess {
 class FixtureRouter extends RootStackRouter {
   final Access access;
   WidgetBuilder? formsListBuilder;
+  WidgetBuilder? loadingBuilder;
+  bool showHeader = false;
   bool extra = true;
   bool dirty = false;
   bool discard = false;
@@ -70,7 +72,10 @@ class FixtureRouter extends RootStackRouter {
             (context) => OccasionAdministrationBoundary(
                 access: access,
                 reservations: true,
-                builder: (context) => const AutoRouter()),
+                loadingBuilder: loadingBuilder,
+                builder: (context) => showHeader
+                    ? Scaffold(appBar: AppBar(automaticallyImplyLeading: false, title: const Text('ADMIN HEADER')), body: const AutoRouter())
+                    : const AutoRouter()),
             children: [
               page(
                   ReservationsTabsRoute.name,
