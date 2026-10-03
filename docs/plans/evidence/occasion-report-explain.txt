@@ -1,0 +1,441 @@
+BEGIN
+DROP INDEX
+DROP INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+DO
+ANALYZE
+ANALYZE
+ANALYZE
+ANALYZE
+ANALYZE
+ANALYZE
+                                                                                                       QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ CTE Scan on scope s  (cost=175655.15..175655.19 rows=1 width=33) (actual time=64.750..64.767 rows=1 loops=1)
+   Buffers: shared hit=17868 dirtied=1
+   CTE scope
+     ->  Nested Loop  (cost=0.00..8.35 rows=1 width=40) (actual time=0.088..0.089 rows=1 loops=1)
+           Join Filter: (o.organization = u.organization)
+           Buffers: shared hit=43
+           ->  Seq Scan on occasions o  (cost=0.00..7.30 rows=1 width=48) (actual time=0.085..0.086 rows=1 loops=1)
+                 Filter: ((link = 'report-benchmark'::text) AND get_is_editor_order_view_on_occasion(id))
+                 Rows Removed by Filter: 1
+                 Buffers: shared hit=42
+           ->  Seq Scan on user_info u  (cost=0.00..1.03 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+                 Filter: (id = (COALESCE(NULLIF(current_setting('request.jwt.claim.sub'::text, true), ''::text), ((NULLIF(current_setting('request.jwt.claims'::text, true), ''::text))::jsonb ->> 'sub'::text)))::uuid)
+                 Rows Removed by Filter: 1
+                 Buffers: shared hit=1
+   CTE orders_scope
+     ->  Hash Join  (cost=0.03..1556.53 rows=25000 width=126) (actual time=0.006..3.842 rows=5000 loops=1)
+           Hash Cond: (o_1.occasion = s_1.id)
+           Buffers: shared hit=619
+           ->  Seq Scan on orders o_1  (cost=0.00..1119.00 rows=50000 width=126) (actual time=0.001..1.668 rows=50000 loops=1)
+                 Buffers: shared hit=619
+           ->  Hash  (cost=0.02..0.02 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+                 Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                 ->  CTE Scan on scope s_1  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+   CTE payments
+     ->  Nested Loop  (cost=562.79..1666.08 rows=25000 width=163) (actual time=0.660..3.520 rows=5000 loops=1)
+           Buffers: shared hit=15000
+           ->  HashAggregate  (cost=562.50..564.50 rows=200 width=8) (actual time=0.654..0.945 rows=5000 loops=1)
+                 Group Key: orders_scope.payment_info
+                 Batches: 1  Memory Usage: 481kB
+                 ->  CTE Scan on orders_scope  (cost=0.00..500.00 rows=25000 width=8) (actual time=0.000..0.142 rows=5000 loops=1)
+           ->  Index Scan using payment_info_pkey on payment_info p  (cost=0.29..6.55 rows=1 width=163) (actual time=0.000..0.000 rows=1 loops=5000)
+                 Index Cond: (id = orders_scope.payment_info)
+                 Buffers: shared hit=15000
+   CTE money
+     ->  Hash Full Join  (cost=167658.94..167666.48 rows=200 width=225) (actual time=41.176..41.181 rows=1 loops=1)
+           Hash Cond: (p_1.currency_code = orders_scope_1.currency_code)
+           Buffers: shared hit=16235
+           ->  HashAggregate  (cost=167026.94..167031.44 rows=200 width=177) (actual time=40.606..40.609 rows=1 loops=1)
+                 Group Key: p_1.currency_code
+                 Batches: 1  Memory Usage: 40kB
+                 Buffers: shared hit=16235
+                 ->  Hash Left Join  (cost=10903.67..11470.69 rows=6222250 width=96) (actual time=39.050..39.681 rows=5000 loops=1)
+                       Hash Cond: (p_1.id = m.payment_info)
+                       Buffers: shared hit=16235
+                       ->  CTE Scan on payments p_1  (cost=0.00..500.00 rows=25000 width=72) (actual time=0.661..0.821 rows=5000 loops=1)
+                             Buffers: shared hit=3
+                       ->  Hash  (cost=10281.45..10281.45 rows=49778 width=40) (actual time=38.340..38.341 rows=5000 loops=1)
+                             Buckets: 65536  Batches: 1  Memory Usage: 747kB
+                             Buffers: shared hit=16232
+                             ->  Subquery Scan on m  (cost=8533.66..10281.45 rows=49778 width=40) (actual time=36.186..37.972 rows=5000 loops=1)
+                                   Buffers: shared hit=16232
+                                   ->  GroupAggregate  (cost=8533.66..9783.67 rows=49778 width=40) (actual time=36.186..37.753 rows=5000 loops=1)
+                                         Group Key: t.payment_info
+                                         Buffers: shared hit=16232
+                                         ->  Sort  (cost=8533.66..8659.21 rows=50223 width=20) (actual time=36.180..36.468 rows=10000 loops=1)
+                                               Sort Key: t.payment_info
+                                               Sort Method: quicksort  Memory: 1010kB
+                                               Buffers: shared hit=16232
+                                               ->  Hash Join  (cost=3485.00..4612.23 rows=50223 width=20) (actual time=25.441..31.258 rows=10000 loops=1)
+                                                     Hash Cond: (p_2.id = t.payment_info)
+                                                     Buffers: shared hit=16232
+                                                     ->  CTE Scan on payments p_2  (cost=0.00..500.00 rows=25000 width=8) (actual time=0.000..4.655 rows=5000 loops=1)
+                                                           Buffers: shared hit=14997
+                                                     ->  Hash  (cost=2235.00..2235.00 rows=100000 width=20) (actual time=23.654..23.654 rows=100000 loops=1)
+                                                           Buckets: 131072  Batches: 1  Memory Usage: 6103kB
+                                                           Buffers: shared hit=1235
+                                                           ->  Seq Scan on transactions t  (cost=0.00..2235.00 rows=100000 width=20) (actual time=0.011..6.089 rows=100000 loops=1)
+                                                                 Buffers: shared hit=1235
+           ->  Hash  (cost=629.50..629.50 rows=200 width=48) (actual time=0.566..0.566 rows=1 loops=1)
+                 Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                 ->  HashAggregate  (cost=625.00..627.50 rows=200 width=48) (actual time=0.564..0.565 rows=1 loops=1)
+                       Group Key: orders_scope_1.currency_code
+                       Batches: 1  Memory Usage: 40kB
+                       ->  CTE Scan on orders_scope orders_scope_1  (cost=0.00..500.00 rows=25000 width=32) (actual time=0.000..0.144 rows=5000 loops=1)
+   CTE ticket_scope
+     ->  Hash Join  (cost=425.00..648.27 rows=5000 width=133) (actual time=1.971..3.002 rows=5000 loops=1)
+           Hash Cond: (t_1.id = i.ticket)
+           Buffers: shared hit=167
+           ->  Nested Loop  (cost=0.00..154.52 rows=5000 width=133) (actual time=0.003..0.546 rows=5000 loops=1)
+                 Join Filter: (t_1.occasion = s_2.id)
+                 Buffers: shared hit=42
+                 ->  CTE Scan on scope s_2  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+                 ->  Seq Scan on tickets t_1  (cost=0.00..92.00 rows=5000 width=133) (actual time=0.002..0.176 rows=5000 loops=1)
+                       Buffers: shared hit=42
+           ->  Hash  (cost=362.50..362.50 rows=5000 width=8) (actual time=1.961..1.961 rows=5000 loops=1)
+                 Buckets: 8192  Batches: 1  Memory Usage: 260kB
+                 Buffers: shared hit=125
+                 ->  HashAggregate  (cost=312.50..362.50 rows=5000 width=8) (actual time=1.545..1.735 rows=5000 loops=1)
+                       Group Key: i.ticket
+                       Batches: 1  Memory Usage: 465kB
+                       Buffers: shared hit=125
+                       ->  Seq Scan on order_product_ticket i  (cost=0.00..275.00 rows=15000 width=8) (actual time=0.002..0.618 rows=15000 loops=1)
+                             Buffers: shared hit=125
+   InitPlan 6 (returns $6)
+     ->  Subquery Scan on spots  (cost=208.03..208.06 rows=1 width=32) (actual time=0.603..0.604 rows=1 loops=1)
+           Buffers: shared hit=58
+           ->  Aggregate  (cost=208.03..208.04 rows=1 width=24) (actual time=0.600..0.600 rows=1 loops=1)
+                 Buffers: shared hit=58
+                 ->  Nested Loop  (cost=0.02..170.53 rows=5000 width=8) (actual time=0.009..0.451 rows=5000 loops=1)
+                       Join Filter: (spots_1.occasion = scope.id)
+                       Buffers: shared hit=58
+                       ->  HashAggregate  (cost=0.02..0.03 rows=1 width=8) (actual time=0.003..0.003 rows=1 loops=1)
+                             Group Key: scope.id
+                             Batches: 1  Memory Usage: 24kB
+                             ->  CTE Scan on scope  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+                       ->  Seq Scan on spots spots_1  (cost=0.00..108.00 rows=5000 width=16) (actual time=0.005..0.155 rows=5000 loops=1)
+                             Buffers: shared hit=58
+   InitPlan 7 (returns $7)
+     ->  Aggregate  (cost=562.50..562.51 rows=1 width=8) (actual time=4.666..4.666 rows=1 loops=1)
+           Buffers: shared hit=619
+           ->  CTE Scan on orders_scope orders_scope_2  (cost=0.00..500.00 rows=25000 width=0) (actual time=0.006..4.535 rows=5000 loops=1)
+                 Buffers: shared hit=619
+   InitPlan 8 (returns $8)
+     ->  Aggregate  (cost=630.00..630.01 rows=1 width=32) (actual time=0.493..0.494 rows=1 loops=1)
+           ->  Subquery Scan on x  (cost=625.00..629.00 rows=200 width=88) (actual time=0.485..0.485 rows=1 loops=1)
+                 ->  HashAggregate  (cost=625.00..627.00 rows=200 width=40) (actual time=0.483..0.484 rows=1 loops=1)
+                       Group Key: COALESCE(orders_scope_3.state, 'unknown'::text)
+                       Batches: 1  Memory Usage: 40kB
+                       ->  CTE Scan on orders_scope orders_scope_3  (cost=0.00..500.00 rows=25000 width=32) (actual time=0.001..0.204 rows=5000 loops=1)
+   InitPlan 9 (returns $9)
+     ->  Aggregate  (cost=112.50..112.51 rows=1 width=8) (actual time=3.731..3.731 rows=1 loops=1)
+           Buffers: shared hit=167
+           ->  CTE Scan on ticket_scope  (cost=0.00..100.00 rows=5000 width=0) (actual time=1.972..3.591 rows=5000 loops=1)
+                 Buffers: shared hit=167
+   InitPlan 10 (returns $10)
+     ->  Aggregate  (cost=130.00..130.01 rows=1 width=32) (actual time=0.496..0.496 rows=1 loops=1)
+           ->  Subquery Scan on x_1  (cost=125.00..129.00 rows=200 width=88) (actual time=0.486..0.487 rows=1 loops=1)
+                 ->  HashAggregate  (cost=125.00..127.00 rows=200 width=40) (actual time=0.485..0.485 rows=1 loops=1)
+                       Group Key: COALESCE(ticket_scope_1.state, 'unknown'::text)
+                       Batches: 1  Memory Usage: 40kB
+                       ->  CTE Scan on ticket_scope ticket_scope_1  (cost=0.00..100.00 rows=5000 width=32) (actual time=0.002..0.196 rows=5000 loops=1)
+   InitPlan 11 (returns $11)
+     ->  Aggregate  (cost=14.00..14.01 rows=1 width=32) (actual time=41.193..41.193 rows=1 loops=1)
+           Buffers: shared hit=16235
+           ->  CTE Scan on money  (cost=0.00..4.00 rows=200 width=225) (actual time=41.177..41.178 rows=1 loops=1)
+                 Buffers: shared hit=16235
+   InitPlan 12 (returns $12)
+     ->  Aggregate  (cost=1127.91..1127.92 rows=1 width=32) (actual time=6.838..6.840 rows=1 loops=1)
+           Buffers: shared hit=127 dirtied=1
+           ->  Subquery Scan on p_3  (cost=1088.53..1122.28 rows=1125 width=184) (actual time=6.826..6.829 rows=1 loops=1)
+                 Buffers: shared hit=127 dirtied=1
+                 ->  HashAggregate  (cost=1088.53..1111.03 rows=1125 width=152) (actual time=6.823..6.825 rows=1 loops=1)
+                       Group Key: p_4.id, pt.id
+                       Batches: 1  Memory Usage: 73kB
+                       Buffers: shared hit=127 dirtied=1
+                       ->  Hash Left Join  (cost=466.17..1080.09 rows=1125 width=80) (actual time=3.210..6.026 rows=15000 loops=1)
+                             Hash Cond: (p_4.product_type = pt.id)
+                             Buffers: shared hit=127 dirtied=1
+                             ->  Hash Join  (cost=464.24..1074.92 rows=1125 width=48) (actual time=3.193..5.240 rows=15000 loops=1)
+                                   Hash Cond: (i_1.product = p_4.id)
+                                   Buffers: shared hit=126
+                                   ->  Hash Join  (cost=462.50..1069.84 rows=1125 width=8) (actual time=3.185..4.257 rows=15000 loops=1)
+                                         Hash Cond: (o_2.id = i_1."order")
+                                         Buffers: shared hit=125
+                                         ->  CTE Scan on orders_scope o_2  (cost=0.00..593.75 rows=375 width=8) (actual time=0.001..0.255 rows=5000 loops=1)
+                                               Filter: (state = ANY ('{paid,sent,used}'::text[]))
+                                         ->  Hash  (cost=275.00..275.00 rows=15000 width=16) (actual time=3.148..3.149 rows=15000 loops=1)
+                                               Buckets: 16384  Batches: 1  Memory Usage: 832kB
+                                               Buffers: shared hit=125
+                                               ->  Seq Scan on order_product_ticket i_1  (cost=0.00..275.00 rows=15000 width=16) (actual time=0.005..0.704 rows=15000 loops=1)
+                                                     Buffers: shared hit=125
+                                   ->  Hash  (cost=1.33..1.33 rows=33 width=48) (actual time=0.006..0.006 rows=1 loops=1)
+                                         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                         Buffers: shared hit=1
+                                         ->  Seq Scan on products p_4  (cost=0.00..1.33 rows=33 width=48) (actual time=0.005..0.005 rows=1 loops=1)
+                                               Buffers: shared hit=1
+                             ->  Hash  (cost=1.41..1.41 rows=41 width=40) (actual time=0.014..0.014 rows=0 loops=1)
+                                   Buckets: 1024  Batches: 1  Memory Usage: 8kB
+                                   Buffers: shared hit=1 dirtied=1
+                                   ->  Seq Scan on product_types pt  (cost=0.00..1.41 rows=41 width=40) (actual time=0.014..0.014 rows=0 loops=1)
+                                         Buffers: shared hit=1 dirtied=1
+   InitPlan 13 (returns $13)
+     ->  Aggregate  (cost=505.55..505.56 rows=1 width=32) (actual time=0.101..0.102 rows=1 loops=1)
+           ->  Append  (cost=500.31..505.53 rows=2 width=64) (actual time=0.100..0.101 rows=0 loops=1)
+                 ->  Subquery Scan on "*SELECT* 1"  (cost=500.31..500.33 rows=1 width=64) (actual time=0.098..0.099 rows=0 loops=1)
+                       ->  Aggregate  (cost=500.31..500.32 rows=1 width=40) (actual time=0.098..0.098 rows=0 loops=1)
+                             Filter: (count(*) > 0)
+                             Rows Removed by Filter: 1
+                             ->  CTE Scan on orders_scope orders_scope_4  (cost=0.00..500.00 rows=125 width=0) (actual time=0.097..0.097 rows=0 loops=1)
+                                   Filter: (price IS NULL)
+                                   Rows Removed by Filter: 5000
+                 ->  Subquery Scan on "*SELECT* 2"  (cost=5.17..5.19 rows=1 width=64) (actual time=0.001..0.002 rows=0 loops=1)
+                       ->  Aggregate  (cost=5.17..5.18 rows=1 width=40) (actual time=0.001..0.001 rows=0 loops=1)
+                             Filter: (count(*) > 0)
+                             Rows Removed by Filter: 1
+                             ->  CTE Scan on money money_1  (cost=0.00..5.00 rows=67 width=0) (actual time=0.001..0.001 rows=0 loops=1)
+                                   Filter: ((received - manual) < '0'::numeric)
+                                   Rows Removed by Filter: 1
+   InitPlan 15 (returns $15)
+     ->  Hash Join  (cost=812.52..158681.52 rows=24938 width=0) (actual time=6.395..6.396 rows=0 loops=1)
+           Hash Cond: (o_3.payment_info = p_5.id)
+           Join Filter: ((o_3.occasion IS DISTINCT FROM $14) OR (o_3.currency_code IS DISTINCT FROM p_5.currency_code))
+           Rows Removed by Join Filter: 5000
+           Buffers: shared hit=619
+           InitPlan 14 (returns $14)
+             ->  CTE Scan on scope scope_1  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           ->  Seq Scan on orders o_3  (cost=0.00..1119.00 rows=50000 width=20) (actual time=0.003..1.721 rows=50000 loops=1)
+                 Buffers: shared hit=619
+           ->  Hash  (cost=500.00..500.00 rows=25000 width=24) (actual time=1.262..1.262 rows=5000 loops=1)
+                 Buckets: 32768  Batches: 1  Memory Usage: 471kB
+                 ->  CTE Scan on payments p_5  (cost=0.00..500.00 rows=25000 width=24) (actual time=0.001..0.212 rows=5000 loops=1)
+ Planning:
+   Buffers: shared hit=392
+ Planning Time: 0.857 ms
+ Execution Time: 64.967 ms
+(205 rows)
+
+CREATE INDEX
+CREATE INDEX
+                                                                                                       QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ CTE Scan on scope s  (cost=174369.35..174369.39 rows=1 width=33) (actual time=38.328..38.346 rows=1 loops=1)
+   Buffers: shared hit=31638 read=21
+   CTE scope
+     ->  Nested Loop  (cost=0.00..8.35 rows=1 width=40) (actual time=0.054..0.055 rows=1 loops=1)
+           Join Filter: (o.organization = u.organization)
+           Buffers: shared hit=3
+           ->  Seq Scan on occasions o  (cost=0.00..7.30 rows=1 width=48) (actual time=0.051..0.052 rows=1 loops=1)
+                 Filter: ((link = 'report-benchmark'::text) AND get_is_editor_order_view_on_occasion(id))
+                 Rows Removed by Filter: 1
+                 Buffers: shared hit=2
+           ->  Seq Scan on user_info u  (cost=0.00..1.03 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+                 Filter: (id = (COALESCE(NULLIF(current_setting('request.jwt.claim.sub'::text, true), ''::text), ((NULLIF(current_setting('request.jwt.claims'::text, true), ''::text))::jsonb ->> 'sub'::text)))::uuid)
+                 Rows Removed by Filter: 1
+                 Buffers: shared hit=1
+   CTE orders_scope
+     ->  Nested Loop  (cost=0.29..1088.81 rows=25000 width=126) (actual time=0.010..0.648 rows=5000 loops=1)
+           Buffers: shared hit=63 read=6
+           ->  CTE Scan on scope s_1  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)
+           ->  Index Scan using orders_occasion_report_idx on orders o_1  (cost=0.29..838.79 rows=25000 width=126) (actual time=0.009..0.258 rows=5000 loops=1)
+                 Index Cond: (occasion = s_1.id)
+                 Buffers: shared hit=63 read=6
+   CTE payments
+     ->  Nested Loop  (cost=562.79..1666.08 rows=25000 width=163) (actual time=0.628..3.234 rows=5000 loops=1)
+           Buffers: shared hit=15000
+           ->  HashAggregate  (cost=562.50..564.50 rows=200 width=8) (actual time=0.622..0.888 rows=5000 loops=1)
+                 Group Key: orders_scope.payment_info
+                 Batches: 1  Memory Usage: 481kB
+                 ->  CTE Scan on orders_scope  (cost=0.00..500.00 rows=25000 width=8) (actual time=0.000..0.148 rows=5000 loops=1)
+           ->  Index Scan using payment_info_pkey on payment_info p  (cost=0.29..6.55 rows=1 width=163) (actual time=0.000..0.000 rows=1 loops=5000)
+                 Index Cond: (id = orders_scope.payment_info)
+                 Buffers: shared hit=15000
+   CTE money
+     ->  Hash Full Join  (cost=167658.94..167666.48 rows=200 width=225) (actual time=22.841..22.846 rows=1 loops=1)
+           Hash Cond: (p_1.currency_code = orders_scope_1.currency_code)
+           Buffers: shared hit=16235
+           ->  HashAggregate  (cost=167026.94..167031.44 rows=200 width=177) (actual time=22.244..22.247 rows=1 loops=1)
+                 Group Key: p_1.currency_code
+                 Batches: 1  Memory Usage: 40kB
+                 Buffers: shared hit=16235
+                 ->  Hash Left Join  (cost=10903.67..11470.69 rows=6222250 width=96) (actual time=20.575..21.240 rows=5000 loops=1)
+                       Hash Cond: (p_1.id = m.payment_info)
+                       Buffers: shared hit=16235
+                       ->  CTE Scan on payments p_1  (cost=0.00..500.00 rows=25000 width=72) (actual time=0.628..0.800 rows=5000 loops=1)
+                             Buffers: shared hit=3
+                       ->  Hash  (cost=10281.45..10281.45 rows=49778 width=40) (actual time=19.895..19.897 rows=5000 loops=1)
+                             Buckets: 65536  Batches: 1  Memory Usage: 747kB
+                             Buffers: shared hit=16232
+                             ->  Subquery Scan on m  (cost=8533.66..10281.45 rows=49778 width=40) (actual time=17.772..19.545 rows=5000 loops=1)
+                                   Buffers: shared hit=16232
+                                   ->  GroupAggregate  (cost=8533.66..9783.67 rows=49778 width=40) (actual time=17.772..19.331 rows=5000 loops=1)
+                                         Group Key: t.payment_info
+                                         Buffers: shared hit=16232
+                                         ->  Sort  (cost=8533.66..8659.21 rows=50223 width=20) (actual time=17.765..18.040 rows=10000 loops=1)
+                                               Sort Key: t.payment_info
+                                               Sort Method: quicksort  Memory: 1010kB
+                                               Buffers: shared hit=16232
+                                               ->  Hash Join  (cost=3485.00..4612.23 rows=50223 width=20) (actual time=12.015..16.520 rows=10000 loops=1)
+                                                     Hash Cond: (p_2.id = t.payment_info)
+                                                     Buffers: shared hit=16232
+                                                     ->  CTE Scan on payments p_2  (cost=0.00..500.00 rows=25000 width=8) (actual time=0.000..3.354 rows=5000 loops=1)
+                                                           Buffers: shared hit=14997
+                                                     ->  Hash  (cost=2235.00..2235.00 rows=100000 width=20) (actual time=11.918..11.918 rows=100000 loops=1)
+                                                           Buckets: 131072  Batches: 1  Memory Usage: 6103kB
+                                                           Buffers: shared hit=1235
+                                                           ->  Seq Scan on transactions t  (cost=0.00..2235.00 rows=100000 width=20) (actual time=0.003..6.091 rows=100000 loops=1)
+                                                                 Buffers: shared hit=1235
+           ->  Hash  (cost=629.50..629.50 rows=200 width=48) (actual time=0.594..0.595 rows=1 loops=1)
+                 Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                 ->  HashAggregate  (cost=625.00..627.50 rows=200 width=48) (actual time=0.593..0.594 rows=1 loops=1)
+                       Group Key: orders_scope_1.currency_code
+                       Batches: 1  Memory Usage: 40kB
+                       ->  CTE Scan on orders_scope orders_scope_1  (cost=0.00..500.00 rows=25000 width=32) (actual time=0.000..0.167 rows=5000 loops=1)
+   CTE ticket_scope
+     ->  Hash Join  (cost=425.00..648.27 rows=5000 width=133) (actual time=2.036..2.912 rows=5000 loops=1)
+           Hash Cond: (t_1.id = i.ticket)
+           Buffers: shared hit=167
+           ->  Nested Loop  (cost=0.00..154.52 rows=5000 width=133) (actual time=0.003..0.506 rows=5000 loops=1)
+                 Join Filter: (t_1.occasion = s_2.id)
+                 Buffers: shared hit=42
+                 ->  CTE Scan on scope s_2  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+                 ->  Seq Scan on tickets t_1  (cost=0.00..92.00 rows=5000 width=133) (actual time=0.002..0.169 rows=5000 loops=1)
+                       Buffers: shared hit=42
+           ->  Hash  (cost=362.50..362.50 rows=5000 width=8) (actual time=2.026..2.027 rows=5000 loops=1)
+                 Buckets: 8192  Batches: 1  Memory Usage: 260kB
+                 Buffers: shared hit=125
+                 ->  HashAggregate  (cost=312.50..362.50 rows=5000 width=8) (actual time=1.611..1.814 rows=5000 loops=1)
+                       Group Key: i.ticket
+                       Batches: 1  Memory Usage: 465kB
+                       Buffers: shared hit=125
+                       ->  Seq Scan on order_product_ticket i  (cost=0.00..275.00 rows=15000 width=8) (actual time=0.002..0.667 rows=15000 loops=1)
+                             Buffers: shared hit=125
+   InitPlan 6 (returns $7)
+     ->  Subquery Scan on spots  (cost=208.03..208.06 rows=1 width=32) (actual time=0.631..0.633 rows=1 loops=1)
+           Buffers: shared hit=58
+           ->  Aggregate  (cost=208.03..208.04 rows=1 width=24) (actual time=0.629..0.629 rows=1 loops=1)
+                 Buffers: shared hit=58
+                 ->  Nested Loop  (cost=0.02..170.53 rows=5000 width=8) (actual time=0.003..0.473 rows=5000 loops=1)
+                       Join Filter: (spots_1.occasion = scope.id)
+                       Buffers: shared hit=58
+                       ->  HashAggregate  (cost=0.02..0.03 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)
+                             Group Key: scope.id
+                             Batches: 1  Memory Usage: 24kB
+                             ->  CTE Scan on scope  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=1)
+                       ->  Seq Scan on spots spots_1  (cost=0.00..108.00 rows=5000 width=16) (actual time=0.001..0.169 rows=5000 loops=1)
+                             Buffers: shared hit=58
+   InitPlan 7 (returns $8)
+     ->  Aggregate  (cost=562.50..562.51 rows=1 width=8) (actual time=1.479..1.480 rows=1 loops=1)
+           Buffers: shared hit=63 read=6
+           ->  CTE Scan on orders_scope orders_scope_2  (cost=0.00..500.00 rows=25000 width=0) (actual time=0.011..1.352 rows=5000 loops=1)
+                 Buffers: shared hit=63 read=6
+   InitPlan 8 (returns $9)
+     ->  Aggregate  (cost=630.00..630.01 rows=1 width=32) (actual time=0.493..0.494 rows=1 loops=1)
+           ->  Subquery Scan on x  (cost=625.00..629.00 rows=200 width=88) (actual time=0.486..0.487 rows=1 loops=1)
+                 ->  HashAggregate  (cost=625.00..627.00 rows=200 width=40) (actual time=0.485..0.485 rows=1 loops=1)
+                       Group Key: COALESCE(orders_scope_3.state, 'unknown'::text)
+                       Batches: 1  Memory Usage: 40kB
+                       ->  CTE Scan on orders_scope orders_scope_3  (cost=0.00..500.00 rows=25000 width=32) (actual time=0.000..0.203 rows=5000 loops=1)
+   InitPlan 9 (returns $10)
+     ->  Aggregate  (cost=112.50..112.51 rows=1 width=8) (actual time=3.552..3.553 rows=1 loops=1)
+           Buffers: shared hit=167
+           ->  CTE Scan on ticket_scope  (cost=0.00..100.00 rows=5000 width=0) (actual time=2.037..3.426 rows=5000 loops=1)
+                 Buffers: shared hit=167
+   InitPlan 10 (returns $11)
+     ->  Aggregate  (cost=130.00..130.01 rows=1 width=32) (actual time=0.477..0.478 rows=1 loops=1)
+           ->  Subquery Scan on x_1  (cost=125.00..129.00 rows=200 width=88) (actual time=0.470..0.471 rows=1 loops=1)
+                 ->  HashAggregate  (cost=125.00..127.00 rows=200 width=40) (actual time=0.469..0.470 rows=1 loops=1)
+                       Group Key: COALESCE(ticket_scope_1.state, 'unknown'::text)
+                       Batches: 1  Memory Usage: 40kB
+                       ->  CTE Scan on ticket_scope ticket_scope_1  (cost=0.00..100.00 rows=5000 width=32) (actual time=0.000..0.193 rows=5000 loops=1)
+   InitPlan 11 (returns $12)
+     ->  Aggregate  (cost=14.00..14.01 rows=1 width=32) (actual time=22.855..22.855 rows=1 loops=1)
+           Buffers: shared hit=16235
+           ->  CTE Scan on money  (cost=0.00..4.00 rows=200 width=225) (actual time=22.842..22.844 rows=1 loops=1)
+                 Buffers: shared hit=16235
+   InitPlan 12 (returns $13)
+     ->  Aggregate  (cost=1127.91..1127.92 rows=1 width=32) (actual time=5.849..5.851 rows=1 loops=1)
+           Buffers: shared hit=127
+           ->  Subquery Scan on p_3  (cost=1088.53..1122.28 rows=1125 width=184) (actual time=5.839..5.842 rows=1 loops=1)
+                 Buffers: shared hit=127
+                 ->  HashAggregate  (cost=1088.53..1111.03 rows=1125 width=152) (actual time=5.836..5.839 rows=1 loops=1)
+                       Group Key: p_4.id, pt.id
+                       Batches: 1  Memory Usage: 73kB
+                       Buffers: shared hit=127
+                       ->  Hash Left Join  (cost=466.17..1080.09 rows=1125 width=80) (actual time=1.748..4.933 rows=15000 loops=1)
+                             Hash Cond: (p_4.product_type = pt.id)
+                             Buffers: shared hit=127
+                             ->  Hash Join  (cost=464.24..1074.92 rows=1125 width=48) (actual time=1.743..4.064 rows=15000 loops=1)
+                                   Hash Cond: (i_1.product = p_4.id)
+                                   Buffers: shared hit=126
+                                   ->  Hash Join  (cost=462.50..1069.84 rows=1125 width=8) (actual time=1.736..2.954 rows=15000 loops=1)
+                                         Hash Cond: (o_2.id = i_1."order")
+                                         Buffers: shared hit=125
+                                         ->  CTE Scan on orders_scope o_2  (cost=0.00..593.75 rows=375 width=8) (actual time=0.001..0.294 rows=5000 loops=1)
+                                               Filter: (state = ANY ('{paid,sent,used}'::text[]))
+                                         ->  Hash  (cost=275.00..275.00 rows=15000 width=16) (actual time=1.709..1.709 rows=15000 loops=1)
+                                               Buckets: 16384  Batches: 1  Memory Usage: 832kB
+                                               Buffers: shared hit=125
+                                               ->  Seq Scan on order_product_ticket i_1  (cost=0.00..275.00 rows=15000 width=16) (actual time=0.002..0.741 rows=15000 loops=1)
+                                                     Buffers: shared hit=125
+                                   ->  Hash  (cost=1.33..1.33 rows=33 width=48) (actual time=0.005..0.005 rows=1 loops=1)
+                                         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                         Buffers: shared hit=1
+                                         ->  Seq Scan on products p_4  (cost=0.00..1.33 rows=33 width=48) (actual time=0.004..0.004 rows=1 loops=1)
+                                               Buffers: shared hit=1
+                             ->  Hash  (cost=1.41..1.41 rows=41 width=40) (actual time=0.003..0.003 rows=0 loops=1)
+                                   Buckets: 1024  Batches: 1  Memory Usage: 8kB
+                                   Buffers: shared hit=1
+                                   ->  Seq Scan on product_types pt  (cost=0.00..1.41 rows=41 width=40) (actual time=0.003..0.003 rows=0 loops=1)
+                                         Buffers: shared hit=1
+   InitPlan 13 (returns $14)
+     ->  Aggregate  (cost=505.55..505.56 rows=1 width=32) (actual time=0.113..0.114 rows=1 loops=1)
+           ->  Append  (cost=500.31..505.53 rows=2 width=64) (actual time=0.112..0.113 rows=0 loops=1)
+                 ->  Subquery Scan on "*SELECT* 1"  (cost=500.31..500.33 rows=1 width=64) (actual time=0.110..0.110 rows=0 loops=1)
+                       ->  Aggregate  (cost=500.31..500.32 rows=1 width=40) (actual time=0.110..0.110 rows=0 loops=1)
+                             Filter: (count(*) > 0)
+                             Rows Removed by Filter: 1
+                             ->  CTE Scan on orders_scope orders_scope_4  (cost=0.00..500.00 rows=125 width=0) (actual time=0.109..0.109 rows=0 loops=1)
+                                   Filter: (price IS NULL)
+                                   Rows Removed by Filter: 5000
+                 ->  Subquery Scan on "*SELECT* 2"  (cost=5.17..5.19 rows=1 width=64) (actual time=0.001..0.002 rows=0 loops=1)
+                       ->  Aggregate  (cost=5.17..5.18 rows=1 width=40) (actual time=0.001..0.002 rows=0 loops=1)
+                             Filter: (count(*) > 0)
+                             Rows Removed by Filter: 1
+                             ->  CTE Scan on money money_1  (cost=0.00..5.00 rows=67 width=0) (actual time=0.001..0.001 rows=0 loops=1)
+                                   Filter: ((received - manual) < '0'::numeric)
+                                   Rows Removed by Filter: 1
+   InitPlan 15 (returns $18)
+     ->  Nested Loop  (cost=0.31..11594.52 rows=24938 width=0) (actual time=2.803..2.803 rows=0 loops=1)
+           Buffers: shared hit=14985 read=15
+           InitPlan 14 (returns $15)
+             ->  CTE Scan on scope scope_1  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+           ->  CTE Scan on payments p_5  (cost=0.00..500.00 rows=25000 width=24) (actual time=0.000..0.163 rows=5000 loops=1)
+           ->  Index Scan using orders_payment_info_report_idx on orders o_3  (cost=0.29..0.43 rows=1 width=20) (actual time=0.000..0.000 rows=0 loops=5000)
+                 Index Cond: (payment_info = p_5.id)
+                 Filter: ((occasion IS DISTINCT FROM $15) OR (currency_code IS DISTINCT FROM p_5.currency_code))
+                 Rows Removed by Filter: 1
+                 Buffers: shared hit=14985 read=15
+ Planning:
+   Buffers: shared hit=23 read=2
+ Planning Time: 0.543 ms
+ Execution Time: 38.531 ms
+(201 rows)
+
+ response_bytes
+----------------
+           1677
+(1 row)
+
+ROLLBACK
