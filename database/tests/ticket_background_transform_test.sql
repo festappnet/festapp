@@ -11,6 +11,16 @@ BEGIN
       RAISE EXCEPTION 'Expected invalid transform rejection' USING ERRCODE='XX000';
     EXCEPTION WHEN raise_exception THEN NULL; END;
   END LOOP;
+  layout:=jsonb_set(layout,'{templates,wide,backgroundCrop}','{"x":0.2,"y":0.1,"width":0.5,"height":0.6}');
+  PERFORM public.validate_ticket_layout(layout);
+  FOR value IN SELECT v FROM jsonb_array_elements('[null,{}, {"x":-0.1,"y":0,"width":1,"height":1},{"x":0,"y":0,"width":0,"height":1},{"x":0.5,"y":0,"width":1,"height":1}]') v LOOP
+    bad:=jsonb_set(layout,'{templates,wide,backgroundCrop}',value);
+    BEGIN
+      PERFORM public.validate_ticket_layout(bad);
+      RAISE EXCEPTION 'Expected invalid crop rejection' USING ERRCODE='XX000';
+    EXCEPTION WHEN raise_exception THEN NULL; END;
+  END LOOP;
+
 END;
 $test$;
 ROLLBACK;

@@ -1,4 +1,4 @@
-import { validateLayout, backgroundBox, pdfBox, positionedElements, effectiveFontId, type Template } from './ticketLayout.ts';
+import { validateLayout, backgroundBox, croppedBackgroundBox, pdfBox, positionedElements, effectiveFontId, type Template } from './ticketLayout.ts';
 import { fitText, textInsets } from './ticketText.ts';
 import type { RenderData } from './ticketRenderData.ts';
 import type { Resources } from './ticketGeneration.ts';
@@ -22,6 +22,8 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
   if(r.background) {
     const img=r.background[0]===137?await doc.embedPng(r.background):await doc.embedJpg(r.background);
     page.pushOperators(pushGraphicsState(),rectangle(area.x,area.y,area.width,area.height),clip(),endPath());
+    const crop=pdfBox(t,croppedBackgroundBox(t,img.width,img.height));
+    page.pushOperators(rectangle(crop.x,crop.y,crop.width,crop.height),clip(),endPath());
     page.drawImage(img,pdfBox(t,backgroundBox(t,img.width,img.height)));
     page.pushOperators(popGraphicsState());
   }

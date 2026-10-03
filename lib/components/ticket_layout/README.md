@@ -255,3 +255,11 @@ client. The migration only extends validation and does not rewrite saved layouts
 The ticket origin equals the margin and the PDF page adds twice the margin on
 each axis. Deploy `20261003154500_ticket_pdf_margins.sql` and the shared function
 bundle before the client; existing saved templates need no rewriting.
+
+The image crop mode uses four free-aspect corner handles and a draggable crop
+rectangle. It shares the canvas magnets and supports undo and reset without
+modifying or re-uploading the source image. Optional `backgroundCrop` records
+normalized x/y/width/height within the original artwork; absent means the full
+image. Flutter and PDF intersect this crop with the ticket area while retaining
+the original image transform and element geometry. Deploy
+`20261003163000_ticket_background_crop.sql` and the function bundle before the client.

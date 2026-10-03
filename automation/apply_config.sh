@@ -216,6 +216,9 @@ for asset_path in "$LOGO_ASSET" "$DARK_LOGO_ASSET" "$PROGRAM_LOGO_ASSET"; do
         echo "Error: configured asset does not exist: $asset_path"; exit 1;
     }
 done
+# The loading wordmark is derived from the configured brand logo, never from
+# the square PWA installation icon.
+cp "$PROJECT_ROOT/$DARK_LOGO_ASSET" "$PROJECT_ROOT/web/loading-logo.svg"
 [ -f "$PROJECT_ROOT/web/$WEB_LOADING_LOGO_ASSET" ] || {
     echo "Error: configured web loading asset does not exist: $WEB_LOADING_LOGO_ASSET"; exit 1;
 }
