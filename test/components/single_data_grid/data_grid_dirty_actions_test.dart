@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_strings.dart';
+import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
@@ -29,6 +30,7 @@ void main() {
       'save and discard follow grid edits, additions, deletions and HTML drafts',
       (tester) async {
     late SingleDataGridController<RowModel> controller;
+    var canBulkEdit = true;
     await tester.pumpWidget(
         MaterialApp(home: Scaffold(body: Builder(builder: (context) {
       controller = SingleDataGridController<RowModel>(
@@ -37,7 +39,15 @@ void main() {
         fromPlutoJson: (json) => RowModel(json['id'] as int),
         getNewObject: () => RowModel(-1),
         idColumn: 'id',
-        firstColumnType: DataGridFirstColumn.delete,
+        firstColumnType: DataGridFirstColumn.deleteAndCheck,
+        headerChildren: [
+          DataGridAction(
+              name: 'Selected rows',
+              requiresSelection: true,
+              isEnabled: () => canBulkEdit,
+              action: (_, [original]) {}),
+          DataGridAction(name: 'Whole grid', action: (_, [original]) {}),
+        ],
         columns: [
           TrinaColumn(title: 'ID', field: 'id', type: TrinaColumnType.number()),
           TrinaColumn(
@@ -59,6 +69,26 @@ void main() {
     }
 
     enabled(false);
+    bool actionEnabled(String text) =>
+        tester
+            .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, text))
+            .onPressed !=
+        null;
+    expect(actionEnabled('Selected rows'), isFalse);
+    expect(actionEnabled('Whole grid'), isTrue);
+    final selected = controller.stateManager.rows.single;
+    controller.stateManager.setRowChecked(selected, true);
+    await tester.pumpAndSettle();
+    expect(actionEnabled('Selected rows'), isTrue);
+    enabled(false); // Selection is not a data edit.
+    canBulkEdit = false;
+    controller.stateManager.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(actionEnabled('Selected rows'), isFalse);
+    canBulkEdit = true;
+    controller.stateManager.setRowChecked(selected, false);
+    await tester.pumpAndSettle();
+    expect(actionEnabled('Selected rows'), isFalse);
     await tester.tap(find.byIcon(Icons.delete_forever));
     await tester.pumpAndSettle();
     enabled(true);

@@ -74,6 +74,51 @@ class TicketLayoutController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void resizeCanvas(Offset delta,
+      {required int handle,
+      double zoom = 1,
+      bool snap = true,
+      double? gridStep}) {
+    final base = _gesture ?? document;
+    if (_gesture != null) _dragOffset += delta;
+    final drag = _gesture == null ? delta : _dragOffset;
+    final maxWidth = base.fitPageToTicket
+        ? 842 - 2 * base.pageMargin
+        : base.page.width - base.area.left;
+    final maxHeight = base.fitPageToTicket
+        ? 842 - 2 * base.pageMargin
+        : base.page.height - base.area.top;
+    var point = Offset(
+        handle == 1
+            ? base.area.width
+            : (base.area.width + drag.dx).clamp(60, maxWidth),
+        handle == 0
+            ? base.area.height
+            : (base.area.height + drag.dy).clamp(60, maxHeight));
+    guideX = guideY = null;
+    if (snap) {
+      final result = snapTicketBox(point & Size.zero, base.area.size,
+          base.elements.where((e) => e.visible).map((e) => e.box),
+          zoom: zoom, gridStep: gridStep);
+      point = Offset(
+          handle == 1 ? point.dx : result.box.left.clamp(60, maxWidth),
+          handle == 0 ? point.dy : result.box.top.clamp(60, maxHeight));
+      guideX = handle == 1 ? null : result.x;
+      guideY = handle == 0 ? null : result.y;
+    }
+    final next = base.resizeArea(Size(point.dx, point.dy));
+    if (next.validate('wide').isNotEmpty) {
+      guideX = guideY = null;
+      notifyListeners();
+      return;
+    }
+    if (_gesture == null) {
+      replace(next);
+    } else {
+      previewDocument(next);
+    }
+  }
+
   void endGesture() {
     guideX = guideY = null;
     final before = _gesture;

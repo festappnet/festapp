@@ -30,3 +30,12 @@ Escape while focused on the button, tapping outside, scrolling, and removal
 close the tooltip. Explicit activation lasts at most 10 seconds. Only columns
 with help acquire a control-dependent minimum width; checkbox, filter, sort,
 menu and resize controls remain available alongside an ellipsized title.
+
+# Header action availability
+
+Save and discard follow pending row changes and HTML drafts. For actions that
+operate on checked rows, set `DataGridAction.requiresSelection: true`; the shared
+header combines selection with `isEnabled` permissions. Selection considers the
+original row list, matching bulk operations even when filters hide checked rows.
+Whole-grid operations keep the default `false`. Actions needing exactly one row
+retain their more specific `isEnabled` predicate.

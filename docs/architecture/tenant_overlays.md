@@ -24,7 +24,8 @@ select font files.
 
 `web/loading-logo.svg` is a generated copy of the configured `DARK_LOGO_ASSET`.
 The Flutter startup screen selects it with `WEB_LOADING_LOGO_ASSET=loading-logo.svg`
-and lays out the wordmark above its loading indicator. Installation/PWA icons
+and lays out the wordmark above its loading indicator. Its accent color is
+generated from `THEME_SEED_2`, matching the dark-theme brand accent. Installation/PWA icons
 remain separate brand assets; custom tenant startup assets remain configurable.
 
 Translations under `assets/translations/` are shared application content owned

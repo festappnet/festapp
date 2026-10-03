@@ -6,7 +6,9 @@ class DataGridAction {
   FutureOr<void> Function(SingleDataGridController,
       [Future<void> Function()? originalAction])? action;
   bool Function()? isEnabled;
-  DataGridAction({this.action, this.name, this.isEnabled});
+  final bool requiresSelection;
+  DataGridAction(
+      {this.action, this.name, this.isEnabled, this.requiresSelection = false});
 }
 
 class DataGridActionsController {

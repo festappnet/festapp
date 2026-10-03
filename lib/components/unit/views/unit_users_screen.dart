@@ -70,6 +70,7 @@ class _UnitUsersScreenState extends State<UnitUsersScreen> {
             ),
           DataGridAction(
             name: UserStrings.changePassword,
+            requiresSelection: true,
             action: (SingleDataGridController p0, [_]) =>
                 UsersTabHelper.setPassword(context, p0),
             isEnabled: RightsService.canUpdateUnitUsers,

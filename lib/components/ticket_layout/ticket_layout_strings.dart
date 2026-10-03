@@ -5,6 +5,9 @@ class TicketLayoutStrings {
   static String get cropImageHint => 'TicketLayout.cropImageHint'.tr();
   static String get resetCrop => 'TicketLayout.resetCrop'.tr();
   static String get designSize => 'TicketLayout.designSize'.tr();
+  static String get saveDirectHint => 'TicketLayout.saveDirectHint'.tr();
+  static String get resizeCanvas => 'TicketLayout.resizeCanvas'.tr();
+  static String get resizeCanvasHint => 'TicketLayout.resizeCanvasHint'.tr();
   static String get designSizeHint => 'TicketLayout.designSizeHint'.tr();
   static String get marginMm => 'TicketLayout.marginMm'.tr();
   static String get marginHint => 'TicketLayout.marginHint'.tr();

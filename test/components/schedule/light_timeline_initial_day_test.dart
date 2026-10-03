@@ -1,7 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/timeline/light_timeline_view.dart';
+import 'package:fstapp/components/timeline/advanced_timeline_view.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,21 +26,47 @@ class _EmptyAssetLoader extends AssetLoader {
   Future<Map<String, dynamic>> load(String path, Locale locale) async => {};
 }
 
-Widget _testApp(List<TimeBlockItem> events, int occasionId) => EasyLocalization(
+Widget _testApp(List<TimeBlockItem> events, int occasionId,
+        {bool advanced = false}) =>
+    EasyLocalization(
       supportedLocales: const [Locale('cs')],
       path: 'assets/translations',
       assetLoader: const _EmptyAssetLoader(),
       fallbackLocale: const Locale('cs'),
       child: Builder(
         builder: (context) => MaterialApp(
+          theme: ThemeConfig.theme(),
           locale: context.locale,
           supportedLocales: context.supportedLocales,
           localizationsDelegates: context.localizationDelegates,
           home: Scaffold(
-            body: LightTimelineView(
-              events: events,
-              sessionOccasionId: occasionId,
-            ),
+            body: advanced
+                ? DefaultTabController(
+                    length: events.length,
+                    child: AdvancedTimelineView(
+                      weekdays: const [
+                        'PO',
+                        'ÚT',
+                        'ST',
+                        'ČT',
+                        'PÁ',
+                        'SO',
+                        'NE'
+                      ],
+                      groups: [
+                        for (final event in events)
+                          TimeBlockGroup(
+                            title: event.title,
+                            events: [event],
+                            dateTime: event.startTime,
+                          )
+                      ],
+                    ),
+                  )
+                : LightTimelineView(
+                    events: events,
+                    sessionOccasionId: occasionId,
+                  ),
           ),
         ),
       ),
@@ -45,11 +74,44 @@ Widget _testApp(List<TimeBlockItem> events, int occasionId) => EasyLocalization(
 
 void main() {
   setUpAll(() async {
+    final loader = FontLoader(ThemeConfig.fontFamily)
+      ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'));
+    await loader.load();
     SharedPreferences.setMockInitialValues({});
     timezone_data.initializeTimeZones();
     timezone.setLocalLocation(timezone.getLocation('Europe/Prague'));
     await EasyLocalization.ensureInitialized();
   });
+
+  for (final advanced in [false, true]) {
+    testWidgets(
+        '${advanced ? "advanced" : "light"} day tabs are centered on desktop and scroll on narrow screens',
+        (tester) async {
+      TimeHelper.currentTime = DateTime(2026, 10, 3, 12);
+      addTearDown(() => TimeHelper.currentTime = null);
+      final events =
+          List.generate(3, (index) => _eventOn(DateTime(2026, 12, 12 + index)));
+      addTearDown(() => tester.view.resetPhysicalSize());
+      addTearDown(() => tester.view.resetDevicePixelRatio());
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1200, 700);
+      await tester.pumpWidget(_testApp(events, 91020, advanced: advanced));
+      await tester.pumpAndSettle();
+      final bar = tester.widget<TabBar>(find.byType(TabBar));
+      final first = tester.getRect(find.byWidget(bar.tabs.first));
+      final last = tester.getRect(find.byWidget(bar.tabs.last));
+      final center = tester.getRect(find.byType(TabBar)).center.dx;
+      expect((first.left + last.right) / 2, closeTo(center, 1));
+      tester.view.physicalSize = const Size(320, 700);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.chevron_right));
+      await tester.pumpAndSettle();
+      final controller =
+          DefaultTabController.of(tester.element(find.byType(TabBar)));
+      expect(controller.index, greaterThan(0));
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('light Program opens on the current weekday at app startup',
       (tester) async {
