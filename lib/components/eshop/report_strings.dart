@@ -1,6 +1,30 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class ReportStrings {
+  static String get ratesUnavailable => 'OccasionReport.ratesUnavailable'.tr();
+  static String get compareCurrencies =>
+      'OccasionReport.compareCurrencies'.tr();
+  static String get currencyComparisonHelp =>
+      'OccasionReport.currencyComparisonHelp'.tr();
+  static String get orderTimeline => 'OccasionReport.orderTimeline'.tr();
+  static String get orderTimelineHelp =>
+      'OccasionReport.orderTimelineHelp'.tr();
+  static String get paymentTimeline => 'OccasionReport.paymentTimeline'.tr();
+  static String get paymentTimelineHelp =>
+      'OccasionReport.paymentTimelineHelp'.tr();
+  static String get daily => 'OccasionReport.daily'.tr();
+  static String get cumulative => 'OccasionReport.cumulative'.tr();
+  static String get allDays => 'OccasionReport.allDays'.tr();
+  static String get days30 => 'OccasionReport.days30'.tr();
+  static String get days90 => 'OccasionReport.days90'.tr();
+  static String get timelineUnavailable =>
+      'OccasionReport.timelineUnavailable'.tr();
+  static String get timelineEmpty => 'OccasionReport.timelineEmpty'.tr();
+  static String get timelineTotal => 'OccasionReport.timelineTotal'.tr();
+  static String get recordedPayments => 'OccasionReport.recordedPayments'.tr();
+  static String get overview => 'OccasionReport.overview'.tr();
+  static String get snapshot => 'OccasionReport.snapshot'.tr();
+
   static String get type => 'OccasionReport.type'.tr();
   static String get product => 'OccasionReport.product'.tr();
   static String get count => 'OccasionReport.count'.tr();

@@ -56,7 +56,7 @@ test('every Edge Function and Worker entrypoint has a fail-closed cutover classi
   const report = evaluateRuntimeWriterPolicy(policy);
   assert.equal(report.status, 'pass');
   assert.deepEqual(report.blockers, []);
-  assert.equal(report.edge_functions, 24);
+  assert.equal(report.edge_functions, 25);
   assert.equal(report.worker_entrypoints, 6);
   assert.equal(report.mutating_surfaces, 21);
   assert.equal(policy.edge_functions['preview-ticket-layout'].mutates_authority, false);
