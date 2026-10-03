@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_commands.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -42,6 +45,49 @@ void main() {
     expect(functionName, 'save_occasion_client_sync_v1');
     expect(parameters['p_expected_version'], 4);
     expect(saved.aggregateVersion, 5);
+  });
+
+  test(
+      'occasion command carries an explicit layout envelope without persisting it',
+      () async {
+    final layout = jsonDecode(File('test/fixtures/ticket_layout/layouts.json')
+        .readAsStringSync())['valid'][0] as Map<String, dynamic>;
+    final ticket = TicketFeature.fromJson(
+        {'code': 'ticket', 'is_enabled': true, 'layout': layout});
+    ticket.layout!['templates']['named']['elements'][0]['style']['color'] =
+        '17365D';
+    Map<String, dynamic>? config;
+    final commands = SupabaseOccasionCommands.withTransport(
+        ClientCommandTransport((name, params) async {
+      config = jsonDecode(jsonEncode(params['p_config'])) as Map<String, dynamic>;
+      return {
+        'status': 'applied',
+        'code': 200,
+        'data': {
+          'occasion': {
+            'id': 7,
+            'is_open': true,
+            'is_hidden': false,
+            'is_promoted': false,
+            'features': config!['features'],
+            'aggregate_version': 2
+          }
+        },
+        'sync': {'replacements': <Object>[]}
+      };
+    }, maxAttempts: 1));
+    final saved = await commands.save(OccasionModel(
+        id: 7,
+        isOpen: true,
+        isHidden: false,
+        isPromoted: false,
+        features: [ticket]));
+    expect(config!['ticket_layout_change'], ticket.layoutChange);
+    expect(
+        (config!['features'] as List).first.containsKey('ticket_layout_change'),
+        isFalse);
+    expect(
+        saved.features.whereType<TicketFeature>().single.layoutChange, isNull);
   });
 
   test('occasion lifecycle commands use dedicated receipted RPCs', () async {

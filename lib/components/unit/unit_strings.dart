@@ -23,4 +23,5 @@ class UnitStrings {
       'Unit.createCopySuccess'.tr(); // "Event copy created successfully."
   static String get createCopyFailed =>
       'Unit.createCopyFailed'.tr(); // "Failed to create event copy."
+  static String get createCopyMediaFailed => 'Unit.createCopyMediaFailed'.tr();
 }

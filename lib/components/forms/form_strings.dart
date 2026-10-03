@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get moreFonts => 'FeatureFormSettings.moreFonts'.tr();
+  static String get fontSearchHint => 'FeatureFormSettings.fontSearchHint'.tr();
 // Form Settings Feature
   static String get formSettingsTitle => 'FeatureFormSettings.title'.tr();
   static String get formNotFound => 'FeatureFormSettings.formNotFound'.tr();

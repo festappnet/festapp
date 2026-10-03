@@ -14,7 +14,6 @@ import 'package:fstapp/components/unit/views/unit_page.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
 import 'package:fstapp/components/users/views/transfer_page.dart';
 import 'package:fstapp/components/users/views/reset_password_page.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
 import 'package:fstapp/components/information/info_page.dart';
 import 'package:fstapp/components/app_management/install_page.dart';
 import 'package:fstapp/components/map/map_page.dart';
@@ -61,6 +60,7 @@ class AppRouter extends RootStackRouter {
             page: ResetPasswordRoute.page, path: sl(ResetPasswordPage.ROUTE)),
         AutoRoute(
             page: ForgotPasswordRoute.page, path: sl(ForgotPasswordPage.ROUTE)),
+        RedirectRoute(path: '/app/google-auth', redirectTo: '/login'),
         AutoRoute(page: LoginRoute.page, path: sl(LoginPage.ROUTE)),
         AutoRoute(
             page: LoginQrScannerRoute.page, path: sl(LoginQrScannerPage.ROUTE)),
@@ -106,9 +106,6 @@ class AppRouter extends RootStackRouter {
         AutoRoute(
             page: NewsFormRoute.page,
             path: "/:$linkFormatted/${NewsFormPage.ROUTE}"),
-        AutoRoute(
-            page: HtmlEditorRoute.page,
-            path: "/:$linkFormatted/${HtmlEditorPage.ROUTE}"),
         CustomRoute(
             page: AdminRoute.page,
             path: "/:$linkFormatted/${AdminPage.ROUTE}",
@@ -256,6 +253,7 @@ class AppRouter extends RootStackRouter {
       FormPage.ROUTE,
       ScanPage.ROUTE,
       TransferPage.ROUTE,
+      'app',
       'privacy',
       'terms',
       'support',

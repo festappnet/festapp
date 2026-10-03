@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "25e98e7eb2c616c91e961d94dd147dddd9e8e499",
+  "baseMainSha": "b7768278dbd269a5b174dcfeb8f023822de7b477",
   "release": {
-    "version": "0.20.29+513",
-    "note": "Use organization wording for inherited form tone"
+    "version": "0.20.68+552",
+    "note": "Release verified main with ticket editor improvements"
   }
 }

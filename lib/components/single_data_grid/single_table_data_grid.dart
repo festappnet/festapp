@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -8,6 +9,7 @@ import 'package:collection/collection.dart';
 import 'package:fstapp/theme_config.dart';
 
 import 'single_data_grid_controller.dart';
+import 'data_grid_column_header.dart';
 
 class SingleTableDataGrid<T extends ITrinaRowModel> extends StatefulWidget {
   final SingleDataGridController<T> controller;
@@ -37,7 +39,13 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: widget.controller.htmlSave, child: _buildGrid(context));
+
+  @override
+  void dispose() { widget.controller.disposeHtml(); super.dispose(); }
+
+  Widget _buildGrid(BuildContext context) {
     return ValueListenableBuilder<Key>(
       valueListenable: widget.controller.refreshKeyNotifier,
       builder: (context, key, child) {
@@ -49,10 +57,31 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
     );
   }
 
+  Widget _withColumnHelpTraversal(Widget grid) {
+    final hasHelp = widget.controller.columns.any((column) =>
+        widget.controller.columnHelp[column.field]?.trim().isNotEmpty ?? false);
+    return hasHelp
+        ? FocusTraversalGroup(
+            policy: DataGridColumnHelpTraversalPolicy(),
+            child: grid,
+          )
+        : grid;
+  }
+
   Widget _buildDataGrid(BuildContext context) {
     if (isLoading) {
       return Center(child: CircularProgressIndicator());
     }
+
+    final configuration = SingleDataGridHeader.defaultTrinaGridConfiguration(
+      widget.controller.context,
+      Localizations.localeOf(widget.controller.context).languageCode,
+    );
+    DataGridColumnHeader.install(
+      widget.controller.columns,
+      widget.controller.columnHelp,
+      configuration.style,
+    );
 
     return Container(
       padding: const EdgeInsets.all(3),
@@ -70,7 +99,7 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
               ? const ShadSlateColorScheme.dark()
               : const ShadSlateColorScheme.light(),
         ),
-        child: TrinaGrid(
+        child: _withColumnHelpTraversal(TrinaGrid(
         noRowsWidget: isDataGridLoading
             ? null
             : Center(child: Text(DataGridStrings.noItems)),
@@ -85,6 +114,7 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
               }
             }
           }
+          widget.controller.stateManager.notifyListeners();
         },
         onLoaded: (TrinaGridOnLoadedEvent event) {
           widget.controller.stateManager = event.stateManager;
@@ -116,11 +146,8 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
           stateManager: stateManager,
           controller: widget.controller,
         ),
-        configuration: SingleDataGridHeader.defaultTrinaGridConfiguration(
-          widget.controller.context,
-          Localizations.localeOf(widget.controller.context).languageCode,
-        ),
-        ),
+        configuration: configuration,
+        )),
       ),
     );
   }

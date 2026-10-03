@@ -94,11 +94,6 @@ export class EmailDeliveryError extends Error {
   }
 }
 
-/** Sanitize HTML to preserve the current Gmail-compatible output. */
-export function sanitizeEmailHtml(html: string) {
-  return html.replace(/(\r\n|\n|\r)/gm, "").replace(/ {2,}/g, " ").trim();
-}
-
 const transporter = nodemailer.createTransport({
   host: _SMTP_HOSTNAME,
   port: _SMTP_PORT,
@@ -169,7 +164,9 @@ export function createEmailDelivery(
         from,
         to,
         subject,
-        html: sanitizeEmailHtml(html),
+        // Template links and layout are authoritative. Send the assembled HTML
+        // without automatic link detection or whitespace postprocessing.
+        html,
         replyTo,
         ...(messageId ? { messageId } : {}),
         attachments: attachments.map((attachment) => ({

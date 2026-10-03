@@ -1,3 +1,5 @@
+import 'ticket_feature.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/theme_config.dart';
 
@@ -7,8 +9,13 @@ import 'feature_metadata.dart';
 class FeatureForm extends StatefulWidget {
   final Feature feature;
   final int occasion;
+  final Future<void> Function(TicketFeature)? onSaveTicket;
 
-  const FeatureForm({super.key, required this.feature, required this.occasion});
+  const FeatureForm(
+      {super.key,
+      required this.feature,
+      required this.occasion,
+      this.onSaveTicket});
 
   @override
   _FeatureFormState createState() => _FeatureFormState();
@@ -64,7 +71,13 @@ class _FeatureFormState extends State<FeatureForm> {
   /// Builds additional fields based on the feature type.
   List<Widget> _buildFeatureFields(BuildContext context) {
     return [
-      widget.feature.buildFormField(context),
+      widget.feature is TicketFeature
+          ? TicketSettings(
+              key: ValueKey((widget.feature as TicketFeature).layout),
+              feature: widget.feature as TicketFeature,
+              occasionId: widget.occasion,
+              onSave: widget.onSaveTicket)
+          : widget.feature.buildFormField(context),
     ];
   }
 }

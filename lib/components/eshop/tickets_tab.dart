@@ -87,6 +87,7 @@ class _TicketsTabState extends State<TicketsTab> {
       headerChildren: [
         DataGridAction(
           name: CommonStrings.cancel,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               _stornoTickets(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,
@@ -94,6 +95,7 @@ class _TicketsTabState extends State<TicketsTab> {
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
           DataGridAction(
             name: OrdersStrings.scanActionText,
+            requiresSelection: true,
             action: (SingleDataGridController singleDataGrid, [_]) =>
                 _scanTickets(singleDataGrid),
             isEnabled: RightsService.isOrderEditor,

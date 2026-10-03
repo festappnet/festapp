@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-01T23:18:00.456887+00:00",
+  "localOnly": true,
+  "googleConsoleConfigured": true,
+  "deployed": false,
+  "liveGoogleE2E": false,
+  "sdkSessionProof": "sdk-session-proof.json",
+  "checks": {
+    "denoProtocolBrokerIssuerQrCancelPassed": 17,
+    "denoEntrypointPassed": 31,
+    "nodeTargetedPassed": 19,
+    "flutterTargetedPassed": 5,
+    "webBuild": "passed",
+    "dartAnalyze": {
+      "errors": 0,
+      "existingWarningsAndInfos": 10
+    },
+    "sql": "passed inside rolled-back local transactions",
+    "applyConfig": "passed",
+    "pwaOffline": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "visuals": {
+    "screenshots": 304,
+    "webScreenshots": 160,
+    "flutterComponentScreenshots": 144,
+    "horizontalOverflow": false,
+    "webMinimumButtonHeight": 44,
+    "keyboardFocusTrap": "forward and reverse Tab passed",
+    "scope": "Actual component fixtures; no live Google or device navigation"
+  },
+  "remaining": [
+    "Deploy private server inputs, SQL migration and Edge/frontend builds under separate authorization.",
+    "Provision selected tenant client registry; currently empty and disabled.",
+    "Live Google OAuth, SMS MFA and end-to-end login/link/signup verification.",
+    "Android signing fingerprints and physical-device App Links verification.",
+    "iOS physical-device Universal Links verification and Apple App Review 4.8 resolution."
+  ]
+}

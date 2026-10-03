@@ -41,6 +41,7 @@ class _OrdersContentState extends State<OrdersContent> {
   String? occasionLink;
   SingleDataGridController<OrderModel>? controller;
   int? unitId;
+  bool loadFailed = false;
 
   @override
   void didChangeDependencies() {
@@ -55,6 +56,16 @@ class _OrdersContentState extends State<OrdersContent> {
   }
 
   Future<void> _initializeController() async {
+    if (mounted) setState(() => loadFailed = false);
+    try {
+      await _loadController();
+    } catch (error) {
+      debugPrint('Could not load orders for occasion: $error');
+      if (mounted) setState(() => loadFailed = true);
+    }
+  }
+
+  Future<void> _loadController() async {
     if (occasionLink == null) return;
 
     // Fetch all data in one request
@@ -144,6 +155,7 @@ class _OrdersContentState extends State<OrdersContent> {
       headerChildren: [
         DataGridAction(
           name: CommonStrings.cancel,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               cancelOrders(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,
@@ -156,6 +168,7 @@ class _OrdersContentState extends State<OrdersContent> {
         ),
         DataGridAction(
           name: OrdersStrings.sendActionText,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               sendTicketsOrConfirmations(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,
@@ -181,6 +194,20 @@ class _OrdersContentState extends State<OrdersContent> {
 
   @override
   Widget build(BuildContext context) {
+    if (loadFailed) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(CommonStrings.unexpectedError),
+            TextButton(
+              onPressed: _initializeController,
+              child: Text(CommonStrings.retry),
+            ),
+          ],
+        ),
+      );
+    }
     if (controller == null) {
       return const Center(child: CircularProgressIndicator());
     }

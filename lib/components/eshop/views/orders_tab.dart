@@ -43,6 +43,7 @@ class _OrdersTabState extends State<OrdersTab>
             child: TabBar(
               controller: _tabController,
               isScrollable: true,
+              tabAlignment: TabAlignment.start,
               tabs: [
                 DataGridHelper.buildTab(
                     context, Icons.shopping_cart, OrdersStrings.ordersTab),

@@ -32,9 +32,9 @@ BEGIN
   INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority)
   VALUES (v_unit_id, v_bank_account_id, 1);
 
-  INSERT INTO public.occasions (title, unit, link, start_time, end_time)
+  INSERT INTO public.occasions (title, organization, unit, link, start_time, end_time)
   VALUES (
-    'EUR RF test occasion', v_unit_id,
+    'EUR RF test occasion', v_org_id, v_unit_id,
     'eur-rf-test-' || floor(random() * 100000)::text,
     now(), now() + interval '1 day'
   ) RETURNING id INTO v_occasion_id;

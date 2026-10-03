@@ -124,6 +124,7 @@ class _UsersTabState extends State<UsersTab> {
       if (_hasCsmAppLinks)
         DataGridAction(
           name: UserStrings.sendAppLinks,
+          requiresSelection: true,
           action: (SingleDataGridController p0, [_]) async {
             await UsersTabHelper.sendAppLinks(context, p0, refreshData);
           },
@@ -131,6 +132,7 @@ class _UsersTabState extends State<UsersTab> {
         ),
       DataGridAction(
         name: UserStrings.invite,
+        requiresSelection: true,
         action: (SingleDataGridController p0, [_]) async {
           await UsersTabHelper.invite(context, p0, refreshData);
         },
@@ -161,6 +163,7 @@ class _UsersTabState extends State<UsersTab> {
         ),
       DataGridAction(
         name: UserStrings.changePassword,
+        requiresSelection: true,
         action: (SingleDataGridController p0, [_]) =>
             UsersTabHelper.setPassword(context, p0),
         isEnabled: RightsService.canUpdateUsers,
@@ -188,6 +191,7 @@ class _UsersTabState extends State<UsersTab> {
         areAllActionsEnabled: RightsService.canUpdateUsers,
       ),
       headerChildren: headerActions,
+      columnHelp: UserColumns.columnHelp,
       columns: UserColumns.generateColumns(
         getColumnIdentifiers(),
         data: {UserColumns.ACCOMMODATION: _accommodations},

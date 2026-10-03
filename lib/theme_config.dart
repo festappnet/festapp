@@ -1,6 +1,7 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/schedule_feature.dart';
@@ -11,42 +12,123 @@ class ThemeConfig {
   static const bool isDarkModeEnabled = true;
   static const AdaptiveThemeMode defaultThemeMode = AdaptiveThemeMode.light;
 
-  // Base theme to hold common properties
   static final fontFamily = "Cerebri";
-  static ThemeData baseTheme() => ThemeData(
-      fontFamily: fontFamily,
-      useMaterial3: false,
-      primarySwatch: ThemeConfig.lllPrimary.getMaterialColorFromColor(),
-      colorScheme: ColorScheme.fromSwatch(
-        primarySwatch: ThemeConfig.lllPrimary.getMaterialColorFromColor(),
-      ).copyWith(
-        surface: seed2.changeColorSaturation(0.2).changeColorLightness(0.86),
-        onSurface: Colors.black,
-      ),
-      scaffoldBackgroundColor: lllBackground,
-      appBarTheme: AppBarTheme(backgroundColor: appBarColor()),
-      tabBarTheme: TabBarThemeData(indicatorColor: lllPrimary));
 
-  // Dark theme configuration
-  static ThemeData darkTheme(ThemeData baseTheme) => ThemeData.dark(
-        useMaterial3: baseTheme.useMaterial3,
-      ).copyWith(
-          scaffoldBackgroundColor: dddBackground,
-          textTheme: ThemeData.dark().textTheme.apply(fontFamily: fontFamily),
-          primaryTextTheme:
-              ThemeData.dark().primaryTextTheme.apply(fontFamily: fontFamily),
-          primaryColor: dddPrimary,
-          colorScheme: ColorScheme.fromSwatch(
-            primarySwatch: ThemeConfig.dddPrimary.getMaterialColorFromColor(),
-            brightness: Brightness.dark,
-          ).copyWith(
-            surface: dddPrimary
-                .changeColorSaturation(0.06)
-                .changeColorLightness(0.20),
-            onSurface: dddText,
-          ),
-          appBarTheme: AppBarTheme(backgroundColor: appBarColor()),
-          tabBarTheme: TabBarThemeData(indicatorColor: dddPrimary));
+  /// The single shared Material 3 factory for application and local themes.
+  static ThemeData theme({Brightness brightness = Brightness.light}) {
+    final dark = brightness == Brightness.dark;
+    final primary = dark ? dddPrimary : lllPrimary;
+    final scheme =
+        colorSchemeForBrand(primary: primary, brightness: brightness);
+    final chrome = appBarColor();
+    final onChrome = textColorForBackground(chrome);
+    final selected = seed2;
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: fontFamily,
+      colorScheme: scheme,
+      primaryColor: primary,
+      scaffoldBackgroundColor: dark ? dddBackground : lllBackground,
+      appBarTheme: AppBarTheme(
+        backgroundColor: chrome,
+        foregroundColor: onChrome,
+        surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: systemUiOverlayStyle(statusBarColor: chrome),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) => states
+                  .contains(WidgetState.disabled)
+              ? null
+              : Color.alphaBlend(
+                  primary.withValues(alpha: dark ? .18 : .10), scheme.surface)),
+          side: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.disabled)
+                  ? BorderSide.none
+                  : BorderSide(color: primary.withValues(alpha: .35))),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: chrome,
+        surfaceTintColor: Colors.transparent,
+        height: kBottomNavigationBarHeight,
+        indicatorColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+              color: states.contains(WidgetState.selected)
+                  ? selected
+                  : Colors.grey,
+            )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+              fontFamily: fontFamily,
+              fontSize: states.contains(WidgetState.selected) ? 14 : 12,
+              fontWeight: FontWeight.w400,
+              height: 1,
+              letterSpacing: 0,
+              overflow: TextOverflow.ellipsis,
+              color: states.contains(WidgetState.selected)
+                  ? selected
+                  : Colors.grey,
+            )),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+      ),
+      tabBarTheme: TabBarThemeData(
+        dividerColor: Colors.transparent,
+        dividerHeight: 0,
+        indicatorColor: primary,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: UnderlineTabIndicator(
+            borderSide: BorderSide(color: primary, width: 2)),
+        labelStyle: TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            height:
+                0, // Use the font metrics without inheriting M3 line height.
+            letterSpacing: 0),
+        unselectedLabelStyle: TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            height:
+                0, // Use the font metrics without inheriting M3 line height.
+            letterSpacing: 0),
+        labelColor: primary,
+        unselectedLabelColor: scheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  /// Preserve configured brand colors while generating the complete M3 roles.
+  static ColorScheme colorSchemeForBrand({
+    required Color primary,
+    required Brightness brightness,
+    Color? secondary,
+  }) {
+    return ColorScheme.fromSeed(seedColor: primary, brightness: brightness)
+        .copyWith(
+      primary: primary,
+      onPrimary: textColorForBackground(primary),
+      secondary: secondary,
+      onSecondary: secondary == null ? null : textColorForBackground(secondary),
+    );
+  }
+
+  static SystemUiOverlayStyle systemUiOverlayStyle({Color? statusBarColor}) {
+    final status = statusBarColor ?? appBarColor();
+    final navigation = appBarColor();
+    final darkStatus = textColorForBackground(status) == Colors.white;
+    final darkNavigation = textColorForBackground(navigation) == Colors.white;
+    return SystemUiOverlayStyle(
+      statusBarColor: status,
+      statusBarIconBrightness: darkStatus ? Brightness.light : Brightness.dark,
+      statusBarBrightness: darkStatus ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: navigation,
+      systemNavigationBarIconBrightness:
+          darkNavigation ? Brightness.light : Brightness.dark,
+      systemNavigationBarDividerColor: navigation,
+      systemNavigationBarContrastEnforced: false,
+    );
+  }
 
   // Dynamic color methods with BuildContext for theme-based color adaptation
   static Color backgroundColor(BuildContext context) =>
@@ -65,9 +147,11 @@ class ThemeConfig {
   static Color dddPrimary = seed2;
   static Color lllPrimary = seed1;
 
-  static Color dddBackground = seed3.changeColorSaturation(0.08).changeColorLightness(0.14);
+  static Color dddBackground =
+      seed3.changeColorSaturation(0.08).changeColorLightness(0.14);
   static Color lllBackground = Color(0xFFe3e2d3);
-  static Color dddText = seed3.changeColorSaturation(0.1).changeColorLightness(0.82);
+  static Color dddText =
+      seed3.changeColorSaturation(0.1).changeColorLightness(0.82);
 
   static Color dddBackgroundDarker = const Color(0xFF191a1e);
 
@@ -97,10 +181,15 @@ class ThemeConfig {
       ? dddBackgroundDarker
       : whiteColor(context).changeColorLightness(0.95);
 
-  static Color timelineAll(BuildContext context) => isDarkMode(context) ? seed2.changeColorSaturation(0.6) : seed1.changeColorSaturation(0.4).changeColorLightness(0.4);
-  static Color timelineSplitLabelColor(BuildContext context) => timelineAll(context);
-  static Color timelineTabLabelColor(BuildContext context) => timelineAll(context);
-  static Color timelineTabIndicatorColor(BuildContext context) => timelineAll(context);
+  static Color timelineAll(BuildContext context) => isDarkMode(context)
+      ? seed2.changeColorSaturation(0.6)
+      : seed1.changeColorSaturation(0.4).changeColorLightness(0.4);
+  static Color timelineSplitLabelColor(BuildContext context) =>
+      timelineAll(context);
+  static Color timelineTabLabelColor(BuildContext context) =>
+      timelineAll(context);
+  static Color timelineTabIndicatorColor(BuildContext context) =>
+      timelineAll(context);
   static Color timelineColor(BuildContext context) => timelineAll(context);
   static Color timelineTextColor(BuildContext context) => blackColor(context);
   static Color timelineAddNewEventColor(BuildContext context) =>
@@ -111,7 +200,7 @@ class ThemeConfig {
   static Color infoPageColor(BuildContext context) => backgroundColor(context);
   static Color profileButtonColor(BuildContext context) => appBarColor();
   static Color profileButtonTextColor(BuildContext context) =>
-      bottomNavUnselectedItemColor(context);
+      textColorForBackground(appBarColor());
 
   static Color indicatorColor(BuildContext context) =>
       isDarkMode(context) ? dddPrimary : seed3;
@@ -120,13 +209,11 @@ class ThemeConfig {
   static Color indicatorTextColor(BuildContext context) =>
       whiteColorDarker(context); //header color
 
-  static Color appBarColor() => seed3.changeColorSaturation(0.5).changeColorLightness(0.10);
+  static Color appBarColor() =>
+      seed3.changeColorSaturation(0.5).changeColorLightness(0.10);
   static Color appBarColorNegative() => Colors.grey.changeColorLightness(0.8);
 
-  static Color bottomNavBackgroundColor(BuildContext context) => appBarColor();
-  static Color bottomNavSelectedItemColor(BuildContext context) => seed2;
-  static Color bottomNavUnselectedItemColor(BuildContext context) =>
-      Colors.grey;
+  static Color get brandAccentColor => seed2;
 
   static Color tabHeaderColor(BuildContext context) =>
       Theme.of(context).scaffoldBackgroundColor;
@@ -182,12 +269,15 @@ class ThemeConfig {
   static Color grey150(BuildContext context) =>
       isDarkMode(context) ? Colors.grey[850]! : Colors.grey[200]!;
 
-  static Color defaultHtmlViewColor(BuildContext context) => blackColor(context);
-  static Color htmlLinkColor(BuildContext context) => isDarkMode(context) ? seed2 : seed1;
-  static Color correctGuessColor(BuildContext context) => isDarkMode(context) ? seed3 : seed4;
+  static Color defaultHtmlViewColor(BuildContext context) =>
+      blackColor(context);
+  static Color htmlLinkColor(BuildContext context) =>
+      isDarkMode(context) ? seed2 : seed1;
+  static Color correctGuessColor(BuildContext context) =>
+      isDarkMode(context) ? seed3 : seed4;
 
   static Color textColorForBackground(Color background) {
-    return background.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    return background.computeLuminance() > 0.179 ? Colors.black : Colors.white;
   }
 
   // Function for eventTypeColor
@@ -214,46 +304,15 @@ class ThemeConfig {
 
   static Color eventTypeToColorNegative(BuildContext context, String? type) {
     final Color backgroundColor = eventTypeToColor(context, type);
-    return backgroundColor.computeLuminance() > 0.5
-        ? Colors.black
-        : Colors.white;
+    return textColorForBackground(backgroundColor);
   }
 
   static Color eventTypeToColorTimetable(BuildContext context, String? type) {
     return eventTypeToColor(context, type);
   }
-
-  static Color getShade(Color color, {bool darker = false, double value = .1}) {
-    assert(value >= 0 && value <= 1, 'shade values must be between 0 and 1');
-
-    final hsl = HSLColor.fromColor(color);
-    final hslDark = hsl.withLightness(
-      (darker ? (hsl.lightness - value) : (hsl.lightness + value))
-          .clamp(0.0, 1.0),
-    );
-
-    return hslDark.toColor();
-  }
 }
 
 extension ColorExtensions on Color {
-  /// Returns a [MaterialColor] from a [Color] object
-  MaterialColor getMaterialColorFromColor() {
-    final colorShades = <int, Color>{
-      50: ThemeConfig.getShade(this, value: 0.5),
-      100: ThemeConfig.getShade(this, value: 0.4),
-      200: ThemeConfig.getShade(this, value: 0.3),
-      300: ThemeConfig.getShade(this, value: 0.2),
-      400: ThemeConfig.getShade(this, value: 0.1),
-      500: this, //Primary value
-      600: ThemeConfig.getShade(this, value: 0.1, darker: true),
-      700: ThemeConfig.getShade(this, value: 0.15, darker: true),
-      800: ThemeConfig.getShade(this, value: 0.2, darker: true),
-      900: ThemeConfig.getShade(this, value: 0.25, darker: true),
-    };
-    return MaterialColor(value, colorShades);
-  }
-
   Color withOpacityBlack(double factor) {
     assert(factor >= 0 && factor <= 1, 'Factor must be between 0 and 1');
     // Multiply factor by 1.4 and clamp between 0 and 1.

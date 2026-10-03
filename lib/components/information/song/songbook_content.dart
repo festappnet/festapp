@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
@@ -63,6 +64,7 @@ class _SongbookContentState extends State<SongbookContent> {
           type: TrinaColumnType.text(),
           renderer: (rendererContext) {
             return DataGridHelper.buildHtmlEditorButton(
+                profile: HtmlContentProfile.songContent,
               context: context,
               occasionId: RightsService.currentOccasionId(),
               field: Tb.information.description,

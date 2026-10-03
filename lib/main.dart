@@ -1,3 +1,5 @@
+import 'package:fstapp/services/google_auth_service.dart';
+import 'package:fstapp/services/auth_session_storage.dart';
 import 'dart:async';
 
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -25,7 +27,6 @@ import 'package:fstapp/startup/startup_failure_policy.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -45,9 +46,17 @@ Future<void> main() async {
   debugProfileBuildsEnabled = true;
   configureUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
-  final initialRoute = kIsWeb
-      ? initialRouteForUri(RouterService.getCurrentBrowserUri())
-      : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+  try {
+    await GoogleAuthService.initializeLinks()
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // A missing native link/storage plugin must not block existing sign-in.
+  }
+  final initialRoute = GoogleAuthService.hasCallback
+      ? "/login"
+      : kIsWeb
+          ? initialRouteForUri(RouterService.getCurrentBrowserUri())
+          : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
   runApp(FestappBootstrap(
     initialRoute: initialRoute,
     initialize: initializeEverything,
@@ -66,10 +75,19 @@ Future<void> main() async {
 NotificationReconnectCoordinator? _notificationReconnectCoordinator;
 
 String initialRouteForUri(Uri uri) {
+  if (uri.path == '/app/google-auth') return '/login';
   final path = uri.path == '/' && AppConfig.forceOccasionLink != null
       ? '/${AppConfig.forceOccasionLink}'
       : uri.path;
   return '$path${uri.hasQuery ? '?${uri.query}' : ''}';
+}
+
+bool isUnitAdminStartupRoute(Uri uri) {
+  final segments = uri.pathSegments;
+  return segments.length == 3 &&
+      segments[0] == 'unit' &&
+      int.tryParse(segments[1]) != null &&
+      segments[2] == 'edit';
 }
 
 /// Paints immediately on PWA, Android and iOS while startup restores the local
@@ -130,7 +148,10 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
   @override
   Widget build(BuildContext context) {
     if (_isReady) return widget.buildReadyApp();
+    final baseTheme = ThemeConfig.theme();
     return MaterialApp(
+      theme: baseTheme,
+      darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
       key: const ValueKey('festapp-startup-material-app'),
       debugShowCheckedModeBanner: false,
       initialRoute: _initialRoute,
@@ -144,6 +165,12 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
 
 Future<void> initializeEverything() async {
   AppLogger.debug('Initialization started');
+
+  // Unit editors and Google returns own their context. A default occasion
+  // fetch can outlive startup and block their work in the serialized queue.
+  final skipInitialOccasion = kIsWeb &&
+      (isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri()) ||
+          RouterService.getCurrentBrowserUri().path == '/app/google-auth');
 
   WidgetsFlutterBinding.ensureInitialized();
   AppLogger.debug('Widgets binding initialized');
@@ -216,7 +243,7 @@ Future<void> initializeEverything() async {
       url: resolvedBackend.supabaseUrl,
       publishableKey: resolvedBackend.anonKey,
       authOptions: FlutterAuthClientOptions(
-        localStorage: SharedPreferencesLocalStorage(
+        localStorage: AuthSessionStorage(
           persistSessionKey: AppConfig.supabaseAuthStorageKey,
         ),
       ),
@@ -274,7 +301,7 @@ Future<void> initializeEverything() async {
   }
 
   try {
-    final cachedSyncModel = allowPersistedOccasionData
+    final cachedSyncModel = allowPersistedOccasionData && !skipInitialOccasion
         ? await ClientSyncRuntime.restoreLastContext()
         : null;
     if (cachedSyncModel != null) {
@@ -325,7 +352,7 @@ Future<void> initializeEverything() async {
     if (effectiveOffline) {
       RightsService.useOfflineVersion = true;
       AppLogger.debug('Offline start: using cached occasion data');
-    } else {
+    } else if (!skipInitialOccasion) {
       await RightsService.updateAppData(force: true, refreshOffline: false)
           .timeout(occasionLoadTimeout(
         hasCachedSettings: hasCachedOccasionSettings,
@@ -338,6 +365,8 @@ Future<void> initializeEverything() async {
           AppLogger.error('Private offline snapshot refresh failed: $error');
         }));
       }
+    } else {
+      AppLogger.debug('Unit admin route: occasion preload skipped');
     }
   } catch (e) {
     AppLogger.error('Occasion loading failed: $e');
@@ -386,6 +415,9 @@ class _MyAppState extends State<MyApp> {
   Offset _offset = Offset.zero;
 
   DeepLink _resolveDeepLink(PlatformDeepLink platformDeepLink) {
+    if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {
+      return DeepLink.path('/login', includePrefixMatches: false);
+    }
     if (platformDeepLink.initial) {
       return DeepLink.path(
         widget.initialRoute,
@@ -414,12 +446,10 @@ class _MyAppState extends State<MyApp> {
       });
     };
 
-    var baseTheme = ThemeConfig.baseTheme();
+    var baseTheme = ThemeConfig.theme();
     return AdaptiveTheme(
-      light: ThemeConfig.baseTheme(),
-      dark: ThemeConfig.isDarkModeEnabled
-          ? ThemeConfig.darkTheme(baseTheme)
-          : baseTheme,
+      light: baseTheme,
+      dark: ThemeConfig.theme(brightness: Brightness.dark),
       initial: ThemeConfig.defaultThemeMode,
       builder: (theme, darkTheme) => MaterialApp.router(
         routerConfig: RouterService.router.config(
@@ -459,7 +489,6 @@ class _MyAppState extends State<MyApp> {
         localizationsDelegates: [
           ...context.localizationDelegates,
           FormBuilderLocalizations.delegate,
-          FlutterQuillLocalizations.delegate,
         ],
         supportedLocales: context.supportedLocales,
         locale: context.locale,

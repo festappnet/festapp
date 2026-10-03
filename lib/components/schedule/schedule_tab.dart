@@ -51,6 +51,7 @@ class _ScheduleTabState extends State<ScheduleTab>
             child: TabBar(
               controller: _tabController,
               isScrollable: true,
+              tabAlignment: TabAlignment.start,
               onTap: (index) {
                 if (index == 1) {
                   _suspiciousEventsKey.currentState?.reloadIfClean();

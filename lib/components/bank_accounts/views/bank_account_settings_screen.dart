@@ -232,6 +232,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         accountNumberHumanReadable: _buildLegacyHumanReadable(),
         tokenMasked: _account.tokenMasked,
         lastFetchTime: _account.lastFetchTime,
+        lastFioFetchTime: _account.lastFioFetchTime,
         tokenExpiryDate: _account.tokenExpiryDate,
         pairingCode: _pairingCode,
       );
