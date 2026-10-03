@@ -20,6 +20,28 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets('occasion switch keeps header visible while destination loads', (tester) async {
+    final pending = Completer<void>();
+    final access = Access()..beforeLoad = (link) => link == 'occasion-b' ? pending.future : Future.value();
+    final router = FixtureRouter(access)..showHeader = true
+      ..loadingBuilder = (_) => Scaffold(appBar: AppBar(automaticallyImplyLeading: false, title: const Text('ADMIN HEADER')),
+          body: const Center(child: CircularProgressIndicator()));
+    await mount(tester, router, '/occasion-a/reservations/orders/history');
+    final header = tester.getRect(find.text('ADMIN HEADER'));
+    unawaited(RouterService.navigateToOccasionAdministration(
+        tester.element(find.text('HISTORY CONTENT')), occasionLink: 'occasion-b'));
+    for (var i = 0; i < 10; i++) { await tester.pump(const Duration(milliseconds: 50)); }
+    expect(find.text('ADMIN HEADER'), findsOneWidget);
+    expect(tester.getRect(find.text('ADMIN HEADER')), header);
+    expect(find.text('HISTORY CONTENT'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('ADMIN HEADER'), findsOneWidget);
+    expect(find.text('HISTORY CONTENT'), findsOneWidget);
+    expect(access.requests, ['occasion-a', 'occasion-b']);
+  });
+
   testWidgets('denied context without a resolved link stops reloading',
       (tester) async {
     final access = Access();
