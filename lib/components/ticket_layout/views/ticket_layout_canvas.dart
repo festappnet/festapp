@@ -9,6 +9,7 @@ import '../ticket_text.dart';
 import '../ticket_layout_strings.dart';
 
 class TicketLayoutCanvas extends StatefulWidget {
+  final VoidCallback? onDismiss;
   final TicketLayoutController controller;
   final TicketLayoutResources resources;
   final Map<String, String?> data;
@@ -24,6 +25,7 @@ class TicketLayoutCanvas extends StatefulWidget {
   final TransformationController transform;
   const TicketLayoutCanvas(
       {super.key,
+      this.onDismiss,
       required this.controller,
       required this.resources,
       required this.data,
@@ -369,6 +371,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       _marqueeStart = null;
       widget.controller.selectionRect = null;
       setState(() => _editing = null);
+      widget.onDismiss?.call();
       return KeyEventResult.handled;
     }
     if (!widget.editBackground && e.logicalKey == LogicalKeyboardKey.delete) {
@@ -478,7 +481,24 @@ class TicketLayoutPainter extends CustomPainter {
       canvas.translate(-doc.area.left, -doc.area.top);
     }
     canvas.drawRect(Offset.zero & doc.page, Paint()..color = Colors.white);
-    canvas.drawRect(doc.area, Paint()..color = const Color(0xffe6e6e6));
+    if (doc.canvasColor == 'transparent') {
+      canvas.save();
+      canvas.clipRect(doc.area);
+      final step = 10 / zoom;
+      for (double y = doc.area.top; y < doc.area.bottom; y += step) {
+        for (double x = doc.area.left; x < doc.area.right; x += step) {
+          final dark = (((x - doc.area.left) / step).round() +
+                  ((y - doc.area.top) / step).round())
+              .isEven;
+          canvas.drawRect(Rect.fromLTWH(x, y, step, step),
+              Paint()..color = dark ? const Color(0xffe5e7eb) : Colors.white);
+        }
+      }
+      canvas.restore();
+    } else {
+      canvas.drawRect(doc.area,
+          Paint()..color = Color(int.parse('ff${doc.canvasColor}', radix: 16)));
+    }
     final artwork = resources.artworks[controller.artworkKey];
     final background = artwork != null ? artwork.image : resources.background;
     if (background != null) {

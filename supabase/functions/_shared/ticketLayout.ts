@@ -13,7 +13,7 @@ export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
 export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface Template { canvasColor?:string; backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 1 | 2; templates: { wide?: Template; named?: Template } }
 export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=new Set()): asserts value is TicketLayout {
   const v = value as TicketLayout;
@@ -22,6 +22,7 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
   const fontIds=new Set<string>();
   const checkFont=(id:unknown)=>{if(id===undefined)return;if(v.schemaVersion===1||typeof id!=='string'||! /^(gf:|builtin:[a-z0-9-]+:)[a-f0-9]{64}$/.test(id)||(!knownFontId(id)&&!registeredIds.has(id)))fail();fontIds.add(id as string);if(fontIds.size>12)fail();};
   for (const t of Object.values(v.templates)) {
+    if(t?.canvasColor!==undefined && (typeof t.canvasColor!=='string'||(t.canvasColor!=='transparent'&&!/^[0-9a-fA-F]{6}$/.test(t.canvasColor))))fail();
     checkFont(t?.fontId);if(v.schemaVersion===2&&t?.font!==undefined)fail();
     if(t?.font!==undefined && !['futura','robotoSlab','roboto','russoOne'].includes(t.font)) fail();
     if(t?.flowStep!==undefined && (!Number.isFinite(t.flowStep)||t.flowStep<1||t.flowStep>842))fail();

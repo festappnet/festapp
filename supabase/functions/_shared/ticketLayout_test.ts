@@ -188,3 +188,17 @@ Deno.test('image crop masks PDF artwork without rescaling it or moving ticket da
  assert(clips.some(([x,y,w,h])=>Math.abs(x-expected.x)<.001&&Math.abs(y-expected.y)<.001&&Math.abs(w-expected.width)<.001&&Math.abs(h-expected.height)<.001),'PDF must clip the original image to the selected crop');
  for(const bad of [null,{}, {x:-.1,y:0,width:1,height:1},{x:0,y:0,width:0,height:1},{x:.5,y:0,width:1,height:1}])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,backgroundCrop:bad}}}));
 });
+
+Deno.test('canvas fill supports hex or transparent and renders no fill for transparency',async()=>{
+ for(const fill of ['FF0000','transparent']) {
+  const t={...preset('wide'),canvasColor:fill};
+  parseLayout({schemaVersion:1,templates:{wide:t}});
+  const output=await generateTicketPdf(sampleData(),{...r,background:undefined},t,'wide',true);
+  const pdf=await PDFDocument.load(output.bytes);
+  const ops=pdf.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFRawStream).map(([,o])=>o as PDFRawStream)
+   .filter(s=>s.dict.get(PDFName.of('Filter'))?.toString()==='/FlateDecode').map(s=>new TextDecoder().decode(inflateSync(s.getContents()))).join('\n');
+  assertEquals(ops.includes('1 0 0 rg'),fill==='FF0000');
+  assert(!ops.includes('0.9 0.9 0.9 rg'));
+ }
+ for(const canvasColor of ['#FFFFFF','bad',null,42])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...preset('wide'),canvasColor}}}));
+});
