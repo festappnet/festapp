@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fstapp/components/ticket_layout/views/ticket_canvas_color_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:easy_localization/src/localization.dart';
@@ -1467,6 +1469,57 @@ void main() {
     c.dispose();
   });
 
+  test(
+    'left and top canvas edges preserve content and artwork, snap and undo',
+    () {
+      final original = document().withPaper(true, margin: 6.25);
+      const image = Size(400, 200);
+      final c = TicketLayoutController(original);
+      c.beginGesture();
+      c.resizeCanvas(
+        const Offset(-10, -15),
+        handle: 5,
+        snap: false,
+        backgroundImage: image,
+      );
+      expect(
+        c.document.area.size,
+        Size(original.area.width + 10, original.area.height + 15),
+      );
+      for (final e in original.elements) {
+        expect(
+          c.document.elements.firstWhere((n) => n.id == e.id).box,
+          e.box.shift(const Offset(10, 15)),
+        );
+      }
+      final artwork =
+          original.backgroundRect(image).shift(const Offset(10, 15));
+      expect(
+        (c.document.backgroundRect(image).topLeft - artwork.topLeft).distance,
+        lessThan(.001),
+      );
+      expect(c.document.validate('named'), isEmpty);
+      c.endGesture();
+      c.undo();
+      expect(c.document.toJson(), original.toJson());
+      final required = original.elements.where(
+        (e) => ['qr', 'ticketSymbol'].contains(e.binding),
+      );
+      final left = required.map((e) => e.box.left).reduce(math.min);
+      c.beginGesture();
+      c.resizeCanvas(Offset(left + 100, 0), handle: 3, snap: false);
+      expect(c.canvasOrigin.dx, closeTo(left, .001));
+      expect(c.canvasBlockers, isNotEmpty);
+      expect(c.document.validate('named'), isEmpty);
+      c.cancelGesture();
+      c.beginGesture();
+      c.resizeCanvas(const Offset(-2, 0), handle: 3, snap: true);
+      expect(c.document.area.size, original.area.size);
+      c.cancelGesture();
+      c.dispose();
+    },
+  );
+
   testWidgets('ticket canvas edge handles resize the design live',
       (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
@@ -1485,6 +1538,8 @@ void main() {
     final state =
         tester.state<TicketLayoutCanvasState>(find.byType(TicketLayoutCanvas));
     final c = state.widget.controller;
+    c.replace(c.document.withPaper(true, margin: 6.25));
+    await tester.pump();
     final original = c.document;
     final point = tester.getTopLeft(find.byType(InteractiveViewer)) +
         MatrixUtils.transformPoint(
@@ -1497,6 +1552,32 @@ void main() {
     await gesture.up();
     c.undo();
     expect(c.document.toJson(), original.toJson());
+    await tester.pump();
+    Offset screenPoint(Offset point) =>
+        tester.getTopLeft(find.byType(InteractiveViewer)) +
+        MatrixUtils.transformPoint(state.widget.transform.value, point);
+    final qr = c.document.elements.firstWhere((e) => e.binding == 'qr');
+    final attempt = await tester.startGesture(
+      screenPoint(c.document.area.topLeft + qr.box.center),
+    );
+    await attempt.moveBy(const Offset(20, 10));
+    await attempt.up();
+    await tester.pumpAndSettle();
+    expect(c.document.toJson(), original.toJson());
+    expect(find.text('TicketLayout.finishCanvasFirst'.tr()), findsOneWidget);
+    final leftPoint = screenPoint(c.document.area.centerLeft);
+    final leftDrag = await tester.startGesture(leftPoint);
+    await leftDrag.moveBy(const Offset(-10, 0));
+    await tester.pump();
+    await leftDrag.moveBy(const Offset(-10, 0));
+    await tester.pump();
+    expect(c.document.area.width, greaterThan(original.area.width));
+    final actualLeft = screenPoint(c.document.area.centerLeft);
+    expect(actualLeft.dx, closeTo(leftPoint.dx - 20, 1));
+    await leftDrag.up();
+    await tester.tap(find.byKey(const ValueKey('finish-canvas-resize')));
+    await tester.pumpAndSettle();
+    expect(state.widget.editCanvas, isFalse);
   });
 
   testWidgets('direct save waits for persistence and prevents duplicate clicks',

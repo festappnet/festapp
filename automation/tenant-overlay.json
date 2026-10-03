@@ -1,5 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "b7768278dbd269a5b174dcfeb8f023822de7b477"
+  "baseMainSha": "1444f263e969fb83d4692114b12182038efcfc41",
+  "release": {
+    "version": "0.20.69+553",
+    "note": "Resize canvas from all edges and explain editing mode"
+  }
 }

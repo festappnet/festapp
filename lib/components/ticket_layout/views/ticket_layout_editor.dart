@@ -72,6 +72,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   bool additiveSelection = false;
   bool cropBackground = false;
   bool editCanvas = false;
+  int canvasElementAttempts = 0;
   bool editBackground = false,
       pan = false,
       wholePage = false,
@@ -686,6 +687,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         : () {
                             setState(() {
                               editCanvas = true;
+                              canvasElementAttempts = 0;
                               editBackground = false;
                               pan = false;
                             });
@@ -1359,6 +1361,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(TicketLayoutStrings.resizeCanvasHint),
+                                  if (canvasElementAttempts > 0)
+                                    Text(TicketLayoutStrings.finishCanvasFirst,
+                                        style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                                   if (controller.canvasBlockers.isNotEmpty)
                                     Text(
                                         '${TicketLayoutStrings.canvasBlocked}: ${controller.document.elements.where((e) => controller.canvasBlockers.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}',
@@ -1375,11 +1380,18 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                       onPressed: editDimensions,
                                       child:
                                           Text(TicketLayoutStrings.canvasSize)),
-                                  FilledButton(
-                                      onPressed: () =>
-                                          setState(() => editCanvas = false),
-                                      child:
-                                          Text(TicketLayoutStrings.doneImage)),
+                                  TweenAnimationBuilder<double>(
+                                      key: ValueKey('canvas-done-$canvasElementAttempts'),
+                                      tween: Tween(begin: 0, end: 1),
+                                      duration: const Duration(milliseconds: 650),
+                                      builder: (context, value, child) => Transform.scale(
+                                          scale: canvasElementAttempts == 0 ? 1 :
+                                              1 + .08 * math.pow(math.sin(value * math.pi * 2), 2),
+                                          child: child),
+                                      child: FilledButton(
+                                          key: const ValueKey('finish-canvas-resize'),
+                                          onPressed: () => setState(() => editCanvas = false),
+                                          child: Text(TicketLayoutStrings.doneImage))),
                                 ]))),
                   if (editBackground) backgroundTools(),
                   Expanded(child: LayoutBuilder(builder: (c, constraints) {
@@ -1387,6 +1399,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     final view = TicketLayoutCanvas(
                         key: canvas,
                         onDismiss: cancel,
+                          onCanvasElementAttempt: () =>
+                              setState(() => canvasElementAttempts++),
                         controller: controller,
                         resources: resources,
                         data: resources.scenarios[scenario]!,

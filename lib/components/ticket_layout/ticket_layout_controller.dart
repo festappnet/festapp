@@ -27,6 +27,7 @@ class TicketLayoutController extends ChangeNotifier {
       document.elements.where((e) => selectedIds.contains(e.id)).toList();
   double? guideX, guideY;
   final Set<String> canvasBlockers = {}, canvasHidden = {};
+  Offset canvasOrigin = Offset.zero;
   final List<({TicketTemplate document, String? artworkKey})> _undo = [],
       _redo = [];
   TicketTemplate? _gesture;
@@ -55,6 +56,7 @@ class TicketLayoutController extends ChangeNotifier {
     if (_gesture == null) {
       _gesture = document;
       _dragOffset = Offset.zero;
+      canvasOrigin = Offset.zero;
     }
   }
 
@@ -95,13 +97,24 @@ class TicketLayoutController extends ChangeNotifier {
     final maxHeight = base.fitPageToTicket
         ? 842 - 2 * base.pageMargin
         : base.page.height - base.area.top;
+    final left = [3, 5, 7].contains(handle);
+    final top = [4, 5, 6].contains(handle);
+    final horizontal = ![1, 4].contains(handle);
+    final vertical = ![0, 3].contains(handle);
+    double clampX(double x) => left
+        ? x.clamp(base.area.width - maxWidth, base.area.width - 60)
+        : x.clamp(60, maxWidth);
+    double clampY(double y) => top
+        ? y.clamp(base.area.height - maxHeight, base.area.height - 60)
+        : y.clamp(60, maxHeight);
     var point = Offset(
-        handle == 1
-            ? base.area.width
-            : (base.area.width + drag.dx).clamp(60, maxWidth),
-        handle == 0
-            ? base.area.height
-            : (base.area.height + drag.dy).clamp(60, maxHeight));
+      horizontal
+          ? clampX((left ? 0 : base.area.width) + drag.dx)
+          : base.area.width,
+      vertical
+          ? clampY((top ? 0 : base.area.height) + drag.dy)
+          : base.area.height,
+    );
     guideX = guideY = null;
     if (snap) {
       final result = snapTicketBox(
@@ -115,27 +128,59 @@ class TicketLayoutController extends ChangeNotifier {
           zoom: zoom,
           gridStep: gridStep);
       point = Offset(
-          handle == 1 ? point.dx : result.box.left.clamp(60, maxWidth),
-          handle == 0 ? point.dy : result.box.top.clamp(60, maxHeight));
-      guideX = handle == 1 ? null : result.x;
-      guideY = handle == 0 ? null : result.y;
+        horizontal ? clampX(result.box.left) : point.dx,
+        vertical ? clampY(result.box.top) : point.dy,
+      );
+      guideX = horizontal ? result.x : null;
+      guideY = vertical ? result.y : null;
     }
     canvasBlockers.clear();
     canvasHidden.clear();
-    for (final e in base.elements
-        .where((e) => ['qr', 'ticketSymbol'].contains(e.binding))) {
-      if (e.box.right > point.dx + .001 || e.box.bottom > point.dy + .001)
-        canvasBlockers.add(e.id);
-    }
     final required =
         base.elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
-    point = Offset(
-        math.max(point.dx, required.map((e) => e.box.right).reduce(math.max)),
-        math.max(point.dy, required.map((e) => e.box.bottom).reduce(math.max)));
+    for (final e in required) {
+      if ((horizontal &&
+              (left
+                  ? e.box.left < point.dx - .001
+                  : e.box.right > point.dx + .001)) ||
+          (vertical &&
+              (top
+                  ? e.box.top < point.dy - .001
+                  : e.box.bottom > point.dy + .001))) {
+        canvasBlockers.add(e.id);
+      }
+    }
+    for (final e in required) {
+      point = Offset(
+        !horizontal
+            ? point.dx
+            : left
+                ? math.min(point.dx, e.box.left)
+                : math.max(point.dx, e.box.right),
+        !vertical
+            ? point.dy
+            : top
+                ? math.min(point.dy, e.box.top)
+                : math.max(point.dy, e.box.bottom),
+      );
+    }
+    // Binary-exact origin shifts preserve the square QR contract.
+    double originCoordinate(double value, double min) => math.max(
+        (value * 1024).floor() / 1024, (min * 1024).ceil() / 1024);
+    final origin = Offset(
+      left ? originCoordinate(point.dx, base.area.width - maxWidth) : 0,
+      top ? originCoordinate(point.dy, base.area.height - maxHeight) : 0,
+    );
     if (guideX != null && (point.dx - guideX!).abs() > .001) guideX = null;
     if (guideY != null && (point.dy - guideY!).abs() > .001) guideY = null;
-    final next = base.resizeCanvasArea(Size(point.dx, point.dy),
-        backgroundImage: backgroundImage);
+    final next = base.resizeCanvasArea(Size(
+        left ? base.area.width - origin.dx : point.dx,
+        top ? base.area.height - origin.dy : point.dy),
+      origin: origin,
+      backgroundImage: backgroundImage,
+    );
+    if (guideX != null) guideX = guideX! - origin.dx;
+    if (guideY != null) guideY = guideY! - origin.dy;
     canvasHidden.addAll(base.elements
         .where((e) =>
             e.visible && !next.elements.firstWhere((n) => n.id == e.id).visible)
@@ -145,6 +190,7 @@ class TicketLayoutController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    canvasOrigin = origin;
     if (_gesture == null) {
       replace(next);
     } else {
