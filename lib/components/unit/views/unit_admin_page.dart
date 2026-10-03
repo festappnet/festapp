@@ -181,6 +181,35 @@ class UnitAdministrationScope extends InheritedWidget {
       oldWidget.unit != unit || oldWidget.occasions != occasions;
 }
 
+class UnitAdministrationBody extends StatelessWidget {
+  final List<RoutedTabDefinition> tabs;
+  final TabController controller;
+  final Widget child;
+  const UnitAdministrationBody({
+    super.key,
+    required this.tabs,
+    required this.controller,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: SideMenu.collapsedWidth),
+        child: child,
+      ),
+      Positioned(
+        left: 0,
+        top: 0,
+        bottom: 0,
+        child: SideMenu(tabs: tabs, controller: controller),
+      ),
+    ],
+  );
+}
+
 class SideMenu extends StatefulWidget {
   final List<RoutedTabDefinition> tabs;
   final TabController controller;
@@ -400,10 +429,8 @@ class UnitAdministrationTabsPage extends StatelessWidget {
               Expanded(
                   child: Scaffold(
                       appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context),
-                      body: Row(children: [
-                        SideMenu(tabs: tabs, controller: controller),
-                        Expanded(child: child)
-                      ]),
+                      body: UnitAdministrationBody(
+                          tabs: tabs, controller: controller, child: child),
                       floatingActionButton: FloatingActionButton(
                           onPressed: () => RouterService.navigate(
                               context, 'unit/${scope.unit.id}'),
