@@ -19,6 +19,33 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets('denied context without a resolved link stops reloading',
+      (tester) async {
+    final access = Access();
+    access.beforeLoad = (_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      access.identity = null;
+      access.notifyListeners();
+      throw StateError('Access denied without an occasion');
+    };
+    final router = FixtureRouter(access);
+    await tester.pumpWidget(MaterialApp.router(
+        routerConfig: router.config(
+            deepLinkBuilder: (_) => DeepLink.path(
+                '/denied-occasion/reservations/orders/current'))));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(access.requests, ['denied-occasion']);
+    expect(find.text('Access denied'), findsOneWidget);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    access.beforeLoad = null;
+    await tester.tap(find.byType(TextButton));
+    await tester.pumpAndSettle();
+    expect(access.requests, ['denied-occasion', 'denied-occasion']);
+    expect(find.text('CURRENT CONTENT'), findsOneWidget);
+  });
+
   testWidgets('incoming browser history restores retained occasion context',
       (tester) async {
     final access = Access();
