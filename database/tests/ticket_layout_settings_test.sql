@@ -13,6 +13,12 @@ BEGIN
   END LOOP;
   PERFORM assert_eq(public.scan_ticket('VZOR:NEPLATNY','preview-only')->>'code','404','scanner rejects the synthetic preview QR');
   layout:=fixtures->'valid'->0;
+  PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,canvasOpacity}','0.4'));
+  BEGIN
+    PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,canvasOpacity}','1.1'));
+    RAISE EXCEPTION 'accepted invalid canvas opacity';
+  EXCEPTION WHEN OTHERS THEN IF SQLERRM='accepted invalid canvas opacity' THEN RAISE; END IF; END;
+
   PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,canvasColor}','"transparent"'));
   PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,canvasColor}','"FF0000"'));
   BEGIN

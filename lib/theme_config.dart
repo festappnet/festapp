@@ -35,6 +35,19 @@ class ThemeConfig {
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: systemUiOverlayStyle(statusBarColor: chrome),
       ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) => states
+                  .contains(WidgetState.disabled)
+              ? null
+              : Color.alphaBlend(
+                  primary.withValues(alpha: dark ? .18 : .10), scheme.surface)),
+          side: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.disabled)
+                  ? BorderSide.none
+                  : BorderSide(color: primary.withValues(alpha: .35))),
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: chrome,
         surfaceTintColor: Colors.transparent,

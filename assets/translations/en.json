@@ -2085,6 +2085,7 @@
     "canvasHidden": "Outside canvas, automatically hidden (Undo to restore)",
     "checkElements": "Adjust highlighted elements: keep them clear of QR and inside the canvas",
     "canvasColor": "Canvas color",
+    "transparency": "Transparency",
     "transparent": "Transparent",
     "transparentHint": "The checkerboard indicates transparency and is not printed in the PDF.",
     "canvasSection": "Canvas",

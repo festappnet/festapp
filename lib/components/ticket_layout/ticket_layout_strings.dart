@@ -7,6 +7,7 @@ class TicketLayoutStrings {
   static String get designSize => 'TicketLayout.designSize'.tr();
   static String get saveDirectHint => 'TicketLayout.saveDirectHint'.tr();
   static String get canvasColor => 'TicketLayout.canvasColor'.tr();
+  static String get transparency => 'TicketLayout.transparency'.tr();
   static String get transparent => 'TicketLayout.transparent'.tr();
   static String get transparentHint => 'TicketLayout.transparentHint'.tr();
   static String get canvasSection => 'TicketLayout.canvasSection'.tr();

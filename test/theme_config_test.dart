@@ -4,6 +4,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/theme_config.dart';
 
 void main() {
+  testWidgets('enabled buttons have a brand outline without changing geometry',
+      (tester) async {
+    for (final brightness in Brightness.values) {
+      final theme = ThemeConfig.theme(brightness: brightness);
+      final style = theme.elevatedButtonTheme.style!;
+      expect(style.side!.resolve({})!.color,
+          theme.primaryColor.withValues(alpha: .35));
+      expect(style.side!.resolve({WidgetState.disabled}), BorderSide.none);
+      expect(style.backgroundColor!.resolve({WidgetState.disabled}), isNull);
+      final enabledColor = style.backgroundColor!.resolve({})!;
+      expect(contrastRatio(enabledColor, theme.primaryColor),
+          greaterThanOrEqualTo(4.5));
+      Future<Size> buttonSize(
+          ThemeData buttonTheme, VoidCallback? onPressed) async {
+        await tester.pumpWidget(MaterialApp(
+            theme: buttonTheme,
+            home: Scaffold(
+              body: Center(
+                  child: ElevatedButton(
+                      onPressed: onPressed, child: const Text('Save changes'))),
+            )));
+        await tester.pumpAndSettle();
+        return tester.getSize(find.byType(ElevatedButton));
+      }
+
+      final original =
+          theme.copyWith(elevatedButtonTheme: const ElevatedButtonThemeData());
+      expect(await buttonSize(theme, () {}), await buttonSize(original, () {}));
+      expect(await buttonSize(theme, null), await buttonSize(original, null));
+    }
+  });
+
   test('dark mode is available but defaults to light mode', () {
     expect(ThemeConfig.isDarkModeEnabled, isTrue);
     expect(ThemeConfig.defaultThemeMode, AdaptiveThemeMode.light);

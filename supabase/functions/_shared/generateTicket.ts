@@ -18,7 +18,7 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
     page.drawImage(img,{x:b.x+(b.width-img.width*scale)/2,y:b.y+(b.height-img.height*scale)/2,width:img.width*scale,height:img.height*scale});
   };
   const area=pdfBox(t,{x:0,y:0,width:t.ticketArea.width,height:t.ticketArea.height});
-  if(t.canvasColor!=='transparent')page.drawRectangle({...area,color:t.canvasColor?color(t.canvasColor):rgb(.9,.9,.9)});
+  if(t.canvasColor!=='transparent'&&(t.canvasOpacity??1)>0)page.drawRectangle({...area,color:t.canvasColor?color(t.canvasColor):rgb(.9,.9,.9),opacity:t.canvasOpacity??1});
   if(r.background) {
     const img=r.background[0]===137?await doc.embedPng(r.background):await doc.embedJpg(r.background);
     page.pushOperators(pushGraphicsState(),rectangle(area.x,area.y,area.width,area.height),clip(),endPath());
