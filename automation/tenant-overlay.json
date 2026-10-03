@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "5572a637956ccf05daa745eb220203331fa3b25d",
+  "baseMainSha": "436e03945afb24fb253dcad90aca5c23931c3982",
   "release": {
-    "version": "0.20.77+561",
-    "note": "Restore admin dialogs, stop context reload loops and preserve animated tab navigation"
+    "version": "0.20.78+562",
+    "note": "Restore bank modal presentation and eliminate duplicate loading"
   }
 }
