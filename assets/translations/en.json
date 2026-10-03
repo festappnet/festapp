@@ -2073,6 +2073,9 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "modeCanvas": "Mode: Canvas size",
+    "modeImage": "Mode: Image placement",
+    "modeCrop": "Mode: Image crop",
     "dimensionInputHint": "Confirm with Enter or click outside the field. Content stays in place.",
     "editBlockingElement": "Edit: {name}",
     "resetCrop": "Show entire image",
