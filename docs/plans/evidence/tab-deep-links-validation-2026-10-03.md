@@ -56,3 +56,11 @@ Startup/accessibility observations, Colima shared-path constraints, required Sto
 The focused full-app checks above use synthetic local data and do not cover every administrative screen or a live Google OAuth broker. Real calendar browser history/date selection remains covered by the isolated running fixture; the full-app timetable date rendering was not established in this run. Live Google OAuth needs an authorized external account and configured local broker credentials. Full `automation/test_all.sh` and release/deploy gates were not run because publication/release was not requested. The implementation and targeted contract checks are complete; these are validation limitations, not claimed production evidence.
 
 Cleanup completed: both named local browsers closed, the owned Flutter web server quit, functions serve terminated and only the disposable Supabase project stopped with --no-backup. Existing PostgreSQL test containers remain running. No production writes, commit, push or deployment.
+
+## Authorized live release preparation
+
+The user subsequently authorized deployment specifically to live.festapp.net. Rebased the feature onto authoritative main c84030bfc28563aa28bf32d09ea123ef00d2083d, preserving its new occasion report and ticket editor changes. The only content conflict was resolved by keeping the new report and reading the inherited occasion route parameter. Added a nested-report regression and migrated the existing administration presentation test to RoutedTabDefinition.
+
+Release checks: full Flutter 1,012 passed / 1 skipped; web 208 passed; isolated SQL 102 passed; Deno Edge 216 passed; worker integration 3 passed / 27 skipped (external worker inputs absent); automation checks passed. The local SQL fixture was rebuilt using the canonical bootstrap default-privilege reset before baseline restoration. Scoped merge analysis has style/dependency infos only, no errors/warnings.
+
+Main is protected and publication uses PR #253. Production scope is exclusively prod/festapp, Cloudflare project festapplive, version 0.20.70+554. Local production preflight correctly refuses to build without FESTAPP_RELEASE_MANIFEST. The established GitHub Deploy workflow supplies the approved tenant-specific manifest; no private release contract was fabricated and no other tenant is being built or published.
