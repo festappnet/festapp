@@ -114,6 +114,7 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
               }
             }
           }
+          widget.controller.stateManager.notifyListeners();
         },
         onLoaded: (TrinaGridOnLoadedEvent event) {
           widget.controller.stateManager = event.stateManager;

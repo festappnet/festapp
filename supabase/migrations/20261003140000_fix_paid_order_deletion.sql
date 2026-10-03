@@ -1,4 +1,5 @@
-CREATE OR REPLACE FUNCTION public.delete_order_221(order_id BIGINT)
+-- Preserve the canonical sync facade; repair its internal deletion operation.
+CREATE OR REPLACE FUNCTION public.delete_order_internal_v1(order_id BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -99,3 +100,5 @@ BEGIN
 
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.delete_order_internal_v1(bigint) FROM PUBLIC, anon, authenticated;

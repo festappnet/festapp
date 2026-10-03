@@ -28,15 +28,26 @@ class ExportOptions {
 class SingleDataGridController<T extends ITrinaRowModel> {
   HtmlSaveCoordinator? _htmlSave;
   HtmlSaveCoordinator get htmlSave => _htmlSave ??= HtmlSaveCoordinator();
-  void disposeHtml() { _htmlSave?.dispose(); _htmlSave = null; }
-  Future<void> prepareHtmlRows() => htmlSave.prepareWhere((identity) =>
-    {...updatedRows, ...newRows}.any((row) => row.key == identity.entity && !deletedRows.contains(row)));
+  void disposeHtml() {
+    _htmlSave?.dispose();
+    _htmlSave = null;
+  }
+
+  Future<void> prepareHtmlRows() => htmlSave.prepareWhere((identity) => {
+        ...updatedRows,
+        ...newRows
+      }.any((row) => row.key == identity.entity && !deletedRows.contains(row)));
   ValueNotifier<Key> refreshKeyNotifier = ValueNotifier(UniqueKey());
 
   late TrinaGridStateManager stateManager;
   Set<TrinaRow> updatedRows = {};
   Set<TrinaRow> deletedRows = {};
   Set<TrinaRow> newRows = {};
+  bool get hasPendingChanges =>
+      updatedRows.isNotEmpty ||
+      deletedRows.isNotEmpty ||
+      newRows.isNotEmpty ||
+      htmlSave.hasDraft;
   List<TrinaRow> rows = [];
   List<TrinaColumn> columns = [];
   final Future<List<T>> Function() loadData;
