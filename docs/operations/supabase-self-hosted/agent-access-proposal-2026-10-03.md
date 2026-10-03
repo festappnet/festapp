@@ -1,7 +1,10 @@
 # Unattended agent access to canonical Supabase (proposal)
 
-Requested during the ticket-font rollout on 2026-10-03. This proposal does not
-change production access policies or provision credentials.
+Requested during the ticket-font rollout on 2026-10-03 and authorized by the
+user during the occasion-report rollout. A tested read-only implementation
+candidate is now in [agent-access](../../../automation/hetzner-supabase/agent-access/README.md).
+It has not been provisioned: infrastructure access remains unavailable. Production
+access policies and credentials are unchanged; unattended releases are not enabled.
 
 ## Observations
 
