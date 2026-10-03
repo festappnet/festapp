@@ -55,11 +55,11 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
       preciseSize = null;
       error = null;
     });
-    preview();
+    preview(reportErrors: false);
   }
 
-  void preview() {
-    final candidate = validated();
+  void preview({bool reportErrors = true}) {
+    final candidate = validated(reportErrors: reportErrors);
     if (candidate != null) widget.onPreview?.call(candidate);
   }
 
@@ -71,7 +71,11 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
     super.dispose();
   }
 
-  TicketTemplate? validated() {
+  TicketTemplate? validated({bool reportErrors = true}) {
+    void report(String message) {
+      if (reportErrors) setState(() => error = message);
+    }
+
     final w = double.tryParse(width.text.replaceAll(',', '.'));
     final h = double.tryParse(height.text.replaceAll(',', '.'));
     if (w == null ||
@@ -80,18 +84,18 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
         !h.isFinite ||
         w <= 0 ||
         h <= 0) {
-      setState(() => error = TicketLayoutStrings.invalidCanvas);
+      report(TicketLayoutStrings.invalidCanvas);
       return null;
     }
     if (w * pointsPerMm > 842 || h * pointsPerMm > 842) {
-      setState(() => error = TicketLayoutStrings.canvasTooLarge);
+      report(TicketLayoutStrings.canvasTooLarge);
       return null;
     }
     final m = preciseMargin ??
         (double.tryParse(margin.text.replaceAll(',', '.')) ?? double.nan) *
             pointsPerMm;
     if (ticketPaper && (!m.isFinite || m < 0 || m > 72)) {
-      setState(() => error = TicketLayoutStrings.invalidMargin);
+      report(TicketLayoutStrings.invalidMargin);
       return null;
     }
     var candidate = widget.document.resizeArea(preciseSize ??
@@ -111,7 +115,7 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
     }
     final errors = candidate.validate(widget.type);
     if (errors.isNotEmpty) {
-      setState(() => error = errors.contains('geometry')
+      report(errors.contains('geometry')
           ? TicketLayoutStrings.canvasTooLarge
           : TicketLayoutStrings.canvasTooSmall);
       return null;
