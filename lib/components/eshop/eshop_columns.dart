@@ -284,7 +284,7 @@ class EshopColumns {
                 renderer: (ctx) {
                   return DataGridHelper.buildHtmlEditorButton(
                     context: context,
-                    occasionId: data[PRODUCT_DESCRIPTION],
+                    occasionId: (ctx.row.cells[PRODUCT_MODEL_REFERENCE]?.value as ProductModel?)?.occasion,
                     field: PRODUCT_DESCRIPTION,
                     title: ctx.row.cells[PRODUCT_TITLE]!.value,
                     rendererContext: ctx,

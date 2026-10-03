@@ -267,6 +267,23 @@ export default {
 
     if (path.startsWith("/form/")) return handleForm(request, env, path);
 
+    // OAuth handoffs must reach the correct adapter and never enter HTML caches.
+    if (path === "/google-auth" || path === "/app/google-auth") {
+      const entry = path === "/google-auth" ? WEB_CLIENT_INDEX : FLUTTER_ENTRY;
+      const res = await serveAsset(env, request, entry);
+      const response = htmlResponse(res.body, res.headers);
+      response.headers.set("cache-control", "no-store");
+      response.headers.set("referrer-policy", "no-referrer");
+      return response;
+    }
+
+    if (["/.well-known/apple-app-site-association", "/apple-app-site-association", "/.well-known/assetlinks.json"].includes(path)) {
+      const response = await env.ASSETS.fetch(request);
+      const headers = new Headers(response.headers);
+      headers.set("content-type", "application/json");
+      return new Response(response.body, { status: response.status, headers });
+    }
+
     if (WEB_CLIENT_EXACT.has(path)) {
       const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
       return htmlResponse(res.body, res.headers);

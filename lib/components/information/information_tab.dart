@@ -48,6 +48,7 @@ class _InformationTabState extends State<InformationTab>
             child: TabBar(
               controller: _tabController,
               isScrollable: true,
+              tabAlignment: TabAlignment.start,
               tabs: [
                 DataGridHelper.buildTab(
                     context, Icons.info, InformationStrings.information),

@@ -122,6 +122,9 @@ export class RouterService {
 
     // Initial Load Check
     static async handleInitialLoad() {
+        // The callback owns its continuation dialog until the user finishes or
+        // cancels. App-supported tenants must not hand it off to Flutter.
+        if (window.location.pathname === '/google-auth') return true;
         let path = window.location.pathname;
         const fullUrl = window.location.href;
 

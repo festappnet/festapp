@@ -2,34 +2,267 @@
   "version": 1,
   "canonical_origin": "https://api.festapp.net",
   "edge_functions": {
-    "bank-mail-parser": { "trigger": "aws-sns-callback", "effects": ["database-rpc", "aws-sns-subscription-confirmation"], "mutates_authority": true },
-    "cancel-reception-registration": { "trigger": "client-http", "effects": ["database-rpc", "auth-session-revocation"], "mutates_authority": true },
-    "confirm-account-deletion": { "trigger": "client-http", "effects": ["database-rpc", "auth-delete", "storage-delete", "onesignal-delete", "smtp"], "mutates_authority": true },
-    "download-ticket": { "trigger": "client-http", "effects": ["database-read", "remote-asset-read"], "mutates_authority": false },
-    "exchange-login-qr": { "trigger": "client-http", "effects": ["database-rpc", "auth-session-create"], "mutates_authority": true },
-    "fetch-http-data": { "trigger": "client-http", "effects": ["remote-http-read"], "mutates_authority": false },
-    "fetch-transactions": { "trigger": "client-http", "effects": ["database-rpc", "fio-api"], "mutates_authority": true },
-    "generate-order-agreement": { "trigger": "client-http", "effects": ["database-read", "remote-asset-read"], "mutates_authority": false },
-    "instance-install": { "trigger": "operator-http", "effects": ["direct-sql", "github-api"], "mutates_authority": true },
-    "notify": { "trigger": "database-webhook", "effects": ["database-read", "onesignal-notification"], "mutates_authority": false },
-    "register": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "request-account-deletion": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-app-links": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-custom-email": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-email": { "trigger": "database-cron-or-client-http", "effects": ["database-rpc", "fakturoid-api", "smtp"], "mutates_authority": true },
-    "send-reset-password-link": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-sign-in-code": { "trigger": "client-http", "effects": ["database-rpc", "auth-update", "smtp"], "mutates_authority": true },
-    "send-ticket-order": { "trigger": "client-http", "effects": ["database-rpc"], "mutates_authority": true },
-    "send-tickets": { "trigger": "edge-function-http", "effects": ["database-rpc", "remote-asset-read", "smtp"], "mutates_authority": true },
-    "synchronize-orders": { "trigger": "database-cron-or-client-http", "effects": ["database-rpc", "fio-api", "edge-function-http"], "mutates_authority": true }
+    "preview-ticket-layout": {
+      "trigger": "client-http",
+      "effects": [
+        "database-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
+    },
+    "bank-mail-parser": {
+      "trigger": "aws-sns-callback",
+      "effects": [
+        "database-rpc",
+        "aws-sns-subscription-confirmation"
+      ],
+      "mutates_authority": true
+    },
+    "cancel-reception-registration": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-session-revocation"
+      ],
+      "mutates_authority": true
+    },
+    "confirm-account-deletion": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-delete",
+        "storage-delete",
+        "onesignal-delete",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "download-ticket": {
+      "trigger": "client-http",
+      "effects": [
+        "database-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
+    },
+    "exchange-login-qr": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-session-create"
+      ],
+      "mutates_authority": true
+    },
+    "fetch-http-data": {
+      "trigger": "client-http",
+      "effects": [
+        "remote-http-read"
+      ],
+      "mutates_authority": false
+    },
+    "fetch-transactions": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "fio-api"
+      ],
+      "mutates_authority": true
+    },
+    "generate-order-agreement": {
+      "trigger": "client-http",
+      "effects": [
+        "database-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
+    },
+    "instance-install": {
+      "trigger": "operator-http",
+      "effects": [
+        "direct-sql",
+        "github-api"
+      ],
+      "mutates_authority": true
+    },
+    "notify": {
+      "trigger": "database-webhook",
+      "effects": [
+        "database-read",
+        "onesignal-notification"
+      ],
+      "mutates_authority": false
+    },
+    "register": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "request-account-deletion": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "send-app-links": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "send-custom-email": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "send-email": {
+      "trigger": "database-cron-or-client-http",
+      "effects": [
+        "database-rpc",
+        "fakturoid-api",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "send-reset-password-link": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "send-sign-in-code": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-update",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "send-ticket-order": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc"
+      ],
+      "mutates_authority": true
+    },
+    "send-tickets": {
+      "trigger": "edge-function-http",
+      "effects": [
+        "database-rpc",
+        "remote-asset-read",
+        "smtp"
+      ],
+      "mutates_authority": true
+    },
+    "synchronize-orders": {
+      "trigger": "database-cron-or-client-http",
+      "effects": [
+        "database-rpc",
+        "fio-api",
+        "edge-function-http"
+      ],
+      "mutates_authority": true
+    },
+    "google-auth-start": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "google-oidc"
+      ],
+      "mutates_authority": true
+    },
+    "google-auth-callback": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "google-oidc"
+      ],
+      "mutates_authority": true
+    },
+    "google-auth-complete": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "google-oidc",
+        "auth-session-create",
+        "smtp"
+      ],
+      "mutates_authority": true
+    }
   },
   "workers": {
-    "image-worker": { "entrypoint": "workers/image-worker/src/index.ts", "deployment_contract": "workers/image-worker/wrangler.toml", "trigger": "public-http", "effects": ["database-rpc", "r2-write", "cloudflare-cache-purge"], "mutates_authority": true },
-    "self-hosted-preactivation-guard": { "entrypoint": "workers/self-hosted-preactivation-guard/src/index.mjs", "deployment_contract": "workers/self-hosted-preactivation-guard/wrangler.toml", "trigger": "canonical-function-route", "effects": ["fail-closed-http-response"], "mutates_authority": false },
-    "self-hosted-monitor": { "entrypoint": "workers/self-hosted-monitor/src/index.mjs", "deployment_contract": "workers/self-hosted-monitor/wrangler.toml", "trigger": "cloudflare-cron", "effects": ["canonical-and-rehearsal-health-read", "r2-evidence-write", "healthchecks-heartbeat"], "mutates_authority": false },
-    "supabase-legacy-keepalive": { "entrypoint": "workers/supabase-legacy-keepalive/src/index.mjs", "deployment_contract": "workers/supabase-legacy-keepalive/wrangler.toml", "trigger": "cloudflare-cron", "effects": ["legacy-database-read"], "mutates_authority": false },
-    "sync-publisher": { "entrypoint": "workers/sync-publisher/src/worker.ts", "deployment_contract": "workers/sync-publisher/wrangler.example.toml", "trigger": "cloudflare-cron-or-internal-http", "effects": ["database-rpc", "r2-write"], "mutates_authority": true },
-    "sync-worker": { "entrypoint": "workers/sync-worker/src/index.ts", "deployment_contract": "workers/sync-worker/wrangler.toml", "trigger": "public-http", "effects": ["r2-read", "cloudflare-cache-write"], "mutates_authority": false }
+    "image-worker": {
+      "entrypoint": "workers/image-worker/src/index.ts",
+      "deployment_contract": "workers/image-worker/wrangler.toml",
+      "trigger": "public-http",
+      "effects": [
+        "database-rpc",
+        "r2-write",
+        "cloudflare-cache-purge"
+      ],
+      "mutates_authority": true
+    },
+    "self-hosted-preactivation-guard": {
+      "entrypoint": "workers/self-hosted-preactivation-guard/src/index.mjs",
+      "deployment_contract": "workers/self-hosted-preactivation-guard/wrangler.toml",
+      "trigger": "canonical-function-route",
+      "effects": [
+        "fail-closed-http-response"
+      ],
+      "mutates_authority": false
+    },
+    "self-hosted-monitor": {
+      "entrypoint": "workers/self-hosted-monitor/src/index.mjs",
+      "deployment_contract": "workers/self-hosted-monitor/wrangler.toml",
+      "trigger": "cloudflare-cron",
+      "effects": [
+        "canonical-and-rehearsal-health-read",
+        "r2-evidence-write",
+        "healthchecks-heartbeat"
+      ],
+      "mutates_authority": false
+    },
+    "supabase-legacy-keepalive": {
+      "entrypoint": "workers/supabase-legacy-keepalive/src/index.mjs",
+      "deployment_contract": "workers/supabase-legacy-keepalive/wrangler.toml",
+      "trigger": "cloudflare-cron",
+      "effects": [
+        "legacy-database-read"
+      ],
+      "mutates_authority": false
+    },
+    "sync-publisher": {
+      "entrypoint": "workers/sync-publisher/src/worker.ts",
+      "deployment_contract": "workers/sync-publisher/wrangler.example.toml",
+      "trigger": "cloudflare-cron-or-internal-http",
+      "effects": [
+        "database-rpc",
+        "r2-write"
+      ],
+      "mutates_authority": true
+    },
+    "sync-worker": {
+      "entrypoint": "workers/sync-worker/src/index.ts",
+      "deployment_contract": "workers/sync-worker/wrangler.toml",
+      "trigger": "public-http",
+      "effects": [
+        "r2-read",
+        "cloudflare-cache-write"
+      ],
+      "mutates_authority": false
+    }
   },
   "canonical_function_security": {
     "blocked": {},

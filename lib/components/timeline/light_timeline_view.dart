@@ -1033,7 +1033,7 @@ class _LightDayTabBar extends StatelessWidget {
                   child: TabBar(
                     controller: controller,
                     isScrollable: true,
-                    tabAlignment: TabAlignment.start,
+                    tabAlignment: TabAlignment.center,
                     indicator: _RoundedUnderlineIndicator(
                       color: accent,
                       width: 28,

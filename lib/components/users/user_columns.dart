@@ -50,6 +50,25 @@ class UserColumns {
   static const String CREATED_AT = "created_at";
   static const String LAST_SIGN_IN_AT = "last_sign_in_at";
 
+  /// Help is keyed by field, so it survives column reloads and reordering.
+  static Map<String, String> get columnHelp => {
+        MANAGER: UserStrings.administratorHelp,
+        EDITOR: UserStrings.editorHelp,
+        EDITOR_VIEW: UserStrings.readOnlyHelp,
+        EDITOR_ORDER: UserStrings.editOrdersHelp,
+        EDITOR_ORDER_VIEW: UserStrings.readOrdersHelp,
+        UNIT_MANAGER: UserStrings.unitAdministratorHelp,
+        UNIT_EDITOR: UserStrings.unitEditorHelp,
+        UNIT_EDITOR_VIEW: UserStrings.unitReadOnlyHelp,
+        APPROVER: UserStrings.approverHelp,
+        APPROVED: UserStrings.approvedHelp,
+        RECEPTIONIST: UserStrings.receptionistHelp,
+        CLEANING_CREW: UserStrings.cleaningCrewHelp,
+        CLEANING_BLOCKED: UserStrings.cleaningBlockedHelp,
+        IS_VOLUNTEER: UserStrings.volunteerHelp,
+        INVITED: UserStrings.invitedHelp,
+      };
+
   static Map<String, dynamic> get columnBuilders => {
         ID: [
           TrinaColumn(

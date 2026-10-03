@@ -452,9 +452,31 @@
     "noResults": "Žiadne výsledky."
   },
   "HtmlEditor": {
-    "processingContent": "Spracovanie obsahu a detekcia veľkých obrázkov...",
-    "reducingImagesSize": "Prebieha zmenšovanie veľkosti obrázkov...",
-    "largeImagesDetected": "Zistené veľké obrázky",
-    "largeImagesPrompt": "Niektoré obrázky sú veľké a môžu spomaliť aplikáciu. Stlačte OK pre ich prevod na optimálnu veľkosť."
+    "bold": "Tučné",
+    "italic": "Kurzíva",
+    "underline": "Podčiarknuté",
+    "strike": "Prečiarknuté",
+    "link": "Odkaz",
+    "image": "Obrázok",
+    "paste": "Vložiť",
+    "undo": "Späť",
+    "redo": "Znova",
+    "heading2": "Nadpis 2",
+    "heading3": "Nadpis 3",
+    "orderedList": "Číslovaný zoznam",
+    "bulletList": "Odrážky",
+    "indent": "Zväčšiť odsadenie",
+    "outdent": "Zmenšiť odsadenie",
+    "alignLeft": "Zarovnať doľava",
+    "alignCenter": "Na stred",
+    "alignRight": "Zarovnať doprava",
+    "expand": "Zväčšiť",
+    "collapse": "Zmenšiť editor",
+    "imageUrl": "URL obrázka",
+    "discardDraft": "Zahodiť zmeny?",
+    "unknownPublish": "Výsledok publikovania nie je známy. Pred ďalším pokusom znovu načítajte správy.",
+    "unknownUpload": "Výsledok nahrávania obrázka nie je známy. Opakovanie môže vytvoriť ďalší obrázok.",
+    "retryUpload": "Zopakovať nahrávanie",
+    "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
   }
 }

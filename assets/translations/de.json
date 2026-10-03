@@ -453,9 +453,31 @@
     "noResults": "Keine Ergebnisse."
   },
   "HtmlEditor": {
-    "processingContent": "Inhalte verarbeiten und große Bilder erkennen...",
-    "reducingImagesSize": "Größenreduzierung der Bilder...",
-    "largeImagesDetected": "Große Bilder erkannt",
-    "largeImagesPrompt": "Einige Bilder sind groß und können die App verlangsamen. Drücken Sie OK, um sie in die optimale Größe zu konvertieren."
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "underline": "Unterstrichen",
+    "strike": "Durchgestrichen",
+    "link": "Link",
+    "image": "Bild",
+    "paste": "Einfügen",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen",
+    "heading2": "Überschrift 2",
+    "heading3": "Überschrift 3",
+    "orderedList": "Nummerierte Liste",
+    "bulletList": "Aufzählung",
+    "indent": "Einrücken",
+    "outdent": "Ausrücken",
+    "alignLeft": "Links ausrichten",
+    "alignCenter": "Zentrieren",
+    "alignRight": "Rechts ausrichten",
+    "expand": "Vergrößern",
+    "collapse": "Vollbild verlassen",
+    "imageUrl": "Bild-URL",
+    "discardDraft": "Änderungen verwerfen?",
+    "unknownPublish": "Das Ergebnis der Veröffentlichung ist unbekannt. Laden Sie die Nachrichten vor einem weiteren Versuch neu.",
+    "unknownUpload": "Das Ergebnis des Bild-Uploads ist unbekannt. Ein erneuter Versuch kann ein weiteres Bild erzeugen.",
+    "retryUpload": "Upload erneut versuchen",
+    "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
   }
 }

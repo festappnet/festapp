@@ -1,3 +1,4 @@
+import 'package:fstapp/services/exception_handler.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -76,14 +77,23 @@ class SingleDataGridHeader<T extends ITrinaRowModel> extends StatefulWidget {
 class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     extends State<SingleDataGridHeader<T>> {
   final SingleDataGridController<T> controller;
+  bool _isSaving = false;
 
   _SingleDataGridHeaderState(this.controller);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: Listenable.merge([widget.stateManager, controller.htmlSave]),
+        builder: (context, _) => _buildHeader(context),
+      );
+
+  Widget _buildHeader(BuildContext context) {
     // Build left-side actions (Add, Discard, Save and any extra header children)
     List<Widget> leftActions = [];
     var actionsController = controller.actionsExtended;
+    final canChange = actionsController?.areAllActionsEnabled?.call() ?? true;
+    final canSaveOrDiscard =
+        canChange && controller.hasPendingChanges && !_isSaving;
 
     leftActions.addAll([
       if (actionsController?.isAddActionPossible?.call() ?? true)
@@ -96,24 +106,14 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
           child: Text(CommonStrings.add),
         ),
       ElevatedButton(
-        onPressed: actionsController != null &&
-                actionsController.areAllActionsEnabled != null &&
-                !actionsController.areAllActionsEnabled!()
-            ? null
-            : _cancelChanges,
+        onPressed: canSaveOrDiscard ? _cancelChanges : null,
         child: Text(DataGridStrings.discardChanges),
       ),
       ElevatedButton(
-        onPressed: actionsController != null &&
-                actionsController.areAllActionsEnabled != null &&
-                !actionsController.areAllActionsEnabled!()
-            ? null
-            : () {
-                actionsController?.saveAction?.action == null
-                    ? _saveChanges()
-                    : actionsController!.saveAction!.action!(
-                        controller, _saveChanges);
-              },
+        onPressed: canSaveOrDiscard &&
+                (actionsController?.saveAction?.isEnabled?.call() ?? true)
+            ? _runSave
+            : null,
         child: Text(
             actionsController?.saveAction?.name ?? CommonStrings.saveChanges),
       ),
@@ -126,7 +126,11 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
           AnimatedBuilder(
             animation: widget.stateManager,
             builder: (context, _) => ElevatedButton(
-              onPressed: a.isEnabled != null && !a.isEnabled!()
+              onPressed: a.action == null ||
+                      (a.requiresSelection &&
+                          !widget.stateManager.refRows.originalList
+                              .any((row) => row.checked == true)) ||
+                      (a.isEnabled != null && !a.isEnabled!())
                   ? null
                   : () => a.action!(controller, null),
               child: Text(a.name ?? "---"),
@@ -214,11 +218,28 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     for (var value in newRowsGenerated) {
       controller.newRows.add(value);
     }
+    controller.stateManager.notifyListeners();
+  }
+
+  Future<void> _runSave() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    await ExceptionHandler.guardVoid(context, futureFunction: () async {
+      await controller.htmlSave.save(() async {
+        final action = controller.actionsExtended?.saveAction?.action;
+        if (action == null) {
+          await _saveChanges();
+        } else {
+          await controller.prepareHtmlRows();
+          await action(controller, _saveChanges);
+        }
+      }, context: context);
+    });
+    if (mounted) setState(() => _isSaving = false);
   }
 
   Future<void> _saveChanges() async {
     var toDelete = controller.deletedRows.toList();
-    controller.updatedRows.removeAll(toDelete);
 
     var deleteList = List<T>.from(
       toDelete.map((x) => controller.fromPlutoJson(x.toJson())),
@@ -235,8 +256,12 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
       }
     }
 
+    await controller.prepareHtmlRows();
+
     var updatedSet = Set<T>.from(
-      controller.updatedRows.map((x) => controller.fromPlutoJson(x.toJson())),
+      controller.updatedRows
+          .where((row) => !toDelete.contains(row))
+          .map((x) => controller.fromPlutoJson(x.toJson())),
     );
 
     var newSet = Set<T>.from(
@@ -275,6 +300,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     );
 
     if (success) {
+      controller.htmlSave.markSaved();
       await controller.reloadData();
     }
   }
@@ -288,6 +314,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     if (!result) {
       return;
     }
+    controller.htmlSave.markSaved();
     // This was controller.loadData() but should be controller.reloadData()
     // to ensure UI consistency with how save works or loadDataOnly and apply.
     // Or, if loadData() implies full reload and state reset, it's fine.

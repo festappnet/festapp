@@ -41,49 +41,22 @@ class DbInformation {
 
   static Future<List<InformationModel>> getAllInformationForDataGrid(
       [String? type]) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final response = await _supabase.rpc(
-        'get_information_editor_bundle_v1',
-        params: {
-          'p_occasion': RightsService.currentOccasionId()!,
-          'p_type': type,
-        },
-      );
-      final bundle = (response as Map).cast<String, dynamic>();
-      final information = ((bundle['information'] as List?) ?? const [])
-          .map((x) =>
-              InformationModel.fromJson((x as Map).cast<String, dynamic>()))
-          .toList();
-      return _sortInformationList(information);
+    final response = await _supabase.rpc(
+      'get_information_editor_bundle_v1',
+      params: {
+        'p_occasion': RightsService.currentOccasionId()!,
+        'p_type': type,
+      },
+    );
+    final bundle = (response as Map).cast<String, dynamic>();
+    if (bundle['code'] != 200) {
+      throw StateError('Information editor data could not be loaded');
     }
-    var select = "${Tb.information.id},"
-        "${Tb.information.occasion},"
-        "${Tb.information.created_at},"
-        "${Tb.information.updated_at},"
-        "${Tb.information.is_hidden},"
-        "${Tb.information.title},"
-        "${Tb.information.description},"
-        "${Tb.information.order},"
-        "${Tb.information.type},"
-        "${Tb.information.data},"
-        "${Tb.information_hidden.table}(*)";
-    List<Map<String, dynamic>> data = [];
-    if (type != null) {
-      data = await _supabase
-          .from(Tb.information.table)
-          .select(select)
-          .eq(Tb.information.occasion, RightsService.currentOccasionId()!)
-          .filter(Tb.information.type, "eq", type);
-    } else {
-      data = await _supabase
-          .from(Tb.information.table)
-          .select(select)
-          .eq(Tb.information.occasion, RightsService.currentOccasionId()!)
-          .or("${Tb.information.type}.eq.,${Tb.information.type}.is.null");
-    }
-    var infoList = List<InformationModel>.from(
-        data.map((x) => InformationModel.fromJson(x)));
-    return _sortInformationList(infoList);
+    final information = ((bundle['information'] as List?) ?? const [])
+        .map((x) =>
+            InformationModel.fromJson((x as Map).cast<String, dynamic>()))
+        .toList();
+    return _sortInformationList(information);
   }
 
   static Future<List<InformationModel>> getAllInformationForDataGridForUnit(
@@ -138,13 +111,20 @@ class DbInformation {
 
     var infoList = List<InformationModel>.from(
         data.map((x) => InformationModel.fromJson(x)));
+    if (RightsService.isEditor()) {
+      // The inline writer must freeze content and its version from one read.
+      // Keep other information types in the shared public/offline catalog.
+      final editable = await getAllInformationForDataGrid();
+      infoList.removeWhere((info) => info.type == null || info.type!.isEmpty);
+      infoList.addAll(editable.where((info) => !(info.isHidden ?? false)));
+    }
     infoList.sortBy((element) => element.title ?? "".toLowerCase());
     infoList.sort((a, b) => (a.getOrder().compareTo(b.getOrder())));
     return infoList;
   }
 
   static Future<void> updateInformation(InformationModel info) async {
-    if (ClientSyncRuntime.isV1Selected && info.unit == null) {
+    if (info.unit == null) {
       final result =
           await _commands.save(RightsService.currentOccasionId()!, info);
       if (result.status == InformationCommandStatus.conflict) {
