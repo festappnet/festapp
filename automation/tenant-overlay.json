@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "dec493cdd16ef4c21399227f4a3db281c58c4e7d",
+  "baseMainSha": "88af597ceb99bb3a31c645d0ea9d54b5b18f05b9",
   "release": {
-    "version": "0.20.64+548",
-    "note": "Restore Material 2 tab divider and header width behavior; hide history Add action"
+    "version": "0.20.65+549",
+    "note": "Align breadcrumb baselines, clarify enabled actions and fix direct program URL startup"
   }
 }

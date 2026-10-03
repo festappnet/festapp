@@ -285,3 +285,16 @@ shrinking. Numeric edits preview valid sizes and name required blockers on Apply
 Ticket-code edits automatically enlarge undersized boxes using the actual font
 metrics, staying inside the canvas and clear of QR. The same repair runs when
 opening old drafts and before saving, avoiding the generic too-small-box error.
+
+
+## Canvas color and panel organization
+
+The properties panel groups canvas/paper, typography and artwork. Selected
+object properties stay at the top, and a compact thumbnail leaves room for tools.
+`canvasColor` is optional six-digit RGB or `transparent`; absent preserves the
+historical gray fill. Transparency is shown as an editor-only checkerboard and
+omits the canvas fill in PDF (paper margins and QR quiet zones stay white).
+Color changes are undoable and cancel without changes. Escape/outside dismiss
+nested dialogs; the editor protects unsaved changes with its discard prompt.
+Deploy `20261003170000_ticket_canvas_color.sql` and the updated function bundle
+before publishing the client.
