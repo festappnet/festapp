@@ -1,4 +1,5 @@
 import '../models/report_exchange_rates.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -73,7 +74,9 @@ class _ReportTabState extends State<ReportTab> {
 
   void _updateKey() {
     final link = widget.occasionLink ??
-        context.routeData.inheritedPathParams.getString(AppRouter.linkFormatted);
+        context.routeData.inheritedPathParams.getString(
+          AppRouter.linkFormatted,
+        );
     final identity = widget.identityKey ??
         '${Supabase.instance.client.auth.currentUser?.id}/${RightsService.currentUser()?.id}/${RightsService.currentOccasion()?.organization}/${RightsService.isEditorOrderView()}';
     final key = '$identity/$link';
@@ -190,9 +193,9 @@ class _ReportTabState extends State<ReportTab> {
       Card(
         elevation: 0,
         color: Theme.of(context).colorScheme.surfaceContainerLow,
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 4),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -201,13 +204,13 @@ class _ReportTabState extends State<ReportTab> {
                   Expanded(
                     child: Text(
                       title,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
                   _ReportInfoIcon(help: details ?? help, label: title),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
               ...children,
             ],
           ),
@@ -218,12 +221,13 @@ class _ReportTabState extends State<ReportTab> {
     if (!report.hasTimeline) return [Text(ReportStrings.timelineUnavailable)];
     final dates = [
       ...report.orderDays.map((d) => d.day),
-      ...report.paymentDays.map((d) => d.day)
+      ...report.paymentDays.map((d) => d.day),
     ]..sort();
     if (dates.isEmpty) {
       return [
-        _section(ReportStrings.orderTimeline, ReportStrings.orderTimelineHelp,
-            [Text(ReportStrings.timelineEmpty)])
+        _section(ReportStrings.orderTimeline, ReportStrings.orderTimelineHelp, [
+          Text(ReportStrings.timelineEmpty),
+        ]),
       ];
     }
     final generated = report.generatedAt.toUtc();
@@ -236,7 +240,7 @@ class _ReportTabState extends State<ReportTab> {
     final currencies = {
       ...report.orderDays.map((d) => d.currency),
       ...report.money.map((m) => m.currency),
-      ...report.paymentDays.map((d) => d.currency)
+      ...report.paymentDays.map((d) => d.currency),
     }.toList()
       ..sort();
     final selected = currencies.contains(_currency) || _currency == '*'
@@ -246,19 +250,25 @@ class _ReportTabState extends State<ReportTab> {
             : currencies.first;
     final visible = selected == '*' ? currencies : [selected];
     final orders = <DateTime, BigInt>{};
-    for (final d
-        in report.orderDays.where((d) => visible.contains(d.currency))) {
-      orders.update(d.day, (value) => value + BigInt.from(d.count),
-          ifAbsent: () => BigInt.from(d.count));
+    for (final d in report.orderDays.where(
+      (d) => visible.contains(d.currency),
+    )) {
+      orders.update(
+        d.day,
+        (value) => value + BigInt.from(d.count),
+        ifAbsent: () => BigInt.from(d.count),
+      );
     }
     final combined = selected == '*';
     final canConvert = !combined ||
         visible.every(
-            (c) => c == 'CZK' || (_rates?.rates.containsKey(c) ?? false));
+          (c) => c == 'CZK' || (_rates?.rates.containsKey(c) ?? false),
+        );
     Map<DateTime, BigInt> payments(bool returned) {
       final amounts = <DateTime, BigInt>{};
-      for (final day
-          in report.paymentDays.where((d) => visible.contains(d.currency))) {
+      for (final day in report.paymentDays.where(
+        (d) => visible.contains(d.currency),
+      )) {
         final cents = reportMinorUnits(returned ? day.returned : day.received);
         final value = combined ? _rates!.toCzk(cents, day.currency) : cents;
         amounts.update(day.day, (old) => old + value, ifAbsent: () => value);
@@ -267,109 +277,210 @@ class _ReportTabState extends State<ReportTab> {
     }
 
     return [
-      Wrap(spacing: 8, runSpacing: 8, children: [
-        for (final currency in currencies)
-          ChoiceChip(
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final currency in currencies)
+            ChoiceChip(
               label: Text(currency),
               selected: selected == currency,
-              onSelected: (_) => setState(() => _currency = currency)),
-        if (currencies.length > 1)
-          ChoiceChip(
+              onSelected: (_) => setState(() => _currency = currency),
+            ),
+          if (currencies.length > 1)
+            ChoiceChip(
               label: Text(ReportStrings.compareCurrencies),
               selected: selected == '*',
-              onSelected: (_) => setState(() => _currency = '*')),
-      ]),
+              onSelected: (_) => setState(() => _currency = '*'),
+            ),
+        ],
+      ),
       const SizedBox(height: 12),
-      Wrap(spacing: 8, runSpacing: 8, children: [
-        for (final range in [30, 90, 0])
-          ChoiceChip(
-              label: Text(range == 0
-                  ? ReportStrings.allDays
-                  : range == 30
-                      ? ReportStrings.days30
-                      : ReportStrings.days90),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final range in [30, 90, 0])
+            ChoiceChip(
+              label: Text(
+                range == 0
+                    ? ReportStrings.allDays
+                    : range == 30
+                        ? ReportStrings.days30
+                        : ReportStrings.days90,
+              ),
               selected: _rangeDays == range,
-              onSelected: (_) => setState(() => _rangeDays = range)),
-        ChoiceChip(
+              onSelected: (_) => setState(() => _rangeDays = range),
+            ),
+          ChoiceChip(
             label: Text(ReportStrings.daily),
             selected: !_cumulative,
-            onSelected: (_) => setState(() => _cumulative = false)),
-        ChoiceChip(
+            onSelected: (_) => setState(() => _cumulative = false),
+          ),
+          ChoiceChip(
             label: Text(ReportStrings.cumulative),
             selected: _cumulative,
-            onSelected: (_) => setState(() => _cumulative = true)),
-      ]),
+            onSelected: (_) => setState(() => _cumulative = true),
+          ),
+        ],
+      ),
       _columns([
         _section(ReportStrings.orderTimeline, ReportStrings.orderTimelineHelp, [
           ReportTimelineChart(
-              start: start,
-              end: end,
-              cumulative: _cumulative,
-              series: [
-                ReportTimelineSeries(
-                    ReportStrings.orders, colors.primary, orders)
-              ])
+            start: start,
+            end: end,
+            cumulative: _cumulative,
+            series: [
+              ReportTimelineSeries(
+                ReportStrings.orders,
+                colors.primary,
+                orders,
+              ),
+            ],
+          ),
         ]),
         _section(
-            ReportStrings.paymentTimeline, ReportStrings.paymentTimelineHelp, [
-          if (canConvert)
-            ReportTimelineChart(
+          ReportStrings.paymentTimeline,
+          ReportStrings.paymentTimelineHelp,
+          [
+            if (canConvert)
+              ReportTimelineChart(
                 start: start,
                 end: end,
                 cumulative: _cumulative,
                 currency: combined ? 'CZK' : selected,
                 series: [
                   ReportTimelineSeries(
-                      ReportStrings.received, colors.primary, payments(false)),
+                    ReportStrings.received,
+                    colors.primary,
+                    payments(false),
+                  ),
                   ReportTimelineSeries(
-                      ReportStrings.returned, colors.error, payments(true)),
-                ])
-          else if (_ratesFailed)
-            Text(ReportStrings.ratesUnavailable)
-          else
-            const LinearProgressIndicator(),
-          if (combined && canConvert) ...[
-            Text(
+                    ReportStrings.returned,
+                    colors.error,
+                    payments(true),
+                  ),
+                ],
+              )
+            else if (_ratesFailed)
+              Text(ReportStrings.ratesUnavailable)
+            else
+              const LinearProgressIndicator(),
+            if (combined && canConvert) ...[
+              Text(
                 '${ReportStrings.currencyComparisonHelp} ${DateFormat('d. M. yyyy').format(_rates!.date)}',
-                style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 8),
-            Wrap(spacing: 12, runSpacing: 4, children: [
-              for (final c in visible.where((c) => c != 'CZK'))
-                Text(_rates!.rates[c]!.label,
-                    style: Theme.of(context).textTheme.labelSmall),
-            ]),
-            const SizedBox(height: 16),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                children: [
+                  for (final c in visible.where((c) => c != 'CZK'))
+                    Text(
+                      _rates!.rates[c]!.label,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
           ],
-        ]),
+        ),
       ]),
     ];
   }
 
-  Widget _columns(List<Widget> children) =>
-      LayoutBuilder(builder: (context, constraints) {
-        if (constraints.maxWidth < 850 ||
-            MediaQuery.textScalerOf(context).scale(1) > 1.4) {
-          return Column(
+  Widget _columns(List<Widget> children) => LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 850 ||
+              MediaQuery.textScalerOf(context).scale(1) > 1.4) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: children);
-        }
-        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(width: 16),
-            Expanded(child: children[i]),
-          ],
-        ]);
-      });
+              children: children,
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(child: children[i]),
+              ],
+            ],
+          );
+        },
+      );
 
   Widget _value(String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label),
-            Text(value, style: Theme.of(context).textTheme.titleMedium),
-          ],
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final labelText = Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall,
+            );
+            final valueStyle = Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600);
+            if (MediaQuery.textScalerOf(context).scale(1) > 1.4) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  labelText,
+                  Text(value, style: valueStyle),
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: labelText),
+                const SizedBox(width: 12),
+                Flexible(
+                  flex: 2,
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Text(value,
+                        textAlign: TextAlign.end, style: valueStyle),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
+      );
+
+  Widget _moneyDetails(List<ReportMoney> money) => LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = constraints.maxWidth >= 850 &&
+                  MediaQuery.textScalerOf(context).scale(1) <= 1.4
+              ? 2
+              : 1;
+          final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
+          return Wrap(
+            spacing: 12,
+            children: [
+              for (final m in money)
+                SizedBox(
+                  width: width,
+                  child: _section(
+                      m.currency,
+                      ReportStrings.moneyHelp,
+                      [
+                        for (final a in m.amounts.entries)
+                          if (m.hasDeposits || !a.key.contains('deposit'))
+                            _value(
+                              ReportStrings.metric(a.key),
+                              '${a.value} ${m.currency}',
+                            ),
+                      ],
+                      details: ReportStrings.moneyDetails),
+                ),
+            ],
+          );
+        },
       );
 
   Widget _states(String title, ReportCounts counts) =>
@@ -386,7 +497,7 @@ class _ReportTabState extends State<ReportTab> {
                   Text('${entry.key}: ${entry.value}'),
                   LinearProgressIndicator(
                     value: counts.total == 0 ? 0 : entry.value / counts.total,
-                    minHeight: 8,
+                    minHeight: 5,
                   ),
                 ],
               ),
@@ -411,7 +522,7 @@ class _ReportTabState extends State<ReportTab> {
                   if (r != null) ...[
                     Text(
                       r.title,
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     Text(
                       '${ReportStrings.snapshot}: ${DateFormat('d. M. yyyy HH:mm').format(r.generatedAt.toLocal())}',
@@ -467,40 +578,57 @@ class _ReportTabState extends State<ReportTab> {
                   if (_error) Text(ReportStrings.error),
                   if (r != null && _text) SelectableText(r.text),
                   if (r != null && !_text) ...[
-                    LayoutBuilder(builder: (context, constraints) {
-                      final columns =
-                          MediaQuery.textScalerOf(context).scale(1) > 1.4
-                              ? 1
-                              : constraints.maxWidth >= 1100
-                                  ? 5
-                                  : constraints.maxWidth >= 850
-                                      ? 4
-                                      : constraints.maxWidth >= 550
-                                          ? 2
-                                          : 1;
-                      final width =
-                          (constraints.maxWidth - (columns - 1) * 12) / columns;
-                      return Wrap(spacing: 12, runSpacing: 12, children: [
-                        _summary(
-                            ReportStrings.orders, '${r.orders.total}', width),
-                        _summary(
-                            ReportStrings.tickets, '${r.tickets.total}', width),
-                        if (r.spotsTotal > 0)
-                          _summary(ReportStrings.spots,
-                              '${r.spotsOccupied} / ${r.spotsTotal}', width),
-                        for (final m in r.money)
-                          _summary(
-                              '${ReportStrings.metric('net_received')} (${m.currency})',
-                              m.amounts['net_received']!,
-                              width),
-                      ]);
-                    }),
-                    const SizedBox(height: 20),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns =
+                            MediaQuery.textScalerOf(context).scale(1) > 1.4
+                                ? 1
+                                : constraints.maxWidth >= 1100
+                                    ? 5
+                                    : constraints.maxWidth >= 850
+                                        ? 4
+                                        : constraints.maxWidth >= 350
+                                            ? 2
+                                            : 1;
+                        final width =
+                            (constraints.maxWidth - (columns - 1) * 12) /
+                                columns;
+                        return Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            _summary(
+                              ReportStrings.orders,
+                              '${r.orders.total}',
+                              width,
+                            ),
+                            _summary(
+                              ReportStrings.tickets,
+                              '${r.tickets.total}',
+                              width,
+                            ),
+                            if (r.spotsTotal > 0)
+                              _summary(
+                                ReportStrings.spots,
+                                '${r.spotsOccupied} / ${r.spotsTotal}',
+                                width,
+                              ),
+                            for (final m in r.money)
+                              _summary(
+                                '${ReportStrings.metric('net_received')} (${m.currency})',
+                                m.amounts['net_received']!,
+                                width,
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
                     ..._timelines(r),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     Text(
                       ReportStrings.overview,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
                     if (r.spotsTotal > 0)
@@ -515,7 +643,7 @@ class _ReportTabState extends State<ReportTab> {
                               '${ReportStrings.spots}: ${r.spotsOccupied} / ${r.spotsTotal}',
                           child: LinearProgressIndicator(
                             value: r.spotsOccupied / r.spotsTotal,
-                            minHeight: 12,
+                            minHeight: 6,
                           ),
                         ),
                       ]),
@@ -523,19 +651,7 @@ class _ReportTabState extends State<ReportTab> {
                       _states(ReportStrings.orders, r.orders),
                       _states(ReportStrings.tickets, r.tickets),
                     ]),
-                    for (final m in r.money)
-                      _section(
-                          m.currency,
-                          ReportStrings.moneyHelp,
-                          [
-                            for (final a in m.amounts.entries)
-                              if (m.hasDeposits || !a.key.contains('deposit'))
-                                _value(
-                                  ReportStrings.metric(a.key),
-                                  '${a.value} ${m.currency}',
-                                ),
-                          ],
-                          details: ReportStrings.moneyDetails),
+                    _moneyDetails(r.money),
                     for (final w in r.warnings.entries)
                       Semantics(
                         liveRegion: true,
@@ -623,17 +739,21 @@ class _ReportTabState extends State<ReportTab> {
               .primaryContainer
               .withValues(alpha: 0.35),
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 12),
-              Text(value,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.labelLarge),
+                const SizedBox(height: 4),
+                Text(
+                  value,
                   style: Theme.of(context)
                       .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-            ]),
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
           ),
         ),
       );
