@@ -481,7 +481,7 @@ class TicketLayoutPainter extends CustomPainter {
       canvas.translate(-doc.area.left, -doc.area.top);
     }
     canvas.drawRect(Offset.zero & doc.page, Paint()..color = Colors.white);
-    if (doc.canvasColor == 'transparent') {
+    if (doc.canvasOpacity < 1) {
       canvas.save();
       canvas.clipRect(doc.area);
       final step = 10 / zoom;
@@ -495,9 +495,13 @@ class TicketLayoutPainter extends CustomPainter {
         }
       }
       canvas.restore();
-    } else {
-      canvas.drawRect(doc.area,
-          Paint()..color = Color(int.parse('ff${doc.canvasColor}', radix: 16)));
+    }
+    if (doc.canvasOpacity > 0) {
+      canvas.drawRect(
+          doc.area,
+          Paint()
+            ..color = Color(int.parse('ff${doc.canvasColor}', radix: 16))
+                .withValues(alpha: doc.canvasOpacity));
     }
     final artwork = resources.artworks[controller.artworkKey];
     final background = artwork != null ? artwork.image : resources.background;
