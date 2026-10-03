@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:fstapp/services/auth_session_storage.dart';
 import 'dart:async';
@@ -84,7 +85,7 @@ String initialRouteForUri(Uri uri) {
 
 bool isUnitAdminStartupRoute(Uri uri) {
   final segments = uri.pathSegments;
-  return segments.length == 3 &&
+  return segments.length >= 3 &&
       segments[0] == 'unit' &&
       int.tryParse(segments[1]) != null &&
       segments[2] == 'edit';
@@ -414,7 +415,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Offset _offset = Offset.zero;
 
-  DeepLink _resolveDeepLink(PlatformDeepLink platformDeepLink) {
+  Future<DeepLink> _resolveDeepLink(PlatformDeepLink platformDeepLink) async {
     if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {
       return DeepLink.path('/login', includePrefixMatches: false);
     }
@@ -423,6 +424,12 @@ class _MyAppState extends State<MyApp> {
         widget.initialRoute,
         includePrefixMatches: false,
       );
+    }
+    if (!await RetainedDraftGuard.instance
+        .confirmPath(RouterService.router, platformDeepLink.uri)) {
+      RouterService.router.markUrlStateForReplace();
+      RouterService.router.notifyAll(forceUrlRebuild: true);
+      return DeepLink.none;
     }
     return platformDeepLink;
   }

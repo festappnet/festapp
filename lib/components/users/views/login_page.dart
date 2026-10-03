@@ -29,7 +29,8 @@ import 'package:fstapp/app_router.gr.dart';
 @RoutePage()
 class LoginPage extends StatefulWidget {
   static const ROUTE = "login";
-  const LoginPage({super.key});
+  final String? redirect;
+  const LoginPage({super.key, @QueryParam('redirect') this.redirect});
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -146,10 +147,12 @@ class _LoginPageState extends State<LoginPage> {
                         height: 24,
                       ),
                       GoogleLoginPanel(
+                          returnPath: widget.redirect,
                           onAuthenticated: () =>
                               RouterService.handlePostLoginNavigation(context,
-                                  fallbackPath: GoogleAuthService.state.value
-                                      .result['returnPath'] as String?,
+                                  fallbackPath: widget.redirect ??
+                                      GoogleAuthService.state.value
+                                          .result['returnPath'] as String?,
                                   useReplacement: true)),
                       if (!GoogleAuthService.isContinuation) ...[
                         if (RightsService.occasionLinkModel?.organization
@@ -308,7 +311,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     if (loggedIn) {
       await RouterService.handlePostLoginNavigation(context,
-          fallbackPath:
+          fallbackPath: widget.redirect ??
               GoogleAuthService.state.value.result['returnPath'] as String?);
     }
   }
