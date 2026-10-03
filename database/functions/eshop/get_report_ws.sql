@@ -16,9 +16,20 @@ BEGIN
     SELECT EXISTS (SELECT 1 FROM payments p JOIN eshop.orders o ON o.payment_info = p.id
       WHERE o.occasion IS DISTINCT FROM (SELECT id FROM scope)
          OR o.currency_code IS DISTINCT FROM p.currency_code) AS value
+  ), transactions_scope AS MATERIALIZED (
+    SELECT t.* FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info
+    WHERE t.currency=p.currency_code
+  ), order_days AS (
+    SELECT (created_at AT TIME ZONE 'Europe/Prague')::date AS day,currency_code::text AS currency,count(*) AS count
+    FROM orders_scope GROUP BY 1,2
+  ), payment_days AS (
+    SELECT date::date AS day,currency::text AS currency,
+      coalesce(sum(amount) FILTER (WHERE amount>0),0)::text AS received,
+      coalesce(-sum(amount) FILTER (WHERE amount<0),0)::text AS returned
+    FROM transactions_scope GROUP BY 1,2
   ), manual AS (
     SELECT t.payment_info, sum(t.amount) FILTER (WHERE t.transaction_type = 'manual' AND t.amount > 0) AS received
-    FROM eshop.transactions t JOIN payments p ON p.id = t.payment_info GROUP BY t.payment_info
+    FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info GROUP BY t.payment_info
   ), order_money AS (
     SELECT currency_code AS currency, sum(coalesce(price,0)) AS value
     FROM orders_scope GROUP BY currency_code
@@ -54,6 +65,7 @@ BEGIN
     WHERE o.state IN ('paid','sent','used') GROUP BY p.id,pt.id
   ), warnings AS (
     SELECT 'missing_order_price' AS code,count(*) AS count FROM orders_scope WHERE price IS NULL HAVING count(*)>0
+    UNION ALL SELECT 'transaction_currency_mismatch',count(*) FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info WHERE t.currency<>p.currency_code HAVING count(*)>0
     UNION ALL SELECT 'negative_other_received',count(*) FROM money WHERE received-manual<0 HAVING count(*)>0
   )
   SELECT jsonb_build_object(
@@ -67,6 +79,11 @@ BEGIN
       'net_received',(received-returned)::text,'manual_received',manual::text,'other_received',(received-manual)::text,
       'has_deposits',deposits,'deposit_received_gross',deposit::text,'beyond_deposit_received_gross',beyond::text
     ) ORDER BY currency) FROM money),'[]'::jsonb),
+    'timeline',jsonb_build_object(
+      'order_timezone','Europe/Prague','payment_date_basis','transaction_date',
+      'orders',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day) FROM order_days d),'[]'::jsonb),
+      'payments',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM payment_days d),'[]'::jsonb)
+    ),
     'products',coalesce((SELECT jsonb_agg(to_jsonb(p) ORDER BY type_id,product_id) FROM products p),'[]'::jsonb),
     'warnings',coalesce((SELECT jsonb_agg(to_jsonb(w) ORDER BY code) FROM warnings w),'[]'::jsonb)
   ), invalid.value INTO r,invalid_payment FROM scope s CROSS JOIN invalid;

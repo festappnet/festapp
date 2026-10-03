@@ -1,3 +1,4 @@
+import 'models/report_exchange_rates.dart';
 import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -47,8 +48,14 @@ class DbEshop {
     return response;
   }
 
+  static Future<ReportExchangeRates> getReportExchangeRates() async {
+    final result = await _supabase.functions.invoke('report-exchange-rates');
+    return ReportExchangeRates.fromJson(Map<String, dynamic>.from(result.data));
+  }
+
   static Future<OccasionReport> getReportForOccasion(String link) async {
-    final response = await _supabase.rpc('get_report_ws', params: {'occasion_link': link});
+    final response =
+        await _supabase.rpc('get_report_ws', params: {'occasion_link': link});
     return OccasionReport.fromResponse(response);
   }
 
