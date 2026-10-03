@@ -84,5 +84,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('UNIT 1'), findsOneWidget);
     expect(access.requests, [1, 2, 1]);
+    unawaited(
+        RouterService.navigateToUnitAdmin(selectedContext, UnitModel(id: 2)));
+    await tester.pumpAndSettle();
+    const target = '/unit/1/edit';
+    await router.delegate().setNewRoutePath(UrlState(Uri.parse(target),
+        router.matcher.match(target, includePrefixMatches: false)!));
+    await tester.pumpAndSettle();
+    expect(access.requests, [1, 2, 1, 2, 1]);
+    expect(find.text('UNIT 1'), findsOneWidget);
   });
 }

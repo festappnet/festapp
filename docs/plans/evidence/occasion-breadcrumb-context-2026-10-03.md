@@ -13,7 +13,7 @@ their content is hidden behind a loading screen. Context listeners only reload
 the visible native route and only rebuild when denial state actually changes.
 Initial denial still creates no protected children.
 
-Validation: 96 targeted navigation/unit widget tests passed; scoped analysis
+Validation: 97 targeted navigation/unit widget tests passed; scoped analysis
 reported no errors or warnings. The fixture now uses the production no-transition
 route behavior and expanded path keys. The new regression asserts bounded
 settling, exactly one context load per switch, and the original subtab after Back.
@@ -23,8 +23,14 @@ isolated headless agent-browser session, with production notification SDK calls
 stubbed by the existing E2E entry point. Actual occasion-picker handlers were
 clicked, not direct router calls. A -> B -> A -> B rendered the order grid each
 time; observed `get_app_config_v218` requests were one per switch. This confirms
-local settling; the user's entire persistent production refresh loop was not
-independently captured. The original regression was a lost retained subtab.
+local settling. Physical browser Back then reproduced a permanently loading
+screen: the loaded context remained B after returning to A. Targeted logs proved
+all reparsed URL match IDs differed from retained page IDs. A second regression
+using `router.delegate().setNewRoutePath` reproduced the exact failure: expected
+loads [A,B,A], actual [A,B]. Changing visibility to `root.currentSegments` fixes
+it by checking mounted controllers rather than freshly parsed history matches.
+This regression covers occasions and units; physical browser Back renders the
+correct grid after the fix. No temporary instrumentation remains.
 
 The separate existing local-preview checkout was based on 5e13d80b8 and missed
 later shipped sidebar/dialog/context changes. No other Flutter server was

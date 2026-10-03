@@ -19,6 +19,26 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets('incoming browser history restores retained occasion context',
+      (tester) async {
+    final access = Access();
+    final router = FixtureRouter(access);
+    const target = '/occasion-a/reservations/orders/history';
+    await mount(tester, router, target);
+    unawaited(RouterService.navigateToOccasionAdministration(
+        tester.element(find.text('HISTORY CONTENT')),
+        occasionLink: 'occasion-b'));
+    await tester.pumpAndSettle();
+    await router.delegate().setNewRoutePath(UrlState(Uri.parse(target),
+        router.matcher.match(target, includePrefixMatches: false)!));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(access.requests, ['occasion-a', 'occasion-b', 'occasion-a']);
+    expect(find.text('HISTORY CONTENT'), findsOneWidget);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+  });
+
   testWidgets('occasion breadcrumb switch settles and Back restores context',
       (tester) async {
     final access = Access();
