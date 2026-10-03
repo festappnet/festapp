@@ -38,6 +38,60 @@ List<DateTime> reportChartDays(DateTime start, DateTime end) => [
         day,
     ];
 
+// Calendar anchors, rather than equally spaced labels with misleading dates.
+List<DateTime> reportChartTicks(DateTime start, DateTime end) {
+  final span = end.difference(start).inDays;
+  return [
+    start,
+    for (var day = start.add(const Duration(days: 1));
+        day.isBefore(end);
+        day = day.add(const Duration(days: 1)))
+      if (span >= 45
+          ? day.day == 1
+          : span >= 10
+              ? day.weekday == DateTime.monday
+              : true)
+        day,
+    if (end != start) end,
+  ];
+}
+
+class _DateTick {
+  final String label;
+  final double fraction, left, width, height;
+  const _DateTick(
+      this.label, this.fraction, this.left, this.width, this.height);
+}
+
+List<_DateTick> _dateTicks(
+    BuildContext context, DateTime start, DateTime end, double width) {
+  final span = end.difference(start).inDays;
+  final candidates = reportChartTicks(start, end).map((day) {
+    final label = DateFormat('d. M.').format(day);
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: Theme.of(context).textTheme.bodySmall),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: width);
+    final fraction = span == 0 ? 0.5 : day.difference(start).inDays / span;
+    return _DateTick(
+        label,
+        fraction,
+        (fraction * width - painter.width / 2).clamp(0, width - painter.width),
+        painter.width,
+        painter.height);
+  }).toList();
+  final ticks = <_DateTick>[candidates.first];
+  for (final tick in candidates.skip(1)) {
+    final isEnd = identical(tick, candidates.last);
+    if (tick.left >= ticks.last.left + ticks.last.width + 12 &&
+        (isEnd || tick.left + tick.width + 12 <= candidates.last.left)) {
+      ticks.add(tick);
+    }
+  }
+  return ticks;
+}
+
 class ReportTimelineChart extends StatefulWidget {
   final List<ReportTimelineSeries> series;
   final DateTime start, end;
@@ -97,73 +151,80 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
       if (index != _selected) setState(() => _selected = index);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Wrap(
-          spacing: 20,
-          runSpacing: 8,
-          children: [
-            Text(
-              DateFormat('d. M. yyyy').format(days[selected]),
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            for (var i = 0; i < widget.series.length; i++)
+    return LayoutBuilder(builder: (context, constraints) {
+      final ticks = _dateTicks(context, widget.start, widget.end,
+          math.max(1.0, constraints.maxWidth - 54));
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 20,
+            runSpacing: 8,
+            children: [
               Text(
-                '${widget.series[i].label}: ${reportChartAmount(amounts[i][selected], widget.series[i].currency ?? widget.currency)}',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(color: widget.series[i].color),
+                DateFormat('d. M. yyyy').format(days[selected]),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 54,
-              height: 160,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    NumberFormat.compact().format(axis),
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                  Text(
-                    NumberFormat.compact().format(axis / 2),
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                  Text('0', style: Theme.of(context).textTheme.labelSmall),
-                ],
+              for (var i = 0; i < widget.series.length; i++)
+                Text(
+                  '${widget.series[i].label}: ${reportChartAmount(amounts[i][selected], widget.series[i].currency ?? widget.currency)}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(color: widget.series[i].color),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 54,
+                height: 160,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      NumberFormat.compact().format(axis),
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    Text(
+                      NumberFormat.compact().format(axis / 2),
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    Text('0', style: Theme.of(context).textTheme.labelSmall),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) => MouseRegion(
-                  onHover: (event) =>
-                      select(event.localPosition.dx, constraints.maxWidth),
-                  child: GestureDetector(
-                    onTapDown: (event) =>
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => MouseRegion(
+                    onHover: (event) =>
                         select(event.localPosition.dx, constraints.maxWidth),
-                    onHorizontalDragUpdate: (event) =>
-                        select(event.localPosition.dx, constraints.maxWidth),
-                    child: Semantics(
-                      label: widget.series.map((s) => s.label).join(', '),
-                      child: SizedBox(
-                        height: 160,
-                        child: CustomPaint(
-                          painter: _TimelinePainter(
-                            amounts: amounts,
-                            maximum: maximum,
-                            colors: widget.series.map((s) => s.color).toList(),
-                            grid: colors.outlineVariant,
-                            selected: selected,
-                            bars:
-                                !widget.cumulative && widget.series.length == 1,
+                    child: GestureDetector(
+                      onTapDown: (event) =>
+                          select(event.localPosition.dx, constraints.maxWidth),
+                      onHorizontalDragUpdate: (event) =>
+                          select(event.localPosition.dx, constraints.maxWidth),
+                      child: Semantics(
+                        label: widget.series.map((s) => s.label).join(', '),
+                        child: SizedBox(
+                          height: 160,
+                          child: CustomPaint(
+                            painter: _TimelinePainter(
+                              ticks:
+                                  ticks.map((tick) => tick.fraction).toList(),
+                              amounts: amounts,
+                              maximum: maximum,
+                              colors:
+                                  widget.series.map((s) => s.color).toList(),
+                              grid: colors.outlineVariant,
+                              selected: selected,
+                              bars: !widget.cumulative &&
+                                  widget.series.length == 1,
+                            ),
                           ),
                         ),
                       ),
@@ -171,35 +232,39 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
                   ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 54),
+            child: SizedBox(
+              height: ticks.map((tick) => tick.height).reduce(math.max),
+              child: Stack(children: [
+                for (final tick in ticks)
+                  Positioned(
+                    left: tick.left,
+                    width: tick.width,
+                    child: Text(tick.label,
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ),
+              ]),
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(child: Text(DateFormat('d. M.').format(widget.start))),
-            Expanded(
-              child: Text(
-                DateFormat('d. M.').format(widget.end),
-                textAlign: TextAlign.end,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 16,
-          runSpacing: 8,
-          children: [
-            for (final series in widget.series)
-              Text(
-                '${series.label} - ${ReportStrings.timelineTotal}: ${reportChartAmount(series.amounts.entries.where((e) => !e.key.isBefore(widget.start) && !e.key.isAfter(widget.end)).fold(BigInt.zero, (sum, e) => sum + e.value), series.currency ?? widget.currency)}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-          ],
-        ),
-      ],
-    );
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              for (final series in widget.series)
+                Text(
+                  '${series.label} - ${ReportStrings.timelineTotal}: ${reportChartAmount(series.amounts.entries.where((e) => !e.key.isBefore(widget.start) && !e.key.isAfter(widget.end)).fold(BigInt.zero, (sum, e) => sum + e.value), series.currency ?? widget.currency)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+            ],
+          ),
+        ],
+      );
+    });
   }
 
   List<BigInt> _amounts(ReportTimelineSeries series, List<DateTime> days) {
@@ -221,6 +286,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
 }
 
 class _TimelinePainter extends CustomPainter {
+  final List<double> ticks;
   final List<List<BigInt>> amounts;
   final BigInt maximum;
   final List<Color> colors;
@@ -228,6 +294,7 @@ class _TimelinePainter extends CustomPainter {
   final int? selected;
   final bool bars;
   _TimelinePainter({
+    required this.ticks,
     required this.amounts,
     required this.maximum,
     required this.colors,
@@ -246,6 +313,10 @@ class _TimelinePainter extends CustomPainter {
         Offset(size.width, size.height * fraction),
         gridPaint,
       );
+    }
+    for (final tick in ticks) {
+      final x = size.width * tick;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
     for (var s = 0; s < amounts.length; s++) {
       final values = amounts[s];

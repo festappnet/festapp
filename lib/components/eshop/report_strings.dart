@@ -1,6 +1,9 @@
+import 'models/order_model.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ReportStrings {
+  static String state(String? state) =>
+      OrderModel.stateToLocale(state == 'unknown' ? null : state);
   static String get ratesUnavailable => 'OccasionReport.ratesUnavailable'.tr();
   static String get compareCurrencies =>
       'OccasionReport.compareCurrencies'.tr();
@@ -43,11 +46,17 @@ class ReportStrings {
   static String get noType => 'OccasionReport.noType'.tr();
   static String get empty => 'OccasionReport.empty'.tr();
   static String get details => 'OccasionReport.details'.tr();
-  static String get statesHelp => 'OccasionReport.statesHelp'.tr();
+  static String get statesHelp =>
+      'OccasionReport.statesHelp'.tr(namedArgs: {'paid': state('paid')});
   static String get spotsHelp => 'OccasionReport.spotsHelp'.tr();
   static String get moneyHelp => 'OccasionReport.moneyHelp'.tr();
   static String get moneyDetails => 'OccasionReport.moneyDetails'.tr();
-  static String get productsHelp => 'OccasionReport.productsHelp'.tr();
+  static String get productsHelp =>
+      'OccasionReport.productsHelp'.tr(namedArgs: {
+        'paid': state('paid'),
+        'sent': state('sent'),
+        'used': state('used'),
+      });
   static String get received => 'OccasionReport.received'.tr();
   static String get returned => 'OccasionReport.returned'.tr();
   static String metric(String key) => 'OccasionReport.$key'.tr();

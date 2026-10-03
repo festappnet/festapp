@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "436e03945afb24fb253dcad90aca5c23931c3982",
+  "baseMainSha": "e26951bb85b226ea433c5b636a5daa180a7e5e9a",
   "release": {
-    "version": "0.20.78+562",
-    "note": "Restore bank modal presentation and eliminate duplicate loading"
+    "version": "0.20.79+563",
+    "note": "Approved navigation, modal and report presentation"
   }
 }

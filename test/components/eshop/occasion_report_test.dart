@@ -1,3 +1,7 @@
+import 'package:fstapp/components/eshop/views/report_text.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:fstapp/components/eshop/models/report_period.dart';
+import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/eshop/models/report_exchange_rates.dart';
 import 'dart:convert';
@@ -61,6 +65,31 @@ Widget app(
     );
 
 void main() {
+  test('report period ends with occasion but preserves later activity', () {
+    final today = DateTime.utc(2026, 10, 3);
+    final end = DateTime.utc(2026, 2, 20);
+    expect(
+        reportTimelineEnd(
+            today: today,
+            lastActivity: DateTime.utc(2026, 2, 1),
+            occasionEnd: end),
+        end);
+    expect(
+        reportTimelineEnd(
+            today: today,
+            lastActivity: DateTime.utc(2026, 3, 5),
+            occasionEnd: end),
+        DateTime.utc(2026, 3, 5));
+    expect(
+        reportTimelineEnd(
+            today: today,
+            lastActivity: end,
+            occasionEnd: DateTime.utc(2026, 12, 1)),
+        today);
+    expect(reportTimelineEnd(today: today, lastActivity: end), end);
+    expect(reportDay(DateTime.parse('2026-03-29T22:30:00Z')),
+        DateTime.utc(2026, 3, 30));
+  });
   test('CNB conversion rounds exact cents and respects quoted quantities', () {
     final rates = ReportExchangeRates.fromJson({
       'source': 'CNB',
@@ -79,6 +108,7 @@ void main() {
     expect(() => rates.toCzk(BigInt.one, 'XXX'), throwsFormatException);
   });
   setUpAll(() async {
+    tzdata.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
@@ -156,7 +186,8 @@ void main() {
 
     Future<void> exporter(OccasionReport r) async {
       exports++;
-      expect(r.text, contains('Report 1'));
+      expect(formatReportText(r),
+          contains('${OrderModel.stateToLocale('paid')}: 2'));
     }
 
     await tester.pumpWidget(app(loader, exporter: exporter));
@@ -164,8 +195,18 @@ void main() {
     expect(calls, 1);
     expect(
         tester
-            .widgetList<Semantics>(find.byType(Semantics))
-            .any((w) => w.properties.label == 'paid: 2 / 3'),
+            .widget<ChoiceChip>(
+                find.widgetWithText(ChoiceChip, ReportStrings.cumulative))
+            .selected,
+        isTrue);
+    expect(
+        tester
+            .widgetList<ReportTimelineChart>(find.byType(ReportTimelineChart))
+            .every((chart) => chart.cumulative),
+        isTrue);
+    expect(
+        tester.widgetList<Semantics>(find.byType(Semantics)).any((w) =>
+            w.properties.label == '${OrderModel.stateToLocale('paid')}: 2 / 3'),
         isTrue);
     await tester.pumpWidget(app(loader, exporter: exporter));
     await tester.pumpAndSettle();
@@ -175,6 +216,11 @@ void main() {
     await tester.tap(find.text(ReportStrings.text));
     await tester.pumpAndSettle();
     expect(find.byType(SelectableText), findsOneWidget);
+    final displayed =
+        tester.widget<SelectableText>(find.byType(SelectableText)).data!;
+    expect(displayed, contains('${OrderModel.stateToLocale('paid')}: 2'));
+    expect(displayed, isNot(contains('  paid:')));
+    expect(displayed, formatReportText(reportFixture()));
     await tester.tap(find.byType(PopupMenuButton<String>));
     await tester.pumpAndSettle();
     await tester.tap(find.text(ReportStrings.export));
@@ -362,6 +408,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(calls, 1);
     expect(tester.takeException(), isNull);
+  });
+
+  test('date axis uses month boundaries across years and days for short ranges',
+      () {
+    expect(
+        reportChartTicks(DateTime.utc(2025, 11, 20), DateTime.utc(2026, 1, 18)),
+        [
+          DateTime.utc(2025, 11, 20),
+          DateTime.utc(2025, 12, 1),
+          DateTime.utc(2026, 1, 1),
+          DateTime.utc(2026, 1, 18),
+        ]);
+    expect(
+        reportChartTicks(DateTime.utc(2026, 1, 1), DateTime.utc(2026, 1, 3))
+            .length,
+        3);
+    expect(
+        reportChartTicks(DateTime.utc(2026, 1, 1), DateTime.utc(2026, 1, 1))
+            .length,
+        1);
   });
 
   test('chart preserves exact cents and fills missing calendar days', () {
