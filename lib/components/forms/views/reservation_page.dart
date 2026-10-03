@@ -15,8 +15,13 @@ class ReservationsPage extends StatelessWidget {
     Localizations.localeOf(context);
     return OccasionAdministrationBoundary(
         reservations: true,
-        loadingBuilder: (_) => const AdministrationLoadingShell(reservations: true),
-        builder: (_) => const AutoRouter());
+        loadingBuilder: (_) =>
+            const AdministrationLoadingShell(reservations: true),
+        // AutoRouter defers its initial routes until the next frame. Keep
+        // the same chrome during that frame too, after access has resolved.
+        builder: (_) => AutoRouter(
+            placeholder: (_) =>
+                const AdministrationLoadingShell(reservations: true)));
   }
 }
 
