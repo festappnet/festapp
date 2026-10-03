@@ -17,6 +17,7 @@ class TicketLayoutStrings {
   static String get canvasHidden => 'TicketLayout.canvasHidden'.tr();
   static String get checkElements => 'TicketLayout.checkElements'.tr();
   static String get resizeCanvas => 'TicketLayout.resizeCanvas'.tr();
+  static String get finishCanvasFirst => 'TicketLayout.finishCanvasFirst'.tr();
   static String get resizeCanvasHint => 'TicketLayout.resizeCanvasHint'.tr();
   static String get designSizeHint => 'TicketLayout.designSizeHint'.tr();
   static String get marginMm => 'TicketLayout.marginMm'.tr();
