@@ -4,11 +4,9 @@ import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
-import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import '../form_strings.dart';
-import 'create_or_copy_dialog.dart';
 import 'form_creation_helper.dart';
 import 'package:fstapp/app_router.gr.dart';
 
@@ -84,53 +82,14 @@ class _FormsTabState extends State<FormsListView> {
 
   Future<void> _handleCreateNew() async {
     if (occasionLink == null) return;
-
-    final List<FormModel> formsForDialog =
-        await DbForms.getAllFormsForOccasionOrUnit();
-
-    final result = await showDialog<dynamic>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        // Use the new, imported dialog widget
-        return CreateOrCopyFormDialog(
-          existingForms: formsForDialog,
-        );
-      },
-    );
-
-    if (result == null) return; // Dialog dismissed
-
-    if (result is FormModel) {
-      await _handleCreateCopy(result);
-    } else if (result == 'CREATE_NEW') {
-      if (!mounted) return;
-      await FormCreationHelper.showCreateFormDialog(
-        context,
-        occasionLink: occasionLink!,
-        onFormCreated: () {
-          loadData();
-        },
-      );
-    }
+    await FormCreationHelper.showCreateOrCopyFormDialog(context,
+        occasionLink: occasionLink!, onFormCreated: loadData);
   }
 
-  Future<void> _handleCreateCopy(FormModel formToCopy) async {
+  Future<void> _handleCreateCopy(FormModel form) async {
     if (occasionLink == null) return;
-    try {
-      await DbForms.duplicateFormToOccasion(
-        sourceFormId: formToCopy.id!,
-        targetOccasionLink: occasionLink!,
-      );
-
-      if (!mounted) return;
-      ToastHelper.Show(context, FormStrings.duplicateSuccess,
-          severity: ToastSeverity.Ok);
-      await loadData();
-    } catch (e) {
-      if (!mounted) return;
-      ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
-          severity: ToastSeverity.NotOk);
-    }
+    await FormCreationHelper.copyFormToOccasion(context, form,
+        occasionLink: occasionLink!, onFormCreated: loadData);
   }
 
   Widget _buildFormsGrid() {
