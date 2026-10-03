@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/navigation/occasion_administration_boundary.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
@@ -33,6 +34,8 @@ class Access extends ChangeNotifier implements AdministrationAccess {
 class FixtureRouter extends RootStackRouter {
   final Access access;
   WidgetBuilder? formsListBuilder;
+  WidgetBuilder? loadingBuilder;
+  bool showHeader = false;
   bool extra = true;
   bool dirty = false;
   bool discard = false;
@@ -41,13 +44,32 @@ class FixtureRouter extends RootStackRouter {
   @override
   List<AutoRouteGuard> get guards => [RetainedDraftGuard.instance];
   AutoRoute page(String name, String path, WidgetBuilder builder,
-          {List<AutoRoute>? children}) =>
-      CustomRoute(
-          transitionsBuilder: TransitionsBuilders.noTransition,
-          usesPathAsKey: name == ReservationsRoute.name,
-          page: PageInfo(name, builder: (data) => Builder(builder: builder)),
-          path: path,
-          children: children);
+      {List<AutoRoute>? children}) {
+    final info = PageInfo(name, builder: (data) => Builder(builder: builder));
+    if (name == FormDetailRoute.name) {
+      Iterable<RouteMatch> flatten(List<RouteMatch> routes) sync* {
+        for (final route in routes) {
+          yield route;
+          yield* flatten(route.children ?? []);
+        }
+      }
+
+      // Use production's entry transition while keeping backend-free content.
+      final entry = flatten(AppRouter().matcher.match(
+              '/occasion-a/reservations/forms/form-0/editor',
+              includePrefixMatches: false)!)
+          .singleWhere((route) => route.name == name);
+      return AutoRoute(
+          page: info, path: path, type: entry.type, children: children);
+    }
+    return CustomRoute(
+        transitionsBuilder: TransitionsBuilders.noTransition,
+        usesPathAsKey: name == ReservationsRoute.name,
+        page: info,
+        path: path,
+        children: children);
+  }
+
   @override
   List<AutoRoute> get routes => [
         page(
@@ -56,31 +78,40 @@ class FixtureRouter extends RootStackRouter {
             (context) => OccasionAdministrationBoundary(
                 access: access,
                 reservations: true,
-                builder: (context) => const AutoRouter()),
+                loadingBuilder: loadingBuilder,
+                builder: (context) => AutoRouter(placeholder: loadingBuilder)),
             children: [
               page(
                   ReservationsTabsRoute.name,
                   '',
                   (context) => ListenableBuilder(
                       listenable: access,
-                      builder: (context, _) => RoutedTabScaffold(tabs: [
-                            const RoutedTabDefinition(
-                                slug: 'orders',
-                                route: OrdersTabsRoute(),
-                                label: 'Orders',
-                                icon: Icons.shopping_cart),
-                            const RoutedTabDefinition(
-                                slug: 'report',
-                                route: ReportSectionRoute(),
-                                label: 'Report',
-                                icon: Icons.bar_chart),
-                            if (extra)
-                              const RoutedTabDefinition(
-                                  slug: 'forms',
-                                  route: FormsNavigationRoute(),
-                                  label: 'Forms',
-                                  icon: Icons.article),
-                          ])),
+                      builder: (context, _) => RoutedTabScaffold(
+                              builder: showHeader
+                                  ? (context, child, controller) => Scaffold(
+                                      appBar: AppBar(
+                                          automaticallyImplyLeading: false,
+                                          title: const Text('ADMIN HEADER')),
+                                      body: child)
+                                  : null,
+                              tabs: [
+                                const RoutedTabDefinition(
+                                    slug: 'orders',
+                                    route: OrdersTabsRoute(),
+                                    label: 'Orders',
+                                    icon: Icons.shopping_cart),
+                                const RoutedTabDefinition(
+                                    slug: 'report',
+                                    route: ReportSectionRoute(),
+                                    label: 'Report',
+                                    icon: Icons.bar_chart),
+                                if (extra)
+                                  const RoutedTabDefinition(
+                                      slug: 'forms',
+                                      route: FormsNavigationRoute(),
+                                      label: 'Forms',
+                                      icon: Icons.article),
+                              ])),
                   children: [
                     RedirectRoute(path: '', redirectTo: 'orders'),
                     page(

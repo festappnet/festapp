@@ -95,7 +95,7 @@ class _TicketsTabState extends State<TicketsTab> {
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
           DataGridAction(
             name: OrdersStrings.scanActionText,
-            requiresSelection: true,
+            requiresSelection: false,
             action: (SingleDataGridController singleDataGrid, [_]) =>
                 _scanTickets(singleDataGrid),
             isEnabled: RightsService.isOrderEditor,

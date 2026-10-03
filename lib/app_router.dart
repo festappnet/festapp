@@ -223,8 +223,13 @@ class AppRouter extends RootStackRouter {
                               page: FormsListRoute.page,
                               path: '',
                               initial: true),
-                          AutoRoute(
+                          CustomRoute(
                               page: FormDetailRoute.page,
+                              // Selecting the only form must not add a second
+                              // nested slide after the outer Forms tab transition.
+                              transitionsBuilder: TransitionsBuilders.noTransition,
+                              duration: Duration.zero,
+                              reverseDuration: Duration.zero,
                               path: ':formLink',
                               children: [
                                 AutoRoute(

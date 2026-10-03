@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "e26951bb85b226ea433c5b636a5daa180a7e5e9a",
+  "baseMainSha": "b331c94b21dfef736467625a2939298376e06694",
   "release": {
-    "version": "0.20.79+563",
-    "note": "Approved navigation, modal and report presentation"
+    "version": "0.20.81+565",
+    "note": "Remove one-frame header flash during administration context switching"
   }
 }
