@@ -200,6 +200,14 @@
         "smtp"
       ],
       "mutates_authority": true
+    },
+    "report-exchange-rates": {
+      "trigger": "client-http",
+      "effects": [
+        "auth-user-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
     }
   },
   "workers": {

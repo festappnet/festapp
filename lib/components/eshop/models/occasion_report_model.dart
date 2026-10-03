@@ -1,3 +1,32 @@
+class ReportOrderDay {
+  final DateTime day;
+  final int count;
+  final String currency;
+  ReportOrderDay(Map<String, dynamic> json)
+      : day = DateTime.parse('${json['day']}T00:00:00Z'),
+        currency = json['currency'] as String,
+        count = json['count'] as int {
+    if (count < 0) throw const FormatException('Invalid daily orders');
+  }
+}
+
+class ReportPaymentDay {
+  final DateTime day;
+  final String currency, received, returned;
+  ReportPaymentDay(Map<String, dynamic> json)
+      : day = DateTime.parse('${json['day']}T00:00:00Z'),
+        currency = json['currency'] as String,
+        received = json['received'] as String,
+        returned = json['returned'] as String {
+    if ([
+      received,
+      returned,
+    ].any((v) => !RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(v))) {
+      throw const FormatException('Invalid daily payment');
+    }
+  }
+}
+
 class ReportUnavailable implements Exception {
   final int? code;
   const ReportUnavailable(this.code);
@@ -66,9 +95,21 @@ class OccasionReport {
   final List<ReportMoney> money;
   final List<ReportProduct> products;
   final Map<String, int> warnings;
+  final List<ReportOrderDay> orderDays;
+  final List<ReportPaymentDay> paymentDays;
+  final bool hasTimeline;
 
   OccasionReport._(Map<String, dynamic> r, this.text)
-      : occasionId = r['occasion']['id'] as String,
+      : hasTimeline = r['timeline'] != null,
+        orderDays = [
+          for (final d in r['timeline']?['orders'] ?? [])
+            ReportOrderDay(Map<String, dynamic>.from(d)),
+        ],
+        paymentDays = [
+          for (final d in r['timeline']?['payments'] ?? [])
+            ReportPaymentDay(Map<String, dynamic>.from(d)),
+        ],
+        occasionId = r['occasion']['id'] as String,
         title = r['occasion']['title'] as String,
         generatedAt = DateTime.parse(r['generated_at'] as String),
         orders = ReportCounts(Map<String, dynamic>.from(r['orders'])),
@@ -78,14 +119,14 @@ class OccasionReport {
         spotsFree = r['spots']['free'] as int,
         money = [
           for (final m in r['money_by_currency'])
-            ReportMoney(Map<String, dynamic>.from(m))
+            ReportMoney(Map<String, dynamic>.from(m)),
         ],
         products = [
           for (final p in r['products'])
-            ReportProduct(Map<String, dynamic>.from(p))
+            ReportProduct(Map<String, dynamic>.from(p)),
         ],
         warnings = {
-          for (final w in r['warnings']) w['code'] as String: w['count'] as int
+          for (final w in r['warnings']) w['code'] as String: w['count'] as int,
         } {
     if (spotsOccupied < 0 ||
         spotsFree < 0 ||
@@ -97,7 +138,8 @@ class OccasionReport {
   factory OccasionReport.fromResponse(dynamic response) {
     if (response is! Map || response['code'] != 200) {
       throw ReportUnavailable(
-          response is Map ? response['code'] as int? : null);
+        response is Map ? response['code'] as int? : null,
+      );
     }
     try {
       final r = Map<String, dynamic>.from(response['report'] as Map);

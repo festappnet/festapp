@@ -61,6 +61,20 @@ BEGIN
   PERFORM assert_eq((r->'report'->'spots'->>'occupied')::int,1,'occupied seats');
   PERFORM assert_eq(public.format_occasion_report_text(r->'report'),r->>'data','text from same object');
   PERFORM assert_true(r->'report'->'orders'->'by_state' @> '[{"state":"unknown","count":1},{"state":"future","count":1}]','null and future state');
+  -- Daily history includes partial money while an order is still ordered,
+  -- deduplicates a shared payment and excludes another occasion's transactions.
+  UPDATE eshop.orders SET state='ordered',created_at='2026-10-01 22:30:00+00' WHERE id=o4;
+  UPDATE eshop.transactions SET date='2026-10-01 12:00:00' WHERE payment_info=p1;
+  INSERT INTO eshop.transactions(date,amount,currency,bank_account_id,payment_info,transaction_type)
+    VALUES('2026-10-03 12:00:00',12.50,'CZK',bank,p3,'bank'),
+          ('2026-10-03 12:00:00',10,'EUR',bank,p2,'bank');
+  SET LOCAL ROLE authenticated;
+  r:=public.get_report_ws('report-metrics');
+  RESET ROLE;
+  PERFORM assert_true(r->'report'->'timeline'->'orders' @> '[{"day":"2026-10-02","currency":"CZK","count":1}]', 'Prague order day at UTC midnight boundary');
+  PERFORM assert_true(r->'report'->'timeline'->'payments' @> '[{"day":"2026-10-01","currency":"CZK","received":"40.00","returned":"20.00"}]','shared payment transactions counted once');
+  PERFORM assert_true(r->'report'->'timeline'->'payments' @> '[{"day":"2026-10-03","currency":"CZK","received":"12.50","returned":"0"}]','partial bank payment on still ordered order');
+  PERFORM assert_true(r->'report'->'timeline'->'payments' @> '[{"day":"2026-10-03","currency":"EUR","received":"10.00"}]','currencies remain separate');
   UPDATE eshop.orders SET currency_code='EUR' WHERE id=o2;
   SET LOCAL ROLE authenticated;
   r:=public.get_report_ws('report-metrics');

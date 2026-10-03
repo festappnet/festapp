@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/models/report_exchange_rates.dart';
 // Isolated report smoke harness. Uses synthetic data and never contacts a backend.
 import 'dart:convert';
 import 'dart:typed_data';
@@ -38,6 +39,15 @@ void main() async {
                                     Uri.base.queryParameters['scale'] ?? '') ??
                                 1)),
                         child: ReportTab(
+                            exchangeRateLoader: () async =>
+                                ReportExchangeRates.fromJson({
+                                  'source': 'CNB',
+                                  'base': 'CZK',
+                                  'date': '2026-10-02',
+                                  'rates': {
+                                    'EUR': {'amount': '1', 'rate': '24.5'}
+                                  }
+                                }),
                             occasionLink: 'synthetic',
                             identityKey: 'synthetic/org',
                             loader: (_) async => reportFixture()),
