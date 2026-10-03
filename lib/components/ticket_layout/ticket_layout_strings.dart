@@ -1,12 +1,18 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get modeCanvas => 'TicketLayout.modeCanvas'.tr();
+  static String get modeImage => 'TicketLayout.modeImage'.tr();
+  static String get modeCrop => 'TicketLayout.modeCrop'.tr();
+  static String get dimensionInputHint => 'TicketLayout.dimensionInputHint'.tr();
+  static String editBlockingElement(String name) => 'TicketLayout.editBlockingElement'.tr(namedArgs: {'name': name});
   static String get cropImage => 'TicketLayout.cropImage'.tr();
   static String get cropImageHint => 'TicketLayout.cropImageHint'.tr();
   static String get resetCrop => 'TicketLayout.resetCrop'.tr();
   static String get designSize => 'TicketLayout.designSize'.tr();
   static String get saveDirectHint => 'TicketLayout.saveDirectHint'.tr();
   static String get canvasColor => 'TicketLayout.canvasColor'.tr();
+  static String get transparency => 'TicketLayout.transparency'.tr();
   static String get transparent => 'TicketLayout.transparent'.tr();
   static String get transparentHint => 'TicketLayout.transparentHint'.tr();
   static String get canvasSection => 'TicketLayout.canvasSection'.tr();
@@ -16,6 +22,7 @@ class TicketLayoutStrings {
   static String get canvasHidden => 'TicketLayout.canvasHidden'.tr();
   static String get checkElements => 'TicketLayout.checkElements'.tr();
   static String get resizeCanvas => 'TicketLayout.resizeCanvas'.tr();
+  static String get finishCanvasFirst => 'TicketLayout.finishCanvasFirst'.tr();
   static String get resizeCanvasHint => 'TicketLayout.resizeCanvasHint'.tr();
   static String get designSizeHint => 'TicketLayout.designSizeHint'.tr();
   static String get marginMm => 'TicketLayout.marginMm'.tr();

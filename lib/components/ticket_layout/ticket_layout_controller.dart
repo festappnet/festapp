@@ -6,10 +6,14 @@ import 'models/ticket_layout.dart';
 import 'ticket_snapping.dart';
 
 class TicketLayoutController extends ChangeNotifier {
-  TicketLayoutController(this.document, {this.artworkKey, this.prepareDocument})
+  TicketLayoutController(this.document,
+      {this.artworkKey, this.prepareDocument, this.geometryData})
       : initial = document,
         initialArtworkKey = artworkKey;
   final TicketTemplate Function(TicketTemplate)? prepareDocument;
+  final Map<String, String?> Function()? geometryData;
+  TicketTemplate positionedDocument(TicketTemplate value) =>
+      geometryData == null ? value : value.fixedPositions(geometryData!());
   String? artworkKey;
   final String? initialArtworkKey;
   ({TicketTemplate document, String? artworkKey}) get _snapshot =>
@@ -23,8 +27,29 @@ class TicketLayoutController extends ChangeNotifier {
       document.elements.where((e) => selectedIds.contains(e.id)).toList();
   double? guideX, guideY;
   final Set<String> canvasBlockers = {}, canvasHidden = {};
+  Offset canvasOrigin = Offset.zero;
   final List<({TicketTemplate document, String? artworkKey})> _undo = [],
       _redo = [];
+  // Editor-only recovery data follows immutable documents through undo/redo.
+  // Saved templates retain valid hidden boxes; no extra persistence contract.
+  final _canvasRecovery = Expando<Map<String, TicketElement>>();
+
+  TicketTemplate _prepare(TicketTemplate next) {
+    final prepared = prepareDocument?.call(next) ?? next;
+    final recovery = _canvasRecovery[next] ?? _canvasRecovery[document];
+    final source = _canvasRecovery[next] != null ? next : document;
+    if (recovery != null) {
+      _canvasRecovery[prepared] = {
+        for (final entry in recovery.entries)
+          if (prepared.elements.any((e) => e.id == entry.key &&
+              source.elements.any((old) => old.id == e.id &&
+                  jsonEncode(old.toJson()) == jsonEncode(e.toJson()))))
+            entry.key: entry.value,
+      };
+    }
+    return prepared;
+  }
+
   TicketTemplate? _gesture;
   Offset _dragOffset = Offset.zero;
   bool get dirty =>
@@ -51,12 +76,13 @@ class TicketLayoutController extends ChangeNotifier {
     if (_gesture == null) {
       _gesture = document;
       _dragOffset = Offset.zero;
+      canvasOrigin = Offset.zero;
     }
   }
 
   void previewDocument(TicketTemplate next) {
     beginGesture();
-    document = prepareDocument?.call(next) ?? next;
+    document = _prepare(next);
     notifyListeners();
   }
 
@@ -82,7 +108,11 @@ class TicketLayoutController extends ChangeNotifier {
       bool snap = true,
       double? gridStep,
       Size? backgroundImage}) {
-    final base = _gesture ?? document;
+    final source = _gesture ?? document;
+    var base = positionedDocument(source);
+    for (final e in (_canvasRecovery[source] ?? <String, TicketElement>{}).values) {
+      base = base.replace(e);
+    }
     if (_gesture != null) _dragOffset += delta;
     final drag = _gesture == null ? delta : _dragOffset;
     final maxWidth = base.fitPageToTicket
@@ -91,38 +121,108 @@ class TicketLayoutController extends ChangeNotifier {
     final maxHeight = base.fitPageToTicket
         ? 842 - 2 * base.pageMargin
         : base.page.height - base.area.top;
+    final left = [3, 5, 7].contains(handle);
+    final top = [4, 5, 6].contains(handle);
+    final horizontal = ![1, 4].contains(handle);
+    final vertical = ![0, 3].contains(handle);
+    double clampX(double x) => left
+        ? x.clamp(base.area.width - maxWidth, base.area.width - 60)
+        : x.clamp(60, maxWidth);
+    double clampY(double y) => top
+        ? y.clamp(base.area.height - maxHeight, base.area.height - 60)
+        : y.clamp(60, maxHeight);
     var point = Offset(
-        handle == 1
-            ? base.area.width
-            : (base.area.width + drag.dx).clamp(60, maxWidth),
-        handle == 0
-            ? base.area.height
-            : (base.area.height + drag.dy).clamp(60, maxHeight));
+      horizontal
+          ? clampX((left ? 0 : base.area.width) + drag.dx)
+          : base.area.width,
+      vertical
+          ? clampY((top ? 0 : base.area.height) + drag.dy)
+          : base.area.height,
+    );
+    final unsnappedPoint = point;
     guideX = guideY = null;
     if (snap) {
-      final result = snapTicketBox(point & Size.zero, base.area.size,
-          base.elements.where((e) => e.visible).map((e) => e.box),
-          zoom: zoom, gridStep: gridStep);
+      final result = snapTicketBox(
+          point & Size.zero,
+          base.area.size,
+          [
+            ...base.elements.where((e) => e.visible).map((e) => e.box),
+            if (backgroundImage != null)
+              base.croppedBackgroundRect(backgroundImage),
+          ],
+          zoom: zoom,
+          gridStep: gridStep);
       point = Offset(
-          handle == 1 ? point.dx : result.box.left.clamp(60, maxWidth),
-          handle == 0 ? point.dy : result.box.top.clamp(60, maxHeight));
-      guideX = handle == 1 ? null : result.x;
-      guideY = handle == 0 ? null : result.y;
+        horizontal ? clampX(result.box.left) : point.dx,
+        vertical ? clampY(result.box.top) : point.dy,
+      );
+      guideX = horizontal ? result.x : null;
+      guideY = vertical ? result.y : null;
     }
     canvasBlockers.clear();
     canvasHidden.clear();
-    for (final e in base.elements
-        .where((e) => ['qr', 'ticketSymbol'].contains(e.binding))) {
-      if (e.box.right > point.dx + .001 || e.box.bottom > point.dy + .001)
-        canvasBlockers.add(e.id);
-    }
     final required =
         base.elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
-    point = Offset(
-        math.max(point.dx, required.map((e) => e.box.right).reduce(math.max)),
-        math.max(point.dy, required.map((e) => e.box.bottom).reduce(math.max)));
-    final next = base.resizeCanvasArea(Size(point.dx, point.dy),
-        backgroundImage: backgroundImage);
+    for (final e in required) {
+      if ((horizontal &&
+              (left
+                  ? e.box.left < point.dx - .001
+                  : e.box.right > point.dx + .001)) ||
+          (vertical &&
+              (top
+                  ? e.box.top < point.dy - .001
+                  : e.box.bottom > point.dy + .001))) {
+        canvasBlockers.add(e.id);
+      }
+    }
+    for (final e in required) {
+      point = Offset(
+        !horizontal
+            ? point.dx
+            : left
+                ? math.min(point.dx, e.box.left)
+                : math.max(point.dx, e.box.right),
+        !vertical
+            ? point.dy
+            : top
+                ? math.min(point.dy, e.box.top)
+                : math.max(point.dy, e.box.bottom),
+      );
+    }
+    // Discard motion beyond hard limits, but retain the sub-threshold motion
+    // needed to escape a magnet during a slow drag.
+    var bounded = unsnappedPoint;
+    for (final e in required) {
+      bounded = Offset(
+          !horizontal ? bounded.dx : left
+              ? math.min(bounded.dx, e.box.left)
+              : math.max(bounded.dx, e.box.right),
+          !vertical ? bounded.dy : top
+              ? math.min(bounded.dy, e.box.top)
+              : math.max(bounded.dy, e.box.bottom));
+    }
+    if (_gesture != null) {
+      _dragOffset = Offset(
+          horizontal ? bounded.dx - (left ? 0 : base.area.width) : 0,
+          vertical ? bounded.dy - (top ? 0 : base.area.height) : 0);
+    }
+    // Binary-exact origin shifts preserve the square QR contract.
+    double originCoordinate(double value, double min) => math.max(
+        (value * 1024).floor() / 1024, (min * 1024).ceil() / 1024);
+    final origin = Offset(
+      left ? originCoordinate(point.dx, base.area.width - maxWidth) : 0,
+      top ? originCoordinate(point.dy, base.area.height - maxHeight) : 0,
+    );
+    if (guideX != null && (point.dx - guideX!).abs() > .001) guideX = null;
+    if (guideY != null && (point.dy - guideY!).abs() > .001) guideY = null;
+    final next = base.resizeCanvasArea(Size(
+        left ? base.area.width - origin.dx : point.dx,
+        top ? base.area.height - origin.dy : point.dy),
+      origin: origin,
+      backgroundImage: backgroundImage,
+    );
+    if (guideX != null) guideX = guideX! - origin.dx;
+    if (guideY != null) guideY = guideY! - origin.dy;
     canvasHidden.addAll(base.elements
         .where((e) =>
             e.visible && !next.elements.firstWhere((n) => n.id == e.id).visible)
@@ -132,6 +232,13 @@ class TicketLayoutController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    _canvasRecovery[next] = {
+      for (final e in base.elements)
+        if (next.elements.any((n) => n.id == e.id &&
+            (e.visible != n.visible || e.box.shift(-origin) != n.box)))
+          e.id: e.copyWith(box: e.box.shift(-origin)),
+    };
+    canvasOrigin = origin;
     if (_gesture == null) {
       replace(next);
     } else {
@@ -165,14 +272,16 @@ class TicketLayoutController extends ChangeNotifier {
   void replace(TicketTemplate next, {String? artworkKey}) {
     _undo.add(_snapshot);
     _redo.clear();
-    document = prepareDocument?.call(next) ?? next;
+    document = _prepare(next);
     this.artworkKey = artworkKey ?? this.artworkKey;
     guideX = guideY = null;
     selectedIds.removeWhere((id) => !document.elements.any((e) => e.id == id));
     notifyListeners();
   }
 
-  void change(TicketElement e) {
+  void change(TicketElement e) => _changeOn(document, e);
+
+  void _changeOn(TicketTemplate base, TicketElement e) {
     if (e.binding == 'qr' &&
         document.elements.where((item) => item.id == e.id).firstOrNull?.box !=
             e.box) {
@@ -188,15 +297,15 @@ class TicketLayoutController extends ChangeNotifier {
       _undo.add(_snapshot);
       _redo.clear();
     }
-    final next = document.replace(e);
-    document = prepareDocument?.call(next) ?? next;
+    final next = base.replace(e);
+    document = _prepare(next);
     notifyListeners();
   }
 
   void move(Offset delta,
       {double zoom = 1, bool snap = true, double? gridStep}) {
-    final moving = (_gesture ?? document)
-        .elements
+    final base = positionedDocument(_gesture ?? document);
+    final moving = base.elements
         .where((e) => selectedIds.contains(e.id) && !e.locked)
         .toList();
     if (moving.isEmpty) return;
@@ -210,7 +319,7 @@ class TicketLayoutController extends ChangeNotifier {
       final result = snapTicketBox(
           b,
           area,
-          document.elements
+          base.elements
               .where((e) => e.visible && !selectedIds.contains(e.id))
               .map((e) => e.box),
           zoom: zoom,
@@ -227,6 +336,7 @@ class TicketLayoutController extends ChangeNotifier {
       _undo.add(_snapshot);
       _redo.clear();
     }
+    document = base;
     for (final element in moving) {
       document =
           document.replace(element.copyWith(box: element.box.shift(shift)));
@@ -241,9 +351,8 @@ class TicketLayoutController extends ChangeNotifier {
       double? gridStep}) {
     final selectedElement = selection;
     if (selectedElement == null || selectedElement.locked) return;
-    final e = (_gesture ?? document)
-        .elements
-        .firstWhere((e) => e.id == selectedElement.id);
+    final base = positionedDocument(_gesture ?? document);
+    final e = base.elements.firstWhere((e) => e.id == selectedElement.id);
     if (_gesture != null) _dragOffset += delta;
     final drag = _gesture == null ? delta : _dragOffset;
     final b = e.box, a = document.area;
@@ -268,7 +377,7 @@ class TicketLayoutController extends ChangeNotifier {
       final result = snapTicketBox(
           next,
           a.size,
-          document.elements
+          base.elements
               .where((other) => other.visible && other.id != e.id)
               .map((e) => e.box),
           zoom: zoom,
@@ -282,11 +391,13 @@ class TicketLayoutController extends ChangeNotifier {
       guideX = result.x;
       guideY = result.y;
     }
-    change(e.copyWith(
-        box: next,
-        fontSize: stretch
-            ? e.fontSize
-            : (e.fontSize * ratio).clamp(e.minFontSize, 72)));
+    _changeOn(
+        base,
+        e.copyWith(
+            box: next,
+            fontSize: stretch
+                ? e.fontSize
+                : (e.fontSize * ratio).clamp(e.minFontSize, 72)));
   }
 
   void transformBackground(Size image, Offset delta,
@@ -318,8 +429,13 @@ class TicketLayoutController extends ChangeNotifier {
     }
     guideX = guideY = null;
     if (snap) {
-      final result = snapTicketBox(next, base.area.size,
-          base.elements.where((e) => e.visible).map((e) => e.box),
+      final result = snapTicketBox(
+          next,
+          base.area.size,
+          positionedDocument(base)
+              .elements
+              .where((e) => e.visible)
+              .map((e) => e.box),
           zoom: zoom,
           gridStep: gridStep,
           anchor: anchor,
@@ -344,7 +460,10 @@ class TicketLayoutController extends ChangeNotifier {
     final drag = _gesture == null ? delta : _dragOffset;
     final full = base.backgroundRect(image),
         crop = base.croppedBackgroundRect(image);
-    final others = base.elements.where((e) => e.visible).map((e) => e.box);
+    final others = positionedDocument(base)
+        .elements
+        .where((e) => e.visible)
+        .map((e) => e.box);
     var next = crop.shift(drag);
     guideX = guideY = null;
     if (corner == null) {

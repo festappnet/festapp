@@ -149,12 +149,20 @@ class TicketTemplate {
   String? get fontId => appearance['fontId'] as String?;
   String get font => appearance['font'] as String? ?? 'futura';
   String get canvasColor => appearance['canvasColor'] as String? ?? 'E6E6E6';
-  TicketTemplate withCanvasColor(String color) => TicketTemplate(
-      fitPageToTicket: fitPageToTicket,
-      page: page,
-      area: area,
-      elements: elements,
-      appearance: {...appearance, 'canvasColor': color});
+  double get canvasOpacity => canvasColor == 'transparent'
+      ? 0
+      : (appearance['canvasOpacity'] as num?)?.toDouble() ?? 1;
+  TicketTemplate withCanvasColor(String color, {double? opacity}) =>
+      TicketTemplate(
+          fitPageToTicket: fitPageToTicket,
+          page: page,
+          area: area,
+          elements: elements,
+          appearance: {
+            ...appearance,
+            'canvasColor': color,
+            if (opacity != null) 'canvasOpacity': opacity
+          });
   Map get qrAppearance => appearance['qrAppearance'] as Map? ?? const {};
   List<TicketElement> positionedElements(Map<String, String?> data) {
     final flow = (appearance['flow'] as List? ?? const [])
@@ -171,6 +179,22 @@ class TicketTemplate {
       }
     }
     return elements.map((e) => positions[e.id] ?? e).toList();
+  }
+
+  /// Explicit geometry edits take ownership of the currently displayed positions.
+  TicketTemplate fixedPositions(Map<String, String?> data) {
+    if (!(appearance['flow'] is List) || (appearance['flow'] as List).isEmpty)
+      return this;
+    return TicketTemplate(
+        fitPageToTicket: fitPageToTicket,
+        page: page,
+        area: area,
+        appearance: {
+          for (final entry in appearance.entries)
+            if (!['flow', 'flowStep'].contains(entry.key))
+              entry.key: entry.value
+        },
+        elements: positionedElements(data));
   }
 
   final bool fitPageToTicket;
@@ -201,6 +225,7 @@ class TicketTemplate {
             'backgroundTransform',
             'backgroundCrop',
             'canvasColor',
+            'canvasOpacity',
             'pageMargin',
             'border'
           ])
@@ -334,16 +359,23 @@ class TicketTemplate {
       elements: elements.map((old) => old.id == e.id ? e : old).toList());
 
   /// Resize the surface, not its content. Hidden boxes stay contract-valid.
-  TicketTemplate resizeCanvasArea(Size size, {Size? backgroundImage}) {
-    if (size == area.size) return this;
+  TicketTemplate resizeCanvasArea(Size size,
+      {Size? backgroundImage, Offset origin = Offset.zero}) {
+    final bounds = origin & size;
+    if (size == area.size && origin == Offset.zero &&
+        elements.every((e) => e.box.left >= 0 && e.box.top >= 0 &&
+            e.box.right <= size.width && e.box.bottom <= size.height)) return this;
     final required =
         elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
     if (!size.width.isFinite ||
         !size.height.isFinite ||
         size.width < 60 ||
         size.height < 60 ||
-        required.any(
-            (e) => e.box.right > size.width || e.box.bottom > size.height)) {
+        required.any((e) =>
+            e.box.left < bounds.left - .001 ||
+            e.box.top < bounds.top - .001 ||
+            e.box.right > bounds.right + .001 ||
+            e.box.bottom > bounds.bottom + .001)) {
       throw const FormatException('Required ticket elements outside canvas');
     }
     var next = TicketTemplate(
@@ -353,9 +385,12 @@ class TicketTemplate {
             ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
             : page,
         area: Rect.fromLTWH(area.left, area.top, size.width, size.height),
-        elements: elements.map((e) {
-          if (e.box.right <= size.width && e.box.bottom <= size.height)
-            return e;
+        elements: elements.map((original) {
+          final e = original.copyWith(box: original.box.shift(-origin));
+          if (e.box.left >= -.001 &&
+              e.box.top >= -.001 &&
+              e.box.right <= size.width + .001 &&
+              e.box.bottom <= size.height + .001) return e;
           final w = math.min(e.box.width, size.width),
               h = math.min(e.box.height, size.height);
           return e.copyWith(
@@ -364,7 +399,7 @@ class TicketTemplate {
                   e.box.top.clamp(0, size.height - h), w, h));
         }).toList());
     if (backgroundImage != null) {
-      final original = backgroundRect(backgroundImage);
+      final original = backgroundRect(backgroundImage).shift(-origin);
       final contain = math.min(size.width / backgroundImage.width,
           size.height / backgroundImage.height);
       next = next.withBackground(
@@ -434,6 +469,12 @@ class TicketTemplate {
       };
   List<String> validate(String type) {
     final errors = <String>[];
+    if (appearance.containsKey('canvasOpacity') &&
+        (appearance['canvasOpacity'] is! num ||
+            !(appearance['canvasOpacity'] as num).isFinite ||
+            (appearance['canvasOpacity'] as num) < 0 ||
+            (appearance['canvasOpacity'] as num) > 1))
+      errors.add('canvasOpacity');
     if (appearance.containsKey('canvasColor') &&
         (appearance['canvasColor'] is! String ||
             (canvasColor != 'transparent' &&
