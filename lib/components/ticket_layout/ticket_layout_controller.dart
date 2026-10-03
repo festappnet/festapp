@@ -266,6 +266,80 @@ class TicketLayoutController extends ChangeNotifier {
             (next.center.dy - base.area.height / 2) / base.area.height));
   }
 
+  void cropBackground(Size image, Offset delta,
+      {int? corner, double zoom = 1, bool snap = true, double? gridStep}) {
+    final base = _gesture ?? document;
+    if (_gesture != null) _dragOffset += delta;
+    final drag = _gesture == null ? delta : _dragOffset;
+    final full = base.backgroundRect(image),
+        crop = base.croppedBackgroundRect(image);
+    final others = base.elements.where((e) => e.visible).map((e) => e.box);
+    var next = crop.shift(drag);
+    guideX = guideY = null;
+    if (corner == null) {
+      if (snap) {
+        final result = snapTicketBox(next, base.area.size, others,
+            zoom: zoom, gridStep: gridStep);
+        next = result.box;
+        guideX = result.x;
+        guideY = result.y;
+      }
+      next = Rect.fromLTWH(
+          next.left
+              .clamp(full.left, math.max(full.left, full.right - crop.width)),
+          next.top
+              .clamp(full.top, math.max(full.top, full.bottom - crop.height)),
+          crop.width,
+          crop.height);
+    } else {
+      final corners = [
+        crop.topLeft,
+        crop.topRight,
+        crop.bottomRight,
+        crop.bottomLeft
+      ];
+      final anchor = corners[(corner + 2) % 4];
+      var point = corners[corner] + drag;
+      if (snap) {
+        final result = snapTicketBox(point & Size.zero, base.area.size, others,
+            zoom: zoom, gridStep: gridStep);
+        point = result.box.topLeft;
+        guideX = result.x;
+        guideY = result.y;
+      }
+      point = Offset(
+          corner == 0 || corner == 3
+              ? point.dx.clamp(
+                  full.left, anchor.dx - math.min(full.width * .01, crop.width))
+              : point.dx.clamp(
+                  anchor.dx + math.min(full.width * .01, crop.width),
+                  full.right),
+          corner == 0 || corner == 1
+              ? point.dy.clamp(full.top,
+                  anchor.dy - math.min(full.height * .01, crop.height))
+              : point.dy.clamp(
+                  anchor.dy + math.min(full.height * .01, crop.height),
+                  full.bottom));
+      next = Rect.fromPoints(anchor, point);
+    }
+    if (guideX != null &&
+        ![next.left, next.center.dx, next.right]
+            .any((v) => (v - guideX!).abs() < .001)) guideX = null;
+    if (guideY != null &&
+        ![next.top, next.center.dy, next.bottom]
+            .any((v) => (v - guideY!).abs() < .001)) guideY = null;
+    final result = base.withBackgroundCrop(Rect.fromLTWH(
+        ((next.left - full.left) / full.width).clamp(0, 1),
+        ((next.top - full.top) / full.height).clamp(0, 1),
+        (next.width / full.width).clamp(.001, 1),
+        (next.height / full.height).clamp(.001, 1)));
+    if (_gesture == null) {
+      replace(result);
+    } else {
+      previewDocument(result);
+    }
+  }
+
   void undo() {
     if (!canUndo) return;
     _redo.add(_snapshot);

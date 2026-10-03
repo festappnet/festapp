@@ -250,11 +250,11 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                             key: const ValueKey('add-button'),
                             children: [
                               const SizedBox(width: 16),
-                              ElevatedButton.icon(
+                              FilledButton.icon(
                                 onPressed: _addNewEvent,
                                 icon: const Icon(Icons.add, size: 18),
                                 label: Text(UnitStrings.addNewEvent),
-                                style: ElevatedButton.styleFrom(
+                                style: FilledButton.styleFrom(
                                   // This will force the button to be at least 48px tall.
                                   minimumSize: const Size(0, 48),
                                   tapTargetSize:

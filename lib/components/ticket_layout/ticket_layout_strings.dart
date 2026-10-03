@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get cropImage => 'TicketLayout.cropImage'.tr();
+  static String get cropImageHint => 'TicketLayout.cropImageHint'.tr();
+  static String get resetCrop => 'TicketLayout.resetCrop'.tr();
   static String get designSize => 'TicketLayout.designSize'.tr();
   static String get designSizeHint => 'TicketLayout.designSizeHint'.tr();
   static String get marginMm => 'TicketLayout.marginMm'.tr();
