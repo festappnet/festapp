@@ -82,10 +82,10 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (occasionLink == null &&
-        context.routeData.inheritedPathParams.isNotEmpty) {
-      occasionLink = context.routeData.inheritedPathParams
-          .getString(AppRouter.linkFormatted);
+    final link = context.routeData.inheritedPathParams
+        .optString(AppRouter.linkFormatted);
+    if (link != null && link != occasionLink) {
+      occasionLink = link;
       _loadData();
     }
   }
@@ -104,16 +104,13 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       _isLoading = true;
     });
 
-    final fetchedOccasion = await DbOccasions.getOccasionByLink(occasionLink!);
+    final identity = occasionLink!;
+    final fetchedOccasion = await DbOccasions.getOccasionByLink(identity);
 
-    if (mounted) {
+    if (mounted && occasionLink == identity) {
       setState(() {
         occasion = fetchedOccasion;
         _initializeFormState();
-        _isLoading = false;
-      });
-    } else if (mounted) {
-      setState(() {
         _isLoading = false;
       });
     }
@@ -230,14 +227,14 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
             ToastHelper.Show(
                 context, "${CommonStrings.saved}: ${occasion!.title!}");
 
-            // 7. Trigger the full page refresh.
-            // This router method handles updating RightsService with the new link
-            // and then navigates to the correct administration page (AdminPage or
-            // ReservationsPage). This is crucial, especially if the event link
-            // itself has been changed.
-            await RouterService.navigateToOccasionAdministration(
-              context,
-              occasion: occasion!,
+            await refreshSavedOccasion(
+              router: context.router,
+              previousLink: occasionLink!,
+              savedLink: occasion!.link!,
+              refresh: (link) async {
+                await RightsService.updateAppData(
+                    link: link, force: true, refreshOffline: false);
+              },
             );
           }
         },
