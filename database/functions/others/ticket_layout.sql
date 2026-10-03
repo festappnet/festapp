@@ -145,8 +145,11 @@ BEGIN
     IF next_layout IS DISTINCT FROM 'null'::jsonb THEN PERFORM public.validate_ticket_layout(next_layout); ELSE next_layout:=NULL; END IF;
     -- Old clients discard appearance fields they do not understand. Fail closed
     -- instead of turning a migrated original back into an approximate preset.
+    -- A validated schema-2 fontId is the current editor's explicit replacement.
     IF EXISTS(SELECT 1 FROM jsonb_each(COALESCE(old_layout->'templates','{}'::jsonb)) old
-      WHERE old.value ? 'font' AND NOT COALESCE(next_layout->'templates'->old.key ? 'font',false))
+      WHERE old.value ? 'font' AND NOT COALESCE(next_layout->'templates'->old.key ? 'font',false)
+        AND NOT COALESCE(next_layout->>'schemaVersion'='2'
+          AND next_layout->'templates'->old.key ? 'fontId',false))
     THEN RAISE EXCEPTION 'Ticket editor update required'; END IF;
   END IF;
   FOR f IN SELECT * FROM jsonb_array_elements(p_next) LOOP
