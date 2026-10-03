@@ -2082,7 +2082,7 @@
     "marginMm": "Paper margin (mm)",
     "saveDirectHint": "Save stores the ticket changes directly in the event.",
     "canvasBlocked": "Size limit reached. Move the highlighted required elements",
-    "canvasHidden": "Outside canvas, automatically hidden (Undo to restore)",
+    "canvasHidden": "Outside canvas, automatically hidden (enlarge canvas to restore)",
     "checkElements": "Adjust highlighted elements: keep them clear of QR and inside the canvas",
     "canvasColor": "Canvas color",
     "transparency": "Transparency",
