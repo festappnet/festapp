@@ -15,11 +15,13 @@ import 'ticket_layout_canvas.dart';
 class TicketSettings extends StatefulWidget {
   final TicketFeature feature;
   final int occasionId;
+  final Future<void> Function(TicketFeature)? onSave;
   final TicketLayoutService service;
   TicketSettings(
       {super.key,
       required this.feature,
       required this.occasionId,
+      this.onSave,
       TicketLayoutService? service})
       : service = service ?? TicketLayoutService();
   @override
@@ -99,6 +101,22 @@ class _TicketSettingsState extends State<TicketSettings> {
           builder: (c) => Dialog.fullscreen(
               child: TicketLayoutEditor(
                   showTemplatePicker: showTemplatePicker,
+                  onSave: widget.onSave == null
+                      ? null
+                      : (result) async {
+                          final draft =
+                              TicketFeature.fromJson(widget.feature.toJson());
+                          draft.ticketType = type;
+                          draft.ticketBackground = result.background;
+                          draft.layout = upgradeTicketLayout({
+                            'schemaVersion': 1,
+                            'templates': {
+                              ...?(widget.feature.layout?['templates'] as Map?),
+                              type: result.template.toJson(),
+                            }
+                          });
+                          await widget.onSave!(draft);
+                        },
                   occasionId: widget.occasionId,
                   type: type,
                   layout: widget.feature.layout == null
@@ -119,6 +137,7 @@ class _TicketSettingsState extends State<TicketSettings> {
             }
           });
           widget.feature.ticketBackground = result.background;
+          if (widget.onSave != null) widget.feature.markLayoutSaved();
         });
         if (jsonEncode(result.template.toJson()) != initialTemplate ||
             result.background != initialBackground) {

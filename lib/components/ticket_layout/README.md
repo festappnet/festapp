@@ -47,7 +47,11 @@ contains dark high-contrast colors. Text must not overlap its protected box.
 
 ## Persistence and lifecycle
 
-Apply only returns a draft to settings. The existing occasion save transport
+The production editor Save action persists only ticket layout, artwork and type
+through the existing versioned occasion command. It loads the saved occasion,
+checks the settings version and preserves unrelated unsaved form edits. Failures
+keep the editor open; successful saves advance the parent version and layout
+baseline. Local fixture previews still return a draft. The occasion save transport
 adds `ticket_layout_change: {expected, next}` only if layout changed. This
 command envelope is never persisted in the occasion JSON. SQL locks the row,
 preserves layout when the command is absent, validates explicit changes and
@@ -268,3 +272,9 @@ Crop editing uses L-shaped corner marks. The faded original is visible only
 while editing the crop. Placement, resizing, snapping and the sidebar thumbnail
 use the visible crop bounds, with the original full-image transform retained
 for PDF rendering and restoring the crop.
+
+Ticket canvas resizing uses a dedicated mode with right, bottom and corner
+handles, live millimeter dimensions, shared magnets and one undo step per drag.
+Dimensions transform the content as one group, preserving the QR minimum and
+using surrounding whitespace before rejecting an impossible fit. Numeric edits
+preview valid sizes while typing and report dimension errors on Apply.

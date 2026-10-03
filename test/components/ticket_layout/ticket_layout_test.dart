@@ -1225,6 +1225,116 @@ void main() {
     expect(controller.document.elements.first.locked, !element.locked);
     controller.dispose();
   });
+  test('ticket height can shrink while a minimum-size QR remains printable',
+      () {
+    final original =
+        TicketTemplate.fromJson(fixture['presetsByType']['wide']['classic']);
+    final qr = original.elements.firstWhere((e) => e.binding == 'qr');
+    final template = original.replace(
+        qr.copyWith(box: Rect.fromLTWH(qr.box.left, qr.box.top, 60, 60)));
+    expect(template.validate('wide'), isEmpty);
+    final resized = template.resizeArea(Size(template.area.width, 250));
+    expect(resized.validate('wide'), isEmpty);
+    expect(resized.elements.firstWhere((e) => e.binding == 'qr').box.size,
+        const Size(60, 60));
+  });
+
+  test('canvas handles resize independently, snap, undo and keep valid bounds',
+      () {
+    final original = document().withPaper(true, margin: 0);
+    final c = TicketLayoutController(original)..beginGesture();
+    c.resizeCanvas(const Offset(24, 12), handle: 0, snap: false);
+    expect(c.document.area.width, original.area.width + 24);
+    expect(c.document.area.height, original.area.height);
+    c.endGesture();
+    c.undo();
+    expect(c.document.toJson(), original.toJson());
+    c.beginGesture();
+    final target = ((original.area.height + 30) / 10).round() * 10.0;
+    c.resizeCanvas(Offset(0, target - original.area.height - 2),
+        handle: 1, gridStep: 10);
+    expect(c.document.area.height, target);
+    expect(c.guideY, target);
+    c.cancelGesture();
+    expect(c.document.toJson(), original.toJson());
+    c.beginGesture();
+    c.resizeCanvas(const Offset(-10000, -10000), handle: 2, snap: false);
+    expect(c.document.validate('named'), isEmpty);
+    c.cancelGesture();
+    c.dispose();
+  });
+
+  testWidgets('ticket canvas edge handles resize the design live',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TicketLayout.resizeCanvas'.tr()));
+    await tester.pumpAndSettle();
+    final state =
+        tester.state<TicketLayoutCanvasState>(find.byType(TicketLayoutCanvas));
+    final c = state.widget.controller;
+    final original = c.document;
+    final point = tester.getTopLeft(find.byType(InteractiveViewer)) +
+        MatrixUtils.transformPoint(
+            state.widget.transform.value, original.area.centerRight);
+    final gesture = await tester.startGesture(point);
+    await gesture.moveBy(const Offset(20, 0));
+    await tester.pump();
+    expect(c.document.area.width, greaterThan(original.area.width));
+    expect(c.document.area.height, original.area.height);
+    await gesture.up();
+    c.undo();
+    expect(c.document.toJson(), original.toJson());
+  });
+
+  testWidgets('direct save waits for persistence and prevents duplicate clicks',
+      (tester) async {
+    final pending = Completer<void>();
+    var calls = 0;
+    TicketLayoutResult? result;
+    await tester.pumpWidget(MaterialApp(
+        home: Builder(
+            builder: (context) => Scaffold(
+                body: TextButton(
+                    child: const Text('open save'),
+                    onPressed: () async {
+                      result = await showDialog<TicketLayoutResult>(
+                          context: context,
+                          builder: (_) => Dialog.fullscreen(
+                              child: TicketLayoutEditor(
+                                  occasionId: 1,
+                                  type: 'named',
+                                  resources: resources(),
+                                  service: FakeService(),
+                                  onSave: (_) {
+                                    calls++;
+                                    return pending.future;
+                                  })));
+                    })))));
+    await tester.tap(find.text('open save'));
+    await tester.pumpAndSettle();
+    final save = find.widgetWithText(FilledButton, 'Common.save'.tr());
+    await tester.tap(save);
+    await tester.pump();
+    expect(calls, 1);
+    expect(result, isNull);
+    expect(find.byType(TicketLayoutEditor), findsOneWidget);
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(result, isNotNull);
+    expect(find.byType(TicketLayoutEditor), findsNothing);
+  });
+
   test('portrait millimeter resize keeps QR dimensions exactly square in JSON',
       () {
     final catalog = jsonDecode(
