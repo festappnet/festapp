@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "6d1ef54570e7494b0313a439130890b7a8be7f75",
+  "baseMainSha": "5e13d80b881fd0ba9f2bb6b923d45187b5070819",
   "release": {
-    "version": "0.20.72+556",
-    "note": "Compact occasion report with denser metrics and currency details"
+    "version": "0.20.73+557",
+    "note": "Retain occasion settings on Save and open the only form automatically"
   }
 }

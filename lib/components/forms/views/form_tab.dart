@@ -74,7 +74,13 @@ class _FormDetailPageState extends State<FormDetailPage> {
 
   void _back() {
     RetainedDraftGuard.instance.leaveOwner(
-        context, () => context.router.replaceAll([const FormsListRoute()]));
+        context,
+        () => context.router.replaceAll([
+              PageRouteInfo(FormsListRoute.name, rawQueryParams: {
+                ...context.router.root.urlState.uri.queryParametersAll,
+                'list': true,
+              })
+            ]));
   }
 
   @override
