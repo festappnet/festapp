@@ -171,7 +171,10 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
                   unit: _unit!,
                   occasions: _occasions,
                   onUpdated: () => _load(force: true),
-                  child: const AutoRouter()))),
+                  // Initial nested routes are installed after the first frame.
+                  child: AutoRouter(
+                      placeholder: (_) =>
+                          const AdministrationLoadingShell(unit: true))))),
       if (denied)
         failure
       else if (waiting)
