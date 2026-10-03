@@ -1,3 +1,4 @@
+import '../ticket_layout/ticket_layout_saver.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -565,6 +566,8 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                     features: occasion!.features,
                     isEditingEnabled: isEditingEnabled,
                     occasionId: occasion!.id!,
+                    onSaveTicket: (draft) =>
+                        TicketLayoutSaver().save(occasion!, draft),
                   ),
                   const SizedBox(height: 24),
                   if (RightsService.isUnitManager())
