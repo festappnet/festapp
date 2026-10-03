@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/components/eshop/models/report_exchange_rates.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
@@ -10,6 +11,8 @@ import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:fstapp/components/eshop/report_strings.dart';
 import 'package:fstapp/components/eshop/views/report_tab.dart';
 import 'occasion_report_fixture.dart';
+import 'package:flutter/gestures.dart';
+import 'package:fstapp/components/eshop/views/report_timeline_chart.dart';
 
 class _ReportAssetLoader extends AssetLoader {
   const _ReportAssetLoader();
@@ -41,6 +44,15 @@ Widget app(
                         textScaler: TextScaler.linear(scale),
                         size: const Size(390, 844)),
                     child: ReportTab(
+                        exchangeRateLoader: () async =>
+                            ReportExchangeRates.fromJson({
+                              'source': 'CNB',
+                              'base': 'CZK',
+                              'date': '2026-10-02',
+                              'rates': {
+                                'EUR': {'amount': '1', 'rate': '24.5'}
+                              }
+                            }),
                         occasionLink: link,
                         identityKey: identity,
                         loader: loader,
@@ -49,6 +61,23 @@ Widget app(
     );
 
 void main() {
+  test('CNB conversion rounds exact cents and respects quoted quantities', () {
+    final rates = ReportExchangeRates.fromJson({
+      'source': 'CNB',
+      'base': 'CZK',
+      'date': '2026-10-02',
+      'rates': {
+        'EUR': {'amount': '1', 'rate': '24.5'},
+        'JPY': {'amount': '100', 'rate': '14.123'}
+      }
+    });
+    expect(rates.toCzk(BigInt.from(100), 'EUR'), BigInt.from(2450));
+    expect(rates.toCzk(BigInt.one, 'EUR'), BigInt.from(25));
+    expect(rates.toCzk(BigInt.from(10000), 'JPY'), BigInt.from(1412));
+    expect(rates.toCzk(BigInt.parse('1234567890123456789012'), 'EUR'),
+        BigInt.parse('30246913308024691330794'));
+    expect(() => rates.toCzk(BigInt.one, 'XXX'), throwsFormatException);
+  });
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
@@ -233,11 +262,12 @@ void main() {
       expect(tester.getSize(find.byType(PopupMenuButton<String>)).shortestSide,
           greaterThanOrEqualTo(48));
       await tester.scrollUntilVisible(
-          find.text(ReportStrings.details).first, 300);
-      await tester.tap(find.text(ReportStrings.details).first);
+          find.byIcon(Icons.info_outline).first, 300);
+      await tester.tap(find.byIcon(Icons.info_outline).first);
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsOneWidget);
-      await tester.tap(find.text(ReportStrings.close));
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text(ReportStrings.orderTimelineHelp), findsOneWidget);
+      await tester.pump(const Duration(seconds: 11));
       await tester.pumpAndSettle();
       final scroll = find.byType(SingleChildScrollView).first;
       for (var i = 0; i < 20; i++) {
@@ -296,5 +326,53 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(ReportStrings.spots), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+  testWidgets('info hover and currency/range switches keep one snapshot',
+      (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(app((_) async {
+      calls++;
+      return reportFixture();
+    }));
+    await tester.pumpAndSettle();
+    final icon = find.byIcon(Icons.info_outline).first;
+    await tester.scrollUntilVisible(icon, 200);
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(icon));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text(ReportStrings.orderTimelineHelp), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    await mouse.moveTo(Offset.zero);
+    await tester.pump(const Duration(milliseconds: 200));
+    await mouse.removePointer();
+    await tester.drag(
+        find.byType(SingleChildScrollView).first, const Offset(0, 2000));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'EUR'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'EUR'));
+    await tester.pumpAndSettle();
+    expect(calls, 1);
+    await tester.ensureVisible(
+        find.widgetWithText(ChoiceChip, ReportStrings.compareCurrencies));
+    await tester.pumpAndSettle();
+    await tester
+        .tap(find.widgetWithText(ChoiceChip, ReportStrings.compareCurrencies));
+    await tester.pumpAndSettle();
+    expect(calls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('chart preserves exact cents and fills missing calendar days', () {
+    final value = reportMinorUnits('12345678901234567890.12');
+    expect(reportChartAmount(value, 'CZK'), '12345678901234567890,12 CZK');
+    expect(
+        reportChartDays(DateTime.utc(2026, 3, 28), DateTime.utc(2026, 3, 30))
+            .length,
+        3);
+    final fixture = reportFixture();
+    expect(fixture.orderDays.length, 2);
+    expect(fixture.paymentDays[0].received, '25.00');
   });
 }

@@ -11,6 +11,38 @@ Map<String, dynamic> reportResponse({String id = '1', bool empty = false}) => {
           'title': 'Testovací akce $id s dlouhým názvem pro mobilní obrazovku'
         },
         'generated_at': '2026-10-03T12:00:00Z',
+        'timeline': {
+          'order_timezone': 'Europe/Prague',
+          'payment_date_basis': 'transaction_date',
+          'orders': empty
+              ? []
+              : [
+                  {'day': '2026-10-01', 'currency': 'CZK', 'count': 2},
+                  {'day': '2026-10-03', 'currency': 'EUR', 'count': 1},
+                ],
+          'payments': empty
+              ? []
+              : [
+                  {
+                    'day': '2026-10-01',
+                    'currency': 'CZK',
+                    'received': '25.00',
+                    'returned': '0'
+                  },
+                  {
+                    'day': '2026-10-03',
+                    'currency': 'CZK',
+                    'received': '50.00',
+                    'returned': '10.00'
+                  },
+                  {
+                    'day': '2026-10-02',
+                    'currency': 'EUR',
+                    'received': '15.00',
+                    'returned': '0'
+                  },
+                ],
+        },
         'spots': {
           'total': empty ? 0 : 3,
           'occupied': empty ? 0 : 2,
