@@ -888,7 +888,7 @@ class AppPanelHelper {
     );
   }
 
-  static TabBar _buildAdminTabs(
+  static PreferredSizeWidget _buildAdminTabs(
     BuildContext context,
     List<AdminTabDefinition> tabs,
     TabController? controller,
@@ -899,7 +899,7 @@ class AppPanelHelper {
     final fontSize = theme.textTheme.labelLarge?.fontSize ?? 14;
     final height = (MediaQuery.textScalerOf(context).scale(fontSize) + 24)
         .clamp(38.0, double.infinity);
-    return TabBar(
+    final tabBar = TabBar(
       controller: controller,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
@@ -921,6 +921,12 @@ class AppPanelHelper {
                 ),
               ))
           .toList(),
+    );
+    // AppBar centers an intrinsically sized scrollable strip. Give this
+    // administration strip the full width so its start alignment stays left.
+    return PreferredSize(
+      preferredSize: tabBar.preferredSize,
+      child: SizedBox(width: double.infinity, child: tabBar),
     );
   }
 }
