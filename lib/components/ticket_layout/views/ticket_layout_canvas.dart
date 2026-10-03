@@ -12,7 +12,7 @@ class TicketLayoutCanvas extends StatefulWidget {
   final TicketLayoutController controller;
   final TicketLayoutResources resources;
   final Map<String, String?> data;
-  final bool pan, wholePage, snap, grid, additiveSelection;
+  final bool pan, wholePage, snap, grid, additiveSelection, editBackground;
   final double gridStep;
   final TransformationController transform;
   const TicketLayoutCanvas(
@@ -22,6 +22,7 @@ class TicketLayoutCanvas extends StatefulWidget {
       required this.data,
       required this.transform,
       this.pan = false,
+      this.editBackground = false,
       this.additiveSelection = false,
       this.wholePage = false,
       this.snap = true,
@@ -146,6 +147,12 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     if (panning || event.buttons != kPrimaryButton) return;
     final point = widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
+    if (widget.editBackground) {
+      widget.controller.beginGesture();
+      _last = point;
+      setState(() => _editing = event.pointer);
+      return;
+    }
     final selected = widget.controller.document
         .positionedElements(widget.data)
         .where((e) => e.id == widget.controller.selected)
@@ -204,6 +211,16 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     if (event.pointer != _editing || _pointers.length != 1) return;
     final point = widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
+    if (widget.editBackground && _last != null) {
+      final doc = widget.controller.document;
+      final delta = point - _last!;
+      widget.controller.changeBackground(
+          doc.backgroundScale,
+          doc.backgroundOffset +
+              Offset(delta.dx / doc.area.width, delta.dy / doc.area.height));
+      _last = point;
+      return;
+    }
     if (_marqueeStart != null) {
       final rect = Rect.fromPoints(_marqueeStart!, point);
       widget.controller.selectionRect = rect;
@@ -255,7 +272,9 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     if (e is KeyUpEvent) return KeyEventResult.ignored;
     final ctrl = HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
-    if (ctrl && e.logicalKey == LogicalKeyboardKey.keyA) {
+    if (!widget.editBackground &&
+        ctrl &&
+        e.logicalKey == LogicalKeyboardKey.keyA) {
       widget.controller.selectAll(widget.controller.document.elements
           .where((e) => e.visible)
           .map((e) => e.id));
@@ -269,7 +288,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       setState(() => _editing = null);
       return KeyEventResult.handled;
     }
-    if (e.logicalKey == LogicalKeyboardKey.delete) {
+    if (!widget.editBackground && e.logicalKey == LogicalKeyboardKey.delete) {
       final s = widget.controller.selection;
       if (s != null && !['qr', 'ticketSymbol'].contains(s.binding)) {
         widget.controller.change(s.copyWith(visible: false));
@@ -284,7 +303,15 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       LogicalKeyboardKey.arrowDown: Offset(0, step)
     }[e.logicalKey];
     if (delta != null) {
-      widget.controller.move(delta, snap: false);
+      if (widget.editBackground) {
+        final doc = widget.controller.document;
+        widget.controller.changeBackground(
+            doc.backgroundScale,
+            doc.backgroundOffset +
+                Offset(delta.dx / doc.area.width, delta.dy / doc.area.height));
+      } else {
+        widget.controller.move(delta, snap: false);
+      }
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -358,7 +385,16 @@ class TicketLayoutPainter extends CustomPainter {
     final artwork = resources.artworks[controller.artworkKey];
     final background = artwork != null ? artwork.image : resources.background;
     if (background != null) {
-      _image(canvas, background, doc.area);
+      canvas.save();
+      canvas.clipRect(doc.area);
+      _image(
+          canvas,
+          background,
+          doc
+              .backgroundRect(Size(
+                  background.width.toDouble(), background.height.toDouble()))
+              .shift(doc.area.topLeft));
+      canvas.restore();
     }
     if (doc.appearance['border'] == true) {
       final paint = Paint()
