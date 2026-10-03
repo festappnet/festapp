@@ -1,4 +1,6 @@
 import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/bank_accounts/views/unit_bank_accounts_screen.dart';
+import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +13,45 @@ import 'package:fstapp/components/unit/views/unit_admin_page.dart';
 class UnitBankAccountsNavigationPage extends StatelessWidget {
   const UnitBankAccountsNavigationPage({super.key});
   @override
-  Widget build(BuildContext context) => const AutoRouter();
+  Widget build(BuildContext context) => const BankAccountsNavigationView();
+}
+
+class BankAccountsNavigationView extends StatefulWidget {
+  final WidgetBuilder? listBuilder;
+  const BankAccountsNavigationView({super.key, this.listBuilder});
+  @override
+  State<BankAccountsNavigationView> createState() =>
+      _BankAccountsNavigationViewState();
+}
+
+class _BankAccountsNavigationViewState
+    extends State<BankAccountsNavigationView> {
+  bool _hadDetail = false;
+  int _listRevision = 0;
+  @override
+  Widget build(BuildContext context) =>
+      AutoRouter(builder: (context, navigator) {
+        final unit = UnitAdministrationScope.of(context).unit;
+        final hasDetail =
+            context.router.current.name == BankAccountDetailRoute.name;
+        if (_hadDetail && !hasDetail) _listRevision++;
+        _hadDetail = hasDetail;
+        return Stack(fit: StackFit.expand, children: [
+          KeyedSubtree(
+              key: ValueKey(_listRevision),
+              child: widget.listBuilder?.call(context) ??
+                  UnitBankAccountsScreen(unitId: unit.id!)),
+          navigator,
+        ]);
+      });
+}
+
+// The list stays underneath the routed dialog, including on a direct deep link.
+@RoutePage(name: 'UnitBankAccountsListRoute')
+class UnitBankAccountsListPage extends StatelessWidget {
+  const UnitBankAccountsListPage({super.key});
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 @RoutePage()
@@ -82,15 +122,15 @@ class _BankAccountDetailPageState extends State<BankAccountDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_failed)
-      return Scaffold(
-        appBar: AppBar(
-            leading: IconButton(
-                icon: const Icon(Icons.arrow_back), onPressed: _back)),
-        body: const Center(child: Text('Not found or access denied')),
-      );
-    if (_account == null)
-      return const Center(child: CircularProgressIndicator());
+    if (_failed || _account == null) {
+      return RoutedBankAccountDialog(
+          title: BankAccountStrings.bankAccountSettingsTitle,
+          onClose: _back,
+          child: Center(
+              child: _failed
+                  ? const Text('Not found or access denied')
+                  : const CircularProgressIndicator()));
+    }
     return BankAccountSettingsScreen(
         key: ValueKey(widget.accountId),
         unitId: _unitId!,

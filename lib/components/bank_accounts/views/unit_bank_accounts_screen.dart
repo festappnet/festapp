@@ -14,7 +14,6 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/components/users/db_users.dart';
 
-@RoutePage(name: 'UnitBankAccountsListRoute')
 class UnitBankAccountsScreen extends StatefulWidget {
   final int unitId;
 
@@ -65,6 +64,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       _unitAccounts =
           await DbBankAccounts.getBankAccountsForUnit(widget.unitId);
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -210,7 +210,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     } else {
       await context.router
           .push(BankAccountDetailRoute(accountId: account.id.toString()));
-      _loadData();
+      if (mounted) _loadData();
     }
   }
 

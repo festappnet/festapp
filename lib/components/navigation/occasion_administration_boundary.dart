@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -66,6 +67,8 @@ class _OccasionAdministrationBoundaryState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    ModalRoute.of(
+        context); // Reload retained context when native Back reveals it.
     context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
     final root = context.router.root;
     if (_root != root) {
@@ -75,7 +78,10 @@ class _OccasionAdministrationBoundaryState
     }
     final link = context.routeData.inheritedPathParams
         .getString(AppRouter.linkFormatted);
-    if (_link == link) return;
+    if (_link == link) {
+      _contextChanged();
+      return;
+    }
     _link = link;
     _ready = false;
     _denied = false;
@@ -95,9 +101,9 @@ class _OccasionAdministrationBoundaryState
       }
       if (widget.access.loadedLink != _link || (!_ready && !_loading)) {
         if (_ready) setState(() => _ready = false);
-        if (!_loading && context.routeData.isActive)
+        if (!_loading && isVisibleRouteInstance(context))
           _load(_link!, ++_generation);
-      } else if (_ready && context.routeData.isActive) {
+      } else if (_ready && isVisibleRouteInstance(context)) {
         setState(() => _denied = false);
       }
     });
