@@ -146,7 +146,10 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     if (panning || event.buttons != kPrimaryButton) return;
     final point = widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
-    final selected = widget.controller.document.positionedElements(widget.data).where((e) => e.id == widget.controller.selected).firstOrNull;
+    final selected = widget.controller.document
+        .positionedElements(widget.data)
+        .where((e) => e.id == widget.controller.selected)
+        .firstOrNull;
     final handle = 14 / zoom;
     _resize = selected != null &&
         !selected.locked &&
@@ -155,7 +158,9 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         !selected.locked &&
         (point - Offset(selected.box.right, selected.box.center.dy)).distance <
             handle;
-    final hit = widget.controller.document.positionedElements(widget.data).reversed
+    final hit = widget.controller.document
+        .positionedElements(widget.data)
+        .reversed
         .where((e) => e.visible && e.box.inflate(3 / zoom).contains(point))
         .firstOrNull;
     final additive = widget.additiveSelection ||
@@ -165,7 +170,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     if (!_resize && !_widthOnly) {
       if (hit == null) {
         _marqueeStart = point;
-        _selectionBeforeMarquee = additive ? {...widget.controller.selectedIds} : {};
+        _selectionBeforeMarquee =
+            additive ? {...widget.controller.selectedIds} : {};
         widget.controller.selectAll(_selectionBeforeMarquee);
         setState(() => _editing = event.pointer);
         return;
@@ -177,7 +183,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       }
     }
     if (!widget.controller.selections.any((e) => !e.locked)) {
-      if (_pendingToggle != null) widget.controller.select(_pendingToggle, additive: true);
+      if (_pendingToggle != null)
+        widget.controller.select(_pendingToggle, additive: true);
       _pendingToggle = null;
       return;
     }
@@ -200,9 +207,13 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     if (_marqueeStart != null) {
       final rect = Rect.fromPoints(_marqueeStart!, point);
       widget.controller.selectionRect = rect;
-      widget.controller.selectAll({..._selectionBeforeMarquee,
-        ...widget.controller.document.positionedElements(widget.data)
-            .where((e) => e.visible && rect.overlaps(e.box)).map((e) => e.id)});
+      widget.controller.selectAll({
+        ..._selectionBeforeMarquee,
+        ...widget.controller.document
+            .positionedElements(widget.data)
+            .where((e) => e.visible && rect.overlaps(e.box))
+            .map((e) => e.id)
+      });
       return;
     }
     if (_pendingToggle != null) {
@@ -246,7 +257,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         HardwareKeyboard.instance.isMetaPressed;
     if (ctrl && e.logicalKey == LogicalKeyboardKey.keyA) {
       widget.controller.selectAll(widget.controller.document.elements
-          .where((e) => e.visible).map((e) => e.id));
+          .where((e) => e.visible)
+          .map((e) => e.id));
       return KeyEventResult.handled;
     }
     if (e.logicalKey == LogicalKeyboardKey.escape) {
@@ -349,15 +361,19 @@ class TicketLayoutPainter extends CustomPainter {
       _image(canvas, background, doc.area);
     }
     if (doc.appearance['border'] == true) {
-      final paint = Paint()..color = const Color(0xffe0e0e0)..strokeWidth = 1;
+      final paint = Paint()
+        ..color = const Color(0xffe0e0e0)
+        ..strokeWidth = 1;
       for (double x = doc.area.left; x < doc.area.right; x += 5) {
         for (final y in [doc.area.top, doc.area.bottom]) {
-          canvas.drawLine(Offset(x,y),Offset(math.min(x+3.75,doc.area.right),y),paint);
+          canvas.drawLine(Offset(x, y),
+              Offset(math.min(x + 3.75, doc.area.right), y), paint);
         }
       }
       for (double y = doc.area.top; y < doc.area.bottom; y += 5) {
-        for (final x in [doc.area.left,doc.area.right]) {
-          canvas.drawLine(Offset(x,y),Offset(x,math.min(y+3.75,doc.area.bottom)),paint);
+        for (final x in [doc.area.left, doc.area.right]) {
+          canvas.drawLine(Offset(x, y),
+              Offset(x, math.min(y + 3.75, doc.area.bottom)), paint);
         }
       }
     }
@@ -374,7 +390,9 @@ class TicketLayoutPainter extends CustomPainter {
         canvas.drawLine(Offset(0, y), Offset(doc.area.width, y), paint);
       }
     }
-    for (final e in doc.positionedElements(data).where((e) => e.visible && e.binding != 'qr')) {
+    for (final e in doc
+        .positionedElements(data)
+        .where((e) => e.visible && e.binding != 'qr')) {
       if (e.binding == 'logo') {
         if (resources.logo != null) _image(canvas, resources.logo!, e.box);
         continue;
@@ -383,7 +401,7 @@ class TicketLayoutPainter extends CustomPainter {
       if (text == null) continue;
       TicketTextFit fit;
       try {
-        fit = fitTicketText(text, e, resources.metricsFor(doc));
+        fit = fitTicketText(text, e, resources.metricsFor(doc, e));
       } on FormatException {
         canvas.drawRect(
             e.box, Paint()..color = Colors.red.withValues(alpha: .2));
@@ -398,35 +416,52 @@ class TicketLayoutPainter extends CustomPainter {
                 : e.align == 'right'
                     ? e.box.width - fit.widths[i]
                     : 0);
-        x += ticketTextInsets(e, resources.metricsFor(doc)).left * fit.size;
+        x += ticketTextInsets(e, resources.metricsFor(doc, e)).left * fit.size;
         final lineStart = x;
         final baseline = e.box.top +
-            resources.metricsFor(doc).ascent * fit.size +
+            resources.metricsFor(doc, e).ascent * fit.size +
             i * fit.size * 1.2;
         for (final rune in fit.lines[i].runes) {
           final c = String.fromCharCode(rune);
           canvas.save();
           canvas.translate(x, baseline);
           if (e.italic) {
-            canvas.transform((Matrix4.identity()..setEntry(0, 1, -.2125565616700221)).storage);
+            canvas.transform((Matrix4.identity()
+                  ..setEntry(0, 1, -.2125565616700221))
+                .storage);
           }
           for (final outline in [if (e.bold) true, false]) {
             final painter = TextPainter(
-                text: TextSpan(text: c, style: TextStyle(
-                  fontFamily: 'TicketLayoutFont-${doc.font}', fontSize: fit.size, height: 1,
-                  foreground: Paint()..color = Color(int.parse('ff${e.color}', radix: 16))
-                    ..style = outline ? PaintingStyle.stroke : PaintingStyle.fill
-                    ..strokeWidth = fit.size * .04)),
-                textDirection: TextDirection.ltr)..layout();
-            painter.paint(canvas, Offset(0, -painter.computeDistanceToActualBaseline(TextBaseline.alphabetic)));
+                text: TextSpan(
+                    text: c,
+                    style: TextStyle(
+                        fontFamily: resources.fontFor(doc, e).loaderName,
+                        fontSize: fit.size,
+                        height: 1,
+                        foreground: Paint()
+                          ..color = Color(int.parse('ff${e.color}', radix: 16))
+                          ..style = outline
+                              ? PaintingStyle.stroke
+                              : PaintingStyle.fill
+                          ..strokeWidth = fit.size * .04)),
+                textDirection: TextDirection.ltr)
+              ..layout();
+            painter.paint(
+                canvas,
+                Offset(
+                    0,
+                    -painter.computeDistanceToActualBaseline(
+                        TextBaseline.alphabetic)));
             painter.dispose();
           }
           canvas.restore();
-          x += resources.metricsFor(doc).width(c, fit.size);
+          x += resources.metricsFor(doc, e).width(c, fit.size);
         }
         if (e.underline) {
-          canvas.drawLine(Offset(lineStart, baseline + fit.size * .1),
-              Offset(x, baseline + fit.size * .1), Paint()
+          canvas.drawLine(
+              Offset(lineStart, baseline + fit.size * .1),
+              Offset(x, baseline + fit.size * .1),
+              Paint()
                 ..color = Color(int.parse('ff${e.color}', radix: 16))
                 ..strokeWidth = fit.size * .05);
         }
@@ -439,7 +474,15 @@ class TicketLayoutPainter extends CustomPainter {
     final q = doc.elements.firstWhere((e) => e.binding == 'qr');
     final margin = (doc.qrAppearance['margin'] as num?)?.toDouble() ?? 4;
     final module = q.box.width / (resources.qrSize + 2 * margin);
-    canvas.drawRect(q.box, Paint()..color = Color(int.parse('ff${doc.qrAppearance['background'] ?? 'FFFFFF'}', radix: 16)).withValues(alpha: (doc.qrAppearance['opacity'] as num?)?.toDouble() ?? 1));
+    canvas.drawRect(
+        q.box,
+        Paint()
+          ..color = Color(int.parse(
+                  'ff${doc.qrAppearance['background'] ?? 'FFFFFF'}',
+                  radix: 16))
+              .withValues(
+                  alpha:
+                      (doc.qrAppearance['opacity'] as num?)?.toDouble() ?? 1));
     for (var y = 0; y < resources.qrSize; y++) {
       for (var x = 0; x < resources.qrSize; x++) {
         if (resources.qrModules[y * resources.qrSize + x] != 0) {
@@ -462,11 +505,18 @@ class TicketLayoutPainter extends CustomPainter {
           Offset(doc.area.width, controller.guideY!), guide);
     }
     if (controller.selectionRect case final Rect rect) {
-      canvas.drawRect(rect, Paint()..color = Colors.blue.withValues(alpha: .12));
-      canvas.drawRect(rect, Paint()..color = Colors.blue
-        ..style = PaintingStyle.stroke..strokeWidth = 1 / zoom);
+      canvas.drawRect(
+          rect, Paint()..color = Colors.blue.withValues(alpha: .12));
+      canvas.drawRect(
+          rect,
+          Paint()
+            ..color = Colors.blue
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1 / zoom);
     }
-    for (final selected in doc.positionedElements(data).where((e) => controller.selectedIds.contains(e.id))) {
+    for (final selected in doc
+        .positionedElements(data)
+        .where((e) => controller.selectedIds.contains(e.id))) {
       canvas.drawRect(
           selected.box,
           Paint()

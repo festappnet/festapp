@@ -1,10 +1,11 @@
+import {fontMetrics} from './ticketFonts.ts';
 import {assert,assertEquals,assertRejects,assertThrows} from 'jsr:@std/assert@1';
-import {fontBytes,fontMetrics,generateTicketPdf,prepareTicketRenderer,resolveTicketTemplate} from './ticketGeneration.ts';
+import {generateTicketPdf,prepareTicketRenderer,resolveTicketTemplate} from './ticketGeneration.ts';
 import {importTicketTemplate} from './ticketTemplateImport.ts';
 import {positionedElements,parseLayout,preset} from './ticketLayout.ts';
 import {sampleData} from './ticketRenderData.ts';
 import {PDFDocument} from 'npm:pdf-lib';
-const font=await fontBytes('robotoSlab');
+const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/roboto-slab.ttf');
 const resources={font,metrics:fontMetrics(font),background:await Deno.readFile('test/fixtures/ticket_layout/historical/forest.jpg')};
 const occasion={id:27,features:[{code:'ticket',ticket_type:'wide',background:'https://img.festapp.net/forest.jpg',darkColor:'FFFFFF',lightColor:'000000'}]};
 Deno.test('existing wide ticket imports its physical geometry, original font, inverted QR and compact rows',async()=>{
@@ -20,7 +21,7 @@ Deno.test('existing wide ticket imports its physical geometry, original font, in
 });
 Deno.test('both named fonts import without losing original baseline or page geometry',async()=>{
  for(const name of ['roboto','russoOne']){
- const f=await fontBytes(name);const t=await importTicketTemplate({features:[{code:'ticket',ticket_type:'named'}],data:name==='russoOne'?{font:'https://fonts.cdnfonts.com/s/15876/RussoOne-Regular.woff'}:{}},{font:f,metrics:fontMetrics(f)});
+ const f=await Deno.readFile('supabase/functions/_shared/ticket-assets/'+({roboto:'roboto.ttf',russoOne:'russo-one.ttf'} as Record<string,string>)[name]);const t=await importTicketTemplate({features:[{code:'ticket',ticket_type:'named'}],data:name==='russoOne'?{font:'https://fonts.cdnfonts.com/s/15876/RussoOne-Regular.woff'}:{}},{font:f,metrics:fontMetrics(f)});
  assertEquals(t.font,name);assertEquals(t.page,{width:212.5,height:387.5});parseLayout({schemaVersion:1,templates:{named:t}});
  const title=t.elements.find(e=>e.binding==='occasionTitle')!;assertEquals(title.box.y+title.style.fontSize*fontMetrics(f).ascent,87.5);
  }
