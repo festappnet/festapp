@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "e0b14ccade70f74ee84a51693f4066f6cc81195e",
+  "baseMainSha": "e942504c85510b67b7f89eada9b4fd17079c8983",
   "release": {
-    "version": "0.20.58+542",
-    "note": "User role and status explanations through data-grid info buttons"
+    "version": "0.20.59+543",
+    "note": "Canonical Material 3 themes and navigation synchronized with main"
   }
 }

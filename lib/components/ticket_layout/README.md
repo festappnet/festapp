@@ -223,3 +223,34 @@ not individual color changes, so inversion is possible in one undoable edit.
 A changed background becomes opaque; otherwise imported opacity/quiet margins
 remain intact. These values persist through the existing layout contract and
 are consumed by both the canvas and the sole PDF renderer.
+
+## Paper and image placement
+
+The dimensions dialog separates ticket dimensions from the PDF paper: A4 or
+ticket size plus an adjustable uniform white paper margin (0-25.4 mm).
+New switches to ticket-sized paper start with 3 mm; existing zero-margin layouts
+remain unchanged. Ticket dimensions scale the design independently of paper. New ordinary templates default to A4; explicitly portrait
+gallery styles retain ticket-sized paper. Existing saved paper sizes are kept
+until changed. Switching paper preserves element and image geometry.
+
+“Position image” enters a canvas mode that moves only the artwork. Dragging
+(or arrow keys) changes its position; four corner handles change its scale while
+preserving aspect ratio and the opposite corner. Image, text and QR transforms
+share the same snapping policy for ticket edges, centers, elements and visible
+grid. Alt temporarily disables magnets. The full image outline remains visible
+outside the crop while editing. Fit
+whole image, Fill ticket and Center provide starting positions. Smaller artwork
+leaves room for text; larger artwork is clipped to the ticket in Flutter and PDF.
+The optional `backgroundTransform` stores a scale (0.1-10) and x/y offsets in
+units of ticket width/height (-10 to 10); absent values preserve centered contain.
+Each gesture is one undo step. Paper previews cancel without changing the draft.
+Editor controls follow the app brightness; printed colors remain unchanged.
+
+Deploy `20261003120000_ticket_background_transform.sql` and the shared PDF
+renderer in download-ticket, send-tickets and preview-ticket-layout before the
+client. The migration only extends validation and does not rewrite saved layouts.
+
+`pageMargin` is optional in points (0-72), valid only with `pageFit: ticket`.
+The ticket origin equals the margin and the PDF page adds twice the margin on
+each axis. Deploy `20261003154500_ticket_pdf_margins.sql` and the shared function
+bundle before the client; existing saved templates need no rewriting.

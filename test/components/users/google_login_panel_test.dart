@@ -129,8 +129,8 @@ void main() {
                         supportedLocales: context.supportedLocales,
                         localizationsDelegates: context.localizationDelegates,
                         theme: dark
-                            ? ThemeConfig.darkTheme(ThemeConfig.baseTheme())
-                            : ThemeConfig.baseTheme(),
+                            ? ThemeConfig.theme(brightness: Brightness.dark)
+                            : ThemeConfig.theme(),
                         home: content,
                       )),
             ));

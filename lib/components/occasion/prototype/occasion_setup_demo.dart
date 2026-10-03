@@ -55,7 +55,7 @@ class OccasionSetupDemoApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         title: 'Festapp · Simulace průvodce',
         debugShowCheckedModeBanner: false,
-        theme: ThemeConfig.baseTheme(),
+        theme: ThemeConfig.theme(),
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         locale: context.locale,

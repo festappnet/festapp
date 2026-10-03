@@ -1,11 +1,12 @@
+import {fontMetrics} from './ticketFonts.ts';
 import {assertEquals,assertThrows,assert,assertRejects} from 'jsr:@std/assert@1';
-import {parseLayout,preset,pdfBox} from './ticketLayout.ts';
+import {parseLayout,preset,pdfBox,backgroundBox} from './ticketLayout.ts';
 import {fitText} from './ticketText.ts';
 import {normalizeTicketData,sampleData,sampleSymbol,sampleQr} from './ticketRenderData.ts';
-import {fontBytes,fontMetrics,generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
+import {generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
 import {PDFDocument,PDFRawStream,PDFName} from 'npm:pdf-lib';
 import {inflateSync} from 'node:zlib';
-const font=await fontBytes();const metrics=fontMetrics(font);
+const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');const metrics=fontMetrics(font);
 const png=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='),c=>c.charCodeAt(0));
 const r={font,metrics,background:png,logo:png};
 Deno.test('both presets round trip and stay printable at extreme aspect ratios',()=>{
@@ -18,7 +19,7 @@ Deno.test('both presets round trip and stay printable at extreme aspect ratios',
 });
 Deno.test('layout rejects missing, duplicate, hidden, distorted and overlapping QR and unknown versions',()=>{
   const base={schemaVersion:1,templates:{named:preset('named')}};
-  const invalid=[(v:any)=>v.schemaVersion=2,(v:any)=>v.templates.named.elements.push(v.templates.named.elements[0]),(v:any)=>v.templates.named.elements=v.templates.named.elements.filter((e:any)=>e.binding!=='qr'),(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').visible=false,(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').box.width=30,(v:any)=>v.templates.named.elements[1].box=v.templates.named.elements.find((e:any)=>e.binding==='qr').box,(v:any)=>v.templates.named.elements[0].box.x=-1,(v:any)=>v.templates.named.elements[0].style.fontSize=Infinity,(v:any)=>v.templates={}];
+  const invalid=[(v:any)=>v.schemaVersion=3,(v:any)=>v.templates.named.elements.push(v.templates.named.elements[0]),(v:any)=>v.templates.named.elements=v.templates.named.elements.filter((e:any)=>e.binding!=='qr'),(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').visible=false,(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').box.width=30,(v:any)=>v.templates.named.elements[1].box=v.templates.named.elements.find((e:any)=>e.binding==='qr').box,(v:any)=>v.templates.named.elements[0].box.x=-1,(v:any)=>v.templates.named.elements[0].style.fontSize=Infinity,(v:any)=>v.templates={}];
   for(const mutate of invalid){const v=structuredClone(base);mutate(v);assertThrows(()=>parseLayout(v));}
   assertEquals(activeTemplate({features:[{code:'ticket',ticket_type:'wide'}]}),undefined);
   assertThrows(()=>activeTemplate({features:[{code:'ticket',layout:{schemaVersion:2}}]}));
@@ -135,4 +136,39 @@ Deno.test('landscape gallery contains only variable ticket data; named templates
      assert(result.bytes.length>1000);
    }
  }
+});
+Deno.test('background placement supports inset artwork and cropped output with bounded transforms',async()=>{
+ const t=preset('wide');
+ assertEquals(preset('named').page,{width:595.28,height:841.89});
+ const base=backgroundBox(t,1600,800);
+ t.backgroundTransform={scale:.5,x:-.2,y:.1};
+ const box=backgroundBox(t,1600,800);
+ assertEquals(box.width,base.width/2);
+ assert(Math.abs(box.x+box.width/2-t.ticketArea.width*.3)<.0001);
+ parseLayout({schemaVersion:1,templates:{wide:t}});
+ t.backgroundTransform={scale:2,x:-.3,y:.2};
+ const result=await generateTicketPdf(sampleData('normal'),r,t);
+ const pdf=await PDFDocument.load(result.bytes);
+ assertEquals(pdf.getPage(0).getSize(),t.page);
+ for(const bad of [null,{}, {scale:0,x:0,y:0},{scale:1,x:11,y:0},{scale:Infinity,x:0,y:0}]) {
+   assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,backgroundTransform:bad}}}));
+ }
+});
+
+Deno.test('ticket paper margins preserve design coordinates and render a larger PDF',async()=>{
+ const t=preset('wide'); const original=structuredClone(t.elements); const margin=9;
+ t.pageFit='ticket';t.pageMargin=margin;
+ t.page={width:t.ticketArea.width+2*margin,height:t.ticketArea.height+2*margin};
+ t.ticketArea={...t.ticketArea,x:margin,y:margin};
+ const layout={schemaVersion:1 as const,templates:{wide:t}};
+ assertEquals(parseLayout(layout),layout);
+ assertEquals(t.elements,original);
+ const qr=t.elements.find(e=>e.binding==='qr')!;
+ assertEquals(pdfBox(t,qr.box).x,qr.box.x+margin);
+ assertEquals(pdfBox(t,qr.box).y,t.page.height-margin-qr.box.y-qr.box.height);
+ const result=await generateTicketPdf(sampleData(),r,t,'wide',true);
+ const pdf=await PDFDocument.load(result.bytes);assertEquals(pdf.getPage(0).getSize(),t.page);
+ for(const value of [-1,73,null,'9',Infinity])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,pageMargin:value}}}));
+ assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,ticketArea:{...t.ticketArea,x:0}}}}));
+ assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,pageFit:undefined}}}));
 });
