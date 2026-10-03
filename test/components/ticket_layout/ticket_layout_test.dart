@@ -36,7 +36,12 @@ TicketLayoutResources resources() => TicketLayoutResources(
         id,
         TicketFontResource(
             id,
-            {'futura':'Futura PT','robotoSlab':'Roboto Slab (legacy)','roboto':'Roboto (legacy)','russoOne':'Russo One (legacy)'}[name]!,
+            {
+              'futura': 'Futura PT',
+              'robotoSlab': 'Roboto Slab (legacy)',
+              'roboto': 'Roboto (legacy)',
+              'russoOne': 'Russo One (legacy)'
+            }[name]!,
             400,
             TicketFontMetrics.fromJson(fixture['metrics']),
             'TicketFont_${id.split(':').last}'))),
@@ -98,13 +103,106 @@ void main() {
           level.toString().contains('error')) {
         localizationWarnings.add(object.toString());
       }
-      originalPrinter?.call(object, name: name, stackTrace: stackTrace, level: level);
+      originalPrinter?.call(object,
+          name: name, stackTrace: stackTrace, level: level);
     };
   });
   tearDown(() {
     EasyLocalization.logger.printer = originalPrinter;
     expect(localizationWarnings, isEmpty,
-        reason: 'Editor tests must resolve real translations without warnings.');
+        reason:
+            'Editor tests must resolve real translations without warnings.');
+  });
+  testWidgets(
+      'paper dialog previews ticket-sized output without moving elements',
+      (tester) async {
+    final original = document().withPaper(false);
+    TicketTemplate? preview;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: TicketDimensionsDialog(
+                document: original,
+                defaults: original,
+                type: 'wide',
+                onPreview: (value) => preview = value))));
+    await tester.tap(find.text('TicketLayout.paperTicket'.tr()));
+    await tester.pumpAndSettle();
+    expect(preview!.fitPageToTicket, isTrue);
+    expect(preview!.page, original.area.size);
+    expect(preview!.elements, original.elements);
+    await tester.tap(find.text('TicketLayout.paperA4'.tr()));
+    await tester.pumpAndSettle();
+    expect(preview!.page, const Size(595.28, 841.89));
+    expect(preview!.fitPageToTicket, isFalse);
+  });
+  test('paper and artwork edits retain element geometry and undo together', () {
+    final original = document();
+    final placed = original.withBackground(2, const Offset(-.3, .2));
+    final restored = TicketTemplate.fromJson(placed.toJson());
+    expect(restored.backgroundScale, 2);
+    expect(restored.backgroundOffset, const Offset(-.3, .2));
+    final ticket = placed.withPaper(true);
+    expect(ticket.page, placed.area.size);
+    expect(ticket.area.topLeft, Offset.zero);
+    expect(ticket.withPaper(false).page, const Size(595.28, 841.89));
+    expect(ticket.elements, placed.elements);
+    expect(ticket.validate('wide'), isEmpty);
+    final c = TicketLayoutController(original);
+    c.beginGesture();
+    c.changeBackground(2, const Offset(-.3, .2));
+    c.changeBackground(3, const Offset(-.4, .2));
+    c.endGesture();
+    c.undo();
+    expect(c.document.toJson(), original.toJson());
+    c.redo();
+    expect(c.document.backgroundScale, 3);
+    c.beginGesture();
+    c.changeBackground(.5, Offset.zero);
+    c.cancelGesture();
+    expect(c.document.backgroundScale, 3);
+    for (final value in [
+      null,
+      {},
+      {'scale': 0, 'x': 0, 'y': 0},
+      {'scale': 1, 'x': 11, 'y': 0}
+    ]) {
+      final raw = original.toJson()..['backgroundTransform'] = value;
+      expect(TicketTemplate.fromJson(raw).validate('wide'),
+          contains('background'));
+    }
+    c.dispose();
+  });
+  testWidgets('editor follows dark theme and moves only artwork in image mode',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.runAsync(TicketFontCatalog.load);
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeData.dark(),
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'wide',
+            background: 'fixture.png',
+            resources: resources(),
+            service: FakeService())));
+    await tester.pumpAndSettle();
+    expect(Theme.of(tester.element(find.byType(Scaffold))).brightness,
+        Brightness.dark);
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    final before =
+        state.controller.document.elements.map((e) => e.toJson()).toList();
+    await tester.ensureVisible(find.text('TicketLayout.positionImage'.tr()));
+    await tester.tap(find.text('TicketLayout.positionImage'.tr()));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(TicketLayoutCanvas), const Offset(40, 20));
+    await tester.pumpAndSettle();
+    expect(state.controller.document.backgroundOffset, isNot(Offset.zero));
+    expect(state.controller.document.elements.map((e) => e.toJson()).toList(),
+        before);
+    state.controller.undo();
+    expect(state.controller.document.backgroundOffset, Offset.zero);
   });
   testWidgets('editor shows one font picker and a contrasting Apply action',
       (tester) async {
@@ -123,7 +221,9 @@ void main() {
             service: FakeService())));
     await tester.pumpAndSettle();
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
-    await tester.runAsync(() async { await state.fontCatalog; });
+    await tester.runAsync(() async {
+      await state.fontCatalog;
+    });
     state.controller.select('food');
     await tester.pumpAndSettle();
     expect(find.byType(FontFamilyPicker), findsOneWidget);
@@ -131,15 +231,16 @@ void main() {
     final button = tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr()));
     expect(button.onPressed, isNotNull);
-    final buttonContext = tester.element(
-        find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr()));
+    final buttonContext = tester
+        .element(find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr()));
     final style = button.defaultStyleOf(buttonContext);
     final background = style.backgroundColor!.resolve({})!;
     final foreground = style.foregroundColor!.resolve({})!;
     final light = foreground.computeLuminance();
     final dark = background.computeLuminance();
     expect((light + .05) / (dark + .05), greaterThanOrEqualTo(4.5));
-    expect(background, isNot(Theme.of(buttonContext).appBarTheme.backgroundColor));
+    expect(
+        background, isNot(Theme.of(buttonContext).appBarTheme.backgroundColor));
     expect(find.text('TicketLayout.elementFont'.tr()), findsNothing);
     expect(find.text('TicketLayout.downloadPdf'.tr()), findsNothing);
   });
@@ -417,8 +518,9 @@ void main() {
               body: SingleChildScrollView(
                   child: TicketLayoutProperties(
                       controller: c, backgroundImage: image)))));
-      await tester.tap(find.text(
-          binding == 'qr' ? 'TicketLayout.qrColors'.tr() : 'TicketLayout.color'.tr()));
+      await tester.tap(find.text(binding == 'qr'
+          ? 'TicketLayout.qrColors'.tr()
+          : 'TicketLayout.color'.tr()));
       await tester.pumpAndSettle();
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 50)));
@@ -432,7 +534,8 @@ void main() {
           '204060');
       await tester.enterText(find.byType(TextField), 'FFFFFF');
       await tester.pump();
-      final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr());
+      final apply =
+          find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr());
       expect(tester.widget<FilledButton>(apply).onPressed == null,
           binding == 'qr');
       await tester.enterText(find.byType(TextField), '445566');
@@ -812,9 +915,10 @@ void main() {
   setUpAll(() async {
     // Load the same catalog used by the app. An uninitialized translator returns
     // raw keys and floods otherwise passing widget tests with missing-key warnings.
-    Localization.load(const Locale('cs'), translations: Translations(
-        jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-            as Map<String, dynamic>));
+    Localization.load(const Locale('cs'),
+        translations: Translations(
+            jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+                as Map<String, dynamic>));
     final bytes =
         await File('supabase/functions/_shared/ticket-assets/font.ttf')
             .readAsBytes();

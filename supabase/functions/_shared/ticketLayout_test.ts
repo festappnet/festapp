@@ -1,6 +1,6 @@
 import {fontMetrics} from './ticketFonts.ts';
 import {assertEquals,assertThrows,assert,assertRejects} from 'jsr:@std/assert@1';
-import {parseLayout,preset,pdfBox} from './ticketLayout.ts';
+import {parseLayout,preset,pdfBox,backgroundBox} from './ticketLayout.ts';
 import {fitText} from './ticketText.ts';
 import {normalizeTicketData,sampleData,sampleSymbol,sampleQr} from './ticketRenderData.ts';
 import {generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
@@ -135,5 +135,22 @@ Deno.test('landscape gallery contains only variable ticket data; named templates
      const result=await generateTicketPdf(sampleData('normal'),r,t);
      assert(result.bytes.length>1000);
    }
+ }
+});
+Deno.test('background placement supports inset artwork and cropped output with bounded transforms',async()=>{
+ const t=preset('wide');
+ assertEquals(preset('named').page,{width:595.28,height:841.89});
+ const base=backgroundBox(t,1600,800);
+ t.backgroundTransform={scale:.5,x:-.2,y:.1};
+ const box=backgroundBox(t,1600,800);
+ assertEquals(box.width,base.width/2);
+ assert(Math.abs(box.x+box.width/2-t.ticketArea.width*.3)<.0001);
+ parseLayout({schemaVersion:1,templates:{wide:t}});
+ t.backgroundTransform={scale:2,x:-.3,y:.2};
+ const result=await generateTicketPdf(sampleData('normal'),r,t);
+ const pdf=await PDFDocument.load(result.bytes);
+ assertEquals(pdf.getPage(0).getSize(),t.page);
+ for(const bad of [null,{}, {scale:0,x:0,y:0},{scale:1,x:11,y:0},{scale:Infinity,x:0,y:0}]) {
+   assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,backgroundTransform:bad}}}));
  }
 });

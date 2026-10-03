@@ -2074,6 +2074,17 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "paperFormat": "Formát PDF",
+    "paperA4": "A4",
+    "paperTicket": "Podle vstupenky",
+    "paperOriginal": "Původní formát",
+    "positionImage": "Umístit obrázek",
+    "dragImage": "Posouvejte obrázek tažením. Velikost měňte posuvníkem.",
+    "containImage": "Celý obrázek",
+    "coverImage": "Vyplnit vstupenku",
+    "centerImage": "Na střed",
+    "doneImage": "Hotovo",
+
     "missingBackground": "Původní podkladový obrázek už není dostupný. V editoru nahrajte nový nebo podklad odeberte. Do té doby nelze vytvořit PDF.",
     "usedColors": "Použité na vstupence",
     "imageColors": "Doporučené k podkladu",

@@ -59,7 +59,11 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   final transform = TransformationController();
   final canvas = GlobalKey<TicketLayoutCanvasState>();
   bool additiveSelection = false;
-  bool pan = false, wholePage = false, pdfBusy = false, imageBusy = false;
+  bool editBackground = false,
+      pan = false,
+      wholePage = false,
+      pdfBusy = false,
+      imageBusy = false;
   int fontGeneration = 0;
   bool fontBusy = false;
   late final fontCatalog = TicketFontCatalog.load();
@@ -317,8 +321,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             defaults: propertyDefaults,
             type: widget.type,
             image: artwork != null ? artwork.image : resources.background,
-            onPreview: (size) {
-              controller.previewResize(size);
+            onPreview: (candidate) {
+              controller.previewDocument(candidate);
               setState(() {});
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) canvas.currentState?.fit();
@@ -328,7 +332,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       if (next == null) {
         controller.cancelGesture();
       } else {
-        controller.previewResize(next.area.size);
+        controller.previewDocument(next);
         controller.endGesture();
       }
       setState(() {});
@@ -571,7 +575,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             builder: (context, _) => ListTile(
                 title: Text(TicketLayoutStrings.canvasSize),
                 subtitle: Text(
-                    '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm'),
+                    '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket ? TicketLayoutStrings.paperTicket : controller.document.page == const Size(595.28, 841.89) ? TicketLayoutStrings.paperA4 : TicketLayoutStrings.paperOriginal}'),
                 trailing: const Icon(Icons.tune),
                 onTap: imageBusy ? null : editDimensions)),
         ListenableBuilder(
@@ -601,6 +605,22 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 enabled: !imageBusy,
                 onFileSelected: upload,
                 onRemove: removeBackground)),
+        if (background?.isNotEmpty ?? false)
+          OutlinedButton.icon(
+              icon: const Icon(Icons.crop),
+              label: Text(TicketLayoutStrings.positionImage),
+              onPressed: imageBusy
+                  ? null
+                  : () {
+                      setState(() {
+                        editBackground = true;
+                        pan = false;
+                      });
+                      controller.select(null);
+                      if (MediaQuery.sizeOf(context).width < 900) {
+                        Navigator.pop(context);
+                      }
+                    }),
         TextButton(
             onPressed: imageBusy
                 ? null
@@ -612,6 +632,56 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   },
             child: Text(TicketLayoutStrings.reset))
       ]));
+  Widget backgroundTools() => ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final doc = controller.document;
+        final artwork = resources.artworks[controller.artworkKey];
+        final image = artwork != null ? artwork.image : resources.background;
+        void fitImage(bool cover) {
+          if (image == null) return;
+          final sx = doc.area.width / image.width,
+              sy = doc.area.height / image.height;
+          final scale = cover ? (sx > sy ? sx / sy : sy / sx) : 1.0;
+          controller.changeBackground(scale, Offset.zero);
+        }
+
+        return Padding(
+            padding: const EdgeInsets.all(8),
+            child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(TicketLayoutStrings.dragImage),
+                  SizedBox(
+                      width: 180,
+                      child: Slider(
+                          label: '${(doc.backgroundScale * 100).round()}%',
+                          value: doc.backgroundScale,
+                          min: .1,
+                          max: 10,
+                          onChangeStart: (_) => controller.beginGesture(),
+                          onChangeEnd: (_) => controller.endGesture(),
+                          onChanged: (v) => controller.changeBackground(
+                              v, doc.backgroundOffset))),
+                  Text('${(doc.backgroundScale * 100).round()}%'),
+                  TextButton(
+                      onPressed: () => fitImage(false),
+                      child: Text(TicketLayoutStrings.containImage)),
+                  TextButton(
+                      onPressed: () => fitImage(true),
+                      child: Text(TicketLayoutStrings.coverImage)),
+                  TextButton(
+                      onPressed: () => controller.changeBackground(
+                          doc.backgroundScale, Offset.zero),
+                      child: Text(TicketLayoutStrings.centerImage)),
+                  FilledButton(
+                      onPressed: () => setState(() => editBackground = false),
+                      child: Text(TicketLayoutStrings.doneImage)),
+                ]));
+      });
+
   Future<void> showMobilePanel(int tab) => showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -751,16 +821,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   ThemeData _editorTheme(ThemeData inherited) {
     final colors = ColorScheme.fromSeed(
       seedColor: const Color(0xff334b70),
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: const Color(0xff334b70),
-      onPrimary: Colors.white,
-      surface: Colors.white,
-      surfaceContainerHighest: const Color(0xffeef0f3),
-      outlineVariant: const Color(0xffdfe3e9),
-      onSurface: const Color(0xff202a38),
-      onSurfaceVariant: const Color(0xff637083),
+      brightness: inherited.brightness,
     );
+    final palette = inherited.brightness == Brightness.dark
+        ? colors
+        : colors.copyWith(
+            primary: const Color(0xff334b70),
+            onPrimary: Colors.white,
+            surface: Colors.white,
+            surfaceContainerHighest: const Color(0xffeef0f3),
+            outlineVariant: const Color(0xffdfe3e9),
+            onSurface: const Color(0xff202a38),
+            onSurfaceVariant: const Color(0xff637083),
+          );
     final shape =
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
     final buttons = ButtonStyle(
@@ -772,49 +845,51 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     );
     return ThemeData(
       useMaterial3: true,
-      colorScheme: colors,
+      colorScheme: palette,
       textTheme: inherited.textTheme
-          .apply(bodyColor: colors.onSurface, displayColor: colors.onSurface),
-      scaffoldBackgroundColor: colors.surface,
+          .apply(bodyColor: palette.onSurface, displayColor: palette.onSurface),
+      scaffoldBackgroundColor: palette.surface,
       appBarTheme: AppBarTheme(
-        backgroundColor: colors.surface,
-        foregroundColor: colors.onSurface,
+        backgroundColor: palette.surface,
+        foregroundColor: palette.onSurface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         toolbarHeight: 64,
         titleTextStyle: inherited.textTheme.titleLarge?.copyWith(
-            color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.w600),
+            color: palette.onSurface,
+            fontSize: 20,
+            fontWeight: FontWeight.w600),
       ),
-      iconTheme: IconThemeData(size: 20, color: colors.onSurfaceVariant),
+      iconTheme: IconThemeData(size: 20, color: palette.onSurfaceVariant),
       iconButtonTheme: IconButtonThemeData(
           style: buttons.copyWith(
         backgroundColor: WidgetStateProperty.resolveWith((states) =>
             states.contains(WidgetState.selected)
-                ? colors.primaryContainer
+                ? palette.primaryContainer
                 : null),
         foregroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.disabled)
-                ? colors.onSurface.withValues(alpha: .3)
+                ? palette.onSurface.withValues(alpha: .3)
                 : states.contains(WidgetState.selected)
-                    ? colors.primary
-                    : colors.onSurfaceVariant),
+                    ? palette.primary
+                    : palette.onSurfaceVariant),
       )),
       textButtonTheme: TextButtonThemeData(style: buttons),
       outlinedButtonTheme: OutlinedButtonThemeData(
           style: buttons.copyWith(
               side: WidgetStatePropertyAll(
-                  BorderSide(color: colors.outlineVariant)))),
+                  BorderSide(color: palette.outlineVariant)))),
       filledButtonTheme: FilledButtonThemeData(style: buttons),
       segmentedButtonTheme: SegmentedButtonThemeData(
           style: buttons.copyWith(
               side: WidgetStatePropertyAll(
-                  BorderSide(color: colors.outlineVariant)))),
+                  BorderSide(color: palette.outlineVariant)))),
       dividerTheme:
-          DividerThemeData(color: colors.outlineVariant, thickness: 1),
+          DividerThemeData(color: palette.outlineVariant, thickness: 1),
       listTileTheme: ListTileThemeData(
-        iconColor: colors.onSurfaceVariant,
-        selectedColor: colors.primary,
-        selectedTileColor: colors.primaryContainer.withValues(alpha: .5),
+        iconColor: palette.onSurfaceVariant,
+        selectedColor: palette.primary,
+        selectedTileColor: palette.primaryContainer.withValues(alpha: .5),
         shape: shape,
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -822,7 +897,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: colors.outlineVariant)),
+            borderSide: BorderSide(color: palette.outlineVariant)),
       ),
       sliderTheme: const SliderThemeData(
           trackHeight: 3,
@@ -836,9 +911,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           toggled: selected,
           child: TextButton.icon(
             style: TextButton.styleFrom(
-              backgroundColor: selected ? const Color(0xffe6ecf5) : null,
-              foregroundColor:
-                  selected ? const Color(0xff334b70) : const Color(0xff637083),
+              backgroundColor: selected
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : null,
+              foregroundColor: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             onPressed: () => onChanged(!selected),
             icon: Icon(selected ? Icons.check : icon, size: 18),
@@ -850,18 +928,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   Widget _sidebar(String title, Widget child, double width) => Container(
       width: width,
-      decoration: const BoxDecoration(
-        border:
-            Border.symmetric(vertical: BorderSide(color: Color(0xffdfe3e9))),
+      decoration: BoxDecoration(
+        border: Border.symmetric(
+            vertical: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
             child: Text(title,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xff637083)))),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant))),
         Expanded(child: child),
       ]));
 
@@ -922,10 +1001,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 10),
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                             border: Border.symmetric(
-                                horizontal:
-                                    BorderSide(color: Color(0xffdfe3e9)))),
+                                horizontal: BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant))),
                         child: Wrap(
                             spacing: 4,
                             runSpacing: 8,
@@ -1072,6 +1153,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                     style:
                                         Theme.of(context).textTheme.bodySmall))
                           ])),
+                  if (editBackground) backgroundTools(),
                   Expanded(child: LayoutBuilder(builder: (c, constraints) {
                     final narrow = constraints.maxWidth < 900;
                     final view = TicketLayoutCanvas(
@@ -1081,6 +1163,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         data: resources.scenarios[scenario]!,
                         transform: transform,
                         pan: pan,
+                        editBackground: editBackground,
                         additiveSelection: additiveSelection,
                         wholePage: wholePage,
                         snap: snap,

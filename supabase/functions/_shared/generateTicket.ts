@@ -1,4 +1,4 @@
-import { validateLayout, pdfBox, positionedElements, effectiveFontId, type Template } from './ticketLayout.ts';
+import { validateLayout, backgroundBox, pdfBox, positionedElements, effectiveFontId, type Template } from './ticketLayout.ts';
 import { fitText, textInsets } from './ticketText.ts';
 import type { RenderData } from './ticketRenderData.ts';
 import type { Resources } from './ticketGeneration.ts';
@@ -19,7 +19,12 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
   };
   const area=pdfBox(t,{x:0,y:0,width:t.ticketArea.width,height:t.ticketArea.height});
   page.drawRectangle({...area,color:rgb(.9,.9,.9)});
-  if(r.background)await image(r.background,area);
+  if(r.background) {
+    const img=r.background[0]===137?await doc.embedPng(r.background):await doc.embedJpg(r.background);
+    page.pushOperators(pushGraphicsState(),rectangle(area.x,area.y,area.width,area.height),clip(),endPath());
+    page.drawImage(img,pdfBox(t,backgroundBox(t,img.width,img.height)));
+    page.pushOperators(popGraphicsState());
+  }
   if(t.border)page.drawRectangle({...area,borderColor:rgb(224/255,224/255,224/255),borderWidth:1,borderDashArray:[3.75,1.25]});
   for(const e of positionedElements(t,data).filter(e=>e.visible && e.binding!=='qr')) {
     const b=pdfBox(t,e.box);
