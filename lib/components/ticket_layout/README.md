@@ -223,3 +223,23 @@ not individual color changes, so inversion is possible in one undoable edit.
 A changed background becomes opaque; otherwise imported opacity/quiet margins
 remain intact. These values persist through the existing layout contract and
 are consumed by both the canvas and the sole PDF renderer.
+
+## Paper and image placement
+
+The dimensions dialog separates ticket dimensions from the PDF paper: A4 or
+exact ticket size. New ordinary templates default to A4; explicitly portrait
+gallery styles retain ticket-sized paper. Existing saved paper sizes are kept
+until changed. Switching paper preserves element and image geometry.
+
+“Position image” enters a canvas mode that moves only the artwork. Dragging
+(or arrow keys) changes its position; the size slider changes its scale. Fit
+whole image, Fill ticket and Center provide starting positions. Smaller artwork
+leaves room for text; larger artwork is clipped to the ticket in Flutter and PDF.
+The optional `backgroundTransform` stores a scale (0.1-10) and x/y offsets in
+units of ticket width/height (-10 to 10); absent values preserve centered contain.
+Each gesture is one undo step. Paper previews cancel without changing the draft.
+Editor controls follow the app brightness; printed colors remain unchanged.
+
+Deploy `20261003120000_ticket_background_transform.sql` and the shared PDF
+renderer in download-ticket, send-tickets and preview-ticket-layout before the
+client. The migration only extends validation and does not rewrite saved layouts.

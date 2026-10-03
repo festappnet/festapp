@@ -63,6 +63,17 @@ BEGIN
         OR NOT EXISTS(SELECT 1 FROM public.ticket_font_assets WHERE id=t->>'fontId')
       THEN RAISE EXCEPTION 'Invalid ticket font'; END IF;
     END IF;
+    IF t ? 'backgroundTransform' THEN
+      b:=t->'backgroundTransform';
+      IF jsonb_typeof(b) IS DISTINCT FROM 'object'
+        OR jsonb_typeof(b->'scale') IS DISTINCT FROM 'number'
+        OR jsonb_typeof(b->'x') IS DISTINCT FROM 'number'
+        OR jsonb_typeof(b->'y') IS DISTINCT FROM 'number'
+      THEN RAISE EXCEPTION 'Invalid background transform'; END IF;
+      IF (b->>'scale')::numeric NOT BETWEEN .1 AND 10
+        OR abs((b->>'x')::numeric)>10 OR abs((b->>'y')::numeric)>10
+      THEN RAISE EXCEPTION 'Invalid background transform'; END IF;
+    END IF;
     a:=t->'ticketArea'; ids:='{}'; bindings:='{}';
     FOR b IN SELECT a UNION ALL SELECT value->'box' FROM jsonb_array_elements(t->'elements') LOOP
       FOR k IN SELECT unnest(ARRAY['x','y','width','height']) LOOP

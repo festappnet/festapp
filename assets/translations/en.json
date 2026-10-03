@@ -2073,6 +2073,17 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "paperFormat": "PDF format",
+    "paperA4": "A4",
+    "paperTicket": "Ticket size",
+    "paperOriginal": "Original format",
+    "positionImage": "Position image",
+    "dragImage": "Drag the image to move it. Use the slider to resize.",
+    "containImage": "Fit whole image",
+    "coverImage": "Fill ticket",
+    "centerImage": "Center",
+    "doneImage": "Done",
+
     "missingBackground": "The original background image is no longer available. Upload a replacement or remove the background in the editor before generating a PDF.",
     "usedColors": "Used on this ticket",
     "imageColors": "Suggested for the background",

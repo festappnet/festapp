@@ -13,7 +13,7 @@ export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
 export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface Template { backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 1 | 2; templates: { wide?: Template; named?: Template } }
 export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=new Set()): asserts value is TicketLayout {
   const v = value as TicketLayout;
@@ -37,6 +37,10 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
       if (!b || ![b.x,b.y,b.width,b.height].every(Number.isFinite) || b.x < 0 || b.y < 0 || b.width < 1 || b.height < 1 || b.x+b.width > w+.001 || b.y+b.height > h+.001) fail();
     };
     checkBox(t.ticketArea,t.page.width,t.page.height);
+    if(t.backgroundTransform!==undefined) {
+      const b=t.backgroundTransform;
+      if(!b || ![b.scale,b.x,b.y].every(Number.isFinite) || b.scale<.1 || b.scale>10 || Math.abs(b.x)>10 || Math.abs(b.y)>10) fail();
+    }
     if (!Array.isArray(t.elements) || t.elements.length < 2 || t.elements.length > 11) fail();
     const ids = new Set(), seen = new Set();
     for (const e of t.elements) {
@@ -57,12 +61,20 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
     }
   }
 }
+// Image placement is relative to the ticket, independent of PDF paper size.
+export function backgroundBox(t:Template,width:number,height:number):Box {
+  const b=t.backgroundTransform??{scale:1,x:0,y:0};
+  const scale=Math.min(t.ticketArea.width/width,t.ticketArea.height/height)*b.scale;
+  return {x:(t.ticketArea.width-width*scale)/2+b.x*t.ticketArea.width,
+    y:(t.ticketArea.height-height*scale)/2+b.y*t.ticketArea.height,
+    width:width*scale,height:height*scale};
+}
 export function pdfBox(t: Template, b: Box): Box { return {...b,x:t.ticketArea.x+b.x,y:t.page.height-t.ticketArea.y-b.y-b.height}; }
 export function preset(type: 'wide'|'named', imageWidth=1600, imageHeight=800): Template {
   const named=type==='named';
   const width=named?200:Math.max(240,Math.min(535.752,782.362*imageWidth/imageHeight));
   const height=named?375:Math.min(782.362, width*imageHeight/imageWidth);
-  const area:Box={x:named?0:(595.28-width)/2,y:named?0:29.764,width,height};
+  const area:Box={x:(595.28-width)/2,y:29.764,width,height};
   const element=(binding:Binding,x:number,y:number,w:number,h:number,size=12,lines=2):Element=>({id:binding,binding,box:{x,y,width:w,height:h},visible:true,locked:false,style:{fontSize:size,minFontSize:6,maxLines:lines,color:'2A2A2A',align:named||binding==='ticketSymbol'?'center':'left'}});
   let elements:Element[];
   if(named) elements=[element('logo',71.875,12.5,56.25,56.25),element('occasionTitle',6.25,77,187.5,32,12.5),element('occasionDatePlace',6.25,111,187.5,24,8.75),element('orderName',6.25,151,187.5,32,12.5),element('qr',50,206.25,100,100),element('ticketSymbol',10,313,180,20,8.75,1),element('footer',6.25,348,187.5,20,6.25)];
@@ -76,17 +88,17 @@ export function preset(type: 'wide'|'named', imageWidth=1600, imageHeight=800): 
     const tx=Math.min(50,150*scale), tw=Math.min(width*.45,qx-tx-8);
     elements=[element('qr',qx,qy,q,q),element('ticketSymbol',qx,qy+q+4,q,22,Math.min(24,Math.max(8,28*scale)),1),...(['spotGroup','food','note','price'] as Binding[]).map((b,i)=>element(b,tx,Math.max(8,h-100)+i*22,tw,21,Math.min(24,Math.max(8,24*scale)),1))];
   }
-  return {...(named?{pageFit:'ticket' as const}:{}),page:{width:named?200:595.28,height:named?375:841.89},ticketArea:area,elements};
+  return {page:{width:595.28,height:841.89},ticketArea:area,elements};
 }
 
 // Portrait is a ticket-sized PDF, independently of the selected template slot.
-export function portraitPreset(): Template { return preset('named'); }
+export function portraitPreset(): Template { const t=preset('named'); return {...t,pageFit:'ticket',page:{width:t.ticketArea.width,height:t.ticketArea.height},ticketArea:{...t.ticketArea,x:0,y:0}}; }
 
 export function parseLayout(value: unknown,registeredIds?:ReadonlySet<string>): TicketLayout { validateLayout(value,registeredIds); return structuredClone(value); }
 
 // Gallery presets establish a clear hierarchy independently of the importer.
 function styleVariants(type: TicketType): Record<string,Template> {
-  const base=preset(type);
+  const base=type==='named'?portraitPreset():preset(type);
   const make=(binding:Binding,x:number,y:number,width:number,height:number,fontSize=12,maxLines=2,align:'left'|'center'='left'):Element=>({id:binding,binding,box:{x,y,width,height},visible:true,locked:false,style:{fontSize,minFontSize:6,maxLines,color:'202020',align}});
   const classic=structuredClone(base),compact=structuredClone(base),event=structuredClone(base);
   if(type==='named') {

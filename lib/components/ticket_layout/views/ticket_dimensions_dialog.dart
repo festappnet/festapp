@@ -8,7 +8,7 @@ class TicketDimensionsDialog extends StatefulWidget {
   final String type;
   final TicketTemplate defaults;
   final ui.Image? image;
-  final ValueChanged<Size>? onPreview;
+  final ValueChanged<TicketTemplate>? onPreview;
   const TicketDimensionsDialog(
       {super.key,
       required this.document,
@@ -27,6 +27,11 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
   late final height = TextEditingController(
       text: (widget.document.area.height / pointsPerMm).toStringAsFixed(1));
   late Size? preciseSize = widget.document.area.size;
+  late bool ticketPaper = widget.document.fitPageToTicket;
+  bool paperChanged = false;
+  bool get legacyPaper =>
+      !widget.document.fitPageToTicket &&
+      widget.document.page != const Size(595.28, 841.89);
   String? error;
   void setDimensions(Size size) {
     width.text = (size.width / pointsPerMm).toStringAsFixed(1);
@@ -48,7 +53,7 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
 
   void preview() {
     final candidate = validated();
-    if (candidate != null) widget.onPreview?.call(candidate.area.size);
+    if (candidate != null) widget.onPreview?.call(candidate);
   }
 
   @override
@@ -60,7 +65,8 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
 
   void fromImage() {
     final image = widget.image!;
-    final current = widget.document;
+    final current =
+        paperChanged ? widget.document.withPaper(ticketPaper) : widget.document;
     var w = (double.tryParse(width.text.replaceAll(',', '.')) ??
             current.area.width / pointsPerMm) *
         pointsPerMm;
@@ -90,8 +96,10 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
       setState(() => error = TicketLayoutStrings.invalidCanvas);
       return null;
     }
-    final candidate = widget.document
-        .resizeArea(preciseSize ?? Size(w * pointsPerMm, h * pointsPerMm));
+    final base =
+        paperChanged ? widget.document.withPaper(ticketPaper) : widget.document;
+    final candidate =
+        base.resizeArea(preciseSize ?? Size(w * pointsPerMm, h * pointsPerMm));
     final errors = candidate.validate(widget.type);
     if (errors.isNotEmpty) {
       setState(() => error = errors.contains('geometry')
@@ -114,6 +122,36 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
               width: 340,
               child: SingleChildScrollView(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(TicketLayoutStrings.paperFormat),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                    segments: [
+                      if (legacyPaper)
+                        ButtonSegment(
+                            value: 'original',
+                            label: Text(TicketLayoutStrings.paperOriginal)),
+                      ButtonSegment(
+                          value: 'a4',
+                          label: Text(TicketLayoutStrings.paperA4)),
+                      ButtonSegment(
+                          value: 'ticket',
+                          label: Text(TicketLayoutStrings.paperTicket)),
+                    ],
+                    selected: {
+                      legacyPaper && !paperChanged
+                          ? 'original'
+                          : ticketPaper
+                              ? 'ticket'
+                              : 'a4'
+                    },
+                    onSelectionChanged: (values) {
+                      setState(() {
+                        ticketPaper = values.single == 'ticket';
+                        paperChanged = values.single != 'original';
+                      });
+                      preview();
+                    }),
+                const SizedBox(height: 16),
                 TextField(
                     controller: width,
                     onChanged: edited,
@@ -129,7 +167,7 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
                     decoration: InputDecoration(
                         labelText: TicketLayoutStrings.heightMm)),
                 const SizedBox(height: 12),
-                Text(widget.document.fitPageToTicket
+                Text(ticketPaper
                     ? TicketLayoutStrings.ticketPdfHint
                     : TicketLayoutStrings.canvasHint),
                 TextButton(

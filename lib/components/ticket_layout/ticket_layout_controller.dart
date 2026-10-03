@@ -17,8 +17,8 @@ class TicketLayoutController extends ChangeNotifier {
   final Set<String> selectedIds = {};
   String? get selected => selectedIds.length == 1 ? selectedIds.single : null;
   Rect? selectionRect;
-  List<TicketElement> get selections => document.elements
-      .where((e) => selectedIds.contains(e.id)).toList();
+  List<TicketElement> get selections =>
+      document.elements.where((e) => selectedIds.contains(e.id)).toList();
   double? guideX, guideY;
   final List<({TicketTemplate document, String? artworkKey})> _undo = [],
       _redo = [];
@@ -38,7 +38,9 @@ class TicketLayoutController extends ChangeNotifier {
   }
 
   void selectAll(Iterable<String> ids) {
-    selectedIds..clear()..addAll(ids);
+    selectedIds
+      ..clear()
+      ..addAll(ids);
     notifyListeners();
   }
 
@@ -46,6 +48,22 @@ class TicketLayoutController extends ChangeNotifier {
     if (_gesture == null) {
       _gesture = document;
       _dragOffset = Offset.zero;
+    }
+  }
+
+  void previewDocument(TicketTemplate next) {
+    beginGesture();
+    document = next;
+    notifyListeners();
+  }
+
+  void changeBackground(double scale, Offset offset) {
+    final next = document.withBackground(scale.clamp(.1, 10),
+        Offset(offset.dx.clamp(-10, 10), offset.dy.clamp(-10, 10)));
+    if (_gesture == null) {
+      replace(next);
+    } else {
+      previewDocument(next);
     }
   }
 
@@ -108,19 +126,22 @@ class TicketLayoutController extends ChangeNotifier {
 
   void move(Offset delta,
       {double zoom = 1, bool snap = true, double? gridStep}) {
-    final moving = (_gesture ?? document).elements
-        .where((e) => selectedIds.contains(e.id) && !e.locked).toList();
+    final moving = (_gesture ?? document)
+        .elements
+        .where((e) => selectedIds.contains(e.id) && !e.locked)
+        .toList();
     if (moving.isEmpty) return;
     if (_gesture != null) _dragOffset += delta;
-    final bounds = moving.map((e) => e.box).reduce((a, b) => a.expandToInclude(b));
+    final bounds =
+        moving.map((e) => e.box).reduce((a, b) => a.expandToInclude(b));
     var b = bounds.shift(_gesture == null ? delta : _dragOffset);
     final area = document.area.size;
     guideX = guideY = null;
     if (snap) {
       final xs = <double>[0, area.width / 2, area.width],
           ys = <double>[0, area.height / 2, area.height];
-      for (final other
-          in document.elements.where((o) => !selectedIds.contains(o.id) && o.visible)) {
+      for (final other in document.elements
+          .where((o) => !selectedIds.contains(o.id) && o.visible)) {
         xs.addAll([other.box.left, other.box.center.dx, other.box.right]);
         ys.addAll([other.box.top, other.box.center.dy, other.box.bottom]);
       }
@@ -161,7 +182,8 @@ class TicketLayoutController extends ChangeNotifier {
       _redo.clear();
     }
     for (final element in moving) {
-      document = document.replace(element.copyWith(box: element.box.shift(shift)));
+      document =
+          document.replace(element.copyWith(box: element.box.shift(shift)));
     }
     notifyListeners();
   }

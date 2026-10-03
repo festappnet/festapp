@@ -191,6 +191,7 @@ class TicketTemplate {
             'flow',
             'flowStep',
             'qrAppearance',
+            'backgroundTransform',
             'border'
           ])
             if (j.containsKey(key)) key: j[key]
@@ -206,6 +207,49 @@ class TicketTemplate {
             .map((e) => TicketElement.fromJson(e))
             .toList());
   }
+  Map get backgroundTransform =>
+      appearance['backgroundTransform'] as Map? ?? const {};
+  double get backgroundScale =>
+      (backgroundTransform['scale'] as num?)?.toDouble() ?? 1;
+  Offset get backgroundOffset => Offset(
+      (backgroundTransform['x'] as num?)?.toDouble() ?? 0,
+      (backgroundTransform['y'] as num?)?.toDouble() ?? 0);
+  Rect backgroundRect(Size image) {
+    final scale =
+        math.min(area.width / image.width, area.height / image.height) *
+            backgroundScale;
+    return Rect.fromCenter(
+        center: Offset(area.width / 2 + backgroundOffset.dx * area.width,
+            area.height / 2 + backgroundOffset.dy * area.height),
+        width: image.width * scale,
+        height: image.height * scale);
+  }
+
+  TicketTemplate withBackground(double scale, Offset offset) => TicketTemplate(
+          fitPageToTicket: fitPageToTicket,
+          page: page,
+          area: area,
+          elements: elements,
+          appearance: {
+            ...appearance,
+            'backgroundTransform': {
+              'scale': scale,
+              'x': offset.dx,
+              'y': offset.dy
+            }
+          });
+  TicketTemplate withPaper(bool ticket) => TicketTemplate(
+      fitPageToTicket: ticket,
+      page: ticket ? area.size : const Size(595.28, 841.89),
+      area: ticket
+          ? Offset.zero & area.size
+          : Rect.fromLTWH(
+              math.max(0, (595.28 - area.width) / 2),
+              math.min(29.764, math.max(0, 841.89 - area.height)),
+              area.width,
+              area.height),
+      appearance: appearance,
+      elements: elements);
   TicketTemplate withQrColors(String foreground, String background) =>
       TicketTemplate(
           fitPageToTicket: fitPageToTicket,
@@ -288,6 +332,17 @@ class TicketTemplate {
     bool validFont(String? id) =>
         id == null ||
         RegExp(r'^(gf:|builtin:[a-z0-9-]+:)[a-f0-9]{64}$').hasMatch(id);
+    final transform = appearance['backgroundTransform'];
+    if (appearance.containsKey('backgroundTransform') &&
+        (transform is! Map ||
+            !['scale', 'x', 'y'].every(
+                (k) => transform[k] is num && (transform[k] as num).isFinite) ||
+            (transform['scale'] as num) < .1 ||
+            (transform['scale'] as num) > 10 ||
+            (transform['x'] as num).abs() > 10 ||
+            (transform['y'] as num).abs() > 10)) {
+      errors.add('background');
+    }
     if (!validFont(fontId)) errors.add('font');
     bool inside(Rect b, Size size) =>
         [b.left, b.top, b.width, b.height].every((v) => v.isFinite) &&
