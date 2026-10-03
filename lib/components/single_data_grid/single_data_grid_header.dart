@@ -126,7 +126,11 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
           AnimatedBuilder(
             animation: widget.stateManager,
             builder: (context, _) => ElevatedButton(
-              onPressed: a.isEnabled != null && !a.isEnabled!()
+              onPressed: a.action == null ||
+                      (a.requiresSelection &&
+                          !widget.stateManager.refRows.originalList
+                              .any((row) => row.checked == true)) ||
+                      (a.isEnabled != null && !a.isEnabled!())
                   ? null
                   : () => a.action!(controller, null),
               child: Text(a.name ?? "---"),
