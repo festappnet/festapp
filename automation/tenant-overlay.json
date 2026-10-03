@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "b7768278dbd269a5b174dcfeb8f023822de7b477",
+  "baseMainSha": "c84030bfc28563aa28bf32d09ea123ef00d2083d",
   "release": {
-    "version": "0.20.68+552",
-    "note": "Release verified ticket editor geometry and live canvas colors"
+    "version": "0.20.69+553",
+    "note": "Release graphical occasion report with one authorized snapshot RPC"
   }
 }
