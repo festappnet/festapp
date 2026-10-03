@@ -490,6 +490,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                   .change(e.copyWith(visible: !e.visible)))),
                   trailing: e.locked ? const Icon(Icons.lock, size: 16) : null,
                   onTap: () {
+                    if (editCanvas || editBackground) {
+                      setState(() { editCanvas = false; editBackground = false; });
+                    }
                     controller.select(e.id, additive: additiveSelection);
                     onSelected?.call();
                   }))
@@ -798,6 +801,46 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       child: Text(TicketLayoutStrings.reset))
                 ])),
       ]));
+  Widget modeBanner({required String title, required String hint,
+      required IconData icon, required VoidCallback onDone, Widget? tools,
+      bool canvasMode = false}) {
+    final colors = Theme.of(editorContext).colorScheme;
+    return Container(
+        key: const ValueKey('ticket-edit-mode'),
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: colors.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.primary.withValues(alpha: .4))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Icon(icon, color: colors.onPrimaryContainer, size: 24),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: Theme.of(editorContext).textTheme.titleSmall?.copyWith(
+                  color: colors.onPrimaryContainer, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(hint, style: Theme.of(editorContext).textTheme.bodySmall?.copyWith(color: colors.onPrimaryContainer)),
+            ])),
+            const SizedBox(width: 12),
+            TweenAnimationBuilder<double>(
+                key: ValueKey('mode-done-${canvasMode ? canvasElementAttempts : 0}'),
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 650),
+                builder: (context, value, child) => Transform.scale(
+                    scale: canvasMode && canvasElementAttempts > 0
+                        ? 1 + .08 * math.pow(math.sin(value * math.pi * 2), 2) : 1,
+                    child: child),
+                child: FilledButton(
+                    key: canvasMode ? const ValueKey('finish-canvas-resize') : null,
+                    onPressed: onDone, child: Text(TicketLayoutStrings.doneImage))),
+          ]),
+          if (tools != null) ...[const SizedBox(height: 12), tools],
+        ]));
+  }
+
   Widget backgroundTools() => ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
@@ -812,16 +855,16 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           controller.changeBackground(scale, Offset.zero);
         }
 
-        return Padding(
-            padding: const EdgeInsets.all(8),
-            child: Wrap(
+        return modeBanner(
+            title: cropBackground ? TicketLayoutStrings.modeCrop : TicketLayoutStrings.modeImage,
+            hint: cropBackground ? TicketLayoutStrings.cropImageHint : TicketLayoutStrings.dragImage,
+            icon: cropBackground ? Icons.crop : Icons.photo_size_select_large,
+            onDone: () => setState(() => editBackground = false),
+            tools: Wrap(
                 spacing: 8,
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(cropBackground
-                      ? TicketLayoutStrings.cropImageHint
-                      : TicketLayoutStrings.dragImage),
                   SegmentedButton<bool>(
                       segments: [
                         ButtonSegment(
@@ -855,9 +898,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         onPressed: () => controller.changeBackground(
                             doc.backgroundScale, Offset.zero),
                         child: Text(TicketLayoutStrings.centerImage)),
-                  FilledButton(
-                      onPressed: () => setState(() => editBackground = false),
-                      child: Text(TicketLayoutStrings.doneImage)),
                 ]));
       });
 
@@ -1344,32 +1384,14 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                         Theme.of(context).textTheme.bodySmall))
                           ])),
                   if (editCanvas)
-                    ListenableBuilder(
-                        listenable: controller,
-                        builder: (context, _) => Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Wrap(
-                                spacing: 16,
-                                runSpacing: 8,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Text(TicketLayoutStrings.designSize),
-                                  if (canvasElementAttempts > 0)
-                                    Text(TicketLayoutStrings.finishCanvasFirst,
-                                        style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                                  TweenAnimationBuilder<double>(
-                                      key: ValueKey('canvas-done-$canvasElementAttempts'),
-                                      tween: Tween(begin: 0, end: 1),
-                                      duration: const Duration(milliseconds: 650),
-                                      builder: (context, value, child) => Transform.scale(
-                                          scale: canvasElementAttempts == 0 ? 1 :
-                                              1 + .08 * math.pow(math.sin(value * math.pi * 2), 2),
-                                          child: child),
-                                      child: FilledButton(
-                                          key: const ValueKey('finish-canvas-resize'),
-                                          onPressed: () => setState(() => editCanvas = false),
-                                          child: Text(TicketLayoutStrings.doneImage))),
-                                ]))),
+                    modeBanner(
+                        title: TicketLayoutStrings.modeCanvas,
+                        hint: canvasElementAttempts > 0
+                            ? TicketLayoutStrings.finishCanvasFirst
+                            : TicketLayoutStrings.resizeCanvasHint,
+                        icon: Icons.aspect_ratio,
+                        canvasMode: true,
+                        onDone: () => setState(() => editCanvas = false)),
                   if (editBackground) backgroundTools(),
                   Expanded(child: LayoutBuilder(builder: (c, constraints) {
                     final narrow = constraints.maxWidth < 900;

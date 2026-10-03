@@ -2074,6 +2074,9 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "modeCanvas": "Režim: Velikost plátna",
+    "modeImage": "Režim: Umístění obrázku",
+    "modeCrop": "Režim: Ořez obrázku",
     "dimensionInputHint": "Rozměr potvrďte Enterem nebo kliknutím mimo pole. Obsah zůstává na místě.",
     "editBlockingElement": "Upravit: {name}",
     "resetCrop": "Zobrazit celý obrázek",

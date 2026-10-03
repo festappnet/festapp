@@ -1537,6 +1537,25 @@ void main() {
     c.dispose();
   });
 
+  testWidgets('canvas handle scale tracks zoom without another pointer event', (tester) async {
+    final c = TicketLayoutController(document());
+    final transform = TransformationController();
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: TicketLayoutCanvas(
+        controller: c, resources: resources(), data: resources().scenarios['normal']!,
+        transform: transform, editCanvas: true))));
+    await tester.pumpAndSettle();
+    final painting = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is TicketLayoutPainter);
+    for (final scale in [.5, 3.0, 1.0]) {
+      transform.value = Matrix4.identity()..scaleByDouble(scale, scale, 1, 1);
+      await tester.pump();
+      final painter = tester.widget<CustomPaint>(painting).painter! as TicketLayoutPainter;
+      expect(painter.zoom, closeTo(scale, .0001));
+    }
+    await tester.pumpWidget(const SizedBox());
+    transform.dispose();
+    c.dispose();
+  });
+
   testWidgets('ticket canvas edge handles resize the design live',
       (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
