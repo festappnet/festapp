@@ -1,3 +1,4 @@
+import {resolveTicketFont,parseRegisteredTicketLayout} from '../_shared/ticketFontStorage.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import { supabaseAdmin } from '../_shared/supabaseUtil.ts';
 import { loadLayoutResources } from '../_shared/ticketGeneration.ts';
@@ -12,4 +13,5 @@ Deno.serve(req=>handlePreview(req,{
   occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,organization,title,start_time,end_time,features,data').eq('id',id).single();if(error)throw error;return data;},
   products:id=>loadPreviewProducts(supabaseAdmin,id),
   resources:loadLayoutResources,
+  font:resolveTicketFont,layout:parseRegisteredTicketLayout,
 }));

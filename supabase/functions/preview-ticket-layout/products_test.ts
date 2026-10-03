@@ -2,7 +2,7 @@ import { assertEquals, assertRejects } from 'jsr:@std/assert@1';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import { loadPreviewProducts } from './products.ts';
 import { handlePreview } from './handler.ts';
-import { fontBytes, fontMetrics } from '../_shared/ticketGeneration.ts';
+import { fontMetrics } from '../_shared/ticketFonts.ts';
 
 Deno.test('editor resolve works with canonical API exposing only public schema', async () => {
   const calls: string[]=[];
@@ -18,7 +18,7 @@ Deno.test('editor resolve works with canonical API exposing only public schema',
       {id:22,product_type:2,title:'Večeře',data:{short_title:'Řízek'},price:170,currency_code:'CZK',is_hidden:false},
     ]}),{headers:{'Content-Type':'application/json'}});
   }}});
-  const font=await fontBytes();
+  const font=await Deno.readFile(new URL('../_shared/ticket-assets/font.ttf', import.meta.url));
   const response=await handlePreview(new Request('https://test.invalid',{method:'POST',headers:{Authorization:'Bearer test'},body:JSON.stringify({occasionId:7,mode:'resolve',type:'named'})}),{
     authorize:async()=>true,occasion:async()=>({id:7,features:[],data:{}}),
     products:id=>loadPreviewProducts(client,id),resources:async()=>({font,metrics:fontMetrics(font)}),

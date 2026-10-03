@@ -36,7 +36,7 @@ class _TicketSettingsState extends State<TicketSettings> {
   String get type => widget.feature.ticketType == 'named' ? 'named' : 'wide';
   bool get unsupported =>
       widget.feature.layout != null &&
-      widget.feature.layout!['schemaVersion'] != 1;
+      ![1, 2].contains(widget.feature.layout!['schemaVersion']);
   @override
   void initState() {
     super.initState();
@@ -111,13 +111,13 @@ class _TicketSettingsState extends State<TicketSettings> {
       if (result != null) {
         setState(() {
           widget.feature.ticketType = type;
-          widget.feature.layout = {
+          widget.feature.layout = upgradeTicketLayout({
             'schemaVersion': 1,
             'templates': {
               ...?(widget.feature.layout?['templates'] as Map?),
               type: result.template.toJson()
             }
-          };
+          });
           widget.feature.ticketBackground = result.background;
         });
         if (jsonEncode(result.template.toJson()) != initialTemplate ||
@@ -147,7 +147,9 @@ class _TicketSettingsState extends State<TicketSettings> {
         const SizedBox(height: 12),
         if (unsupported) Text(TicketLayoutStrings.unsupported),
         if (thumbnail?.missingBackground == true)
-          Padding(padding: const EdgeInsets.all(12), child: Text(TicketLayoutStrings.missingBackground)),
+          Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(TicketLayoutStrings.missingBackground)),
         if (thumbnail != null && !unsupported)
           SizedBox(
               height: 160,
