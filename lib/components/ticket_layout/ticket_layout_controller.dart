@@ -6,9 +6,10 @@ import 'models/ticket_layout.dart';
 import 'ticket_snapping.dart';
 
 class TicketLayoutController extends ChangeNotifier {
-  TicketLayoutController(this.document, {this.artworkKey})
+  TicketLayoutController(this.document, {this.artworkKey, this.prepareDocument})
       : initial = document,
         initialArtworkKey = artworkKey;
+  final TicketTemplate Function(TicketTemplate)? prepareDocument;
   String? artworkKey;
   final String? initialArtworkKey;
   ({TicketTemplate document, String? artworkKey}) get _snapshot =>
@@ -21,6 +22,7 @@ class TicketLayoutController extends ChangeNotifier {
   List<TicketElement> get selections =>
       document.elements.where((e) => selectedIds.contains(e.id)).toList();
   double? guideX, guideY;
+  final Set<String> canvasBlockers = {}, canvasHidden = {};
   final List<({TicketTemplate document, String? artworkKey})> _undo = [],
       _redo = [];
   TicketTemplate? _gesture;
@@ -54,7 +56,7 @@ class TicketLayoutController extends ChangeNotifier {
 
   void previewDocument(TicketTemplate next) {
     beginGesture();
-    document = next;
+    document = prepareDocument?.call(next) ?? next;
     notifyListeners();
   }
 
@@ -78,7 +80,8 @@ class TicketLayoutController extends ChangeNotifier {
       {required int handle,
       double zoom = 1,
       bool snap = true,
-      double? gridStep}) {
+      double? gridStep,
+      Size? backgroundImage}) {
     final base = _gesture ?? document;
     if (_gesture != null) _dragOffset += delta;
     final drag = _gesture == null ? delta : _dragOffset;
@@ -106,7 +109,24 @@ class TicketLayoutController extends ChangeNotifier {
       guideX = handle == 1 ? null : result.x;
       guideY = handle == 0 ? null : result.y;
     }
-    final next = base.resizeArea(Size(point.dx, point.dy));
+    canvasBlockers.clear();
+    canvasHidden.clear();
+    for (final e in base.elements
+        .where((e) => ['qr', 'ticketSymbol'].contains(e.binding))) {
+      if (e.box.right > point.dx + .001 || e.box.bottom > point.dy + .001)
+        canvasBlockers.add(e.id);
+    }
+    final required =
+        base.elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
+    point = Offset(
+        math.max(point.dx, required.map((e) => e.box.right).reduce(math.max)),
+        math.max(point.dy, required.map((e) => e.box.bottom).reduce(math.max)));
+    final next = base.resizeCanvasArea(Size(point.dx, point.dy),
+        backgroundImage: backgroundImage);
+    canvasHidden.addAll(base.elements
+        .where((e) =>
+            e.visible && !next.elements.firstWhere((n) => n.id == e.id).visible)
+        .map((e) => e.id));
     if (next.validate('wide').isNotEmpty) {
       guideX = guideY = null;
       notifyListeners();
@@ -132,6 +152,8 @@ class TicketLayoutController extends ChangeNotifier {
   }
 
   void cancelGesture() {
+    canvasBlockers.clear();
+    canvasHidden.clear();
     guideX = guideY = null;
     if (_gesture != null) {
       document = _gesture!;
@@ -143,7 +165,7 @@ class TicketLayoutController extends ChangeNotifier {
   void replace(TicketTemplate next, {String? artworkKey}) {
     _undo.add(_snapshot);
     _redo.clear();
-    document = next;
+    document = prepareDocument?.call(next) ?? next;
     this.artworkKey = artworkKey ?? this.artworkKey;
     guideX = guideY = null;
     selectedIds.removeWhere((id) => !document.elements.any((e) => e.id == id));
@@ -166,7 +188,8 @@ class TicketLayoutController extends ChangeNotifier {
       _undo.add(_snapshot);
       _redo.clear();
     }
-    document = document.replace(e);
+    final next = document.replace(e);
+    document = prepareDocument?.call(next) ?? next;
     notifyListeners();
   }
 
@@ -389,6 +412,8 @@ class TicketLayoutController extends ChangeNotifier {
   }
 
   void undo() {
+    canvasBlockers.clear();
+    canvasHidden.clear();
     if (!canUndo) return;
     _redo.add(_snapshot);
     final previous = _undo.removeLast();
@@ -398,6 +423,8 @@ class TicketLayoutController extends ChangeNotifier {
   }
 
   void redo() {
+    canvasBlockers.clear();
+    canvasHidden.clear();
     if (!canRedo) return;
     _undo.add(_snapshot);
     final next = _redo.removeLast();

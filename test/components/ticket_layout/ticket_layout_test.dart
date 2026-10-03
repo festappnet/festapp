@@ -1225,6 +1225,63 @@ void main() {
     expect(controller.document.elements.first.locked, !element.locked);
     controller.dispose();
   });
+  test(
+      'narrow canvas hides optional content without scaling artwork or required elements',
+      () {
+    final base =
+        TicketTemplate.fromJson(fixture['presetsByType']['wide']['classic']);
+    final qr = base.elements.firstWhere((e) => e.binding == 'qr');
+    final code = base.elements.firstWhere((e) => e.binding == 'ticketSymbol');
+    final note = base.elements.firstWhere((e) => e.binding == 'note');
+    final original = base
+        .replace(qr.copyWith(box: const Rect.fromLTWH(400, 10, 60, 60)))
+        .replace(code.copyWith(box: const Rect.fromLTWH(400, 75, 100, 15)))
+        .replace(note.copyWith(
+            visible: true, box: const Rect.fromLTWH(20, 200, 180, 20)));
+    final c = TicketLayoutController(original)..beginGesture();
+    const image = Size(1600, 900);
+    final artwork = original.backgroundRect(image);
+    c.resizeCanvas(Offset(0, 100 - original.area.height),
+        handle: 1, snap: false, backgroundImage: image);
+    expect(c.document.area.height, closeTo(100, .001));
+    expect(
+        c.document.elements.firstWhere((e) => e.id == note.id).visible, false);
+    expect(c.canvasHidden, contains(note.id));
+    expect(c.document.elements.firstWhere((e) => e.id == qr.id).box,
+        const Rect.fromLTWH(400, 10, 60, 60));
+    expect(c.document.backgroundRect(image).left, closeTo(artwork.left, .001));
+    expect(
+        c.document.backgroundRect(image).height, closeTo(artwork.height, .001));
+    expect(c.document.validate('wide'), isEmpty);
+    c.resizeCanvas(const Offset(0, -50),
+        handle: 1, snap: false, backgroundImage: image);
+    expect(c.document.area.height, closeTo(90, .001));
+    expect(c.canvasBlockers, contains(code.id));
+    c.endGesture();
+    c.undo();
+    expect(c.document.toJson(), original.toJson());
+    expect(c.canvasHidden, isEmpty);
+    c.dispose();
+  });
+
+  test('ticket-code boxes expand before becoming an unsavable draft', () {
+    final base = document();
+    final metrics = TicketFontMetrics.fromJson(fixture['metrics']);
+    final code = base.elements.firstWhere((e) => e.binding == 'ticketSymbol');
+    final c = TicketLayoutController(base,
+        prepareDocument: (doc) => ensureTicketCodeFits(doc, metrics));
+    c.change(
+        code.copyWith(box: Rect.fromLTWH(code.box.left, code.box.top, 12, 2)));
+    final repaired = c.document.elements.firstWhere((e) => e.id == code.id);
+    expect(repaired.box.width, greaterThan(12));
+    expect(
+        () => fitTicketText('XXXX9W9W9W', repaired, metrics), returnsNormally);
+    expect(c.document.validate('named'), isEmpty);
+    c.undo();
+    expect(c.document.toJson(), base.toJson());
+    c.dispose();
+  });
+
   test('ticket height can shrink while a minimum-size QR remains printable',
       () {
     final original =

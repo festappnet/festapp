@@ -324,6 +324,49 @@ class TicketTemplate {
       page: page,
       area: area,
       elements: elements.map((old) => old.id == e.id ? e : old).toList());
+
+  /// Resize the surface, not its content. Hidden boxes stay contract-valid.
+  TicketTemplate resizeCanvasArea(Size size, {Size? backgroundImage}) {
+    if (size == area.size) return this;
+    final required =
+        elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
+    if (!size.width.isFinite ||
+        !size.height.isFinite ||
+        size.width < 60 ||
+        size.height < 60 ||
+        required.any(
+            (e) => e.box.right > size.width || e.box.bottom > size.height)) {
+      throw const FormatException('Required ticket elements outside canvas');
+    }
+    var next = TicketTemplate(
+        fitPageToTicket: fitPageToTicket,
+        appearance: appearance,
+        page: fitPageToTicket
+            ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
+            : page,
+        area: Rect.fromLTWH(area.left, area.top, size.width, size.height),
+        elements: elements.map((e) {
+          if (e.box.right <= size.width && e.box.bottom <= size.height)
+            return e;
+          final w = math.min(e.box.width, size.width),
+              h = math.min(e.box.height, size.height);
+          return e.copyWith(
+              visible: false,
+              box: Rect.fromLTWH(e.box.left.clamp(0, size.width - w),
+                  e.box.top.clamp(0, size.height - h), w, h));
+        }).toList());
+    if (backgroundImage != null) {
+      final original = backgroundRect(backgroundImage);
+      final contain = math.min(size.width / backgroundImage.width,
+          size.height / backgroundImage.height);
+      next = next.withBackground(
+          original.width / backgroundImage.width / contain,
+          Offset((original.center.dx - size.width / 2) / size.width,
+              (original.center.dy - size.height / 2) / size.height));
+    }
+    return next;
+  }
+
   TicketTemplate resizeArea(Size size) {
     if (!size.width.isFinite ||
         !size.height.isFinite ||
