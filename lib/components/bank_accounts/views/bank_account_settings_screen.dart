@@ -25,6 +25,7 @@ class BankAccountSettingsScreen extends StatefulWidget {
 
   final bool isDialog;
   final bool routed;
+  final ValueChanged<BankAccountModel>? onUpdated;
 
   const BankAccountSettingsScreen({
     super.key,
@@ -34,6 +35,7 @@ class BankAccountSettingsScreen extends StatefulWidget {
     this.readOnly = false,
     this.isDialog = false,
     this.routed = false,
+    this.onUpdated,
   });
 
   @override
@@ -276,6 +278,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         _account = savedAccount;
         _savedGeneral = _generalValues;
       });
+      widget.onUpdated?.call(savedAccount);
 
       if (isCreation) {
         await _regenerateToken(silent: true);
@@ -529,29 +532,22 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   Widget build(BuildContext context) {
     if (widget.routed) {
       return NavigationDraftBoundary(
-          isDirty: () => _hasDraft,
-          child: BankAccountEditorScope(
-              general: _general,
-              connection: _connection,
-              users: _users,
-              child: RoutedBankAccountDialog(
-                  title: _account.title ??
-                      BankAccountStrings.bankAccountSettingsTitle,
-                  onClose: () => RetainedDraftGuard.instance.leaveOwner(
-                      context,
-                      () => context.router
-                          .replaceAll([UnitBankAccountsListRoute()])),
-                  child: const AutoRouter())));
+        isDirty: () => _hasDraft,
+        child: BankAccountEditorScope(
+          general: _general,
+          connection: _connection,
+          users: _users,
+          child: const AutoRouter(),
+        ),
+      );
     }
     final content = Column(
       children: [
         if (widget.isDialog)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              _account.title ?? BankAccountStrings.bankAccountSettingsTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+          _BankAccountDialogHeader(
+            title:
+                _account.title ?? BankAccountStrings.bankAccountSettingsTitle,
+            onClose: () => Navigator.pop(context),
           ),
         TabBar(
           controller: _tabController,
@@ -608,16 +604,44 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   }
 }
 
+class _BankAccountDialogHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onClose;
+  const _BankAccountDialogHeader({required this.title, required this.onClose});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const SizedBox(width: 48),
+            Expanded(
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            IconButton(
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+              onPressed: onClose,
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+      );
+}
+
 /// URL-backed editor with the same compact presentation as the creation dialog.
 class RoutedBankAccountDialog extends StatefulWidget {
   final String title;
   final Widget child;
   final VoidCallback onClose;
-  const RoutedBankAccountDialog(
-      {super.key,
-      required this.title,
-      required this.child,
-      required this.onClose});
+  const RoutedBankAccountDialog({
+    super.key,
+    required this.title,
+    required this.child,
+    required this.onClose,
+  });
   @override
   State<RoutedBankAccountDialog> createState() =>
       _RoutedBankAccountDialogState();
@@ -642,61 +666,78 @@ class _RoutedBankAccountDialogState extends State<RoutedBankAccountDialog> {
 
   @override
   Widget build(BuildContext context) => OverlayPortal.targetsRootOverlay(
-      controller: _overlay,
-      overlayChildBuilder: _buildDialog,
-      child: const SizedBox.shrink());
+        controller: _overlay,
+        overlayChildBuilder: _buildDialog,
+        child: const SizedBox.shrink(),
+      );
   Widget _buildDialog(BuildContext context) => Offstage(
-      offstage: !_visible,
-      child: BlockSemantics(
-        child: FocusScope(
+        offstage: !_visible,
+        child: BlockSemantics(
+          child: FocusScope(
             autofocus: true,
             canRequestFocus: _visible,
             child: CallbackShortcuts(
               bindings: {
-                const SingleActivator(LogicalKeyboardKey.escape): widget.onClose
+                const SingleActivator(LogicalKeyboardKey.escape):
+                    widget.onClose,
               },
-              child: Stack(fit: StackFit.expand, children: [
-                ModalBarrier(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ModalBarrier(
                     color: Colors.black54,
                     onDismiss: widget.onClose,
                     semanticsLabel: MaterialLocalizations.of(context)
-                        .modalBarrierDismissLabel),
-                Dialog(
+                        .modalBarrierDismissLabel,
+                  ),
+                  Dialog(
                     child: ConstrainedBox(
-                  constraints:
-                      const BoxConstraints(maxWidth: 600, maxHeight: 800),
-                  child: Column(children: [
-                    Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(widget.title,
-                            style: Theme.of(context).textTheme.titleLarge)),
-                    Expanded(child: widget.child),
-                    Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton(
+                      constraints: const BoxConstraints(
+                        maxWidth: 600,
+                        maxHeight: 800,
+                      ),
+                      child: Column(
+                        children: [
+                          _BankAccountDialogHeader(
+                            title: widget.title,
+                            onClose: widget.onClose,
+                          ),
+                          Expanded(child: widget.child),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
                                   onPressed: widget.onClose,
-                                  child: Text(BankAccountStrings.cancel)),
-                            ])),
-                  ]),
-                )),
-              ]),
-            )),
-      ));
+                                  child: Text(BankAccountStrings.cancel),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class BankAccountEditorScope extends InheritedWidget {
   final WidgetBuilder general;
   final WidgetBuilder connection;
   final WidgetBuilder users;
-  const BankAccountEditorScope(
-      {super.key,
-      required this.general,
-      required this.connection,
-      required this.users,
-      required super.child});
+  const BankAccountEditorScope({
+    super.key,
+    required this.general,
+    required this.connection,
+    required this.users,
+    required super.child,
+  });
   static BankAccountEditorScope of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<BankAccountEditorScope>()!;
   @override
@@ -733,22 +774,41 @@ class BankAccountTabsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Localizations.localeOf(context);
-    return RoutedTabScaffold(tabs: [
-      RoutedTabDefinition(
+    return RoutedTabScaffold(
+      builder: (context, child, controller) => Column(
+        children: [
+          TabBar(
+            controller: controller,
+            labelColor: Theme.of(context).primaryColor,
+            tabs: [
+              Tab(text: BankAccountStrings.generalTab),
+              Tab(text: BankAccountStrings.bankConnectionTab),
+              Tab(text: BankAccountStrings.usersTab),
+            ],
+          ),
+          Expanded(child: child),
+        ],
+      ),
+      tabs: [
+        RoutedTabDefinition(
           slug: NavigationPaths.general,
           route: const BankAccountGeneralRoute(),
           label: BankAccountStrings.generalTab,
-          icon: Icons.account_balance),
-      RoutedTabDefinition(
+          icon: Icons.account_balance,
+        ),
+        RoutedTabDefinition(
           slug: NavigationPaths.connection,
           route: const BankAccountConnectionRoute(),
           label: BankAccountStrings.bankConnectionTab,
-          icon: Icons.link),
-      RoutedTabDefinition(
+          icon: Icons.link,
+        ),
+        RoutedTabDefinition(
           slug: NavigationPaths.users,
           route: const BankAccountUsersRoute(),
           label: BankAccountStrings.usersTab,
-          icon: Icons.people),
-    ]);
+          icon: Icons.people,
+        ),
+      ],
+    );
   }
 }
