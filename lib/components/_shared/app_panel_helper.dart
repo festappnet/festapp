@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/breadcrumb_row.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -212,8 +213,7 @@ class AppPanelHelper {
       }
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return BreadcrumbRow(
       children: breadcrumbItems,
     );
   }

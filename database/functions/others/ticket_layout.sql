@@ -28,6 +28,9 @@ BEGIN
           AND t->'page' IS DISTINCT FROM '{"width":595.28,"height":841.89}'::jsonb
           AND t->'page' IS DISTINCT FROM '{"width":212.5,"height":387.5}'::jsonb)
     THEN RAISE EXCEPTION 'Invalid ticket template'; END IF;
+    IF t ? 'canvasColor' AND (jsonb_typeof(t->'canvasColor') IS DISTINCT FROM 'string'
+      OR (t->>'canvasColor' <> 'transparent' AND t->>'canvasColor' !~ '^[a-fA-F0-9]{6}$'))
+    THEN RAISE EXCEPTION 'Invalid ticket canvas color'; END IF;
     IF t ? 'pageMargin' THEN
       IF t->>'pageFit' IS DISTINCT FROM 'ticket' OR jsonb_typeof(t->'pageMargin') IS DISTINCT FROM 'number'
       THEN RAISE EXCEPTION 'Invalid ticket page margin'; END IF;
