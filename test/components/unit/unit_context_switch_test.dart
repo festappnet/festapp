@@ -44,6 +44,7 @@ void main() {
             builder: (data) =>
                 UnitAdminPage(id: data.params.getInt('id'), access: access)),
         path: '/unit/:id/edit',
+        usesPathAsKey: true,
         children: [
           AutoRoute(
               page: PageInfo('UnitContent',

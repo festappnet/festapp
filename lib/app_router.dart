@@ -88,6 +88,8 @@ class AppRouter extends RootStackRouter {
             path: sl(InstanceInstallPage.ROUTE)),
         CustomRoute(
             page: UnitAdminRoute.page,
+            // Retained context routers must have different keys per unit/link.
+            usesPathAsKey: true,
             path: "/${UnitPage.ROUTE}/:id/edit",
             children: [
               AutoRoute(
@@ -175,6 +177,8 @@ class AppRouter extends RootStackRouter {
         AutoRoute(page: FormRoute.page, path: "/${FormPage.ROUTE}/:formLink"),
         CustomRoute(
             page: ReservationsRoute.page,
+            // Retained context routers must have different keys per unit/link.
+            usesPathAsKey: true,
             path: "/:$linkFormatted/${ReservationsPage.ROUTE}",
             children: [
               AutoRoute(
@@ -317,6 +321,8 @@ class AppRouter extends RootStackRouter {
             path: "/:$linkFormatted/${NewsFormPage.ROUTE}"),
         CustomRoute(
             page: AdminRoute.page,
+            // Retained context routers must have different keys per unit/link.
+            usesPathAsKey: true,
             path: "/:$linkFormatted/${AdminPage.ROUTE}",
             children: [
               AutoRoute(

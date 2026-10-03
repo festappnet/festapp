@@ -5,6 +5,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 
 Future<void> mount(
@@ -18,6 +19,41 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets('occasion breadcrumb switch settles and Back restores context',
+      (tester) async {
+    final access = Access();
+    final router = FixtureRouter(access);
+    await mount(tester, router, '/occasion-a/reservations/orders/history');
+    final context = tester.element(find.text('HISTORY CONTENT'));
+    unawaited(RouterService.navigateToOccasionAdministration(context,
+        occasionLink: 'occasion-b'));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(access.requests, ['occasion-a', 'occasion-b']);
+    expect(router.currentUrl, '/occasion-b/reservations/orders/current');
+    expect(find.text('CURRENT CONTENT'), findsOneWidget);
+    expect(tester.binding.hasScheduledFrame, isFalse,
+        reason: 'Breadcrumb switching must stop refreshing after loading');
+    unawaited(RouterService.navigateToOccasionAdministration(
+        tester.element(find.text('CURRENT CONTENT')),
+        occasionLink: 'occasion-a'));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(access.requests, ['occasion-a', 'occasion-b', 'occasion-a']);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    await router.maybePop();
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/occasion-b/reservations/orders/current');
+    await router.maybePop();
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/occasion-a/reservations/orders/history');
+    expect(find.text('HISTORY CONTENT'), findsOneWidget);
+    expect(access.requests,
+        ['occasion-a', 'occasion-b', 'occasion-a', 'occasion-b', 'occasion-a']);
+  });
+
   testWidgets(
       'deep link, tab clicks and history retain the same nested selection',
       (tester) async {
