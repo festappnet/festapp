@@ -48,6 +48,7 @@ async function loadHandler(name: string): Promise<EdgeHandler> {
 }
 
 const optionEntrypoints = [
+  "report-exchange-rates",
   "preview-ticket-layout",
   "cancel-reception-registration",
   "confirm-account-deletion",

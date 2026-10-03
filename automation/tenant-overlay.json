@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "hvezdamorska",
-  "baseMainSha": "b7768278dbd269a5b174dcfeb8f023822de7b477",
+  "baseMainSha": "b331c94b21dfef736467625a2939298376e06694",
   "release": {
-    "version": "0.20.68+552",
-    "note": "Release verified main with ticket editor improvements"
+    "version": "0.20.81+565",
+    "note": "Remove one-frame header flash during administration context switching"
   }
 }

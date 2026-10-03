@@ -1,3 +1,5 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'ticket_canvas_color_dialog.dart';
 import '../../_shared/common_strings.dart';
 import 'dart:convert';
@@ -18,7 +20,7 @@ import '../ticket_text.dart';
 import 'ticket_layout_canvas.dart';
 import 'ticket_layout_properties.dart';
 import 'ticket_pdf_document.dart';
-import 'ticket_dimensions_dialog.dart';
+import 'ticket_canvas_settings.dart';
 
 class TicketLayoutResult {
   final TicketTemplate template;
@@ -27,6 +29,7 @@ class TicketLayoutResult {
 }
 
 class TicketLayoutEditor extends StatefulWidget {
+  final StackRouter? routeRouter;
   final int occasionId;
   final String type;
   final Map<String, dynamic>? layout;
@@ -37,6 +40,7 @@ class TicketLayoutEditor extends StatefulWidget {
   final Future<void> Function(TicketLayoutResult)? onSave;
   const TicketLayoutEditor(
       {super.key,
+      this.routeRouter,
       required this.occasionId,
       required this.type,
       required this.resources,
@@ -72,6 +76,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   bool additiveSelection = false;
   bool cropBackground = false;
   bool editCanvas = false;
+  int canvasElementAttempts = 0;
   bool editBackground = false,
       pan = false,
       wholePage = false,
@@ -355,37 +360,33 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (mounted) setState(() => imageBusy = false);
   }
 
-  Future<void> editDimensions() async {
-    final original = controller.positionedDocument(controller.document);
-    final previousWholePage = wholePage;
-    setState(() => wholePage = true);
-    controller.beginGesture();
-    final next = await showDialog<TicketTemplate>(
-        context: editorContext,
-        builder: (_) => TicketDimensionsDialog(
-            document: original,
-            backgroundImage: canvas.currentState?.backgroundSize,
-            type: widget.type,
-            onPreview: (candidate) {
-              controller.previewDocument(candidate);
-              setState(() {});
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) canvas.currentState?.fit();
-              });
-            }));
-    if (mounted) {
-      wholePage = previousWholePage;
-      if (next == null) {
-        controller.cancelGesture();
-      } else {
-        controller.previewDocument(next);
-        controller.endGesture();
-      }
-      setState(() {});
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => canvas.currentState?.fit());
-    }
+  void editDimensions() {
+    setState(() {
+      editCanvas = true;
+      editBackground = false;
+      pan = false;
+      wholePage = true;
+      canvasElementAttempts = 0;
+    });
+    controller.select(null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) canvas.currentState?.fit();
+    });
   }
+
+  Widget canvasSettings() => TicketCanvasSettings(
+      controller: controller,
+      backgroundImage: canvas.currentState?.backgroundSize,
+      onPaperChanged: () => WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) canvas.currentState?.fit();
+      }),
+      onEditElement: (id) {
+        setState(() => editCanvas = false);
+        controller.select(id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) canvas.currentState?.fit();
+        });
+      });
 
   Future<void> chooseStyle() async {
     final presets = resources.presets.isEmpty
@@ -493,6 +494,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                   .change(e.copyWith(visible: !e.visible)))),
                   trailing: e.locked ? const Icon(Icons.lock, size: 16) : null,
                   onTap: () {
+                    if (editCanvas || editBackground) {
+                      setState(() { editCanvas = false; editBackground = false; });
+                    }
                     controller.select(e.id, additive: additiveSelection);
                     onSelected?.call();
                   }))
@@ -673,7 +677,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 subtitle: Text(
                     '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket ? TicketLayoutStrings.paperTicket : controller.document.page == const Size(595.28, 841.89) ? TicketLayoutStrings.paperA4 : TicketLayoutStrings.paperOriginal}'),
                 trailing: const Icon(Icons.tune),
-                onTap: imageBusy ? null : editDimensions)),
+                onTap: imageBusy ? null : () {
+                  if (MediaQuery.sizeOf(context).width < 900) Navigator.pop(context);
+                  editDimensions();
+                })),
         Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: SizedBox(
@@ -684,12 +691,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     onPressed: imageBusy
                         ? null
                         : () {
-                            setState(() {
-                              editCanvas = true;
-                              editBackground = false;
-                              pan = false;
-                            });
-                            controller.select(null);
+                            editDimensions();
                             if (MediaQuery.sizeOf(context).width < 900)
                               Navigator.pop(context);
                           }))),
@@ -803,6 +805,46 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       child: Text(TicketLayoutStrings.reset))
                 ])),
       ]));
+  Widget modeBanner({required String title, required String hint,
+      required IconData icon, required VoidCallback onDone, Widget? tools,
+      bool canvasMode = false}) {
+    final colors = Theme.of(editorContext).colorScheme;
+    return Container(
+        key: const ValueKey('ticket-edit-mode'),
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: colors.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.primary.withValues(alpha: .4))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Icon(icon, color: colors.onPrimaryContainer, size: 24),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: Theme.of(editorContext).textTheme.titleSmall?.copyWith(
+                  color: colors.onPrimaryContainer, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(hint, style: Theme.of(editorContext).textTheme.bodySmall?.copyWith(color: colors.onPrimaryContainer)),
+            ])),
+            const SizedBox(width: 12),
+            TweenAnimationBuilder<double>(
+                key: ValueKey('mode-done-${canvasMode ? canvasElementAttempts : 0}'),
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 650),
+                builder: (context, value, child) => Transform.scale(
+                    scale: canvasMode && canvasElementAttempts > 0
+                        ? 1 + .08 * math.pow(math.sin(value * math.pi * 2), 2) : 1,
+                    child: child),
+                child: FilledButton(
+                    key: canvasMode ? const ValueKey('finish-canvas-resize') : null,
+                    onPressed: onDone, child: Text(TicketLayoutStrings.doneImage))),
+          ]),
+          if (tools != null) ...[const SizedBox(height: 12), tools],
+        ]));
+  }
+
   Widget backgroundTools() => ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
@@ -817,16 +859,16 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           controller.changeBackground(scale, Offset.zero);
         }
 
-        return Padding(
-            padding: const EdgeInsets.all(8),
-            child: Wrap(
+        return modeBanner(
+            title: cropBackground ? TicketLayoutStrings.modeCrop : TicketLayoutStrings.modeImage,
+            hint: cropBackground ? TicketLayoutStrings.cropImageHint : TicketLayoutStrings.dragImage,
+            icon: cropBackground ? Icons.crop : Icons.photo_size_select_large,
+            onDone: () => setState(() => editBackground = false),
+            tools: Wrap(
                 spacing: 8,
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(cropBackground
-                      ? TicketLayoutStrings.cropImageHint
-                      : TicketLayoutStrings.dragImage),
                   SegmentedButton<bool>(
                       segments: [
                         ButtonSegment(
@@ -860,51 +902,86 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         onPressed: () => controller.changeBackground(
                             doc.backgroundScale, Offset.zero),
                         child: Text(TicketLayoutStrings.centerImage)),
-                  FilledButton(
-                      onPressed: () => setState(() => editBackground = false),
-                      child: Text(TicketLayoutStrings.doneImage)),
                 ]));
       });
 
-  Future<void> showMobilePanel(int tab) => showModalBottomSheet<void>(
-      context: editorContext,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => Focus(
-          autofocus: true,
-          onKeyEvent: _historyKey,
-          child: DefaultTabController(
-              initialIndex: tab,
-              length: 2,
-              child: SizedBox(
-                  height: MediaQuery.sizeOf(context).height * .72,
-                  child: Column(children: [
-                    Row(children: [
+  bool _panelOpen = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final panel = widget.routeRouter == null
+        ? null
+        : Uri.parse(widget.routeRouter!.currentUrl).queryParameters['panel'];
+    if (!_panelOpen &&
+        MediaQuery.sizeOf(context).width < 900 &&
+        (panel == 'elements' || panel == 'properties')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_panelOpen)
+          showMobilePanel(panel == 'properties' ? 1 : 0);
+      });
+    }
+  }
+
+  Future<void> showMobilePanel(int tab) async {
+    if (_panelOpen) return;
+    _panelOpen = true;
+    final root = widget.routeRouter;
+    if (root != null)
+      await DayRouteSelection.write(
+          root, 'panel', tab == 0 ? 'elements' : 'properties');
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+        context: editorContext,
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (context) => Focus(
+            autofocus: true,
+            onKeyEvent: _historyKey,
+            child: DefaultTabController(
+                initialIndex: tab,
+                length: 2,
+                child: SizedBox(
+                    height: MediaQuery.sizeOf(context).height * .72,
+                    child: Column(children: [
+                      Row(children: [
+                        Expanded(
+                            child: TabBar(
+                                onTap: (index) {
+                                  if (root != null)
+                                    DayRouteSelection.write(root, 'panel',
+                                        index == 0 ? 'elements' : 'properties');
+                                },
+                                tabs: [
+                              Tab(text: TicketLayoutStrings.elements),
+                              Tab(text: TicketLayoutStrings.properties),
+                            ])),
+                        IconButton(
+                            tooltip: MaterialLocalizations.of(context)
+                                .closeButtonTooltip,
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close)),
+                      ]),
                       Expanded(
-                          child: TabBar(tabs: [
-                        Tab(text: TicketLayoutStrings.elements),
-                        Tab(text: TicketLayoutStrings.properties),
-                      ])),
-                      IconButton(
-                          tooltip: MaterialLocalizations.of(context)
-                              .closeButtonTooltip,
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close)),
-                    ]),
-                    Expanded(
-                        child: TabBarView(
-                            physics: const NeverScrollableScrollPhysics(),
-                            children: [
-                          Builder(
-                              builder: (tabContext) => SingleChildScrollView(
-                                  child: elements(
-                                      onSelected: () =>
-                                          DefaultTabController.of(tabContext)
-                                              .animateTo(1)))),
-                          panel(includeElements: false),
-                        ])),
-                  ])))));
+                          child: TabBarView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                            Builder(
+                                builder: (tabContext) => SingleChildScrollView(
+                                        child: elements(onSelected: () {
+                                      DefaultTabController.of(tabContext)
+                                          .animateTo(1);
+                                      if (root != null)
+                                        DayRouteSelection.write(
+                                            root, 'panel', 'properties');
+                                    }))),
+                            panel(includeElements: false),
+                          ])),
+                    ])))));
+    _panelOpen = false;
+    if (root != null && mounted)
+      await DayRouteSelection.write(root, 'panel', null, replace: true);
+  }
 
   Widget mobileToolbar() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1349,44 +1426,22 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                         Theme.of(context).textTheme.bodySmall))
                           ])),
                   if (editCanvas)
-                    ListenableBuilder(
-                        listenable: controller,
-                        builder: (context, _) => Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Wrap(
-                                spacing: 16,
-                                runSpacing: 8,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Text(TicketLayoutStrings.resizeCanvasHint),
-                                  if (controller.canvasBlockers.isNotEmpty)
-                                    Text(
-                                        '${TicketLayoutStrings.canvasBlocked}: ${controller.document.elements.where((e) => controller.canvasBlockers.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}',
-                                        style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .error)),
-                                  if (controller.canvasHidden.isNotEmpty)
-                                    Text(
-                                        '${TicketLayoutStrings.canvasHidden}: ${controller.document.elements.where((e) => controller.canvasHidden.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}'),
-                                  Text(
-                                      '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm'),
-                                  TextButton(
-                                      onPressed: editDimensions,
-                                      child:
-                                          Text(TicketLayoutStrings.canvasSize)),
-                                  FilledButton(
-                                      onPressed: () =>
-                                          setState(() => editCanvas = false),
-                                      child:
-                                          Text(TicketLayoutStrings.doneImage)),
-                                ]))),
+                    modeBanner(
+                        title: TicketLayoutStrings.modeCanvas,
+                        hint: canvasElementAttempts > 0
+                            ? TicketLayoutStrings.finishCanvasFirst
+                            : TicketLayoutStrings.resizeCanvasHint,
+                        icon: Icons.aspect_ratio,
+                        canvasMode: true,
+                        onDone: () => setState(() => editCanvas = false)),
                   if (editBackground) backgroundTools(),
                   Expanded(child: LayoutBuilder(builder: (c, constraints) {
                     final narrow = constraints.maxWidth < 900;
                     final view = TicketLayoutCanvas(
                         key: canvas,
                         onDismiss: cancel,
+                          onCanvasElementAttempt: () =>
+                              setState(() => canvasElementAttempts++),
                         controller: controller,
                         resources: resources,
                         data: resources.scenarios[scenario]!,
@@ -1402,7 +1457,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     return narrow
                         ? Column(children: [
                             Expanded(child: view),
-                            Padding(
+                            if (editCanvas)
+                              SizedBox(height: constraints.maxHeight * .42, child: canvasSettings())
+                            else Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 8),
                                 child: Row(children: [
@@ -1432,8 +1489,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                         child: elements())),
                                 200),
                             Expanded(child: view),
-                            _sidebar(TicketLayoutStrings.properties,
-                                panel(includeElements: false), 280)
+                            _sidebar(editCanvas ? TicketLayoutStrings.canvasSize : TicketLayoutStrings.properties,
+                                editCanvas ? canvasSettings() : panel(includeElements: false), editCanvas ? 340 : 280)
                           ]);
                   })),
                 ])),
