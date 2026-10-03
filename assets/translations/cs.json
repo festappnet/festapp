@@ -320,7 +320,9 @@
     "editorPreview": "Náhled editora",
     "labelShowPaymentQr": "Zobrazit QR platbu po objednávce",
     "helperShowPaymentQr": "Po dokončení objednávky zobrazí platební QR kód a údaje přímo na potvrzovací obrazovce.",
-    "seatSelection": "Výběr místa"
+    "seatSelection": "Výběr místa",
+    "moreFonts": "Další fonty",
+    "fontSearchHint": "Vyhledejte font podle názvu. Na Google Fonts si můžete prohlédnout ukázky a název sem zkopírovat, například Roboto Slab. Výběr se ukáže přímo v náhledu."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -2172,6 +2174,8 @@
     "sampleData": "Ukázkové údaje",
     "templateFont": "Písmo šablony",
     "elementFont": "Písmo prvku (výjimka)",
-    "missingGlyphs": "Písmo neobsahuje některé znaky. Jsou nahrazeny znakem ?."
+    "missingGlyphs": "Písmo neobsahuje některé znaky. Jsou nahrazeny znakem ?.",
+    "fontForText": "Jiné písmo pro tento text",
+    "inheritFont": "Použít písmo vstupenky"
   }
 }

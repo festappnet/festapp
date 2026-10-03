@@ -5,7 +5,6 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_saver/file_saver.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import '../ticket_background_image.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -191,13 +190,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
               child: Scaffold(
                   appBar:
                       AppBar(title: Text(TicketLayoutStrings.pdf), actions: [
-                    TextButton.icon(
-                        onPressed: () => FileSaver.instance.saveFile(
-                            name: 'ticket_layout_sample',
-                            bytes: result.bytes,
-                            mimeType: MimeType.pdf),
-                        icon: const Icon(Icons.download),
-                        label: Text(TicketLayoutStrings.downloadPdf)),
                     IconButton(
                         tooltip: TicketLayoutStrings.cancel,
                         onPressed: () => Navigator.pop(c),
@@ -477,52 +469,98 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     }
   }
 
-  Widget fontPicker({TicketElement? element}) => FutureBuilder<
-          List<Map<String, dynamic>>>(
-      future: fontCatalog,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
-        final entries = snapshot.data!;
-        final id = element?.fontId ??
-            (element == null ? controller.document.fontId : null);
-        final effective = element == null
-            ? controller.document.fontId
-            : element.fontId ?? controller.document.fontId;
-        final font = effective == null
-            ? resources.fonts.values.firstWhere((f) => f.family == 'Futura PT')
-            : resources.fonts[effective];
-        const sample = 'Příliš žluťoučký kůň, Ľščťžýáíé, 0123456789 Kč €';
-        final glyphs = sample.runes.map(String.fromCharCode);
-        final missing = font != null &&
-            glyphs.any((c) => !font.metrics.advances.containsKey(c));
-        final previewText = glyphs
-            .map((c) => font?.metrics.advances.containsKey(c) == true ? c : '?')
-            .join();
-        return Padding(
-            padding: const EdgeInsets.all(12),
+  Widget fontPicker() => FutureBuilder<List<Map<String, dynamic>>>(
+        future: fontCatalog,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const SizedBox.shrink();
+          final entries = snapshot.data!;
+          final font = resources.fontFor(controller.document);
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: FontFamilyPicker(
-                value: id == null ? null : font?.family,
-                families: entries.map((f) => f['family'] as String).toList(),
-                extraFamilies: const ['Futura PT', 'Roboto Slab', 'Russo One'],
-                enabled: !imageBusy && !(element?.locked ?? false),
-                preview: font == null
+              label: TicketLayoutStrings.templateFont,
+              value: font.family,
+              families: entries.map((f) => f['family'] as String).toList(),
+              extraFamilies: entries
+                  .where((f) => f['source'] == 'bundled')
+                  .map((f) => f['family'] as String)
+                  .toList(),
+              canReset: controller.document.fontId != null,
+              enabled: !imageBusy && !fontBusy,
+              onSelected: (family) => selectFont(
+                family == null
                     ? null
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                            Text('${font.family} ${font.weight}'),
-                            Text(previewText,
-                                style: TextStyle(fontFamily: font.loaderName)),
-                            if (missing)
-                              Text(TicketLayoutStrings.missingGlyphs,
-                                  style: const TextStyle(color: Colors.orange))
-                          ]),
-                onSelected: (family) => selectFont(
-                    family == null
-                        ? null
-                        : entries.firstWhere((f) => f['family'] == family),
-                    elementId: element?.id)));
-      });
+                    : entries.firstWhere((f) => f['family'] == family),
+              ),
+            ),
+          );
+        },
+      );
+
+  Widget? elementFontControl() {
+    final element = controller.selection;
+    if (element == null || ['qr', 'logo'].contains(element.binding))
+      return null;
+    final enabled = !imageBusy && !fontBusy && !element.locked;
+    final family = resources
+        .fontFor(controller.document, element)
+        .family
+        .replaceFirst(' (legacy)', '');
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton.icon(
+            style: TextButton.styleFrom(
+              alignment: Alignment.centerLeft,
+              minimumSize: const Size(48, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+            icon: const Icon(Icons.font_download_outlined, size: 18),
+            label: Text(
+              element.fontId == null
+                  ? TicketLayoutStrings.fontForText
+                  : '${TicketLayoutStrings.fontFamily}: $family',
+            ),
+            onPressed: enabled
+                ? () async {
+                    final entries = await fontCatalog;
+                    if (!mounted) return;
+                    await FontFamilyPicker.showChoices(
+                      context,
+                      title: TicketLayoutStrings.fontForText,
+                      value: element.fontId == null
+                          ? null
+                          : resources
+                              .fontFor(controller.document, element)
+                              .family,
+                      families:
+                          entries.map((f) => f['family'] as String).toList(),
+                      extraFamilies: entries
+                          .where((f) => f['source'] == 'bundled')
+                          .map((f) => f['family'] as String)
+                          .toList(),
+                      onSelected: (family) => selectFont(
+                        family == null
+                            ? null
+                            : entries.firstWhere((f) => f['family'] == family),
+                        elementId: element.id,
+                      ),
+                    );
+                  }
+                : null,
+          ),
+        ),
+        if (element.fontId != null)
+          IconButton(
+            tooltip: TicketLayoutStrings.inheritFont,
+            onPressed:
+                enabled ? () => selectFont(null, elementId: element.id) : null,
+            icon: const Icon(Icons.restore),
+          ),
+      ],
+    );
+  }
+
   Widget panel({bool includeElements = true}) => SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListenableBuilder(
@@ -535,21 +573,13 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 onTap: imageBusy ? null : editDimensions)),
         ListenableBuilder(
             listenable: controller,
-            builder: (context, _) => Column(children: [
-                  Text(TicketLayoutStrings.templateFont),
-                  fontPicker(),
-                  if (controller.selection != null &&
-                      !['qr', 'logo']
-                          .contains(controller.selection!.binding)) ...[
-                    Text(TicketLayoutStrings.elementFont),
-                    fontPicker(element: controller.selection!)
-                  ]
-                ])),
+            builder: (context, _) => fontPicker()),
         if (includeElements) elements(),
         ListenableBuilder(
             listenable: controller,
             builder: (context, _) => TicketLayoutProperties(
                 controller: controller,
+                fontControl: elementFontControl(),
                 defaults: propertyDefaults,
                 backgroundImage:
                     resources.artworks.containsKey(controller.artworkKey)
@@ -724,7 +754,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 actions: [
                   Center(
-                    child: TextButton.icon(
+                    child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            disabledBackgroundColor: Colors.white12,
+                            disabledForegroundColor: Colors.white54),
                         onPressed: imageBusy || fontBusy ? null : apply,
                         icon: const Icon(Icons.check),
                         label: Text(TicketLayoutStrings.apply)),
