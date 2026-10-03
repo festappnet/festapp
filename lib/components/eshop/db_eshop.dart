@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
@@ -46,14 +47,9 @@ class DbEshop {
     return response;
   }
 
-  static Future<String> getReportForOccasion(String link) async {
-    final response =
-        await _supabase.rpc('get_report_ws', params: {'occasion_link': link});
-
-    if (response["code"] == 200) {
-      return response["data"];
-    }
-    return "";
+  static Future<OccasionReport> getReportForOccasion(String link) async {
+    final response = await _supabase.rpc('get_report_ws', params: {'occasion_link': link});
+    return OccasionReport.fromResponse(response);
   }
 
   /// Retrieves all transactions associated with a specific order ID.

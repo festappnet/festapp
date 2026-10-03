@@ -311,3 +311,21 @@ used/artwork/basic swatches. Canvas transparency uses one 0-100% slider and
 optional `canvasOpacity` (0-1, default 1); legacy `canvasColor: transparent`
 remains fully transparent. QR contrast still gates Apply. Deploy
 `20261003180000_ticket_canvas_opacity.sql` and the function bundle before client.
+
+Canvas resizing supports all four edges and corners. Left/top changes rebase
+element and artwork coordinates without scaling or moving visible content;
+required QR/code bounds still limit shrinking. Attempting to move an element
+in this mode pulses Done and explains how to return to element editing.
+
+Canvas gestures discard pointer overshoot at hard bounds while retaining small
+movements needed to escape magnetic snapping. Automatically hidden elements
+keep their original geometry in editor-only recovery data tied to immutable
+documents, so enlarging the canvas restores them across drags and undo/redo.
+Manually hidden or subsequently edited elements are not automatically restored.
+Recovery data is not serialized; reopening a saved layout uses its saved state.
+
+Ticket dimensions and PDF format are edited in the persistent canvas settings
+panel beside the full-page preview (below it on phones). Numeric dimensions
+commit on Enter/blur through the same canvas controller as edge drags. Required
+element blockers link directly to element editing. Changes use ordinary undo;
+there is no second modal Apply step.
