@@ -74,7 +74,7 @@ Deno.test('gallery keeps ordinary tickets on A4 and named tickets ticket-sized i
   for(const type of ['wide','named'] as const){
     const styles=ticketPresets();
     assertEquals(Object.keys(styles).length,6);
-    for(const [key,t] of Object.entries(styles)) {if(key.startsWith('portrait')) {assertEquals(t.pageFit,'ticket');assertEquals(t.page,{width:t.ticketArea.width,height:t.ticketArea.height});} else {assertEquals(t.pageFit,undefined);assertEquals(t.page,{width:595.28,height:841.89});}}
+    for(const [key,t] of Object.entries(styles)) {if(key.startsWith('portrait')) {assertEquals(t.pageFit,'ticket');assertEquals(t.pageMargin,3*72/25.4);assertEquals(t.ticketArea.x,t.pageMargin);assertEquals(t.ticketArea.y,t.pageMargin);assertEquals(t.page,{width:t.ticketArea.width+2*t.pageMargin!,height:t.ticketArea.height+2*t.pageMargin!});} else {assertEquals(t.pageFit,undefined);assertEquals(t.page,{width:595.28,height:841.89});}}
     for(const t of Object.values(styles))parseLayout({schemaVersion:1,templates:{[type]:t}});
     assert(JSON.stringify(styles.compact)!==JSON.stringify(styles.event));
   }

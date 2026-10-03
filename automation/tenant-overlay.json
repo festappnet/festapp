@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "e942504c85510b67b7f89eada9b4fd17079c8983",
+  "baseMainSha": "e65386b64fbefa43ce1d65319c25a913b2194426",
   "release": {
-    "version": "0.20.59+543",
-    "note": "Canonical Material 3 themes and navigation synchronized with main"
+    "version": "0.20.60+544",
+    "note": "Restore navigation dimensions and eliminate recursive HTML editor actions"
   }
 }

@@ -199,6 +199,7 @@ class _TimetablePageState extends State<TimetablePage>
                 child: TabBar(
                     controller: _tabController,
                     isScrollable: true,
+              tabAlignment: TabAlignment.start,
                     tabs: List<Widget>.generate(
                         _days.length,
                         (i) => Padding(
