@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -445,19 +446,22 @@ class _HtmlDraftBoundary extends StatefulWidget {
 class _HtmlDraftBoundaryState extends State<_HtmlDraftBoundary> {
   bool _asking = false;
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-      animation: widget.coordinator,
-      builder: (context, _) => PopScope(
-          canPop: !widget.coordinator.hasDraft,
-          onPopInvokedWithResult: (didPop, _) async {
-            if (didPop || _asking) return;
-            _asking = true;
-            final discard =
-                await confirmHtmlDiscard(context, widget.coordinator);
-            _asking = false;
-            if (discard == true && context.mounted) Navigator.pop(context);
-          },
-          child: widget.child));
+  Widget build(BuildContext context) => NavigationDraftBoundary(
+      isDirty: () => widget.coordinator.hasDraft,
+      confirm: () => confirmHtmlDiscard(context, widget.coordinator),
+      child: AnimatedBuilder(
+          animation: widget.coordinator,
+          builder: (context, _) => PopScope(
+              canPop: !widget.coordinator.hasDraft,
+              onPopInvokedWithResult: (didPop, _) async {
+                if (didPop || _asking) return;
+                _asking = true;
+                final discard =
+                    await confirmHtmlDiscard(context, widget.coordinator);
+                _asking = false;
+                if (discard == true && context.mounted) Navigator.pop(context);
+              },
+              child: widget.child)));
 }
 
 Future<bool> confirmHtmlDiscard(

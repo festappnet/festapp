@@ -29,9 +29,9 @@ class _EmailTemplatesTabState extends State<EmailTemplatesTab> {
     super.didChangeDependencies();
     if (widget.unitId == null &&
         occasionLink == null &&
-        context.routeData.params.isNotEmpty) {
-      occasionLink =
-          context.routeData.params.get(AppRouter.linkFormatted, null);
+        context.routeData.inheritedPathParams.isNotEmpty) {
+      occasionLink = context.routeData.inheritedPathParams
+          .get(AppRouter.linkFormatted, null);
     }
     loadData();
   }

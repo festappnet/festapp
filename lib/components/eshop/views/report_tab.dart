@@ -63,7 +63,7 @@ class _ReportTabState extends State<ReportTab> {
 
   void _updateKey() {
     final link = widget.occasionLink ??
-        context.routeData.params.getString(AppRouter.linkFormatted);
+        context.routeData.inheritedPathParams.getString(AppRouter.linkFormatted);
     final identity = widget.identityKey ??
         '${Supabase.instance.client.auth.currentUser?.id}/${RightsService.currentUser()?.id}/${RightsService.currentOccasion()?.organization}/${RightsService.isEditorOrderView()}';
     final key = '$identity/$link';
