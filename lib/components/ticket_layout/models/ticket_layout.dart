@@ -192,6 +192,7 @@ class TicketTemplate {
             'flowStep',
             'qrAppearance',
             'backgroundTransform',
+            'backgroundCrop',
             'pageMargin',
             'border'
           ])
@@ -225,6 +226,32 @@ class TicketTemplate {
         width: image.width * scale,
         height: image.height * scale);
   }
+
+  Rect get backgroundCrop {
+    final crop = appearance['backgroundCrop'];
+    if (crop is! Map) return const Rect.fromLTWH(0, 0, 1, 1);
+    return Rect.fromLTWH(
+        (crop['x'] as num).toDouble(),
+        (crop['y'] as num).toDouble(),
+        (crop['width'] as num).toDouble(),
+        (crop['height'] as num).toDouble());
+  }
+
+  Rect croppedBackgroundRect(Size image) {
+    final full = backgroundRect(image), crop = backgroundCrop;
+    return Rect.fromLTWH(
+        full.left + crop.left * full.width,
+        full.top + crop.top * full.height,
+        crop.width * full.width,
+        crop.height * full.height);
+  }
+
+  TicketTemplate withBackgroundCrop(Rect crop) => TicketTemplate(
+      fitPageToTicket: fitPageToTicket,
+      page: page,
+      area: area,
+      elements: elements,
+      appearance: {...appearance, 'backgroundCrop': boxJson(crop)});
 
   TicketTemplate withBackground(double scale, Offset offset) => TicketTemplate(
           fitPageToTicket: fitPageToTicket,
@@ -354,6 +381,19 @@ class TicketTemplate {
             (transform['scale'] as num) > 10 ||
             (transform['x'] as num).abs() > 10 ||
             (transform['y'] as num).abs() > 10)) {
+      errors.add('background');
+    }
+    final crop = appearance['backgroundCrop'];
+    if (appearance.containsKey('backgroundCrop') &&
+        (crop is! Map ||
+            !['x', 'y', 'width', 'height']
+                .every((k) => crop[k] is num && (crop[k] as num).isFinite) ||
+            (crop['x'] as num) < 0 ||
+            (crop['y'] as num) < 0 ||
+            (crop['width'] as num) < .001 ||
+            (crop['height'] as num) < .001 ||
+            (crop['x'] as num) + (crop['width'] as num) > 1.000001 ||
+            (crop['y'] as num) + (crop['height'] as num) > 1.000001)) {
       errors.add('background');
     }
     if (appearance.containsKey('pageMargin') &&

@@ -13,7 +13,7 @@ export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
 export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface Template { backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 1 | 2; templates: { wide?: Template; named?: Template } }
 export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=new Set()): asserts value is TicketLayout {
   const v = value as TicketLayout;
@@ -39,6 +39,10 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
       if (!b || ![b.x,b.y,b.width,b.height].every(Number.isFinite) || b.x < 0 || b.y < 0 || b.width < 1 || b.height < 1 || b.x+b.width > w+.001 || b.y+b.height > h+.001) fail();
     };
     checkBox(t.ticketArea,t.page.width,t.page.height);
+    if(t.backgroundCrop!==undefined) {
+      const c=t.backgroundCrop;
+      if(!c || ![c.x,c.y,c.width,c.height].every(Number.isFinite) || c.x<0 || c.y<0 || c.width<.001 || c.height<.001 || c.x+c.width>1.000001 || c.y+c.height>1.000001)fail();
+    }
     if(t.backgroundTransform!==undefined) {
       const b=t.backgroundTransform;
       if(!b || ![b.scale,b.x,b.y].every(Number.isFinite) || b.scale<.1 || b.scale>10 || Math.abs(b.x)>10 || Math.abs(b.y)>10) fail();
@@ -64,6 +68,10 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
   }
 }
 // Image placement is relative to the ticket, independent of PDF paper size.
+export function croppedBackgroundBox(t:Template,width:number,height:number):Box {
+  const b=backgroundBox(t,width,height), c=t.backgroundCrop??{x:0,y:0,width:1,height:1};
+  return {x:b.x+c.x*b.width,y:b.y+c.y*b.height,width:c.width*b.width,height:c.height*b.height};
+}
 export function backgroundBox(t:Template,width:number,height:number):Box {
   const b=t.backgroundTransform??{scale:1,x:0,y:0};
   const scale=Math.min(t.ticketArea.width/width,t.ticketArea.height/height)*b.scale;

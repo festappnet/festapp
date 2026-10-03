@@ -61,6 +61,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   BuildContext get editorContext => _themeKey.currentContext ?? context;
   final canvas = GlobalKey<TicketLayoutCanvasState>();
   bool additiveSelection = false;
+  bool cropBackground = false;
   bool editBackground = false,
       pan = false,
       wholePage = false,
@@ -261,7 +262,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       old.dispose();
       previousImage?.dispose();
       committed = true;
-      controller.replace(controller.document, artworkKey: 'classic');
+      controller.replace(
+          controller.document
+              .withBackgroundCrop(const Rect.fromLTWH(0, 0, 1, 1)),
+          artworkKey: 'classic');
       if (ratioChanged) {
         final reset = await showDialog<bool>(
             context: editorContext,
@@ -616,12 +620,29 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   : () {
                       setState(() {
                         editBackground = true;
+                        cropBackground = false;
                         pan = false;
                       });
                       controller.select(null);
                       if (MediaQuery.sizeOf(context).width < 900) {
                         Navigator.pop(context);
                       }
+                    }),
+        if (background?.isNotEmpty ?? false)
+          OutlinedButton.icon(
+              icon: const Icon(Icons.crop),
+              label: Text(TicketLayoutStrings.cropImage),
+              onPressed: imageBusy
+                  ? null
+                  : () {
+                      setState(() {
+                        editBackground = true;
+                        cropBackground = true;
+                        pan = false;
+                      });
+                      controller.select(null);
+                      if (MediaQuery.sizeOf(context).width < 900)
+                        Navigator.pop(context);
                     }),
         TextButton(
             onPressed: imageBusy
@@ -655,17 +676,42 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(TicketLayoutStrings.dragImage),
-                  TextButton(
-                      onPressed: () => fitImage(false),
-                      child: Text(TicketLayoutStrings.containImage)),
-                  TextButton(
-                      onPressed: () => fitImage(true),
-                      child: Text(TicketLayoutStrings.coverImage)),
-                  TextButton(
-                      onPressed: () => controller.changeBackground(
-                          doc.backgroundScale, Offset.zero),
-                      child: Text(TicketLayoutStrings.centerImage)),
+                  Text(cropBackground
+                      ? TicketLayoutStrings.cropImageHint
+                      : TicketLayoutStrings.dragImage),
+                  SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                            value: false,
+                            label: Text(TicketLayoutStrings.positionImage)),
+                        ButtonSegment(
+                            value: true,
+                            label: Text(TicketLayoutStrings.cropImage))
+                      ],
+                      selected: {
+                        cropBackground
+                      },
+                      onSelectionChanged: (values) =>
+                          setState(() => cropBackground = values.single)),
+                  if (cropBackground)
+                    TextButton(
+                        onPressed: () => controller.replace(
+                            doc.withBackgroundCrop(
+                                const Rect.fromLTWH(0, 0, 1, 1))),
+                        child: Text(TicketLayoutStrings.resetCrop)),
+                  if (!cropBackground)
+                    TextButton(
+                        onPressed: () => fitImage(false),
+                        child: Text(TicketLayoutStrings.containImage)),
+                  if (!cropBackground)
+                    TextButton(
+                        onPressed: () => fitImage(true),
+                        child: Text(TicketLayoutStrings.coverImage)),
+                  if (!cropBackground)
+                    TextButton(
+                        onPressed: () => controller.changeBackground(
+                            doc.backgroundScale, Offset.zero),
+                        child: Text(TicketLayoutStrings.centerImage)),
                   FilledButton(
                       onPressed: () => setState(() => editBackground = false),
                       child: Text(TicketLayoutStrings.doneImage)),
@@ -1153,6 +1199,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         transform: transform,
                         pan: pan,
                         editBackground: editBackground,
+                        cropBackground: cropBackground,
                         additiveSelection: additiveSelection,
                         wholePage: wholePage,
                         snap: snap,
