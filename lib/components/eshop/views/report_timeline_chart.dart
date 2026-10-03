@@ -9,8 +9,12 @@ class ReportTimelineSeries {
   final Color color;
   final Map<DateTime, BigInt> amounts;
   final String? currency;
-  const ReportTimelineSeries(this.label, this.color, this.amounts,
-      {this.currency});
+  const ReportTimelineSeries(
+    this.label,
+    this.color,
+    this.amounts, {
+    this.currency,
+  });
 }
 
 // Plot coordinates may be approximate; all displayed values use integer cents.
@@ -71,11 +75,15 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
     ];
     final maximum =
         amounts.expand((x) => x).fold(BigInt.one, (a, b) => a > b ? a : b);
-    final lastActivity = days.lastIndexWhere((day) => widget.series
-        .any((s) => (s.amounts[day] ?? BigInt.zero) > BigInt.zero));
+    final lastActivity = days.lastIndexWhere(
+      (day) => widget.series.any(
+        (s) => (s.amounts[day] ?? BigInt.zero) > BigInt.zero,
+      ),
+    );
     final selected = math.min(
-        _selected ?? (lastActivity < 0 ? days.length - 1 : lastActivity),
-        days.length - 1);
+      _selected ?? (lastActivity < 0 ? days.length - 1 : lastActivity),
+      days.length - 1,
+    );
     final axis =
         widget.currency == null && !widget.series.any((s) => s.currency != null)
             ? maximum.toDouble()
@@ -110,13 +118,13 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
               ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
               width: 54,
-              height: 200,
+              height: 160,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +154,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
                     child: Semantics(
                       label: widget.series.map((s) => s.label).join(', '),
                       child: SizedBox(
-                        height: 200,
+                        height: 160,
                         child: CustomPaint(
                           painter: _TimelinePainter(
                             amounts: amounts,
@@ -167,13 +175,18 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
           ],
         ),
         const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: Text(DateFormat('d. M.').format(widget.start))),
-          Expanded(
-              child: Text(DateFormat('d. M.').format(widget.end),
-                  textAlign: TextAlign.end)),
-        ]),
-        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: Text(DateFormat('d. M.').format(widget.start))),
+            Expanded(
+              child: Text(
+                DateFormat('d. M.').format(widget.end),
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 16,
           runSpacing: 8,

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "cfd471f2da9625fa762c7f2a6ce198b6202406a0",
+  "baseMainSha": "6d1ef54570e7494b0313a439130890b7a8be7f75",
   "release": {
-    "version": "0.20.71+555",
-    "note": "Daily order/payment history, exact indicative CNB currency conversion and hover help"
+    "version": "0.20.72+556",
+    "note": "Compact occasion report with denser metrics and currency details"
   }
 }
