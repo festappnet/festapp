@@ -359,16 +359,23 @@ class TicketTemplate {
       elements: elements.map((old) => old.id == e.id ? e : old).toList());
 
   /// Resize the surface, not its content. Hidden boxes stay contract-valid.
-  TicketTemplate resizeCanvasArea(Size size, {Size? backgroundImage}) {
-    if (size == area.size) return this;
+  TicketTemplate resizeCanvasArea(Size size,
+      {Size? backgroundImage, Offset origin = Offset.zero}) {
+    final bounds = origin & size;
+    if (size == area.size && origin == Offset.zero &&
+        elements.every((e) => e.box.left >= 0 && e.box.top >= 0 &&
+            e.box.right <= size.width && e.box.bottom <= size.height)) return this;
     final required =
         elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
     if (!size.width.isFinite ||
         !size.height.isFinite ||
         size.width < 60 ||
         size.height < 60 ||
-        required.any(
-            (e) => e.box.right > size.width || e.box.bottom > size.height)) {
+        required.any((e) =>
+            e.box.left < bounds.left - .001 ||
+            e.box.top < bounds.top - .001 ||
+            e.box.right > bounds.right + .001 ||
+            e.box.bottom > bounds.bottom + .001)) {
       throw const FormatException('Required ticket elements outside canvas');
     }
     var next = TicketTemplate(
@@ -378,8 +385,11 @@ class TicketTemplate {
             ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
             : page,
         area: Rect.fromLTWH(area.left, area.top, size.width, size.height),
-        elements: elements.map((e) {
-          if (e.box.right <= size.width + .001 &&
+        elements: elements.map((original) {
+          final e = original.copyWith(box: original.box.shift(-origin));
+          if (e.box.left >= -.001 &&
+              e.box.top >= -.001 &&
+              e.box.right <= size.width + .001 &&
               e.box.bottom <= size.height + .001) return e;
           final w = math.min(e.box.width, size.width),
               h = math.min(e.box.height, size.height);
@@ -389,7 +399,7 @@ class TicketTemplate {
                   e.box.top.clamp(0, size.height - h), w, h));
         }).toList());
     if (backgroundImage != null) {
-      final original = backgroundRect(backgroundImage);
+      final original = backgroundRect(backgroundImage).shift(-origin);
       final contain = math.min(size.width / backgroundImage.width,
           size.height / backgroundImage.height);
       next = next.withBackground(

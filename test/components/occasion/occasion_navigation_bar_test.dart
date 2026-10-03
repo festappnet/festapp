@@ -1,9 +1,10 @@
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_navigation_bar.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
-import 'package:fstapp/components/single_data_grid/admin_page_helper.dart';
 import 'package:fstapp/widgets/buttons_helper.dart';
 
 const destinations = [
@@ -130,14 +131,16 @@ void main() {
               child: Builder(builder: (context) {
                 final appBar = AppPanelHelper.buildAdaptiveAdminAppBar(context,
                     activeTabs: [
-                      AdminTabDefinition(
+                      RoutedTabDefinition(
+                          slug: 'users',
                           label: 'Účastníci',
                           icon: Icons.people,
-                          widget: const SizedBox()),
-                      AdminTabDefinition(
+                          route: UsersSectionRoute()),
+                      RoutedTabDefinition(
+                          slug: 'orders',
                           label: 'Objednávky vstupenek',
                           icon: Icons.confirmation_number,
-                          widget: const SizedBox()),
+                          route: OrdersNavigationRoute()),
                     ],
                     tabController: DefaultTabController.of(context)) as AppBar;
                 // Exercise the production tab strip without unrelated tenant

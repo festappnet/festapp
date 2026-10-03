@@ -1,3 +1,5 @@
+import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -38,11 +40,11 @@ class RouterService {
 
   static Future<T?> navigateOccasion<T extends Object?>(
       BuildContext context, String path) {
-    return context.router.pushPath(getCurrentLink() + path);
+    return pushRootPath<T>(context.router.root, getCurrentLink() + path);
   }
 
   static Future<T?> navigateOccasionNoContext<T extends Object?>(String path) {
-    return router.pushPath(getCurrentLink() + path);
+    return pushRootPath<T>(router, getCurrentLink() + path);
   }
 
   static Future<T?> changeOnOccasion<T extends Object?>(
@@ -75,7 +77,7 @@ class RouterService {
       }
     }
 
-    return context.router.root.pushPath(path);
+    return pushRootPath<T>(context.router.root, path);
   }
 
   static String fixPath(String path) {
@@ -120,12 +122,12 @@ class RouterService {
   static Future<void> pushReplacementFull<T extends Object?>(
       BuildContext context, String path) async {
     path = fixPath(path);
-    await context.router.replacePath(path);
+    await replaceRootPath(context.router.root, path);
   }
 
   static void pushReplacementOccasion<T extends Object?>(
       BuildContext context, String path) {
-    context.router.replacePath(getCurrentLink() + path);
+    replaceRootPath(context.router.root, getCurrentLink() + path);
   }
 
   static Future<void> goToApplicationHome(StackRouter rootRouter) async {
@@ -153,8 +155,8 @@ class RouterService {
     final tabsRouter = context.tabsRouter;
     final programRouter = tabsRouter.stackRouterOfIndex(tabsRouter.activeIndex);
     if (programRouter == null) {
-      unawaited(
-          context.router.root.replacePath(getCurrentLink() + EventPage.ROUTE));
+      unawaited(replaceRootPath(
+          context.router.root, getCurrentLink() + EventPage.ROUTE));
       return;
     }
     final canonicalRoot = programRouter.routeCollection.routes.firstWhere(
@@ -222,10 +224,7 @@ class RouterService {
   /// Navigates to a specific unit's edit page after updating app data.
   static Future<void> navigateToUnitAdmin(
       BuildContext context, UnitModel unit) async {
-    await RightsService.updateAppData(
-        unitId: unit.id, force: true, refreshOffline: false);
-    await RouterService.navigate(
-        context, "unit/${RightsService.currentUnit()!.id!}/edit");
+    await RouterService.navigate(context, "unit/${unit.id!}/edit");
   }
 
   /// Clear a deleted occasion from the route stack and reload its unit.
@@ -248,12 +247,11 @@ class RouterService {
   static Future<void> navigateHome(BuildContext context) async {
     String targetHomePath = fixPath(""); // This resolves to "/"
 
-    // First, update app data regardless of navigation
-    await RightsService.updateAppData(
-        unitId: null, force: true, refreshOffline: false);
-
     // Check if the current path is already the target home path
     if (context.routeData.path == targetHomePath) {
+      await RightsService.updateAppData(
+          unitId: null, force: true, refreshOffline: false);
+      if (!context.mounted) return;
       if (kIsWeb && AppConfig.isWebclientSupported) {
         await LaunchUrlService.openExternalUrl(
           "/",
@@ -265,6 +263,8 @@ class RouterService {
     }
 
     if (kIsWeb && AppConfig.isWebclientSupported) {
+      if (!await RetainedDraftGuard.instance
+          .confirmPath(context.router.root, Uri.parse(targetHomePath))) return;
       await LaunchUrlService.openExternalUrl(
         "/",
         inCurrentWindow: true,
@@ -276,50 +276,28 @@ class RouterService {
     await RouterService.navigate(context, ""); // Navigates to "/"
   }
 
-  /// Navigates to a specific occasion's admin page after updating app data.
+  /// The routed entry page loads and checks the occasion after navigation.
   static Future<void> navigateToOccasionByLink(
       BuildContext context, String link) async {
-    await RightsService.updateAppData(
-        link: link, force: true, refreshOffline: false);
     await RouterService.navigate(context, "/$link/${AdminPage.ROUTE}");
   }
 
-  /// Navigates to a specific occasion's reservation page after updating app data.
+  /// The routed reservation boundary owns its context load and access check.
   static Future<void> navigateToOccasionReservationsByLink(
       BuildContext context, String link) async {
-    await RightsService.updateAppData(
-        link: link, force: true, refreshOffline: false);
     await RouterService.navigate(context, "/$link/${ReservationsPage.ROUTE}");
   }
 
-  /// Navigates to an occasion's administration page based on context.
-  ///
-  /// This method determines the destination by first checking the type of the
-  /// current widget from the `BuildContext`. If the context is an `AdminPage` or
-  /// `ReservationsPage`, it navigates to the corresponding view.
-  ///
-  /// If the widget type isn't a recognized admin page, it uses the fallback route
-  /// defined in `AppConfig.defaultAdministrationRoute`.
-  ///
-  /// The [occasionLink] can be passed directly. If not, it's extracted from
-  /// the current route's parameters.
+  /// Preserve the nearest administration ancestor when changing occasions.
+  /// Outside a shell, keep the existing product default.
   static Future<void> navigateToOccasionAdministration(BuildContext context,
       {String? occasionLink, OccasionModel? occasion}) async {
-    // If occasion is provided, prioritize it for feature checks
-    if (occasion != null) {
-      if (FeatureService.isFeatureEnabled(FeatureConstants.form,
-          features: occasion.features)) {
-        await navigateToOccasionReservationsByLink(
-            context, occasion.link ?? occasionLink!);
-        return;
-      }
-    }
-
     String? resolvedLink = occasionLink ?? occasion?.link;
 
     // Get the link from arguments or route parameters.
     if (resolvedLink == null || resolvedLink.isEmpty) {
-      resolvedLink = context.routeData.params.getString(link);
+      resolvedLink = context.routeData.inheritedPathParams
+          .getString(AppRouter.linkFormatted);
     }
 
     // If no link could be resolved, we can't navigate.
@@ -329,16 +307,32 @@ class RouterService {
       return;
     }
 
-    if (!AppConfig.isAppSupported) {
-      await navigateToOccasionReservationsByLink(context, resolvedLink);
+    // Preserve static section/subtab paths, but never carry an object's ID
+    // into another occasion. Read the active router, since the breadcrumb's
+    // BuildContext may belong to the outer shell rather than its selected tab.
+    final active = context.router.root.currentSegments;
+    final shellIndex = active.indexWhere((route) =>
+        route.name == AdminRoute.name || route.name == ReservationsRoute.name);
+    if (shellIndex >= 0) {
+      final shell = active[shellIndex].name == ReservationsRoute.name
+          ? ReservationsPage.ROUTE
+          : AdminPage.ROUTE;
+      final suffix = <String>[];
+      for (final route in active.skip(shellIndex + 1)) {
+        if (route.path.contains(':') || route.path.contains('*')) break;
+        suffix.addAll(route.path.split('/').where((part) => part.isNotEmpty));
+      }
+      await navigate(
+          context,
+          '/$resolvedLink/$shell'
+          '${suffix.isEmpty ? '' : '/${suffix.join('/')}'}');
       return;
     }
 
-    // 1. Decide destination based on the current widget type.
-    if (context.widget is AdminPage) {
-      await navigateToOccasionByLink(context, resolvedLink);
-      return;
-    } else if (context.widget is ReservationsPage) {
+    if (!AppConfig.isAppSupported ||
+        (occasion != null &&
+            FeatureService.isFeatureEnabled(FeatureConstants.form,
+                features: occasion.features))) {
       await navigateToOccasionReservationsByLink(context, resolvedLink);
       return;
     }
@@ -397,8 +391,41 @@ class RouterService {
 
   /// Centralized logic for navigation after successful login.
   /// Used by both [LoginPage] and [TransferPage] to ensure consistent behavior.
+  static bool isAdministrationReturnPath(String? path) {
+    final uri = path == null ? null : Uri.tryParse(path);
+    if (uri == null ||
+        uri.hasScheme ||
+        uri.hasAuthority ||
+        !uri.path.startsWith('/')) return false;
+    final segments = uri.pathSegments;
+    return (segments.length >= 2 &&
+            (segments[1] == 'admin' || segments[1] == 'reservations')) ||
+        (segments.length >= 3 &&
+            segments[0] == 'unit' &&
+            int.tryParse(segments[1]) != null &&
+            segments[2] == 'edit');
+  }
+
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
+    // An explicit protected destination has priority over the generic unit landing.
+    if (isAdministrationReturnPath(fallbackPath)) {
+      final target = Uri.parse(fallbackPath!);
+      if (target.pathSegments.first == 'unit') {
+        await RightsService.updateAppData(
+            unitId: int.parse(target.pathSegments[1]),
+            force: true,
+            refreshOffline: false);
+      } else {
+        await RightsService.updateAppData(
+            link: target.pathSegments.first,
+            force: true,
+            refreshOffline: false);
+      }
+      if (!context.mounted) return;
+      await replaceRootPath(context.router.root, target.toString());
+      return;
+    }
     // 1. Update App Data
     var unitId = RightsService.currentUnit()?.id == 1
         ? null
@@ -454,7 +481,7 @@ class RouterService {
           fallbackPath.toLowerCase() == "login") {
         AppLogger.debug(
             "[RouterService] Post-Login: Redirect was 'login', avoiding redundant loop. Going Home.");
-        await context.router.replacePath('/');
+        await replaceRootPath(context.router.root, '/');
         return;
       }
 
@@ -463,7 +490,7 @@ class RouterService {
       if (useReplacement) {
         // Fix path to ensure it starts with /
         String target = fixPath(fallbackPath);
-        await context.router.replacePath(target);
+        await replaceRootPath(context.router.root, target);
       } else {
         await navigate(context, fallbackPath);
       }
@@ -472,7 +499,7 @@ class RouterService {
       AppLogger.debug("[RouterService] Post-Login: Pop or Home");
       if (useReplacement) {
         // If we must replace but have no specific target, we go Home.
-        await context.router.replacePath('/');
+        await replaceRootPath(context.router.root, '/');
       } else {
         popOrHome(context);
       }

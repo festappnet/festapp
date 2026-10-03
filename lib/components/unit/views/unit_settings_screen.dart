@@ -1,4 +1,6 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_strings.dart';
@@ -15,7 +17,6 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:fstapp/components/bank_accounts/views/unit_bank_accounts_screen.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/router_service.dart';
@@ -491,12 +492,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         title: Text(BankAccountStrings.bankAccountsTitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  UnitBankAccountsScreen(unitId: _unit.id!),
-                            ),
-                          );
+                          context.tabsRouter.navigate(
+                              const UnitBankAccountsNavigationRoute());
                         },
                       ),
                     const SizedBox(height: 48),

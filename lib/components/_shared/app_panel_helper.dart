@@ -7,7 +7,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/project_picker_widget.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
-import 'package:fstapp/components/single_data_grid/admin_page_helper.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -386,6 +386,13 @@ class AppPanelHelper {
         fontSize: 16,
         color: onAppBarColor,
         fontWeight: isBold ? FontWeight.bold : FontWeight.normal);
+    // The bold face is Gill Sans; keep both title weights on Futura's line metrics.
+    final titleStrut = StrutStyle(
+      fontFamily: ThemeConfig.fontFamily,
+      fontSize: 16,
+      fontWeight: FontWeight.normal,
+      forceStrutHeight: true,
+    );
     final iconColor = onAppBarColor.withOpacity(0.7);
     final hoverColor = Colors.black.withOpacity(0.15);
 
@@ -396,7 +403,10 @@ class AppPanelHelper {
         borderRadius: BorderRadius.circular(6),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-          child: Text(title, style: textStyle, overflow: TextOverflow.ellipsis),
+          child: Text(title,
+              style: textStyle,
+              strutStyle: titleStrut,
+              overflow: TextOverflow.ellipsis),
         ),
       );
     }
@@ -415,6 +425,7 @@ class AppPanelHelper {
               child: Text(
                 title,
                 style: textStyle,
+                strutStyle: titleStrut,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -568,7 +579,7 @@ class AppPanelHelper {
 
   /// This method returns an adaptive AppBar based on the screen width.
   static PreferredSizeWidget buildAdaptiveAdminAppBar(BuildContext context,
-      {List<AdminTabDefinition>? activeTabs, TabController? tabController}) {
+      {List<RoutedTabDefinition>? activeTabs, TabController? tabController}) {
     final screenWidth = MediaQuery.of(context).size.width;
     // Use a more standard breakpoint for mobile vs. desktop layouts.
     if (screenWidth < 720) {
@@ -582,7 +593,7 @@ class AppPanelHelper {
   /// Desktop/Tablet version of the AppBar.
   static PreferredSizeWidget buildDesktopAdminAppBar(
     BuildContext context,
-    List<AdminTabDefinition>? activeTabs,
+    List<RoutedTabDefinition>? activeTabs,
     TabController? tabController,
   ) {
     return AppBar(
@@ -634,7 +645,7 @@ class AppPanelHelper {
   /// A professionally redesigned mobile version of the AppBar with Unit switcher on the left.
   static PreferredSizeWidget buildProfessionalMobileAdminAppBar(
     BuildContext context,
-    List<AdminTabDefinition>? activeTabs,
+    List<RoutedTabDefinition>? activeTabs,
     TabController? tabController,
   ) {
     final onAppBarColor =
@@ -890,7 +901,7 @@ class AppPanelHelper {
 
   static PreferredSizeWidget _buildAdminTabs(
     BuildContext context,
-    List<AdminTabDefinition> tabs,
+    List<RoutedTabDefinition> tabs,
     TabController? controller,
   ) {
     final theme = Theme.of(context);
