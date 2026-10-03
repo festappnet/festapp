@@ -1,6 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get designSize => 'TicketLayout.designSize'.tr();
+  static String get designSizeHint => 'TicketLayout.designSizeHint'.tr();
+  static String get marginMm => 'TicketLayout.marginMm'.tr();
+  static String get marginHint => 'TicketLayout.marginHint'.tr();
+  static String get invalidMargin => 'TicketLayout.invalidMargin'.tr();
+  static String get originalPaperHint => 'TicketLayout.originalPaperHint'.tr();
+
   static String get paperFormat => 'TicketLayout.paperFormat'.tr();
   static String get paperA4 => 'TicketLayout.paperA4'.tr();
   static String get paperTicket => 'TicketLayout.paperTicket'.tr();
