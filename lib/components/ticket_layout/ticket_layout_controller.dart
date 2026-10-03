@@ -226,7 +226,8 @@ class TicketLayoutController extends ChangeNotifier {
     final base = _gesture ?? document;
     if (_gesture != null) _dragOffset += delta;
     final drag = _gesture == null ? delta : _dragOffset;
-    final original = base.backgroundRect(image);
+    final original = base.croppedBackgroundRect(image);
+    final full = base.backgroundRect(image);
     var next = original.shift(drag);
     Offset? anchor;
     var lower = 0.0, upper = double.infinity;
@@ -260,10 +261,12 @@ class TicketLayoutController extends ChangeNotifier {
       guideX = result.x;
       guideY = result.y;
     }
+    final ratio = next.width / original.width;
+    final center = next.topLeft + (full.center - original.topLeft) * ratio;
     changeBackground(
-        base.backgroundScale * next.width / original.width,
-        Offset((next.center.dx - base.area.width / 2) / base.area.width,
-            (next.center.dy - base.area.height / 2) / base.area.height));
+        base.backgroundScale * ratio,
+        Offset((center.dx - base.area.width / 2) / base.area.width,
+            (center.dy - base.area.height / 2) / base.area.height));
   }
 
   void cropBackground(Size image, Offset delta,
