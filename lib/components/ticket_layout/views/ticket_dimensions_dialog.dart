@@ -5,9 +5,14 @@ import '../ticket_layout_strings.dart';
 class TicketDimensionsDialog extends StatefulWidget {
   final TicketTemplate document;
   final String type;
+  final Size? backgroundImage;
   final ValueChanged<TicketTemplate>? onPreview;
   const TicketDimensionsDialog(
-      {super.key, required this.document, required this.type, this.onPreview});
+      {super.key,
+      required this.document,
+      required this.type,
+      this.onPreview,
+      this.backgroundImage});
   @override
   State<TicketDimensionsDialog> createState() => _TicketDimensionsDialogState();
 }
@@ -98,7 +103,7 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
       report(TicketLayoutStrings.invalidMargin);
       return null;
     }
-    var candidate = widget.document.resizeArea(preciseSize ??
+    final size = preciseSize ??
         Size(
             width.text ==
                     (widget.document.area.width / pointsPerMm)
@@ -109,7 +114,21 @@ class _TicketDimensionsDialogState extends State<TicketDimensionsDialog> {
                     (widget.document.area.height / pointsPerMm)
                         .toStringAsFixed(1)
                 ? widget.document.area.height
-                : h * pointsPerMm));
+                : h * pointsPerMm);
+    final blockers = widget.document.elements.where((e) =>
+        ['qr', 'ticketSymbol'].contains(e.binding) &&
+        (e.box.right > size.width || e.box.bottom > size.height));
+    if (blockers.isNotEmpty) {
+      report(
+          '${TicketLayoutStrings.canvasBlocked}: ${blockers.map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}');
+      return null;
+    }
+    if (size.width < 60 || size.height < 60) {
+      report(TicketLayoutStrings.canvasTooSmall);
+      return null;
+    }
+    var candidate = widget.document
+        .resizeCanvasArea(size, backgroundImage: widget.backgroundImage);
     if (ticketPaper || paperChanged || (!legacyPaper && preciseSize == null)) {
       candidate = candidate.withPaper(ticketPaper, margin: ticketPaper ? m : 0);
     }
