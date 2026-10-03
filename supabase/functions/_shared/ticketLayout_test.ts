@@ -202,3 +202,13 @@ Deno.test('canvas fill supports hex or transparent and renders no fill for trans
  }
  for(const canvasColor of ['#FFFFFF','bad',null,42])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...preset('wide'),canvasColor}}}));
 });
+
+Deno.test('canvas opacity validates and is emitted as PDF graphics state',async()=>{
+ const t={...preset('wide'),canvasColor:'FF0000',canvasOpacity:.4};
+ parseLayout({schemaVersion:1,templates:{wide:t}});
+ const output=await generateTicketPdf(sampleData(),r,t,'wide',true);
+ const pdf=await PDFDocument.load(output.bytes);
+ const states=pdf.getPage(0).node.Resources()?.lookup(PDFName.of('ExtGState'))?.toString()??'';
+ assert(states.includes('/ca 0.4'));
+ for(const canvasOpacity of [-.1,1.1,null,'0.5'])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,canvasOpacity}}}));
+});
