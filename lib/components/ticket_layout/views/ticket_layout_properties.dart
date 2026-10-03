@@ -9,6 +9,7 @@ import '../ticket_layout_strings.dart';
 
 class TicketLayoutProperties extends StatelessWidget {
   final TicketLayoutController controller;
+  final Widget? fontControl;
   final TicketTemplate? defaults;
   final ui.Image? backgroundImage;
   final TicketFontMetrics? metrics;
@@ -16,6 +17,7 @@ class TicketLayoutProperties extends StatelessWidget {
   const TicketLayoutProperties(
       {super.key,
       required this.controller,
+      this.fontControl,
       this.metrics,
       this.backgroundImage,
       this.data,
@@ -67,6 +69,7 @@ class TicketLayoutProperties extends StatelessWidget {
                   Text(TicketLayoutStrings.binding(e.binding),
                       style: Theme.of(context).textTheme.titleMedium),
                   if (text) ...[
+                    if (fontControl != null) fontControl!,
                     const SizedBox(height: 12),
                     Text(TicketLayoutStrings.textStyle),
                     const SizedBox(height: 6),

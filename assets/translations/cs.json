@@ -320,7 +320,9 @@
     "editorPreview": "Náhled editora",
     "labelShowPaymentQr": "Zobrazit QR platbu po objednávce",
     "helperShowPaymentQr": "Po dokončení objednávky zobrazí platební QR kód a údaje přímo na potvrzovací obrazovce.",
-    "seatSelection": "Výběr místa"
+    "seatSelection": "Výběr místa",
+    "moreFonts": "Další fonty",
+    "fontSearchHint": "Vyhledejte font podle názvu. Na Google Fonts si můžete prohlédnout ukázky a název sem zkopírovat, například Roboto Slab. Výběr se ukáže přímo v náhledu."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -2072,6 +2074,23 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "originalPaperHint": "Zůstane zachovaný původní formát papíru této šablony.",
+    "invalidMargin": "Zadejte okraj od 0 do 25,4 mm.",
+    "marginHint": "Bílý okraj kolem vstupenky ze všech stran. 0-25,4 mm.",
+    "marginMm": "Okraj papíru (mm)",
+    "designSizeHint": "Změna rozměrů přizpůsobí také texty a QR kód. Obrázek upravíte úchyty přímo na plátně.",
+    "designSize": "Velikost návrhu vstupenky",
+    "paperFormat": "Formát PDF",
+    "paperA4": "A4",
+    "paperTicket": "Podle vstupenky",
+    "paperOriginal": "Původní formát",
+    "positionImage": "Umístit obrázek",
+    "dragImage": "Táhněte obrázek pro přesun, rohové úchyty pro změnu velikosti.",
+    "containImage": "Celý obrázek",
+    "coverImage": "Vyplnit vstupenku",
+    "centerImage": "Na střed",
+    "doneImage": "Hotovo",
+
     "missingBackground": "Původní podkladový obrázek už není dostupný. V editoru nahrajte nový nebo podklad odeberte. Do té doby nelze vytvořit PDF.",
     "usedColors": "Použité na vstupence",
     "imageColors": "Doporučené k podkladu",
@@ -2157,18 +2176,23 @@
     "grid": "Mřížka",
     "snap": "Přichytávání",
     "resetSlider": "Dvojklik vrátí výchozí velikost šablony",
-    "canvasSize": "Rozměry vstupenky",
+    "canvasSize": "Vstupenka a tisk",
     "widthMm": "Šířka (mm)",
     "heightMm": "Výška (mm)",
-    "canvasHint": "Velikost vstupenky na listu A4. Prvky se při změně přizpůsobí.",
+    "canvasHint": "A4 má pevný rozměr 210 × 297 mm. Vstupenka se umístí na tento papír ve své velikosti.",
     "fromImage": "Převzít poměr stran obrázku",
     "invalidCanvas": "Rozměry musí vejít na tiskový list a zachovat dostatek místa pro QR a text.",
     "downloadPdf": "Stáhnout PDF",
     "style_portrait": "Jmenná na výšku",
     "defaultDimensions": "Obnovit výchozí rozměry šablony",
-    "ticketPdfHint": "PDF bude mít přesně rozměry vstupenky.",
+    "ticketPdfHint": "Papír PDF bude mít rozměr vstupenky zvětšený o okraje.",
     "canvasTooLarge": "Velikost přesahuje povolený formát. Zmenšete rozměry.",
     "canvasTooSmall": "Pro prvky nebo čitelný QR zbývá příliš málo místa. Zvětšete rozměry.",
-    "sampleData": "Ukázkové údaje"
+    "sampleData": "Ukázkové údaje",
+    "templateFont": "Písmo šablony",
+    "elementFont": "Písmo prvku (výjimka)",
+    "missingGlyphs": "Písmo neobsahuje některé znaky. Jsou nahrazeny znakem ?.",
+    "fontForText": "Jiné písmo pro tento text",
+    "inheritFont": "Použít písmo vstupenky"
   }
 }

@@ -1,6 +1,28 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get designSize => 'TicketLayout.designSize'.tr();
+  static String get designSizeHint => 'TicketLayout.designSizeHint'.tr();
+  static String get marginMm => 'TicketLayout.marginMm'.tr();
+  static String get marginHint => 'TicketLayout.marginHint'.tr();
+  static String get invalidMargin => 'TicketLayout.invalidMargin'.tr();
+  static String get originalPaperHint => 'TicketLayout.originalPaperHint'.tr();
+
+  static String get paperFormat => 'TicketLayout.paperFormat'.tr();
+  static String get paperA4 => 'TicketLayout.paperA4'.tr();
+  static String get paperTicket => 'TicketLayout.paperTicket'.tr();
+  static String get paperOriginal => 'TicketLayout.paperOriginal'.tr();
+  static String get positionImage => 'TicketLayout.positionImage'.tr();
+  static String get dragImage => 'TicketLayout.dragImage'.tr();
+  static String get containImage => 'TicketLayout.containImage'.tr();
+  static String get coverImage => 'TicketLayout.coverImage'.tr();
+  static String get centerImage => 'TicketLayout.centerImage'.tr();
+  static String get doneImage => 'TicketLayout.doneImage'.tr();
+  static String get fontForText => 'TicketLayout.fontForText'.tr();
+  static String get inheritFont => 'TicketLayout.inheritFont'.tr();
+  static String get templateFont => 'TicketLayout.templateFont'.tr();
+  static String get elementFont => 'TicketLayout.elementFont'.tr();
+  static String get missingGlyphs => 'TicketLayout.missingGlyphs'.tr();
   static String get missingBackground => 'TicketLayout.missingBackground'.tr();
   static String get usedColors => 'TicketLayout.usedColors'.tr();
   static String get imageColors => 'TicketLayout.imageColors'.tr();
