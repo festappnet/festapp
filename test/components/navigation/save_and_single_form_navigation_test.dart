@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:easy_localization/src/localization.dart';
 import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/views/forms_tab.dart';
@@ -36,6 +37,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.currentUrl, path.replaceFirst('occasion-a', 'renamed'));
     expect(find.text('RESPONSES CONTENT'), findsOneWidget);
+  });
+
+  testWidgets('automatic single-form entry has no nested page transition',
+      (tester) async {
+    final router = FixtureRouter(Access())
+      ..formsListBuilder = (_) => FormsListView(loadForms: (_) async =>
+          [FormModel(id: 1, link: 'single', title: 'Single')]);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config(
+        deepLinkBuilder: (_) => const DeepLink.path('/occasion-a/reservations/forms'))));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 1));
+      if (find.byKey(const Key('draft-field')).evaluate().isNotEmpty) break;
+    }
+    await tester.pump();
+    final detailRoute = ModalRoute.of(tester.element(find.byKey(const Key('draft-field'))))!;
+    expect(detailRoute.animation!.isCompleted, isTrue,
+        reason: 'Automatic selection must not slide in a second nested page');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Responses'));
+    await tester.pump(const Duration(milliseconds: 30));
+    final bar = tester.widget<TabBar>(find.ancestor(
+        of: find.text('Responses'), matching: find.byType(TabBar)));
+    expect(bar.controller!.indexIsChanging, isTrue,
+        reason: 'User-requested subtab switches retain their normal animation');
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/occasion-a/reservations/forms/single/responses');
   });
 
   for (final count in [0, 1, 2]) {
