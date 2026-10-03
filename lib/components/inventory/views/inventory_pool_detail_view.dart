@@ -61,6 +61,7 @@ class _InventoryPoolDetailViewState extends State<InventoryPoolDetailView>
           child: TabBar(
             controller: _tabController,
             isScrollable: true,
+              tabAlignment: TabAlignment.start,
             tabs: [
               DataGridHelper.buildTab(context, Icons.grid_view,
                   InventoryStrings.detailTabOccupancy),

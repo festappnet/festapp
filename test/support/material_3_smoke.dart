@@ -1,6 +1,7 @@
 // Offline visual smoke harness using production widgets and a mocked backend.
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -195,10 +196,19 @@ class _FixtureAppState extends State<FixtureApp> {
                                                       ctx)) as AppBar)
                                           .bottom,
                                 ),
-                                body: const TabBarView(children: [
-                                  ListTile(
-                                      title: Text('Žofie Česká'),
-                                      subtitle: Text('ucastnik@example.test')),
+                                body: TabBarView(children: [
+                                  Column(children: [
+                                    const ListTile(
+                                        title: Text('Žofie Česká'),
+                                        subtitle:
+                                            Text('ucastnik@example.test')),
+                                    TextButton(
+                                        onPressed: () =>
+                                            RichHtmlEditorDialog.show(ctx,
+                                                initialHtml:
+                                                    '<br><span></span>'),
+                                        child: const Text('Textový editor')),
+                                  ]),
                                   ListTile(
                                       title: Text('Objednávka vstupenek'),
                                       subtitle: Text('Potvrzeno')),

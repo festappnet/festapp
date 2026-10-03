@@ -94,7 +94,7 @@ export function preset(type: 'wide'|'named', imageWidth=1600, imageHeight=800): 
 }
 
 // Portrait is a ticket-sized PDF, independently of the selected template slot.
-export function portraitPreset(): Template { const t=preset('named'); return {...t,pageFit:'ticket',page:{width:t.ticketArea.width,height:t.ticketArea.height},ticketArea:{...t.ticketArea,x:0,y:0}}; }
+export function portraitPreset(): Template { const t=preset('named'),margin=3*72/25.4; return {...t,pageFit:'ticket',pageMargin:margin,page:{width:t.ticketArea.width+2*margin,height:t.ticketArea.height+2*margin},ticketArea:{...t.ticketArea,x:margin,y:margin}}; }
 
 export function parseLayout(value: unknown,registeredIds?:ReadonlySet<string>): TicketLayout { validateLayout(value,registeredIds); return structuredClone(value); }
 

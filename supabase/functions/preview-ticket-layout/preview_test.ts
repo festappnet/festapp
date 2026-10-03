@@ -85,18 +85,19 @@ Deno.test('image-backed presets inherit existing text color without weakening QR
   assertEquals(result.template.elements.find((e:any)=>e.binding==='qr').style.color,'2A2A2A');
 });
 
-Deno.test('portrait PDF page matches editable ticket area',async()=>{
+Deno.test('portrait PDF page includes the default margin after resizing',async()=>{
   const s=setup();
   const choices=await (await handlePreview(req({...body,type:'wide'}),s.deps)).json();
   assertEquals(choices.presetBackgrounds.portrait,null);
   const t=choices.presets.portrait;
   assert(t.ticketArea.height>t.ticketArea.width);
-  t.ticketArea.width=240; t.ticketArea.height=450; t.page={width:240,height:450};
+  t.ticketArea.width=240; t.ticketArea.height=450; t.page={width:240+2*t.pageMargin,height:450+2*t.pageMargin};
   const response=await handlePreview(req({...body,type:'wide',mode:'pdf',background:null,layout:{schemaVersion:1,templates:{wide:t}}}),s.deps);
   assertEquals(response.status,200);
   const {PDFDocument}=await import('npm:pdf-lib');
   const doc=await PDFDocument.load(Uint8Array.from(atob((await response.json()).file),c=>c.charCodeAt(0)));
-  assertEquals(doc.getPages()[0].getSize(),{width:240,height:450});
+  assertEquals(t.pageMargin,3*72/25.4);
+  assertEquals(doc.getPages()[0].getSize(),t.page);
 });
 
 Deno.test('legacy type does not restrict gallery, background selection or saved layout',async()=>{

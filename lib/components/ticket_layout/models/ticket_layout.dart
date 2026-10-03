@@ -239,6 +239,7 @@ class TicketTemplate {
               'y': offset.dy
             }
           });
+  static const defaultPageMargin = 3 * 72 / 25.4;
   double get pageMargin => appearance['pageMargin'] is num
       ? (appearance['pageMargin'] as num).toDouble()
       : 0;
@@ -257,7 +258,7 @@ class TicketTemplate {
       appearance: {
         for (final entry in appearance.entries)
           if (entry.key != 'pageMargin') entry.key: entry.value,
-        if (ticket && margin != 0) 'pageMargin': margin
+        if (ticket) 'pageMargin': margin
       },
       elements: elements);
   TicketTemplate withQrColors(String foreground, String background) =>

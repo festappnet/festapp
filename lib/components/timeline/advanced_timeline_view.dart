@@ -77,6 +77,7 @@ class AdvancedTimelineView extends StatelessWidget {
                   child: TabBar(
                     controller: controller,
                     isScrollable: true,
+              tabAlignment: TabAlignment.start,
                     indicator: BoxDecoration(
                       color: ThemeConfig.indicatorColor(context),
                       border: StylesConfig.indicatorBorder(),

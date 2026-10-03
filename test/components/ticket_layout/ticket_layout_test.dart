@@ -149,6 +149,105 @@ void main() {
     expect(dialogTheme.useMaterial3, isTrue);
   });
   testWidgets(
+      'paper dialog has separated fields on desktop and mobile in both themes',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.runAsync(() async {
+      final loader = FontLoader('Futura')
+        ..addFont(Future.value(ByteData.sublistView(
+            File('fonts/Futura PT Book.ttf').readAsBytesSync())))
+        ..addFont(Future.value(ByteData.sublistView(
+            File('fonts/Futura PT Medium.ttf').readAsBytesSync())));
+      await loader.load();
+    });
+    for (final brightness in Brightness.values) {
+      for (final screenWidth in [360.0, 1000.0]) {
+        tester.view.physicalSize = Size(screenWidth, 900);
+        final boundaryKey = GlobalKey();
+        await tester.pumpWidget(RepaintBoundary(
+            key: boundaryKey,
+            child: MaterialApp(
+                theme: ThemeConfig.theme(brightness: brightness).copyWith(
+                    inputDecorationTheme: const InputDecorationTheme(
+                        isDense: true,
+                        border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(8))))),
+                home: Scaffold(
+                    body: TicketDimensionsDialog(
+                        document: document().withPaper(true,
+                            margin: TicketTemplate.defaultPageMargin),
+                        type: 'wide')))));
+        await tester.pumpAndSettle();
+        final width = tester.getRect(
+            find.widgetWithText(TextField, 'TicketLayout.widthMm'.tr()));
+        final height = tester.getRect(
+            find.widgetWithText(TextField, 'TicketLayout.heightMm'.tr()));
+        final heading =
+            tester.getRect(find.text('TicketLayout.designSize'.tr()));
+        expect(width.top - heading.bottom, greaterThanOrEqualTo(20));
+        if (screenWidth < 380) {
+          expect(height.top - width.bottom, greaterThanOrEqualTo(20));
+        } else {
+          expect(height.left - width.right, greaterThanOrEqualTo(16));
+          expect(height.top, width.top);
+        }
+        expect(tester.takeException(), isNull);
+        final capture = Platform.environment['TICKET_DIALOG_CAPTURE_DIR'];
+        if (capture != null) {
+          final boundary = boundaryKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+          final image =
+              (await tester.runAsync(() => boundary.toImage(pixelRatio: 1.5)))!;
+          final bytes = (await tester.runAsync(
+              () => image.toByteData(format: ui.ImageByteFormat.png)))!;
+          File('$capture/dialog-${brightness.name}-${screenWidth.toInt()}.png')
+              .writeAsBytesSync(bytes.buffer.asUint8List());
+          image.dispose();
+        }
+        await tester.pumpWidget(const SizedBox());
+      }
+    }
+  });
+  testWidgets(
+      'old ticket templates propose a margin but explicit zero is retained',
+      (tester) async {
+    final old = document().withPaper(true).toJson()..remove('pageMargin');
+    TicketTemplate? preview;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: TicketDimensionsDialog(
+                document: TicketTemplate.fromJson(old),
+                type: 'wide',
+                onPreview: (value) => preview = value))));
+    await tester.pumpAndSettle();
+    expect(preview!.pageMargin, TicketTemplate.defaultPageMargin);
+    await tester.enterText(
+        find.widgetWithText(TextField, 'TicketLayout.marginMm'.tr()), '0');
+    await tester.pumpAndSettle();
+    expect(preview!.toJson()['pageMargin'], 0);
+    final saved = TicketTemplate.fromJson(preview!.toJson());
+    await tester.pumpWidget(const SizedBox());
+    preview = null;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: TicketDimensionsDialog(
+                document: saved,
+                type: 'wide',
+                onPreview: (value) => preview = value))));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<TextField>(
+                find.widgetWithText(TextField, 'TicketLayout.marginMm'.tr()))
+            .controller!
+            .text,
+        '0.0');
+    expect(preview, isNull);
+  });
+  testWidgets(
       'paper dialog previews ticket-sized output without moving elements',
       (tester) async {
     final original = document().withPaper(false);

@@ -50,6 +50,7 @@ class _FormTabState extends State<FormTab> with SingleTickerProviderStateMixin {
           child: TabBar(
             controller: _tabController,
             isScrollable: true,
+              tabAlignment: TabAlignment.start,
             tabs: [
               DataGridHelper.buildTab(
                   context, Icons.data_object, FormStrings.tabForm),

@@ -34,6 +34,42 @@ void insert(RichHtmlEditorController controller, String text) {
 void _ignoreHtml(String _) {}
 
 void main() {
+  for (final html in ['<br>', '<span></span>']) {
+    testWidgets('empty inline markup accepts text and undo: $html',
+        (tester) async {
+      final controller = RichHtmlEditorController(
+          initialHtml: html, owner: const HtmlMediaOwner.none());
+      addTearDown(controller.dispose);
+      final original = controller.html;
+      expect(controller.editor.document.first, isA<TextNode>());
+      insert(controller, 'Draft');
+      expect(controller.html, contains('Draft'));
+      controller.undo();
+      expect(controller.html, original);
+    });
+  }
+
+  for (final html in [
+    '<br>',
+    '<span></span>',
+    '<table></table>',
+    '<table><tr><td>Text</td></tr></table><span></span>'
+  ]) {
+    testWidgets('decorations never offer a nested editor: $html',
+        (tester) async {
+      final controller = RichHtmlEditorController(
+          initialHtml: html, owner: const HtmlMediaOwner.none());
+      final original = controller.html;
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(body: RichHtmlEditor(controller: controller))));
+      await tester.pump();
+      expect(find.widgetWithIcon(TextButton, Icons.edit), findsNothing);
+      expect(controller.html, original);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
+
   testWidgets('HTML typography survives inline and fullscreen editing',
       (tester) async {
     for (final fontSize in [18.0, 24.0]) {
