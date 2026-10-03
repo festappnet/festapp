@@ -18,7 +18,7 @@ import '../ticket_text.dart';
 import 'ticket_layout_canvas.dart';
 import 'ticket_layout_properties.dart';
 import 'ticket_pdf_document.dart';
-import 'ticket_dimensions_dialog.dart';
+import 'ticket_canvas_settings.dart';
 
 class TicketLayoutResult {
   final TicketTemplate template;
@@ -356,37 +356,33 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (mounted) setState(() => imageBusy = false);
   }
 
-  Future<void> editDimensions() async {
-    final original = controller.positionedDocument(controller.document);
-    final previousWholePage = wholePage;
-    setState(() => wholePage = true);
-    controller.beginGesture();
-    final next = await showDialog<TicketTemplate>(
-        context: editorContext,
-        builder: (_) => TicketDimensionsDialog(
-            document: original,
-            backgroundImage: canvas.currentState?.backgroundSize,
-            type: widget.type,
-            onPreview: (candidate) {
-              controller.previewDocument(candidate);
-              setState(() {});
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) canvas.currentState?.fit();
-              });
-            }));
-    if (mounted) {
-      wholePage = previousWholePage;
-      if (next == null) {
-        controller.cancelGesture();
-      } else {
-        controller.previewDocument(next);
-        controller.endGesture();
-      }
-      setState(() {});
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => canvas.currentState?.fit());
-    }
+  void editDimensions() {
+    setState(() {
+      editCanvas = true;
+      editBackground = false;
+      pan = false;
+      wholePage = true;
+      canvasElementAttempts = 0;
+    });
+    controller.select(null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) canvas.currentState?.fit();
+    });
   }
+
+  Widget canvasSettings() => TicketCanvasSettings(
+      controller: controller,
+      backgroundImage: canvas.currentState?.backgroundSize,
+      onPaperChanged: () => WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) canvas.currentState?.fit();
+      }),
+      onEditElement: (id) {
+        setState(() => editCanvas = false);
+        controller.select(id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) canvas.currentState?.fit();
+        });
+      });
 
   Future<void> chooseStyle() async {
     final presets = resources.presets.isEmpty
@@ -674,7 +670,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 subtitle: Text(
                     '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket ? TicketLayoutStrings.paperTicket : controller.document.page == const Size(595.28, 841.89) ? TicketLayoutStrings.paperA4 : TicketLayoutStrings.paperOriginal}'),
                 trailing: const Icon(Icons.tune),
-                onTap: imageBusy ? null : editDimensions)),
+                onTap: imageBusy ? null : () {
+                  if (MediaQuery.sizeOf(context).width < 900) Navigator.pop(context);
+                  editDimensions();
+                })),
         Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: SizedBox(
@@ -685,13 +684,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     onPressed: imageBusy
                         ? null
                         : () {
-                            setState(() {
-                              editCanvas = true;
-                              canvasElementAttempts = 0;
-                              editBackground = false;
-                              pan = false;
-                            });
-                            controller.select(null);
+                            editDimensions();
                             if (MediaQuery.sizeOf(context).width < 900)
                               Navigator.pop(context);
                           }))),
@@ -1360,26 +1353,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                 runSpacing: 8,
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  Text(TicketLayoutStrings.resizeCanvasHint),
+                                  Text(TicketLayoutStrings.designSize),
                                   if (canvasElementAttempts > 0)
                                     Text(TicketLayoutStrings.finishCanvasFirst,
                                         style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                                  if (controller.canvasBlockers.isNotEmpty)
-                                    Text(
-                                        '${TicketLayoutStrings.canvasBlocked}: ${controller.document.elements.where((e) => controller.canvasBlockers.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}',
-                                        style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .error)),
-                                  if (controller.canvasHidden.isNotEmpty)
-                                    Text(
-                                        '${TicketLayoutStrings.canvasHidden}: ${controller.document.elements.where((e) => controller.canvasHidden.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}'),
-                                  Text(
-                                      '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm'),
-                                  TextButton(
-                                      onPressed: editDimensions,
-                                      child:
-                                          Text(TicketLayoutStrings.canvasSize)),
                                   TweenAnimationBuilder<double>(
                                       key: ValueKey('canvas-done-$canvasElementAttempts'),
                                       tween: Tween(begin: 0, end: 1),
@@ -1416,7 +1393,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     return narrow
                         ? Column(children: [
                             Expanded(child: view),
-                            Padding(
+                            if (editCanvas)
+                              SizedBox(height: constraints.maxHeight * .42, child: canvasSettings())
+                            else Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 8),
                                 child: Row(children: [
@@ -1446,8 +1425,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                         child: elements())),
                                 200),
                             Expanded(child: view),
-                            _sidebar(TicketLayoutStrings.properties,
-                                panel(includeElements: false), 280)
+                            _sidebar(editCanvas ? TicketLayoutStrings.canvasSize : TicketLayoutStrings.properties,
+                                editCanvas ? canvasSettings() : panel(includeElements: false), editCanvas ? 340 : 280)
                           ]);
                   })),
                 ])),
