@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
+import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
@@ -96,6 +97,9 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
       },
       fromPlutoJson: (json) => OrderHistoryModel.fromPlutoJson(json),
       idColumn: EshopColumns.HISTORY_ID,
+      actionsExtended: DataGridActionsController(
+        isAddActionPossible: () => false,
+      ),
       columns: EshopColumns.generateColumns(context, [
         EshopColumns.HISTORY_ID,
         EshopColumns.HISTORY_CHANGED_AT,

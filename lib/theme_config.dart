@@ -59,6 +59,8 @@ class ThemeConfig {
         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
       ),
       tabBarTheme: TabBarThemeData(
+        dividerColor: Colors.transparent,
+        dividerHeight: 0,
         indicatorColor: primary,
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: UnderlineTabIndicator(
@@ -67,13 +69,15 @@ class ThemeConfig {
             fontFamily: fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            height: 0, // Use the font metrics without inheriting M3 line height.
+            height:
+                0, // Use the font metrics without inheriting M3 line height.
             letterSpacing: 0),
         unselectedLabelStyle: TextStyle(
             fontFamily: fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            height: 0, // Use the font metrics without inheriting M3 line height.
+            height:
+                0, // Use the font metrics without inheriting M3 line height.
             letterSpacing: 0),
         labelColor: primary,
         unselectedLabelColor: scheme.onSurfaceVariant,

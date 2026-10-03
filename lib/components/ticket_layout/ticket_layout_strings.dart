@@ -6,6 +6,9 @@ class TicketLayoutStrings {
   static String get resetCrop => 'TicketLayout.resetCrop'.tr();
   static String get designSize => 'TicketLayout.designSize'.tr();
   static String get saveDirectHint => 'TicketLayout.saveDirectHint'.tr();
+  static String get canvasBlocked => 'TicketLayout.canvasBlocked'.tr();
+  static String get canvasHidden => 'TicketLayout.canvasHidden'.tr();
+  static String get checkElements => 'TicketLayout.checkElements'.tr();
   static String get resizeCanvas => 'TicketLayout.resizeCanvas'.tr();
   static String get resizeCanvasHint => 'TicketLayout.resizeCanvasHint'.tr();
   static String get designSizeHint => 'TicketLayout.designSizeHint'.tr();
