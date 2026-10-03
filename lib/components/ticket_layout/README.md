@@ -275,6 +275,13 @@ for PDF rendering and restoring the crop.
 
 Ticket canvas resizing uses a dedicated mode with right, bottom and corner
 handles, live millimeter dimensions, shared magnets and one undo step per drag.
-Dimensions transform the content as one group, preserving the QR minimum and
-using surrounding whitespace before rejecting an impossible fit. Numeric edits
-preview valid sizes while typing and report dimension errors on Apply.
+Canvas handles and numeric dimensions change the surface without scaling or
+moving artwork, QR or text. Optional elements extending outside become hidden;
+their hidden boxes are bounded to satisfy the existing storage contract. Undo
+restores original visibility and geometry. Within a gesture, expanding restores
+content from its original snapshot. Required QR/code bounds clamp the canvas and
+are highlighted orange with their names. Hidden optional elements never block
+shrinking. Numeric edits preview valid sizes and name required blockers on Apply.
+Ticket-code edits automatically enlarge undersized boxes using the actual font
+metrics, staying inside the canvas and clear of QR. The same repair runs when
+opening old drafts and before saving, avoiding the generic too-small-box error.
