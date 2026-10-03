@@ -1,3 +1,4 @@
+import '../../_shared/common_strings.dart';
 import 'dart:convert';
 import '../../fonts/font_family_picker.dart';
 import '../../fonts/ticket_font_catalog.dart';
@@ -32,6 +33,7 @@ class TicketLayoutEditor extends StatefulWidget {
   final TicketLayoutResources resources;
   final TicketLayoutService service;
   final bool showTemplatePicker;
+  final Future<void> Function(TicketLayoutResult)? onSave;
   const TicketLayoutEditor(
       {super.key,
       required this.occasionId,
@@ -39,6 +41,7 @@ class TicketLayoutEditor extends StatefulWidget {
       required this.resources,
       required this.service,
       this.showTemplatePicker = false,
+      this.onSave,
       this.layout,
       this.background});
   @override
@@ -62,6 +65,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   final canvas = GlobalKey<TicketLayoutCanvasState>();
   bool additiveSelection = false;
   bool cropBackground = false;
+  bool editCanvas = false;
   bool editBackground = false,
       pan = false,
       wholePage = false,
@@ -69,6 +73,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       imageBusy = false;
   int fontGeneration = 0;
   bool fontBusy = false;
+  bool saving = false;
   late final fontCatalog = TicketFontCatalog.load();
   bool snap = true, grid = false;
   late TicketTemplate _propertyDefaults = resources.preset;
@@ -109,6 +114,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   KeyEventResult _historyKey(FocusNode node, KeyEvent event) {
+    if (saving) return KeyEventResult.handled;
     final keyboard = HardwareKeyboard.instance;
     if (event is KeyUpEvent ||
         keyboard.isAltPressed ||
@@ -140,6 +146,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         }
       });
   Future<void> cancel() async {
+    if (saving) return;
     fontGeneration++;
     if (mounted) setState(() => fontBusy = false);
     if (dirty) {
@@ -159,8 +166,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (mounted) Navigator.pop(context);
   }
 
-  void apply() {
-    if (fontBusy) return;
+  Future<void> apply() async {
+    if (fontBusy || saving) return;
     final errors = controller.document.validate(widget.type);
     final symbol = controller.document.elements
         .firstWhere((e) => e.binding == 'ticketSymbol');
@@ -179,7 +186,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           .showSnackBar(SnackBar(content: Text(TicketLayoutStrings.invalid)));
       return;
     }
-    Navigator.pop(context, TicketLayoutResult(controller.document, background));
+    final result = TicketLayoutResult(controller.document, background);
+    if (widget.onSave != null) {
+      setState(() => saving = true);
+      var saved = false;
+      await ExceptionHandler.guard(editorContext, futureFunction: () async {
+        await widget.onSave!(result);
+        saved = true;
+      });
+      if (!mounted) return;
+      setState(() => saving = false);
+      if (!saved) return;
+    }
+    if (mounted) Navigator.pop(context, result);
   }
 
   Future<void> preview() async {
@@ -584,6 +603,25 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket ? TicketLayoutStrings.paperTicket : controller.document.page == const Size(595.28, 841.89) ? TicketLayoutStrings.paperA4 : TicketLayoutStrings.paperOriginal}'),
                 trailing: const Icon(Icons.tune),
                 onTap: imageBusy ? null : editDimensions)),
+        Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                    icon: const Icon(Icons.aspect_ratio),
+                    label: Text(TicketLayoutStrings.resizeCanvas),
+                    onPressed: imageBusy
+                        ? null
+                        : () {
+                            setState(() {
+                              editCanvas = true;
+                              editBackground = false;
+                              pan = false;
+                            });
+                            controller.select(null);
+                            if (MediaQuery.sizeOf(context).width < 900)
+                              Navigator.pop(context);
+                          }))),
         ListenableBuilder(
             listenable: controller, builder: (context, _) => fontPicker()),
         const Padding(
@@ -639,6 +677,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                             : () {
                                 setState(() {
                                   editBackground = true;
+                                  editCanvas = false;
                                   cropBackground = false;
                                   pan = false;
                                 });
@@ -657,6 +696,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                             : () {
                                 setState(() {
                                   editBackground = true;
+                                  editCanvas = false;
                                   cropBackground = true;
                                   pan = false;
                                 });
@@ -875,7 +915,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   @override
   Widget build(BuildContext context) => Theme(
       data: _editorTheme(Theme.of(context)),
-      child: Builder(key: _themeKey, builder: _buildEditor));
+      child: AbsorbPointer(
+          absorbing: saving,
+          child: Builder(key: _themeKey, builder: _buildEditor)));
 
   ThemeData _editorTheme(ThemeData inherited) {
     final colors = ColorScheme.fromSeed(
@@ -1038,15 +1080,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   ],
                   Center(
                     child: FilledButton.icon(
-                        onPressed: imageBusy || fontBusy ? null : apply,
+                        onPressed:
+                            imageBusy || fontBusy || saving ? null : apply,
                         icon: const Icon(Icons.check),
-                        label: Text(TicketLayoutStrings.apply)),
+                        label: Text(widget.onSave == null
+                            ? TicketLayoutStrings.apply
+                            : CommonStrings.save)),
                   ),
                   const SizedBox(width: 16)
                 ]),
             body: SafeArea(
                 top: false,
                 child: Column(children: [
+                  if (saving) const LinearProgressIndicator(),
                   if (resources.missingBackground &&
                       (background?.isNotEmpty ?? false))
                     Padding(
@@ -1207,10 +1253,36 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                             Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
-                                child: Text(TicketLayoutStrings.savedLater,
+                                child: Text(
+                                    widget.onSave == null
+                                        ? TicketLayoutStrings.savedLater
+                                        : TicketLayoutStrings.saveDirectHint,
                                     style:
                                         Theme.of(context).textTheme.bodySmall))
                           ])),
+                  if (editCanvas)
+                    ListenableBuilder(
+                        listenable: controller,
+                        builder: (context, _) => Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Wrap(
+                                spacing: 16,
+                                runSpacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(TicketLayoutStrings.resizeCanvasHint),
+                                  Text(
+                                      '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm'),
+                                  TextButton(
+                                      onPressed: editDimensions,
+                                      child:
+                                          Text(TicketLayoutStrings.canvasSize)),
+                                  FilledButton(
+                                      onPressed: () =>
+                                          setState(() => editCanvas = false),
+                                      child:
+                                          Text(TicketLayoutStrings.doneImage)),
+                                ]))),
                   if (editBackground) backgroundTools(),
                   Expanded(child: LayoutBuilder(builder: (c, constraints) {
                     final narrow = constraints.maxWidth < 900;
@@ -1222,6 +1294,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         transform: transform,
                         pan: pan,
                         editBackground: editBackground,
+                        editCanvas: editCanvas,
                         cropBackground: cropBackground,
                         additiveSelection: additiveSelection,
                         wholePage: wholePage,
