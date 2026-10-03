@@ -458,7 +458,8 @@
           onEntrypointLoaded: async function(engineInitializer) {
             try {
               const appRunner = await engineInitializer.initializeEngine({
-                useColorEmoji: true
+                useColorEmoji: true,
+                assetBase: new URL(".", document.baseURI).href
               });
               await appRunner.runApp();
             } catch (error) {

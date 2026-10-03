@@ -2086,6 +2086,7 @@
     "canvasHidden": "Mimo plátno, automaticky skryto (vrátíte krokem Zpět)",
     "checkElements": "Upravte označené prvky: nesmí se překrývat s QR ani přesahovat plátno",
     "canvasColor": "Barva plátna",
+    "transparency": "Průhlednost",
     "transparent": "Průhledné",
     "transparentHint": "Šachovnice označuje průhlednost a do PDF se netiskne.",
     "canvasSection": "Plátno",
