@@ -12,6 +12,8 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:fstapp/components/fonts/font_family_picker.dart';
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_dimensions_dialog.dart';
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_controller.dart';
@@ -31,7 +33,7 @@ TicketLayoutResources resources() => TicketLayoutResources(
         id,
         TicketFontResource(
             id,
-            name,
+            {'futura':'Futura PT','robotoSlab':'Roboto Slab (legacy)','roboto':'Roboto (legacy)','russoOne':'Russo One (legacy)'}[name]!,
             400,
             TicketFontMetrics.fromJson(fixture['metrics']),
             'TicketFont_${id.split(':').last}'))),
@@ -84,6 +86,36 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  testWidgets('editor shows one font picker and a contrasting Apply action',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.runAsync(TicketFontCatalog.load);
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(
+            appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF0D1323))),
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    await tester.runAsync(() async { await state.fontCatalog; });
+    state.controller.select('food');
+    await tester.pumpAndSettle();
+    expect(find.byType(FontFamilyPicker), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'TicketLayout.apply'));
+    expect(button.onPressed, isNotNull);
+    expect(button.style!.backgroundColor!.resolve({}), Colors.white);
+    expect(button.style!.foregroundColor!.resolve({}), Colors.black87);
+    expect(find.text('TicketLayout.elementFont'), findsNothing);
+    expect(find.text('TicketLayout.downloadPdf'), findsNothing);
+  });
   testWidgets(
       'font A/B race preserves draft, commits one undo step, isolates editors, blocks pending PDF and Apply',
       (tester) async {
