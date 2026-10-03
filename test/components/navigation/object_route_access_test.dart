@@ -1,4 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:easy_localization/src/localization.dart';
+import 'package:easy_localization/src/translations.dart';
+import 'package:flutter/services.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +23,8 @@ import 'package:fstapp/components/unit/views/unit_admin_page.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
 class ObjectFixture extends RootStackRouter {
+  bool realBankGeneral = false;
+  final unitVisible = ValueNotifier(true);
   Future<List<FormModel>> Function(String) forms = (_) async => [
         FormModel(id: 1, link: 'first', title: 'First', occasionId: 1),
         FormModel(id: 2, link: 'second', title: 'Second', occasionId: 1)
@@ -105,12 +112,21 @@ class ObjectFixture extends RootStackRouter {
                 unit: UnitModel(id: 5),
                 occasions: const [],
                 onUpdated: () {},
-                child: const AutoRouter()),
+                child: ValueListenableBuilder<bool>(
+                    valueListenable: unitVisible,
+                    builder: (context, visible, child) => Scaffold(
+                        appBar: AppBar(title: const Text('UNIT HEADER')),
+                        body: TickerMode(
+                            enabled: visible, child: const AutoRouter())))),
             children: [
-              page(UnitBankAccountsNavigationRoute.name, 'bank-accounts',
-                  (_) => const AutoRouter(),
+              page(
+                  UnitBankAccountsNavigationRoute.name,
+                  'bank-accounts',
+                  (_) => BankAccountsNavigationView(
+                      listBuilder: (_) => const Text('ACCOUNT LIST')),
                   children: [
-                    text(UnitBankAccountsListRoute.name, '', 'ACCOUNT LIST'),
+                    page(UnitBankAccountsListRoute.name, '',
+                        (_) => const UnitBankAccountsListPage()),
                     page(
                         BankAccountDetailRoute.name,
                         ':accountId',
@@ -121,8 +137,12 @@ class ObjectFixture extends RootStackRouter {
                           page(BankAccountTabsRoute.name, '',
                               (_) => const BankAccountTabsPage(),
                               children: [
-                                text(BankAccountGeneralRoute.name, 'general',
-                                    'ACCOUNT GENERAL'),
+                                page(
+                                    BankAccountGeneralRoute.name,
+                                    'general',
+                                    (_) => realBankGeneral
+                                        ? const BankAccountGeneralPage()
+                                        : const Text('ACCOUNT GENERAL')),
                                 text(BankAccountConnectionRoute.name,
                                     'connection', 'ACCOUNT CONNECTION'),
                                 text(BankAccountUsersRoute.name, 'users',
@@ -201,10 +221,69 @@ void main() {
     await mount(tester, router, '/unit/5/edit/bank-accounts/9/users');
     expect(find.text('ACCOUNT USERS'), findsOneWidget);
     expect(find.text('Unit account'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back));
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.text('ACCOUNT LIST'), findsOneWidget);
+    expect(
+        tester.getRect(find.byWidgetPredicate((widget) =>
+            widget is ModalBarrier && widget.color == Colors.black54)),
+        const Rect.fromLTWH(0, 0, 800, 600));
+    expect(
+        tester
+            .getSize(find
+                .descendant(
+                    of: find.byType(Dialog), matching: find.byType(Material))
+                .first)
+            .width,
+        lessThanOrEqualTo(600));
+    await tester.tap(find.widgetWithText(TextButton, 'BankAccount.cancel'));
     await tester.pumpAndSettle();
     expect(router.currentUrl, '/unit/5/edit/bank-accounts');
     expect(find.text('ACCOUNT LIST'), findsOneWidget);
+  });
+  for (final closeWith in ['barrier', 'escape']) {
+    testWidgets('routed bank dialog closes through $closeWith', (tester) async {
+      final router = ObjectFixture();
+      await mount(tester, router, '/unit/5/edit/bank-accounts/9/connection');
+      expect(find.byType(Dialog), findsOneWidget);
+      if (closeWith == 'barrier') {
+        await tester.tapAt(const Offset(10, 10));
+      } else {
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      }
+      await tester.pumpAndSettle();
+      expect(router.currentUrl, '/unit/5/edit/bank-accounts');
+    });
+  }
+  testWidgets('a retained inactive section hides its root overlay',
+      (tester) async {
+    final router = ObjectFixture();
+    await mount(tester, router, '/unit/5/edit/bank-accounts/9/users');
+    expect(find.byType(Dialog), findsOneWidget);
+    router.unitVisible.value = false;
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsNothing);
+    router.unitVisible.value = true;
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(router.currentUrl, '/unit/5/edit/bank-accounts/9/users');
+  });
+  testWidgets('dirty bank dialog can cancel barrier dismissal', (tester) async {
+    Localization.load(const Locale('cs'),
+        translations: Translations(jsonDecode(
+            File('assets/translations/cs.json').readAsStringSync())));
+    final router = ObjectFixture()..realBankGeneral = true;
+    await mount(tester, router, '/unit/5/edit/bank-accounts/9/general');
+    final title = find.widgetWithText(TextFormField, 'Unit account');
+    await tester.enterText(title, 'Unsaved title');
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(TextButton, 'Storno')));
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/unit/5/edit/bank-accounts/9/general');
+    expect(find.text('Unsaved title'), findsOneWidget);
   });
   testWidgets(
       'bank membership uses the loaded unit scope during rights refresh',
