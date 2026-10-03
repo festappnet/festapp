@@ -16,6 +16,7 @@ import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_navigation_page.dart';
+import 'package:fstapp/components/bank_accounts/views/bank_accounts_load_scope.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -125,6 +126,7 @@ class ObjectFixture extends RootStackRouter {
                   UnitBankAccountsNavigationRoute.name,
                   'bank-accounts',
                   (_) => BankAccountsNavigationView(
+                      loadAccounts: accounts,
                       listBuilder: (context) =>
                           bankListBuilder?.call(context) ??
                           const Text('ACCOUNT LIST')),
@@ -135,8 +137,7 @@ class ObjectFixture extends RootStackRouter {
                         BankAccountDetailRoute.name,
                         ':accountId',
                         (data) => BankAccountDetailPage(
-                            accountId: data.params.getString('accountId'),
-                            loadAccounts: accounts),
+                            accountId: data.params.getString('accountId')),
                         children: [
                           page(BankAccountTabsRoute.name, '',
                               (_) => const BankAccountTabsPage(),
@@ -169,6 +170,50 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets(
+      'bank dialog retains its overlay while sharing the initial list load',
+      (tester) async {
+    final pending = Completer<List<BankAccountModel>>();
+    var requests = 0;
+    final router = ObjectFixture()
+      ..accounts = (_) {
+        requests++;
+        return pending.future;
+      };
+    router.bankListBuilder = (context) => FutureBuilder<List<BankAccountModel>>(
+        future: BankAccountsLoadScope.maybeOf(context)!.load(false),
+        builder: (_, snapshot) =>
+            Text(snapshot.hasData ? 'ACCOUNT LIST' : 'LOADING LIST'));
+    await tester.pumpWidget(MaterialApp.router(
+        routerConfig: router.config(
+            deepLinkBuilder: (_) =>
+                const DeepLink.path('/unit/5/edit/bank-accounts/9/general'))));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byType(Dialog), findsOneWidget);
+    final overlayState = tester.state(find.byType(RoutedBankAccountDialog));
+    expect(requests, 1);
+    pending.complete(
+        [BankAccountModel(id: 9, title: 'Unit account', isAdmin: true)]);
+    await tester.pumpAndSettle();
+    expect(
+        tester.state(find.byType(RoutedBankAccountDialog)), same(overlayState));
+    expect(requests, 1);
+    final tabBar = tester.widget<TabBar>(find.byType(TabBar));
+    expect(tabBar.isScrollable, isFalse);
+    expect(
+        tabBar.tabs
+            .every((tab) => tab is Tab && tab.icon == null && tab.text != null),
+        isTrue);
+    expect(find.byIcon(Icons.close), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/unit/5/edit/bank-accounts');
+    expect(requests, 2, reason: 'Closing refreshes the list exactly once');
+    expect(find.byType(Dialog), findsNothing);
+  });
+
   testWidgets('bank list edit click opens and reopens the routed dialog',
       (tester) async {
     final router = ObjectFixture();
