@@ -897,7 +897,8 @@ class AppPanelHelper {
     final foreground = theme.appBarTheme.foregroundColor ??
         ThemeConfig.textColorForBackground(ThemeConfig.appBarColor());
     final fontSize = theme.textTheme.labelLarge?.fontSize ?? 14;
-    final height = MediaQuery.textScalerOf(context).scale(fontSize) * 1.5 + 16;
+    final height = (MediaQuery.textScalerOf(context).scale(fontSize) + 24)
+        .clamp(38.0, double.infinity);
     return TabBar(
       controller: controller,
       isScrollable: true,
@@ -905,6 +906,8 @@ class AppPanelHelper {
       labelColor: foreground,
       unselectedLabelColor: foreground.withValues(alpha: 0.8),
       indicatorColor: ThemeConfig.seed2,
+      indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(color: ThemeConfig.seed2, width: 2)),
       tabs: tabs
           .map((tab) => Tab(
                 height: height,

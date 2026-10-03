@@ -23,7 +23,6 @@ class ThemeConfig {
     final chrome = appBarColor();
     final onChrome = textColorForBackground(chrome);
     final selected = seed2;
-    final onSelected = textColorForBackground(selected);
     return ThemeData(
       useMaterial3: true,
       fontFamily: fontFamily,
@@ -39,23 +38,43 @@ class ThemeConfig {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: chrome,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: selected,
+        height: kBottomNavigationBarHeight,
+        indicatorColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
-              color:
-                  states.contains(WidgetState.selected) ? onSelected : onChrome,
+              color: states.contains(WidgetState.selected)
+                  ? selected
+                  : Colors.grey,
             )),
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
               fontFamily: fontFamily,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontSize: states.contains(WidgetState.selected) ? 14 : 12,
+              fontWeight: FontWeight.w400,
+              height: 1,
+              letterSpacing: 0,
               overflow: TextOverflow.ellipsis,
-              color:
-                  states.contains(WidgetState.selected) ? selected : onChrome,
+              color: states.contains(WidgetState.selected)
+                  ? selected
+                  : Colors.grey,
             )),
         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
       ),
       tabBarTheme: TabBarThemeData(
         indicatorColor: primary,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: UnderlineTabIndicator(
+            borderSide: BorderSide(color: primary, width: 2)),
+        labelStyle: TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            height: 0, // Use the font metrics without inheriting M3 line height.
+            letterSpacing: 0),
+        unselectedLabelStyle: TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            height: 0, // Use the font metrics without inheriting M3 line height.
+            letterSpacing: 0),
         labelColor: primary,
         unselectedLabelColor: scheme.onSurfaceVariant,
       ),
