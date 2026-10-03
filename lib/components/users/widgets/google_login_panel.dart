@@ -10,8 +10,12 @@ import 'package:fstapp/services/launch_url_service.dart';
 class GoogleLoginPanel extends StatefulWidget {
   final Future<void> Function() onAuthenticated;
   final Future<bool> Function()? capability;
+  final String? returnPath;
   const GoogleLoginPanel(
-      {super.key, required this.onAuthenticated, this.capability});
+      {super.key,
+      required this.onAuthenticated,
+      this.capability,
+      this.returnPath});
   @override
   State<GoogleLoginPanel> createState() => _GoogleLoginPanelState();
 }
@@ -281,7 +285,8 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
                         textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     OutlinedButton(
-                        onPressed: GoogleAuthService.start,
+                        onPressed: () => GoogleAuthService.start(
+                            returnPath: widget.returnPath),
                         style: OutlinedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 44),
                             backgroundColor:
@@ -314,7 +319,8 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
                   ],
                   if (proof || profile)
                     TextButton(
-                        onPressed: GoogleAuthService.start,
+                        onPressed: () => GoogleAuthService.start(
+                            returnPath: widget.returnPath),
                         child: Text(UserStrings.googleRetry)),
                 ])));
   }

@@ -1,3 +1,5 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'ticket_canvas_color_dialog.dart';
 import '../../_shared/common_strings.dart';
 import 'dart:convert';
@@ -27,6 +29,7 @@ class TicketLayoutResult {
 }
 
 class TicketLayoutEditor extends StatefulWidget {
+  final StackRouter? routeRouter;
   final int occasionId;
   final String type;
   final Map<String, dynamic>? layout;
@@ -37,6 +40,7 @@ class TicketLayoutEditor extends StatefulWidget {
   final Future<void> Function(TicketLayoutResult)? onSave;
   const TicketLayoutEditor(
       {super.key,
+      this.routeRouter,
       required this.occasionId,
       required this.type,
       required this.resources,
@@ -901,45 +905,83 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 ]));
       });
 
-  Future<void> showMobilePanel(int tab) => showModalBottomSheet<void>(
-      context: editorContext,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => Focus(
-          autofocus: true,
-          onKeyEvent: _historyKey,
-          child: DefaultTabController(
-              initialIndex: tab,
-              length: 2,
-              child: SizedBox(
-                  height: MediaQuery.sizeOf(context).height * .72,
-                  child: Column(children: [
-                    Row(children: [
+  bool _panelOpen = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final panel = widget.routeRouter == null
+        ? null
+        : Uri.parse(widget.routeRouter!.currentUrl).queryParameters['panel'];
+    if (!_panelOpen &&
+        MediaQuery.sizeOf(context).width < 900 &&
+        (panel == 'elements' || panel == 'properties')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_panelOpen)
+          showMobilePanel(panel == 'properties' ? 1 : 0);
+      });
+    }
+  }
+
+  Future<void> showMobilePanel(int tab) async {
+    if (_panelOpen) return;
+    _panelOpen = true;
+    final root = widget.routeRouter;
+    if (root != null)
+      await DayRouteSelection.write(
+          root, 'panel', tab == 0 ? 'elements' : 'properties');
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+        context: editorContext,
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (context) => Focus(
+            autofocus: true,
+            onKeyEvent: _historyKey,
+            child: DefaultTabController(
+                initialIndex: tab,
+                length: 2,
+                child: SizedBox(
+                    height: MediaQuery.sizeOf(context).height * .72,
+                    child: Column(children: [
+                      Row(children: [
+                        Expanded(
+                            child: TabBar(
+                                onTap: (index) {
+                                  if (root != null)
+                                    DayRouteSelection.write(root, 'panel',
+                                        index == 0 ? 'elements' : 'properties');
+                                },
+                                tabs: [
+                              Tab(text: TicketLayoutStrings.elements),
+                              Tab(text: TicketLayoutStrings.properties),
+                            ])),
+                        IconButton(
+                            tooltip: MaterialLocalizations.of(context)
+                                .closeButtonTooltip,
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close)),
+                      ]),
                       Expanded(
-                          child: TabBar(tabs: [
-                        Tab(text: TicketLayoutStrings.elements),
-                        Tab(text: TicketLayoutStrings.properties),
-                      ])),
-                      IconButton(
-                          tooltip: MaterialLocalizations.of(context)
-                              .closeButtonTooltip,
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close)),
-                    ]),
-                    Expanded(
-                        child: TabBarView(
-                            physics: const NeverScrollableScrollPhysics(),
-                            children: [
-                          Builder(
-                              builder: (tabContext) => SingleChildScrollView(
-                                  child: elements(
-                                      onSelected: () =>
-                                          DefaultTabController.of(tabContext)
-                                              .animateTo(1)))),
-                          panel(includeElements: false),
-                        ])),
-                  ])))));
+                          child: TabBarView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                            Builder(
+                                builder: (tabContext) => SingleChildScrollView(
+                                        child: elements(onSelected: () {
+                                      DefaultTabController.of(tabContext)
+                                          .animateTo(1);
+                                      if (root != null)
+                                        DayRouteSelection.write(
+                                            root, 'panel', 'properties');
+                                    }))),
+                            panel(includeElements: false),
+                          ])),
+                    ])))));
+    _panelOpen = false;
+    if (root != null && mounted)
+      await DayRouteSelection.write(root, 'panel', null, replace: true);
+  }
 
   Widget mobileToolbar() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

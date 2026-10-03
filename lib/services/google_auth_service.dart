@@ -157,13 +157,17 @@ class GoogleAuthService {
     }
   }
 
-  static Future<void> start({String intent = 'login'}) async {
+  static Future<void> start(
+      {String intent = 'login', String? returnPath}) async {
     if (_flight != null) return _flight;
     navigationClaimed = false;
     state.value = const GoogleLoginState(GoogleLoginStatus.openingGoogle);
-    final returnPath =
-        safeReturnPath(RouterService.getCurrentBrowserUri().path);
-    _flight = _start(intent, returnPath).catchError((Object error) {
+    final uri = RouterService.getCurrentBrowserUri();
+    final intended = returnPath ??
+        (uri.path == '/login' ? uri.queryParameters['redirect'] : null) ??
+        '${uri.path}${uri.hasQuery ? '?${uri.query}' : ''}';
+    _flight =
+        _start(intent, safeReturnPath(intended)).catchError((Object error) {
       _error(error);
     }).whenComplete(() => _flight = null);
     return _flight;
@@ -291,11 +295,24 @@ class GoogleAuthService {
         result: {...state.value.result, 'status': 'needs_account_proof'});
   }
 
-  static String safeReturnPath(String value) =>
-      RegExp(r'^/(?!/)[A-Za-z0-9/_-]*$').hasMatch(value) &&
-              !value.contains('..')
-          ? value
-          : '/';
+  static String safeReturnPath(String value) {
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        uri.hasScheme ||
+        uri.hasAuthority ||
+        uri.hasFragment ||
+        !RegExp(r'^/(?!/)[A-Za-z0-9/_-]*$').hasMatch(uri.path) ||
+        value.split('?').first.contains('..') ||
+        RegExp(r'[\x00-\x20\\]').hasMatch(value) ||
+        uri.queryParameters.keys.any((key) => const {
+              'secret',
+              'token',
+              'access_token',
+              'refresh_token'
+            }.contains(key.toLowerCase()))) return '/';
+    return uri.toString();
+  }
+
   static bool get isContinuation =>
       state.value.status == GoogleLoginStatus.openingGoogle ||
       state.value.status == GoogleLoginStatus.completing ||

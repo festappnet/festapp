@@ -1,7 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
-import 'package:fstapp/components/_shared/breadcrumb_row.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -11,9 +10,9 @@ import 'package:fstapp/theme_config.dart';
 import '../form_strings.dart';
 import 'create_or_copy_dialog.dart';
 import 'form_creation_helper.dart';
-import 'form_tab.dart';
+import 'package:fstapp/app_router.gr.dart';
 
-@RoutePage()
+@RoutePage(name: 'FormsListRoute')
 class FormsTab extends StatefulWidget {
   const FormsTab({super.key});
 
@@ -26,14 +25,13 @@ class _FormsTabState extends State<FormsTab> {
   String? occasionLink;
   bool _isLoading = true;
 
-  FormModel? _selectedForm;
   String? _previousOccasionLink;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink =
-        context.routeData.params.get(AppRouter.linkFormatted, null);
+    final newOccasionLink = context.routeData.inheritedPathParams
+        .get(AppRouter.linkFormatted, null);
 
     if (newOccasionLink != null && newOccasionLink != _previousOccasionLink) {
       occasionLink = newOccasionLink;
@@ -48,10 +46,10 @@ class _FormsTabState extends State<FormsTab> {
       setState(() => _isLoading = true);
     }
     if (occasionLink != null) {
-      _forms = await DbForms.getAllFormsByOccasionLink(occasionLink!);
-      if (_forms.length == 1) {
-        _selectedForm = _forms.first;
-      }
+      final identity = occasionLink;
+      final forms = await DbForms.getAllFormsByOccasionLink(identity!);
+      if (!mounted || occasionLink != identity) return;
+      _forms = forms;
     }
     if (mounted) {
       setState(() => _isLoading = false);
@@ -59,9 +57,7 @@ class _FormsTabState extends State<FormsTab> {
   }
 
   Future<void> _handleCardTap(FormModel form) async {
-    setState(() {
-      _selectedForm = form;
-    });
+    await context.router.push(FormDetailRoute(formLink: form.link!));
   }
 
   Future<void> _handleCreateNew() async {
@@ -90,7 +86,6 @@ class _FormsTabState extends State<FormsTab> {
         context,
         occasionLink: occasionLink!,
         onFormCreated: () {
-          _navigateToFormsHome();
           loadData();
         },
       );
@@ -108,127 +103,12 @@ class _FormsTabState extends State<FormsTab> {
       if (!mounted) return;
       ToastHelper.Show(context, FormStrings.duplicateSuccess,
           severity: ToastSeverity.Ok);
-      _navigateToFormsHome();
       await loadData();
     } catch (e) {
       if (!mounted) return;
       ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
           severity: ToastSeverity.NotOk);
     }
-  }
-
-  void _navigateToFormsHome() {
-    setState(() {
-      _selectedForm = null;
-    });
-  }
-
-  void _handleActionAndRefresh() {
-    _navigateToFormsHome();
-    loadData();
-  }
-
-  Widget _buildBreadcrumbs() {
-    final theme = Theme.of(context);
-    final onAppBarColor = theme.appBarTheme.foregroundColor ?? Colors.white;
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: BreadcrumbRow(
-        children: [
-          InkWell(
-            onTap: _navigateToFormsHome,
-            borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IgnoreBaseline(
-                    child: Icon(Icons.article_outlined,
-                        size: 20, color: onAppBarColor)),
-                const SizedBox(width: 6),
-                Text(
-                  FormStrings.formsTitle,
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: onAppBarColor,
-                      fontWeight: FontWeight.normal),
-                ),
-              ],
-            ),
-          ),
-          if (_selectedForm != null) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: Text(
-                "/",
-                style: TextStyle(
-                    fontSize: 14, color: onAppBarColor.withOpacity(0.4)),
-              ),
-            ),
-            _buildFormSelector(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFormSelector() {
-    final onAppBarColor =
-        Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
-    if (_forms.length <= 1) {
-      return Text(
-        _selectedForm.toString(),
-        style: TextStyle(
-            fontSize: 16, fontWeight: FontWeight.bold, color: onAppBarColor),
-      );
-    }
-
-    return PopupMenuButton<FormModel>(
-      onSelected: (FormModel form) {
-        setState(() {
-          _selectedForm = form;
-        });
-      },
-      itemBuilder: (BuildContext context) {
-        return _forms.map((form) {
-          final isSelected = form.id == _selectedForm!.id;
-          return PopupMenuItem<FormModel>(
-            value: form,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(form.toString()),
-                if (isSelected)
-                  Icon(Icons.check,
-                      color: Theme.of(context).colorScheme.primary),
-              ],
-            ),
-          );
-        }).toList();
-      },
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _selectedForm.toString(),
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                  color: onAppBarColor),
-            ),
-            const SizedBox(width: 8),
-            Transform.scale(
-              scaleY: 0.8,
-              child: Icon(Icons.unfold_more_rounded,
-                  size: 20, color: onAppBarColor.withOpacity(0.7)),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildFormsGrid() {
@@ -285,7 +165,7 @@ class _FormsTabState extends State<FormsTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _buildBreadcrumbs(),
+        title: Text(FormStrings.formsTitle),
         elevation: 0,
         toolbarHeight: 44.0,
         automaticallyImplyLeading: false,
@@ -311,16 +191,9 @@ class _FormsTabState extends State<FormsTab> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _selectedForm != null
-              ? FormTab(
-                  key: ValueKey(_selectedForm!.id),
-                  formLink: _selectedForm!.link!,
-                  onActionCompleted: _handleActionAndRefresh,
-                  onDataUpdated: loadData,
-                )
-              : _forms.isEmpty
-                  ? _buildEmptyState()
-                  : _buildFormsGrid(),
+          : _forms.isEmpty
+              ? _buildEmptyState()
+              : _buildFormsGrid(),
     );
   }
 }
