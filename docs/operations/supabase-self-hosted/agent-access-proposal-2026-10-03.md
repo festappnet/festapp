@@ -3,8 +3,11 @@
 Requested during the ticket-font rollout on 2026-10-03 and authorized by the
 user during the occasion-report rollout. A tested read-only implementation
 candidate is now in [agent-access](../../../automation/hetzner-supabase/agent-access/README.md).
-It has not been provisioned: infrastructure access remains unavailable. Production
-access policies and credentials are unchanged; unattended releases are not enabled.
+The existing SSH release path now uses a separate Service Auth SSH tunnel,
+Keychain-backed expiring service credentials and the existing SSH key. The
+temporary direct SSH rule and Hetzner provisioning token have been removed. The diagnostic broker is not provisioned:
+production PUBLIC grants prevent the proposed role isolation. Studio MFA and
+Cloudflare Access policies are unchanged.
 
 ## Observations
 

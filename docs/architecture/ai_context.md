@@ -39,7 +39,14 @@ operation against a former source requires its own explicit plan and authority.
 
 Key SQL directories: `eshop_orders/` (orders), `eshop_forms/` (form→order), `user_permissions/` (RBAC), `events/` (schedule), `inventory/` (capacity).
 
-When production SSH is unavailable, use the reviewed
+For authorized backend administration on the configured workstation, prefer
+`ssh festapp-backend-agent` and the installed `festapp-backend-access` skill. The
+protected tunnel uses its dedicated Keychain service credential and existing SSH
+key; verify its private target assertions, hostname, active database and tenant
+before queries or writes. It remains privileged administration, not a read-only
+role. Studio human MFA is unchanged and no direct public SSH rule is retained.
+
+When the protected SSH path is unavailable, use the reviewed
 `automation/hetzner-supabase/runtime/access-sql.py` fallback through the
 existing named-user Cloudflare Access login. It verifies the database identity
 and SQL file digest before execution. See

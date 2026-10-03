@@ -71,7 +71,7 @@ FESTAPP_AGENT_LOCAL_DB_TEST=1 python3 -m unittest discover \
   -s automation/hetzner-supabase/agent-access -p 'test_*.py' -q
 ```
 
-Five tests pass. Database verification creates and removes a synthetic isolated
+Five broker/database tests pass; three SSH proxy tests live with the installed skill. Database verification creates and removes a synthetic isolated
 database on **127.0.0.1:55432 only**; it refuses an existing matching database or
 role. It verifies wrong database rejection, no base-table access or writes,
 only organization 1 and 50 migration rows. HTTP tests verify missing/wrong,
@@ -81,14 +81,41 @@ without credential values. Cloudflare-side authentication is not mocked into a
 claim of production readiness. Container execution and real timeout saturation
 remain deployment gates.
 
-## Current infrastructure blocker (2026-10-03)
+## Active protected SSH transport (2026-10-03)
 
-SSH to the documented host timed out. No active Hetzner CLI context/token was
-available. Existing Wrangler OAuth showed Pages permissions but no Access
-application/service-token administration scopes. Hetzner rejected the isolated
-headless browser at its security check. Gmail is connected, but its connector
-redacts authentication codes. No existing policies, production data or credentials
-were changed. The report remains separately prepared in PR #251.
+The existing authorized SSH release path is now available as the local alias
+`festapp-backend-agent`. It uses a dedicated Cloudflare Access Service Auth
+application, an expiring workstation service token stored in macOS Keychain, and
+the existing SSH private key. The server host-key check remains mandatory. The
+SSH service token has no Cloudflare or Hetzner management permission and is accepted
+only by its separate SSH application. Studio's human MFA policy is unchanged.
+
+The temporary workstation /32 direct SSH rule was removed, preserving the original
+firewall rules. The broad temporary Hetzner project token was revoked (verified API
+401) and removed from Keychain. No Hetzner administrator token or direct SSH rule
+is retained. Temporary plaintext credential files were removed after import.
+Actual WebSocket access probes returned anonymous 403, wrong credential 403 and
+valid credential 101; SSH hostname and canonical database identity passed through
+the tunnel after closing the direct port. This is infrastructure authentication
+verification, not a production application fixture/test.
+
+This is **privileged server administration**, not a read-only SQL role. Writes,
+releases and tenant scope still require their normal task authorization and
+review gates. Compromise of the workstation or SSH key requires revocation.
+Credentials and private target assertions are not repository content. The current
+skill and proxy have a single canonical source in the private
+`miakh/development-tools` repository under `vendor/codex-skills/festapp-backend-access`,
+installed via `scripts/install-skills.sh`. Use that skill for target verification
+and default read-only diagnostics; do not expose secrets in process arguments.
+
+The **diagnostic broker above remains disabled**. Production grant audit found
+PUBLIC access to `net` queues/responses and 215 SECURITY DEFINER functions.
+NOINHERIT cannot suppress PUBLIC privileges; the proposed isolated database role
+does not meet its production acceptance criteria. Do not weaken Studio or revoke
+shared PUBLIC privileges during unrelated releases. A separate grant migration or
+stronger database isolation requires its own design and validation. No diagnostic
+Service Auth token, broker hostname, broker database role or broker container was
+provisioned. The active SSH application is a separate administrative transport.
 
 Cloudflare's official machine authentication instructions:
 https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/
