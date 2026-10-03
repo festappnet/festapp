@@ -486,6 +486,7 @@
       margin: 0px;
     }
     .main-content {
+      --festapp-loading-accent: #80BDF2;
       position: fixed;
       inset: 0;
       z-index: 1000;
@@ -527,7 +528,7 @@
     border-radius: 50%;
   }
   .loader::before {
-    border-color: #fd6206 #0000;
+    border-color: var(--festapp-loading-accent) #0000;
     animation: inherit;
     animation-duration: .5s;
     animation-direction: reverse;

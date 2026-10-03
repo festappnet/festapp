@@ -155,6 +155,7 @@ class _OrdersContentState extends State<OrdersContent> {
       headerChildren: [
         DataGridAction(
           name: CommonStrings.cancel,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               cancelOrders(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,
@@ -167,6 +168,7 @@ class _OrdersContentState extends State<OrdersContent> {
         ),
         DataGridAction(
           name: OrdersStrings.sendActionText,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               sendTicketsOrConfirmations(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,

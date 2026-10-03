@@ -69,6 +69,7 @@ class _ScheduleTabViewState extends State<ScheduleTabView> {
         child: Scaffold(
           appBar: TabBar(
             isScrollable: datedEvents.length > 4,
+            tabAlignment: datedEvents.length > 4 ? TabAlignment.center : TabAlignment.fill,
             unselectedLabelColor: Colors.grey,
             labelColor: ThemeConfig.timelineTabLabelColor(context),
             indicatorColor: ThemeConfig.timelineTabIndicatorColor(context),
