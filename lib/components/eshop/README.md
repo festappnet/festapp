@@ -42,7 +42,9 @@ caller's organization and order-view permission, then returns `{code: 200,
 data: string, report: {...}}`. `report.schema_version` is 1; it contains occasion
 ID/title, UTC snapshot time, spots, order/ticket state counts, money per currency,
 confirmed products by ID, and warnings. IDs and numeric money are strings.
-`data` is formatted from that same object for older clients and UTF-8 TXT export.
+`data` is formatted from that same object for older clients. The Flutter text
+view and UTF-8 TXT export share a localized formatter of `report`, using the
+same translation keys as the graphical view.
 The private invoker formatter has no table reads or client execution grants.
 
 Payments are deduplicated before aggregation. Cross-occasion payment sharing or
