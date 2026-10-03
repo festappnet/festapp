@@ -1,3 +1,4 @@
+import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -14,7 +15,6 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/components/users/db_users.dart';
 
-@RoutePage(name: 'UnitBankAccountsListRoute')
 class UnitBankAccountsScreen extends StatefulWidget {
   final int unitId;
 
@@ -29,6 +29,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   List<BankAccountModel> _unitAccounts = [];
 
   bool _isLoading = true;
+  bool _hasLoaded = false;
   int? _organizationId;
 
   @override
@@ -56,15 +57,16 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      // 1. Get Organization ID (if admin)
-      // 1. Get Organization ID (if admin)
+      // Share the initial list request with a routed detail; mutations refresh.
+      final accounts = BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
+          DbBankAccounts.getBankAccountsForUnit(widget.unitId);
+      _hasLoaded = true;
+      _unitAccounts = await accounts;
+      // Get Organization ID (if admin)
       final orgData = await DbUsers.getCurrentOrganization();
       _organizationId = orgData?.id;
 
-      // 2. Load Unit Accounts
-      _unitAccounts =
-          await DbBankAccounts.getBankAccountsForUnit(widget.unitId);
-
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -210,7 +212,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     } else {
       await context.router
           .push(BankAccountDetailRoute(accountId: account.id.toString()));
-      _loadData();
+      // The navigation owner refreshes the underlay once when detail closes.
     }
   }
 

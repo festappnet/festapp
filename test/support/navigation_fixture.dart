@@ -42,7 +42,9 @@ class FixtureRouter extends RootStackRouter {
   List<AutoRouteGuard> get guards => [RetainedDraftGuard.instance];
   AutoRoute page(String name, String path, WidgetBuilder builder,
           {List<AutoRoute>? children}) =>
-      AutoRoute(
+      CustomRoute(
+          transitionsBuilder: TransitionsBuilders.noTransition,
+          usesPathAsKey: name == ReservationsRoute.name,
           page: PageInfo(name, builder: (data) => Builder(builder: builder)),
           path: path,
           children: children);
@@ -67,6 +69,11 @@ class FixtureRouter extends RootStackRouter {
                                 route: OrdersTabsRoute(),
                                 label: 'Orders',
                                 icon: Icons.shopping_cart),
+                            const RoutedTabDefinition(
+                                slug: 'report',
+                                route: ReportSectionRoute(),
+                                label: 'Report',
+                                icon: Icons.bar_chart),
                             if (extra)
                               const RoutedTabDefinition(
                                   slug: 'forms',
@@ -98,6 +105,8 @@ class FixtureRouter extends RootStackRouter {
                           page(OrdersHistoryRoute.name, 'history',
                               (context) => const Text('HISTORY CONTENT'))
                         ]),
+                    page(ReportSectionRoute.name, 'report',
+                        (context) => const Text('REPORT CONTENT')),
                     page(FormsNavigationRoute.name, 'forms',
                         (context) => const AutoRouter(),
                         children: [

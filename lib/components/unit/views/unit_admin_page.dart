@@ -1,9 +1,9 @@
+import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
-import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
 import 'package:fstapp/components/_shared/red_strip_widget.dart';
@@ -13,7 +13,7 @@ import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/unit/views/occasions_screen.dart';
-import 'package:fstapp/components/occasion/db_occasions.dart';
+import 'package:fstapp/components/navigation/unit_administration_access.dart';
 import 'package:fstapp/components/unit/views/quotes_tab.dart';
 import 'package:fstapp/components/unit/views/unit_users_screen.dart';
 import 'package:fstapp/router_service.dart';
@@ -25,29 +25,35 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 @RoutePage()
 class UnitAdminPage extends StatefulWidget {
   final int? id;
+  final UnitAdministrationAccess? access;
   static const double contentMaxWidth = 1000;
-  const UnitAdminPage({super.key, @pathParam required this.id});
+  const UnitAdminPage({super.key, @pathParam required this.id, this.access});
   @override
   State<UnitAdminPage> createState() => _UnitAdminPageState();
 }
 
 class _UnitAdminPageState extends State<UnitAdminPage> {
+  UnitAdministrationAccess get _access =>
+      widget.access ?? const RightsUnitAdministrationAccess();
   UnitModel? _unit;
   List<OccasionModel>? _occasions;
   bool _failed = false;
   int _generation = 0;
   bool _loading = false;
+  bool _loadFailed = false;
   StackRouter? _root;
   @override
   void initState() {
     super.initState();
-    RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
+    _access.changes.addListener(_contextChanged);
     _load();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    ModalRoute.of(
+        context); // Reload retained context when native Back reveals it.
     Localizations.localeOf(context);
     context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
     final root = context.router.root;
@@ -56,20 +62,23 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
       _root = root;
       root.addListener(_contextChanged);
     }
+    _contextChanged();
   }
 
   void _contextChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _loading || !context.routeData.isActive) return;
-      if (RightsService.currentUnit()?.id != widget.id ||
-          RightsService.currentOccasionId() != null)
+      if (!mounted ||
+          _loading ||
+          _loadFailed ||
+          !isVisibleRouteInstance(context)) return;
+      if (_access.currentUnit?.id != widget.id || _access.hasOccasion)
         _load(force: true);
-      else if (!AuthService.isLoggedIn())
+      else if (!_access.isSignedIn)
         _load();
-      else
-        setState(() {
-          _failed = !RightsService.isUnitEditorView();
-        });
+      else {
+        final failed = !_access.canAccess;
+        if (_failed != failed) setState(() => _failed = failed);
+      }
     });
     WidgetsBinding.instance.ensureVisualUpdate();
   }
@@ -78,7 +87,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
   void dispose() {
     ++_generation;
     _root?.removeListener(_contextChanged);
-    RightsService.occasionLinkModelNotifier.removeListener(_contextChanged);
+    _access.changes.removeListener(_contextChanged);
     super.dispose();
   }
 
@@ -95,13 +104,14 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
   Future<void> _load({bool force = false}) async {
     final generation = ++_generation;
     _loading = true;
+    _loadFailed = false;
     final id = widget.id;
     if (id == null) {
       setState(() => _failed = true);
       _loading = false;
       return;
     }
-    if (!AuthService.isLoggedIn()) {
+    if (!_access.isSignedIn) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted)
           context.router.root.replace(LoginRoute(
@@ -110,17 +120,17 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
       return;
     }
     try {
-      await RightsService.updateAppData(
-          unitId: id,
-          force: force || RightsService.currentOccasionId() != null,
-          refreshOffline: false);
+      await _access.load(id, force: force || _access.hasOccasion);
       if (!mounted || generation != _generation) return;
-      final unit = RightsService.currentUnit();
-      if (unit?.id != id || !RightsService.isUnitEditorView()) {
-        setState(() => _failed = true);
+      final unit = _access.currentUnit;
+      if (unit?.id != id || !_access.canAccess) {
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
         return;
       }
-      final occasions = await DbOccasions.getAllOccasionsForEdit(id);
+      final occasions = await _access.occasions(id);
       if (!mounted || generation != _generation) return;
       setState(() {
         _unit = unit;
@@ -128,7 +138,11 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
         _failed = false;
       });
     } catch (_) {
-      if (mounted && generation == _generation) setState(() => _failed = true);
+      if (mounted && generation == _generation)
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
     } finally {
       if (generation == _generation) _loading = false;
     }
@@ -144,22 +158,24 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
           onPressed: () => _load(force: true), child: Text(CommonStrings.retry))
     ])));
     if (_failed && _unit == null) return failure;
-    if (_unit == null ||
-        RightsService.currentUnit()?.id != widget.id ||
-        RightsService.currentOccasionId() != null)
+    if (_unit == null)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    final denied = _failed || !RightsService.isUnitEditorView();
+    final waiting = _access.currentUnit?.id != widget.id || _access.hasOccasion;
+    final denied = _failed || !_access.canAccess;
     return Stack(fit: StackFit.expand, children: [
       Offstage(
-          offstage: denied,
+          offstage: denied || waiting,
           child: TickerMode(
-              enabled: !denied,
+              enabled: !denied && !waiting,
               child: UnitAdministrationScope(
                   unit: _unit!,
                   occasions: _occasions,
                   onUpdated: () => _load(force: true),
                   child: const AutoRouter()))),
-      if (denied) failure,
+      if (denied)
+        failure
+      else if (waiting)
+        const Scaffold(body: Center(child: CircularProgressIndicator())),
     ]);
   }
 }
@@ -179,6 +195,35 @@ class UnitAdministrationScope extends InheritedWidget {
   @override
   bool updateShouldNotify(UnitAdministrationScope oldWidget) =>
       oldWidget.unit != unit || oldWidget.occasions != occasions;
+}
+
+class UnitAdministrationBody extends StatelessWidget {
+  final List<RoutedTabDefinition> tabs;
+  final TabController controller;
+  final Widget child;
+  const UnitAdministrationBody({
+    super.key,
+    required this.tabs,
+    required this.controller,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        fit: StackFit.expand,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: SideMenu.collapsedWidth),
+            child: child,
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: SideMenu(tabs: tabs, controller: controller),
+          ),
+        ],
+      );
 }
 
 class SideMenu extends StatefulWidget {
@@ -400,10 +445,8 @@ class UnitAdministrationTabsPage extends StatelessWidget {
               Expanded(
                   child: Scaffold(
                       appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context),
-                      body: Row(children: [
-                        SideMenu(tabs: tabs, controller: controller),
-                        Expanded(child: child)
-                      ]),
+                      body: UnitAdministrationBody(
+                          tabs: tabs, controller: controller, child: child),
                       floatingActionButton: FloatingActionButton(
                           onPressed: () => RouterService.navigate(
                               context, 'unit/${scope.unit.id}'),

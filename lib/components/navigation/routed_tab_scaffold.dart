@@ -54,7 +54,6 @@ class RoutedTabScaffold extends StatelessWidget {
     }
     return AutoTabsRouter.tabBar(
         routes: tabs.map((t) => t.route).toList(),
-        animatePageTransition: false,
         physics: const NeverScrollableScrollPhysics(),
         builder: (context, child, controller) {
           if (builder != null) return builder!(context, child, controller);
