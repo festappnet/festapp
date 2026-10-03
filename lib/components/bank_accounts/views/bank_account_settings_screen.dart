@@ -3,6 +3,7 @@ import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
@@ -533,18 +534,14 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
               general: _general,
               connection: _connection,
               users: _users,
-              child: Scaffold(
-                  appBar: AppBar(
-                      title: Text(_account.title ??
-                          BankAccountStrings.bankAccountSettingsTitle),
-                      leading: IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => RetainedDraftGuard.instance
-                              .leaveOwner(
-                                  context,
-                                  () => context.router.replaceAll(
-                                      [UnitBankAccountsListRoute()])))),
-                  body: const AutoRouter())));
+              child: RoutedBankAccountDialog(
+                  title: _account.title ??
+                      BankAccountStrings.bankAccountSettingsTitle,
+                  onClose: () => RetainedDraftGuard.instance.leaveOwner(
+                      context,
+                      () => context.router
+                          .replaceAll([UnitBankAccountsListRoute()])),
+                  child: const AutoRouter())));
     }
     final content = Column(
       children: [
@@ -609,6 +606,85 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       body: content,
     );
   }
+}
+
+/// URL-backed editor with the same compact presentation as the creation dialog.
+class RoutedBankAccountDialog extends StatefulWidget {
+  final String title;
+  final Widget child;
+  final VoidCallback onClose;
+  const RoutedBankAccountDialog(
+      {super.key,
+      required this.title,
+      required this.child,
+      required this.onClose});
+  @override
+  State<RoutedBankAccountDialog> createState() =>
+      _RoutedBankAccountDialogState();
+}
+
+class _RoutedBankAccountDialogState extends State<RoutedBankAccountDialog> {
+  final _overlay = OverlayPortalController();
+  bool _visible = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Retained inactive tabs and denied administration scopes must hide the modal.
+    final visible =
+        TickerMode.of(context) && (ModalRoute.of(context)?.isCurrent ?? true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_visible != visible) setState(() => _visible = visible);
+      // Keep the native child router mounted while a retained section is hidden.
+      if (!_overlay.isShowing) _overlay.show();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => OverlayPortal.targetsRootOverlay(
+      controller: _overlay,
+      overlayChildBuilder: _buildDialog,
+      child: const SizedBox.shrink());
+  Widget _buildDialog(BuildContext context) => Offstage(
+      offstage: !_visible,
+      child: BlockSemantics(
+        child: FocusScope(
+            autofocus: true,
+            canRequestFocus: _visible,
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.escape): widget.onClose
+              },
+              child: Stack(fit: StackFit.expand, children: [
+                ModalBarrier(
+                    color: Colors.black54,
+                    onDismiss: widget.onClose,
+                    semanticsLabel: MaterialLocalizations.of(context)
+                        .modalBarrierDismissLabel),
+                Dialog(
+                    child: ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(maxWidth: 600, maxHeight: 800),
+                  child: Column(children: [
+                    Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(widget.title,
+                            style: Theme.of(context).textTheme.titleLarge)),
+                    Expanded(child: widget.child),
+                    Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                  onPressed: widget.onClose,
+                                  child: Text(BankAccountStrings.cancel)),
+                            ])),
+                  ]),
+                )),
+              ]),
+            )),
+      ));
 }
 
 class BankAccountEditorScope extends InheritedWidget {
