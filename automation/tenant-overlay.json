@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "b331c94b21dfef736467625a2939298376e06694",
+  "baseMainSha": "c2c5634f72287a86a1b2f55e58ea63727f53ac0f",
   "release": {
-    "version": "0.20.81+565",
-    "note": "Remove one-frame header flash during administration context switching"
+    "version": "0.20.82+566",
+    "note": "Simplify application reports and stabilize chart legends"
   }
 }

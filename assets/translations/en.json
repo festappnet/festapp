@@ -2221,6 +2221,8 @@
     "ratesUnavailable": "CNB rates are unavailable or a currency is missing. Select an individual currency to display payments.",
     "compareCurrencies": "All currencies in CZK",
     "currencyComparisonHelp": "Indicative conversion of all days at the latest available CNB rate, rounded to cents per day and currency. Rate date:",
+    "applicationTimeline": "Application activity over time",
+    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
     "orderTimeline": "Order activity over time",
     "orderTimelineHelp": "Newly created orders per day, including orders cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
     "paymentTimeline": "When payments arrived",
