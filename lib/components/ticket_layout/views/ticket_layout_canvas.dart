@@ -280,6 +280,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         widget.controller.document.area.topLeft;
     if (widget.editCanvas && _last != null && _canvasHandle != null) {
       widget.controller.resizeCanvas(point - _last!,
+          backgroundImage: backgroundSize,
           handle: _canvasHandle!,
           zoom: zoom,
           snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
@@ -651,6 +652,17 @@ class TicketLayoutPainter extends CustomPainter {
           Offset(doc.area.width, controller.guideY!), guide);
     }
     if (editCanvas) {
+      for (final e in doc.elements
+          .where((e) => controller.canvasBlockers.contains(e.id))) {
+        canvas.drawRect(e.box.inflate(3 / zoom),
+            Paint()..color = Colors.deepOrange.withValues(alpha: .18));
+        canvas.drawRect(
+            e.box.inflate(3 / zoom),
+            Paint()
+              ..color = Colors.deepOrange
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 3 / zoom);
+      }
       final rect = Offset.zero & doc.area.size;
       canvas.drawRect(
           rect,

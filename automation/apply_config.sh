@@ -362,6 +362,9 @@ source = re.sub(r"occasion: '[^']*'", f"occasion: '{occasion}'", source)
 open(path, "w", encoding="utf-8").write(source)
 PY
     sed_inplace "s|<img class=\"initial-logo\" src=\"[^\"]*\"|<img class=\"initial-logo\" src=\"$WEB_LOADING_LOGO_ASSET\"|" "$FLUTTER_INDEX"
+    if [ ! -z "$THEME_SEED_2" ]; then
+        sed_inplace "s|--festapp-loading-accent: [^;]*;|--festapp-loading-accent: $THEME_SEED_2;|" "$FLUTTER_INDEX"
+    fi
     echo "✔ Updated web/index.html"
 else
     echo "Warning: $FLUTTER_INDEX not found."

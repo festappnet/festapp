@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:math' as math;
 import 'models/ticket_layout.dart';
 
@@ -28,13 +29,18 @@ class TicketTextFit {
 
 // Synthetic emphasis uses the bundled font in both Canvas and PDF, with the
 // same outline width and 12-degree shear. Reserve its overhang during fitting.
-({double left, double right}) ticketTextInsets(TicketElement e, TicketFontMetrics m) => (
-  left: (e.bold ? .02 : 0) + (e.italic ? -m.descent * .2125565616700221 : 0),
-  right: (e.bold ? .02 : 0) + (e.italic ? m.ascent * .2125565616700221 : 0));
+({double left, double right}) ticketTextInsets(
+        TicketElement e, TicketFontMetrics m) =>
+    (
+      left:
+          (e.bold ? .02 : 0) + (e.italic ? -m.descent * .2125565616700221 : 0),
+      right: (e.bold ? .02 : 0) + (e.italic ? m.ascent * .2125565616700221 : 0)
+    );
 
 TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
   final inset = ticketTextInsets(e, m);
-  double width(String text, double size) => m.width(text, size) +
+  double width(String text, double size) =>
+      m.width(text, size) +
       (text.isEmpty ? 0 : (inset.left + inset.right) * size);
   final replaced = text.runes
       .any((r) => r != 10 && !m.advances.containsKey(String.fromCharCode(r)));
@@ -106,4 +112,41 @@ TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
   }
   return TicketTextFit(size, lines, lines.map((l) => width(l, size)).toList(),
       overflow, replaced);
+}
+
+/// Grow an undersized ticket-code box, keeping it on the ticket and clear of QR.
+TicketTemplate ensureTicketCodeFits(
+    TicketTemplate doc, TicketFontMetrics metrics) {
+  final code = doc.elements.firstWhere((e) => e.binding == 'ticketSymbol');
+  const sample = 'XXXX9W9W9W';
+  try {
+    fitTicketText(sample, code, metrics);
+    return doc;
+  } on FormatException {
+    // The code is required: enlarge its box instead of truncating or hiding it.
+  }
+  final inset = ticketTextInsets(code, metrics);
+  final width = math.max(
+      code.box.width,
+      metrics.width(sample, code.minFontSize) +
+          (inset.left + inset.right) * code.minFontSize +
+          .01);
+  final height = math.max(code.box.height,
+      (metrics.ascent - metrics.descent) * code.minFontSize + .01);
+  if (width > doc.area.width || height > doc.area.height) return doc;
+  final qr = doc.elements.firstWhere((e) => e.binding == 'qr').box;
+  Rect box(Offset p) => Rect.fromLTWH(p.dx.clamp(0, doc.area.width - width),
+      p.dy.clamp(0, doc.area.height - height), width, height);
+  final candidates = [
+    code.box.topLeft,
+    Offset(qr.right + 2, code.box.top),
+    Offset(qr.left - width - 2, code.box.top),
+    Offset(code.box.left, qr.bottom + 2),
+    Offset(code.box.left, qr.top - height - 2)
+  ].map(box).where((b) => !b.overlaps(qr)).toList()
+    ..sort((a, b) => (a.topLeft - code.box.topLeft)
+        .distance
+        .compareTo((b.topLeft - code.box.topLeft).distance));
+  if (candidates.isEmpty) return doc;
+  return doc.replace(code.copyWith(box: candidates.first));
 }
