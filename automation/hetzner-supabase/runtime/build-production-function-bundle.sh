@@ -38,6 +38,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
   -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" |
   tar --no-xattrs -C "$STAGE" -xf -
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle must not contain symlinks"
+readonly TICKET_FONT_ASSET_PROOF="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/ticket-font-asset-proof.py" "$STAGE/_shared/ticket-assets")"
 readonly ARCHIVE="$RUN_DIR/functions.tar.gz"
 COPYFILE_DISABLE=1 tar --no-xattrs -C "$STAGE" -czf "$ARCHIVE" .
 chmod 0600 "$ARCHIVE"
@@ -47,10 +48,11 @@ readonly POLICY_SHA256="$(shasum -a 256 "$POLICY" | awk '{print $1}')"
 jq -n --arg bundle_id "$BUNDLE_ID" --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg source_sha "$SOURCE_SHA" --arg archive_file "$(basename "$ARCHIVE")" \
   --arg archive_sha256 "$ARCHIVE_SHA256" --arg policy_sha256 "$POLICY_SHA256" \
+  --argjson ticket_font_assets "$TICKET_FONT_ASSET_PROOF" \
   --argjson functions "$(printf '%s\n' "${FUNCTION_NAMES[@]}" | sort | jq -R . | jq -s .)" \
   '{version:1,bundle_id:$bundle_id,created_at:$created_at,source_sha:$source_sha,
     archive:{file:$archive_file,sha256:$archive_sha256},runtime_writer_policy_sha256:$policy_sha256,
-    packaged_directories:$functions,host_router_directory:"main",excluded_directories:["hello","instance-install"]}' \
+    ticket_font_assets:$ticket_font_assets,packaged_directories:$functions,host_router_directory:"main",excluded_directories:["hello","instance-install"]}' \
   >"$RUN_DIR/manifest.json"
 chmod 0600 "$RUN_DIR/manifest.json"
 rm -rf "$STAGE"

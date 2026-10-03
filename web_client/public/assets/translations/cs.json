@@ -592,7 +592,22 @@
     "cleaningCrew": "Úklidová služba",
     "cleaningBlocked": "Zákaz hlášení úklidu",
     "receptionist": "Recepční",
-    "group": "Skupina"
+    "group": "Skupina",
+    "administratorHelp": "Spravuje tuto akci a její uživatele včetně přidělování oprávnění. Jde o správce akce, nikoli celé aplikace. Přístup k objednávkám určují samostatná oprávnění.",
+    "editorHelp": "Upravuje obsah této akce, například program a informace, a může spravovat účast na událostech. Samotná tato role nedává právo měnit oprávnění uživatelů ani upravovat objednávky.",
+    "readOnlyHelp": "Umožňuje prohlížet administraci této akce bez práva upravovat její obsah. Další přidělená oprávnění mohou úpravy umožnit. Čtení objednávek má vlastní sloupec.",
+    "editOrdersHelp": "Umožňuje upravovat objednávky a prodejní nastavení této akce. Samotné oprávnění nedává právo spravovat uživatele ani upravovat program.",
+    "readOrdersHelp": "Umožňuje prohlížet objednávky a související prodejní údaje této akce. Samotné oprávnění nedovoluje jejich úpravy; jiné přidělené role je mohou umožnit.",
+    "unitAdministratorHelp": "Spravuje uživatele této organizační jednotky a přiděluje jim oprávnění v jednotce. Jde o jiný rozsah než správce jedné akce nebo administrátor celé aplikace.",
+    "unitEditorHelp": "Umožňuje editaci v rámci této organizační jednotky a správu objednávek jejích akcí. Oprávnění uživatelů jednotky přiděluje její správce.",
+    "unitReadOnlyHelp": "Umožňuje prohlížet administraci a objednávky v rámci této organizační jednotky. Samotná tato role nedává právo je upravovat; další přidělená oprávnění mohou úpravy umožnit.",
+    "approverHelp": "Umožňuje kontrolovat účastníky pomocí vstupního kódu nebo skeneru a ověřovat jejich účast. Samotná tato role nedává právo upravovat program nebo objednávky.",
+    "approvedHelp": "Označuje schválenou účast uživatele na této akci. Je to stav účastníka, nikoli administrátorské oprávnění. Schválení je také podmínkou pro hlášení úklidu.",
+    "receptionistHelp": "Při zapnuté recepci umožňuje přijímat účastníky, vytvářet recepční registrace a vydávat přihlašovací QR kódy. Samotná tato role nedává obecná oprávnění editora ani správce.",
+    "cleaningCrewHelp": "Zpřístupňuje úklidové službě hlášení, jejich historii a označování míst jako uklizených. Členové služby mohou dostávat upozornění na nová hlášení.",
+    "cleaningBlockedHelp": "Zakazuje tomuto uživateli odesílat hlášení úklidu na této akci. Neznamená zákaz přihlášení ani odebrání ostatních oprávnění.",
+    "volunteerHelp": "Označuje uživatele jako dobrovolníka této akce. V nastavení některých akcí mohou dobrovolníci automaticky získat oprávnění schvalovatele.",
+    "invitedHelp": "Ukazuje, zda byla uživateli odeslána pozvánka. Jde o údaj o odeslání, nikoli potvrzení doručení nebo přihlášení uživatele."
   },
   "OrderHistory": {
     "noHistoryFound": "Nebyla nalezena žádná historie.",
@@ -2154,6 +2169,9 @@
     "ticketPdfHint": "PDF bude mít přesně rozměry vstupenky.",
     "canvasTooLarge": "Velikost přesahuje povolený formát. Zmenšete rozměry.",
     "canvasTooSmall": "Pro prvky nebo čitelný QR zbývá příliš málo místa. Zvětšete rozměry.",
-    "sampleData": "Ukázkové údaje"
+    "sampleData": "Ukázkové údaje",
+    "templateFont": "Písmo šablony",
+    "elementFont": "Písmo prvku (výjimka)",
+    "missingGlyphs": "Písmo neobsahuje některé znaky. Jsou nahrazeny znakem ?."
   }
 }

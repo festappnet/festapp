@@ -20,5 +20,8 @@
   ],
   "sensitiveScopes": [],
   "restrictedScopes": [],
-  "logoUploaded": false
+  "logoUploaded": false,
+  "homepage": "https://live.festapp.net",
+  "privacyUrl": "https://live.festapp.net/privacy/",
+  "termsUrl": "https://live.festapp.net/terms/"
 }

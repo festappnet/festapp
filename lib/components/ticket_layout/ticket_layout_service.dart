@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:crypto/crypto.dart';
+import '../fonts/ticket_font_ids.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/services/storage_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,6 +9,14 @@ import 'models/ticket_layout.dart';
 import '../images/db_images.dart';
 import 'ticket_text.dart';
 import 'ticket_background_image.dart';
+
+class TicketFontResource {
+  final String id, family, loaderName;
+  final int weight;
+  final TicketFontMetrics metrics;
+  TicketFontResource(
+      this.id, this.family, this.weight, this.metrics, this.loaderName);
+}
 
 class TicketLayoutArtwork {
   final String? label, background;
@@ -23,9 +33,18 @@ class TicketLayoutResources {
   final Map<String, TicketTemplate> presets;
   final Map<String, Map<String, String?>> scenarios;
   final TicketFontMetrics metrics;
-  final Map<String, TicketFontMetrics> fonts;
-  final Map<String, String> fontLabels;
-  TicketFontMetrics metricsFor(TicketTemplate template) => fonts[template.font] ?? metrics;
+  final Map<String, TicketFontResource> fonts;
+  TicketFontResource fontFor(TicketTemplate t, [TicketElement? e]) {
+    final id = e?.fontId ?? t.fontId ?? legacyTicketFontIds[t.font]!;
+    if (fonts.containsKey(id)) return fonts[id]!;
+    if (fonts.isNotEmpty || t.fontId != null || e?.fontId != null)
+      throw StateError('Font resource missing');
+    return TicketFontResource(
+        id, 'Futura PT', 400, metrics, 'TicketFont_${id.split(':').last}');
+  }
+
+  TicketFontMetrics metricsFor(TicketTemplate t, [TicketElement? e]) =>
+      fontFor(t, e).metrics;
   ui.Image? background;
   final ui.Image? logo;
   final int qrSize;
@@ -38,12 +57,13 @@ class TicketLayoutResources {
       this.initialArtworkKey,
       required this.scenarios,
       required this.metrics,
-      this.fonts = const {}, this.fontLabels = const {},
+      Map<String, TicketFontResource> fonts = const {},
       this.background,
       this.missingBackground = false,
       this.logo,
       required this.qrSize,
-      required this.qrModules});
+      required this.qrModules})
+      : fonts = Map.of(fonts);
   void dispose() {
     background?.dispose();
     logo?.dispose();
@@ -57,12 +77,52 @@ class TicketLayoutService {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? transport;
   final Future<String?> Function(String) _readPreference;
   final Future<void> Function(String, String) _writePreference;
-  TicketLayoutService({this.transport,
+  TicketLayoutService(
+      {this.transport,
       Future<String?> Function(String)? readPreference,
       Future<void> Function(String, String)? writePreference})
       : _readPreference = readPreference ?? ((key) => StorageHelper.get(key)),
-        _writePreference = writePreference ?? ((key, value) => StorageHelper.set(key, value));
+        _writePreference =
+            writePreference ?? ((key, value) => StorageHelper.set(key, value));
 
+  static final Map<String, Future<TicketFontResource>> _fonts = {};
+  static Future<TicketFontResource> _register(Map j) async {
+    final bytes = base64Decode(j['font']);
+    final hash = sha256.convert(bytes).toString();
+    final id = j['id'] as String;
+    if (!id.endsWith(':$hash')) throw const FormatException('Font integrity');
+    final name = 'TicketFont_$hash';
+    final loader = FontLoader(name)
+      ..addFont(Future.value(ByteData.sublistView(bytes)));
+    await loader.load();
+    return TicketFontResource(id, j['family'], j['weight'],
+        TicketFontMetrics.fromJson(j['metrics']), name);
+  }
+
+  static Future<TicketFontResource> _cache(
+      String id, Future<Map> Function() load) {
+    return _fonts.putIfAbsent(id, () async {
+      try {
+        final reply = await load();
+        if (reply['id'] != id) {
+          throw const FormatException('Font identity mismatch');
+        }
+        return await _register(reply);
+      } catch (_) {
+        _fonts.remove(id);
+        rethrow;
+      }
+    });
+  }
+
+  Future<TicketFontResource> font(int occasionId, String id) => _cache(
+      id,
+      () => _request({
+            'occasionId': occasionId,
+            'mode': 'font',
+            'fontProtocol': 2,
+            'fontId': id
+          }));
   Future<bool> openTemplatePickerOnce(int occasionId, String userId,
       {required bool configured}) async {
     final key = 'ticket-editor-opened:$userId:$occasionId';
@@ -79,19 +139,30 @@ class TicketLayoutService {
 
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background) async {
+    if (layout != null) validateTicketLayout(layout);
     final j = await _request({
+      'fontProtocol': 2,
       'occasionId': occasionId,
       'type': type,
       'mode': 'resolve',
       if (layout != null) 'layout': layout,
       'background': background
     });
-    final fonts = (j['fonts'] as Map? ?? {j['template']['font'] ?? 'futura': {'font': j['font'], 'metrics': j['metrics'], 'label': 'Futura PT'}});
-    for (final entry in fonts.entries) {
-      final loader = FontLoader('TicketLayoutFont-${entry.key}')
-        ..addFont(Future.value(ByteData.sublistView(base64Decode(entry.value['font']))));
-      await loader.load();
-    }
+    if (layout?['schemaVersion'] == 2 && j['fonts'] == null)
+      throw const FormatException('Unsupported font protocol');
+    final fonts = <String, TicketFontResource>{};
+    final replies = j['fonts'] as Map?;
+    if (replies != null)
+      for (final entry in replies.entries) {
+        // Closed enum reply belongs exclusively to the old v1 endpoint boundary.
+        final raw = (entry.value as Map).cast<String, dynamic>();
+        final id = raw['id'] ?? legacyTicketFontIds[entry.key];
+        if (id == null) throw const FormatException('Unknown font reply');
+        raw['id'] = id;
+        raw['family'] ??= raw['label'];
+        raw['weight'] ??= 400;
+        fonts[id] = await _cache(id, () async => raw);
+      }
     ui.Image? bg, logo;
     Future<ui.Image?> decode(String? b) async {
       if (b == null) return null;
@@ -127,8 +198,7 @@ class TicketLayoutService {
           scenarios: (j['scenarios'] as Map).map((k, v) =>
               MapEntry(k as String, (v as Map).cast<String, String?>())),
           metrics: TicketFontMetrics.fromJson(j['metrics']),
-          fonts: fonts.map((key, value) => MapEntry(key as String, TicketFontMetrics.fromJson(value['metrics']))),
-          fontLabels: fonts.map((key, value) => MapEntry(key as String, value['label'] as String)),
+          fonts: fonts,
           background: bg,
           missingBackground: j['missingBackground'] == true,
           logo: logo,
@@ -151,6 +221,7 @@ class TicketLayoutService {
       'occasionId': occasionId,
       'type': type,
       'mode': 'pdf',
+      'fontProtocol': 2,
       'layout': layout,
       'scenario': scenario,
       'background': background
