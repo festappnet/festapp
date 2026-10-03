@@ -13,14 +13,22 @@ import 'form_creation_helper.dart';
 import 'package:fstapp/app_router.gr.dart';
 
 @RoutePage(name: 'FormsListRoute')
-class FormsTab extends StatefulWidget {
+class FormsTab extends StatelessWidget {
   const FormsTab({super.key});
 
   @override
-  _FormsTabState createState() => _FormsTabState();
+  Widget build(BuildContext context) => const FormsListView();
 }
 
-class _FormsTabState extends State<FormsTab> {
+class FormsListView extends StatefulWidget {
+  final Future<List<FormModel>> Function(String)? loadForms;
+  const FormsListView({super.key, this.loadForms});
+
+  @override
+  State<FormsListView> createState() => _FormsTabState();
+}
+
+class _FormsTabState extends State<FormsListView> {
   List<FormModel> _forms = [];
   String? occasionLink;
   bool _isLoading = true;
@@ -47,9 +55,23 @@ class _FormsTabState extends State<FormsTab> {
     }
     if (occasionLink != null) {
       final identity = occasionLink;
-      final forms = await DbForms.getAllFormsByOccasionLink(identity!);
+      final forms = await (widget.loadForms ??
+          DbForms.getAllFormsByOccasionLink)(identity!);
       if (!mounted || occasionLink != identity) return;
       _forms = forms;
+      if (forms.length == 1 &&
+          forms.single.link?.isNotEmpty == true &&
+          context.routeData.queryParams.optBool('list') != true) {
+        // Replace the selector so Back does not bounce through it again.
+        context.router.markUrlStateForReplace();
+        await context.router.replaceAll([
+          FormDetailRoute(
+            formLink: forms.single.link!,
+          ).copyWith(
+              queryParams: context.router.root.urlState.uri.queryParametersAll)
+        ]);
+        return;
+      }
     }
     if (mounted) {
       setState(() => _isLoading = false);
