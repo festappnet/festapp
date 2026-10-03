@@ -19,6 +19,7 @@ web/apple-app-site-association
 web/backend-activation.json
 web/client-sync-config.json
 web/index.html
+web/loading-logo.svg
 web/delete-account/index.html
 web/privacy/index.html
 web/privacy/choices/index.html
