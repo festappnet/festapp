@@ -440,8 +440,9 @@ class AppPanelHelper {
                     upcomingText: itemDateBuilder != null
                         ? CommonStrings.upcomingEvents
                         : null,
-                    pastText:
-                        itemDateBuilder != null ? CommonStrings.pastEvents : null,
+                    pastText: itemDateBuilder != null
+                        ? CommonStrings.pastEvents
+                        : null,
                   );
                 },
                 hoverColor: hoverColor,
@@ -624,29 +625,9 @@ class AppPanelHelper {
               appBarIconColor: ThemeConfig.lllBackground,
             ))
       ],
-      bottom: (activeTabs == null)
+      bottom: activeTabs == null
           ? null
-          : PreferredSize(
-              preferredSize: const Size.fromHeight(40),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TabBar(
-                  controller: tabController,
-                  isScrollable: true,
-                  tabs: activeTabs.map((tab) {
-                    return Row(
-                      children: [
-                        Icon(tab.icon),
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(tab.label),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
+          : _buildAdminTabs(context, activeTabs, tabController),
     );
   }
 
@@ -901,26 +882,42 @@ class AppPanelHelper {
           child: UserHeaderWidget(appBarIconColor: ThemeConfig.lllBackground),
         ),
       ],
-      bottom: (activeTabs == null)
+      bottom: activeTabs == null
           ? null
-          : PreferredSize(
-              preferredSize: const Size.fromHeight(40),
-              child: TabBar(
-                controller: tabController,
-                isScrollable: true,
-                tabs: activeTabs.map((tab) {
-                  return Tab(
-                    child: Row(
-                      children: [
-                        Icon(tab.icon),
-                        const SizedBox(width: 8),
-                        Text(tab.label),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+          : _buildAdminTabs(context, activeTabs, tabController),
+    );
+  }
+
+  static TabBar _buildAdminTabs(
+    BuildContext context,
+    List<AdminTabDefinition> tabs,
+    TabController? controller,
+  ) {
+    final theme = Theme.of(context);
+    final foreground = theme.appBarTheme.foregroundColor ??
+        ThemeConfig.textColorForBackground(ThemeConfig.appBarColor());
+    final fontSize = theme.textTheme.labelLarge?.fontSize ?? 14;
+    final height = MediaQuery.textScalerOf(context).scale(fontSize) * 1.5 + 16;
+    return TabBar(
+      controller: controller,
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
+      labelColor: foreground,
+      unselectedLabelColor: foreground.withValues(alpha: 0.8),
+      indicatorColor: ThemeConfig.seed2,
+      tabs: tabs
+          .map((tab) => Tab(
+                height: height,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(tab.icon),
+                    const SizedBox(width: 8),
+                    Text(tab.label),
+                  ],
+                ),
+              ))
+          .toList(),
     );
   }
 }

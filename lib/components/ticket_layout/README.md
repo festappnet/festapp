@@ -228,8 +228,9 @@ are consumed by both the canvas and the sole PDF renderer.
 
 The dimensions dialog separates ticket dimensions from the PDF paper: A4 or
 ticket size plus an adjustable uniform white paper margin (0-25.4 mm).
-New switches to ticket-sized paper start with 3 mm; existing zero-margin layouts
-remain unchanged. Ticket dimensions scale the design independently of paper. New ordinary templates default to A4; explicitly portrait
+Gallery templates and switches to ticket-sized paper start with 3 mm. Opening
+the dimensions dialog proposes 3 mm for old layouts without a saved margin;
+cancel preserves the draft. Explicitly saved margins, including zero, are retained. Ticket dimensions scale the design independently of paper. New ordinary templates default to A4; explicitly portrait
 gallery styles retain ticket-sized paper. Existing saved paper sizes are kept
 until changed. Switching paper preserves element and image geometry.
 
