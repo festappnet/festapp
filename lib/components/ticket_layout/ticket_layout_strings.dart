@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get dimensionInputHint => 'TicketLayout.dimensionInputHint'.tr();
+  static String editBlockingElement(String name) => 'TicketLayout.editBlockingElement'.tr(namedArgs: {'name': name});
   static String get cropImage => 'TicketLayout.cropImage'.tr();
   static String get cropImageHint => 'TicketLayout.cropImageHint'.tr();
   static String get resetCrop => 'TicketLayout.resetCrop'.tr();

@@ -2073,6 +2073,8 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "dimensionInputHint": "Confirm with Enter or click outside the field. Content stays in place.",
+    "editBlockingElement": "Edit: {name}",
     "resetCrop": "Show entire image",
     "cropImageHint": "Drag the corners to crop. Drag inside to move the crop.",
     "cropImage": "Crop image",

@@ -323,3 +323,9 @@ keep their original geometry in editor-only recovery data tied to immutable
 documents, so enlarging the canvas restores them across drags and undo/redo.
 Manually hidden or subsequently edited elements are not automatically restored.
 Recovery data is not serialized; reopening a saved layout uses its saved state.
+
+Ticket dimensions and PDF format are edited in the persistent canvas settings
+panel beside the full-page preview (below it on phones). Numeric dimensions
+commit on Enter/blur through the same canvas controller as edge drags. Required
+element blockers link directly to element editing. Changes use ordinary undo;
+there is no second modal Apply step.

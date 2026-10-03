@@ -2074,6 +2074,8 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "dimensionInputHint": "Rozměr potvrďte Enterem nebo kliknutím mimo pole. Obsah zůstává na místě.",
+    "editBlockingElement": "Upravit: {name}",
     "resetCrop": "Zobrazit celý obrázek",
     "cropImageHint": "Tažením rohů vyberte výřez. Uvnitř jej můžete posunout.",
     "cropImage": "Oříznout obrázek",
