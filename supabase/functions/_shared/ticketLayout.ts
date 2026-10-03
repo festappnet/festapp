@@ -1,3 +1,4 @@
+import {knownFontId,legacyFontIds,futuraId} from './ticketFonts.ts';
 export const qrColors = ['000000','2A2A2A','17365D','123B20','401529'];
 export function qrColorReadable(color:string,background='FFFFFF'):boolean {
   if(!/^[0-9a-fA-F]{6}$/.test(color))return false;
@@ -11,14 +12,17 @@ export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'food', 'note', 'pri
 export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
-export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
-export interface TicketLayout { schemaVersion: 1; templates: { wide?: Template; named?: Template } }
-export function validateLayout(value: unknown): asserts value is TicketLayout {
+export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
+export interface Template { fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface TicketLayout { schemaVersion: 1 | 2; templates: { wide?: Template; named?: Template } }
+export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=new Set()): asserts value is TicketLayout {
   const v = value as TicketLayout;
   const fail = () => { throw new Error('Invalid ticket layout'); };
-  if (!v || JSON.stringify(v).length > 32768 || v.schemaVersion !== 1 || !v.templates || Array.isArray(v.templates) || !Object.keys(v.templates).length || Object.keys(v.templates).some(k => !['wide', 'named'].includes(k))) fail();
+  if (!v || JSON.stringify(v).length > 32768 || ![1,2].includes(v.schemaVersion) || !v.templates || Array.isArray(v.templates) || !Object.keys(v.templates).length || Object.keys(v.templates).some(k => !['wide', 'named'].includes(k))) fail();
+  const fontIds=new Set<string>();
+  const checkFont=(id:unknown)=>{if(id===undefined)return;if(v.schemaVersion===1||typeof id!=='string'||! /^(gf:|builtin:[a-z0-9-]+:)[a-f0-9]{64}$/.test(id)||(!knownFontId(id)&&!registeredIds.has(id)))fail();fontIds.add(id as string);if(fontIds.size>12)fail();};
   for (const t of Object.values(v.templates)) {
+    checkFont(t?.fontId);if(v.schemaVersion===2&&t?.font!==undefined)fail();
     if(t?.font!==undefined && !['futura','robotoSlab','roboto','russoOne'].includes(t.font)) fail();
     if(t?.flowStep!==undefined && (!Number.isFinite(t.flowStep)||t.flowStep<1||t.flowStep>842))fail();
     if(t?.border!==undefined && typeof t.border!=='boolean')fail();
@@ -39,7 +43,7 @@ export function validateLayout(value: unknown): asserts value is TicketLayout {
       if (!e || typeof e.id !== 'string' || !/^[a-zA-Z0-9_-]{1,40}$/.test(e.id) || ids.has(e.id) || seen.has(e.binding) || !bindings.includes(e.binding) || typeof e.visible !== 'boolean' || typeof e.locked !== 'boolean') fail();
       ids.add(e.id); seen.add(e.binding);
       checkBox(e.box,t.ticketArea.width,t.ticketArea.height);
-      const s=e.style;
+      const s=e.style;checkFont(s?.fontId);if(s?.fontId!==undefined&&['qr','logo'].includes(e.binding))fail();
       if(s && ['bold','italic','underline'].some(key=>key in s && typeof (s as any)[key]!=='boolean')) fail();
       if (!s || !Number.isFinite(s.fontSize) || !Number.isFinite(s.minFontSize) || s.minFontSize < 6 || s.fontSize < s.minFontSize || s.fontSize > 72 || !Number.isInteger(s.maxLines) || s.maxLines < 1 || s.maxLines > 12 || !/^[0-9A-Fa-f]{6}$/.test(s.color) || !['left','center','right'].includes(s.align)) fail();
       if (['qr','ticketSymbol'].includes(e.binding) && !e.visible) fail();
@@ -78,7 +82,7 @@ export function preset(type: 'wide'|'named', imageWidth=1600, imageHeight=800): 
 // Portrait is a ticket-sized PDF, independently of the selected template slot.
 export function portraitPreset(): Template { return preset('named'); }
 
-export function parseLayout(value: unknown): TicketLayout { validateLayout(value); return structuredClone(value); }
+export function parseLayout(value: unknown,registeredIds?:ReadonlySet<string>): TicketLayout { validateLayout(value,registeredIds); return structuredClone(value); }
 
 // Gallery presets establish a clear hierarchy independently of the importer.
 function styleVariants(type: TicketType): Record<string,Template> {
@@ -129,3 +133,8 @@ export function positionedElements(t:Template,data:Partial<Record<Binding,string
   }
   return t.elements.map(e=>positions.get(e.id)??e);
 }
+
+export function layoutFontIds(value:unknown):Set<string> {
+ const ids=new Set<string>();for(const t of Object.values((value as TicketLayout)?.templates??{})){if(t?.fontId!==undefined)ids.add(t.fontId);for(const e of t?.elements??[])if(e.style?.fontId!==undefined)ids.add(e.style.fontId);}return ids;
+}
+export function effectiveFontId(t:Template,e?:Element):string{return e?.style.fontId??t.fontId??legacyFontIds[t.font??'futura']??futuraId;}

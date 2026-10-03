@@ -6,7 +6,9 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/preview-ticket-layout/preview_test.ts"
+        "supabase/functions/preview-ticket-layout/preview_test.ts",
+        "supabase/functions/preview-ticket-layout/products_test.ts",
+        "supabase/functions/_shared/ticketFonts_test.ts"
       ]
     },
     "bank-mail-parser": {
@@ -38,7 +40,8 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/ticketFonts_test.ts"
       ]
     },
     "exchange-login-qr": {
@@ -150,7 +153,8 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/ticketFonts_test.ts"
       ]
     },
     "synchronize-orders": {

@@ -23,7 +23,10 @@ BEGIN
              'title', p.title,
              'short_title', p.data->>'short_title',
              'product_type', p.product_type,
-             'data', p.data
+             'data', p.data,
+             'price', p.price,
+             'currency_code', p.currency_code,
+             'is_hidden', p.is_hidden
            )
          )
     INTO products

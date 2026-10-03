@@ -1,11 +1,12 @@
+import {fontMetrics} from './ticketFonts.ts';
 import {assertEquals,assertThrows,assert,assertRejects} from 'jsr:@std/assert@1';
 import {parseLayout,preset,pdfBox} from './ticketLayout.ts';
 import {fitText} from './ticketText.ts';
 import {normalizeTicketData,sampleData,sampleSymbol,sampleQr} from './ticketRenderData.ts';
-import {fontBytes,fontMetrics,generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
+import {generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
 import {PDFDocument,PDFRawStream,PDFName} from 'npm:pdf-lib';
 import {inflateSync} from 'node:zlib';
-const font=await fontBytes();const metrics=fontMetrics(font);
+const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');const metrics=fontMetrics(font);
 const png=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='),c=>c.charCodeAt(0));
 const r={font,metrics,background:png,logo:png};
 Deno.test('both presets round trip and stay printable at extreme aspect ratios',()=>{
@@ -18,7 +19,7 @@ Deno.test('both presets round trip and stay printable at extreme aspect ratios',
 });
 Deno.test('layout rejects missing, duplicate, hidden, distorted and overlapping QR and unknown versions',()=>{
   const base={schemaVersion:1,templates:{named:preset('named')}};
-  const invalid=[(v:any)=>v.schemaVersion=2,(v:any)=>v.templates.named.elements.push(v.templates.named.elements[0]),(v:any)=>v.templates.named.elements=v.templates.named.elements.filter((e:any)=>e.binding!=='qr'),(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').visible=false,(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').box.width=30,(v:any)=>v.templates.named.elements[1].box=v.templates.named.elements.find((e:any)=>e.binding==='qr').box,(v:any)=>v.templates.named.elements[0].box.x=-1,(v:any)=>v.templates.named.elements[0].style.fontSize=Infinity,(v:any)=>v.templates={}];
+  const invalid=[(v:any)=>v.schemaVersion=3,(v:any)=>v.templates.named.elements.push(v.templates.named.elements[0]),(v:any)=>v.templates.named.elements=v.templates.named.elements.filter((e:any)=>e.binding!=='qr'),(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').visible=false,(v:any)=>v.templates.named.elements.find((e:any)=>e.binding==='qr').box.width=30,(v:any)=>v.templates.named.elements[1].box=v.templates.named.elements.find((e:any)=>e.binding==='qr').box,(v:any)=>v.templates.named.elements[0].box.x=-1,(v:any)=>v.templates.named.elements[0].style.fontSize=Infinity,(v:any)=>v.templates={}];
   for(const mutate of invalid){const v=structuredClone(base);mutate(v);assertThrows(()=>parseLayout(v));}
   assertEquals(activeTemplate({features:[{code:'ticket',ticket_type:'wide'}]}),undefined);
   assertThrows(()=>activeTemplate({features:[{code:'ticket',layout:{schemaVersion:2}}]}));

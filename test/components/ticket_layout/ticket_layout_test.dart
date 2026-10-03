@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_ids.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -26,6 +27,14 @@ final fixture = jsonDecode(
     File('test/fixtures/ticket_layout/resolve.json').readAsStringSync()) as Map;
 TicketTemplate document() => TicketTemplate.fromJson(fixture['template']);
 TicketLayoutResources resources() => TicketLayoutResources(
+    fonts: legacyTicketFontIds.map((name, id) => MapEntry(
+        id,
+        TicketFontResource(
+            id,
+            name,
+            400,
+            TicketFontMetrics.fromJson(fixture['metrics']),
+            'TicketFont_${id.split(':').last}'))),
     template: document(),
     preset: document(),
     presets: (fixture['presets'] as Map).map((key, value) =>
@@ -41,7 +50,9 @@ class SettingsService extends TicketLayoutService {
   int resolveCalls = 0;
   Completer<TicketLayoutResources>? pendingResolve;
   @override
-  Future<bool> openTemplatePickerOnce(int occasionId, String userId, {required bool configured}) async => false;
+  Future<bool> openTemplatePickerOnce(int occasionId, String userId,
+          {required bool configured}) async =>
+      false;
   @override
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background) async {
@@ -53,6 +64,10 @@ class SettingsService extends TicketLayoutService {
 }
 
 class FakeService extends TicketLayoutService {
+  final fontResponses = <String, Completer<TicketFontResource>>{};
+  @override
+  Future<TicketFontResource> font(int occasionId, String id) =>
+      fontResponses[id]!.future;
   int pdfCalls = 0;
   Completer<({Uint8List bytes, List<String> warnings})>? pending;
   @override
@@ -69,20 +84,178 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
-  test('template picker opens once per user and occasion, including after cancelling', () async {
+  testWidgets(
+      'font A/B race preserves draft, commits one undo step, isolates editors, blocks pending PDF and Apply',
+      (tester) async {
+    final catalog = jsonDecode(File('assets/fonts/ticket-font-catalog.json')
+        .readAsStringSync())['fonts'] as List;
+    final a = (catalog.firstWhere((f) => f['family'] == 'Roboto') as Map)
+        .cast<String, dynamic>();
+    final b = (catalog.firstWhere((f) => f['family'] == 'Russo One') as Map)
+        .cast<String, dynamic>();
+    final service = FakeService();
+    service.fontResponses[a['id']] = Completer();
+    service.fontResponses[b['id']] = Completer();
+    final separate = TicketLayoutController(document());
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: service)));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    final before = state.controller.document.toJson();
+    final first = state.selectFont(a) as Future<void>;
+    final second = state.selectFont(b) as Future<void>;
+    await tester.pump();
+    expect(state.fontBusy, true);
+    expect(state.controller.document.toJson(), before);
+    await state.preview();
+    state.apply();
+    expect(service.pdfCalls, 0);
+    expect(find.byType(TicketLayoutEditor), findsOneWidget);
+    TicketFontResource resource(Map asset) => TicketFontResource(
+        asset['id'],
+        asset['family'],
+        400,
+        resources().metrics,
+        'TicketFont_${asset['id'].split(':').last}');
+    service.fontResponses[b['id']]!.complete(resource(b));
+    await second;
+    await tester.pump();
+    expect(state.controller.document.fontId, b['id']);
+    expect(state.fontBusy, false);
+    service.fontResponses[a['id']]!.complete(resource(a));
+    await first;
+    await tester.pump();
+    expect(state.controller.document.fontId, b['id']);
+    expect(separate.document.fontId, isNull);
+    state.controller.undo();
+    expect(state.controller.document.toJson(), before);
+    expect(state.controller.canUndo, false);
+    state.controller.redo();
+    expect(state.controller.document.fontId, b['id']);
+    await state.selectFont(a);
+    expect(state.controller.document.fontId, a['id']);
+    state.controller.select('ticketSymbol');
+    state.controller.change(state.controller.selection.copyWith(locked: true));
+    await state.selectFont(b, elementId: 'ticketSymbol');
+    expect(state.controller.selection.fontId, isNull);
+    final failed = Completer<TicketFontResource>();
+    service.fontResponses[b['id']] = failed;
+    final pending = state.selectFont(b) as Future<void>;
+    final failure = expectLater(pending, throwsStateError);
+    failed.completeError(StateError('offline'));
+    await failure;
+    expect(state.controller.document.fontId, a['id']);
+    expect(state.fontBusy, false);
+    final disposed = Completer<TicketFontResource>();
+    service.fontResponses[b['id']] = disposed;
+    final last = state.selectFont(b) as Future<void>;
+    await tester.pumpWidget(const SizedBox());
+    disposed.complete(resource(b));
+    await last;
+    expect(tester.takeException(), isNull);
+    separate.dispose();
+  });
+  testWidgets('Cancel invalidates pending font and leaves original untouched',
+      (tester) async {
+    final asset = (jsonDecode(File('assets/fonts/ticket-font-catalog.json')
+            .readAsStringSync())['fonts'] as List)
+        .firstWhere((f) => f['family'] == 'Roboto') as Map;
+    final service = FakeService();
+    final loaded = Completer<TicketFontResource>();
+    service.fontResponses[asset['id']] = loaded;
+    await tester.pumpWidget(MaterialApp(
+        home: Builder(
+            builder: (context) => TextButton(
+                onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => Dialog.fullscreen(
+                        child: TicketLayoutEditor(
+                            occasionId: 1,
+                            type: 'named',
+                            resources: resources(),
+                            service: service))),
+                child: const Text('open')))));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    final pending =
+        state.selectFont(asset.cast<String, dynamic>()) as Future<void>;
+    await state.cancel();
+    await tester.pumpAndSettle();
+    loaded.complete(TicketFontResource(asset['id'], asset['family'], 400,
+        resources().metrics, 'TicketFont_${asset['id'].split(':').last}'));
+    await pending;
+    expect(find.byType(TicketLayoutEditor), findsNothing);
+    expect(state.controller.document.fontId, isNull);
+    expect(tester.takeException(), isNull);
+  });
+  test(
+      'shared Dart registration reuses bytes for A/B/A across service instances',
+      () async {
+    final catalog = jsonDecode(File('assets/fonts/ticket-font-catalog.json')
+        .readAsStringSync())['fonts'] as List;
+    final calls = <String>[];
+    Future<Map<String, dynamic>> transport(Map<String, dynamic> request) async {
+      expect(request['mode'], 'font');
+      expect(request['fontProtocol'], 2);
+      final asset = catalog.firstWhere((f) => f['id'] == request['fontId']);
+      calls.add(asset['id']);
+      return {
+        'id': asset['id'],
+        'family': asset['family'],
+        'weight': asset['weight'],
+        'font': base64Encode(File(
+                'test/fixtures/ticket_fonts/${asset['family'].replaceAll(' ', '-')}.ttf')
+            .readAsBytesSync()),
+        'metrics': fixture['metrics']
+      };
+    }
+
+    final first = TicketLayoutService(transport: transport),
+        second = TicketLayoutService(transport: transport);
+    final a =
+            catalog.firstWhere((f) => f['family'] == 'Roboto')['id'] as String,
+        b = catalog.firstWhere((f) => f['family'] == 'Russo One')['id']
+            as String;
+    final concurrent = await Future.wait([first.font(1, a), second.font(1, a)]);
+    expect(identical(concurrent[0], concurrent[1]), true);
+    await first.font(1, b);
+    expect(identical(await first.font(1, a), concurrent[0]), true);
+    expect(calls, [a, b]);
+    expect(concurrent[0].loaderName, 'TicketFont_${a.split(':').last}');
+  });
+
+  test(
+      'template picker opens once per user and occasion, including after cancelling',
+      () async {
     final preferences = <String, String>{};
     TicketLayoutService service() => TicketLayoutService(
         readPreference: (key) async => preferences[key],
-        writePreference: (key, value) async { preferences[key] = value; });
-    expect(await service().openTemplatePickerOnce(7, 'user', configured: false), isTrue);
+        writePreference: (key, value) async {
+          preferences[key] = value;
+        });
+    expect(await service().openTemplatePickerOnce(7, 'user', configured: false),
+        isTrue);
     // A new service instance models leaving and reopening the settings page.
-    expect(await service().openTemplatePickerOnce(7, 'user', configured: false), isFalse);
-    expect(await service().openTemplatePickerOnce(8, 'user', configured: true), isFalse);
-    expect(await service().openTemplatePickerOnce(8, 'user', configured: false), isFalse);
-    expect(await service().openTemplatePickerOnce(9, 'user', configured: false), isTrue);
-    expect(await service().openTemplatePickerOnce(7, 'another-user', configured: false), isTrue);
+    expect(await service().openTemplatePickerOnce(7, 'user', configured: false),
+        isFalse);
+    expect(await service().openTemplatePickerOnce(8, 'user', configured: true),
+        isFalse);
+    expect(await service().openTemplatePickerOnce(8, 'user', configured: false),
+        isFalse);
+    expect(await service().openTemplatePickerOnce(9, 'user', configured: false),
+        isTrue);
+    expect(
+        await service()
+            .openTemplatePickerOnce(7, 'another-user', configured: false),
+        isTrue);
   });
-  test('custom QR colors use white-background contrast rather than a palette', () {
+  test('custom QR colors use white-background contrast rather than a palette',
+      () {
     for (final color in ['445566', '5A245A', '003F88', '767676']) {
       expect(ticketQrColorReadable(color), isTrue);
     }
@@ -90,14 +263,18 @@ void main() {
       expect(ticketQrColorReadable(color), isFalse);
     }
   });
-  testWidgets('mobile palettes align left and scroll on one row', (tester) async {
+  testWidgets('mobile palettes align left and scroll on one row',
+      (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final c = TicketLayoutController(document())..select('occasionTitle');
-    await tester.pumpWidget(MaterialApp(theme: ThemeData(useMaterial3: false),
-      home: Scaffold(body: SingleChildScrollView(child: TicketLayoutProperties(controller: c)))));
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(useMaterial3: false),
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: TicketLayoutProperties(controller: c)))));
     await tester.tap(find.text('TicketLayout.color'));
     await tester.pumpAndSettle();
     final first = find.byTooltip('#000000').last;
@@ -105,48 +282,67 @@ void main() {
     expect(tester.getTopLeft(first).dy, tester.getTopLeft(last).dy);
     expect(tester.getTopLeft(find.text('TicketLayout.usedColors')).dx,
         tester.getTopLeft(find.text('TicketLayout.basicColors')).dx);
-    final row = find.ancestor(of: last, matching: find.byType(SingleChildScrollView)).first;
+    final row = find
+        .ancestor(of: last, matching: find.byType(SingleChildScrollView))
+        .first;
     final previousX = tester.getCenter(last).dx;
     await tester.drag(row, const Offset(-220, 0));
     await tester.pumpAndSettle();
     expect(tester.getCenter(last).dx, lessThan(previousX));
     await tester.tap(last);
     await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'FFFFFF');
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'FFFFFF');
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     c.dispose();
   });
-  testWidgets('palette paints its colors in Material 2 and 3, light and dark', (tester) async {
+  testWidgets('palette paints its colors in Material 2 and 3, light and dark',
+      (tester) async {
     for (final material3 in [false, true]) {
       for (final brightness in Brightness.values) {
         final c = TicketLayoutController(document())..select('occasionTitle');
         final boundaryKey = GlobalKey();
-        await tester.pumpWidget(RepaintBoundary(key: boundaryKey, child: MaterialApp(
-          theme: ThemeData(useMaterial3: material3, brightness: brightness),
-          home: Scaffold(body: SingleChildScrollView(child: TicketLayoutProperties(controller: c))))));
+        await tester.pumpWidget(RepaintBoundary(
+            key: boundaryKey,
+            child: MaterialApp(
+                theme:
+                    ThemeData(useMaterial3: material3, brightness: brightness),
+                home: Scaffold(
+                    body: SingleChildScrollView(
+                        child: TicketLayoutProperties(controller: c))))));
         await tester.tap(find.text('TicketLayout.color'));
         await tester.pumpAndSettle();
-        final boundary = boundaryKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final boundary = boundaryKey.currentContext!.findRenderObject()!
+            as RenderRepaintBoundary;
         final image = (await tester.runAsync(() => boundary.toImage()))!;
-        final pixels = (await tester.runAsync(() => image.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
+        final pixels = (await tester.runAsync(
+            () => image.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
         for (final hex in ticketQrColors) {
           final rect = tester.getRect(find.byTooltip('#$hex').last);
-          final point = boundary.globalToLocal(Offset(rect.center.dx, rect.top + 12));
-          final offset = (point.dy.toInt() * image.width + point.dx.toInt()) * 4;
-          final rgb = (pixels.getUint8(offset) << 16) | (pixels.getUint8(offset + 1) << 8) | pixels.getUint8(offset + 2);
-          expect(rgb, int.parse(hex, radix: 16), reason: '$hex material3=$material3 brightness=$brightness');
+          final point =
+              boundary.globalToLocal(Offset(rect.center.dx, rect.top + 12));
+          final offset =
+              (point.dy.toInt() * image.width + point.dx.toInt()) * 4;
+          final rgb = (pixels.getUint8(offset) << 16) |
+              (pixels.getUint8(offset + 1) << 8) |
+              pixels.getUint8(offset + 2);
+          expect(rgb, int.parse(hex, radix: 16),
+              reason: '$hex material3=$material3 brightness=$brightness');
         }
         image.dispose();
         await tester.tap(find.byTooltip('#17365D').last);
         await tester.pump();
-        expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '17365D');
+        expect(
+            tester.widget<TextField>(find.byType(TextField)).controller!.text,
+            '17365D');
         await tester.pumpWidget(const SizedBox());
         c.dispose();
       }
     }
   });
-  testWidgets('text and QR share the color picker and HEX entry', (tester) async {
+  testWidgets('text and QR share the color picker and HEX entry',
+      (tester) async {
     for (final binding in ['qr', 'occasionTitle']) {
       final c = TicketLayoutController(document())..select(binding);
       final recorder = ui.PictureRecorder();
@@ -154,30 +350,43 @@ void main() {
       final picture = recorder.endRecording();
       final image = (await tester.runAsync(() => picture.toImage(8, 8)))!;
       picture.dispose();
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
-          child: TicketLayoutProperties(controller: c, backgroundImage: image)))));
-      await tester.tap(find.text(binding == 'qr' ? 'TicketLayout.qrColors' : 'TicketLayout.color'));
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: SingleChildScrollView(
+                  child: TicketLayoutProperties(
+                      controller: c, backgroundImage: image)))));
+      await tester.tap(find.text(
+          binding == 'qr' ? 'TicketLayout.qrColors' : 'TicketLayout.color'));
       await tester.pumpAndSettle();
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pumpAndSettle();
       expect(find.byType(ColorPicker), findsOneWidget);
       expect(find.text('TicketLayout.usedColors'), findsOneWidget);
       expect(find.text('TicketLayout.imageColors'), findsOneWidget);
       await tester.tap(find.byTooltip('#204060'));
       await tester.pump();
-      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '204060');
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          '204060');
       await tester.enterText(find.byType(TextField), 'FFFFFF');
       await tester.pump();
       final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply');
-      expect(tester.widget<FilledButton>(apply).onPressed == null, binding == 'qr');
-      await tester.enterText(find.byType(TextField), '445566'); await tester.pump();
-      await tester.tap(apply); await tester.pumpAndSettle();
+      expect(tester.widget<FilledButton>(apply).onPressed == null,
+          binding == 'qr');
+      await tester.enterText(find.byType(TextField), '445566');
+      await tester.pump();
+      await tester.tap(apply);
+      await tester.pumpAndSettle();
       expect(c.selection!.color, '445566');
-      await tester.pumpWidget(const SizedBox()); c.dispose(); image.dispose();
+      await tester.pumpWidget(const SizedBox());
+      c.dispose();
+      image.dispose();
     }
   });
   test('styled text fitting matches the PDF renderer fixtures', () {
-    final cases = jsonDecode(File('test/fixtures/ticket_layout/text-emphasis.json').readAsStringSync()) as List;
+    final cases = jsonDecode(
+        File('test/fixtures/ticket_layout/text-emphasis.json')
+            .readAsStringSync()) as List;
     final r = resources();
     for (final item in cases) {
       final e = TicketElement.fromJson(item['element']);
@@ -190,47 +399,71 @@ void main() {
     }
     r.dispose();
   });
-  test('group movement preserves relative placement, bounds and one undo step', () {
+  test('group movement preserves relative placement, bounds and one undo step',
+      () {
     final c = TicketLayoutController(document());
-    c.select('qr'); c.select('ticketSymbol', additive: true);
+    c.select('qr');
+    c.select('ticketSymbol', additive: true);
     final before = {for (final e in c.selections) e.id: e.box};
     c.beginGesture();
     c.move(const Offset(-10, -10), snap: false);
     c.move(const Offset(-1000, -1000), snap: false);
     c.endGesture();
-    final shifts = c.selections.map((e) => e.box.topLeft - before[e.id]!.topLeft).toSet();
+    final shifts =
+        c.selections.map((e) => e.box.topLeft - before[e.id]!.topLeft).toSet();
     expect(shifts.length, 1);
-    for (final e in c.selections) { expect(e.box.left, greaterThanOrEqualTo(0)); expect(e.box.top, greaterThanOrEqualTo(0)); }
+    for (final e in c.selections) {
+      expect(e.box.left, greaterThanOrEqualTo(0));
+      expect(e.box.top, greaterThanOrEqualTo(0));
+    }
     final q = c.document.elements.firstWhere((e) => e.binding == 'qr');
     expect(q.box.width, q.box.height);
-    c.undo(); expect(c.document.toJson(), document().toJson());
+    c.undo();
+    expect(c.document.toJson(), document().toJson());
     expect(c.canUndo, isFalse);
-    c.redo(); expect(c.document.toJson(), isNot(document().toJson()));
+    c.redo();
+    expect(c.document.toJson(), isNot(document().toJson()));
     c.dispose();
   });
-  testWidgets('selection marquee and shift-click move QR and code together', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
-        occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+  testWidgets('selection marquee and shift-click move QR and code together',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
     await tester.pumpAndSettle();
-    final state = tester.state<TicketLayoutCanvasState>(find.byType(TicketLayoutCanvas));
+    final state =
+        tester.state<TicketLayoutCanvasState>(find.byType(TicketLayoutCanvas));
     final c = state.widget.controller;
-    Offset screen(Offset p) => tester.getTopLeft(find.byType(InteractiveViewer)) +
-        MatrixUtils.transformPoint(state.widget.transform.value, c.document.area.topLeft + p);
+    Offset screen(Offset p) =>
+        tester.getTopLeft(find.byType(InteractiveViewer)) +
+        MatrixUtils.transformPoint(
+            state.widget.transform.value, c.document.area.topLeft + p);
     final qr = c.document.elements.firstWhere((e) => e.binding == 'qr');
-    final code = c.document.elements.firstWhere((e) => e.binding == 'ticketSymbol');
+    final code =
+        c.document.elements.firstWhere((e) => e.binding == 'ticketSymbol');
     await tester.tapAt(screen(qr.box.center));
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
     await tester.tapAt(screen(code.box.center));
     await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
     expect(c.selectedIds, {'qr', 'ticketSymbol'});
     final drag = await tester.startGesture(screen(qr.box.center));
-    await drag.moveBy(const Offset(-5, -5)); await drag.up(); await tester.pump();
+    await drag.moveBy(const Offset(-5, -5));
+    await drag.up();
+    await tester.pump();
     expect(c.selectedIds, {'qr', 'ticketSymbol'});
-    expect(c.document.elements.firstWhere((e) => e.id == qr.id).box, isNot(qr.box));
-    c.undo(); c.select(null); await tester.pump();
+    expect(c.document.elements.firstWhere((e) => e.id == qr.id).box,
+        isNot(qr.box));
+    c.undo();
+    c.select(null);
+    await tester.pump();
     final bounds = qr.box.expandToInclude(code.box).inflate(2);
     final marquee = await tester.startGesture(screen(bounds.topLeft));
-    await marquee.moveTo(screen(bounds.bottomRight)); await marquee.up(); await tester.pump();
+    await marquee.moveTo(screen(bounds.bottomRight));
+    await marquee.up();
+    await tester.pump();
     expect(c.selectedIds, containsAll(['qr', 'ticketSymbol']));
     await tester.tap(find.byTooltip('TicketLayout.viewOptions'));
     await tester.pumpAndSettle();
@@ -238,23 +471,30 @@ void main() {
     await tester.pumpAndSettle();
     final previous = c.document;
     final touchDrag = await tester.startGesture(screen(qr.box.center));
-    await touchDrag.moveBy(const Offset(-8, -8)); await touchDrag.up(); await tester.pump();
+    await touchDrag.moveBy(const Offset(-8, -8));
+    await touchDrag.up();
+    await tester.pump();
     expect(c.selectedIds, containsAll(['qr', 'ticketSymbol']));
     expect(c.document.toJson(), isNot(previous.toJson()));
-
   });
-  testWidgets('text emphasis round trips, updates the editor and supports undo', (tester) async {
+  testWidgets('text emphasis round trips, updates the editor and supports undo',
+      (tester) async {
     final c = TicketLayoutController(document())..select('occasionTitle');
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
-        child: TicketLayoutProperties(controller: c)))));
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: TicketLayoutProperties(controller: c)))));
     for (final style in ['bold', 'italic', 'underline']) {
-      await tester.tap(find.byTooltip('TicketLayout.$style')); await tester.pump();
+      await tester.tap(find.byTooltip('TicketLayout.$style'));
+      await tester.pump();
       expect(c.selection!.toJson()['style'][style], isTrue);
     }
     final restored = TicketElement.fromJson(c.selection!.toJson());
     expect(restored.bold && restored.italic && restored.underline, isTrue);
-    c.undo(); expect(c.selection!.underline, isFalse);
-    await tester.pumpWidget(const SizedBox()); c.dispose();
+    c.undo();
+    expect(c.selection!.underline, isFalse);
+    await tester.pumpWidget(const SizedBox());
+    c.dispose();
   });
   test('A4 template stays printable in the legacy named slot', () {
     final layouts = jsonDecode(
@@ -293,36 +533,47 @@ void main() {
     }
   });
 
-  testWidgets('returning from the editor keeps its button ready while only changed thumbnails reload', (tester) async {
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        unitUser: OccasionUserModel(isEditor: true));
+  testWidgets(
+      'returning from the editor keeps its button ready while only changed thumbnails reload',
+      (tester) async {
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(unitUser: OccasionUserModel(isEditor: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
     final service = SettingsService();
     final feature = TicketFeature(code: 'ticket', ticketType: 'named');
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
-      child: TicketSettings(feature: feature, occasionId: 7, service: service)))));
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: TicketSettings(
+                    feature: feature, occasionId: 7, service: service)))));
     await tester.pumpAndSettle();
     final edit = find.widgetWithText(FilledButton, 'TicketLayout.edit');
     expect(service.resolveCalls, 1);
-    await tester.tap(edit); await tester.pumpAndSettle();
+    await tester.tap(edit);
+    await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutEditor), findsOneWidget,
         reason: 'system back must not dismiss a clean editor');
     await tester.tap(find.byTooltip('TicketLayout.cancel').first);
     await tester.pumpAndSettle();
-    expect(service.resolveCalls, 2, reason: 'cancel does not reload the thumbnail');
+    expect(service.resolveCalls, 2,
+        reason: 'cancel does not reload the thumbnail');
     expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    await tester.tap(edit); await tester.pumpAndSettle();
-    final editorController = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    await tester.tap(edit);
+    await tester.pumpAndSettle();
+    final editorController = tester
+        .widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas))
+        .controller;
     editorController.replace(document().withFont('roboto'));
     await tester.pump();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutEditor), findsOneWidget);
     expect(find.text('TicketLayout.discard'), findsNothing,
-        reason: 'back gestures must not interrupt editing with a discard prompt');
+        reason:
+            'back gestures must not interrupt editing with a discard prompt');
     service.pendingResolve = Completer<TicketLayoutResources>();
     final changed = document().withFont('roboto');
     Navigator.of(tester.element(find.byType(TicketLayoutEditor)))
@@ -514,16 +765,17 @@ void main() {
         expect(d.toJson(), entry.value);
       }
     }
-    for (final entry in (fixtures['invalid'] as Map).entries) {
-      final l = entry.value;
-      if (l['schemaVersion'] != 1 || (l['templates'] as Map).isEmpty) continue;
-      final templates = (l['templates'] as Map).entries;
+    final allowed = (jsonDecode(File('assets/fonts/ticket-font-catalog.json')
+            .readAsStringSync())['fonts'] as List)
+        .map((f) => f['id'] as String)
+        .toSet();
+    for (final entry in (fixtures['invalid'] as Map).entries)
       expect(
-          templates.any((e) =>
-              TicketTemplate.fromJson(e.value).validate(e.key).isNotEmpty),
-          isTrue,
+          () => validateTicketLayout(
+              (entry.value as Map).cast<String, dynamic>(),
+              allowedFontIds: allowed),
+          throwsFormatException,
           reason: entry.key);
-    }
   });
   test(
       'a drag is one undo step with immediate notifications and zoom independent coordinates',
@@ -904,49 +1156,79 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     c.dispose();
   });
-  test('imported appearance round trips and compact rows retain editable geometry', () {
-    final source = jsonDecode(File('test/fixtures/ticket_layout/imported.json').readAsStringSync()) as Map;
+  test(
+      'imported appearance round trips and compact rows retain editable geometry',
+      () {
+    final source = jsonDecode(File('test/fixtures/ticket_layout/imported.json')
+        .readAsStringSync()) as Map;
     final t = TicketTemplate.fromJson(source);
     expect(t.validate('wide'), isEmpty);
     expect(t.toJson()['qrAppearance'], source['qrAppearance']);
     expect(t.toJson()['flow'], source['flow']);
     expect(TicketTemplate.fromJson(t.toJson()).validate('wide'), isEmpty);
     expect(t.font, 'robotoSlab');
-    final data = <String, String?>{'food':'Večeře', 'price':'Cena', 'spotGroup':'Stůl'};
+    final data = <String, String?>{
+      'food': 'Večeře',
+      'price': 'Cena',
+      'spotGroup': 'Stůl'
+    };
     final visible = t.positionedElements(data);
     final food = visible.firstWhere((e) => e.binding == 'food');
     final price = visible.firstWhere((e) => e.binding == 'price');
-    expect(price.box.top-food.box.top, closeTo(t.appearance['flowStep'] as double, .001));
+    expect(price.box.top - food.box.top,
+        closeTo(t.appearance['flowStep'] as double, .001));
     final c = TicketLayoutController(t)..select('price');
     c.move(const Offset(0, 5), snap: false);
-    expect(c.document.positionedElements(data).firstWhere((e) => e.binding == 'price').box.top, closeTo(price.box.top+5, .001));
+    expect(
+        c.document
+            .positionedElements(data)
+            .firstWhere((e) => e.binding == 'price')
+            .box
+            .top,
+        closeTo(price.box.top + 5, .001));
     c.replace(c.document.withFont('roboto'));
-    expect(c.document.font, 'roboto');
-    c.undo();expect(c.document.font,'robotoSlab');
-    final resized=t.resizeArea(Size(t.area.width*.9,t.area.height*.9));
-    expect(resized.appearance['flowStep'],closeTo((t.appearance['flowStep'] as num)*.9,.001));
+    expect(c.document.fontId, legacyTicketFontIds['roboto']);
+    c.undo();
+    expect(c.document.font, 'robotoSlab');
+    final resized = t.resizeArea(Size(t.area.width * .9, t.area.height * .9));
+    expect(resized.appearance['flowStep'],
+        closeTo((t.appearance['flowStep'] as num) * .9, .001));
     c.dispose();
   });
 
-  testWidgets('sidebar eyes toggle visibility without changing selection and support undo', (tester) async {
+  testWidgets(
+      'sidebar eyes toggle visibility without changing selection and support undo',
+      (tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
-      occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
     await tester.pumpAndSettle();
-    final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    final c = tester
+        .widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas))
+        .controller;
     c.select('logo');
     await tester.pump();
-    final titleRow = find.widgetWithText(ListTile, 'TicketLayout.occasionTitle');
-    final eye = find.descendant(of: titleRow, matching: find.byType(IconButton));
-    bool titleVisible() => c.document.elements.singleWhere((e) => e.id == 'occasionTitle').visible;
+    final titleRow =
+        find.widgetWithText(ListTile, 'TicketLayout.occasionTitle');
+    final eye =
+        find.descendant(of: titleRow, matching: find.byType(IconButton));
+    bool titleVisible() =>
+        c.document.elements.singleWhere((e) => e.id == 'occasionTitle').visible;
     await tester.tap(eye);
     await tester.pump();
     expect(titleVisible(), isFalse);
     expect(c.selectedIds, {'logo'});
-    expect(find.descendant(of: titleRow, matching: find.byIcon(Icons.visibility_off)), findsOneWidget);
+    expect(
+        find.descendant(
+            of: titleRow, matching: find.byIcon(Icons.visibility_off)),
+        findsOneWidget);
     c.undo();
     await tester.pump();
     expect(titleVisible(), isTrue);
@@ -955,26 +1237,35 @@ void main() {
     await tester.tap(eye);
     await tester.pump();
     expect(titleVisible(), isTrue);
-    await tester.tap(find.descendant(of: titleRow, matching: find.byType(Text)));
+    await tester
+        .tap(find.descendant(of: titleRow, matching: find.byType(Text)));
     await tester.pump();
     expect(c.selectedIds, {'occasionTitle'});
     for (final binding in ['qr', 'ticketSymbol']) {
       final button = find.descendant(
-        of: find.widgetWithText(ListTile, 'TicketLayout.$binding'),
-        matching: find.byType(IconButton));
+          of: find.widgetWithText(ListTile, 'TicketLayout.$binding'),
+          matching: find.byType(IconButton));
       expect(tester.widget<IconButton>(button).onPressed, isNull);
     }
   });
 
-  testWidgets('editor history shortcuts work from properties and preserve text field history', (tester) async {
+  testWidgets(
+      'editor history shortcuts work from properties and preserve text field history',
+      (tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(
-      occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
     await tester.pumpAndSettle();
-    final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    final c = tester
+        .widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas))
+        .controller;
     c.select('occasionTitle');
     await tester.pump();
     final original = c.selection!.bold;
@@ -982,7 +1273,8 @@ void main() {
     await tester.pump();
     Focus.of(tester.element(find.byIcon(Icons.format_bold))).requestFocus();
     await tester.pump();
-    Future<void> shortcut(LogicalKeyboardKey modifier, LogicalKeyboardKey key, {bool shift = false}) async {
+    Future<void> shortcut(LogicalKeyboardKey modifier, LogicalKeyboardKey key,
+        {bool shift = false}) async {
       await tester.sendKeyDownEvent(modifier);
       if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
       await tester.sendKeyEvent(key);
@@ -990,6 +1282,7 @@ void main() {
       await tester.sendKeyUpEvent(modifier);
       await tester.pump();
     }
+
     expect(c.selection!.bold, !original);
     await shortcut(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyZ);
     expect(c.selection!.bold, original);
@@ -997,7 +1290,8 @@ void main() {
     expect(c.selection!.bold, !original);
     await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ);
     expect(c.selection!.bold, original);
-    await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ, shift: true);
+    await shortcut(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyZ,
+        shift: true);
     expect(c.selection!.bold, !original);
     await tester.tap(find.text('TicketLayout.color'));
     await tester.pumpAndSettle();
@@ -1012,67 +1306,56 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('ticket font selection updates the document, metrics and undo', (tester) async {
-    tester.view.physicalSize = const Size(1280, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final r=resources();
-    final fonts={'futura':r.metrics,'roboto':r.metrics};
-    final withFonts=TicketLayoutResources(template:r.template,preset:r.preset,
-      scenarios:r.scenarios,metrics:r.metrics,fonts:fonts,
-      fontLabels:const {'futura':'Futura PT','roboto':'Roboto'},
-      qrSize:r.qrSize,qrModules:r.qrModules);
-    await tester.pumpWidget(MaterialApp(home:TicketLayoutEditor(
-      occasionId:1,type:'named',resources:withFonts,service:FakeService())));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Futura PT').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Roboto').last);
-    await tester.pumpAndSettle();
-    final canvas=tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
-    expect(canvas.controller.document.font,'roboto');
-    canvas.controller.undo();await tester.pumpAndSettle();
-    expect(canvas.controller.document.font,'futura');
-    await tester.pumpWidget(const SizedBox());
-  });
-
-  testWidgets('QR foreground and background edit atomically on mobile with contrast and undo', (tester) async {
+  testWidgets(
+      'QR foreground and background edit atomically on mobile with contrast and undo',
+      (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final c=TicketLayoutController(document())..select('qr');
-    final initial=c.document.toJson();
-    await tester.pumpWidget(MaterialApp(home:Scaffold(body:SingleChildScrollView(
-      child:TicketLayoutProperties(controller:c)))));
+    final c = TicketLayoutController(document())..select('qr');
+    final initial = c.document.toJson();
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: TicketLayoutProperties(controller: c)))));
     await tester.tap(find.text('TicketLayout.qrColors'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byType(TextField));
-    await tester.enterText(find.byType(TextField),'FFFFFF');
+    await tester.enterText(find.byType(TextField), 'FFFFFF');
     await tester.pump();
-    final apply=find.widgetWithText(FilledButton,'TicketLayout.apply');
-    expect(tester.widget<FilledButton>(apply).onPressed,isNull);
-    final background=find.text('TicketLayout.qrBackground');
+    final apply = find.widgetWithText(FilledButton, 'TicketLayout.apply');
+    expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+    final background = find.text('TicketLayout.qrBackground');
     await tester.ensureVisible(background);
-    await tester.tap(background);await tester.pumpAndSettle();
+    await tester.tap(background);
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byType(TextField));
-    await tester.enterText(find.byType(TextField),'17365D');await tester.pump();
-    expect(tester.widget<FilledButton>(apply).onPressed,isNotNull);
-    expect(c.document.toJson(),initial);
-    await tester.tap(apply);await tester.pumpAndSettle();
-    expect(c.selection!.color,'FFFFFF');
-    expect(c.document.qrAppearance['background'],'17365D');
-    expect(c.document.qrAppearance['opacity'],1);
-    expect(c.document.validate('named'),isEmpty);
-    expect(TicketTemplate.fromJson(c.document.toJson()).qrAppearance['background'],'17365D');
-    c.undo();await tester.pumpAndSettle();expect(c.document.toJson(),initial);
-    await tester.tap(find.text('TicketLayout.qrColors'));await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('TicketLayout.swapColors'));await tester.pump();
-    await tester.tap(find.text('TicketLayout.cancel'));await tester.pumpAndSettle();
-    expect(c.document.toJson(),initial);
-    expect(tester.takeException(),isNull);
-    await tester.pumpWidget(const SizedBox());c.dispose();
+    await tester.enterText(find.byType(TextField), '17365D');
+    await tester.pump();
+    expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
+    expect(c.document.toJson(), initial);
+    await tester.tap(apply);
+    await tester.pumpAndSettle();
+    expect(c.selection!.color, 'FFFFFF');
+    expect(c.document.qrAppearance['background'], '17365D');
+    expect(c.document.qrAppearance['opacity'], 1);
+    expect(c.document.validate('named'), isEmpty);
+    expect(
+        TicketTemplate.fromJson(c.document.toJson()).qrAppearance['background'],
+        '17365D');
+    c.undo();
+    await tester.pumpAndSettle();
+    expect(c.document.toJson(), initial);
+    await tester.tap(find.text('TicketLayout.qrColors'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('TicketLayout.swapColors'));
+    await tester.pump();
+    await tester.tap(find.text('TicketLayout.cancel'));
+    await tester.pumpAndSettle();
+    expect(c.document.toJson(), initial);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    c.dispose();
   });
-
 }
