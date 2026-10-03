@@ -386,6 +386,80 @@ void main() {
         zoom: 4, anchor: Offset.zero);
     expect(zoomed.box.width, 98);
   });
+  test(
+      'crop corners, bounded movement, serialization, cancel and undo preserve the source',
+      () {
+    const image = Size(400, 200);
+    for (var corner = 0; corner < 4; corner++) {
+      final c = TicketLayoutController(document());
+      final original = c.document;
+      final full = original.backgroundRect(image);
+      final corners = [
+        full.topLeft,
+        full.topRight,
+        full.bottomRight,
+        full.bottomLeft
+      ];
+      final drag = (corners[(corner + 2) % 4] - corners[corner]) * .25;
+      c.beginGesture();
+      c.cropBackground(image, drag, corner: corner, snap: false);
+      c.endGesture();
+      expect(c.document.backgroundCrop.width, closeTo(.75, .000001));
+      expect(c.document.backgroundCrop.height, closeTo(.75, .000001));
+      expect(c.document.backgroundRect(image), full);
+      expect(c.document.elements, original.elements);
+      expect(c.document.validate('wide'), isEmpty);
+      final saved = TicketTemplate.fromJson(c.document.toJson());
+      expect(saved.backgroundCrop, c.document.backgroundCrop);
+      c.beginGesture();
+      c.cropBackground(
+          image,
+          Offset(saved.backgroundCrop.left > 0 ? -9999 : 9999,
+              saved.backgroundCrop.top > 0 ? -9999 : 9999),
+          snap: false);
+      c.endGesture();
+      expect(c.document.backgroundCrop.left,
+          closeTo(saved.backgroundCrop.left > 0 ? 0 : .25, .000001));
+      expect(c.document.backgroundCrop.top,
+          closeTo(saved.backgroundCrop.top > 0 ? 0 : .25, .000001));
+      c.undo();
+      expect(c.document.toJson(), saved.toJson());
+      c.beginGesture();
+      c.cropBackground(image, drag, corner: corner, snap: false);
+      c.cancelGesture();
+      expect(c.document.toJson(), saved.toJson());
+      c.undo();
+      expect(c.document.toJson(), original.toJson());
+      c.dispose();
+    }
+    for (final crop in [
+      null,
+      {},
+      {'x': -.1, 'y': 0, 'width': 1, 'height': 1},
+      {'x': 0, 'y': 0, 'width': 0, 'height': 1},
+      {'x': .5, 'y': 0, 'width': 1, 'height': 1}
+    ]) {
+      expect(
+          TicketTemplate.fromJson(
+                  document().toJson()..['backgroundCrop'] = crop)
+              .validate('wide'),
+          contains('background'));
+    }
+  });
+  test('crop magnets snap to ticket edges and can be disabled', () {
+    const image = Size(400, 200);
+    final c = TicketLayoutController(document().withBackground(2, Offset.zero));
+    final full = c.document.backgroundRect(image);
+    c.beginGesture();
+    c.cropBackground(image, Offset(2 - full.left, 0), corner: 0);
+    expect(c.document.croppedBackgroundRect(image).left, closeTo(0, .000001));
+    c.cancelGesture();
+    c.beginGesture();
+    c.cropBackground(image, Offset(2 - full.left, 0), corner: 0, snap: false);
+    expect(c.document.croppedBackgroundRect(image).left, closeTo(2, .000001));
+    c.cancelGesture();
+    c.dispose();
+  });
   test('paper and artwork edits retain element geometry and undo together', () {
     final original = document();
     final placed = original.withBackground(2, const Offset(-.3, .2));
@@ -476,6 +550,22 @@ void main() {
         before);
     view.controller.undo();
     expect(view.controller.document.backgroundScale, 1);
+    await tester.pumpAndSettle();
+    await tester.tap(
+        find.widgetWithText(OutlinedButton, 'TicketLayout.cropImage'.tr()));
+    await tester.pumpAndSettle();
+    final cropPoint = MatrixUtils.transformPoint(view.transform.value, scene) +
+        tester.getTopLeft(find.byType(TicketLayoutCanvas));
+    await tester.dragFrom(cropPoint, const Offset(-60, -30));
+    await tester.pumpAndSettle();
+    expect(view.controller.document.backgroundCrop.width, lessThan(1));
+    expect(view.controller.document.backgroundScale, 1);
+    expect(view.controller.document.elements.map((e) => e.toJson()).toList(),
+        before);
+    await tester.tap(find.text('TicketLayout.resetCrop'.tr()));
+    await tester.pumpAndSettle();
+    expect(view.controller.document.backgroundCrop,
+        const Rect.fromLTWH(0, 0, 1, 1));
     await tester.pumpWidget(const SizedBox());
   });
   testWidgets('editor shows one font picker and a contrasting Apply action',

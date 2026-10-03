@@ -68,6 +68,18 @@ BEGIN
         OR NOT EXISTS(SELECT 1 FROM public.ticket_font_assets WHERE id=t->>'fontId')
       THEN RAISE EXCEPTION 'Invalid ticket font'; END IF;
     END IF;
+    IF t ? 'backgroundCrop' THEN
+      b:=t->'backgroundCrop';
+      IF jsonb_typeof(b) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'Invalid background crop'; END IF;
+      FOREACH k IN ARRAY ARRAY['x','y','width','height'] LOOP
+        IF jsonb_typeof(b->k) IS DISTINCT FROM 'number' THEN RAISE EXCEPTION 'Invalid background crop'; END IF;
+      END LOOP;
+      IF (b->>'x')::numeric<0 OR (b->>'y')::numeric<0
+        OR (b->>'width')::numeric<.001 OR (b->>'height')::numeric<.001
+        OR (b->>'x')::numeric+(b->>'width')::numeric>1.000001
+        OR (b->>'y')::numeric+(b->>'height')::numeric>1.000001
+      THEN RAISE EXCEPTION 'Invalid background crop'; END IF;
+    END IF;
     IF t ? 'backgroundTransform' THEN
       b:=t->'backgroundTransform';
       IF jsonb_typeof(b) IS DISTINCT FROM 'object'

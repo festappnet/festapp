@@ -2073,6 +2073,9 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "resetCrop": "Show entire image",
+    "cropImageHint": "Drag the corners to crop. Drag inside to move the crop.",
+    "cropImage": "Crop image",
     "originalPaperHint": "The original paper format of this template is preserved.",
     "invalidMargin": "Enter a margin between 0 and 25.4 mm.",
     "marginHint": "White space on all sides, added to the ticket size. 0-25.4 mm.",

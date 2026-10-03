@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "e65386b64fbefa43ce1d65319c25a913b2194426",
+  "baseMainSha": "a9db5cb931b2106255610e445016cd4021126004",
   "release": {
-    "version": "0.20.60+544",
-    "note": "Restore navigation dimensions and eliminate recursive HTML editor actions"
+    "version": "0.20.61+545",
+    "note": "Restore configured Festapp wordmark above web loading indicator"
   }
 }

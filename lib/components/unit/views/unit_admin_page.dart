@@ -276,12 +276,6 @@ class _SideMenuState extends State<SideMenu> {
         width: _isExpanded ? SideMenu.expandedWidth : SideMenu.collapsedWidth,
         decoration: BoxDecoration(
           color: Theme.of(context).canvasColor,
-          border: Border(
-            right: BorderSide(
-              color: Theme.of(context).dividerColor,
-              width: 1.0,
-            ),
-          ),
         ),
         child: Column(
           children: [
