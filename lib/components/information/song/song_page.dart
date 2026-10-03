@@ -29,8 +29,8 @@ class _SongbookPageState extends State<SongbookPage> {
   static bool? isDarkMode;
   static bool isDarkModeDefault = false;
 
-  final ThemeData lightTheme = ThemeConfig.baseTheme();
-  final ThemeData darkTheme = ThemeConfig.darkTheme(ThemeConfig.baseTheme());
+  final ThemeData lightTheme = ThemeConfig.theme();
+  final ThemeData darkTheme = ThemeConfig.theme(brightness: Brightness.dark);
 
   bool _isDialogOpen = false;
 
