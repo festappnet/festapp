@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "5e13d80b881fd0ba9f2bb6b923d45187b5070819",
+  "baseMainSha": "62c8943d323865b1e4b4fdd9f74d4d8b1f2c0537",
   "release": {
-    "version": "0.20.73+557",
-    "note": "Retain occasion settings on Save and open the only form automatically"
+    "version": "0.20.74+558",
+    "note": "Restore expanding side menu as an overlay without resizing content"
   }
 }
