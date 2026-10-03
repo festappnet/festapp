@@ -52,6 +52,7 @@ class TicketLayoutEditor extends StatefulWidget {
 class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   late final controller = TicketLayoutController(widget.resources.template,
       artworkKey: widget.resources.initialArtworkKey,
+      geometryData: () => resources.scenarios[scenario]!,
       prepareDocument: (doc) => ensureTicketCodeFits(
           doc,
           resources.metricsFor(doc,
@@ -355,7 +356,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Future<void> editDimensions() async {
-    final original = controller.document;
+    final original = controller.positionedDocument(controller.document);
     final previousWholePage = wholePage;
     setState(() => wholePage = true);
     controller.beginGesture();
@@ -624,12 +625,27 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   ?.copyWith(fontWeight: FontWeight.w600))));
 
   Future<void> editCanvasColor() async {
-    final color = await showDialog<String>(
+    final original = controller.document;
+    controller.beginGesture();
+    final color = await showDialog<TicketCanvasColor>(
         context: editorContext,
-        builder: (_) =>
-            TicketCanvasColorDialog(value: controller.document.canvasColor));
-    if (mounted && color != null && color != controller.document.canvasColor) {
-      controller.replace(controller.document.withCanvasColor(color));
+        builder: (_) => TicketCanvasColorDialog(
+            value: original.canvasColor,
+            opacity: original.canvasOpacity,
+            usedColors: [
+              ...original.elements.map((e) => e.color),
+              original.canvasColor
+            ],
+            image: canvas.currentState?.backgroundImage,
+            onPreview: (color) => controller.previewDocument(original
+                .withCanvasColor(color.color, opacity: color.opacity))));
+    if (!mounted) return;
+    if (color == null) {
+      controller.cancelGesture();
+    } else {
+      controller.previewDocument(
+          original.withCanvasColor(color.color, opacity: color.opacity));
+      controller.endGesture();
     }
   }
 
@@ -684,9 +700,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
               return ListTile(
                   dense: true,
                   title: Text(TicketLayoutStrings.canvasColor),
-                  subtitle: Text(value == 'transparent'
+                  subtitle: Text(controller.document.canvasOpacity == 0
                       ? TicketLayoutStrings.transparent
-                      : '#${value.toUpperCase()}'),
+                      : '#${value.toUpperCase()} · ${((1 - controller.document.canvasOpacity) * 100).round()} % ${TicketLayoutStrings.transparency.toLowerCase()}'),
                   trailing: Container(
                       width: 28,
                       height: 28,

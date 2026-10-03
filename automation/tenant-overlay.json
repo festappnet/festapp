@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapp",
-  "baseMainSha": "3912447c88f070910cfcf64e2a93c53191284430",
+  "baseMainSha": "b7768278dbd269a5b174dcfeb8f023822de7b477",
   "release": {
-    "version": "0.20.66+550",
-    "note": "Keep administration tabs left aligned at all screen widths"
+    "version": "0.20.68+552",
+    "note": "Release verified ticket editor geometry and live canvas colors"
   }
 }

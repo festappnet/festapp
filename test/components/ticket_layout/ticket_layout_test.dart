@@ -635,8 +635,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.ensureVisible(
         find.widgetWithText(TextButton, 'TicketLayout.cropImage'.tr()).last);
-    await tester
-        .tap(find.widgetWithText(TextButton, 'TicketLayout.cropImage'.tr()).last);
+    await tester.tap(
+        find.widgetWithText(TextButton, 'TicketLayout.cropImage'.tr()).last);
     await tester.pumpAndSettle();
     final cropPoint = MatrixUtils.transformPoint(view.transform.value, scene) +
         tester.getTopLeft(find.byType(TicketLayoutCanvas));
@@ -1317,7 +1317,7 @@ void main() {
     for (final escape in [true, false]) {
       await tester.tap(find.text('choose canvas'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(SwitchListTile));
+      tester.widget<Slider>(find.byType(Slider)).onChanged!(.5);
       await tester.pumpAndSettle();
       if (escape) {
         await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -1328,6 +1328,104 @@ void main() {
       expect(find.byType(TicketCanvasColorDialog), findsNothing);
       expect(result, isNull);
     }
+  });
+
+  test(
+      'canvas bounds and movement use the price actually displayed after hidden flow rows',
+      () {
+    var base =
+        TicketTemplate.fromJson(fixture['presetsByType']['wide']['classic']);
+    for (final e in base.elements.toList()) {
+      if (e.binding == 'qr')
+        base =
+            base.replace(e.copyWith(box: const Rect.fromLTWH(400, 10, 60, 60)));
+      if (e.binding == 'ticketSymbol')
+        base = base
+            .replace(e.copyWith(box: const Rect.fromLTWH(400, 75, 100, 15)));
+      final i = ['spotGroup', 'food', 'note', 'price'].indexOf(e.binding);
+      if (i >= 0)
+        base = base.replace(e.copyWith(
+            box: Rect.fromLTWH(40, 80 + i * 40, 140, 20),
+            visible: !['food', 'note'].contains(e.binding)));
+    }
+    base = TicketTemplate(
+        fitPageToTicket: base.fitPageToTicket,
+        area: base.area,
+        page: base.page,
+        elements: base.elements,
+        appearance: {
+          ...base.appearance,
+          'flow': ['spotGroup', 'food', 'note', 'price'],
+          'flowStep': 40
+        });
+    final data = <String, String?>{'spotGroup': 'Stůl', 'price': 'Cena'};
+    final price =
+        base.positionedElements(data).firstWhere((e) => e.binding == 'price');
+    final c = TicketLayoutController(base, geometryData: () => data)
+      ..beginGesture();
+    c.resizeCanvas(Offset(0, price.box.bottom + 2 - base.area.height),
+        handle: 1, snap: true);
+    expect(c.document.area.height, closeTo(price.box.bottom, .001));
+    expect(
+        c.document.elements.firstWhere((e) => e.id == price.id).visible, true);
+    expect(c.guideY, price.box.bottom);
+    c.endGesture();
+    c.undo();
+    expect(c.document.toJson(), base.toJson());
+    c.select(price.id);
+    c.beginGesture();
+    c.move(const Offset(0, 10), snap: false);
+    expect(
+        c.document
+            .positionedElements(data)
+            .firstWhere((e) => e.id == price.id)
+            .box
+            .top,
+        closeTo(price.box.top + 10, .001));
+    c.cancelGesture();
+    const image = Size(1000, 200);
+    final edge = base.croppedBackgroundRect(image).bottom;
+    c.beginGesture();
+    c.resizeCanvas(Offset(0, edge + 2 - base.area.height),
+        handle: 1, backgroundImage: image);
+    expect(c.document.area.height, closeTo(edge, .001));
+    expect(c.guideY, closeTo(edge, .001));
+    c.cancelGesture();
+    c.beginGesture();
+    c.resizeCanvas(Offset(0, edge + 2 - base.area.height),
+        handle: 1, backgroundImage: image, snap: false);
+    expect(c.document.area.height, closeTo(edge + 2, .001));
+    c.dispose();
+  });
+
+  testWidgets(
+      'canvas colors preview immediately and cancel restores one transaction',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
+    await tester.pumpAndSettle();
+    final c = tester
+        .widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas))
+        .controller;
+    final before = c.document.toJson();
+    await tester.tap(find.text('TicketLayout.canvasColor'.tr()));
+    await tester.pumpAndSettle();
+    tester.widget<Slider>(find.byType(Slider)).onChanged!(.4);
+    await tester.pump();
+    expect(c.document.canvasOpacity, closeTo(.6, .001));
+    expect(c.canUndo, false);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(c.document.toJson(), before);
+    expect(c.canUndo, false);
   });
 
   test('ticket height can shrink while a minimum-size QR remains printable',
@@ -2172,7 +2270,9 @@ void main() {
     await tester.enterText(find.byType(TextField), '17365D');
     await tester.pump();
     expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
-    expect(c.document.toJson(), initial);
+    expect(c.selection!.color, 'FFFFFF');
+    expect(c.document.qrAppearance['background'], '17365D');
+    expect(c.canUndo, isFalse);
     await tester.tap(apply);
     await tester.pumpAndSettle();
     expect(c.selection!.color, 'FFFFFF');

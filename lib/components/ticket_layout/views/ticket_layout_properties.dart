@@ -1,10 +1,10 @@
+import 'ticket_color_suggestions.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../ticket_layout_controller.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_text.dart';
-import '../ticket_image_palette.dart';
 import '../ticket_layout_strings.dart';
 
 class TicketLayoutProperties extends StatelessWidget {
@@ -28,13 +28,17 @@ class TicketLayoutProperties extends StatelessWidget {
       builder: (context, _) {
         final e = controller.selection;
         if (controller.selectedIds.length > 1) {
-          return Padding(padding: const EdgeInsets.all(12), child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${TicketLayoutStrings.selectedElements}: ${controller.selectedIds.length}',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(TicketLayoutStrings.groupMoveHint),
-            ]));
+          return Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        '${TicketLayoutStrings.selectedElements}: ${controller.selectedIds.length}',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Text(TicketLayoutStrings.groupMoveHint),
+                  ]));
         }
         if (e == null) return const SizedBox.shrink();
         final text = !['qr', 'logo'].contains(e.binding);
@@ -74,20 +78,34 @@ class TicketLayoutProperties extends StatelessWidget {
                     Text(TicketLayoutStrings.textStyle),
                     const SizedBox(height: 6),
                     SegmentedButton<String>(
-                      multiSelectionEnabled: true, emptySelectionAllowed: true,
-                      showSelectedIcon: false,
-                      segments: [
-                        ButtonSegment(value: 'bold', tooltip: TicketLayoutStrings.bold,
-                            icon: const Icon(Icons.format_bold)),
-                        ButtonSegment(value: 'italic', tooltip: TicketLayoutStrings.italic,
-                            icon: const Icon(Icons.format_italic)),
-                        ButtonSegment(value: 'underline', tooltip: TicketLayoutStrings.underline,
-                            icon: const Icon(Icons.format_underlined)),
-                      ],
-                      selected: {if (e.bold) 'bold', if (e.italic) 'italic', if (e.underline) 'underline'},
-                      onSelectionChanged: e.locked ? null : (values) => controller.change(e.copyWith(
-                        bold: values.contains('bold'), italic: values.contains('italic'),
-                        underline: values.contains('underline')))),
+                        multiSelectionEnabled: true,
+                        emptySelectionAllowed: true,
+                        showSelectedIcon: false,
+                        segments: [
+                          ButtonSegment(
+                              value: 'bold',
+                              tooltip: TicketLayoutStrings.bold,
+                              icon: const Icon(Icons.format_bold)),
+                          ButtonSegment(
+                              value: 'italic',
+                              tooltip: TicketLayoutStrings.italic,
+                              icon: const Icon(Icons.format_italic)),
+                          ButtonSegment(
+                              value: 'underline',
+                              tooltip: TicketLayoutStrings.underline,
+                              icon: const Icon(Icons.format_underlined)),
+                        ],
+                        selected: {
+                          if (e.bold) 'bold',
+                          if (e.italic) 'italic',
+                          if (e.underline) 'underline'
+                        },
+                        onSelectionChanged: e.locked
+                            ? null
+                            : (values) => controller.change(e.copyWith(
+                                bold: values.contains('bold'),
+                                italic: values.contains('italic'),
+                                underline: values.contains('underline')))),
                     const SizedBox(height: 12),
                     Text(TicketLayoutStrings.align),
                     const SizedBox(height: 6),
@@ -127,25 +145,51 @@ class TicketLayoutProperties extends StatelessWidget {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                                color:
-                                    Color(int.parse('ff${e.binding == 'qr' ? controller.document.qrAppearance['background'] ?? 'FFFFFF' : e.color}', radix: 16)),
+                                color: Color(int.parse(
+                                    'ff${e.binding == 'qr' ? controller.document.qrAppearance['background'] ?? 'FFFFFF' : e.color}',
+                                    radix: 16)),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(color: Colors.grey)),
-                            child: e.binding == 'qr' ? Icon(Icons.qr_code_2, color: Color(int.parse('ff${e.color}', radix: 16))) : null),
+                            child: e.binding == 'qr'
+                                ? Icon(Icons.qr_code_2,
+                                    color: Color(
+                                        int.parse('ff${e.color}', radix: 16)))
+                                : null),
                         onTap: e.locked
                             ? null
                             : () async {
-                                final color = await showDialog<({String foreground, String background})>(
+                                final original = controller.document;
+                                controller.beginGesture();
+                                final color = await showDialog<
+                                        ({String foreground, String background})>(
                                     context: context,
-                                    builder: (_) =>
-                                        _TicketColorDialog(element: e, usedColors: controller.document.elements.map((e) => e.color).toSet().toList(), backgroundImage: backgroundImage, background: controller.document.qrAppearance['background'] as String? ?? 'FFFFFF'));
-                                if (!context.mounted || color == null) return;
-                                if (e.binding == 'qr') {
-                                  if (color.foreground != e.color || color.background != (controller.document.qrAppearance['background'] ?? 'FFFFFF')) {
-                                    controller.replace(controller.document.withQrColors(color.foreground, color.background));
-                                  }
-                                } else if (color.foreground != e.color) {
-                                  controller.change(e.copyWith(color: color.foreground));
+                                    builder: (_) => _TicketColorDialog(
+                                        element: e,
+                                        usedColors: [
+                                          ...original.elements
+                                              .map((e) => e.color),
+                                          original.canvasColor
+                                        ],
+                                        backgroundImage: backgroundImage,
+                                        background:
+                                            original.qrAppearance['background']
+                                                    as String? ??
+                                                'FFFFFF',
+                                        onPreview: (foreground, background) =>
+                                            controller.previewDocument(e.binding == 'qr'
+                                                ? original.withQrColors(
+                                                    foreground, background)
+                                                : original.replace(
+                                                    e.copyWith(color: foreground)))));
+                                if (color == null) {
+                                  controller.cancelGesture();
+                                } else {
+                                  controller.previewDocument(e.binding == 'qr'
+                                      ? original.withQrColors(
+                                          color.foreground, color.background)
+                                      : original.replace(
+                                          e.copyWith(color: color.foreground)));
+                                  controller.endGesture();
                                 }
                               }),
                   if (text) ...[
@@ -209,77 +253,45 @@ class _TicketColorDialog extends StatefulWidget {
   final String background;
   final List<String> usedColors;
   final ui.Image? backgroundImage;
-  const _TicketColorDialog({required this.element, required this.background, required this.usedColors, this.backgroundImage});
+  final void Function(String foreground, String background)? onPreview;
+  const _TicketColorDialog(
+      {required this.element,
+      required this.background,
+      required this.usedColors,
+      this.backgroundImage,
+      this.onPreview});
   @override
   State<_TicketColorDialog> createState() => _TicketColorDialogState();
 }
 
 class _TicketColorDialogState extends State<_TicketColorDialog> {
-  late Color foreground = Color(int.parse('ff${widget.element.color}', radix: 16));
+  late Color foreground =
+      Color(int.parse('ff${widget.element.color}', radix: 16));
   late Color background = Color(int.parse('ff${widget.background}', radix: 16));
   bool editingBackground = false;
-  List<String> imageColors = [];
-  @override
-  void initState() {
-    super.initState();
-    extractImageColors();
-  }
-
-  Future<void> extractImageColors() async {
-    final image = widget.backgroundImage;
-    if (image == null) return;
-    // Sample a tiny raster, never read the full-resolution artwork into Dart.
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-        const Rect.fromLTWH(0, 0, 96, 96), Paint());
-    final picture = recorder.endRecording();
-    final sample = await picture.toImage(96, 96);
-    picture.dispose();
-    final bytes = await sample.toByteData(format: ui.ImageByteFormat.rawRgba);
-    sample.dispose();
-    if (bytes == null || !mounted) return;
-    setState(() => imageColors = ticketArtworkSuggestions(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes)));
-  }
-
-  Widget swatches(String label, Iterable<String> colors) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text(label, style: Theme.of(context).textTheme.labelMedium),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(spacing: 8, children: colors.map((v) => v.toUpperCase()).toSet().map((v) =>
-        IconButton(
-          tooltip: '#$v',
-          onPressed: () { focus.unfocus(); pick(Color(int.parse('ff$v', radix: 16))); },
-          // IconButton.style is ignored by Material 2, used by the app.
-          // Paint the swatch itself so both themes show the actual color.
-          iconSize: 32,
-          icon: Container(
-            width: 32, height: 32,
-            decoration: BoxDecoration(
-              color: Color(int.parse('ff$v', radix: 16)),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey),
-            ),
-            child: value == v ? Icon(Icons.check, size: 22,
-              color: Color(int.parse('ff$v', radix: 16)).computeLuminance() > .5
-                  ? Colors.black : Colors.white) : null,
-          ),
-        )).toList())),
-      const SizedBox(height: 12),
-    ]);
-
   bool get isQr => widget.element.binding == 'qr';
   Color get color => editingBackground ? background : foreground;
-  String colorHex(Color value) => value.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase();
-  bool get readable => ticketQrColorReadable(colorHex(foreground), colorHex(background));
+  String colorHex(Color value) => value
+      .toARGB32()
+      .toRadixString(16)
+      .padLeft(8, '0')
+      .substring(2)
+      .toUpperCase();
+  bool get readable =>
+      ticketQrColorReadable(colorHex(foreground), colorHex(background));
   void selectBackground(bool selected) => setState(() {
-    focus.unfocus(); editingBackground = selected; hex.text = value;
-  });
+        focus.unfocus();
+        editingBackground = selected;
+        hex.text = value;
+      });
   void swapColors() => setState(() {
-    focus.unfocus(); final previous = foreground; foreground = background; background = previous; hex.text = value;
-  });
+        focus.unfocus();
+        final previous = foreground;
+        foreground = background;
+        background = previous;
+        hex.text = value;
+        widget.onPreview?.call(colorHex(foreground), colorHex(background));
+      });
   late final hex =
       TextEditingController(text: widget.element.color.toUpperCase());
   final focus = FocusNode();
@@ -297,10 +309,15 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
   }
 
   void pick(Color c, {bool fromHex = false}) => setState(() {
-        if (editingBackground) { background = c; } else { foreground = c; }
+        if (editingBackground) {
+          background = c;
+        } else {
+          foreground = c;
+        }
         if (!fromHex) {
           hex.text = value;
         }
+        widget.onPreview?.call(colorHex(foreground), colorHex(background));
       });
   @override
   Widget build(BuildContext context) => AlertDialog(
@@ -312,50 +329,70 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
               child: SingleChildScrollView(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                 if (isQr) ...[
-                  Container(padding: const EdgeInsets.all(8), color: background,
-                    child: Icon(Icons.qr_code_2, size: 56, color: foreground)),
+                  Container(
+                      padding: const EdgeInsets.all(8),
+                      color: background,
+                      child:
+                          Icon(Icons.qr_code_2, size: 56, color: foreground)),
                   const SizedBox(height: 8),
                   Row(children: [
-                    Expanded(child: SegmentedButton<bool>(
-                      segments: [
-                        ButtonSegment(value: false, label: Text(TicketLayoutStrings.qrForeground)),
-                        ButtonSegment(value: true, label: Text(TicketLayoutStrings.qrBackground)),
-                      ],
-                      selected: {editingBackground},
-                      onSelectionChanged: (value) => selectBackground(value.single))),
-                    IconButton(onPressed: swapColors, tooltip: TicketLayoutStrings.swapColors,
-                      icon: const Icon(Icons.swap_horiz)),
+                    Expanded(
+                        child: SegmentedButton<bool>(
+                            segments: [
+                          ButtonSegment(
+                              value: false,
+                              label: Text(TicketLayoutStrings.qrForeground)),
+                          ButtonSegment(
+                              value: true,
+                              label: Text(TicketLayoutStrings.qrBackground)),
+                        ],
+                            selected: {
+                          editingBackground
+                        },
+                            onSelectionChanged: (value) =>
+                                selectBackground(value.single))),
+                    IconButton(
+                        onPressed: swapColors,
+                        tooltip: TicketLayoutStrings.swapColors,
+                        icon: const Icon(Icons.swap_horiz)),
                   ]),
                   const SizedBox(height: 8),
                   Text(TicketLayoutStrings.qrBackgroundHint),
                   const SizedBox(height: 12),
                 ],
-                swatches(TicketLayoutStrings.usedColors, widget.usedColors),
-                if (imageColors.isNotEmpty) swatches(TicketLayoutStrings.imageColors, imageColors),
-                swatches(TicketLayoutStrings.basicColors, ticketQrColors),
-                  ColorPicker(
-                      pickerColor: color,
-                      enableAlpha: false,
-                      labelTypes: const [],
-                      portraitOnly: true,
-                      pickerAreaHeightPercent: .8,
-                      onColorChanged: pick),
-                  TextField(
-                      controller: hex,
-                      focusNode: focus,
-                      maxLength: 6,
-                      decoration: const InputDecoration(
-                          prefixText: '#', labelText: 'HEX'),
-                      onChanged: (v) {
-                        if (RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(v)) {
-                          pick(Color(int.parse('ff$v', radix: 16)), fromHex: true);
-                        } else {
-                          setState(() {});
-                        }
-                      }),
+                TicketColorSuggestions(
+                    usedColors: widget.usedColors,
+                    image: widget.backgroundImage,
+                    selected: value,
+                    onSelect: (color) {
+                      focus.unfocus();
+                      pick(color);
+                    }),
+                ColorPicker(
+                    pickerColor: color,
+                    enableAlpha: false,
+                    labelTypes: const [],
+                    portraitOnly: true,
+                    pickerAreaHeightPercent: .8,
+                    onColorChanged: pick),
+                TextField(
+                    controller: hex,
+                    focusNode: focus,
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                        prefixText: '#', labelText: 'HEX'),
+                    onChanged: (v) {
+                      if (RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(v)) {
+                        pick(Color(int.parse('ff$v', radix: 16)),
+                            fromHex: true);
+                      } else {
+                        setState(() {});
+                      }
+                    }),
                 if (isQr && !readable)
                   Text(TicketLayoutStrings.qrContrast,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)),
               ]))),
           actions: [
             TextButton(
@@ -363,8 +400,12 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
                 child: Text(TicketLayoutStrings.cancel)),
             FilledButton(
                 onPressed: !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(hex.text) ||
-                    isQr && !readable
-                    ? null : () => Navigator.pop(context, (foreground: colorHex(foreground), background: colorHex(background))),
+                        isQr && !readable
+                    ? null
+                    : () => Navigator.pop(context, (
+                          foreground: colorHex(foreground),
+                          background: colorHex(background)
+                        )),
                 child: Text(TicketLayoutStrings.apply)),
           ]);
 }
