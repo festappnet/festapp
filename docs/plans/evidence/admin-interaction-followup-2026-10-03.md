@@ -33,7 +33,17 @@ with the failure screen taking precedence over a context-mismatch spinner.
 The occasion regression additionally restores the loader and verifies explicit
 Retry succeeds; prior rights-revocation/restoration and browser-history tests pass.
 
-Validation: 100 navigation/unit widget tests pass. Scoped Dart analysis reports
+## Tab transitions and occasion switching
+
+Restored AutoTabsRouter.tabBar's native animated transition, matching the previous
+TabBarView. Occasion switching now carries the active static section/subtab paths,
+including Report and Orders/History, from the active native router even when the
+breadcrumb context belongs to the outer shell. Object IDs and their queries do
+not cross occasions; a form detail returns to Forms for the destination occasion.
+Existing feature availability normalization still chooses an available tab.
+Tests cover Report switching, object-ID removal, and History A -> B -> A with Back.
+
+Validation: 102 navigation/unit widget tests pass. Scoped Dart analysis reports
 no errors or warnings. Shared source is validated on main; the local preview
 keeps its report work and tenant configuration, and is rebuilt into staging before
 replacing the existing compiled server root on port 18875. No duplicate user-facing

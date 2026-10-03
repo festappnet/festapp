@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/router_service.dart';
+import 'package:fstapp/components/navigation/occasion_administration_boundary.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 
 Future<void> mount(
@@ -46,6 +47,34 @@ void main() {
     expect(find.text('CURRENT CONTENT'), findsOneWidget);
   });
 
+  testWidgets(
+      'occasion switch preserves Report from the outer breadcrumb context',
+      (tester) async {
+    final access = Access();
+    final router = FixtureRouter(access);
+    await mount(tester, router, '/occasion-a/reservations/report');
+    final context = tester.element(find.byType(OccasionAdministrationBoundary));
+    unawaited(RouterService.navigateToOccasionAdministration(context,
+        occasionLink: 'occasion-b'));
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/occasion-b/reservations/report');
+    expect(find.text('REPORT CONTENT'), findsOneWidget);
+    expect(access.requests, ['occasion-a', 'occasion-b']);
+  });
+
+  testWidgets('occasion switch drops the previous form identity',
+      (tester) async {
+    final router = FixtureRouter(Access());
+    await mount(
+        tester, router, '/occasion-a/reservations/forms/second/responses');
+    unawaited(RouterService.navigateToOccasionAdministration(
+        tester.element(find.text('RESPONSES CONTENT')),
+        occasionLink: 'occasion-b'));
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/occasion-b/reservations/forms');
+    expect(find.text('FORMS LIST'), findsOneWidget);
+  });
+
   testWidgets('incoming browser history restores retained occasion context',
       (tester) async {
     final access = Access();
@@ -78,12 +107,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(access.requests, ['occasion-a', 'occasion-b']);
-    expect(router.currentUrl, '/occasion-b/reservations/orders/current');
-    expect(find.text('CURRENT CONTENT'), findsOneWidget);
+    expect(router.currentUrl, '/occasion-b/reservations/orders/history');
+    expect(find.text('HISTORY CONTENT'), findsOneWidget);
     expect(tester.binding.hasScheduledFrame, isFalse,
         reason: 'Breadcrumb switching must stop refreshing after loading');
     unawaited(RouterService.navigateToOccasionAdministration(
-        tester.element(find.text('CURRENT CONTENT')),
+        tester.element(find.text('HISTORY CONTENT')),
         occasionLink: 'occasion-a'));
     for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -92,7 +121,7 @@ void main() {
     expect(tester.binding.hasScheduledFrame, isFalse);
     await router.maybePop();
     await tester.pumpAndSettle();
-    expect(router.currentUrl, '/occasion-b/reservations/orders/current');
+    expect(router.currentUrl, '/occasion-b/reservations/orders/history');
     await router.maybePop();
     await tester.pumpAndSettle();
     expect(router.currentUrl, '/occasion-a/reservations/orders/history');
