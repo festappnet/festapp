@@ -41,8 +41,9 @@ its local M3 theme overrides an inherited theme, and are not runtime fallbacks.
   program, event theme, timeline, form/admin components, Google login and startup.
 - The full Flutter run includes ticket-editor coverage and the five new
   metadata regression cases. Web tests, 100 local SQL tests, 212 Deno tests and
-  repository automation checks also passed. Integration dependency setup and
-  the final tenant release checks are recorded below when complete.
+  repository automation checks also passed. After installing the isolated
+  worker dependencies, integration checks passed three tests and skipped 27
+  requiring private inputs. One Flutter test was skipped by its existing gate.
 - Targeted Dart analysis: no errors; two existing immutable-field warnings
   (`FormPage.formLink`, `MyApp.isTimeTravelVisible`) and existing informational
   diagnostics remain. The offline browser harness analyzes without issues.
@@ -74,3 +75,11 @@ simulator build, not an interactive device check. Backend, SDK, dependency and
 web_client behavior are unchanged. Subsequent user instructions authorize a main
 merge and a single-tenant release to `live.festapp.net` (`prod/festapp`, Pages
 project `festapplive`). Other tenants are outside the rollout scope.
+
+## Main synchronization and release
+
+The cutover includes upstream main `1695ebf847cc69f949082245105a6a30dde644b6`
+(ticket resize handles and PDF margins). Shared source is merged into main;
+the Festapp production overlay is replayed over this canonical main using only
+its allowlisted tenant paths. Release build, drift validation and the canonical
+post-deployment verifier must pass before reporting deployment complete.
