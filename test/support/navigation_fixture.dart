@@ -32,6 +32,7 @@ class Access extends ChangeNotifier implements AdministrationAccess {
 
 class FixtureRouter extends RootStackRouter {
   final Access access;
+  WidgetBuilder? formsListBuilder;
   bool extra = true;
   bool dirty = false;
   bool discard = false;
@@ -100,8 +101,12 @@ class FixtureRouter extends RootStackRouter {
                     page(FormsNavigationRoute.name, 'forms',
                         (context) => const AutoRouter(),
                         children: [
-                          page(FormsListRoute.name, '',
-                              (context) => const Text('FORMS LIST')),
+                          page(
+                              FormsListRoute.name,
+                              '',
+                              (context) =>
+                                  formsListBuilder?.call(context) ??
+                                  const Text('FORMS LIST')),
                           page(
                               FormDetailRoute.name,
                               ':formLink',

@@ -163,7 +163,7 @@ void main() {
     expect(find.text('Second'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
-    expect(router.currentUrl, '/occasion-a/reservations/forms');
+    expect(router.currentUrl, '/occasion-a/reservations/forms?list=true');
     expect(find.text('FORM LIST'), findsOneWidget);
   });
   for (final id in ['deleted', 'foreign']) {
@@ -206,7 +206,8 @@ void main() {
     expect(router.currentUrl, '/unit/5/edit/bank-accounts');
     expect(find.text('ACCOUNT LIST'), findsOneWidget);
   });
-  testWidgets('bank membership uses the loaded unit scope during rights refresh',
+  testWidgets(
+      'bank membership uses the loaded unit scope during rights refresh',
       (tester) async {
     final router = ObjectFixture();
     router.accounts = (unitId) async {
