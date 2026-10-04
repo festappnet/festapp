@@ -1,3 +1,4 @@
+-- Cancel unsent order mail atomically with authorized order deletion.
 CREATE OR REPLACE FUNCTION public.delete_order_221(order_id BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -114,3 +115,18 @@ BEGIN
 
 END;
 $$;
+
+-- Repair already orphaned unsent order intents; preserve delivery evidence.
+WITH cancelled AS (
+  UPDATE public.email_messages m
+     SET workflow_state = 'cancelled', last_error = 'order_deleted',
+         lease_token = NULL, lease_until = NULL
+   WHERE m.order_id IS NOT NULL
+     AND m.workflow_state IN ('pending', 'retry_wait', 'blocked', 'preparing')
+     AND NOT EXISTS (SELECT 1 FROM eshop.orders o WHERE o.id = m.order_id)
+   RETURNING m.message_id
+)
+UPDATE public.email_attempts a
+   SET state = 'cancelled', finished_at = now(), error_code = 'order_deleted'
+ WHERE a.message_id IN (SELECT message_id FROM cancelled)
+   AND a.state = 'preparing';
