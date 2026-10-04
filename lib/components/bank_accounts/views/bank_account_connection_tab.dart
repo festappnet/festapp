@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -46,11 +48,115 @@ class BankAccountConnectionTab extends StatefulWidget {
 
 class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   bool _isTokenVisible = false;
+  Timer? _relativeTimeRefresh;
+
+  @override
+  void initState() {
+    super.initState();
+    _relativeTimeRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _relativeTimeRefresh?.cancel();
+    super.dispose();
+  }
+
   String? get _storedToken => widget.account.bankSync != null
       ? widget.account.bankSync!.tokenMasked
       : widget.account.tokenMasked;
   DateTime? get _lastBankPull =>
       widget.account.bankSync?.bankPullAt ?? widget.account.lastFioFetchTime;
+
+  Widget _buildConnectionStatus(BuildContext context) {
+    final sync = widget.account.bankSync!;
+    final colors = Theme.of(context).colorScheme;
+    final connected = !widget.isSaving && sync.state == 'connected';
+    final needsAttention = !widget.isSaving && sync.state == 'degraded';
+    final color = connected
+        ? (Theme.of(context).brightness == Brightness.dark
+            ? Colors.green.shade300
+            : Colors.green.shade800)
+        : needsAttention
+            ? colors.error
+            : colors.onSurfaceVariant;
+
+    Widget timestamp(IconData icon, String label, DateTime? value) {
+      final relative = value == null
+          ? BankAccountStrings.notReceived
+          : timeago.format(value.toLocal(),
+              locale: context.locale.languageCode);
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: colors.onSurfaceVariant),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 2,
+              children: [
+                Text(label, style: TextStyle(color: colors.onSurfaceVariant)),
+                Text(relative,
+                    style: const TextStyle(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(BankAccountStrings.connectionState,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  )),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ExcludeSemantics(
+                    child: Icon(Icons.circle, size: 9, color: color)),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    widget.isSaving
+                        ? BankAccountStrings.tokenVerifying
+                        : BankAccountStrings.connectionStatus(sync.state),
+                    style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          timestamp(Icons.account_balance_outlined, BankAccountStrings.bankPull,
+              sync.bankPullAt),
+          const SizedBox(height: 8),
+          timestamp(Icons.sync_alt, BankAccountStrings.receiverCommit,
+              sync.receiverCommitAt),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,16 +170,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (widget.account.bankSync != null) ...[
-              Text(
-                widget.isSaving ? BankAccountStrings.tokenVerifying : '${BankAccountStrings.connectionState}: ${BankAccountStrings.connectionStatus(widget.account.bankSync!.state)}',
-              ),
-              Text(
-                '${BankAccountStrings.bankPull}: ${widget.account.bankSync!.bankPullAt ?? BankAccountStrings.notReceived}',
-              ),
-              Text(
-                '${BankAccountStrings.receiverCommit}: ${widget.account.bankSync!.receiverCommitAt ?? BankAccountStrings.notReceived}',
-              ),
-              if (!widget.isSaving && widget.account.bankSync!.lastError != null)
+              _buildConnectionStatus(context),
+              const SizedBox(height: 12),
+              if (!widget.isSaving &&
+                  widget.account.bankSync!.lastError != null)
                 Text(
                   BankAccountStrings.syncError(
                     widget.account.bankSync!.lastError,
@@ -378,8 +478,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const SizedBox(width: 20, height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
+                      const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2)),
                       const SizedBox(width: 12),
                       Flexible(child: Text(BankAccountStrings.tokenVerifying)),
                     ],
@@ -390,7 +492,7 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
       if (widget.isSaving) ...[
         const SizedBox(height: 12),
         Text(BankAccountStrings.tokenVerificationWait,
-          textAlign: TextAlign.center),
+            textAlign: TextAlign.center),
       ],
     ];
   }
