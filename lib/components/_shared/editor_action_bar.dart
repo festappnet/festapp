@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'common_strings.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
 /// Keeps a detached baseline, including nested mutable models.
@@ -85,15 +86,32 @@ class _EditorActionBarState extends State<EditorActionBar> {
   @override
   Widget build(BuildContext context) {
     final active = widget.enabled && widget.hasChanges && !_busy;
+    final header = Theme.of(context).appBarTheme;
+    final background = header.backgroundColor ?? ThemeConfig.appBarColor();
+    final foreground = header.foregroundColor ??
+        ThemeConfig.textColorForBackground(background);
     return BottomAppBar(
-      color: Theme.of(context).colorScheme.surface,
-      height: 72,
+      color: background,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        TextButton(
-            onPressed: active ? () => _run(discard: true) : null,
-            child: Text(CommonStrings.discardChanges)),
-        const SizedBox(width: 16),
+        Flexible(
+            child: TextButton(
+                style: TextButton.styleFrom(
+                    foregroundColor: foreground,
+                    disabledForegroundColor: foreground.withValues(alpha: .38)),
+                onPressed: active ? () => _run(discard: true) : null,
+                child: Text(CommonStrings.discardChanges,
+                    maxLines: 1, overflow: TextOverflow.ellipsis))),
+        const SizedBox(width: 8),
         FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: foreground,
+                foregroundColor: background,
+                disabledBackgroundColor: foreground.withValues(alpha: .12),
+                disabledForegroundColor: foreground.withValues(alpha: .38)),
             onPressed: active ? () => _run(discard: false) : null,
             child: _performing
                 ? const SizedBox(
