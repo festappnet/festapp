@@ -2,8 +2,6 @@ DO $$
 DECLARE
     v_acc_1 bigint;
     v_acc_2 bigint;
-    v_code_1 text;
-    v_code_2 text;
     v_user_id uuid;
 BEGIN
     RAISE NOTICE 'Starting Unique Pairing Code Test...';
@@ -33,23 +31,7 @@ BEGIN
         RAISE NOTICE 'Caught expected unique_violation.';
     END;
 
-    -- 3. Verify Function Retry (Simulated collision is hard without mocking gen_random_bytes)
-    -- But we can verify the function works normally at least.
-    PERFORM public.regenerate_bank_account_pairing_code(v_acc_1);
-    
-    SELECT pairing_code INTO v_code_1 FROM eshop.bank_accounts WHERE id = v_acc_1;
-    IF length(v_code_1) != 10 THEN
-        RAISE EXCEPTION 'Generated code invalid length';
-    END IF;
-    
-    RAISE NOTICE 'Test Passed.';
-    
-    RAISE EXCEPTION 'Test Complete (Rollback)';
-EXCEPTION WHEN OTHERS THEN
-    IF SQLERRM LIKE '%Test Complete (Rollback)%' THEN
-        RAISE NOTICE 'Test completed successfully and rolled back.';
-    ELSE
-        RAISE;
-    END IF;
+    PERFORM assert_true(to_regprocedure('public.regenerate_bank_account_pairing_code(bigint)') IS NULL,
+        'legacy email pairing-code generation must remain retired');
 END;
 $$;
