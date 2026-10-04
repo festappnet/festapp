@@ -10,6 +10,9 @@
         ],
         "components": [
           {
+            "/": "/app/google-auth"
+          },
+          {
             "/": "/delete-account*"
           },
           {

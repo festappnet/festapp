@@ -33,8 +33,9 @@ for (const payment of cases) {
     assert.equal(host.querySelector('.result-payment-more summary')?.textContent, 'Zobrazit možnosti platby');
     host.querySelector('.result-payment-more').open = true;
     assert.equal(host.querySelector('.result-payment-more')?.open, true);
+    assert.match(host.querySelector('.result-subtitle')?.textContent || '', /Platební údaje najdete níže/);
     assert.match(host.querySelector('.result-subtitle')?.textContent || '', /zakaznik@example.cz/);
-    assert.match(host.querySelector('.result-subtitle')?.textContent || '', /obvykle během několika minut/);
+    assert.match(host.querySelector('.result-subtitle')?.textContent || '', /právě odesíláme/i);
     assert.doesNotMatch(host.querySelector('.result-payment-card')?.textContent || '', /zakaznik@example.cz/);
     assert.equal(host.querySelector('.result-payment-total')?.textContent,
       payment.currency_code === 'EUR' ? '12,50 EUR' : '490 CZK');
@@ -53,7 +54,7 @@ test('free or failed orders do not show a payment card', () => {
   OrderResult.render(host, true, { code: 200, ticketOrder: { order: { data: { email: 'free@example.cz' } } } }, model, () => {});
   assert.equal(host.querySelector('.result-payment-card'), null);
   assert.match(host.querySelector('.result-subtitle')?.textContent || '', /free@example.cz/);
-  assert.match(host.querySelector('.result-subtitle')?.textContent || '', /obvykle během několika minut/);
+  assert.match(host.querySelector('.result-subtitle')?.textContent || '', /právě odesíláme/i);
   assert.doesNotMatch(host.querySelector('.result-subtitle')?.textContent || '', /platební údaje/);
   OrderResult.render(host, false, { code: 999, payment_qr: cases[0] }, model, () => {});
   assert.equal(host.querySelector('.result-payment-card'), null);
@@ -83,6 +84,6 @@ test('Czech informal confirmation uses tykání with the returned address', () =
     ticketOrder: { order: { data: { email: 'zakaznik@example.cz' } } },
   }, { communicationTone: 'informal', visibleFields: [{ type: 'ticket' }] }, () => {});
   assert.match(host.querySelector('.result-title')?.textContent || '', /^Tvá objednávka/);
-  assert.match(host.querySelector('.result-subtitle')?.textContent || '', /údaje ti přijdou na e-mail zakaznik@example.cz, obvykle během několika minut/);
+  assert.match(host.querySelector('.result-subtitle')?.textContent || '', /Platební údaje najdeš níže/);
   dom.window.close();
 });

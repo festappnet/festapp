@@ -1,3 +1,6 @@
+import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
+import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/components/users/user_strings.dart';
@@ -10,6 +13,7 @@ import 'package:trina_grid/trina_grid.dart';
 class UserColumns {
   static const String ID = "id";
   static const String UNIT = "unit";
+  static const String EMAIL_HISTORY = "email_history";
   static const String EMAIL = "email";
   static const String NAME = "name";
   static const String SURNAME = "surname";
@@ -50,7 +54,43 @@ class UserColumns {
   static const String CREATED_AT = "created_at";
   static const String LAST_SIGN_IN_AT = "last_sign_in_at";
 
+  /// Help is keyed by field, so it survives column reloads and reordering.
+  static Map<String, String> get columnHelp => {
+        MANAGER: UserStrings.administratorHelp,
+        EDITOR: UserStrings.editorHelp,
+        EDITOR_VIEW: UserStrings.readOnlyHelp,
+        EDITOR_ORDER: UserStrings.editOrdersHelp,
+        EDITOR_ORDER_VIEW: UserStrings.readOrdersHelp,
+        UNIT_MANAGER: UserStrings.unitAdministratorHelp,
+        UNIT_EDITOR: UserStrings.unitEditorHelp,
+        UNIT_EDITOR_VIEW: UserStrings.unitReadOnlyHelp,
+        APPROVER: UserStrings.approverHelp,
+        APPROVED: UserStrings.approvedHelp,
+        RECEPTIONIST: UserStrings.receptionistHelp,
+        CLEANING_CREW: UserStrings.cleaningCrewHelp,
+        CLEANING_BLOCKED: UserStrings.cleaningBlockedHelp,
+        IS_VOLUNTEER: UserStrings.volunteerHelp,
+        INVITED: UserStrings.invitedHelp,
+      };
+
   static Map<String, dynamic> get columnBuilders => {
+        EMAIL_HISTORY: [
+          TrinaColumn(
+              title: EmailDeliveryStrings.title,
+              field: EMAIL_HISTORY,
+              type: TrinaColumnType.text(),
+              readOnly: true,
+              width: 70,
+              enableEditingMode: false,
+              renderer: (cell) => IconButton(
+                  tooltip: EmailDeliveryStrings.history,
+                  icon: const Icon(Icons.mail_outline),
+                  onPressed: () => showDialog<void>(
+                      context: cell.stateManager.gridKey.currentContext!,
+                      builder: (_) => EmailDeliveryHistory(
+                          organizationId: AppConfig.organization,
+                          userId: cell.row.cells[ID]?.value.toString()))))
+        ],
         ID: [
           TrinaColumn(
             hide: true,

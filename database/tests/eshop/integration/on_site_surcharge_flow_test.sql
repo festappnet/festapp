@@ -29,7 +29,8 @@ DECLARE
     v_scan_result jsonb;
     v_deposit_info jsonb;
     v_reminder_count bigint;
-    v_report text;
+    v_report jsonb;
+    v_report_user uuid;
 BEGIN
     -- ==================================================================
     -- Setup: On-site deposit deadline (NOT days-based)
@@ -80,8 +81,8 @@ BEGIN
     SELECT payment_info INTO v_payment_info_id FROM eshop.orders WHERE id = v_order_id;
 
     -- No deposit reminder should be queued (on_site deadline)
-    SELECT COUNT(*) INTO v_reminder_count FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 1: No reminder for on_site deadline');
     RAISE NOTICE 'Step 1 PASSED: Order created, no reminder for on_site';
 
@@ -102,8 +103,8 @@ BEGIN
     -- Step 3: Batch function produces no reminder (on_site excluded)
     -- ==================================================================
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
-    SELECT COUNT(*) INTO v_reminder_count FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 3: No reminder from batch for on_site');
     RAISE NOTICE 'Step 3 PASSED: Batch produces no reminder for on_site';
 
@@ -153,18 +154,23 @@ BEGIN
     -- ==================================================================
     -- Step 7: Financial report shows deposit/remaining split
     -- ==================================================================
-    SELECT get_report_for_occasion(v_occasion_id) INTO v_report;
-    RAISE NOTICE 'Report output: %', v_report;
+    PERFORM create_user_for_test('report_integration', 'report-integration@test.local');
+    v_report_user := get_user_id('report_integration');
+    UPDATE public.user_info SET organization=v_org_id WHERE id=v_report_user;
+    INSERT INTO public.occasion_users (occasion,"user",is_editor_order_view) VALUES (v_occasion_id,v_report_user,true);
+    PERFORM set_config('request.jwt.claim.sub',v_report_user::text,true);
+    PERFORM set_config('test.report_link',(SELECT link FROM public.occasions WHERE id=v_occasion_id),true);
+    SET LOCAL ROLE authenticated;
+    v_report := public.get_report_ws(current_setting('test.report_link',true));
+    RESET ROLE;
+    PERFORM assert_eq((v_report->>'code')::int,200,'Report succeeds through authorized RPC');
+    PERFORM assert_eq((v_report->'report'->'money_by_currency'->0->>'deposit_received_gross')::numeric,
+      500::numeric,'Report deposit split');
+    PERFORM assert_eq((v_report->'report'->'money_by_currency'->0->>'beyond_deposit_received_gross')::numeric,
+      500::numeric,'Report beyond-deposit split excludes non-deposit orders');
+    PERFORM assert_eq((v_report->'report'->'money_by_currency'->0->>'received')::numeric,
+      1000::numeric,'Report received from payment workflow');
 
-    PERFORM assert_true(
-        v_report LIKE '%Zálohy (deposits)%',
-        'Step 7: Report should contain deposit line'
-    );
-    PERFORM assert_true(
-        v_report LIKE '%Doplatky (remaining)%',
-        'Step 7: Report should contain remaining line'
-    );
-    RAISE NOTICE 'Step 7 PASSED: Report shows deposit/remaining split';
 
     RAISE NOTICE '=============================================';
     RAISE NOTICE 'On-site deposit deadline integration test PASSED!';

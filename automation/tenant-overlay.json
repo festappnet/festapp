@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
   "tenantId": "farnostopava",
-  "baseMainSha": "ef9d390c3f89cd8cbae821af37ae2575b75b1712",
-  "release": {
-    "version": "0.20.20+504",
-    "note": "Update Farnost Opava web to current main"
-  }
+  "baseMainSha": "6835e2223cb7206d34e5b07647afc0be9c147475"
 }

@@ -59,7 +59,7 @@ Deno.test("CS depositReminder — contains remaining + deadline + payment detail
   assertStringIncludes(html, "500 Kč");
   assertStringIncludes(html, "29.5.2026");
   // Payment details block
-  assertStringIncludes(html, "1234567/0100");
+  assertStringIncludes(html.replace(/<[^>]*>/g, ""), "1234567/0100");
   assertStringIncludes(html, "VS12345");
 });
 

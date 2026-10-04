@@ -290,7 +290,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.20+504";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.83+567";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -301,6 +301,8 @@
 <body>
 
 <script>
+  // Suppress browser swipe navigation on the root scrolling element as well.
+  document.documentElement.style.overscrollBehaviorX = "none";
   // Disable swipe back gesture globally
   document.body.style.overscrollBehaviorX = "none";
   document.body.style.overscrollBehaviorY = "none";
@@ -308,8 +310,7 @@
   let deferredPrompt;
 
   window.addEventListener('beforeinstallprompt', (e) => {
-    // Retain the browser event for Festapp's explicit install button.
-    e.preventDefault();
+    // Retain the event without suppressing the browser's native installation affordance.
     deferredPrompt = e;
     if (typeof hasPrompt === 'function') hasPrompt();
   });
@@ -456,7 +457,8 @@
           onEntrypointLoaded: async function(engineInitializer) {
             try {
               const appRunner = await engineInitializer.initializeEngine({
-                useColorEmoji: true
+                useColorEmoji: true,
+                assetBase: new URL(".", document.baseURI).href
               });
               await appRunner.runApp();
             } catch (error) {
@@ -484,21 +486,26 @@
       margin: 0px;
     }
     .main-content {
+      --festapp-loading-accent: #fab417;
       position: fixed;
       inset: 0;
       z-index: 1000;
       background: #242424;
       display: flex;
+      flex-direction: column;
+      gap: 24px;
       align-items: center;
       justify-content: center;
       transition: opacity 0.4s ease-out;
     }
 
   img.initial-logo {
-    margin-top: -80px;
+    display: block;
+    width: calc(100vw - 48px);
     max-width: 320px;
     max-height: 120px;
-    position: absolute;
+    height: auto;
+    object-fit: contain;
   }
 
   /* HTML: <div class="loader"></div> */
@@ -521,7 +528,7 @@
     border-radius: 50%;
   }
   .loader::before {
-    border-color: #fd6206 #0000;
+    border-color: var(--festapp-loading-accent) #0000;
     animation: inherit;
     animation-duration: .5s;
     animation-direction: reverse;

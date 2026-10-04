@@ -176,12 +176,15 @@ class DbOccasions {
           : await _commands.save(occasionModel);
       occasionModel.id = saved.id;
       occasionModel.aggregateVersion = saved.aggregateVersion;
+      occasionModel.features = saved.features;
+      occasionModel.markTicketLayoutSaved();
       return;
     }
-    final Map<String, dynamic> occasionJson = occasionModel.toJson();
+    final Map<String, dynamic> occasionJson = occasionModel.toSaveJson();
     await _supabase.rpc("update_occasion_203", params: {
       "input_data": occasionJson,
     });
+    occasionModel.markTicketLayoutSaved();
   }
 
   /// Returns false only when the event exists but its media could not be copied.

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -25,12 +26,28 @@ class ExportOptions {
 }
 
 class SingleDataGridController<T extends ITrinaRowModel> {
+  HtmlSaveCoordinator? _htmlSave;
+  HtmlSaveCoordinator get htmlSave => _htmlSave ??= HtmlSaveCoordinator();
+  void disposeHtml() {
+    _htmlSave?.dispose();
+    _htmlSave = null;
+  }
+
+  Future<void> prepareHtmlRows() => htmlSave.prepareWhere((identity) => {
+        ...updatedRows,
+        ...newRows
+      }.any((row) => row.key == identity.entity && !deletedRows.contains(row)));
   ValueNotifier<Key> refreshKeyNotifier = ValueNotifier(UniqueKey());
 
   late TrinaGridStateManager stateManager;
   Set<TrinaRow> updatedRows = {};
   Set<TrinaRow> deletedRows = {};
   Set<TrinaRow> newRows = {};
+  bool get hasPendingChanges =>
+      updatedRows.isNotEmpty ||
+      deletedRows.isNotEmpty ||
+      newRows.isNotEmpty ||
+      htmlSave.hasDraft;
   List<TrinaRow> rows = [];
   List<TrinaColumn> columns = [];
   final Future<List<T>> Function() loadData;
@@ -43,6 +60,9 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   final DataGridActionsController? actionsExtended;
   final List<DataGridAction>? headerChildren;
   final ExportOptions? exportOptions;
+
+  /// Localized plain-text explanations, keyed by column field.
+  final Map<String, String> columnHelp;
 
   String firstColumnTypeId = "delete0";
 
@@ -58,7 +78,8 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     this.getNewObject,
     this.copyObject,
     this.exportOptions,
-  });
+    Map<String, String> columnHelp = const {},
+  }) : columnHelp = Map.unmodifiable(columnHelp);
 
   String getCsvSeparator(Locale locale) {
     final format = NumberFormat.decimalPattern(locale.toString());
@@ -106,6 +127,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
 
   /// Applies [rows] to the grid and inserts the first column if needed.
   void applyDataToGrid() async {
+    htmlSave.clearBindings();
     stateManager.removeAllRows();
     stateManager.appendRows(rows);
 

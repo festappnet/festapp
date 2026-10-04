@@ -21,9 +21,14 @@ SET search_path = public, extensions
      v_form_id BIGINT;
      v_form_blueprint BIGINT;
      v_form_settings JSONB;
+     v_form_link TEXT;
+     v_form_link_base TEXT;
+     v_form_link_suffix INTEGER;
      v_reminder_interval_seconds BIGINT;
+     v_email_order record;
 
      input_features JSONB;
+     old_features JSONB;
      processed_features JSONB;
      feature JSONB;
      form_feature_found BOOLEAN;
@@ -101,16 +106,23 @@ SET search_path = public, extensions
          -- This is an UPDATE operation
 
          -- Check for the existence of the occasion and get its current unit
-         SELECT unit INTO final_unit FROM public.occasions WHERE id = occ_id;
+         SELECT unit, features INTO final_unit, old_features FROM public.occasions WHERE id = occ_id FOR UPDATE;
          IF NOT FOUND THEN
              RAISE EXCEPTION 'Occasion with ID % not found', occ_id;
          END IF;
+
+         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+             RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
+         END IF;
+         processed_features := public.merge_ticket_layout_features(old_features, processed_features, input_data->'ticket_layout_change');
 
          -- Determine the final unit, allowing it to be updated.
          final_unit := COALESCE((input_data->>'unit')::BIGINT, final_unit);
 
          -- Security check: ensure the current user has editor rights on the target unit.
-         PERFORM check_is_editor_on_unit(final_unit);
+         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+             RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
+         END IF;
 
          UPDATE public.occasions
             SET updated_at  = now,
@@ -126,6 +138,7 @@ SET search_path = public, extensions
                 organization = COALESCE((input_data->>'organization')::BIGINT, organization),
                 services    = COALESCE(input_data->'services', services),
                 unit        = final_unit,
+                is_order_synchronization_enabled=COALESCE((input_data->>'is_order_synchronization_enabled')::boolean,is_order_synchronization_enabled),
                 features    = processed_features -- Use the processed features
           WHERE id = occ_id
           RETURNING * INTO updated_occ;
@@ -140,7 +153,9 @@ SET search_path = public, extensions
          END IF;
 
          -- Security check for the new occasion's unit.
-         PERFORM check_is_editor_on_unit(final_unit);
+         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+             RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
+         END IF;
 
          -- We still need to default 'reminder_is_enabled' for the 'form' feature if not specified.
          -- We do this on the already processed_features array.
@@ -157,6 +172,8 @@ SET search_path = public, extensions
              END IF;
              processed_features := processed_features || feature::jsonb;
          END LOOP;
+
+         processed_features := public.merge_ticket_layout_features('[]', processed_features, input_data->'ticket_layout_change', true);
 
          INSERT INTO public.occasions(
              created_at, updated_at, title, description, link, data,
@@ -199,11 +216,25 @@ SET search_path = public, extensions
 
          -- Create a default form if one doesn't exist for the occasion
          IF NOT EXISTS (SELECT 1 FROM public.forms WHERE occasion = occ_id) THEN
-             PERFORM create_form(
-                 occ_id,
-                 COALESCE(input_data->>'form_link', updated_occ.link),
-                 'Registration'
-             );
+             v_form_link := NULLIF(btrim(input_data->>'form_link'), '');
+             IF v_form_link IS NULL THEN
+                 -- Occasion slugs and form slugs are separate namespaces.
+                 -- An automatic default must not block an unrelated settings save.
+                 v_form_link_base := COALESCE(NULLIF(updated_occ.link, ''), 'registration');
+                 v_form_link := v_form_link_base;
+                 v_form_link_suffix := 0;
+                 LOOP
+                     -- Serialize automatic allocation for each candidate, including
+                     -- candidates that are another occasion's unsuffixed slug.
+                     PERFORM pg_advisory_xact_lock(hashtextextended('default-form:' || v_form_link, 0));
+                     EXIT WHEN NOT EXISTS (SELECT 1 FROM public.forms WHERE link = v_form_link);
+                     v_form_link_suffix := v_form_link_suffix + 1;
+                     v_form_link := v_form_link_base || '-' || occ_id::text ||
+                         CASE WHEN v_form_link_suffix = 1 THEN '' ELSE '-' || v_form_link_suffix::text END;
+                 END LOOP;
+             END IF;
+             -- Explicit links still use create_form's collision validation.
+             PERFORM create_form(occ_id, v_form_link, 'Registration');
          END IF;
 
          -- Check if reminders are enabled within the form feature
@@ -214,10 +245,17 @@ SET search_path = public, extensions
                  86400
              );
              -- Call the function to queue payment reminders for all relevant orders
-             PERFORM public.queue_payment_reminders(occ_id, v_reminder_interval_seconds);
+
          END IF;
      END IF;
 
+     -- Revalidate in-flight reminders after every relevant occasion update.
+     PERFORM public.queue_payment_reminders(occ_id,coalesce(v_reminder_interval_seconds,86400));
+     IF updated_occ.is_order_synchronization_enabled THEN
+       FOR v_email_order IN SELECT id FROM eshop.orders WHERE occasion=occ_id AND state='paid' LOOP
+         PERFORM public.enqueue_paid_order_tickets(v_email_order.id);
+       END LOOP;
+     END IF;
      -- Check if the blueprint feature is enabled in the final, saved state
      IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
          -- Find the associated form to attach the blueprint to

@@ -1,4 +1,4 @@
-import { deliverEmail } from "../_shared/emailDelivery.ts";
+import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
 import {
   accountDeletionCors,
   deleteAccountStorageObjects,
@@ -182,7 +182,7 @@ Deno.serve(async (request) => {
       organization,
       appName: branding.appName,
     }, (message) =>
-      deliverEmail({
+      enqueueAndAwaitEmail({
         ...message,
         from: `${branding.appName} | Festapp <${
           Deno.env.get("DEFAULT_EMAIL") || ""

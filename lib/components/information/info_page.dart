@@ -1,8 +1,9 @@
+import 'package:fstapp/components/html/editable_html_field.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
 import 'package:fstapp/components/information/db_information.dart';
@@ -26,8 +27,6 @@ import 'package:fstapp/widgets/buttons_helper.dart';
 import 'package:fstapp/widgets/pop_button.dart';
 import 'package:fstapp/components/images/zoomable_image/zoomable_image.dart';
 import '../../services/toast_helper.dart';
-import '../html/html_view.dart';
-import '../html/html_editor_page.dart';
 
 @RoutePage()
 class InfoPage extends StatefulWidget {
@@ -40,6 +39,7 @@ class InfoPage extends StatefulWidget {
 }
 
 class _InfoPageState extends State<InfoPage> {
+  final _htmlSave = HtmlSaveCoordinator();
   final JSInterop jsInterop = JSInterop();
   final ScrollController _scrollController = ScrollController();
   List<InformationModel>? _informationList;
@@ -62,6 +62,7 @@ class _InfoPageState extends State<InfoPage> {
 
   @override
   void dispose() {
+    _htmlSave.dispose();
     ClientSyncRuntime.projectionEpoch.removeListener(_onProjectionChanged);
     _scrollController.dispose();
     super.dispose();
@@ -83,7 +84,9 @@ class _InfoPageState extends State<InfoPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => HtmlEditingScope(coordinator: _htmlSave, child: _buildHtmlParent(context));
+
+  Widget _buildHtmlParent(BuildContext context) {
     return Scaffold(
       backgroundColor: ThemeConfig.infoPageColor(context),
       appBar: AppBar(
@@ -160,6 +163,7 @@ class _InfoPageState extends State<InfoPage> {
                         ? []
                         : _informationList!
                             .map<ExpansionPanel>((InformationModel item) {
+                            final htmlVersion = item.aggregateVersion;
                             int index = _informationList!.indexOf(item);
                             return ExpansionPanel(
                               backgroundColor:
@@ -181,47 +185,21 @@ class _InfoPageState extends State<InfoPage> {
                                     )
                                   : Column(
                                       children: [
-                                        if (RightsService.isEditor())
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              var result = await RouterService
-                                                  .navigatePageInfo(
-                                                      context,
-                                                      HtmlEditorRoute(
-                                                          content: {
-                                                            HtmlEditorPage
-                                                                    .parContent:
-                                                                item.description
-                                                          },
-                                                          occasionId: RightsService
-                                                              .currentOccasionId()));
-                                              if (result != null) {
-                                                setState(() {
-                                                  item.description =
-                                                      result as String;
-                                                });
-                                                await DbInformation
-                                                    .updateInformation(item);
-                                                ToastHelper.Show(
-                                                    context,
-                                                    CommonStrings
-                                                        .contentChanged);
-                                              }
-                                            },
-                                            child:
-                                                Text(CommonStrings.editContent),
-                                          ),
-                                        Padding(
-                                          padding:
-                                              const EdgeInsetsDirectional.all(
-                                                  12),
-                                          child: HtmlView(
-                                            html: item.description ?? "",
-                                            isSelectable: true,
-                                            twoFingersOn: onPinchStart,
-                                            twoFingersOff: onPinchEnd,
-                                          ),
-                                        ),
+                                        Padding(padding: const EdgeInsets.all(12),
+                                          child: EditableHtmlField(key: ValueKey('information-html-${item.id}'),
+                                            html: item.description, enabled: RightsService.isEditor(),
+                                            owner: item.unit != null ? HtmlMediaOwner.unit(item.unit) :
+                                              HtmlMediaOwner.occasion(RightsService.currentOccasionId()),
+                                            twoFingersOn: onPinchStart, twoFingersOff: onPinchEnd,
+                                            onChanged: (_) {}, onSave: (html) async {
+                                              final snapshot = InformationModel(id: item.id, title: item.title,
+                                                description: html, type: item.type, isHidden: item.isHidden,
+                                                order: item.order, unit: item.unit, data: item.data,
+                                                informationHidden: item.informationHidden, updatedAt: item.updatedAt,
+                                                aggregateVersion: htmlVersion);
+                                              await DbInformation.updateInformation(snapshot);
+                                              if (mounted) await loadData();
+                                            })),
                                       ],
                                     ),
                               isExpanded: item.isExpanded,

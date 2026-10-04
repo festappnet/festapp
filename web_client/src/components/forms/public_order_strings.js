@@ -25,10 +25,11 @@ export class PublicOrderStrings {
         return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.paymentInfo`, tone);
     }
 
-    static confirmationInfo(tone, hasPayment, email) {
+    static confirmationInfo(tone, hasPayment, email, state = 'queued') {
         const key = hasPayment ? 'paymentInfo' : 'confirmationInfo';
-        const template = PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.${key}${email ? 'WithEmail' : ''}`, tone);
-        return email ? template.replace('{email}', email) : template;
+        const template = PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.${key}${email ? 'WithEmail' : ''}${['accepted','delivered'].includes(state) ? 'Accepted' : ['invalid_email','failed','unknown','dead','suppressed','expired','cancelled','retry_wait'].includes(state) ? 'Unconfirmed' : ''}`, tone);
+        const text = email ? template.replace('{email}', email) : template;
+        return state === 'invalid_email' ? `${text} ${PublicOrderStrings._tr('PublicOrder.invalidEmailAddress', tone)}` : text;
     }
 
     static selectSeat(tone) {
