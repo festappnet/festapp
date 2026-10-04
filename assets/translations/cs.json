@@ -1679,7 +1679,7 @@
     "connect_email": "Připojit bankovní email",
     "fioTokenInactive": "Fio token neexistuje nebo není aktivní. Ve Fio Internetbankingu otevřete Nastavení → API a dokončete jeho autorizaci. Po autorizaci může aktivace trvat až 5 minut. Pokud je token zrušený nebo vypršel, vytvořte a autorizujte nový.",
     "syncRetryRequired": "Spojení s bankou se nepodařilo ověřit. Zkuste to prosím později.",
-    "tokenSavedNeedsAuthorization": "Token je uložený v BankSync, ale Fio ho zatím nepřijalo.",
+    "tokenSavedNeedsAuthorization": "Token je uložený v BankSync. Připojení ale zatím není ověřené.",
     "syncState": {
       "connected": "Připojeno",
       "degraded": "Vyžaduje pozornost",
@@ -1688,7 +1688,8 @@
       "suspended": "Pozastaveno"
     },
     "linkedAccountIdentity": "Číslo napojeného účtu nelze přepsat. Přidejte nový bankovní účet a nastavte jej pro další platby.",
-    "detailsSyncPending": "Údaje jsou uložené ve Festappu. Přenos do BankSync se zatím nepodařil a bude automaticky zopakován."
+    "detailsSyncPending": "Údaje jsou uložené ve Festappu. Přenos do BankSync se zatím nepodařil a bude automaticky zopakován.",
+    "fioAccountMismatch": "Fio token patří k jinému bankovnímu účtu. Zadejte token pro tento účet, nebo přidejte správný účet do Festappu. Platby z jiného účtu se nepřiřazují."
   },
   "FeatureContract": {
     "title": "Smlouva",
