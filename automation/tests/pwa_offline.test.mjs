@@ -550,7 +550,12 @@ try {
     'a failed SDK initialization must remain retryable after reconnect',
   );
   assert.match(oneSignalWorker, /OneSignalSDK\.sw\.js/);
-  assert.match(flutterIndex, /e\.preventDefault\(\)/);
+  const installHandler = flutterIndex.match(
+    /window\.addEventListener\('beforeinstallprompt',[\s\S]*?\n\s*}\);/,
+  )?.[0];
+  assert.ok(installHandler);
+  assert.doesNotMatch(installHandler, /preventDefault\(/,
+    'native installation must remain available alongside the custom prompt');
   assert.match(flutterIndex, /function promptInstall\(\)/);
   assert.doesNotMatch(
     flutterIndex,

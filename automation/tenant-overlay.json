@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "c2c5634f72287a86a1b2f55e58ea63727f53ac0f",
-  "release": {
-    "version": "0.20.82+566",
-    "note": "Simplify application reports and stabilize chart legends"
-  }
+  "baseMainSha": "6835e2223cb7206d34e5b07647afc0be9c147475"
 }

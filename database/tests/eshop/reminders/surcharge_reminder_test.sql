@@ -116,21 +116,21 @@ BEGIN
     -- ==================================================================
 
     -- Clear any reminders that may have been queued at order creation
-    DELETE FROM public.queue_emails WHERE occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
+    DELETE FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
 
     -- Call the batch function
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Test 1: Should queue exactly 1 deposit reminder');
 
     -- Verify target_time = occasion start - 7 days (deposit deadline) - 3 days (reminder interval) = start - 10 days
     SELECT target_time INTO v_target_time
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
     v_expected_target_time := v_occ_start_time - interval '7 days' - interval '3 days';
 
@@ -154,8 +154,8 @@ BEGIN
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Test 2: No reminder should be queued for on_site deadline');
 
@@ -176,8 +176,8 @@ BEGIN
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Test 3: No reminder should be queued for fully-paid order');
 
@@ -194,13 +194,13 @@ BEGIN
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Test 4: Should have 1 queued reminder');
 
     -- Make the reminder "due" by setting target_time to past
-    UPDATE public.queue_emails
+    UPDATE public.email_messages
     SET target_time = NOW() - interval '1 minute'
     WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
@@ -208,12 +208,12 @@ BEGIN
     UPDATE eshop.payment_info SET paid = 1000 WHERE id = v_payment_info_id;
 
     -- Call get_due_queue_emails — should invalidate and delete the reminder
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     -- Verify the deposit reminder was deleted (invalidated because paid >= amount)
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Test 4: Stale reminder should be deleted after full payment');
 
@@ -247,16 +247,16 @@ BEGIN
 
     -- Should only have 1 reminder (for the deposit order, not the non-deposit one)
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
 
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Test 5: Should only queue reminder for deposit order, not non-deposit');
 
     -- Verify the reminder is for the deposit order, not the non-deposit order
     PERFORM assert_true(
         EXISTS(
-            SELECT 1 FROM public.queue_emails
-            WHERE code = 'TICKET_ORDER_REMINDER'
+            SELECT 1 FROM public.email_messages
+            WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER'
             AND occasion = v_occasion_id
             AND (data->>'order_id')::bigint = v_order_id
         ),

@@ -290,7 +290,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.82+566";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.83+567";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -310,8 +310,7 @@
   let deferredPrompt;
 
   window.addEventListener('beforeinstallprompt', (e) => {
-    // Retain the browser event for Festapp's explicit install button.
-    e.preventDefault();
+    // Retain the event without suppressing the browser's native installation affordance.
     deferredPrompt = e;
     if (typeof hasPrompt === 'function') hasPrompt();
   });
