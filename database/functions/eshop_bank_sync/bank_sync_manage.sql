@@ -178,3 +178,16 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.get_recoverable_bank_sync_operations() FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.get_recoverable_bank_sync_operations() TO service_role;
+
+-- Only the authenticated management handler calls this after checking bank-admin rights.
+CREATE OR REPLACE FUNCTION public.get_pending_bank_sync_details(p_bank_account_id bigint)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+  PERFORM public.require_service_role();
+  RETURN (SELECT jsonb_build_object('id',id,'request',request,'payload_sha256',payload_sha256)
+    FROM eshop.bank_sync_operations WHERE bank_account_id=p_bank_account_id AND operation='update_details'
+    AND state IN ('pending','running','uncertain') ORDER BY created_at LIMIT 1);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_pending_bank_sync_details(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_pending_bank_sync_details(bigint) TO service_role;

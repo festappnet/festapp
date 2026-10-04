@@ -2,6 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class BankAccountStrings {
+  static String get linkedAccountIdentity =>
+      'BankAccount.linkedAccountIdentity'.tr();
+  static String get detailsSyncPending => 'BankAccount.detailsSyncPending'.tr();
   static String syncError(String? code) =>
       (code == 'fio_token_invalid_or_inactive'
               ? 'BankAccount.fioTokenInactive'
