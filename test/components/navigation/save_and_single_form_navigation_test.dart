@@ -7,6 +7,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/views/forms_tab.dart';
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion_settings/occasion_save_state.dart';
 import '../../support/navigation_fixture.dart';
 import 'routed_tab_navigation_test.dart' show mount;
@@ -91,6 +93,46 @@ void main() {
           );
     await mount(tester, router, '/occasion-a/reservations/forms?list=true');
     expect(router.currentUrl, '/occasion-a/reservations/forms?list=true');
+    expect(find.text('Single'), findsOneWidget);
+  });
+  testWidgets('return from automatic detail renders the explicit forms list',
+      (tester) async {
+    final router = FixtureRouter(Access())
+      ..formsListBuilder = (_) => FormsListView(
+            loadForms: (_) async =>
+                [FormModel(id: 1, link: 'single', title: 'Single')],
+          );
+    await mount(tester, router, '/occasion-a/reservations/forms');
+    final detailContext = tester.element(find.byKey(const Key('draft-field')));
+    await detailContext.router.replaceAll([
+      const PageRouteInfo(FormsListRoute.name, rawQueryParams: {'list': true}),
+    ]);
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(router.currentUrl, '/occasion-a/reservations/forms?list=true');
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Single'), findsOneWidget);
+  });
+  testWidgets('failed list request stops loading and can retry', (tester) async {
+    var fail = true;
+    final router = FixtureRouter(Access())
+      ..formsListBuilder = (_) => FormsListView(loadForms: (_) async {
+            if (fail) throw StateError('offline');
+            return [FormModel(id: 1, link: 'single', title: 'Single')];
+          });
+    await tester.pumpWidget(MaterialApp.router(
+        routerConfig: router.config(
+            deepLinkBuilder: (_) => const DeepLink.path(
+                '/occasion-a/reservations/forms?list=true'))));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    tester.takeException();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    fail = false;
+    await tester.tap(find.text(CommonStrings.retry));
+    await tester.pumpAndSettle();
     expect(find.text('Single'), findsOneWidget);
   });
 }

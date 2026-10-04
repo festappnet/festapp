@@ -64,6 +64,7 @@ class ProductPriceChangesDialog extends StatefulWidget {
   final Future<ProductModel> Function() reload;
   final Future<void> Function(double, DateTime, ProductPriceChange?)? save;
   final Future<void> Function(ProductPriceChange)? cancel;
+  final VoidCallback? onOpenWaves;
   const ProductPriceChangesDialog({
     super.key,
     required this.product,
@@ -72,6 +73,7 @@ class ProductPriceChangesDialog extends StatefulWidget {
     required this.reload,
     this.save,
     this.cancel,
+    this.onOpenWaves,
   });
   @override
   State<ProductPriceChangesDialog> createState() =>
@@ -161,10 +163,11 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         true;
   }
 
-  Future<void> close() async {
+  Future<void> close({bool openWaves = false}) async {
     if (busy || !await discard() || !mounted) return;
     setState(() => allowClose = true);
     Navigator.pop(context, changed);
+    if (openWaves) widget.onOpenWaves?.call();
   }
 
   Future<void> reload() async {
@@ -477,6 +480,12 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         onPressed: busy ? null : reload,
         child: Text(OrdersStrings.priceRefreshAction),
       ),
+      if (widget.onOpenWaves != null)
+        OutlinedButton.icon(
+          onPressed: busy ? null : () => close(openWaves: true),
+          icon: const Icon(Icons.timeline),
+          label: Text(OrdersStrings.configurePriceWaves),
+        ),
       if (widget.canEdit && !formOpen)
         FilledButton(
           onPressed: busy ? null : () => edit(null),

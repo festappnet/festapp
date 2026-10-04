@@ -154,6 +154,7 @@ class _ProductsTabState extends State<ProductsTab>
     if (!mounted || bundle == null) return;
     final product = bundle.products.where((p) => p.id == id).firstOrNull;
     if (product == null) return;
+    var openWaves = false;
     _dialogOpen = true;
     await showDialog<bool>(
       context: context,
@@ -166,6 +167,7 @@ class _ProductsTabState extends State<ProductsTab>
                 .where((time) => time.isAfter(product.priceNow))
                 .toList(),
         canEdit: RightsService.canUpdateOrders(),
+        onOpenWaves: () => openWaves = true,
         reload: () async {
           final refreshed = await DbEshop.getProductsAndTypesForOccasion(
             _occasionLink!,
@@ -175,7 +177,12 @@ class _ProductsTabState extends State<ProductsTab>
       ),
     );
     _dialogOpen = false;
-    await _refresh(force: true);
+    if (!mounted) return;
+    if (openWaves) {
+      await _openWaves();
+    } else {
+      await _refresh(force: true);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _planFocusNodes[id]?.requestFocus();
     });
