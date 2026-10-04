@@ -13,7 +13,8 @@ RETURNS TABLE (
     supported_currencies text[],
     linked_units text[],
     last_fetch_time timestamptz,
-    last_fio_fetch_time timestamptz
+    last_fio_fetch_time timestamptz,
+    bank_sync jsonb
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -28,11 +29,8 @@ BEGIN
         ba.title,
         ba.creditor_name,
         ba.type,
-        CASE WHEN s.secret IS NULL THEN NULL
-             WHEN length(s.secret) <= 4 THEN '************'
-             ELSE '************' || right(s.secret, 4)
-        END as token_masked,
-        s.expiry_date as token_expiry_date,
+        NULL::text as token_masked,
+        (public.get_bank_sync_connection(ba.id)->>'token_expiry_at')::timestamptz as token_expiry_date,
         ba.supported_currencies,
         ARRAY(
             SELECT u.title 
@@ -41,10 +39,10 @@ BEGIN
             WHERE uba.bank_account = ba.id
         ) as linked_units,
         ba.last_fetch_time,
-        ba.last_fio_fetch_time
+        ba.last_fio_fetch_time,
+        public.get_bank_sync_connection(ba.id) AS bank_sync
     FROM eshop.bank_accounts ba
     JOIN eshop.bank_account_users bau ON ba.id = bau.bank_account
-    LEFT JOIN eshop.secrets s ON ba.secret = s.id
     WHERE bau."user" = auth.uid() AND bau.is_admin = true
     AND ba.type != 'cash'
     ORDER BY ba.title;

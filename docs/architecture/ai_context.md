@@ -120,3 +120,15 @@ These components have non-obvious architecture worth reading before modifying:
 - **[Bank Accounts](../../lib/components/bank_accounts/README.md)**: Dual-layer auth, eshop schema
 
 - **[Tab deep links](tab_deep_links.md)**: AutoRoute ownership, retained admin tabs, object identities, access boundaries and calendar/panel query state.
+
+## Critical: Universal outbound email gate
+
+Every outbound application email, whether automatic or manually requested, must enqueue through `public.email_messages`. This includes registration, sign-in, password reset, GoTrue Auth hooks, orders/tickets, custom messages and account deletion. Only `process-email-queue` owns provider credentials and sends. Security priorities do not bypass global quota, rate, pause, suppression or send fencing. Producers wake the same worker after their SQL commit; cron is recovery. Never send directly from a bank webhook or another producer, and do not add a parallel queue.
+
+## BankSync consumer boundary
+
+BankSync is a shared bank-fact service for independent clients, including Festapp and Mendelio. Festapp's explicit v2 consumer uses `bank-sync-webhook` and `public.ingest_bank_sync_transaction`; raw HMAC authentication precedes the atomic inbox/identity/ledger/existing-matcher/receipt commit. Original bank references and signed amounts remain facts. Payment matching, account aliases, orders and ticket delivery belong to Festapp.
+
+Canonical SQL is in `database/functions/eshop_bank_sync/`; regenerate its scoped migration with `automation/assemble-bank-sync-migration.py`. Activation adopts historical movement identities under an account lock. Legacy bank import/token/email RPCs and the separate polling worker are retired by the guarded full-cutover migration; suspension never reinstates them. No persistent application triggers or second payment engine are introduced.
+
+BankAccountAdmin control uses `bank-sync-manage` with durable, fenced operation intents; encrypted token recovery uses `bank-sync-reconcile` and versioned protected control keys. Paid ticket intent creation is atomic with the SQL paid transition and immediately wakes the globally gated queue. Failed transition receipts abort payment recalculation, keeping the bank webhook retryable. See [implementation and production gates](../operations/banksync/IMPLEMENTATION-2026-10-04.md). See the [full cutover runbook](../operations/banksync/FULL-CUTOVER-2026-10-04.md) for the ordered account rollout and retirement proof. Unproven bank email identities remain quarantined observations until the required real-email evidence is established.

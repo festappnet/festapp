@@ -1670,7 +1670,25 @@
     "safeSenderInfo": "This address is safe. It is a special robot that only reads payment e-mails and nothing else.",
     "forwardingEmailWarning": "Warning: Please keep this e-mail secret. Do not share it with anyone.",
     "creditorNameLabel": "Account holder name",
-    "creditorNameHelp": "For EUR payments. If empty, the organization name is used."
+    "creditorNameHelp": "For EUR payments. If empty, the organization name is used.",
+    "fioTokenInactive": "Fio is not accepting the token yet. If you have just authorized it, allow up to 5 minutes and then refresh the connection status. Checks run automatically; you do not need to save the token again. Otherwise, authorize it in Fio Internetbanking under Settings → API. If the problem persists, check the token validity.",
+    "syncRetryRequired": "The bank connection could not be verified. Please try again later.",
+    "tokenSavedNeedsAuthorization": "The token is saved in BankSync, but the connection is not yet verified.",
+    "syncState": {
+      "connected": "Connected",
+      "degraded": "Needs attention",
+      "provisioning": "Connecting",
+      "shadow": "Verifying",
+      "suspended": "Suspended"
+    },
+    "linkedAccountIdentity": "A connected account number cannot be replaced. Add a new bank account and select it for future payments.",
+    "detailsSyncPending": "Details are saved in Festapp. The update to BankSync is pending and will be retried automatically.",
+    "fioAccountMismatch": "The Fio token belongs to a different bank account. Enter a token for this account, or add the correct account in Festapp. Payments from another account will not be matched.",
+    "tokenVerifying": "Saving and verifying token…",
+    "tokenVerificationWait": "Waiting for Fio to respond. Verification may take several dozen seconds.",
+    "tokenAwaitingActivation": "Token saved - awaiting activation",
+    "tokenSavedNeedsVerification": "Token saved - connection needs attention",
+    "errorTitle": "Error"
   },
   "FeatureContract": {
     "title": "Contract",

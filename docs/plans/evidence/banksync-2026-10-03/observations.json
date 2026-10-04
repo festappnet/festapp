@@ -1,0 +1,210 @@
+{
+  "observed_date": "2026-10-03",
+  "mode": "read-only production diagnostics; synthetic local verification",
+  "festapp": {
+    "checkout_branch": "release/ticket-editor-ui-20261003",
+    "checkout_head": "e380979aad1573cb82f9dc91f0f2fffa23280ef2",
+    "tenant": "festapptickets",
+    "organization": 3,
+    "activation": {
+      "schemaVersion": 1,
+      "tenantId": "festapptickets",
+      "generation": 1,
+      "backend": "canonical"
+    },
+    "database_identity_verified": true,
+    "all_database_bank_accounts": 32,
+    "all_database_enabled_fio": 10,
+    "selected_organization_bank_accounts": 15,
+    "selected_types": {
+      "CASH": 4,
+      "CSOB": 1,
+      "FIO": 8,
+      "General": 2
+    },
+    "selected_enabled_fio": 7,
+    "selected_supported_currency_sets": {
+      "CZK": 13,
+      "CZK,EUR": 1,
+      "EUR": 1
+    },
+    "existing_banksync_account_matches": 0,
+    "duplicate_nonempty_normalized_fio_account_numbers": 1,
+    "transaction_date_type": "timestamp without time zone",
+    "database_timezone": "UTC",
+    "cron_catalog_database": "postgres",
+    "synchronize_orders_schedule": "*/10 * * * *",
+    "active": true,
+    "whole_database_nonpositive_transactions": 847,
+    "whole_database_nonpositive_fio_api_transactions": 54
+  },
+  "banksync": {
+    "local_package": "0.1.6",
+    "local_head": "cc2c605fa7ffe023e468eb355d63e3f391d3d286",
+    "mendelio_dependency": "0.1.6",
+    "d1_schema": "10",
+    "deployment_id": "ab1e0898-8e6a-47d4-ac1c-b8a3d4effa46",
+    "worker_version_id": "1ee1572b-8289-47c7-b682-6d716a8419e9",
+    "deployment_created_on": "2026-09-24T07:47:36.03949Z",
+    "traffic_percent": 100,
+    "deployed_package_identity": "Not independently derived from deployed bundle",
+    "consumers": [
+      "dating",
+      "michael-airbank",
+      "tutoring",
+      "voice"
+    ],
+    "accounts": 5,
+    "enabled_fio_api_accounts": 2,
+    "active_subscription_counts": {
+      "dating": 3,
+      "tutoring": 3,
+      "voice": 2
+    },
+    "delivery_status_counts": {
+      "delivered": 26,
+      "terminal": 428,
+      "active": 0
+    },
+    "last_successful_delivered_job_created_at": "2026-09-25 03:38:14",
+    "active_api_last_success_observed": "2026-10-03 21:05:18 and 21:05:19 UTC",
+    "api_last_errors": null,
+    "parse_log_rows_last_7_days": 0,
+    "live_callback_host_allowlist": [
+      "mendelio.net",
+      "muzazena.festapp.net",
+      "voice.mendelio.net"
+    ],
+    "live_email_authserv": "mx.cloudflare.net",
+    "live_fio_proxy": "https://backend.mendelio.net/functions/v1/fio-proxy",
+    "delivery_detail": [
+      [
+        {
+          "consumer_app_id": "dating",
+          "status": "delivered",
+          "last_http_status": 200,
+          "last_error": null,
+          "n": 16,
+          "newest": "2026-09-25 03:38:13",
+          "last_terminal": null
+        },
+        {
+          "consumer_app_id": "dating",
+          "status": "terminal",
+          "last_http_status": null,
+          "last_error": "legacy_missing_transaction",
+          "n": 5,
+          "newest": "2026-05-11 18:01:46",
+          "last_terminal": "2026-07-24 07:20:50"
+        },
+        {
+          "consumer_app_id": "michael-airbank",
+          "status": "terminal",
+          "last_http_status": null,
+          "last_error": "consumer_secret_decrypt_failed",
+          "n": 2,
+          "newest": "2026-08-06 17:39:03",
+          "last_terminal": "2026-08-06 17:39:10"
+        },
+        {
+          "consumer_app_id": "michael-airbank",
+          "status": "terminal",
+          "last_http_status": null,
+          "last_error": "legacy_missing_transaction",
+          "n": 9,
+          "newest": "2026-05-11 18:01:46",
+          "last_terminal": "2026-07-24 07:20:50"
+        },
+        {
+          "consumer_app_id": "michael-airbank",
+          "status": "terminal",
+          "last_http_status": null,
+          "last_error": "queue_max_retries_exhausted",
+          "n": 391,
+          "newest": "2026-08-05 19:37:04",
+          "last_terminal": "2026-08-06 03:01:36"
+        },
+        {
+          "consumer_app_id": "tutoring",
+          "status": "delivered",
+          "last_http_status": 200,
+          "last_error": null,
+          "n": 4,
+          "newest": "2026-09-25 03:38:13",
+          "last_terminal": null
+        },
+        {
+          "consumer_app_id": "tutoring",
+          "status": "terminal",
+          "last_http_status": null,
+          "last_error": "legacy_missing_transaction",
+          "n": 6,
+          "newest": "2026-05-11 18:01:46",
+          "last_terminal": "2026-07-24 07:20:50"
+        },
+        {
+          "consumer_app_id": "tutoring",
+          "status": "terminal",
+          "last_http_status": null,
+          "last_error": "queue_max_retries_exhausted",
+          "n": 12,
+          "newest": "2026-09-23 04:06:44",
+          "last_terminal": "2026-09-23 10:38:13"
+        },
+        {
+          "consumer_app_id": "voice",
+          "status": "delivered",
+          "last_http_status": 200,
+          "last_error": null,
+          "n": 6,
+          "newest": "2026-09-25 03:38:14",
+          "last_terminal": null
+        },
+        {
+          "consumer_app_id": "voice",
+          "status": "terminal",
+          "last_http_status": null,
+          "last_error": "queue_max_retries_exhausted",
+          "n": 3,
+          "newest": "2026-09-19 20:10:51",
+          "last_terminal": "2026-09-20 02:43:16"
+        }
+      ],
+      [
+        {
+          "owner_app_id": "tutoring",
+          "account_type": "FIO",
+          "api_last_success_at": "2026-10-03 21:05:18",
+          "api_last_fetch_at": "2026-10-03 21:05:18",
+          "api_last_error": null
+        },
+        {
+          "owner_app_id": "tutoring",
+          "account_type": "FIO",
+          "api_last_success_at": "2026-10-03 21:05:19",
+          "api_last_fetch_at": "2026-10-03 21:05:19",
+          "api_last_error": null
+        }
+      ],
+      []
+    ]
+  },
+  "verification": {
+    "command": "pnpm exec vitest run src/db.test.ts src/fio.test.ts src/parser.test.ts src/relay.test.ts src/webhookDelivery.test.ts src/webhookDeliveryCoordinator.test.ts src/email_auth.test.ts",
+    "test_files_passed": 7,
+    "tests_passed": 113,
+    "synthetic_distinct_fio_movements_inserted": [
+      1,
+      0
+    ],
+    "synthetic_fio_email_ID_pokynu_maps_to": "transaction_id, not command_id",
+    "synthetic_fio_column27_preserved": false
+  },
+  "privacy": "No credentials, account numbers, customer rows, message bodies, or monetary sums are retained.",
+  "user_scope_clarification": {
+    "migration": "Fio tokens only",
+    "active_legacy_bank_emails": "None according to user",
+    "new_email_connection": "Required as part of completed integration",
+    "priority": "Fastest safe token cutover, no unnecessary fixed observation delay"
+  }
+}
