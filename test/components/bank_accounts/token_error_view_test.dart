@@ -17,8 +17,9 @@ class _Translations extends AssetLoader {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
+  for (final saving in [false, true]) {
   testWidgets(
-      'inactive token shows actionable Czech text and current BankSync token hint',
+      'token verification shows accurate state and bounded progress (saving=$saving)',
       (tester) async {
     await EasyLocalization.ensureInitialized();
     final translations =
@@ -51,7 +52,7 @@ void main() {
                         account: account,
                         isReadOnly: false,
                         isFio: true,
-                        isSaving: false,
+                        isSaving: saving,
                         pairingCode: null,
                         emailDomain: 'example.invalid',
                         onRegenerateToken: () {},
@@ -59,14 +60,21 @@ void main() {
                         expiryDate: null,
                         onExpiryDateChanged: (_) {},
                         onSaveToken: () {}))))));
-    await tester.pumpAndSettle();
+    if (saving) { await tester.pump(const Duration(milliseconds: 100)); } else { await tester.pumpAndSettle(); }
     expect(find.text(translations['BankAccount']['fioTokenInactive']),
-        findsOneWidget);
-    expect(find.textContaining('Vyžaduje pozornost'), findsOneWidget);
+        saving ? findsNothing : findsOneWidget);
+    if (saving) {
+      expect(find.text(translations['BankAccount']['tokenVerificationWait']), findsOneWidget);
+      expect(tester.getSize(find.byType(CircularProgressIndicator)), const Size(20,20));
+      expect(tester.takeException(), isNull);
+    } else {
+      expect(find.textContaining('Vyžaduje pozornost'), findsOneWidget);
+    }
     expect(find.textContaining('current********'), findsOneWidget);
     expect(find.textContaining('old-stale-token'), findsNothing);
     expect(find.text('fio_token_invalid_or_inactive'), findsNothing);
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
   });
+}
 }

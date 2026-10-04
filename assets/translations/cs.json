@@ -1677,7 +1677,7 @@
     "not_received": "Zatím nepřijato",
     "email_identity_notice": "Zprávy bez ověřené bankovní identity čekají na kontrolu správce a automaticky nehradí objednávky.",
     "connect_email": "Připojit bankovní email",
-    "fioTokenInactive": "Fio token neexistuje nebo není aktivní. Ve Fio Internetbankingu otevřete Nastavení → API a dokončete jeho autorizaci. Po autorizaci může aktivace trvat až 5 minut. Pokud je token zrušený nebo vypršel, vytvořte a autorizujte nový.",
+    "fioTokenInactive": "Fio zatím token nepřijímá. Pokud jste ho právě autorizovali, vyčkejte až 5 minut a potom obnovte stav připojení. Kontroly probíhají automaticky, token není potřeba znovu ukládat. Pokud autorizace ještě neproběhla, dokončete ji ve Fio Internetbankingu v Nastavení → API. Pokud potíže trvají, ověřte platnost tokenu.",
     "syncRetryRequired": "Spojení s bankou se nepodařilo ověřit. Zkuste to prosím později.",
     "tokenSavedNeedsAuthorization": "Token je uložený v BankSync. Připojení ale zatím není ověřené.",
     "syncState": {
@@ -1689,7 +1689,12 @@
     },
     "linkedAccountIdentity": "Číslo napojeného účtu nelze přepsat. Přidejte nový bankovní účet a nastavte jej pro další platby.",
     "detailsSyncPending": "Údaje jsou uložené ve Festappu. Přenos do BankSync se zatím nepodařil a bude automaticky zopakován.",
-    "fioAccountMismatch": "Fio token patří k jinému bankovnímu účtu. Zadejte token pro tento účet, nebo přidejte správný účet do Festappu. Platby z jiného účtu se nepřiřazují."
+    "fioAccountMismatch": "Fio token patří k jinému bankovnímu účtu. Zadejte token pro tento účet, nebo přidejte správný účet do Festappu. Platby z jiného účtu se nepřiřazují.",
+    "tokenVerifying": "Ukládám a ověřuji token…",
+    "tokenVerificationWait": "Čekáme na odpověď Fio. Ověření může trvat několik desítek sekund.",
+    "tokenAwaitingActivation": "Token uložen - čeká na aktivaci",
+    "tokenSavedNeedsVerification": "Token uložen - připojení vyžaduje pozornost",
+    "errorTitle": "Chyba"
   },
   "FeatureContract": {
     "title": "Smlouva",

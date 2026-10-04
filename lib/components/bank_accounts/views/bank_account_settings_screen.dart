@@ -377,12 +377,14 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     if (!widget.routed) _tabController = TabController(length: 3, vsync: this);
   }
 
-  void _showError(String message) {
+  void _showError(String message, {String? title}) {
     if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
+        constraints: const BoxConstraints(maxWidth: 560),
+        scrollable: true,
+        title: Text(title ?? BankAccountStrings.errorTitle),
         content: SelectableText(message),
         actions: [
           TextButton(
@@ -433,8 +435,13 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       if (mounted) {
         _showError(
           e is BankSyncError
-              ? '${e.tokenSaved ? BankAccountStrings.tokenSavedNeedsAuthorization : BankAccountStrings.errorSavingToken}\n${BankAccountStrings.syncError(e.code)}'
+              ? BankAccountStrings.syncError(e.code)
               : BankAccountStrings.syncError(null),
+          title: e is BankSyncError && e.tokenSaved
+              ? (e.code == 'fio_token_invalid_or_inactive'
+                  ? BankAccountStrings.tokenAwaitingActivation
+                  : BankAccountStrings.tokenSavedNeedsVerification)
+              : BankAccountStrings.errorSavingToken,
         );
       }
     } finally {

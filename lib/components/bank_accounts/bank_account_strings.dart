@@ -2,6 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class BankAccountStrings {
+  static String get errorTitle => 'BankAccount.errorTitle'.tr();
+  static String get tokenVerifying => 'BankAccount.tokenVerifying'.tr();
+  static String get tokenVerificationWait => 'BankAccount.tokenVerificationWait'.tr();
+  static String get tokenAwaitingActivation => 'BankAccount.tokenAwaitingActivation'.tr();
+  static String get tokenSavedNeedsVerification => 'BankAccount.tokenSavedNeedsVerification'.tr();
   static String get linkedAccountIdentity =>
       'BankAccount.linkedAccountIdentity'.tr();
   static String get detailsSyncPending => 'BankAccount.detailsSyncPending'.tr();
