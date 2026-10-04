@@ -652,6 +652,7 @@
     "priceRefreshAction": "Obnovit plány",
     "priceSame": "Cena je stejná jako očekávaná předchozí cena.",
     "priceWaves": "Cenové vlny",
+    "configurePriceWaves": "Nastavit cenové vlny",
     "addWave": "Přidat vlnu",
     "moveWave": "Změnit termín",
     "cancelWave": "Zrušit vlnu",
@@ -1688,7 +1689,13 @@
     "tokenVerificationWait": "Čekáme na odpověď Fio. Ověření může trvat několik desítek sekund.",
     "tokenAwaitingActivation": "Token uložen - čeká na aktivaci",
     "tokenSavedNeedsVerification": "Token uložen - připojení vyžaduje pozornost",
-    "errorTitle": "Chyba"
+    "errorTitle": "Chyba",
+    "connection_state": "Stav připojení",
+    "bank_pull": "Bankovní výpis stažen",
+    "receiver_commit": "Pohyb přijat",
+    "not_received": "Zatím nepřijato",
+    "email_identity_notice": "Zprávy bez ověřené bankovní identity čekají na kontrolu správce a automaticky nehradí objednávky.",
+    "connect_email": "Připojit bankovní email"
   },
   "FeatureContract": {
     "title": "Smlouva",
