@@ -130,7 +130,7 @@ void main() {
               title: 'Original title',
               relatedFields: [],
               data: {
-                'design': {
+                'design': <String, dynamic>{
                   'primary_color': '#336699',
                   'secondary_color': '#112233'
                 }
