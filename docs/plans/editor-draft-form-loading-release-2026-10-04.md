@@ -1,6 +1,6 @@
 # Editor drafts, form loading and order-email presentation
 
-Status: shared SQL and vstupenky.online frontend ACTIVE at 0.20.89+573; requested Flutter library follow-up in preparation. Scope: shared backend and only vstupenky.online frontend.
+Status: shared SQL and vstupenky.online frontend ACTIVE at 0.20.90+574, including the requested prepared Flutter library upgrade. Scope: shared backend and only vstupenky.online frontend.
 
 Prepared editor changes were ported from the existing workspace onto current main, preserving newer canonical routes, ticket editor/save behavior and reports. Shared EditorActionBar/EditorSnapshot and EditorDraftScope track nested edits and HTML drafts, disable unchanged actions, confirm discard and reload embedded editors without navigating away. Coverage includes forms, design/settings, blueprint, inventory, occasion features and schedule. Rendering design/schedule defaults no longer mutates form data. Existing retained-navigation guards remain in place.
 
@@ -25,3 +25,10 @@ The `0.20.89+573` workflow succeeded. Independent public proof at `2026-10-04T10
 The user additionally requested the already-prepared Flutter library upgrade in the final release. Ported its pubspec/lock and corresponding file-picker API updates onto fresh main, preserving canonical shared-grid behavior. Dependencies include Supabase Flutter 2.18.0, Trina Grid 2.3.0, shadcn_ui 0.55.1, file_picker 11.0.3, Sembast 3.8.11/2.4.6, HTML/image/cache/scanner updates and their locked transitive dependencies. Added the supplied real on-disk offline-storage reopening regression; no new package versions were independently selected.
 
 Library validation: full Flutter suite passed with the upgraded lockfile (1070 tests, one skip), including Auth recovery, standard grids, HTML editing, forms/tickets and the new on-disk storage regression. Targeted analysis has no errors/warnings; diff check passed.
+
+
+Final library release candidate: main `9158a4d5bad6aab026d2c19aa95bfc318873663b` (PR #284, including navigation/ticket visibility PR #283), production `cd86b3063d4b086c9968ada61b057d222195a06c`, version `0.20.90+574`. Tenant drift gate passed; only prod/festapptickets was pushed and workflow `37197266898` dispatched after verification of the preceding release. No other tenant frontend was built or deployed.
+
+Fresh read-only server inventory confirmed no old gateway container/image, email_capacity.worker_url selecting only the Edge queue processor and paused=false. Previously confirmed owner plain/PDF receipt remains the end-to-end sender evidence; this rollout changes no sender path.
+
+Final deployment run `37197266898` succeeded, including the canonical public coherence checks. Independent live verification at `2026-10-04T11:06:50.346Z` confirmed `0.20.90+574`, immutable bundle `main.dart.0.20.90-574.js`, prepared editor/history/deletion code and canonical tenant activation. Bundle SHA-256: `4c085097916f23cbdb46765786cf9c367501a7204d4d3e288acde458580a3e06`. All requested prepared changes are merged and deployed for vstupenky.online; shared form loading and current-state deletion checks are active.
