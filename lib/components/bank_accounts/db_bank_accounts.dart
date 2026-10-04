@@ -81,7 +81,7 @@ class DbBankAccounts {
     int? unitId,
     int? organizationId,
   }) async {
-    // Use Legacy Unit/Self RPC
+    // Account details remain owned by Festapp; SQL queues the BankSync update.
     final response = await _supabase.rpc(
       'update_bank_account',
       params: {
@@ -104,24 +104,8 @@ class DbBankAccounts {
   static Future<String> regenerateBankAccountPairingCode(
     int bankAccountId,
   ) async {
-    final connection = await getConnection(bankAccountId);
-    if (connection != null) {
-      final result = await manage(bankAccountId, 'rotate_pairing');
-      return (result['receiving_address'] as String).split('@').first;
-    }
-    final response = await _supabase.rpc(
-      'regenerate_bank_account_pairing_code',
-      params: {'p_account_id': bankAccountId},
-    );
-    return response as String;
-  }
-
-  static Future<String> getBankAccountsForUnitManagement(
-    int bankAccountId,
-  ) async {
-    // This function seems unused or misnamed in original code?
-    // Maintaining structure but assuming typical get implementation
-    throw UnimplementedError("Verify original usage");
+    final result = await manage(bankAccountId, 'rotate_pairing');
+    return (result['receiving_address'] as String).split('@').first;
   }
 
   static Future<List<BankAccountUser>> getBankAccountUsers(

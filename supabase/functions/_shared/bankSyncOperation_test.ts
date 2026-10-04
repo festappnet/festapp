@@ -17,6 +17,7 @@ for (const scenario of ['valid','inactive','account-mismatch','throttled','trans
   Deno.test(`token update reaches BankSync and reports ${scenario} accurately`, async () => {
     let stored = 'old-fixture-token';
     let enabled = false;
+    let ingestEnabled = false;
     let tokenWrites = 0;
     let bankChecks = 0;
     const calls: {name:string;body:any}[] = [];
@@ -30,13 +31,16 @@ for (const scenario of ['valid','inactive','account-mismatch','throttled','trans
         return respond(null);
       }
       assertEquals(new Headers(init?.headers).get('x-tenant-secret'),'synthetic-scoped-key');
-      if (url.pathname.endsWith('/ingest-state')) return respond({api_token_hash:await bankSyncHash(scenario === 'digest-mismatch' ? 'wrong-token' : stored)});
+      if (url.pathname.endsWith('/ingest-state')) {
+        if (init?.method === 'PUT') ingestEnabled = body.enabled;
+        return respond({api_token_hash:await bankSyncHash(scenario === 'digest-mismatch' ? 'wrong-token' : stored)});
+      }
       if (url.pathname.endsWith('/fio-token')) {
         if (body.fio_api_token) {stored=body.fio_api_token;tokenWrites++;}
         enabled=body.fetch_enabled;return respond({});
       }
       if (url.pathname.endsWith('/fio-sync')) {
-        bankChecks++;assertEquals(stored,'new-fixture-token');
+        bankChecks++;assertEquals(stored,'new-fixture-token');assertEquals(ingestEnabled,true);
         return scenario==='inactive'
           ? respond({error:'fio_token_invalid_or_inactive'},422)
           : scenario==='account-mismatch' ? respond({error:'fio_receiving_account_mismatch'},422)
@@ -50,12 +54,13 @@ for (const scenario of ['valid','inactive','account-mismatch','throttled','trans
       const run=()=>runBankSyncOperation({operation_id:'fixture',operation:'set_token',token:'new-fixture-token'},'fixture-hash');
       if (scenario==='digest-mismatch') {
         await assertRejects(run,Error,'token_storage_not_verified');
-        assertEquals(bankChecks,0);assertEquals(enabled,false);
+        assertEquals(bankChecks,0);assertEquals(enabled,false);assertEquals(ingestEnabled,false);
         assertEquals(calls.at(-1)?.body.p_state,'uncertain');
       } else {
         const result=await run();
         assertEquals(stored,'new-fixture-token');assertEquals(tokenWrites,1);assertEquals(enabled,true);
         assertEquals(result.token_saved,true);
+        assertEquals(calls.find(c=>c.name==='update_bank_sync_connection_metadata')?.body.p_mode,'api');
         assertEquals(result.state,scenario==='valid'?'connected':'degraded');
         assertEquals(result.verification_error,scenario==='inactive'?'fio_token_invalid_or_inactive':scenario==='account-mismatch'?'fio_receiving_account_mismatch':scenario==='valid'?undefined:'bank_sync_retry_required');
         assertEquals(calls.find(c=>c.name==='record_bank_sync_pull')?.body.p_error,

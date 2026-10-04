@@ -54,6 +54,8 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
         // Persisted digest must match before the UI is allowed to report storage success.
         const stored = await remote(`${path}/ingest-state`);
         if (stored.api_token_hash !== await hash(input.token)) throw new Error('token_storage_not_verified');
+        // A replacement token also resumes a previously expired/suspended account.
+        await remote(`${path}/ingest-state`, 'PUT', {enabled:true});
         let verificationError: string | null = null;
         try {
           const pull = await remote(`${path}/fio-sync`, "POST", {});
@@ -67,7 +69,7 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
         // Authorization can happen later in Fio; the same stored token is retried.
         await remote(`${path}/fio-token`, "PUT", { fetch_enabled: true, ingest_mode: "api" });
         await rpc("update_bank_sync_connection_metadata", { p_id: context.connection_id,
-          p_pairing_code: null, p_expiry: input.expiry ?? null, p_state: verificationError ? "degraded" : "connected" });
+          p_pairing_code: null, p_expiry: input.expiry ?? null, p_mode: "api", p_state: verificationError ? "degraded" : "connected" });
         result = { state: verificationError ? "degraded" : "connected", token_saved:true,
           ...(verificationError ? {verification_error:verificationError} : {}) };
       } else if (input.operation === "rotate_pairing") {

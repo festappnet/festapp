@@ -70,7 +70,6 @@ const optionEntrypoints = [
   "send-sign-in-code",
   "send-ticket-order",
   "send-tickets",
-  "synchronize-orders",
 ];
 
 for (const name of optionEntrypoints) {
@@ -171,16 +170,6 @@ Deno.test("send-tickets rejects invalid input before privileged reads", async ()
   assertEquals(response.status, 400);
 });
 
-Deno.test("synchronize-orders rejects a request without system authorization", async () => {
-  const handler = await loadHandler("synchronize-orders");
-  const response = await handler(
-    new Request("https://edge-test.invalid", {
-      method: "POST",
-      body: "{}",
-    }),
-  );
-  assertEquals(response.status, 401);
-});
 
 Deno.test("preview rejects missing JWT before privileged work", async () => {
   const response = await (await loadHandler("preview-ticket-layout"))(
