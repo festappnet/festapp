@@ -16,7 +16,7 @@ services:
   auth:
     environment:
       GOTRUE_HOOK_SEND_EMAIL_ENABLED: "true"
-      GOTRUE_HOOK_SEND_EMAIL_URI: http://api-gw:8000/functions/v1/auth-email-hook
+      GOTRUE_HOOK_SEND_EMAIL_URI: ${AUTH_EMAIL_PUBLIC_URL:?configure the public HTTPS Auth API origin}/functions/v1/auth-email-hook
       GOTRUE_HOOK_SEND_EMAIL_SECRETS: ${AUTH_EMAIL_HOOK_SECRET:?configure the signed GoTrue hook}
       GOTRUE_SMTP_HOST: ""
       GOTRUE_SMTP_USER: ""
