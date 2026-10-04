@@ -87,6 +87,8 @@ class BankAccountStrings {
   static String get usedIn => 'BankAccount.usedIn'.tr();
   static String get bankAccountsTitle => 'BankAccount.bankAccountsTitle'.tr();
   static String get manageInSettings => 'BankAccount.manageInSettings'.tr();
+  static String get lastFioFetchTime => 'BankAccount.lastFioFetchTime'.tr();
+  static String get fioFetchNever => 'BankAccount.fioFetchNever'.tr();
   static String get lastFetchTime => 'BankAccount.lastFetchTime'.tr();
   static String get noMoreUsersToAdd => 'BankAccount.noMoreUsersToAdd'.tr();
   static String get addInSettings => 'BankAccount.addInSettings'.tr();

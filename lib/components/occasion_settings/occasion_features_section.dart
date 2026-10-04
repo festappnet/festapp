@@ -1,3 +1,4 @@
+import '../features/ticket_feature.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/feature.dart';
@@ -11,12 +12,14 @@ class OccasionFeaturesSection extends StatefulWidget {
   final List<Feature> features;
   final bool isEditingEnabled;
   final int occasionId;
+  final Future<void> Function(TicketFeature)? onSaveTicket;
 
   const OccasionFeaturesSection({
     super.key,
     required this.features,
     required this.isEditingEnabled,
     required this.occasionId,
+    this.onSaveTicket,
   });
 
   @override
@@ -55,13 +58,11 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
     final featuresToShow = AppConfig.isAppSupported
         ? filteredFeaturesBySearch
         : filteredFeaturesBySearch
-            .where(
-                (f) => !FeatureService.appSupportedFeatures.contains(f.code))
+            .where((f) => !FeatureService.appSupportedFeatures.contains(f.code))
             .toList();
 
     final enabledFeatures = featuresToShow.where((f) => f.isEnabled).toList();
-    final disabledFeatures =
-        featuresToShow.where((f) => !f.isEnabled).toList();
+    final disabledFeatures = featuresToShow.where((f) => !f.isEnabled).toList();
 
     return Opacity(
       opacity: widget.isEditingEnabled ? 1.0 : 0.5,
@@ -86,18 +87,18 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
                   labelText: OccasionSettingsStrings.searchFeatures,
                   prefixIcon: const Icon(Icons.search),
                   border: const OutlineInputBorder(),
-                  suffixIcon: _featureSearchQuery.isNotEmpty &&
-                          widget.isEditingEnabled
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _featureSearchController.clear();
-                            setState(() {
-                              _featureSearchQuery = "";
-                            });
-                          },
-                        )
-                      : null,
+                  suffixIcon:
+                      _featureSearchQuery.isNotEmpty && widget.isEditingEnabled
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _featureSearchController.clear();
+                                setState(() {
+                                  _featureSearchQuery = "";
+                                });
+                              },
+                            )
+                          : null,
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -110,16 +111,20 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
                 Text(OccasionSettingsStrings.enabledFeatures,
                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                ...enabledFeatures.map((feature) =>
-                    FeatureForm(feature: feature, occasion: widget.occasionId)),
+                ...enabledFeatures.map((feature) => FeatureForm(
+                    feature: feature,
+                    occasion: widget.occasionId,
+                    onSaveTicket: widget.onSaveTicket)),
               ],
               if (disabledFeatures.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(OccasionSettingsStrings.otherFeatures,
                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                ...disabledFeatures.map((feature) =>
-                    FeatureForm(feature: feature, occasion: widget.occasionId)),
+                ...disabledFeatures.map((feature) => FeatureForm(
+                    feature: feature,
+                    occasion: widget.occasionId,
+                    onSaveTicket: widget.onSaveTicket)),
               ],
               if (featuresToShow.isEmpty && _featureSearchQuery.isNotEmpty)
                 Padding(

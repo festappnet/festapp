@@ -131,6 +131,13 @@ class ProgressDialogs {
             await Future.delayed(delay);
           }
         } catch (e) {
+          if (isBasic) {
+            if (context.mounted) {
+              Navigator.of(context).pop();
+              await ExceptionHandler.handle(context, error: e);
+            }
+            return false;
+          }
           statusMessage.value = ExceptionHandler.toFriendlyMessage(e);
           isCancelled.value = true;
           isStornoActive.value = false;
@@ -145,12 +152,6 @@ class ProgressDialogs {
     isStornoActive.value = false;
     if (hasError.value) {
       statusMessage.value = CommonStrings.processingFailed;
-      // In basic mode the error toast is shown by the upstream caller; auto-dismiss
-      // the progress dialog so the user isn't shown an extra error UI on top of it.
-      if (isBasic && context.mounted) {
-        Navigator.of(context).pop();
-        completer.complete(false);
-      }
     } else if (isCancelled.value) {
       statusMessage.value = CommonStrings.processingCancelled;
     } else {

@@ -4,11 +4,36 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import os from 'node:os';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseFlutterVersion } from '../flutter_version.mjs';
 import { parseProjectVersion } from '../release/project_version.mjs';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+
+test('version generation stamps both HTML entry points before module loading', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-entry-version-'));
+  try {
+    for (const directory of ['automation', 'web', 'web_client/src']) {
+      fs.mkdirSync(path.join(root, directory), { recursive: true });
+    }
+    fs.copyFileSync(path.join(projectRoot, 'automation/configure_version.js'),
+      path.join(root, 'automation/configure_version.js'));
+    for (const entry of ['web/index.html', 'web_client/index.html']) {
+      fs.writeFileSync(path.join(root, entry),
+        '<script>window.__FESTAPP_BUILD_VERSION__ = "old";</script>');
+    }
+    const result = spawnSync(process.execPath,
+      [path.join(root, 'automation/configure_version.js'), '1.2.3+456'], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    for (const entry of ['web/index.html', 'web_client/index.html']) {
+      assert.match(fs.readFileSync(path.join(root, entry), 'utf8'), /"1\.2\.3\+456"/);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test('extracts the canonical build number for App Store tooling', () => {
   assert.deepEqual(parseProjectVersion('APP_NAME=Festapp\nVERSION=1.2.3+456\n'), {

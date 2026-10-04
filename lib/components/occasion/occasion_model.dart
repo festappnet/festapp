@@ -1,3 +1,4 @@
+import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
@@ -149,6 +150,22 @@ class OccasionModel {
       stats: json['stats'] != null ? StatsModel.fromJson(json['stats']) : null,
       aggregateVersion: (json['aggregate_version'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  Map<String, dynamic> toSaveJson() {
+    final result = toJson();
+    for (final ticket in features.whereType<TicketFeature>()) {
+      if (ticket.layoutChange != null) {
+        result['ticket_layout_change'] = ticket.layoutChange;
+      }
+    }
+    return result;
+  }
+
+  void markTicketLayoutSaved() {
+    for (final ticket in features.whereType<TicketFeature>()) {
+      ticket.markLayoutSaved();
+    }
   }
 
   Map<String, dynamic> toJson() {

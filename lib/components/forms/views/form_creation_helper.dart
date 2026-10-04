@@ -5,9 +5,47 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/components/html/html_view.dart';
 import '../form_strings.dart';
+import '../models/form_model.dart';
+import 'create_or_copy_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormCreationHelper {
+  static Future<void> showCreateOrCopyFormDialog(BuildContext context,
+      {required String occasionLink,
+      required VoidCallback onFormCreated}) async {
+    final forms = await DbForms.getAllFormsForOccasionOrUnit();
+    if (!context.mounted) return;
+    final result = await showDialog<dynamic>(
+        context: context,
+        builder: (_) => CreateOrCopyFormDialog(existingForms: forms));
+    if (!context.mounted || result == null) return;
+    if (result is FormModel) {
+      await copyFormToOccasion(context, result,
+          occasionLink: occasionLink, onFormCreated: onFormCreated);
+    } else if (result == 'CREATE_NEW') {
+      await showCreateFormDialog(context,
+          occasionLink: occasionLink, onFormCreated: onFormCreated);
+    }
+  }
+
+  static Future<void> copyFormToOccasion(BuildContext context, FormModel form,
+      {required String occasionLink,
+      required VoidCallback onFormCreated}) async {
+    try {
+      await DbForms.duplicateFormToOccasion(
+          sourceFormId: form.id!, targetOccasionLink: occasionLink);
+      if (!context.mounted) return;
+      ToastHelper.Show(context, FormStrings.duplicateSuccess,
+          severity: ToastSeverity.Ok);
+      onFormCreated();
+    } catch (error) {
+      if (!context.mounted) return;
+      ToastHelper.Show(
+          context, error.toString().replaceFirst('Exception: ', ''),
+          severity: ToastSeverity.NotOk);
+    }
+  }
+
   static String _generateFormHtml(String? link) {
     if (link == null || link.isEmpty) return "";
     final fullUrl = "${AppConfig.webLink}/form/$link";

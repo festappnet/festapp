@@ -35,6 +35,15 @@ assert.equal(
 );
 
 const flutterEntry = target === 'cloudflare' ? 'flutter' : 'flutter.html';
+const webClientEntry = target === 'cloudflare' ? 'webclient' : 'index.html';
+const webClientHtml = await readFile(path.join(buildDir, webClientEntry), 'utf8');
+assert.match(
+  webClientHtml,
+  new RegExp(`window\\.__FESTAPP_BUILD_VERSION__\\s*=\\s*"${escapedVersion}"`),
+  'Web client HTML must report its exact generation before loading modules',
+);
+assert.ok(webClientHtml.includes('web-client-startup'),
+  'Web client HTML must remain visible when its entry module cannot load');
 const authBridgeEntry = target === 'cloudflare' ? 'auth_bridge' : 'auth_bridge.html';
 const [flutterHtml, main, versionedMain, worker, siteManifestText, authBridge] = await Promise.all([
   readFile(path.join(buildDir, flutterEntry), 'utf8'),

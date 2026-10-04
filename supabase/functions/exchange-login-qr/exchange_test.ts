@@ -40,18 +40,18 @@ Deno.test("valid login QR returns only a normal session after marking use", asyn
       calls.push(name);
       if (name === "resolve_reception_login_qr_v1") {
         return Promise.resolve({
-          data: { authEmail: "9+guest@test.local" },
+          data: { userId: "user-id", authEmail: "9+guest@test.local" },
           error: null,
         });
       }
-      return Promise.resolve({ data: null, error: null });
+      return Promise.resolve({ data: { userId: "user-id", authEmail: "9+guest@test.local" }, error: null });
     },
     auth: {
       admin: {
         generateLink() {
           calls.push("generateLink");
           return Promise.resolve({
-            data: { properties: { hashed_token: "otp-proof" } },
+            data: { user: { id: "user-id" }, properties: { hashed_token: "otp-proof" } },
             error: null,
           });
         },
@@ -65,6 +65,7 @@ Deno.test("valid login QR returns only a normal session after marking use", asyn
         return Promise.resolve({
           data: {
             session: {
+              user: { id: "user-id" },
               access_token: "access",
               refresh_token: "refresh",
               expires_at: 123,
@@ -85,8 +86,15 @@ Deno.test("valid login QR returns only a normal session after marking use", asyn
 
   assertEquals(calls, [
     "resolve_reception_login_qr_v1",
+    "acquire_existing_user_session_lease_v1",
+    "resolve_reception_login_qr_v1",
     "generateLink",
     "verifyOtp",
+    "check_existing_user_session_lease_v1",
+    "resolve_reception_login_qr_v1",
+    "check_existing_user_session_lease_v1",
+    "resolve_reception_login_qr_v1",
+    "release_existing_user_session_lease_v1",
     "mark_reception_login_qr_used_v1",
   ]);
   assertEquals(result, {

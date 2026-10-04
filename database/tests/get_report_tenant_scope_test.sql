@@ -54,7 +54,9 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', v_user::text, true);
   PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
 
+  SET LOCAL ROLE authenticated;
   v_result := public.get_report_ws(v_link);
+  RESET ROLE;
 
   PERFORM assert_eq(
     (v_result->>'code')::integer,
@@ -62,7 +64,7 @@ BEGIN
     'report reader resolves duplicate links inside the caller organization'
   );
   PERFORM assert_true(
-    (v_result->>'data') LIKE '%Počet objednávek celkem:%',
+    jsonb_typeof(v_result->'data') = 'string' AND v_result->'report'->'occasion'->>'id' = v_own_occasion::text,
     'report reader returns report data for the authorized occasion'
   );
   PERFORM assert_true(

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
+import { issueExistingUserSession } from "../_shared/issueExistingUserSession.ts";
 import { parseLoginQr, parseManualLoginCode, sha256Hex } from "./qr.ts";
 
 export async function exchangeLoginCredential(
@@ -32,17 +33,18 @@ async function exchangeResolvedCredential(
     },
   );
   if (resolveError || !resolved?.authEmail) return null;
-  const { data: link, error: linkError } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email: resolved.authEmail,
-  });
-  const hashedToken = link?.properties?.hashed_token;
-  if (linkError || !hashedToken) return null;
-  const { data: verified, error: verifyError } = await anon.auth.verifyOtp({
-    type: "magiclink",
-    token_hash: hashedToken,
-  });
-  if (verifyError || !verified.session) return null;
+  let session;
+  try {
+    session = await issueExistingUserSession(
+      { targetUserId: resolved.userId, expectedAuthEmail: resolved.authEmail }, admin, anon,
+      { validateContext: async () => {
+        const { data, error } = await admin.rpc("resolve_reception_login_qr_v1", {
+          p_occasion: parsed.occasion, p_token_hash: await sha256Hex(parsed.token),
+        });
+        return !error && data?.userId === resolved.userId && data?.authEmail === resolved.authEmail;
+      } },
+    );
+  } catch { return null; }
   const { error: markError } = await admin.rpc(
     "mark_reception_login_qr_used_v1",
     {
@@ -50,11 +52,14 @@ async function exchangeResolvedCredential(
       p_token_hash: await sha256Hex(parsed.token),
     },
   );
-  if (markError) return null;
+  if (markError) {
+    await admin.auth.admin.signOut(session.access_token, "local");
+    return null;
+  }
   return {
-    access_token: verified.session.access_token,
-    refresh_token: verified.session.refresh_token,
-    expires_at: verified.session.expires_at,
-    token_type: verified.session.token_type,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at,
+    token_type: session.token_type,
   };
 }

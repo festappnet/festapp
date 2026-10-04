@@ -24,7 +24,7 @@ BEGIN
 
     -- Update the state of the order to 'paid'
     UPDATE eshop.orders
-    SET state = 'paid', updated_at = now()
+    SET state = 'paid', updated_at = now(),email_payment_version=email_payment_version+1
     WHERE id = order_id;
 
     -- Update the state of all tickets linked to the order to 'paid', except those with state 'storno'
@@ -33,7 +33,7 @@ BEGIN
     FROM eshop.order_product_ticket
     WHERE eshop.order_product_ticket.ticket = eshop.tickets.id
     AND eshop.order_product_ticket."order" = order_id
-    AND eshop.tickets.state != 'storno';
+    AND eshop.tickets.state IN ('ordered','expired','paid');
 
     -- Queue deposit-paid or fully-paid email for orders with deposit
     DECLARE
@@ -64,18 +64,12 @@ BEGIN
             v_email_code := 'TICKET_ORDER_PAYMENT_DONE';
 
             IF v_email_code IS NOT NULL THEN
-                INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
-                VALUES (
-                    NOW(),
-                    v_email_code,
-                    jsonb_build_object('order_id', order_id),
-                    v_org_id,
-                    occasion_id,
-                    v_unit_id
-                );
+                PERFORM public.enqueue_order_email(v_email_code,jsonb_build_object('order_id',order_id),v_org_id,occasion_id,v_unit_id);
             END IF;
         END IF;
     END;
+
+    PERFORM public.enqueue_paid_order_tickets(order_id);
 
     -- Return a success message with a status code 200
     RETURN jsonb_build_object('code', 200, 'message', 'Update successful');
