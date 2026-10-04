@@ -62,7 +62,8 @@ class _TicketsTabState extends State<TicketsTab> {
       if (PlatformHelper.isWeb &&
           FeatureService.isFeatureEnabled(FeatureConstants.ticket))
         EshopColumns.TICKET_DOWNLOAD,
-      EshopColumns.TICKET_CONFIRM,
+      if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
+        EshopColumns.TICKET_CONFIRM,
       EshopColumns.TICKET_TOTAL_PRICE,
       if (FeatureService.isFeatureEnabled(FeatureConstants.blueprint))
         EshopColumns.TICKET_SPOT,
