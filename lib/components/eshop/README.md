@@ -58,3 +58,21 @@ responses, and refreshes only on explicit request or context change. Text and
 export reuse the snapshot. Financial values describe current prices and stored
 payment totals, including refunds; paid orders can have paid only a deposit.
 Mobile products use a list; explanations work by tap and keyboard.
+
+### Scheduled product prices
+
+The Products grid reads the complete unapplied timeline from the authorized
+`get_products_and_types_for_edit` bundle. `save_product_price_change` and
+`cancel_product_price_change` are the only editor write boundaries. Each plan
+has its own revision and absolute target price. Applied plans are excluded
+from this UI; failed plans remain available for explicit repair or cancellation.
+
+`apply_planned_changes()` keeps the existing Client Sync v1 entrypoint and cron.
+It serializes workers, locks product before plan, processes due plans by time/id,
+and rolls back an individual price if its sync commit fails. New checkout orders
+read the actual server price; existing order/payment snapshots stay fixed.
+
+Products refresh on tab return, application resume and each minute while a plan
+is due. Shared administration grids also refresh on tab return, preserving drafts,
+filters, sorting, scroll and user column widths. An in-flight refresh rechecks
+drafts before replacing rows. Report refreshes on return as a read-only snapshot.

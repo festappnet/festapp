@@ -1,3 +1,5 @@
+import 'package:fstapp/services/time_helper.dart';
+import 'product_price_change.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
@@ -17,6 +19,11 @@ class ProductModel extends ITrinaRowModel {
   String? deleteBlockedReason;
   bool? deletionAllowed;
   bool get canDelete => id == null || deletionAllowed == true;
+  List<ProductPriceChange> priceChanges = [];
+  DateTime? priceServerTime;
+  Duration priceClockOffset = Duration.zero;
+  DateTime get priceNow =>
+      (TimeHelper.currentTime ?? DateTime.now()).toUtc().add(priceClockOffset);
   DateTime? createdAt;
   DateTime? updatedAt;
   String? title;
@@ -170,6 +177,9 @@ class ProductModel extends ITrinaRowModel {
     this.id,
     this.deleteBlockedReason,
     this.deletionAllowed,
+    List<ProductPriceChange>? priceChanges,
+    this.priceServerTime,
+    this.priceClockOffset = Duration.zero,
     this.createdAt,
     this.updatedAt,
     this.title,
@@ -192,13 +202,17 @@ class ProductModel extends ITrinaRowModel {
     this.isDynamicallyAvailable,
     List<int>? formIds,
     this.formTitles,
-  })  : includedInventories = includedInventories ?? [],
+  })  : priceChanges = priceChanges ?? [],
+        includedInventories = includedInventories ?? [],
         formIds = formIds ?? [];
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic>? data = json[TbEshop.products.data];
 
     return ProductModel(
+      priceChanges: (json['price_changes'] as List? ?? [])
+          .map((c) => ProductPriceChange.fromJson(c))
+          .toList(),
       id: json[TbEshop.products.id],
       deleteBlockedReason: json['delete_blocked_reason'],
       deletionAllowed: json['can_delete'],
@@ -335,6 +349,9 @@ class ProductModel extends ITrinaRowModel {
       currencyCode: json[EshopColumns.PRODUCT_CURRENCY_CODE],
       order: json[EshopColumns.PRODUCT_ORDER],
       maximum: json[EshopColumns.PRODUCT_MAXIMUM],
+      priceChanges: model?.priceChanges,
+      priceServerTime: model?.priceServerTime,
+      priceClockOffset: model?.priceClockOffset ?? Duration.zero,
       includedInventories: model?.includedInventories ?? [],
       formIds: model?.formIds ?? [],
       formTitles: model?.formTitles,
@@ -381,6 +398,9 @@ class ProductModel extends ITrinaRowModel {
     String? formTitles,
   }) {
     return ProductModel(
+      priceChanges: priceChanges,
+      priceServerTime: priceServerTime,
+      priceClockOffset: priceClockOffset,
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -441,6 +461,7 @@ class ProductModel extends ITrinaRowModel {
       EshopColumns.PRODUCT_TITLE: TrinaCell(value: title ?? ''),
       EshopColumns.PRODUCT_SHORT_TITLE: TrinaCell(value: shortTitle ?? ''),
       EshopColumns.PRODUCT_DESCRIPTION: TrinaCell(value: description ?? ''),
+      EshopColumns.PRODUCT_PRICE_CHANGES: TrinaCell(value: this),
       EshopColumns.PRODUCT_PRICE: TrinaCell(
         value: price != null ? price?.toStringAsFixed(2) : '',
       ),
