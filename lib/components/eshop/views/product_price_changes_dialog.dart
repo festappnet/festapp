@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
-import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/widgets/time_data_range_picker.dart';
 import 'package:fstapp/services/utilities_all.dart';
 
 import '../db_eshop.dart';
@@ -395,60 +395,25 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
           ),
           onChanged: (_) => setState(() {}),
         ),
-        TextField(
-          controller: date,
+        const SizedBox(height: 16),
+        TimeDatePicker(
+          date: date.text.isEmpty ? null : scheduleWallTime(date.text, '00:00'),
+          time: time.text.isEmpty
+              ? null
+              : TimeOfDay.fromDateTime(scheduleWallTime('2000-01-01', time.text)!),
+          dateLabel: OrdersStrings.priceDate,
+          timeLabel: OrdersStrings.priceTime,
           enabled: !busy,
-          decoration: InputDecoration(
-            labelText: OrdersStrings.priceDate,
-            suffixIcon: IconButton(
-              tooltip: OrdersStrings.priceDate,
-              onPressed: busy
-                  ? null
-                  : () async {
-                      final day = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2100),
-                      );
-                      if (day != null && mounted) {
-                        setState(() {
-                          date.text = DateFormat('dd.MM.yyyy').format(day);
-                          offsetChoice = null;
-                        });
-                      }
-                    },
-              icon: const Icon(Icons.calendar_month),
-            ),
-          ),
-          onChanged: (_) => setState(() => offsetChoice = null),
-        ),
-        TextField(
-          controller: time,
-          enabled: !busy,
-          decoration: InputDecoration(
-            labelText: OrdersStrings.priceTime,
-            suffixIcon: IconButton(
-              tooltip: OrdersStrings.priceTime,
-              onPressed: busy
-                  ? null
-                  : () async {
-                      final selected = await TimeHelper.showUniversalTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(DateTime.now()),
-                      );
-                      if (selected != null && mounted) {
-                        setState(() {
-                          time.text =
-                              '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
-                          offsetChoice = null;
-                        });
-                      }
-                    },
-              icon: const Icon(Icons.schedule),
-            ),
-          ),
-          onChanged: (_) => setState(() => offsetChoice = null),
+          minDate: DateTime.now(),
+          maxDate: DateTime(2100),
+          onDateChanged: (picked) => setState(() {
+            date.text = DateFormat('dd.MM.yyyy').format(picked);
+            offsetChoice = null;
+          }),
+          onTimeChanged: (picked) => setState(() {
+            time.text = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+            offsetChoice = null;
+          }),
         ),
         if (amount != null && instant != null)
           Padding(
