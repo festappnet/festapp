@@ -1,4 +1,18 @@
-# Canonical email delivery - local implementation handoff
+# Canonical email delivery - implementation and production readiness handoff
+
+## Current production readiness (2026-10-04)
+
+The user subsequently authorized completion through production, AWS configuration, all active tenants and a real canary to bujnmi@gmail.com. The implementation branch was rebased onto authoritative main `c2c5634f72287a86a1b2f55e58ea63727f53ac0f`; a fresh fetch confirmed no missing main commits. Main requires one approving review before merge. No production migration, new AWS credentials or real SES canary has been performed yet.
+
+All 11 active tenants matched generation 1 and their canonical organization: `prod/absolventskyvelehrad`, `prod/aksmcz`, `prod/cavfotofest`, `prod/csmostrava2026`, `prod/doobiscup`, `prod/farnostopava`, `prod/festapp`, `prod/festapptickets`, `prod/festivalslunovrat`, `prod/hvezdamorska`, `prod/jubileum2025`. The protected live host/database assertions passed. Live migration ledger is at 20261003210000; 34 legacy queue entries remain and SMTP is still active. Email cron is in the postgres control-plane database and schedules work in the canonical runtime database; do not run the broad database-finalization script for this rollout.
+
+AWS console login confirmed account 274371802740, Frankfurt, sending quota 50,000/day and 14/second. Gateway API credentials and feedback infrastructure remain to be configured; existing SMTP credentials cannot provide API access. Shared-account allocations must be verified before unpausing.
+
+Validation after updating main: 105 SQL files passed, 235 Deno tests passed, 1,052 Flutter tests passed (1 skipped), 211 web tests passed (9 skipped). The bank-import integration subset passed 3 tests; 27 unrelated/service-dependent cases were skipped. Automation initially exposed two existing main issues (native PWA install suppression and a font test comparing against an obsolete migration); both were fixed and all five targeted checks passed. No load/capacity test was run.
+
+The following sections retain the historical local-phase evidence and outstanding operational checklist; their earlier authorization and target blockers are superseded by the status above.
+
+## Historical local phase
 
 Completed locally on `implementation/canonical-email-delivery-20261003` in `/Users/miakh/source/festapp-email-delivery`, based on main `3912447c8`. The original `/Users/miakh/source/festapp` release worktree and its unrelated changes are untouched. Nothing committed, pushed, deployed or sent to a real recipient. No capacity/load test was performed.
 

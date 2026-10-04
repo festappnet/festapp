@@ -2151,7 +2151,7 @@
     "marginMm": "Paper margin (mm)",
     "saveDirectHint": "Save stores the ticket changes directly in the event.",
     "canvasBlocked": "Size limit reached. Move the highlighted required elements",
-    "canvasHidden": "Outside canvas, automatically hidden (Undo to restore)",
+    "canvasHidden": "Outside canvas, automatically hidden (enlarge canvas to restore)",
     "checkElements": "Adjust highlighted elements: keep them clear of QR and inside the canvas",
     "canvasColor": "Canvas color",
     "transparent": "Transparent",
@@ -2160,7 +2160,7 @@
     "textSection": "Text",
     "imageSection": "Image",
     "resizeCanvas": "Resize ticket canvas",
-    "resizeCanvasHint": "Drag the right, bottom or corner handle.",
+    "resizeCanvasHint": "Drag any edge or corner handle.",
     "designSizeHint": "Content stays in place. Optional elements outside the canvas are hidden.",
     "designSize": "Ticket dimensions",
     "paperFormat": "PDF format",
@@ -2275,7 +2275,14 @@
     "elementFont": "Element font override",
     "missingGlyphs": "Some characters are missing from this font and are replaced with ?.",
     "fontForText": "Different font for this text",
-    "inheritFont": "Use ticket font"
+    "inheritFont": "Use ticket font",
+    "modeCanvas": "Mode: Canvas size",
+    "modeImage": "Mode: Image placement",
+    "modeCrop": "Mode: Image crop",
+    "dimensionInputHint": "Confirm with Enter or click outside the field. Content stays in place.",
+    "editBlockingElement": "Edit: {name}",
+    "transparency": "Transparency",
+    "finishCanvasFirst": "To move elements, click Done first."
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transactions with a currency different from their order are excluded from the chart",
@@ -2312,11 +2319,11 @@
     "noType": "Without type",
     "empty": "No data yet.",
     "details": "Explanation",
-    "statesHelp": "Current states, not sales progression. The paid state may mean only the deposit has been paid.",
+    "statesHelp": "Current states, not sales progression. The {paid} state may mean only the deposit has been paid.",
     "spotsHelp": "Occupied seats have an order item. Temporary holds and capacities of other tickets are excluded.",
     "moneyHelp": "Current values for each currency. Net receipts are received payments minus refunds.",
     "moneyDetails": "Order value uses current prices, which may be zero after cancellation. Manually recorded receipts include only positive manual transactions; other receipts are not necessarily bank payments. Deposits and payments beyond deposits are gross amounts before refunds, only for payments with deposits. They are not outstanding balances.",
-    "productsHelp": "Number of individual items in paid/sent/used orders, including orders with paid deposits.",
+    "productsHelp": "Number of individual items in {paid}/{sent}/{used} orders, including orders with paid deposits.",
     "current_order_value": "Current order value",
     "received": "Received",
     "returned": "Refunded",
@@ -2329,6 +2336,8 @@
     "negative_other_received": "Payment inconsistency: manual receipts exceed received payments.",
     "type": "Type",
     "product": "Product",
-    "count": "Count"
+    "count": "Count",
+    "applicationTimeline": "Application activity over time",
+    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time."
   }
 }

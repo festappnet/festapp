@@ -36,6 +36,8 @@ while IFS= read -r email_migration;do
 done < <(git ls-tree -r --name-only "$email_main_snapshot" supabase/migrations | sort)
 psql "$email_database" -v ON_ERROR_STOP=1 -q -c 'SELECT cron.unschedule(jobid) FROM cron.job' -f database/tests/emails/legacy_cutover_fixture.sql >/dev/null
 psql "$email_database" -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261003200000_canonical_email_delivery.sql -f database/tests/emails/legacy_cutover_assertions.sql >/dev/null
+# Install the standard disposable test identities after legacy cutover assertions.
+psql "$email_database" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql >/dev/null
 # Keep migrated fixtures for inspection, ineligible for any real send.
 psql "$email_database" -v ON_ERROR_STOP=1 -q -c 'SELECT cron.unschedule(jobid) FROM cron.job' >/dev/null
 echo 'PASS: main + legacy fixture + canonical cutover, paused, IDs/audit preserved, ambiguous sends quarantined.'

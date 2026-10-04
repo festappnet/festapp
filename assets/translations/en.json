@@ -2142,11 +2142,6 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
-    "modeCanvas": "Mode: Canvas size",
-    "modeImage": "Mode: Image placement",
-    "modeCrop": "Mode: Image crop",
-    "dimensionInputHint": "Confirm with Enter or click outside the field. Content stays in place.",
-    "editBlockingElement": "Edit: {name}",
     "resetCrop": "Show entire image",
     "cropImageHint": "Drag the corners to crop. Drag inside to move the crop.",
     "cropImage": "Crop image",
@@ -2159,7 +2154,6 @@
     "canvasHidden": "Outside canvas, automatically hidden (enlarge canvas to restore)",
     "checkElements": "Adjust highlighted elements: keep them clear of QR and inside the canvas",
     "canvasColor": "Canvas color",
-    "transparency": "Transparency",
     "transparent": "Transparent",
     "transparentHint": "The checkerboard indicates transparency and is not printed in the PDF.",
     "canvasSection": "Canvas",
@@ -2167,7 +2161,6 @@
     "imageSection": "Image",
     "resizeCanvas": "Resize ticket canvas",
     "resizeCanvasHint": "Drag any edge or corner handle.",
-    "finishCanvasFirst": "To move elements, click Done first.",
     "designSizeHint": "Content stays in place. Optional elements outside the canvas are hidden.",
     "designSize": "Ticket dimensions",
     "paperFormat": "PDF format",
@@ -2282,15 +2275,20 @@
     "elementFont": "Element font override",
     "missingGlyphs": "Some characters are missing from this font and are replaced with ?.",
     "fontForText": "Different font for this text",
-    "inheritFont": "Use ticket font"
+    "inheritFont": "Use ticket font",
+    "modeCanvas": "Mode: Canvas size",
+    "modeImage": "Mode: Image placement",
+    "modeCrop": "Mode: Image crop",
+    "dimensionInputHint": "Confirm with Enter or click outside the field. Content stays in place.",
+    "editBlockingElement": "Edit: {name}",
+    "transparency": "Transparency",
+    "finishCanvasFirst": "To move elements, click Done first."
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transactions with a currency different from their order are excluded from the chart",
     "ratesUnavailable": "CNB rates are unavailable or a currency is missing. Select an individual currency to display payments.",
     "compareCurrencies": "All currencies in CZK",
     "currencyComparisonHelp": "Indicative conversion of all days at the latest available CNB rate, rounded to cents per day and currency. Rate date:",
-    "applicationTimeline": "Application activity over time",
-    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
     "orderTimeline": "Order activity over time",
     "orderTimelineHelp": "Newly created orders per day, including orders cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
     "paymentTimeline": "When payments arrived",
@@ -2338,6 +2336,8 @@
     "negative_other_received": "Payment inconsistency: manual receipts exceed received payments.",
     "type": "Type",
     "product": "Product",
-    "count": "Count"
+    "count": "Count",
+    "applicationTimeline": "Application activity over time",
+    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time."
   }
 }
