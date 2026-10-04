@@ -1,3 +1,5 @@
+-- Preserve production safe-update protection for canonical singleton mutations.
+BEGIN;
 CREATE OR REPLACE FUNCTION public.wake_email_worker() RETURNS void LANGUAGE plpgsql SECURITY INVOKER
 SET search_path=public,extensions AS $$
 DECLARE v_url text;
@@ -370,3 +372,6 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.reconcile_unknown_email(uuid,text,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.reconcile_unknown_email(uuid,text,text,text) TO service_role;
+
+NOTIFY pgrst,'reload schema';
+COMMIT;
