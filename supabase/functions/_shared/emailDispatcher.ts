@@ -48,11 +48,35 @@ export async function drainEmails(
             Math.min(30000, Math.max(1, budgetMs - (d.now() - started))),
           );
         });
+        const work = d.prepare(row);
+        let renewalError: unknown;
+        let renewal = Promise.resolve();
+        const heartbeat = setInterval(() => {
+          renewal = renewal.then(async () => {
+            try {
+              await d.rpc("renew_email_preparation", {
+                p_message: row.message_id,
+                p_token: row.lease_token,
+              });
+            } catch (error) {
+              renewalError = error;
+            }
+          });
+        }, 20_000);
         let snapshot: Awaited<ReturnType<typeof d.prepare>>;
         try {
-          snapshot = await Promise.race([d.prepare(row), timeout]);
+          try {
+            snapshot = await Promise.race([work, timeout]);
+          } catch (error) {
+            // A timer cannot cancel PDF/attachment work. Retain its permit until it stops.
+            await work.catch(() => {});
+            throw error;
+          }
+          if (renewalError) throw renewalError;
         } finally {
           clearTimeout(timer);
+          clearInterval(heartbeat);
+          await renewal;
         }
         row.prepared = await d.seal(snapshot.prepared);
         await d.rpc("prepare_email", {

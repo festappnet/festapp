@@ -35,6 +35,9 @@ BEGIN
  PERFORM public.record_email_event(jsonb_build_object('key','event-bounce','provider_id','ses-fixture','attempt_id',att,'recipient','fixture@example.invalid','type','bounce','time',now(),'hard_bounce',true));
  PERFORM assert_eq((SELECT reason FROM public.email_suppressions WHERE recipient='fixture@example.invalid'),'hard_bounce','hard bounce suppresses future sends');
  PERFORM assert_eq((SELECT public.email_reporting_state(m) FROM public.email_messages m WHERE message_id=(msg->>'message_id')::uuid),'bounce','bounce beats accepted');
+ -- Independent capacity scenario after the preceding outage observation.
+ PERFORM assert_true((SELECT circuit_until>now() FROM public.email_capacity),'unknown provider result keeps an outage circuit');
+ UPDATE public.email_capacity SET circuit_until=NULL,provider_outage_streak=0,probe_until=NULL;
  -- A capacity deferral changes no retry count and retains the immutable snapshot.
  msg:=public.enqueue_email('custom',context,'other@example.invalid','{}','capacity-contract');
  row:=public.claim_email();att:=(row->>'attempt_id')::uuid;token:=(row->>'lease_token')::uuid;
@@ -68,6 +71,9 @@ BEGIN
  PERFORM assert_true(public.create_email_confirmation_receipt('00000000-0000-4000-8000-000000000001',v_order_id,repeat('c',64)),'receipt tied to committed confirmation');
  PERFORM assert_eq(public.get_email_confirmation_status(repeat('c',64)),'queued','receipt exposes coarse status');
  PERFORM assert_eq(public.get_email_confirmation_status(repeat('d',64)),'unavailable','random capability reveals nothing');
+ UPDATE public.email_messages SET workflow_state='accepted',provider_message_id='receipt-provider' WHERE message_id=(SELECT message_id FROM public.email_confirmation_receipts WHERE token_hash=repeat('c',64));
+ PERFORM public.record_email_event(jsonb_build_object('key','receipt-invalid','provider_id','receipt-provider','recipient','order@example.invalid','type','bounce','time',now(),'hard_bounce',true,'invalid_recipient',true));
+ PERFORM assert_eq(public.get_email_confirmation_status(repeat('c',64)),'invalid_email','verified address failure is visible through the bounded capability');
  UPDATE public.email_confirmation_receipts SET reads=15;
  PERFORM assert_eq(public.get_email_confirmation_status(repeat('c',64)),'unavailable','receipt rate budget enforced');
 

@@ -1223,7 +1223,8 @@
     "paymentNote": "Zpráva pro příjemce",
     "copied": "Zkopírováno",
     "orderLabel": "Objednávka",
-    "paymentReference": "Reference platby"
+    "paymentReference": "Reference platby",
+    "invalidEmailAddress": "Zadaná e-mailová adresa neexistuje nebo není platná. Objednávka byla vytvořena; kontaktujte pořadatele pro opravu adresy."
   },
   "FeatureTicket": {
     "enableManualTicketScan": "Povolit ruční skenování vstupenek",

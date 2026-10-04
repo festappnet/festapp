@@ -72,7 +72,7 @@ CREATE TABLE public.email_attempts (
 CREATE TABLE public.email_delivery_events (
  event_key text PRIMARY KEY, provider_message_id text NOT NULL, attempt_id uuid, recipient text NOT NULL,
  event_type text NOT NULL CHECK(event_type IN ('send','delivery','delay','bounce','complaint','reject','rendering_failure','open','click')),
- provider_time timestamptz NOT NULL, received_at timestamptz NOT NULL DEFAULT now(), hard_bounce boolean NOT NULL DEFAULT false,
+ provider_time timestamptz NOT NULL, received_at timestamptz NOT NULL DEFAULT now(), hard_bounce boolean NOT NULL DEFAULT false, invalid_recipient boolean NOT NULL DEFAULT false,
  message_id uuid REFERENCES public.email_messages(message_id));
 CREATE INDEX email_event_history ON public.email_delivery_events(message_id,provider_time);
 CREATE INDEX email_attempt_history ON public.email_attempts(created_at);
@@ -83,6 +83,7 @@ CREATE TABLE public.email_capacity (
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton), account_id text, region text,
  paused boolean NOT NULL DEFAULT true, worker_url text, quota_refresh_until timestamptz, quota_at timestamptz, max_rate numeric, daily_quota numeric,
  provider_sent_24h numeric, shared_account boolean NOT NULL DEFAULT true, allocated_rate numeric, allocated_daily numeric,
+ provider_outage_streak integer NOT NULL DEFAULT 0 CHECK(provider_outage_streak>=0), probe_until timestamptz, probe_attempt uuid,
  next_send_at timestamptz NOT NULL DEFAULT now(), circuit_until timestamptz, rate_factor numeric NOT NULL DEFAULT 1 CHECK(rate_factor>0 AND rate_factor<=1),
  max_preparing integer NOT NULL DEFAULT 2 CHECK(max_preparing BETWEEN 1 AND 8), max_sending integer NOT NULL DEFAULT 2 CHECK(max_sending BETWEEN 1 AND 8),
  wake_error text, heartbeat_at timestamptz);

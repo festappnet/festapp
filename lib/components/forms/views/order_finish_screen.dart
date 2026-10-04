@@ -111,8 +111,10 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
               response.data is Map ? response.data['state'] as String? : null;
         }
         if (!mounted) return;
+        if (state == 'accepted') setState(() => _deliveryState = 'accepted');
         if ([
-          'accepted',
+          'delivered',
+          'invalid_email',
           'failed',
           'unknown',
           'dead',

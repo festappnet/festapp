@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Reviewed opt-in SES feedback infrastructure. Incoming events only; deploy requires separate authorization.",
+  "Description": "SES feedback infrastructure for the approved canonical email rollout.",
   "Parameters": {
     "FeedbackEndpoint": {
       "Type": "String",
@@ -18,6 +18,10 @@
     "AlarmTopicArn": {
       "Type": "String",
       "AllowedPattern": "arn:aws:sns:.+"
+    },
+    "OwnerEmail": {
+      "Type": "String",
+      "AllowedPattern": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+"
     }
   },
   "Resources": {
@@ -273,6 +277,18 @@
         }
       },
       "DependsOn": "FeedbackTopicPolicy"
+    },
+    "OwnerAlarmSubscription": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "AlarmTopicArn"
+        },
+        "Protocol": "email",
+        "Endpoint": {
+          "Ref": "OwnerEmail"
+        }
+      }
     }
   },
   "Outputs": {

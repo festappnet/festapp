@@ -50,6 +50,15 @@ export async function enqueueAndAwaitEmail(
   const dedupe = input.dedupeKey ??
     Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, "0"))
       .join("");
+  const contentHash = Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(JSON.stringify(prepared)),
+      ),
+    ),
+    (b) => b.toString(16).padStart(2, "0"),
+  ).join("");
   const sealed = await sealEmail(prepared);
   // Dedupe hash derives from the plaintext digest; random encryption nonce must not cause collision.
   const message = await emailRpc("enqueue_prepared_email", {
@@ -58,7 +67,7 @@ export async function enqueueAndAwaitEmail(
     p_recipient: input.to,
     p_sealed: sealed,
     p_dedupe: dedupe,
-    p_content_hash: dedupe,
+    p_content_hash: contentHash,
     p_code: input.templateCode ?? "",
     p_expires: input.expiresAt ?? null,
   });

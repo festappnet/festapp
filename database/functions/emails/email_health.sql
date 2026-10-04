@@ -17,13 +17,14 @@ BEGIN
  SELECT count(*) INTO v_post FROM public.email_messages WHERE workflow_state='accepted' AND post_action_state='pending';
  RETURN jsonb_build_object('queue',v_queue,'oldest_due_at',v_oldest,'timings_24h',v_times,'provider',v_provider,'post_action_backlog',v_post,
  'capacity',jsonb_build_object('paused',c.paused,'quota_at',c.quota_at,'quota_fresh',coalesce(c.quota_at>now()-interval '15 minutes',false),
- 'heartbeat_at',c.heartbeat_at,'circuit_until',c.circuit_until,'incident',c.wake_error,
+ 'heartbeat_at',c.heartbeat_at,'circuit_until',c.circuit_until,'provider_outage_streak',c.provider_outage_streak,'probe_until',c.probe_until,'incident',c.wake_error,
  'effective_rate',CASE WHEN c.shared_account THEN least(c.max_rate*0.8,c.allocated_rate) ELSE c.max_rate*0.8 END*c.rate_factor,
  'allocated_daily',c.allocated_daily,'provider_sent_24h',c.provider_sent_24h),
  'alerts',to_jsonb(array_remove(ARRAY[
  CASE WHEN NOT c.paused AND (c.quota_at IS NULL OR c.quota_at<now()-interval '15 minutes') THEN 'quota_stale' END,
  CASE WHEN v_oldest<now()-interval '5 minutes' THEN 'oldest_due' END,
  CASE WHEN v_oldest<now()-interval '5 minutes' AND (c.heartbeat_at IS NULL OR c.heartbeat_at<now()-interval '5 minutes') THEN 'worker_heartbeat_stale' END,
+ CASE WHEN c.provider_outage_streak>0 THEN 'provider_outage' END,
  CASE WHEN c.wake_error IS NOT NULL THEN 'provider_or_wake_incident' END,
  CASE WHEN EXISTS(SELECT 1 FROM public.email_messages WHERE last_error='post_action_failed') THEN 'post_action_failed' END,
  CASE WHEN EXISTS(SELECT 1 FROM public.email_messages m WHERE accepted_at BETWEEN now()-interval '1 day' AND now()-interval '30 minutes' AND NOT EXISTS(SELECT 1 FROM public.email_delivery_events e WHERE e.message_id=m.message_id)) THEN 'feedback_overdue' END

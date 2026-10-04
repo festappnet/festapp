@@ -76,7 +76,7 @@ CREATE TABLE public.email_attempts (
 CREATE TABLE public.email_delivery_events (
  event_key text PRIMARY KEY, provider_message_id text NOT NULL, attempt_id uuid, recipient text NOT NULL,
  event_type text NOT NULL CHECK(event_type IN ('send','delivery','delay','bounce','complaint','reject','rendering_failure','open','click')),
- provider_time timestamptz NOT NULL, received_at timestamptz NOT NULL DEFAULT now(), hard_bounce boolean NOT NULL DEFAULT false,
+ provider_time timestamptz NOT NULL, received_at timestamptz NOT NULL DEFAULT now(), hard_bounce boolean NOT NULL DEFAULT false, invalid_recipient boolean NOT NULL DEFAULT false,
  message_id uuid REFERENCES public.email_messages(message_id));
 CREATE INDEX email_event_history ON public.email_delivery_events(message_id,provider_time);
 CREATE INDEX email_attempt_history ON public.email_attempts(created_at);
@@ -87,6 +87,7 @@ CREATE TABLE public.email_capacity (
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton), account_id text, region text,
  paused boolean NOT NULL DEFAULT true, worker_url text, quota_refresh_until timestamptz, quota_at timestamptz, max_rate numeric, daily_quota numeric,
  provider_sent_24h numeric, shared_account boolean NOT NULL DEFAULT true, allocated_rate numeric, allocated_daily numeric,
+ provider_outage_streak integer NOT NULL DEFAULT 0 CHECK(provider_outage_streak>=0), probe_until timestamptz, probe_attempt uuid,
  next_send_at timestamptz NOT NULL DEFAULT now(), circuit_until timestamptz, rate_factor numeric NOT NULL DEFAULT 1 CHECK(rate_factor>0 AND rate_factor<=1),
  max_preparing integer NOT NULL DEFAULT 2 CHECK(max_preparing BETWEEN 1 AND 8), max_sending integer NOT NULL DEFAULT 2 CHECK(max_sending BETWEEN 1 AND 8),
  wake_error text, heartbeat_at timestamptz);
@@ -607,9 +608,13 @@ BEGIN
   OR (SELECT count(*) FROM public.email_messages WHERE workflow_state='preparing' AND lease_until>now())>=v_cap.max_preparing THEN RETURN NULL; END IF;
  SELECT * INTO v_row FROM public.email_messages m
  WHERE workflow_state IN ('pending','retry_wait') AND target_time<=now()
+ AND (m.prepared IS NOT NULL OR m.message_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue','order_confirmation')
+  OR (SELECT count(*) FROM public.email_messages heavy WHERE heavy.workflow_state='preparing' AND heavy.lease_until>now() AND heavy.prepared IS NULL
+   AND heavy.message_kind NOT IN ('registration','sign_in','reset_password','google_mailbox','gotrue','order_confirmation'))<greatest(1,v_cap.max_preparing-1))
  AND NOT EXISTS(SELECT 1 FROM public.email_messages prior WHERE prior.order_id=m.order_id AND prior.message_kind='order_confirmation'
   AND m.message_kind<>'order_confirmation' AND prior.workflow_state NOT IN ('accepted','cancelled','expired'))
- ORDER BY priority-greatest(0,floor(extract(epoch FROM now()-created_at)/300))::integer,target_time,id FOR UPDATE SKIP LOCKED LIMIT 1;
+ ORDER BY priority-greatest(0,floor(extract(epoch FROM now()-created_at)/300))::integer,
+ (SELECT max(a.created_at) FROM public.email_attempts a JOIN public.email_messages served ON served.message_id=a.message_id WHERE served.organization=m.organization) NULLS FIRST,target_time,id FOR UPDATE SKIP LOCKED LIMIT 1;
  IF v_row.id IS NULL THEN RETURN NULL; END IF;
  IF NOT public.email_intent_valid(v_row) THEN
   UPDATE public.email_messages SET workflow_state=CASE WHEN expires_at<=now() THEN 'expired' ELSE 'cancelled' END,last_error='intent_invalid' WHERE id=v_row.id;
@@ -619,6 +624,18 @@ BEGIN
  INSERT INTO public.email_attempts(message_id,lease_token,state) VALUES(v_row.message_id,v_token,'preparing') RETURNING attempt_id INTO v_attempt;
  RETURN to_jsonb(v_row)||jsonb_build_object('attempt_id',v_attempt);
 END $$;
+
+-- Keep the global preparation permit while rendering still runs; expired workers cannot renew.
+CREATE OR REPLACE FUNCTION public.renew_email_preparation(p_message uuid,p_token uuid) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ PERFORM public.require_service_role();
+ UPDATE public.email_messages SET lease_until=now()+interval '90 seconds'
+ WHERE message_id=p_message AND lease_token=p_token AND workflow_state='preparing' AND lease_until>now();
+ IF NOT FOUND THEN RAISE EXCEPTION 'stale_email_preparation'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.renew_email_preparation(uuid,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.renew_email_preparation(uuid,uuid) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.prepare_email(p_message uuid,p_token uuid,p_prepared jsonb,p_post_action jsonb DEFAULT '{}') RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -659,12 +676,15 @@ BEGIN
  IF v_cap.paused OR v_cap.quota_at IS NULL OR v_cap.quota_at<now()-interval '15 minutes' OR v_rate IS NULL OR v_rate<=0 OR v_daily IS NULL
  OR (v_cap.shared_account AND (v_cap.allocated_rate IS NULL OR v_cap.allocated_daily IS NULL)) OR v_cap.provider_sent_24h+v_used>=v_daily
  OR v_cap.next_send_at>now() OR v_cap.circuit_until>now()
+ OR (v_cap.provider_outage_streak>0 AND v_cap.probe_until>now())
  OR (SELECT count(*) FROM public.email_messages WHERE workflow_state='sending' AND lease_until>now())>=v_cap.max_sending THEN
-  UPDATE public.email_messages SET workflow_state='pending',target_time=greatest(now()+interval '1 second',coalesce(v_cap.next_send_at,now()),coalesce(v_cap.circuit_until,now())),lease_token=NULL,lease_until=NULL,last_error='capacity_deferred' WHERE id=v_row.id;
+  UPDATE public.email_messages SET workflow_state='pending',target_time=greatest(now()+interval '1 second',coalesce(v_cap.next_send_at,now()),coalesce(v_cap.circuit_until,now()),coalesce(v_cap.probe_until,now())),lease_token=NULL,lease_until=NULL,last_error='capacity_deferred' WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code='capacity_deferred' WHERE attempt_id=p_attempt;
   RETURN jsonb_build_object('disposition','deferred');
  END IF;
- UPDATE public.email_capacity SET next_send_at=clock_timestamp()+make_interval(secs=>(1/v_rate)::double precision);
+ UPDATE public.email_capacity SET next_send_at=clock_timestamp()+make_interval(secs=>(1/v_rate)::double precision),
+ probe_until=CASE WHEN provider_outage_streak>0 THEN now()+interval '90 seconds' ELSE NULL END,
+ probe_attempt=CASE WHEN provider_outage_streak>0 THEN p_attempt ELSE NULL END;
  UPDATE public.email_attempts SET state='sending',began_at=now() WHERE attempt_id=p_attempt;
  UPDATE public.email_messages SET workflow_state='sending',attempt_count=attempt_count+1 WHERE id=v_row.id;
  RETURN jsonb_build_object('disposition','send','message',to_jsonb(v_row));
@@ -685,6 +705,7 @@ BEGIN
  IF p_outcome IN ('retry','dead','unknown') AND v_a.state<>'sending' THEN RAISE EXCEPTION 'invalid_email_failure'; END IF;
  IF p_outcome='preparation_failed' AND v_a.state<>'preparing' THEN RAISE EXCEPTION 'invalid_email_preparation_failure'; END IF;
  IF p_outcome='accepted' THEN
+  UPDATE public.email_capacity SET provider_outage_streak=0,probe_until=NULL,probe_attempt=NULL,circuit_until=NULL WHERE probe_attempt=p_attempt;
   UPDATE public.email_attempts SET state='accepted',provider_message_id=p_provider_id,finished_at=now() WHERE attempt_id=p_attempt;
   UPDATE public.email_messages SET workflow_state='accepted',provider_message_id=p_provider_id,accepted_at=coalesce(accepted_at,now()),last_error=NULL WHERE id=v_m.id;
  ELSE
@@ -693,7 +714,9 @@ BEGIN
   UPDATE public.email_messages SET workflow_state=CASE WHEN p_outcome='unknown' THEN 'unknown' WHEN p_outcome='dead' OR attempt_count+CASE WHEN p_outcome='preparation_failed' THEN 1 ELSE 0 END>=8 THEN 'dead' ELSE 'retry_wait' END,
    attempt_count=attempt_count+CASE WHEN p_outcome='preparation_failed' THEN 1 ELSE 0 END,
    target_time=now()+make_interval(secs=>v_delay*(0.8+random()*0.4)),last_error=left(p_error,100),lease_until=NULL WHERE id=v_m.id;
-  IF p_error='throttled' THEN UPDATE public.email_capacity SET rate_factor=greatest(rate_factor/2,0.01),circuit_until=now()+interval '15 seconds'; END IF;
+  IF p_outcome='unknown' THEN UPDATE public.email_capacity SET provider_outage_streak=least(provider_outage_streak+1,10),
+   probe_until=NULL,probe_attempt=NULL,circuit_until=now()+make_interval(secs=>least(300,30*power(2,least(provider_outage_streak,4)))::double precision); END IF;
+  IF p_error='throttled' THEN UPDATE public.email_capacity SET rate_factor=greatest(rate_factor/2,0.01),probe_until=NULL,probe_attempt=NULL,circuit_until=now()+interval '15 seconds'; END IF;
  END IF;
  PERFORM public.reconcile_email_events();
 END $$;
@@ -734,8 +757,8 @@ BEGIN
  PERFORM public.require_service_role();
  PERFORM 1 FROM public.email_capacity FOR UPDATE;
  IF jsonb_typeof(p_events)<>'array' OR jsonb_array_length(p_events)>100 THEN RAISE EXCEPTION 'invalid_event_batch'; END IF;
- INSERT INTO public.email_delivery_events(event_key,provider_message_id,attempt_id,recipient,event_type,provider_time,hard_bounce)
- SELECT e->>'key',e->>'provider_id',(e->>'attempt_id')::uuid,e->>'recipient',e->>'type',(e->>'time')::timestamptz,coalesce((e->>'hard_bounce')::boolean,false)
+ INSERT INTO public.email_delivery_events(event_key,provider_message_id,attempt_id,recipient,event_type,provider_time,hard_bounce,invalid_recipient)
+ SELECT e->>'key',e->>'provider_id',(e->>'attempt_id')::uuid,e->>'recipient',e->>'type',(e->>'time')::timestamptz,coalesce((e->>'hard_bounce')::boolean,false),coalesce((e->>'invalid_recipient')::boolean,false)
  FROM jsonb_array_elements(p_events) e ON CONFLICT(event_key) DO NOTHING;
  PERFORM public.reconcile_email_events();
 END $$;
@@ -957,8 +980,9 @@ BEGIN
  UPDATE public.email_confirmation_receipts SET reads=reads+1 WHERE token_hash=p_hash AND expires_at>now() AND reads<15 RETURNING message_id INTO v_message;
  IF v_message IS NULL THEN RETURN 'unavailable'; END IF;
  SELECT * INTO m FROM public.email_messages WHERE message_id=v_message;
- RETURN CASE WHEN m.bounced_at IS NOT NULL OR m.complained_at IS NOT NULL OR m.provider_failure IN ('reject','rendering_failure') THEN 'failed'
- WHEN m.workflow_state='accepted' THEN 'accepted' WHEN m.workflow_state IN ('unknown','dead','suppressed','expired','cancelled','retry_wait') THEN m.workflow_state ELSE 'queued' END;
+ RETURN CASE WHEN EXISTS(SELECT 1 FROM public.email_delivery_events e WHERE e.message_id=m.message_id AND e.invalid_recipient AND e.recipient=lower(m.recipient)) THEN 'invalid_email'
+ WHEN m.bounced_at IS NOT NULL OR m.complained_at IS NOT NULL OR m.provider_failure IN ('reject','rendering_failure') THEN 'failed'
+ WHEN m.delivered_at IS NOT NULL THEN 'delivered' WHEN m.workflow_state='accepted' THEN 'accepted' WHEN m.workflow_state IN ('unknown','dead','suppressed','expired','cancelled','retry_wait') THEN m.workflow_state ELSE 'queued' END;
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_confirmation_status(text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.get_email_confirmation_status(text) TO service_role;
@@ -1005,13 +1029,14 @@ BEGIN
  SELECT count(*) INTO v_post FROM public.email_messages WHERE workflow_state='accepted' AND post_action_state='pending';
  RETURN jsonb_build_object('queue',v_queue,'oldest_due_at',v_oldest,'timings_24h',v_times,'provider',v_provider,'post_action_backlog',v_post,
  'capacity',jsonb_build_object('paused',c.paused,'quota_at',c.quota_at,'quota_fresh',coalesce(c.quota_at>now()-interval '15 minutes',false),
- 'heartbeat_at',c.heartbeat_at,'circuit_until',c.circuit_until,'incident',c.wake_error,
+ 'heartbeat_at',c.heartbeat_at,'circuit_until',c.circuit_until,'provider_outage_streak',c.provider_outage_streak,'probe_until',c.probe_until,'incident',c.wake_error,
  'effective_rate',CASE WHEN c.shared_account THEN least(c.max_rate*0.8,c.allocated_rate) ELSE c.max_rate*0.8 END*c.rate_factor,
  'allocated_daily',c.allocated_daily,'provider_sent_24h',c.provider_sent_24h),
  'alerts',to_jsonb(array_remove(ARRAY[
  CASE WHEN NOT c.paused AND (c.quota_at IS NULL OR c.quota_at<now()-interval '15 minutes') THEN 'quota_stale' END,
  CASE WHEN v_oldest<now()-interval '5 minutes' THEN 'oldest_due' END,
  CASE WHEN v_oldest<now()-interval '5 minutes' AND (c.heartbeat_at IS NULL OR c.heartbeat_at<now()-interval '5 minutes') THEN 'worker_heartbeat_stale' END,
+ CASE WHEN c.provider_outage_streak>0 THEN 'provider_outage' END,
  CASE WHEN c.wake_error IS NOT NULL THEN 'provider_or_wake_incident' END,
  CASE WHEN EXISTS(SELECT 1 FROM public.email_messages WHERE last_error='post_action_failed') THEN 'post_action_failed' END,
  CASE WHEN EXISTS(SELECT 1 FROM public.email_messages m WHERE accepted_at BETWEEN now()-interval '1 day' AND now()-interval '30 minutes' AND NOT EXISTS(SELECT 1 FROM public.email_delivery_events e WHERE e.message_id=m.message_id)) THEN 'feedback_overdue' END

@@ -54,6 +54,10 @@ export function normalizeSesEvents(root: any, topic: string, _id: string) {
       type,
       time,
       hard_bounce: type === "bounce" && detail.bounceType === "Permanent",
+      invalid_recipient: type === "bounce" &&
+        detail.bounceType === "Permanent" &&
+        typeof r === "object" &&
+        ["5.1.1", "5.1.2", "5.1.3", "5.1.6"].includes(r.status),
     };
   });
   // No IP, UA, click URL/query or raw payload persists.

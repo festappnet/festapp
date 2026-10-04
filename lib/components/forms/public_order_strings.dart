@@ -27,11 +27,29 @@ class PublicOrderStrings {
 
   static String paymentInfo(String? tone) => _tr('$_prefix.paymentInfo', tone);
 
-  static String confirmationInfo(String? tone, {required bool hasPayment, String email = '', String state = 'queued'}) {
+  static String confirmationInfo(String? tone,
+      {required bool hasPayment, String email = '', String state = 'queued'}) {
     final key = hasPayment ? 'paymentInfo' : 'confirmationInfo';
-    final suffix = state == 'accepted' ? 'Accepted' : ['failed','unknown','dead','suppressed','expired','cancelled','retry_wait'].contains(state) ? 'Unconfirmed' : '';
-    final text = _tr('$_prefix.$key${email.isEmpty ? '' : 'WithEmail'}$suffix', tone);
-    return email.isEmpty ? text : text.replaceAll('{email}', email);
+    final suffix = ['accepted', 'delivered'].contains(state)
+        ? 'Accepted'
+        : [
+            'invalid_email',
+            'failed',
+            'unknown',
+            'dead',
+            'suppressed',
+            'expired',
+            'cancelled',
+            'retry_wait'
+          ].contains(state)
+            ? 'Unconfirmed'
+            : '';
+    final text =
+        _tr('$_prefix.$key${email.isEmpty ? '' : 'WithEmail'}$suffix', tone);
+    final message = email.isEmpty ? text : text.replaceAll('{email}', email);
+    return state == 'invalid_email'
+        ? '$message ${_tr('$_prefix.invalidEmailAddress', tone)}'
+        : message;
   }
 
   static String selectSeat(String? tone) => _tr('$_prefix.selectSeat', tone);

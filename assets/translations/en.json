@@ -1223,7 +1223,8 @@
     "paymentNote": "Message for recipient",
     "copied": "Copied",
     "orderLabel": "Order",
-    "paymentReference": "Payment reference"
+    "paymentReference": "Payment reference",
+    "invalidEmailAddress": "The email address does not exist or is invalid. Your order was created; contact the organizer to correct the address."
   },
   "FeatureTicket": {
     "enableManualTicketScan": "Enable Manual Ticket Scan",

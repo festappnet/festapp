@@ -411,3 +411,78 @@ Deno.test("SES signs an encoded email identity using the AWS double-escaped cano
     stub,
   );
 });
+
+Deno.test("a preparation timeout keeps its permit until the renderer stops", async () => {
+  let release!: (
+    value: { prepared: unknown; postAction: Record<string, unknown> },
+  ) => void;
+  let claimed = false, finished = false;
+  const work = new Promise<
+    { prepared: unknown; postAction: Record<string, unknown> }
+  >((resolve) => release = resolve);
+  const drain = drainEmails({
+    rpc: async (name) => {
+      if (name === "claim_email") {
+        if (claimed) return null;
+        claimed = true;
+        return {
+          message_id: "fixture",
+          attempt_id: "attempt",
+          lease_token: "token",
+          prepared: null,
+        };
+      }
+      if (name === "finish_email_attempt") finished = true;
+      return null;
+    },
+    prepare: () => work,
+    seal: async (value) => value,
+    gateway: async () => {
+      throw Error("timed-out work must not send");
+    },
+    now: Date.now,
+  }, 5);
+  await new Promise((resolve) => setTimeout(resolve, 15));
+  assertEquals(
+    finished,
+    false,
+    "live renderer still owns global preparation capacity",
+  );
+  release({ prepared: {}, postAction: {} });
+  await drain;
+  assertEquals(finished, true);
+});
+Deno.test("only explicit permanent address DSN statuses report an invalid recipient", () => {
+  const event = {
+    eventType: "Bounce",
+    mail: {
+      messageId: "fixture",
+      destination: ["fixture@example.invalid"],
+      timestamp: "2026-10-04T00:00:00Z",
+    },
+    bounce: {
+      bounceType: "Permanent",
+      timestamp: "2026-10-04T00:00:01Z",
+      bouncedRecipients: [{
+        emailAddress: "fixture@example.invalid",
+        status: "5.1.1",
+      }],
+    },
+  };
+  assertEquals(
+    normalizeSesEvents(event, "topic", "event")[0].invalid_recipient,
+    true,
+  );
+  event.bounce.bouncedRecipients[0].status = "5.2.2";
+  assertEquals(
+    normalizeSesEvents(event, "topic", "event")[0].invalid_recipient,
+    false,
+    "mailbox full is not an invalid address",
+  );
+  event.bounce.bounceType = "Transient";
+  event.bounce.bouncedRecipients[0].status = "5.1.1";
+  assertEquals(
+    normalizeSesEvents(event, "topic", "event")[0].invalid_recipient,
+    false,
+  );
+});
