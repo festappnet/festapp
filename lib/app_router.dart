@@ -227,7 +227,8 @@ class AppRouter extends RootStackRouter {
                               page: FormDetailRoute.page,
                               // Selecting the only form must not add a second
                               // nested slide after the outer Forms tab transition.
-                              transitionsBuilder: TransitionsBuilders.noTransition,
+                              transitionsBuilder:
+                                  TransitionsBuilders.noTransition,
                               duration: Duration.zero,
                               reverseDuration: Duration.zero,
                               path: ':formLink',
@@ -305,6 +306,9 @@ class AppRouter extends RootStackRouter {
                     AutoRoute(
                         page: ReportSectionRoute.page,
                         path: NavigationPaths.report),
+                    AutoRoute(
+                        page: EmailDeliverySectionRoute.page,
+                        path: NavigationPaths.emailDelivery),
                     AutoRoute(
                         page: EmailTemplatesSectionRoute.page,
                         path: NavigationPaths.emailTemplates),
@@ -450,6 +454,9 @@ class AppRouter extends RootStackRouter {
                     AutoRoute(
                         page: VolunteersSectionRoute.page,
                         path: NavigationPaths.volunteers),
+                    AutoRoute(
+                        page: EmailDeliverySectionRoute.page,
+                        path: NavigationPaths.emailDelivery),
                     AutoRoute(
                         page: EmailTemplatesSectionRoute.page,
                         path: NavigationPaths.emailTemplates),

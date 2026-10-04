@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 const patch = new URL('../hetzner-supabase/runtime/patch-function-proof-routes.py', import.meta.url).pathname;
-test('runtime exposes exactly the Google proof endpoints and fails on upstream router drift',()=>{
+test('runtime exposes Google and signed email proof endpoints and fails on upstream router drift',()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-google-router-'));
   const file=path.join(dir,'index.ts');
   try {
@@ -13,7 +13,9 @@ test('runtime exposes exactly the Google proof endpoints and fails on upstream r
     assert.equal(spawnSync('python3',[patch,file]).status,0);
     const source=fs.readFileSync(file,'utf8');
     assert.match(source,/google-auth-start/);assert.match(source,/google-auth-callback/);assert.match(source,/google-auth-complete/);
-    assert.doesNotMatch(source,/register|send-email/);
+    assert.match(source,/process-email-queue/);assert.match(source,/auth-email-hook/);assert.match(source,/email-provider-events/);assert.match(source,/email-confirmation-status/);
+    assert.match(source,/service_name === "send-email-gateway".*status: 404/);
+    assert.doesNotMatch(source,/"register"|"send-email"/);
     assert.equal(spawnSync('python3',[patch,file]).status,0);
     assert.equal(fs.readFileSync(file,'utf8'),source);
     fs.writeFileSync(file,'if (VERIFY_JWT) { verify(); }');

@@ -54,10 +54,12 @@ async function websocketCanary(anonKey) {
   });
 }
 
-async function smtpCanary() {
-  const script = `import smtplib\nfrom pathlib import Path\nv={}\nfor line in Path('/opt/festapp-supabase/docker/.env').read_text().splitlines():\n if '=' in line and not line.startswith('#'):\n  k,x=line.split('=',1); v[k]=x\nh=v['SMTP_HOST']; p=int(v['SMTP_PORT']); u=v['SMTP_USER']; pw=v['SMTP_PASS']\nif p==465:\n c=smtplib.SMTP_SSL(h,p,timeout=15)\nelse:\n c=smtplib.SMTP(h,p,timeout=15); c.ehlo(); c.starttls(); c.ehlo()\nc.login(u,pw); assert c.noop()[0] in (250,); c.quit(); print('pass')\n`;
-  const result = await run('ssh', ['-o', 'BatchMode=yes', TARGET, 'python3', '-'], script);
-  if (result !== 'pass') fail('SMTP authentication canary failed');
+async function sesCanary() {
+  const expectedAccount=await hostEnv('EMAIL_SES_ACCOUNT_ID');
+  const expectedRegion=await hostEnv('EMAIL_SES_REGION');
+  const cap=JSON.parse(await psql(`SELECT jsonb_build_object('account',account_id,'region',region,'fresh',quota_at>now()-interval '15 minutes',
+    'configured',max_rate>0 AND daily_quota>0 AND (NOT shared_account OR (allocated_rate>0 AND allocated_daily>0))) FROM public.email_capacity;`));
+  if(cap.account!==expectedAccount||cap.region!==expectedRegion||cap.fresh!==true||cap.configured!==true)fail('SES verified quota or shared account allocation unavailable');
 }
 
 async function main() {
@@ -158,7 +160,7 @@ async function main() {
       headers: { authorization: `Basic ${oneSignalConfig.rest_api_key}` },
     });
     if (oneSignal.status !== 200) fail(`OneSignal credential canary returned HTTP ${oneSignal.status}`);
-    await smtpCanary();
+    await sesCanary();
 
     const syncPayload = JSON.stringify({
       protocol: 1,
@@ -183,7 +185,7 @@ async function main() {
       'onesignal': { status: 'pass', evidence: `provider-auth:${oneSignal.status}` },
       'payment-callbacks': { status: 'pass', evidence: `forged-callback-rejected:${callback.status}` },
       'realtime': { status: 'pass', evidence: `websocket:${realtimeStatus}` },
-      'smtp': { status: 'pass', evidence: 'authenticated-no-message-sent' },
+      'email-ses': { status: 'pass', evidence: 'verified-account-quota-no-message-sent' },
       'storage': { status: 'pass', evidence: `roundtrip:${digest(downloaded)}` },
       'sync-worker': { status: 'pass', evidence: `published-head:${sync.status}` },
     };
