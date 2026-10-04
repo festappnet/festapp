@@ -392,19 +392,24 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
               color: ThemeConfig.brandAccentColor,
             ),
             child: Center(
-              child: Text(
-                _getUserInitial(),
-                textHeightBehavior: const TextHeightBehavior(
-                    applyHeightToFirstAscent: false,
-                    applyHeightToLastDescent: false),
-                style: TextStyle(
-                  fontFamily: ThemeConfig.fontFamily,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  height: 1,
-                  color: Colors.white,
-                ),
-              ),
+              // The bundled bold face has 0.682em cap height and 0.318em
+              // descent. Center the capital itself, rather than its line box.
+              child: Transform.translate(
+                  offset: Offset(
+                      0, MediaQuery.textScalerOf(context).scale(20) * .159),
+                  child: Text(
+                    _getUserInitial(),
+                    textHeightBehavior: const TextHeightBehavior(
+                        applyHeightToFirstAscent: false,
+                        applyHeightToLastDescent: false),
+                    style: TextStyle(
+                      fontFamily: ThemeConfig.fontFamily,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      height: 1,
+                      color: Colors.white,
+                    ),
+                  )),
             ),
           ))),
     );
