@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import '../ticket_background_image.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -1083,15 +1084,17 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   ThemeData _editorTheme(ThemeData inherited) {
     final colors = ColorScheme.fromSeed(
-      seedColor: const Color(0xff334b70),
+      seedColor: ThemeConfig.seed1,
       brightness: inherited.brightness,
     );
     final palette = inherited.brightness == Brightness.dark
         ? colors
         : colors.copyWith(
-            primary: const Color(0xff334b70),
+            primary: ThemeConfig.lllPrimary,
+            primaryContainer: ThemeConfig.seed2.withValues(alpha: .22),
+            onPrimaryContainer: ThemeConfig.lllPrimary,
             onPrimary: Colors.white,
-            surface: Colors.white,
+            surface: inherited.colorScheme.surface,
             surfaceContainerHighest: const Color(0xffeef0f3),
             outlineVariant: const Color(0xffdfe3e9),
             onSurface: const Color(0xff202a38),
@@ -1101,7 +1104,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
     final buttons = ButtonStyle(
       minimumSize: const WidgetStatePropertyAll(Size(40, 40)),
-      shape: WidgetStatePropertyAll(shape),
+      shape: const WidgetStatePropertyAll(StadiumBorder()),
       iconSize: const WidgetStatePropertyAll(20),
       textStyle: WidgetStatePropertyAll(inherited.textTheme.labelLarge
           ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
@@ -1111,17 +1114,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       colorScheme: palette,
       textTheme: inherited.textTheme
           .apply(bodyColor: palette.onSurface, displayColor: palette.onSurface),
-      scaffoldBackgroundColor: palette.surface,
+      scaffoldBackgroundColor: inherited.scaffoldBackgroundColor,
       appBarTheme: AppBarTheme(
-        backgroundColor: palette.surface,
-        foregroundColor: palette.onSurface,
+        backgroundColor: ThemeConfig.appBarColor(),
+        foregroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         toolbarHeight: 64,
         titleTextStyle: inherited.textTheme.titleLarge?.copyWith(
-            color: palette.onSurface,
-            fontSize: 20,
-            fontWeight: FontWeight.w600),
+            color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
       ),
       iconTheme: IconThemeData(size: 20, color: palette.onSurfaceVariant),
       iconButtonTheme: IconButtonThemeData(
@@ -1188,23 +1189,36 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   Widget _toolDivider() =>
       const SizedBox(height: 24, child: VerticalDivider(width: 20));
 
-  Widget _sidebar(String title, Widget child, double width) => Container(
-      width: width,
-      decoration: BoxDecoration(
-        border: Border.symmetric(
-            vertical: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-            child: Text(title,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant))),
-        Expanded(child: child),
-      ]));
+  Widget _sidebar(
+          BuildContext context, String title, Widget child, double width) =>
+      Container(
+          width: width,
+          decoration: BoxDecoration(
+            border: Border.symmetric(
+                vertical: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant)),
+          ),
+          child: Material(
+              color: Theme.of(context).colorScheme.surface,
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                        child: Text(title,
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant))),
+                    Expanded(child: child),
+                  ])));
+
+  ButtonStyle get _headerSecondaryStyle => OutlinedButton.styleFrom(
+      foregroundColor: Colors.white,
+      disabledForegroundColor: Colors.white38,
+      side: const BorderSide(color: Colors.white30));
 
   Widget _buildEditor(BuildContext context) => Focus(
       autofocus: true,
@@ -1217,6 +1231,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           child: Scaffold(
             appBar: AppBar(
                 leading: IconButton(
+                    style: IconButton.styleFrom(foregroundColor: Colors.white),
                     tooltip: TicketLayoutStrings.cancel,
                     onPressed: cancel,
                     icon: const Icon(Icons.close)),
@@ -1226,11 +1241,13 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   if (MediaQuery.sizeOf(context).width >= 900) ...[
                     if (resources.presets.length > 1)
                       OutlinedButton.icon(
+                          style: _headerSecondaryStyle,
                           onPressed: imageBusy ? null : chooseStyle,
                           icon: const Icon(Icons.dashboard_customize_outlined),
                           label: Text(TicketLayoutStrings.styles)),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
+                        style: _headerSecondaryStyle,
                         onPressed:
                             pdfBusy || imageBusy || fontBusy ? null : preview,
                         icon: pdfBusy
@@ -1245,6 +1262,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   ],
                   Center(
                     child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ThemeConfig.seed2,
+                          foregroundColor: ThemeConfig.appBarColor(),
+                          disabledBackgroundColor: Colors.white12,
+                          disabledForegroundColor: Colors.white38,
+                        ),
                         onPressed:
                             imageBusy || fontBusy || saving ? null : apply,
                         icon: const Icon(Icons.check),
@@ -1271,6 +1294,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
                             border: Border.symmetric(
                                 horizontal: BorderSide(
                                     color: Theme.of(context)
@@ -1374,7 +1398,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                   child: DecoratedBox(
                                       decoration: BoxDecoration(
                                           borderRadius:
-                                              BorderRadius.circular(8),
+                                              BorderRadius.circular(24),
                                           border: Border.all(
                                               color: Theme.of(context)
                                                   .colorScheme
@@ -1440,8 +1464,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     final view = TicketLayoutCanvas(
                         key: canvas,
                         onDismiss: cancel,
-                          onCanvasElementAttempt: () =>
-                              setState(() => canvasElementAttempts++),
+                        onCanvasElementAttempt: () =>
+                            setState(() => canvasElementAttempts++),
                         controller: controller,
                         resources: resources,
                         data: resources.scenarios[scenario]!,
@@ -1458,29 +1482,33 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         ? Column(children: [
                             Expanded(child: view),
                             if (editCanvas)
-                              SizedBox(height: constraints.maxHeight * .42, child: canvasSettings())
-                            else Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                child: Row(children: [
-                                  Expanded(
-                                      child: OutlinedButton.icon(
-                                          onPressed: () => showMobilePanel(0),
-                                          icon:
-                                              const Icon(Icons.layers_outlined),
-                                          label: Text(
-                                              TicketLayoutStrings.elements))),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                      child: FilledButton.tonalIcon(
-                                          onPressed: () => showMobilePanel(1),
-                                          icon: const Icon(Icons.tune),
-                                          label: Text(
-                                              TicketLayoutStrings.properties))),
-                                ]))
+                              SizedBox(
+                                  height: constraints.maxHeight * .42,
+                                  child: canvasSettings())
+                            else
+                              Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  child: Row(children: [
+                                    Expanded(
+                                        child: OutlinedButton.icon(
+                                            onPressed: () => showMobilePanel(0),
+                                            icon: const Icon(
+                                                Icons.layers_outlined),
+                                            label: Text(
+                                                TicketLayoutStrings.elements))),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                        child: FilledButton.tonalIcon(
+                                            onPressed: () => showMobilePanel(1),
+                                            icon: const Icon(Icons.tune),
+                                            label: Text(TicketLayoutStrings
+                                                .properties))),
+                                  ]))
                           ])
                         : Row(children: [
                             _sidebar(
+                                context,
                                 TicketLayoutStrings.elements,
                                 SingleChildScrollView(
                                     child: Padding(
@@ -1489,8 +1517,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                         child: elements())),
                                 200),
                             Expanded(child: view),
-                            _sidebar(editCanvas ? TicketLayoutStrings.canvasSize : TicketLayoutStrings.properties,
-                                editCanvas ? canvasSettings() : panel(includeElements: false), editCanvas ? 340 : 280)
+                            _sidebar(
+                                context,
+                                editCanvas
+                                    ? TicketLayoutStrings.canvasSize
+                                    : TicketLayoutStrings.properties,
+                                editCanvas
+                                    ? canvasSettings()
+                                    : panel(includeElements: false),
+                                editCanvas ? 340 : 280)
                           ]);
                   })),
                 ])),

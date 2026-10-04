@@ -633,10 +633,22 @@ void main() {
     final buttonContext = tester
         .element(find.widgetWithText(FilledButton, 'TicketLayout.apply'.tr()));
     final style = button.defaultStyleOf(buttonContext);
-    final background = style.backgroundColor!.resolve({})!;
-    final foreground = style.foregroundColor!.resolve({})!;
-    final light = foreground.computeLuminance();
-    final dark = background.computeLuminance();
+    final background = button.style?.backgroundColor?.resolve({}) ??
+        style.backgroundColor!.resolve({})!;
+    final foreground = button.style?.foregroundColor?.resolve({}) ??
+        style.foregroundColor!.resolve({})!;
+    final luminances = [
+      foreground.computeLuminance(),
+      background.computeLuminance()
+    ]..sort();
+    final dark = luminances.first;
+    final light = luminances.last;
+    final theme = Theme.of(buttonContext);
+    expect(
+        theme.appBarTheme.backgroundColor!.computeLuminance(), lessThan(.05));
+    expect(theme.appBarTheme.foregroundColor, Colors.white);
+    expect(theme.filledButtonTheme.style!.shape!.resolve({}),
+        isA<StadiumBorder>());
     expect((light + .05) / (dark + .05), greaterThanOrEqualTo(4.5));
     expect(
         background, isNot(Theme.of(buttonContext).appBarTheme.backgroundColor));
