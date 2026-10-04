@@ -5,7 +5,8 @@ BEGIN
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
  IF current_setting('festapp.email_wake',true)='scheduled' THEN RETURN; END IF;
  SELECT worker_url INTO v_url FROM public.email_capacity WHERE NOT paused;
- IF v_url IS NULL OR NOT EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state IN ('pending','retry_wait') AND target_time<=now()) THEN RETURN; END IF;
+ IF v_url IS NULL OR NOT (EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state IN ('pending','retry_wait') AND target_time<=now())
+  OR EXISTS(SELECT 1 FROM public.email_capacity WHERE quota_at IS NULL OR quota_at<now()-interval '5 minutes')) THEN RETURN; END IF;
  PERFORM set_config('festapp.email_wake','scheduled',true);
  BEGIN
   PERFORM net.http_post(url:=v_url,body:=jsonb_build_object('requestSecret',public.generate_request_secret(120)),timeout_milliseconds:=5000);

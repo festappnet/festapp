@@ -28,6 +28,7 @@ void main() {
     'admin/game/settings': 'GameSettingsRoute',
     'reservations/orders/current': 'OrdersCurrentRoute',
     'reservations/orders/history': 'OrdersHistoryRoute',
+    'reservations/orders/email-history': 'OrdersEmailHistoryRoute',
     'reservations/forms': 'FormsListRoute',
     'reservations/forms/second-form/editor': 'FormEditorRoute',
     'reservations/forms/second-form/settings': 'FormSettingsRoute',
@@ -44,14 +45,12 @@ void main() {
       'volunteers',
       'users',
       'email-templates',
-      'email-delivery',
       'changes',
       'settings'
     ])
       'admin/$section': '${{
             'services': 'Service',
-            'email-templates': 'EmailTemplates',
-            'email-delivery': 'EmailDelivery'
+            'email-templates': 'EmailTemplates'
           }[section] ?? '${section[0].toUpperCase()}${section.substring(1)}'}SectionRoute',
     for (final section in [
       'tickets',
@@ -60,14 +59,27 @@ void main() {
       'report',
       'users',
       'email-templates',
-      'email-delivery',
       'settings'
     ])
       'reservations/$section': '${{
-            'email-templates': 'EmailTemplates',
-            'email-delivery': 'EmailDelivery'
+            'email-templates': 'EmailTemplates'
           }[section] ?? '${section[0].toUpperCase()}${section.substring(1)}'}SectionRoute',
   };
+  for (final removed in [
+    'admin/email-delivery',
+    'reservations/email-delivery'
+  ]) {
+    test('standalone email tab is removed from $removed', () {
+      final router = AppRouter();
+      final routes = flatten(router.matcher
+                  .match('/event-a/$removed', includePrefixMatches: false) ??
+              [])
+          .toList();
+      expect(routes.any((route) => route.name == 'EmailDeliverySectionRoute'),
+          isFalse);
+      expect(routes.last.name, 'NavigationNotFoundRoute');
+    });
+  }
   for (final entry in paths.entries) {
     test('matches ${entry.key} with occasion identity and query', () {
       final router = AppRouter();

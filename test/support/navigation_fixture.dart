@@ -34,6 +34,8 @@ class Access extends ChangeNotifier implements AdministrationAccess {
 class FixtureRouter extends RootStackRouter {
   final Access access;
   WidgetBuilder? formsListBuilder;
+  WidgetBuilder? ordersCurrentBuilder;
+  WidgetBuilder? ordersHistoryBuilder;
   WidgetBuilder? loadingBuilder;
   bool showHeader = false;
   bool extra = true;
@@ -131,10 +133,16 @@ class FixtureRouter extends RootStackRouter {
                             ]),
                         children: [
                           RedirectRoute(path: '', redirectTo: 'current'),
-                          page(OrdersCurrentRoute.name, 'current',
-                              (context) => const Text('CURRENT CONTENT')),
-                          page(OrdersHistoryRoute.name, 'history',
-                              (context) => const Text('HISTORY CONTENT'))
+                          page(
+                              OrdersCurrentRoute.name,
+                              'current',
+                              ordersCurrentBuilder ??
+                                  (context) => const Text('CURRENT CONTENT')),
+                          page(
+                              OrdersHistoryRoute.name,
+                              'history',
+                              ordersHistoryBuilder ??
+                                  (context) => const Text('HISTORY CONTENT'))
                         ]),
                     page(ReportSectionRoute.name, 'report',
                         (context) => const Text('REPORT CONTENT')),

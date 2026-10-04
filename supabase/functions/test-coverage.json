@@ -11,14 +11,6 @@
         "supabase/functions/_shared/ticketFonts_test.ts"
       ]
     },
-    "bank-mail-parser": {
-      "smokeTests": [
-        "supabase/functions/bank-mail-parser/snsVerification_test.ts"
-      ],
-      "behaviorTests": [
-        "supabase/functions/bank-mail-parser/test_parser_comprehensive.ts"
-      ]
-    },
     "cancel-reception-registration": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
@@ -157,14 +149,6 @@
         "supabase/functions/_shared/ticketFonts_test.ts"
       ]
     },
-    "synchronize-orders": {
-      "smokeTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
-      ],
-      "behaviorTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
-      ]
-    },
     "google-auth-start": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
@@ -196,14 +180,6 @@
       ]
     },
     "process-email-queue": {
-      "smokeTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
-      ],
-      "behaviorTests": [
-        "supabase/functions/_shared/canonicalEmail_test.ts"
-      ]
-    },
-    "send-email-gateway": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
@@ -243,6 +219,31 @@
       ],
       "behaviorTests": [
         "supabase/functions/report-exchange-rates/handler_test.ts"
+      ]
+    },
+    "bank-sync-manage": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/bankSyncOperation_test.ts"
+      ]
+    },
+    "bank-sync-reconcile": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/bankSyncOperation_test.ts",
+        "supabase/functions/_shared/bankSyncToken_test.ts"
+      ]
+    },
+    "bank-sync-webhook": {
+      "smokeTests": [
+        "supabase/functions/bank-sync-webhook/handler_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/bank-sync-webhook/handler_test.ts"
       ]
     }
   },

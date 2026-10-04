@@ -66,7 +66,8 @@ BEGIN
     JOIN eshop.payment_info pi
       ON (s.kind = 'rf' AND pi.creditor_reference = s.value)
       OR (s.kind = 'vs' AND pi.variable_symbol = s.value::bigint)
-    WHERE pi.bank_account = v_transaction.bank_account_id
+    WHERE (pi.bank_account = v_transaction.bank_account_id
+      OR public.bank_sync_accounts_match(p_transaction_id,pi.bank_account))
       AND upper(trim(pi.currency_code::text)) = upper(trim(v_transaction.currency::text))
   )
   SELECT (SELECT count(*) FROM signals), array_agg(c.id ORDER BY c.id)

@@ -6,6 +6,7 @@ import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/eshop/views/orders_history_content.dart';
 import 'package:fstapp/components/eshop/views/orders_content.dart';
 import '../orders_strings.dart';
+import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 
 @RoutePage(name: 'OrdersTabsRoute')
 class OrdersTab extends StatelessWidget {
@@ -24,6 +25,11 @@ class OrdersTab extends StatelessWidget {
           route: const OrdersHistoryRoute(),
           label: OrdersStrings.ordersHistoryTab,
           icon: Icons.history),
+      RoutedTabDefinition(
+          slug: NavigationPaths.emailHistory,
+          route: const OrdersEmailHistoryRoute(),
+          label: EmailDeliveryStrings.history,
+          icon: Icons.mail_outline),
     ]);
   }
 }

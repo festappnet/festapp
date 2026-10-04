@@ -129,7 +129,8 @@ class BirthDateEditor {
   }
 
   static Widget buildBirthDateEditor(
-      BuildContext context, FormFieldModel field, int? occasionId) {
+      BuildContext context, FormFieldModel field, int? occasionId,
+      {VoidCallback? onChanged}) {
     final TextEditingController minAgeController = TextEditingController(
       text: field.data != null &&
               field.data![BirthDateFieldHolder.metaMinYear] != null
@@ -163,7 +164,12 @@ class BirthDateEditor {
     }
 
     return StatefulBuilder(
-      builder: (BuildContext context, void Function(void Function()) setState) {
+      builder: (BuildContext context, StateSetter updateLocal) {
+        void setState(VoidCallback change) {
+          updateLocal(change);
+          onChanged?.call();
+        }
+
         final defaultWarning = getDefaultWarning();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,13 +235,16 @@ class BirthDateEditor {
               ],
             ),
             if (!isStrict)
-              EditableHtmlField(html: currentMessage, placeholder: defaultWarning,
-                owner: HtmlMediaOwner.occasion(occasionId),
-                onChanged: (html) {
-                  currentMessage = html; field.data ??= {};
-                  field.data![BirthDateFieldHolder.metaMessage] = html;
-                  setState(() {});
-                }),
+              EditableHtmlField(
+                  html: currentMessage,
+                  placeholder: defaultWarning,
+                  owner: HtmlMediaOwner.occasion(occasionId),
+                  onChanged: (html) {
+                    currentMessage = html;
+                    field.data ??= {};
+                    field.data![BirthDateFieldHolder.metaMessage] = html;
+                    setState(() {});
+                  }),
           ],
         );
       },

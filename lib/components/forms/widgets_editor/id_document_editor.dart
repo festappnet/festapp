@@ -5,7 +5,8 @@ import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
 
 class IdDocumentEditor {
-  static String get _defaultExpiryDateLabelText => PersonFieldsStrings.expiryDate;
+  static String get _defaultExpiryDateLabelText =>
+      PersonFieldsStrings.expiryDate;
 
   static Widget buildIdDocumentReadOnly(
       BuildContext context, FormFieldModel field) {
@@ -64,7 +65,8 @@ class IdDocumentEditor {
             FormStrings.idCardPassportNumber, Icons.badge_outlined),
         if (showExpiry) ...[
           const SizedBox(height: 8),
-          buildReadOnlyTextField(PersonFieldsStrings.expiryDate, Icons.calendar_today),
+          buildReadOnlyTextField(
+              PersonFieldsStrings.expiryDate, Icons.calendar_today),
         ],
 
         // --- CUSTOM LABEL DISPLAY ---
@@ -91,7 +93,8 @@ class IdDocumentEditor {
   }
 
   static Widget buildIdDocumentEditor(
-      BuildContext context, FormFieldModel field, int? occasionId) {
+      BuildContext context, FormFieldModel field, int? occasionId,
+      {VoidCallback? onChanged}) {
     field.data ??= {}; // Ensure data map exists
 
     String initialExpiryLabel =
@@ -115,7 +118,12 @@ class IdDocumentEditor {
     bool currentShowExpiryState = initialShowExpiry;
 
     return StatefulBuilder(
-      builder: (BuildContext context, void Function(void Function()) setState) {
+      builder: (BuildContext context, StateSetter updateLocal) {
+        void setState(VoidCallback change) {
+          updateLocal(change);
+          onChanged?.call();
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

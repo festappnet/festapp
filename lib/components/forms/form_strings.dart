@@ -2,6 +2,27 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String deletionReason(String? reason) =>
+      'FormsFeature.deleteBlocked.${reason ?? 'unknown'}'.tr();
+
+  static String saveError(Object error) {
+    final message = error.toString();
+    for (final reason in [
+      'responses',
+      'orders',
+      'blueprint',
+      'inventory',
+      'shared',
+      'changed'
+    ]) {
+      if (message.contains('FORM_DELETE_$reason')) {
+        return 'FormsFeature.deleteSaveFailed'
+            .tr(args: [deletionReason(reason)]);
+      }
+    }
+    return message.replaceFirst('Exception: ', '');
+  }
+
   static String get moreFonts => 'FeatureFormSettings.moreFonts'.tr();
   static String get fontSearchHint => 'FeatureFormSettings.fontSearchHint'.tr();
 // Form Settings Feature

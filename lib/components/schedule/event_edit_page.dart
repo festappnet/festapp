@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -48,9 +50,12 @@ class _EventEditPageState extends State<EventEditPage> {
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
   @override
-  void dispose() { _htmlSave.dispose(); super.dispose(); }
+  void dispose() {
+    _htmlSave.dispose();
+    super.dispose();
+  }
 
   final eventDayRangeTolerance = 7;
   final _formKey = GlobalKey<FormState>();
@@ -68,6 +73,30 @@ class _EventEditPageState extends State<EventEditPage> {
   bool feedbackEnabled = false;
   bool counselingEntry = false;
   bool isFormValid = true;
+  final _snapshot = EditorSnapshot();
+  Object get _draft => [
+        isHidden,
+        title,
+        type,
+        content,
+        showInsideEvent,
+        startDate?.toIso8601String(),
+        endDate?.toIso8601String(),
+        maxParticipants,
+        placeId,
+        splitForMenWomen,
+        isGroupEvent,
+        isCancelled,
+        feedbackEnabled,
+        counselingEntry,
+        (_selectedSpeakerIds.toList()..sort())
+      ];
+  bool get _hasChanges => _snapshot.differs(_draft) || _htmlSave.hasActiveDraft;
+  void _draftChanged() => scheduleMicrotask(() {
+        if (!mounted) return;
+        _formKey.currentState?.save();
+        setState(() {});
+      });
 
   // Speakers attached to this event. Speakers are core (no feature gate); the
   // picker shows for any saved event (decision R6).
@@ -149,6 +178,7 @@ class _EventEditPageState extends State<EventEditPage> {
             .map((s) => s.id!));
     }
 
+    _snapshot.accept(_draft);
     validateForm();
     if (mounted) {
       setState(() {});
@@ -180,8 +210,9 @@ class _EventEditPageState extends State<EventEditPage> {
   }
 
   Future<void> saveChanges() async {
-    await ExceptionHandler.guardVoid(context, futureFunction: () =>
-      _htmlSave.save(() => _performHtmlSave(), context: context));
+    await ExceptionHandler.guardVoid(context,
+        futureFunction: () =>
+            _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
@@ -190,7 +221,8 @@ class _EventEditPageState extends State<EventEditPage> {
           .save(); // This will call onSaved for all fields, including the new dropdown if it has one
 
       if (originalEvent != null) {
-        content = await _htmlSave.prepare(content ?? '', HtmlMediaOwner.occasion(originalEvent!.occasionId));
+        content = await _htmlSave.prepare(
+            content ?? '', HtmlMediaOwner.occasion(originalEvent!.occasionId));
         originalEvent!
           ..isHidden = isHidden!
           ..title = title!
@@ -221,7 +253,7 @@ class _EventEditPageState extends State<EventEditPage> {
         // updateEvent returns an EventModel carrying the id even after an
         // insert, so speaker attachment never relies on widget.id (decision R6a).
         final updatedEvent = await DbEvents.updateEvent(originalEvent!);
-      _htmlSave.markSaved();
+        _htmlSave.markSaved();
 
         if (updatedEvent.id != null) {
           final speakerVersion = await ExceptionHandler.guard(
@@ -245,7 +277,8 @@ class _EventEditPageState extends State<EventEditPage> {
   }
 
   Future<void> cancelEdit() async {
-    if (!await confirmHtmlDiscard(context, _htmlSave) || !mounted) return;
+    if (_hasChanges && !await confirmDiscardChanges(context)) return;
+    if (!mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -277,7 +310,6 @@ class _EventEditPageState extends State<EventEditPage> {
     return result.id;
   }
 
-
   Widget _buildHtmlParent(BuildContext context) {
     return MouseDetector(
       builder: (context, mouseIsConnected) {
@@ -305,6 +337,7 @@ class _EventEditPageState extends State<EventEditPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Form(
                         key: _formKey,
+                        onChanged: _draftChanged,
                         child: ListView(
                           children: [
                             SwitchListTile(
@@ -460,9 +493,13 @@ class _EventEditPageState extends State<EventEditPage> {
                               CommonStrings.content,
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            EditableHtmlField(html: content, coordinator: _htmlSave,
-                              owner: HtmlMediaOwner.occasion(originalEvent!.occasionId),
-                              onChanged: (html) => setState(() => content = html)),
+                            EditableHtmlField(
+                                html: content,
+                                coordinator: _htmlSave,
+                                owner: HtmlMediaOwner.occasion(
+                                    originalEvent!.occasionId),
+                                onChanged: (html) =>
+                                    setState(() => content = html)),
                             const SizedBox(height: 16),
                             ExpansionTile(
                               title: Text(
@@ -560,35 +597,28 @@ class _EventEditPageState extends State<EventEditPage> {
                     ),
                   ),
                 ),
-          bottomNavigationBar: Container(
-            color: ThemeConfig.appBarColor(),
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: cancelEdit,
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
+          bottomNavigationBar: AnimatedBuilder(
+            animation: _htmlSave,
+            builder: (context, _) => Container(
+              color: Theme.of(context).colorScheme.surface,
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: cancelEdit,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    child: Text(CommonStrings.back),
                   ),
-                  child: Text(CommonStrings.storno),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: isFormValid ? saveChanges : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isFormValid
-                        ? null
-                        : ThemeConfig.appBarColor().withOpacity(0.5),
-                    foregroundColor:
-                        isFormValid ? null : ThemeConfig.grey600(context),
-                    disabledBackgroundColor:
-                        ThemeConfig.appBarColor().withOpacity(0.5),
-                    disabledForegroundColor: ThemeConfig.grey600(context),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: isFormValid && _hasChanges ? saveChanges : null,
+                    child: Text(CommonStrings.save),
                   ),
-                  child: Text(CommonStrings.save),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

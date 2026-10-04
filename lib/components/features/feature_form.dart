@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'ticket_feature.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,11 @@ class FeatureForm extends StatefulWidget {
 }
 
 class _FeatureFormState extends State<FeatureForm> {
+  void _refresh(VoidCallback change) {
+    setState(change);
+    EditorDraftScope.changed(context);
+  }
+
   late bool isEnabled;
 
   @override
@@ -54,7 +60,7 @@ class _FeatureFormState extends State<FeatureForm> {
           value: isEnabled,
           onChanged: widget.feature.canBeDisabled
               ? (value) {
-                  setState(() {
+                  _refresh(() {
                     isEnabled = value;
                     widget.feature.isEnabled = value;
                   });

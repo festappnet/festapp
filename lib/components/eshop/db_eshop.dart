@@ -1,3 +1,4 @@
+import 'models/product_price_wave.dart';
 import 'models/report_exchange_rates.dart';
 import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:collection/collection.dart';
@@ -274,6 +275,9 @@ class DbEshop {
 
     // Join all data to the final product models
     for (var product in products) {
+      product.priceServerTime = DateTime.parse(response['server_time']).toUtc();
+      product.priceClockOffset =
+          product.priceServerTime!.difference(DateTime.now().toUtc());
       product.productType = typesMap[product.productTypeId];
       product.includedInventories = (productLinksMap[product.id] ?? [])
           .where((link) => link.inventoryContext != null)
@@ -295,11 +299,74 @@ class DbEshop {
 
     return ProductsEditBundle(
       products: products,
+      priceWaves: (response['price_waves'] as List? ?? [])
+          .map((w) => ProductPriceWave.fromJson(w))
+          .toList(),
       productTypes: types,
       inventoryPools: pools,
       inventoryContexts: contexts,
       forms: forms,
     );
+  }
+
+  static Future<ProductPriceWave> createProductPriceWave(
+          String link, DateTime time) async =>
+      ProductPriceWave.fromJson(await _supabase.rpc('create_product_price_wave',
+          params: {
+            'p_occasion_link': link,
+            'p_change_time': time.toUtc().toIso8601String()
+          }));
+  static Future<void> saveProductWaveTarget(
+      ProductPriceWave wave,
+      int productId,
+      double? price,
+      bool? hidden,
+      int? priceRevision,
+      int? visibilityRevision) async {
+    await _supabase.rpc('save_product_wave_target', params: {
+      'p_wave_id': wave.id,
+      'p_product_id': productId,
+      'p_expected_wave_revision': wave.revision,
+      'p_price': price,
+      'p_is_hidden': hidden,
+      'p_expected_price_revision': priceRevision,
+      'p_expected_visibility_revision': visibilityRevision
+    });
+  }
+
+  static Future<void> moveProductPriceWave(
+      ProductPriceWave wave, DateTime time) async {
+    await _supabase.rpc('move_product_price_wave', params: {
+      'p_wave_id': wave.id,
+      'p_expected_revision': wave.revision,
+      'p_change_time': time.toUtc().toIso8601String()
+    });
+  }
+
+  static Future<void> cancelProductPriceWave(ProductPriceWave wave) async {
+    await _supabase.rpc('cancel_product_price_wave',
+        params: {'p_wave_id': wave.id, 'p_expected_revision': wave.revision});
+  }
+
+  static Future<void> saveProductPriceChange(
+      int productId, double price, DateTime time,
+      {int? changeId, int? revision}) async {
+    await _supabase.rpc('save_product_price_change', params: {
+      'p_product_id': productId,
+      'p_price': price,
+      'p_change_time': time.toUtc().toIso8601String(),
+      'p_change_id': changeId,
+      'p_expected_revision': revision,
+    });
+  }
+
+  static Future<void> cancelProductPriceChange(
+      int productId, int changeId, int revision) async {
+    await _supabase.rpc('cancel_product_price_change', params: {
+      'p_product_id': productId,
+      'p_change_id': changeId,
+      'p_expected_revision': revision,
+    });
   }
 
   static Future<int> updateProduct(ProductModel product) async {

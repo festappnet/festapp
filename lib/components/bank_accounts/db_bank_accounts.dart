@@ -1,9 +1,62 @@
+import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
+import 'package:uuid/uuid.dart';
+
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
+
 import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
 
 class DbBankAccounts {
+  static final Map<String, String> _operationIds = {};
+  static Future<Map<String, dynamic>> manage(
+    int accountId,
+    String operation, {
+    Map<String, dynamic> values = const {},
+  }) async {
+    final payloadHash = sha256.convert(utf8.encode(jsonEncode(values)));
+    final key = '$accountId:$operation:$payloadHash';
+    final operationId = _operationIds.putIfAbsent(key, () => const Uuid().v4());
+    late final FunctionResponse response;
+    try {
+      response = await _supabase.functions.invoke(
+        'bank-sync-manage',
+        body: {
+          'account_id': accountId,
+          'operation': operation,
+          'operation_id': operationId,
+          ...values,
+        },
+      );
+    } on FunctionException catch (error) {
+      throw BankSyncError.fromResponse(
+        error.details is Map ? error.details as Map : const {},
+      );
+    }
+    final result = Map<String, dynamic>.from(response.data as Map);
+    if (response.status >= 400 || result.containsKey('error')) {
+      throw BankSyncError.fromResponse(result);
+    }
+    _operationIds.remove(key);
+    if (result.containsKey('verification_error')) {
+      throw BankSyncError.fromResponse(result);
+    }
+    return result;
+  }
+
+  static Future<BankSyncConnection?> getConnection(int accountId) async {
+    final response = await _supabase.functions.invoke(
+      'bank-sync-manage',
+      body: {'account_id': accountId, 'operation': 'status'},
+    );
+    return response.data == null
+        ? null
+        : BankSyncConnection.fromJson(
+            Map<String, dynamic>.from(response.data as Map),
+          );
+  }
+
   static final _supabase = Supabase.instance.client;
 
   static Future<List<BankAccountModel>> getBankAccountsForUnit(
@@ -28,7 +81,7 @@ class DbBankAccounts {
     int? unitId,
     int? organizationId,
   }) async {
-    // Use Legacy Unit/Self RPC
+    // Account details remain owned by Festapp; SQL queues the BankSync update.
     final response = await _supabase.rpc(
       'update_bank_account',
       params: {
@@ -43,25 +96,16 @@ class DbBankAccounts {
             unitId, // organizationId currently ignored/handled by context
       },
     );
-    return response as int;
+    final id = response as int;
+    if (account.id != 0) await manage(id, 'update_details');
+    return id;
   }
 
   static Future<String> regenerateBankAccountPairingCode(
     int bankAccountId,
   ) async {
-    final response = await _supabase.rpc(
-      'regenerate_bank_account_pairing_code',
-      params: {'p_account_id': bankAccountId},
-    );
-    return response as String;
-  }
-
-  static Future<String> getBankAccountsForUnitManagement(
-    int bankAccountId,
-  ) async {
-    // This function seems unused or misnamed in original code?
-    // Maintaining structure but assuming typical get implementation
-    throw UnimplementedError("Verify original usage");
+    final result = await manage(bankAccountId, 'rotate_pairing');
+    return (result['receiving_address'] as String).split('@').first;
   }
 
   static Future<List<BankAccountUser>> getBankAccountUsers(
@@ -113,13 +157,13 @@ class DbBankAccounts {
     String token,
     DateTime? expiryDate,
   ) async {
-    await _supabase.rpc(
-      'update_bank_account_token',
-      params: {
-        'p_bank_account_id': bankAccountId,
-        'p_token': token,
-        'p_valid_until': expiryDate?.toIso8601String(),
-      },
+    if (await getConnection(bankAccountId) == null) {
+      await manage(bankAccountId, 'create', values: {'mode': 'api'});
+    }
+    await manage(
+      bankAccountId,
+      'set_token',
+      values: {'token': token, 'expiry': expiryDate?.toIso8601String()},
     );
   }
 

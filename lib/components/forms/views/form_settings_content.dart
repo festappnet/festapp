@@ -1,5 +1,6 @@
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
@@ -28,16 +29,36 @@ import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 
 class FormSettingsContent extends StatefulWidget {
   final String? formLink;
+  final Future<FormEditBundle?> Function(String)? loadBundle;
   final VoidCallback? onActionCompleted;
   final VoidCallback? onDataUpdated;
   const FormSettingsContent(
-      {super.key, this.formLink, this.onActionCompleted, this.onDataUpdated});
+      {super.key,
+      this.formLink,
+      this.onActionCompleted,
+      this.onDataUpdated,
+      this.loadBundle});
 
   @override
   State<FormSettingsContent> createState() => _FormSettingsContentState();
 }
 
 class _FormSettingsContentState extends State<FormSettingsContent> {
+  final _snapshot = EditorSnapshot();
+  Object get _draft => [
+        _titleController.text,
+        _linkController.text,
+        _deadlineDaysController.text,
+        _startingNumberController.text,
+        _isReminderEnabled,
+        _variableSymbolType,
+        _paymentMessageType,
+        _communicationTone,
+      ];
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
   final _formKey = GlobalKey<FormState>();
   FormModel? _form;
   String? _formLink;
@@ -53,7 +74,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   late FormFeature _formFeature;
   String? _linkError;
   bool _isLoading = true;
-  bool _hasChanges = false;
+  bool get _hasChanges =>
+      !_isLoading && _form != null && _snapshot.differs(_draft);
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
@@ -74,9 +96,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _deadlineDaysController,
       _startingNumberController
     ]) {
-      controller.addListener(() {
-        if (!_isLoading) _hasChanges = true;
-      });
+      controller.addListener(_changed);
     }
     _formFeature =
         FeatureService.getFeatureDetails(FeatureConstants.form) as FormFeature;
@@ -119,10 +139,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   Future<void> _loadData() async {
     if (_formLink == null) return;
-    if (mounted) {
+    if (mounted && _form == null) {
       setState(() => _isLoading = true);
     }
-    final bundle = await DbForms.getFormForEdit(_formLink!);
+    final bundle =
+        await (widget.loadBundle ?? DbForms.getFormForEdit)(_formLink!);
     if (!mounted) return;
 
     if (bundle != null) {
@@ -165,10 +186,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     } else {
       _form = null;
     }
-    setState(() {
-      _isLoading = false;
-      _hasChanges = false;
-    });
+    _snapshot.accept(_draft);
+    setState(() => _isLoading = false);
   }
 
   void _validateLink(String? value) {
@@ -233,7 +252,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       ToastHelper.Show(
           currentContext, "${CommonStrings.saved}: ${_form?.title ?? ""}",
           severity: ToastSeverity.Ok);
-      _hasChanges = false;
       final renamed = _formLink != _form!.link;
       if (renamed) {
         setState(() {
@@ -262,9 +280,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
   }
 
-  void _cancelEdit() {
-    widget.onActionCompleted?.call();
-  }
+  Future<void> _cancelEdit() => _loadData();
 
   Future<void> _deleteForm(BuildContext currentContext) async {
     try {
@@ -465,6 +481,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                             child: Form(
                               key: _formKey,
                               child: Column(
+                                key: ObjectKey(_form),
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(FormStrings.formSettingsTitle,
@@ -482,7 +499,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     onChanged: isReminderFeatureEnabled
                                         ? (value) {
                                             setState(() {
-                                              _hasChanges = true;
                                               _isReminderEnabled = value;
                                             });
                                           }
@@ -506,7 +522,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       errorText: _linkError,
                                     ),
                                     onChanged: (value) {
-                                      _hasChanges = true;
                                       _validateLink(value);
                                     },
                                   ),
@@ -553,6 +568,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   _buildUsedBankAccounts(innerContext),
                                   const SizedBox(height: 16),
                                   DropdownButtonFormField<String>(
+                                    isExpanded: true,
                                     value: _variableSymbolType,
                                     decoration: InputDecoration(
                                       labelText:
@@ -570,7 +586,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                               Text(FormStrings.vsTypeSequence)),
                                     ],
                                     onChanged: (value) {
-                                      _hasChanges = true;
                                       if (value != null) {
                                         setState(() {
                                           _variableSymbolType = value;
@@ -605,6 +620,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                   ),
                                   DropdownButtonFormField<String>(
+                                    isExpanded: true,
                                     value: _paymentMessageType,
                                     decoration: InputDecoration(
                                       labelText:
@@ -625,7 +641,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                               .msgTypeOccasionTitle)),
                                     ],
                                     onChanged: (value) {
-                                      _hasChanges = true;
                                       if (value != null) {
                                         setState(() {
                                           _paymentMessageType = value;
@@ -651,6 +666,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ),
                                   const SizedBox(height: 24),
                                   DropdownButtonFormField<String>(
+                                    isExpanded: true,
                                     initialValue: _communicationTone,
                                     decoration: InputDecoration(
                                       labelText:
@@ -673,7 +689,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                               Text(FormStrings.toneInformal)),
                                     ],
                                     onChanged: (value) {
-                                      _hasChanges = true;
                                       if (value != null) {
                                         setState(() {
                                           _communicationTone = value;
@@ -716,30 +731,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                     );
         },
       ),
-      bottomNavigationBar: Builder(builder: (innerContext) {
-        return Container(
-          color: ThemeConfig.appBarColor(),
-          padding: const EdgeInsets.all(10),
-          child: SafeArea(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: _cancelEdit,
-                  child: Text(CommonStrings.storno),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: RightsService.canEditOccasion()
-                      ? () => _saveChanges(innerContext)
-                      : null,
-                  child: Text(CommonStrings.save),
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
+      bottomNavigationBar: EditorActionBar(
+        hasChanges: !_isLoading && _form != null && _snapshot.differs(_draft),
+        enabled: RightsService.canEditOccasion(),
+        onDiscard: _cancelEdit,
+        onSave: () => _saveChanges(context),
+      ),
     );
   }
 }

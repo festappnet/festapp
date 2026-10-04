@@ -70,7 +70,6 @@ const optionEntrypoints = [
   "send-sign-in-code",
   "send-ticket-order",
   "send-tickets",
-  "synchronize-orders",
 ];
 
 for (const name of optionEntrypoints) {
@@ -171,16 +170,6 @@ Deno.test("send-tickets rejects invalid input before privileged reads", async ()
   assertEquals(response.status, 400);
 });
 
-Deno.test("synchronize-orders rejects a request without system authorization", async () => {
-  const handler = await loadHandler("synchronize-orders");
-  const response = await handler(
-    new Request("https://edge-test.invalid", {
-      method: "POST",
-      body: "{}",
-    }),
-  );
-  assertEquals(response.status, 401);
-});
 
 Deno.test("preview rejects missing JWT before privileged work", async () => {
   const response = await (await loadHandler("preview-ticket-layout"))(
@@ -209,7 +198,7 @@ for (
 
 for (
   const name of [
-    "send-email-gateway",
+    "process-email-queue",
     "email-provider-events",
     "auth-email-hook",
   ]
@@ -232,3 +221,11 @@ Deno.test("confirmation status needs an opaque capability, never an order ID", a
   );
   assertEquals(response.status, 403);
 });
+
+for (const name of ["bank-sync-manage", "bank-sync-reconcile"]) {
+  Deno.test(`${name} rejects missing authorization before bank access`, async () => {
+    const handler = await loadHandler(name);
+    const response = await handler(new Request("https://edge-test.invalid", {method:"POST",body:"{}"}));
+    assertEquals(response.status, 401);
+  });
+}
