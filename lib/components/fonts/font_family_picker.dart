@@ -125,8 +125,11 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
                 key: ValueKey(widget.value),
                 initialValue: widget.value,
                 isExpanded: true,
-                style: widget.selectedStyle ??
-                    Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.merge(widget.selectedStyle)
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   labelText: widget.label ?? FormStrings.typography,
                   border: const OutlineInputBorder(),

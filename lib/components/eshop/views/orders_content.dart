@@ -9,7 +9,6 @@ import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
-import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/db_tickets.dart';
@@ -162,12 +161,6 @@ class _OrdersContentState extends State<OrdersContent> {
           isEnabled: RightsService.isOrderEditor,
         ),
         DataGridAction(
-          name: OrdersStrings.synchronizePayments,
-          action: (SingleDataGridController singleDataGrid, [_]) =>
-              synchronizePayments(),
-          isEnabled: RightsService.isOrderEditor,
-        ),
-        DataGridAction(
           name: OrdersStrings.sendActionText,
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
@@ -213,12 +206,6 @@ class _OrdersContentState extends State<OrdersContent> {
       return const Center(child: CircularProgressIndicator());
     }
     return SingleTableDataGrid<OrderModel>(controller!);
-  }
-
-  Future<void> synchronizePayments() async {
-    if (occasionLink == null) return;
-    await DbEshop.fetchTransactions(occasionLink!);
-    refreshData();
   }
 
   Future<void> cancelOrders(SingleDataGridController singleDataGrid) async {

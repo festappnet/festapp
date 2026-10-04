@@ -81,7 +81,7 @@ class _FormDetailPageState extends State<FormDetailPage> {
         () => context.router.replaceAll([
               PageRouteInfo(FormsListRoute.name, rawQueryParams: {
                 ...context.router.root.urlState.uri.queryParametersAll,
-                'list': true,
+                'list': 'true',
               })
             ]));
   }

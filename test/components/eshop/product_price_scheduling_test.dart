@@ -1,4 +1,5 @@
 import 'package:fstapp/components/eshop/views/product_price_waves_dialog.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/models/product_price_wave.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
 import 'package:flutter/services.dart';
@@ -65,6 +66,46 @@ void main() {
     await EasyLocalization.ensureInitialized();
     tzdata.initializeTimeZones();
   });
+  for (final dirty in [false, true]) {
+    testWidgets('opening price waves closes the small dialog, dirty=$dirty',
+        (tester) async {
+      var opened = false;
+      final p = product([]);
+      await tester.pumpWidget(app(Builder(builder: (context) => TextButton(
+        onPressed: () => showDialog<bool>(
+          context: context,
+          builder: (_) => ProductPriceChangesDialog(
+            product: p,
+            canEdit: true,
+            reload: () async => p,
+            onOpenWaves: () => opened = true,
+          ),
+        ),
+        child: const Text('Open plans'),
+      ))));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open plans'));
+      await tester.pumpAndSettle();
+      if (dirty) {
+        await tester.enterText(find.byType(TextField).first, '550');
+      }
+      await tester.tap(find.text('Nastavit cenové vlny'));
+      await tester.pumpAndSettle();
+      if (dirty) {
+        expect(opened, isFalse);
+        await tester.tap(find.widgetWithText(TextButton, CommonStrings.cancel));
+        await tester.pumpAndSettle();
+        expect(find.byType(ProductPriceChangesDialog), findsOneWidget);
+        expect(opened, isFalse);
+        await tester.tap(find.text('Nastavit cenové vlny'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, CommonStrings.discardChanges));
+        await tester.pumpAndSettle();
+      }
+      expect(opened, isTrue);
+      expect(find.byType(ProductPriceChangesDialog), findsNothing);
+    });
+  }
   test('DST gap rejected, overlap offers both instants and preserves occasion timezone', () {
     final prague = tz.getLocation('Europe/Prague');
     expect(
