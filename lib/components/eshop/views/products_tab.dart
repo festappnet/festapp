@@ -279,6 +279,14 @@ class _ProductsTabState extends State<ProductsTab>
         areAllActionsEnabled: () => RightsService.canUpdateOrders(),
         isAddActionPossible: () => false,
       ),
+      headerChildren: [
+        DataGridAction(
+          name: OrdersStrings.priceWaves,
+          requiresSelection: false,
+          action: (SingleDataGridController controller, [_]) => _openWaves(),
+          isEnabled: () => !_dialogOpen,
+        ),
+      ],
       columns: EshopColumns.generateColumns(
         context,
         columnIdentifiers,
@@ -376,14 +384,6 @@ class _ProductsTabState extends State<ProductsTab>
     // Pass the state-managed controller to the grid
     return Column(
       children: [
-        Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: OutlinedButton.icon(
-                    onPressed: _openWaves,
-                    icon: const Icon(Icons.view_week_outlined),
-                    label: Text(OrdersStrings.priceWaves)))),
         if (_refreshAvailable)
           Padding(
             padding: const EdgeInsets.all(8),
