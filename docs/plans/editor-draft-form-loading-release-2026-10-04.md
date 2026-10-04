@@ -1,6 +1,6 @@
 # Editor drafts, form loading and order-email presentation
 
-Status: shared SQL ACTIVE; vstupenky.online frontend deployment in progress. Scope: shared backend and only vstupenky.online frontend.
+Status: shared SQL and vstupenky.online frontend ACTIVE at 0.20.89+573; requested Flutter library follow-up in preparation. Scope: shared backend and only vstupenky.online frontend.
 
 Prepared editor changes were ported from the existing workspace onto current main, preserving newer canonical routes, ticket editor/save behavior and reports. Shared EditorActionBar/EditorSnapshot and EditorDraftScope track nested edits and HTML drafts, disable unchanged actions, confirm discard and reload embedded editors without navigating away. Coverage includes forms, design/settings, blueprint, inventory, occasion features and schedule. Rendering design/schedule defaults no longer mutates form data. Existing retained-navigation guards remain in place.
 
@@ -18,3 +18,10 @@ Canonical merge: main `31c421fd6da2b4b5ac93c879d60318326a750a74` (PR #282). Migr
 Frontend candidate: `0.20.89+573`, production `75d426bb3d18d6bc8d971cc9ce2ee4b53874da86`, exact main base above. Tenant drift check passed; deployment run `37196706049` dispatched only for prod/festapptickets.
 
 Final prepared-change inventory found two additional small changes: read the app-bar page route from its original page context, and expose ticket confirmation only when the ticket feature is enabled. These are included in the sequential follow-up release. The existing report implementation, released form/product changes and invitation-column placement remain canonical. Changes subsequently appearing in other active workspaces are not copied as unfinished work.
+
+
+The `0.20.89+573` workflow succeeded. Independent public proof at `2026-10-04T10:57:48.445Z` verified the versioned bundle, discard confirmation, Orders email-history route and deletion payloads, with no standalone Email route. Bundle SHA-256: `775f6fd1b7052b4c4a94ede72b9c31b7d5a350e7985a4dc5aa2548ad356c2fad`.
+
+The user additionally requested the already-prepared Flutter library upgrade in the final release. Ported its pubspec/lock and corresponding file-picker API updates onto fresh main, preserving canonical shared-grid behavior. Dependencies include Supabase Flutter 2.18.0, Trina Grid 2.3.0, shadcn_ui 0.55.1, file_picker 11.0.3, Sembast 3.8.11/2.4.6, HTML/image/cache/scanner updates and their locked transitive dependencies. Added the supplied real on-disk offline-storage reopening regression; no new package versions were independently selected.
+
+Library validation: full Flutter suite passed with the upgraded lockfile (1070 tests, one skip), including Auth recovery, standard grids, HTML editing, forms/tickets and the new on-disk storage regression. Targeted analysis has no errors/warnings; diff check passed.

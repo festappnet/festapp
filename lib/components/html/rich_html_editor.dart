@@ -210,7 +210,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   Future<void> _image() async {
     final selection = controller.editor.composer.selection;
     final revision = controller.revision;
-    final selected = await FilePicker.platform.pickFiles(
+    final selected = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'heic'],
         withData: true);
