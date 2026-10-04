@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 // companions_feature.dart
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -50,7 +51,12 @@ class CompanionsFeature extends Feature {
   /// Builds the companions UI block.
   @override
   Widget buildFormField(BuildContext context) {
-    return StatefulBuilder(builder: (context, setLocal) {
+    return StatefulBuilder(builder: (context, updateLocal) {
+      void setLocal(VoidCallback change) {
+        updateLocal(change);
+        EditorDraftScope.changed(context);
+      }
+
       return Column(
         children: [
           CheckboxListTile(

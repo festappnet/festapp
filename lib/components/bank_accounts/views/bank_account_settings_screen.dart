@@ -1,7 +1,9 @@
+import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -76,13 +78,15 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         _accountBodyController.text,
         _selectedBankCode,
         _supportedCurrencies.join(','),
-        _useIbanInput
+        _useIbanInput,
       ];
   List<Object?> get _connectionValues => [_tokenController.text, _expiryDate];
   bool get _hasDraft =>
       !const ListEquality<Object?>().equals(_generalValues, _savedGeneral) ||
-      !const ListEquality<Object?>()
-          .equals(_connectionValues, _savedConnection);
+      !const ListEquality<Object?>().equals(
+        _connectionValues,
+        _savedConnection,
+      );
 
   // Validation State
   String? _ibanError;
@@ -90,12 +94,12 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   final _formKey = GlobalKey<FormState>();
 
   bool get _isReadOnly => widget.readOnly || _account.type == 'CASH';
-  final String _emailDomain = "bank.festapp.net";
 
   @override
   void initState() {
     super.initState();
     _account = widget.account;
+    if (_account.id != 0 && !widget.readOnly) _loadBankSyncConnection();
     _titleController = TextEditingController(text: _account.title);
     _creditorNameController = TextEditingController(
       text: _account.creditorName,
@@ -136,6 +140,36 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     _savedGeneral = _generalValues;
     _savedConnection = _connectionValues;
     timeago.setLocaleMessages('cs', timeago.CsMessages());
+  }
+
+  Future<void> _loadBankSyncConnection() async {
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        final connection = await DbBankAccounts.getConnection(_account.id);
+        if (mounted && connection != null) {
+          setState(() {
+            _account = _account.copyWith(bankSync: connection);
+            _pairingCode = connection.receivingAddress?.split('@').first;
+          });
+          widget.onUpdated?.call(_account);
+        }
+      },
+    );
+  }
+
+  Future<void> _connectBankSync(String mode) async {
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        await DbBankAccounts.manage(
+          _account.id,
+          'create',
+          values: {'mode': mode},
+        );
+        await _loadBankSyncConnection();
+      },
+    );
   }
 
   bool get _isFio {
@@ -255,7 +289,9 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
             : _creditorNameController.text.trim(),
         accountNumber: _ibanController.text.trim(),
         priority: int.tryParse(_priorityController.text) ?? _account.priority,
-        type: _isFio ? 'FIO' : 'OTHER',
+        type: _account.bankSync != null
+            ? _account.type
+            : (_isFio ? 'FIO' : 'OTHER'),
         isAdmin: _account.isAdmin,
         supportedCurrencies: _supportedCurrencies,
         accountNumberHumanReadable: _buildLegacyHumanReadable(),
@@ -264,6 +300,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         lastFioFetchTime: _account.lastFioFetchTime,
         tokenExpiryDate: _account.tokenExpiryDate,
         pairingCode: _pairingCode,
+        bankSync: _account.bankSync,
       );
       final newId = await DbBankAccounts.updateBankAccount(
         updatedAccount,
@@ -281,14 +318,17 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       widget.onUpdated?.call(savedAccount);
 
       if (isCreation) {
-        await _regenerateToken(silent: true);
         if (widget.routed) {
-          context.router.navigate(BankAccountDetailRoute(
+          context.router.navigate(
+            BankAccountDetailRoute(
               accountId: _account.id.toString(),
               children: [
                 const BankAccountTabsRoute(
-                    children: [BankAccountConnectionRoute()])
-              ]));
+                  children: [BankAccountConnectionRoute()],
+                ),
+              ],
+            ),
+          );
         } else {
           _tabController?.animateTo(1);
         }
@@ -310,6 +350,12 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     } catch (e) {
       if (e.toString().contains("ACCOUNT_NUMBER_EXISTS")) {
         _showError(BankAccountStrings.accountNumberExists);
+      } else if (e
+          .toString()
+          .contains('BANK_SYNC_ACCOUNT_IDENTITY_IMMUTABLE')) {
+        _showError(BankAccountStrings.linkedAccountIdentity);
+      } else if (e is BankSyncError) {
+        _showError(BankAccountStrings.detailsSyncPending);
       } else {
         _showError("$e");
       }
@@ -333,12 +379,14 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     if (!widget.routed) _tabController = TabController(length: 3, vsync: this);
   }
 
-  void _showError(String message) {
+  void _showError(String message, {String? title}) {
     if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
+        constraints: const BoxConstraints(maxWidth: 560),
+        scrollable: true,
+        title: Text(title ?? BankAccountStrings.errorTitle),
         content: SelectableText(message),
         actions: [
           TextButton(
@@ -348,6 +396,17 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         ],
       ),
     );
+  }
+
+  void _rememberSavedToken() {
+    final newToken = _tokenController.text;
+    if (newToken.isNotEmpty) {
+      final mask =
+          "************${newToken.length >= 4 ? newToken.substring(newToken.length - 4) : newToken}";
+      setState(() {
+        _account = _account.copyWith(tokenMasked: mask);
+      });
+    }
   }
 
   Future<void> _saveToken() async {
@@ -360,20 +419,33 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       );
       if (!mounted) return;
 
-      final newToken = _tokenController.text;
-      if (newToken.isNotEmpty) {
-        final mask =
-            "************${newToken.length >= 4 ? newToken.substring(newToken.length - 4) : newToken}";
-        setState(() {
-          _account = _account.copyWith(tokenMasked: mask);
-        });
-      }
+      _rememberSavedToken();
 
+      await _loadBankSyncConnection();
+      if (!mounted) return;
       ToastHelper.Show(context, BankAccountStrings.tokenUpdated);
       _tokenController.clear();
       _savedConnection = _connectionValues;
     } catch (e) {
-      if (mounted) _showError("${BankAccountStrings.errorSavingToken}: $e");
+      if (!mounted) return;
+      if (e is BankSyncError && e.tokenSaved) {
+        _rememberSavedToken();
+        _tokenController.clear();
+        _savedConnection = _connectionValues;
+      }
+      await _loadBankSyncConnection();
+      if (mounted) {
+        _showError(
+          e is BankSyncError
+              ? BankAccountStrings.syncError(e.code)
+              : BankAccountStrings.syncError(null),
+          title: e is BankSyncError && e.tokenSaved
+              ? (e.code == 'fio_token_invalid_or_inactive'
+                  ? BankAccountStrings.tokenAwaitingActivation
+                  : BankAccountStrings.tokenSavedNeedsVerification)
+              : BankAccountStrings.errorSavingToken,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -413,6 +485,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         _pairingCode = newToken;
         _account = _account.copyWith(pairingCode: newToken);
       });
+      await _loadBankSyncConnection();
       if (!silent) {
         if (!mounted) return;
         ToastHelper.Show(context, BankAccountStrings.tokenUpdated);
@@ -516,7 +589,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         isFio: _isFio,
         isSaving: _isSaving,
         pairingCode: _pairingCode,
-        emailDomain: _emailDomain,
+        onConnectEmail:
+            _account.id == 0 ? null : () => _connectBankSync('email'),
         onRegenerateToken: _regenerateToken,
         tokenController: _tokenController,
         expiryDate: _expiryDate,

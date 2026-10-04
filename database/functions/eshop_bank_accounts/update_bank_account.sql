@@ -20,11 +20,15 @@ AS $$
 DECLARE
     v_id bigint;
     v_account_number text;
+    v_operation_id uuid;
+    v_request jsonb;
 BEGIN
     -- Prevent manual manipulation of CASH accounts
     IF p_type = 'CASH' THEN
         RAISE EXCEPTION 'CASH_ACCOUNT_MANUAL_UPDATE_FORBIDDEN';
     END IF;
+
+    IF char_length(p_title)>120 THEN RAISE EXCEPTION 'BANK_ACCOUNT_TITLE_TOO_LONG'; END IF;
 
     -- Input normalization
     v_account_number := TRIM(p_account_number);
@@ -67,6 +71,12 @@ BEGIN
             RAISE EXCEPTION 'Permission denied: Only bank account admins can update details.';
         END IF;
 
+        PERFORM 1 FROM eshop.bank_accounts WHERE id=p_id FOR UPDATE;
+        IF EXISTS (SELECT 1 FROM eshop.bank_sync_connections WHERE bank_account_id=p_id)
+          AND EXISTS (SELECT 1 FROM eshop.bank_accounts WHERE id=p_id
+            AND (account_number IS DISTINCT FROM v_account_number OR type IS DISTINCT FROM p_type)) THEN
+          RAISE EXCEPTION 'BANK_SYNC_ACCOUNT_IDENTITY_IMMUTABLE';
+        END IF;
         UPDATE eshop.bank_accounts
         SET
             account_number = v_account_number,
@@ -78,6 +88,13 @@ BEGIN
             updated_at = NOW()
         WHERE id = p_id
         RETURNING id INTO v_id;
+    END IF;
+    -- Local details and the durable remote update intent commit together.
+    IF p_id IS NOT NULL AND EXISTS(SELECT 1 FROM eshop.bank_sync_connections WHERE bank_account_id=v_id) THEN
+      v_operation_id := gen_random_uuid();
+      v_request := jsonb_build_object('operation','update_details','operation_id',v_operation_id,'account_id',v_id);
+      INSERT INTO eshop.bank_sync_operations(id,bank_account_id,actor,operation,payload_sha256,state,request)
+        VALUES(v_operation_id,v_id,auth.uid(),'update_details',encode(extensions.digest(v_request::text,'sha256'),'hex'),'pending',v_request);
     END IF;
     RETURN v_id;
 END;

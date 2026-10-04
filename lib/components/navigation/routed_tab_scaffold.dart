@@ -1,3 +1,4 @@
+import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
@@ -33,6 +34,7 @@ class RoutedTabScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
+    final parentActive = AdminTabActivity.isActive(context);
     if (tabs.isEmpty) return const Center(child: Text('Unavailable'));
     // A disabled, known section is normalized before any child is constructed.
     final pending = context.routeData.pendingChildren;
@@ -56,6 +58,11 @@ class RoutedTabScaffold extends StatelessWidget {
         routes: tabs.map((t) => t.route).toList(),
         physics: const NeverScrollableScrollPhysics(),
         builder: (context, child, controller) {
+          child = AdminTabActivity(
+              controller: controller,
+              routeNames: tabs.map((t) => t.route.routeName).toList(),
+              parentActive: parentActive,
+              child: child);
           if (builder != null) return builder!(context, child, controller);
           if (administration) {
             final scaffold = Scaffold(

@@ -421,7 +421,9 @@
     "depositDeadline": "Surcharge deadline",
     "depositPaymentDeadline": "Deposit by",
     "depositOnSiteLabel": "On site",
-    "paymentReference": "Payment reference"
+    "paymentReference": "Payment reference",
+    "shortTitleHelp": "Name printed on the ticket, for example for dinner. If empty, the full product name is used.",
+    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit."
   },
   "FormsFeature": {
     "showDepositDescription": "Show deposit / surcharge note on products",
@@ -514,7 +516,17 @@
     "validationMode": "Validation Mode",
     "tabDesign": "Design",
     "textFieldType": "Text",
-    "viewMore": "View more"
+    "viewMore": "View more",
+    "deleteBlocked": {
+      "responses": "This field already has a response and cannot be deleted.",
+      "orders": "This product has been used in an order and cannot be deleted.",
+      "blueprint": "This product is used in a seating plan and cannot be deleted.",
+      "inventory": "This product is linked to inventory and cannot be deleted.",
+      "shared": "This product group is also used by another field or form.",
+      "changed": "The item has changed. Reload the form.",
+      "unknown": "Item usage has not been verified. Reload the form."
+    },
+    "deleteSaveFailed": "The form was not saved. {} Your changes remain in the editor."
   },
   "FeatureOrders": {
     "searchUnpairedTransactions": "Search unpaired transactions",
@@ -613,7 +625,48 @@
     "fieldTypeParticipant": "Participant Type",
     "fieldMemberAnima": "Member of Anima Iuventutis",
     "fieldDietary": "Dietary restrictions",
-    "fieldPrepTeam": "Preparatory team"
+    "fieldPrepTeam": "Preparatory team",
+    "currentPrice": "Current price",
+    "priceChanges": "Price change",
+    "priceChangesTitle": "Scheduled price changes",
+    "schedulePrice": "Schedule change",
+    "newPrice": "New price",
+    "priceDate": "Date",
+    "priceTime": "Time",
+    "addPriceChange": "Add another change",
+    "cancelPriceChange": "Cancel change",
+    "pricePending": "Waiting to apply",
+    "priceDelayed": "Application is delayed. Refresh the data.",
+    "priceFailed": "Change failed - edit or cancel the schedule",
+    "priceHelp": "The price applies to new orders. Existing orders keep their prices. Automatic application runs approximately every minute.",
+    "futurePricesRemain": "Scheduled price changes remain in effect.",
+    "priceExpected": "Expected sequence",
+    "priceMore": "+{} more",
+    "priceSummary": "From {} the price will be {}.",
+    "priceInvalid": "Enter a valid nonnegative price and a future date and time.",
+    "priceMissingTime": "This local time does not exist.",
+    "priceOffset": "Choose a time offset",
+    "priceCancelConfirm": "Cancel the change to {} from {}?",
+    "priceRefresh": "Updated prices are available. Save or discard your edits.",
+    "priceSaveFailed": "Could not save the change. Refresh schedules before retrying if the connection was interrupted.",
+    "priceRefreshAction": "Refresh schedules",
+    "priceSame": "The price is the same as the expected preceding price.",
+    "priceWaves": "Price waves",
+    "addWave": "Add wave",
+    "moveWave": "Change time",
+    "cancelWave": "Cancel wave",
+    "cancelWaveConfirm": "Cancel this wave and its scheduled changes?",
+    "waveProduct": "Product",
+    "waveAvailability": "Availability",
+    "waveNoChange": "Unchanged",
+    "waveHidden": "Hide",
+    "waveShown": "Offer",
+    "waveChange": "Set",
+    "waveFailed": "Failed",
+    "waveEmptyPrice": "Empty price = unchanged",
+    "noWaves": "No price waves yet.",
+    "waveNow": "Current",
+    "waveHiddenState": "Hidden"
   },
   "UserColumns": {
     "id": "Id",
@@ -1506,7 +1559,10 @@
     "unknownDatabaseError": "An unknown database error occurred.",
     "detailsLabel": "Details:",
     "moreOptions": "More Options",
-    "user": "User"
+    "user": "User",
+    "discardChanges": "Discard changes",
+    "discardChangesConfirmation": "Discard unsaved changes?",
+    "keepEditing": "Keep editing"
   },
   "BankAccount": {
     "settingsTitle": "Bank Account Settings",
@@ -1614,7 +1670,31 @@
     "safeSenderInfo": "This address is safe. It is a special robot that only reads payment e-mails and nothing else.",
     "forwardingEmailWarning": "Warning: Please keep this e-mail secret. Do not share it with anyone.",
     "creditorNameLabel": "Account holder name",
-    "creditorNameHelp": "For EUR payments. If empty, the organization name is used."
+    "creditorNameHelp": "For EUR payments. If empty, the organization name is used.",
+    "connection_state": "Connection status",
+    "bank_pull": "Bank statement downloaded",
+    "receiver_commit": "Movement received",
+    "not_received": "Not received yet",
+    "email_identity_notice": "Messages without verified bank movement identity await operator review and do not automatically pay orders.",
+    "connect_email": "Connect bank email",
+    "fioTokenInactive": "Fio is not accepting the token yet. If you have just authorized it, allow up to 5 minutes and then refresh the connection status. Checks run automatically; you do not need to save the token again. Otherwise, authorize it in Fio Internetbanking under Settings → API. If the problem persists, check the token validity.",
+    "syncRetryRequired": "The bank connection could not be verified. Please try again later.",
+    "tokenSavedNeedsAuthorization": "The token is saved in BankSync, but the connection is not yet verified.",
+    "syncState": {
+      "connected": "Connected",
+      "degraded": "Needs attention",
+      "provisioning": "Connecting",
+      "shadow": "Verifying",
+      "suspended": "Suspended"
+    },
+    "linkedAccountIdentity": "A connected account number cannot be replaced. Add a new bank account and select it for future payments.",
+    "detailsSyncPending": "Details are saved in Festapp. The update to BankSync is pending and will be retried automatically.",
+    "fioAccountMismatch": "The Fio token belongs to a different bank account. Enter a token for this account, or add the correct account in Festapp. Payments from another account will not be matched.",
+    "tokenVerifying": "Saving and verifying token…",
+    "tokenVerificationWait": "Waiting for Fio to respond. Verification may take several dozen seconds.",
+    "tokenAwaitingActivation": "Token saved - awaiting activation",
+    "tokenSavedNeedsVerification": "Token saved - connection needs attention",
+    "errorTitle": "Error"
   },
   "FeatureContract": {
     "title": "Contract",
@@ -1900,7 +1980,9 @@
     "tabReport": "Report",
     "savingChanges": "Saving changes",
     "tabService": "Service",
-    "noItems": "Table does not contain any items"
+    "noItems": "Table does not contain any items",
+    "refreshPending": "Data may be outdated. Save or discard your edits first.",
+    "refreshData": "Refresh data"
   },
   "FeatureSongbook": {
     "description": "Displays a songbook and allows adding custom songs."

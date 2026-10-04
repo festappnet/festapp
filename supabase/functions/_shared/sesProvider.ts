@@ -1,4 +1,4 @@
-// This module is imported only by the isolated gateway, never by producers/worker.
+// SES credentials are scoped to the authenticated process-email-queue worker.
 import type { PreparedEmail } from "./emailDelivery.ts";
 export type SesConfig = {
   region: string;
