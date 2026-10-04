@@ -511,8 +511,6 @@ class OrdersStrings {
         "orderId": orderId.toString()
       }); // "Item {id} (Order {orderId})"
   static String get priceWaves => 'FeatureOrders.priceWaves'.tr();
-  static String get configurePriceWaves =>
-      'FeatureOrders.configurePriceWaves'.tr();
   static String get addWave => 'FeatureOrders.addWave'.tr();
   static String get moveWave => 'FeatureOrders.moveWave'.tr();
   static String get cancelWave => 'FeatureOrders.cancelWave'.tr();

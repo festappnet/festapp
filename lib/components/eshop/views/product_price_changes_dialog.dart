@@ -400,7 +400,8 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
           date: date.text.isEmpty ? null : scheduleWallTime(date.text, '00:00'),
           time: time.text.isEmpty
               ? null
-              : TimeOfDay.fromDateTime(scheduleWallTime('2000-01-01', time.text)!),
+              : TimeOfDay.fromDateTime(
+                  scheduleWallTime('2000-01-01', time.text)!),
           dateLabel: OrdersStrings.priceDate,
           timeLabel: OrdersStrings.priceTime,
           enabled: !busy,
@@ -411,7 +412,8 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
             offsetChoice = null;
           }),
           onTimeChanged: (picked) => setState(() {
-            time.text = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+            time.text =
+                '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
             offsetChoice = null;
           }),
         ),
@@ -449,7 +451,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         OutlinedButton.icon(
           onPressed: busy ? null : () => close(openWaves: true),
           icon: const Icon(Icons.timeline),
-          label: Text(OrdersStrings.configurePriceWaves),
+          label: Text(OrdersStrings.priceWaves),
         ),
       if (widget.canEdit && !formOpen)
         FilledButton(
