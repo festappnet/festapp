@@ -34,12 +34,8 @@ BEGIN
             AND bau."user" = auth.uid() 
             AND bau.is_admin = true
         ) as is_admin,
-        CASE 
-            WHEN s.secret IS NOT NULL THEN 
-                '************' || right(s.secret, 4)
-            ELSE NULL 
-        END as token_masked,
-        s.expiry_date as token_expiry_date,
+        NULL::text as token_masked,
+        NULL::timestamptz as token_expiry_date,
         ba.supported_currencies,
         ba.last_fio_fetch_time,
         CASE WHEN EXISTS (
@@ -55,7 +51,6 @@ BEGIN
           ) END AS bank_sync
     FROM eshop.bank_accounts ba
     JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
-    LEFT JOIN eshop.secrets s ON ba.secret = s.id
     WHERE uba.unit = p_unit_id
     AND ba.type != 'CASH'; -- Exclude Cash Accounts from management list
 END;

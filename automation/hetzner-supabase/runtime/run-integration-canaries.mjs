@@ -72,12 +72,11 @@ async function main() {
     fail('evidence output must be new and outside the repository');
   }
 
-  const [anonKey, serviceKey, snsTopic] = await Promise.all([
-    hostEnv('ANON_KEY'), hostEnv('SERVICE_ROLE_KEY'), hostEnv('AWS_SNS_TOPIC_ARN'),
+  const [anonKey, serviceKey] = await Promise.all([
+    hostEnv('ANON_KEY'), hostEnv('SERVICE_ROLE_KEY'),
   ]);
-  if (anonKey.split('.').length !== 3 || serviceKey.split('.').length !== 3 ||
-      !/^arn:aws:sns:[a-z0-9-]+:\d{12}:[A-Za-z0-9_-]+$/.test(snsTopic)) {
-    fail('runtime credentials or SNS topic configuration is incomplete');
+  if (anonKey.split('.').length !== 3 || serviceKey.split('.').length !== 3) {
+    fail('runtime credentials are incomplete');
   }
 
   const nonce = crypto.randomBytes(10).toString('hex');
@@ -139,17 +138,10 @@ async function main() {
     const realtimeStatus = await websocketCanary(anonKey);
     const notify = await fetch(`${ORIGIN}/functions/v1/notify`, { method: 'POST', body: '{}' });
     if (notify.status !== 401) fail(`notify authorization canary returned HTTP ${notify.status}`);
-    const callback = await fetch(`${ORIGIN}/functions/v1/bank-mail-parser`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-amz-sns-message-type': 'Notification',
-        'x-amz-sns-message-id': 'cutover-canary',
-        'x-amz-sns-topic-arn': snsTopic,
-      },
-      body: JSON.stringify({ Type: 'Notification', MessageId: 'cutover-canary', TopicArn: snsTopic }),
+    const callback = await fetch(`${ORIGIN}/functions/v1/bank-sync-webhook`, {
+      method: 'POST', headers: {'content-type': 'application/json'}, body: '{}',
     });
-    if (callback.status !== 403) fail(`SNS/payment callback rejection returned HTTP ${callback.status}`);
+    if (callback.status !== 401) fail(`Unsigned bank callback returned HTTP ${callback.status}`);
 
     const oneSignalConfig = JSON.parse(await psql(`SELECT jsonb_build_object(
       'app_id',o.data->>'ONESIGNAL_APP_ID','rest_api_key',s.onesignal_rest_api_key)

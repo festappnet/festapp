@@ -90,17 +90,5 @@ BEGIN
   v_result:=public.ingest_bank_sync_transaction('test','festapp',repeat('a',64),v_event);
   PERFORM assert_eq(v_result->>'outcome','already_ingested','legacy movement only linked');
   PERFORM assert_eq((SELECT transaction_id FROM eshop.bank_transaction_identities WHERE instance_id='test' AND identity_kind='movement' AND identity_value='900009'),v_old,'existing ledger identity retained');
-  BEGIN
-    PERFORM public.insert_transactions('[]',v_bank);
-    RAISE EXCEPTION 'legacy authority bypassed';
-  EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM<>'BANK_SYNC_CANONICAL_CONNECTION_REQUIRED' THEN RAISE; END IF;
-  END;
-  BEGIN
-    PERFORM public.process_email_transaction(jsonb_build_object('bank_account_id',v_alias));
-    RAISE EXCEPTION 'email alias authority bypassed';
-  EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM<>'BANK_SYNC_CANONICAL_CONNECTION_REQUIRED' THEN RAISE; END IF;
-  END;
 END;
 $$;

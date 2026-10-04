@@ -1,18 +1,3 @@
-CREATE OR REPLACE FUNCTION public.require_legacy_bank_authority(p_bank_account_id bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  -- All old entry points hold this row through their ledger commit. Activation
-  -- holds the same barrier, so an in-flight legacy SQL write cannot commit late.
-  PERFORM 1 FROM eshop.bank_accounts WHERE id=p_bank_account_id FOR UPDATE;
-  IF EXISTS (SELECT 1 FROM eshop.bank_sync_connections c WHERE c.legacy_blocked_at IS NOT NULL
-    AND (c.bank_account_id=p_bank_account_id OR c.id IN
-      (SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_bank_account_id))) THEN
-    RAISE EXCEPTION 'BANK_SYNC_CANONICAL_CONNECTION_REQUIRED';
-  END IF;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.require_legacy_bank_authority(bigint) FROM PUBLIC,anon,authenticated,service_role;
-
 CREATE OR REPLACE FUNCTION public.bank_sync_accounts_match(p_transaction_id bigint,p_target_account bigint)
 RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
   SELECT EXISTS (
@@ -43,6 +28,25 @@ BEGIN
   PERFORM 1 FROM eshop.bank_accounts WHERE id=v_connection.bank_account_id OR id IN
     (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id)
     ORDER BY id FOR UPDATE;
+  -- Adopt known bank movement IDs before the first replay. Historical ledger
+  -- rows and manual pairing decisions remain unchanged; the receiver compares
+  -- bank facts and quarantines a mismatch instead of crediting history twice.
+  IF v_connection.provider='FIO' THEN
+    INSERT INTO eshop.bank_transaction_identities(instance_id,provider,physical_account,identity_kind,identity_value,transaction_id)
+      SELECT v_connection.instance_id,'FIO',v_connection.physical_account,'movement',t.transaction_id::text,t.id
+      FROM eshop.transactions t
+      WHERE (t.bank_account_id=v_connection.bank_account_id OR t.bank_account_id IN
+        (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id))
+        AND t.ingest_source IN ('fio_api','legacy_api','legacy') AND t.transaction_id IS NOT NULL
+      ON CONFLICT(instance_id,provider,physical_account,identity_kind,identity_value) DO UPDATE
+        SET transaction_id=eshop.bank_transaction_identities.transaction_id
+        WHERE eshop.bank_transaction_identities.transaction_id=EXCLUDED.transaction_id;
+    IF EXISTS(SELECT 1 FROM eshop.transactions t JOIN eshop.bank_transaction_identities i
+      ON i.instance_id=v_connection.instance_id AND i.provider='FIO' AND i.physical_account=v_connection.physical_account
+        AND i.identity_kind='movement' AND i.identity_value=t.transaction_id::text
+      WHERE t.bank_account_id=v_connection.bank_account_id AND t.ingest_source IN ('fio_api','legacy_api','legacy')
+        AND i.transaction_id<>t.id) THEN RAISE EXCEPTION 'BANK_SYNC_HISTORICAL_IDENTITY_CONFLICT'; END IF;
+  END IF;
   UPDATE eshop.bank_accounts SET is_fetch_enabled=false WHERE id=v_connection.bank_account_id OR id IN
     (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id);
   UPDATE eshop.bank_sync_connections SET state='connected',legacy_blocked_at=COALESCE(legacy_blocked_at,now())
