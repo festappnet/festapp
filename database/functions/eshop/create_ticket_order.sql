@@ -360,7 +360,7 @@ BEGIN
               AND (ba.type IS DISTINCT FROM 'CASH') -- EXCLUDE CASH ACCOUNTS
             ORDER BY uba.priority ASC, ba.id ASC
             LIMIT 1;
-            
+
             IF bank_account_id IS NULL THEN
                 RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
                     'code', 1018,
@@ -386,7 +386,7 @@ BEGIN
                     'provided_bank_account', bank_account_id
                 )::TEXT;
             END IF;
-            
+
             SELECT b.account_number, b.account_number_human_readable, b.creditor_name
             INTO account_number, account_number_human_readable, creditor_name
             FROM eshop.bank_accounts b
@@ -506,15 +506,9 @@ BEGIN
                         WHERE elem->>'code' = 'form';
 
                         IF COALESCE(v_reminder_is_enabled, FALSE) AND v_reminder_interval IS NOT NULL THEN
-                            INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
-                            VALUES (
-                                v_deposit_deadline_ts - make_interval(secs => v_reminder_interval),
-                                'TICKET_ORDER_REMINDER',
-                                jsonb_build_object('order_id', order_id, 'is_deposit_reminder', true),
-                                organization_id,
-                                occasion_id,
-                                unit_id
-                            );
+                            PERFORM public.enqueue_order_email('TICKET_ORDER_REMINDER',
+                                jsonb_build_object('order_id',order_id,'is_deposit_reminder',true),organization_id,occasion_id,unit_id,
+                                v_deposit_deadline_ts-make_interval(secs=>v_reminder_interval));
                         END IF;
                     END IF;
                 END IF;

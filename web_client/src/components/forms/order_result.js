@@ -1,8 +1,10 @@
+import { observeOrderDelivery } from './order_delivery_status.js';
 import { PublicOrderStrings } from './public_order_strings.js';
 import QRCode from 'qrcode';
 
 export class OrderResult {
     static render(container, success, resultData, formModel, onClose) {
+        container._orderDeliveryObserver?.stop();
         // Prepare Data
         const tone = formModel.communicationTone; 
         // We need to know if tickets were involved. 
@@ -244,10 +246,19 @@ export class OrderResult {
             paymentHost.appendChild(more);
         }
 
+        if (success && resultData?.delivery_receipt) {
+            container._orderDeliveryObserver = observeOrderDelivery(resultData.delivery_receipt, state => {
+                if (!container.isConnected) { container._orderDeliveryObserver?.stop(); return; }
+                const email = resultData?.ticketOrder?.order?.data?.email;
+                container.querySelector('.result-subtitle').textContent = PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '', state);
+            }, {alive: () => container.isConnected});
+        }
+
         // Attach Event
         const backBtn = container.querySelector('.btn-back-to-form');
         if (backBtn) {
             backBtn.onclick = () => {
+                container._orderDeliveryObserver?.stop();
                 if (onClose) onClose();
             };
         }
