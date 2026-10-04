@@ -311,3 +311,11 @@ verify_jwt = false
 # Machine requestSecret is checked against a private service-only store.
 [functions.process-email-queue]
 verify_jwt = false
+
+[functions.bank-sync-webhook]
+verify_jwt = false
+[functions.bank-sync-manage]
+verify_jwt = true
+
+[functions.bank-sync-reconcile]
+verify_jwt = false

@@ -1,0 +1,88 @@
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -19,7 +19,7 @@
+   workerd: true
+ 
+ catalog:
+-  '@festapp/banksync': 0.1.6
++  '@festapp/banksync': 0.2.2
+   '@cloudflare/workers-types': ^5.20260730.1
+   '@playwright/test': ^1.60.0
+   '@opennextjs/cloudflare': 1.20.6
+@@ -56,7 +56,7 @@
+   '@opennextjs/cloudflare@1.20.6': patches/@opennextjs__cloudflare@1.20.6.patch
+ 
+ minimumReleaseAgeExclude:
+-  - '@festapp/banksync@0.1.6'
++  - '@festapp/banksync@0.2.2'
+   - miniflare@5.20260907.0-alpha || 5.20260911.0-alpha
+   - wrangler@4.131.1
+   - react-native-audio-api@1.0.0-nightly-4c63814-20260911
+--- a/services/banksync/wrangler.toml
++++ b/services/banksync/wrangler.toml
+@@ -66,13 +66,14 @@
+ # CF Email Routing auto-sync — banksync calls CF API on bank-account CRUD to keep ER rules synced with DB.
+ CF_ZONE_ID       = "02fd6ca8f4652d62e9b05f24a5e9d84f"
+ BANKSYNC_DOMAIN  = "banksync.festapp.net"
+-# Bank API polling. Fio limits the "last" endpoint to roughly 1 request / 30s per token.
++# Bank API polling. Schema11 uses bounded /periods under account and full-token leases.
+ FIO_MIN_INTERVAL_S = "30"
+ # Versioned AES-GCM key selector for provider API tokens. Actual key is a Worker secret.
+ ENCRYPTION_KEY_VERSION = "1"
+-CALLBACK_HOST_ALLOWLIST = "mendelio.net,muzazena.festapp.net,voice.mendelio.net"
++CALLBACK_HOST_ALLOWLIST = "mendelio.net,muzazena.festapp.net,voice.mendelio.net,api.festapp.net"
+ BACKUP_ENCRYPTION_KEY_VERSION = "1"
+ EMAIL_AUTHSERV_ID = "mx.cloudflare.net"
++AUTHENTICATED_EMAIL_SPOOL = "on"
+ # Fio egress proxy. Cloudflare Workers cannot reach fioapi.fio.cz (HTTP 525 TLS
+ # handshake fail); this relays Fio pulls through a Supabase edge function on a
+ # non-Cloudflare fixed IP. Secret in FIO_PROXY_SECRET (wrangler secret put).
+diff --git a/supabase/functions/fio-proxy/index.ts b/supabase/functions/fio-proxy/index.ts
+index c323f8f60..de59a38e7 100644
+--- a/supabase/functions/fio-proxy/index.ts
++++ b/supabase/functions/fio-proxy/index.ts
+@@ -30,9 +30,14 @@ function json(body: unknown, status: number): Response {
+   });
+ }
+ 
+-function buildFioUrl(op: string, token: string, date?: string): string | null {
++function buildFioUrl(op: string, token: string, date?: string, toDate?: string): string | null {
+   const t = encodeURIComponent(token);
+   if (op === "transactions") return `${FIO_BASE}/last/${t}/transactions.json`;
++  if (op === "periods") {
++    if (!date || !toDate || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{4}-\d{2}-\d{2}$/.test(toDate)) return null;
++    if (!Number.isFinite(Date.parse(date)) || !Number.isFinite(Date.parse(toDate)) || date > toDate || Date.parse(toDate)-Date.parse(date) > 90*86400000) return null;
++    return `${FIO_BASE}/periods/${t}/${date}/${toDate}/transactions.json`;
++  }
+   if (op === "set-last-date") {
+     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+     return `${FIO_BASE}/set-last-date/${t}/${date}/`;
+@@ -47,7 +52,7 @@ Deno.serve(async (req) => {
+     return json({ error: "unauthorized" }, 401);
+   }
+ 
+-  let body: { op?: string; token?: string; date?: string };
++  let body: { op?: string; token?: string; date?: string; toDate?: string };
+   try {
+     body = await req.json();
+   } catch {
+@@ -58,16 +63,16 @@ Deno.serve(async (req) => {
+   const token = String(body.token ?? "");
+   if (!token) return json({ error: "missing_token" }, 400);
+ 
+-  const url = buildFioUrl(op, token, body.date);
++  const url = buildFioUrl(op, token, body.date, body.toDate);
+   if (!url) return json({ error: "unsupported_op" }, 400);
+ 
+   let upstream: Response;
+   try {
+-    upstream = await fetch(url, { method: "GET" });
++    upstream = await fetch(url, { method: "GET", signal: AbortSignal.timeout(20_000) });
+   } catch (err) {
+     // Surface as a 5xx so the Worker's ensureFioResponse() treats it as a
+     // transient failure and retries on the next tick.
+-    return json({ error: "fio_unreachable", detail: String(err) }, 502);
++    return json({ error: "fio_unreachable" }, 502);
+   }
+ 
+   // Forward Fio's status + body verbatim so the Worker keeps its 429 / >=500 /

@@ -11,6 +11,7 @@ AS $$
 DECLARE
     v_secret_id bigint;
 BEGIN
+  PERFORM public.require_legacy_bank_authority(p_bank_account_id);
     SELECT secret INTO v_secret_id FROM eshop.bank_accounts WHERE id = p_bank_account_id;
 
     -- Security Check: Caller must be an Admin of the bank account

@@ -238,6 +238,29 @@
         "remote-asset-read"
       ],
       "mutates_authority": false
+    },
+    "bank-sync-webhook": {
+      "trigger": "banksync-signed-webhook",
+      "effects": [
+        "database-rpc"
+      ],
+      "mutates_authority": true
+    },
+    "bank-sync-manage": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "banksync-tenant-control"
+      ],
+      "mutates_authority": true
+    },
+    "bank-sync-reconcile": {
+      "trigger": "canonical-cron",
+      "effects": [
+        "database-rpc",
+        "banksync-tenant-control"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -311,7 +334,8 @@
       "process-email-queue": "service-only-machine-proof-fenced-ses-send-and-worker-scoped-credentials",
       "auth-email-hook": "standardwebhooks-hmac-and-server-resolved-tenant",
       "email-provider-events": "signature-v2-exact-topic-aws-certificate-and-durable-redacted-journal",
-      "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only"
+      "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only",
+      "bank-sync-webhook": "bounded-raw-body-hmac-v2-pinned-package-atomic-inbox-receipt"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

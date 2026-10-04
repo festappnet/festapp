@@ -1,0 +1,293 @@
+{
+  "kind": "implementation-review-manifest",
+  "executable": false,
+  "production_writes_authorized": false,
+  "scope": {
+    "tenant": "festapptickets",
+    "organization": 3,
+    "branch": "main",
+    "other_prod_branches": [],
+    "selected_enabled_fio_snapshot_count": 7,
+    "old_email_migration": false
+  },
+  "package": {
+    "name": "@festapp/banksync",
+    "version": "0.2.2",
+    "publication": "completed",
+    "commit": "3ac47d90461c31dbcd4810643b73a14aab65bab7",
+    "integrity": "sha512-h6s1rEAKEQpbQhlnucBV9Y9YVapO/cCdVbvrdKFBNS85BBytTAQWabQe1lTWqd9rjAcXAEP80QAAdCryvHf/KQ==",
+    "release_url": "https://github.com/festappnet/banksync/releases/tag/v0.2.2",
+    "tarball_sha256": "0daecf7cd770749ee18843920ed526c341ad5af1db1ad235ab10029536841457"
+  },
+  "festapp": {
+    "worktree": "/Users/miakh/source/festapp-banksync",
+    "branch": "implementation/banksync-20261004",
+    "base": "148385676d1d6bef68169ef9decf941ca76c11a2",
+    "publication": "not_authorized"
+  },
+  "migration": "supabase/migrations/20261004193000_bank_sync_canonical_ingress.sql",
+  "composition_proxy_source": "/Users/miakh/source/roman_seznamka/supabase/functions/fio-proxy/index.ts",
+  "required_production_bindings": [
+    "Fresh backend activation/database identity",
+    "Exact canonical and approved alias bank account IDs and normalized physical identity",
+    "Exact BankSync instance, consumer and remote account IDs",
+    "Per-account currency set, historical movement and delivery high-water marks",
+    "B2 terminal delivery disposition without blind replay",
+    "B3 duplicate physical account disposition without SQL merge",
+    "Protected control keys and tenant/webhook credentials",
+    "Authorized real CZK/EUR movements and bank email evidence"
+  ],
+  "production_sequence": [
+    "Review and pin compatible shared composition/proxy preserving Mendelio v1",
+    "Apply schema11 and Festapp migration/readers",
+    "Provision isolated v2 consumer and tokenless paused account mappings",
+    "Reconcile bounded history and subscribe approved account",
+    "Activate authority barrier atomically, transfer token once and enable owner",
+    "Compare two polling cycles and authorized real movements, receipts, order and canonical email delivery",
+    "Complete verified new email journey and scoped deletion ledger"
+  ],
+  "milestones": {
+    "M1": "implementation prepared; production cutover gates open",
+    "M2": "control recovery prepared; real email identity and production journey gates open"
+  },
+  "artifacts": [
+    {
+      "path": "assets/translations/cs.json",
+      "sha256": "83faeee970927d7206697baa76b6de6964fe359f0429868b19cf84ce05f14d15"
+    },
+    {
+      "path": "assets/translations/en.json",
+      "sha256": "541d59d61da535e926966d2cb81d65cfe2aa9ecdc5fa252b6434023248e1a2f2"
+    },
+    {
+      "path": "automation/assemble-bank-sync-migration.py",
+      "sha256": "3dbbe278ba597fcd6acdf07ae568e3d8fad5e030fa997ba0dfaf4f78ced3547a"
+    },
+    {
+      "path": "automation/hetzner-supabase/merge/runtime-writer-policy.json",
+      "sha256": "64d86855453258186eb3b3cbb54166f80da8077bc06e99f227b551a828147576"
+    },
+    {
+      "path": "automation/hetzner-supabase/runtime/finalize-canonical-database-operations.sh",
+      "sha256": "e7f884379401c32f70c7301632ae30fac9fce14b53a8e38a4f840fd5c00c0c3c"
+    },
+    {
+      "path": "automation/hetzner-supabase/runtime/patch-function-proof-routes.py",
+      "sha256": "c0afa164db8dda7dae1e9b72858611b9196c0b2656f0880acc0ab0c45df56af6"
+    },
+    {
+      "path": "database/functions/eshop_bank_accounts/get_bank_accounts_for_unit_management.sql",
+      "sha256": "9af64579328c74c2b20ae0fedb98be83b1f145e1e6be0303cd08376c7097184a"
+    },
+    {
+      "path": "database/functions/eshop_bank_accounts/get_my_admin_bank_accounts.sql",
+      "sha256": "9f3dceeb640b395fd405c1e15f34f4671497d2bc386f096b01cab498a9cfe6ac"
+    },
+    {
+      "path": "database/functions/eshop_bank_accounts/regenerate_bank_account_pairing_code.sql",
+      "sha256": "802019d8b8e2a5b60fd6339e0c022148324f54814212246781ca84a7ff59a4fb"
+    },
+    {
+      "path": "database/functions/eshop_bank_accounts/update_bank_account.sql",
+      "sha256": "2b8344bac9fc07d13fde7b54c936df83b0aa613f933783abc5633e4cf5acc933"
+    },
+    {
+      "path": "database/functions/eshop_bank_accounts/update_bank_account_token.sql",
+      "sha256": "41ff8606026f59401430d829ca82fa1bc60e561e6dc20a39dc0868a3ac6c2b8d"
+    },
+    {
+      "path": "database/functions/eshop_bank_sync/bank_sync_authority.sql",
+      "sha256": "1379e966bffe9d85df95460eee324a713cf5555597023dd81a8af38908a163b3"
+    },
+    {
+      "path": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
+      "sha256": "829cdd47facc7f3f67f4ceb7f00ee29a8ebdc0391e454b7de6e8b40c1bad4c98"
+    },
+    {
+      "path": "database/functions/eshop_bank_sync/ingest_bank_sync_transaction.sql",
+      "sha256": "fd3f2cd4195084ca9d3e05f7ea2648db89c7775580117382db7f947ecebe5736"
+    },
+    {
+      "path": "database/functions/eshop_bank_sync/schema.sql",
+      "sha256": "649bd29b63914e5bf7c5064deccbac473e346cd98e9bdb6f8a281cf0f6d72147"
+    },
+    {
+      "path": "database/functions/eshop_orders/recalculate_order_payment_status.sql",
+      "sha256": "d6fd14986bb5adf3fdcfad0b20a33d26bd68ef6874debdd72489f11ad703e9af"
+    },
+    {
+      "path": "database/functions/eshop_transactions/apply_transaction_pairing.sql",
+      "sha256": "1d6a21c6dc94c23bee753d7dbda3729fb22595fec1bfefd1cae929917927fc19"
+    },
+    {
+      "path": "database/functions/eshop_transactions/get_bank_account_secret.sql",
+      "sha256": "76e76c4c783f67884de59455035e90e0b028507633aaaec31b8699be3e764b37"
+    },
+    {
+      "path": "database/functions/eshop_transactions/get_fetchable_bank_accounts_for_unit.sql",
+      "sha256": "d11e95d21f9011976a7a86766375f0f456d1825131d103310abbda43531d99f3"
+    },
+    {
+      "path": "database/functions/eshop_transactions/get_fetchable_bank_accounts_with_t_count.sql",
+      "sha256": "0928844902f0744b6d00685b4dc1b5ec5f79ccf72a74f8be8efaa54eeb312590"
+    },
+    {
+      "path": "database/functions/eshop_transactions/insert_transactions.sql",
+      "sha256": "2fca2aa3216ab140718ec670a33ca96912d267c24e1924cbfa07e86bcabb5b59"
+    },
+    {
+      "path": "database/functions/eshop_transactions/match_bank_transaction.sql",
+      "sha256": "70d12e7ffa11016bbf00037f5c4a93b55b8b154b7ffe959377451f71c6132932"
+    },
+    {
+      "path": "database/functions/eshop_transactions/process_email_transaction.sql",
+      "sha256": "66a12b5059ca99dd92d5f73d8e66be0cadfcb7e11396052d5e2598ec960d8201"
+    },
+    {
+      "path": "database/tables/tables.sql",
+      "sha256": "0da49a21193966aaf716740c3aaa555dd4ebbe50d49c086fc2ca07a9d735c08f"
+    },
+    {
+      "path": "database/tests/eshop/transactions/bank_sync_atomicity_test.sql",
+      "sha256": "588d6ca4e30cf53c40923968fb7ae8ac9abedb5c663f8c620d0653aec456b864"
+    },
+    {
+      "path": "database/tests/eshop/transactions/bank_sync_ingest_test.sql",
+      "sha256": "3f5171aaa3e6053cfb8e8ca8aa1e1d51ae77046b7b81b1f6d804b46da709f338"
+    },
+    {
+      "path": "database/tests/eshop/transactions/bank_sync_operations_test.sql",
+      "sha256": "8c89d16651acf8724b440f1519d3889757e53884836fe2600d87e4f9c83d5da5"
+    },
+    {
+      "path": "database/tests/eshop/transactions/bank_sync_permissions_test.sql",
+      "sha256": "8e0ef58da07850762c806f910ebe16d8306160349a765c88d437fb26de843938"
+    },
+    {
+      "path": "database/tests/eshop/transactions/bank_sync_ticket_delivery_test.sql",
+      "sha256": "2be0cc100f40ab58d08c4c8b7155290033a2ab6a7f94a190e470d788c3485874"
+    },
+    {
+      "path": "docs/architecture/ai_context.md",
+      "sha256": "c78459866b89d17c05c20388a32d1b63574e00dde650b0929971a0daa0dd691f"
+    },
+    {
+      "path": "docs/backend/edge_functions.md",
+      "sha256": "7b3d9605ac22ea0abfb456a88f28e586cbcfc099edc545212363568c3050156d"
+    },
+    {
+      "path": "docs/operations/banksync/IMPLEMENTATION-2026-10-04.md",
+      "sha256": "0b807e9ccfecf4368570dfddd6a9b4daea2869cbed4175ce66eb59e0bbb37cf1"
+    },
+    {
+      "path": "docs/operations/banksync/install-control-reconcile-cron.sql",
+      "sha256": "85cd20ec04b82c3a46d70fa23b00a8ffd3c8880a98f99d179c55ca1d701c971e"
+    },
+    {
+      "path": "docs/operations/banksync/shared-composition-update.patch",
+      "sha256": "cbe4508f3ea98162964489b8c5291d581a3ae0ac1ae9a942e7a779505f2d02cf"
+    },
+    {
+      "path": "docs/operations/banksync/validation.json",
+      "sha256": "ca0a399a3c228319d49987476a594d43b747bcd761116767ea81e5001864d22b"
+    },
+    {
+      "path": "docs/plans/banksync-integration-EXECUTION-PROMPT-2026-10-03.md",
+      "sha256": "bec84c58bbbc203727e75af1bae957320df87b7754a044df4b894678db9b709d"
+    },
+    {
+      "path": "docs/plans/banksync-integration-plan-2026-10-03.md",
+      "sha256": "796cbc2a109bf3e9e04b14a946b6a74f4f4e194387049f711f88546924c015c8"
+    },
+    {
+      "path": "docs/plans/evidence/banksync-2026-10-03/observations.json",
+      "sha256": "5803352cebac722d107de8b4cdc158e59a407e8341e3711a4a07c2ba5ed22da8"
+    },
+    {
+      "path": "lib/components/bank_accounts/bank_account_model.dart",
+      "sha256": "6fa48c32566782065550ee6a78ac997eedccc773b66a76d7d99b85f164fb5723"
+    },
+    {
+      "path": "lib/components/bank_accounts/bank_account_strings.dart",
+      "sha256": "ac6e9af7adff297c2fca5ffd624efe5897c88a83dfd5775c78f7c44329b57980"
+    },
+    {
+      "path": "lib/components/bank_accounts/db_bank_accounts.dart",
+      "sha256": "f04bd9ed939aeab12e64561280cc8725d11631b7a08f12a8501b39e0eebf7e3e"
+    },
+    {
+      "path": "lib/components/bank_accounts/views/bank_account_connection_tab.dart",
+      "sha256": "19387c7e7fffcd3b51d4b03e5e85f3d82598666f8deba2e6a837d01450d52662"
+    },
+    {
+      "path": "lib/components/bank_accounts/views/bank_account_settings_screen.dart",
+      "sha256": "3c73608c70ccefa7b4d79ab4ab76f809b4a965270cb6805b209ec6f47dd2fb11"
+    },
+    {
+      "path": "supabase/config.toml",
+      "sha256": "f332737853bba0452d0defa964f577461c886df6a0e89c7c7816edda256afef2"
+    },
+    {
+      "path": "supabase/functions/_shared/bankSyncClient.ts",
+      "sha256": "290d3296e062b7861367b06137125fbac0e31babc6cd43d2a185de3d7e7d289d"
+    },
+    {
+      "path": "supabase/functions/_shared/bankSyncOperation.ts",
+      "sha256": "122fb1b7ce05c85e81f26f1843cd8c0cee77de7841946344f33a87961ce03883"
+    },
+    {
+      "path": "supabase/functions/_shared/bankSyncToken.ts",
+      "sha256": "767936a871a1ee2db6d71348c4d778658d884cc50b9c04e212eaf524cff61cb0"
+    },
+    {
+      "path": "supabase/functions/_shared/bankSyncToken_test.ts",
+      "sha256": "2421d340e0b5327ea803c8be70435224a682df5dc86e9f6a35edfffa28467703"
+    },
+    {
+      "path": "supabase/functions/_shared/bankSyncWorkerEnvironment_test.ts",
+      "sha256": "48be4a28763c396d9d7208dbdda9313d78f06b930723973602b138eff7833952"
+    },
+    {
+      "path": "supabase/functions/_shared/emailWorkerEnvironment.ts",
+      "sha256": "15c6af8429cbca276f6634cb2dffa2013a7c961b1b7e34827eedeb13f986350d"
+    },
+    {
+      "path": "supabase/functions/bank-sync-manage/index.ts",
+      "sha256": "9dee2567fc3127150cc6c4750b6d4146bc509de52711362d468909a92a4f2732"
+    },
+    {
+      "path": "supabase/functions/bank-sync-reconcile/index.ts",
+      "sha256": "263d12e3621e5bf758e3577f7e54a7c59569e4b9e20565f92df78f7e9d24f3e4"
+    },
+    {
+      "path": "supabase/functions/bank-sync-webhook/handler.ts",
+      "sha256": "c44e50ca90f575805ea07a2e6f89484129bc9d1de9949bffcc622c5bafea4927"
+    },
+    {
+      "path": "supabase/functions/bank-sync-webhook/handler_test.ts",
+      "sha256": "c056726496fd47eb47c729f0ce48dffc0bae64ae87d125ec3943894599a23c02"
+    },
+    {
+      "path": "supabase/functions/bank-sync-webhook/index.ts",
+      "sha256": "e85dea405ff890e6ad112f913c727515a7c5ea1c89403319238bcdd46ed33153"
+    },
+    {
+      "path": "supabase/functions/fetch-transactions/index.ts",
+      "sha256": "504da81785a1b1fb4f6822284be21c26f6f69fa26528829f1270047f43c94adb"
+    },
+    {
+      "path": "supabase/migrations/20261004193000_bank_sync_canonical_ingress.sql",
+      "sha256": "f004273ef8cb494845ccc6727b0a89168e0dca534895ba897d167afc50664b8a"
+    },
+    {
+      "path": "web_client/scripts/test_bank_sync_concurrency.js",
+      "sha256": "c051d2676cd43865f1574c0d0682ddd0d7db6a0029394b5973e814bd88d6fc3b"
+    },
+    {
+      "path": "web_client/scripts/test_bank_sync_receiver.ts",
+      "sha256": "9515c52c2a6ab684bcaec81af059fe4228489652de533a0f3480b9f08ef7d023"
+    }
+  ],
+  "email_delivery_contract": "BankSync webhook -> atomic Festapp payment/ticket intent -> existing global email queue with pause, quota, rate and retry gates; registration/reset/manual emails share that queue.",
+  "composition_patch": "docs/operations/banksync/shared-composition-update.patch"
+}

@@ -25,3 +25,23 @@ Creating a new account auto-grants Bank Account Admin rights to the creator.
 - `eshop.unit_bank_accounts` -- link table (Unit ID, Account ID, Priority)
 - `eshop.bank_account_users` -- permissions (User ID, Account ID, `is_admin`, `is_support`)
 - `eshop.secrets` -- secure token storage
+
+
+## Canonical token updates and activation errors
+
+For a BankSync account, “Update token” calls `bank-sync-manage` -> tenant-scoped
+BankSync `PUT /bank-accounts/:id/fio-token`. The operation verifies the full
+stored token digest before reporting storage success. Legacy SQL token updates
+are blocked after cutover; deploying the backend requires deploying the selected
+tenant client as well. Never claim end-to-end cutover from a backend deploy alone.
+
+Fio token creation is not authorization: the user must authorize it in Fio
+Internetbanking (Settings -> API), then allow up to five minutes for activation.
+On 2026-10-04 an unauthorized token returned HTTP 500 after 30.4 seconds, which
+an earlier 20-second client timeout hid. Fio documents 500 as nonexistent/inactive
+token: https://www.fio.cz/docs/cz/API_Bankovnictvi.pdf (section 8).
+`fio_token_invalid_or_inactive` is a stable error code, not a raw bank response.
+The UI distinguishes token storage success from bank verification failure.
+Polling stays enabled so authorization later recovers without re-uploading.
+Account settings refresh BankSync status and clear stale errors after a successful
+bank pull. A transport timeout or proxy 500 must never be called an invalid token.

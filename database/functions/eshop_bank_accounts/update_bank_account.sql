@@ -67,6 +67,12 @@ BEGIN
             RAISE EXCEPTION 'Permission denied: Only bank account admins can update details.';
         END IF;
 
+        PERFORM 1 FROM eshop.bank_accounts WHERE id=p_id FOR UPDATE;
+        IF EXISTS (SELECT 1 FROM eshop.bank_sync_connections WHERE bank_account_id=p_id)
+          AND EXISTS (SELECT 1 FROM eshop.bank_accounts WHERE id=p_id
+            AND (account_number IS DISTINCT FROM v_account_number OR type IS DISTINCT FROM p_type)) THEN
+          RAISE EXCEPTION 'BANK_SYNC_ACCOUNT_IDENTITY_IMMUTABLE';
+        END IF;
         UPDATE eshop.bank_accounts
         SET
             account_number = v_account_number,

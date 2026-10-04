@@ -15,6 +15,7 @@ DECLARE
   v_match jsonb;
 BEGIN
   PERFORM public.require_service_role();
+  PERFORM public.require_legacy_bank_authority(v_bank_account_id);
   IF v_source NOT IN ('fio_email', 'airbank_email', 'legacy_email') THEN RAISE EXCEPTION 'EMAIL_SOURCE_INVALID'; END IF;
 
   UPDATE eshop.bank_accounts SET last_fetch_time = timezone('UTC', now()), updated_at = now()

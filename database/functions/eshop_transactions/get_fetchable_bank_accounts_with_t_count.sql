@@ -23,6 +23,8 @@ BEGIN
   FROM eshop.bank_accounts ba
   JOIN eshop.secrets s ON ba.secret = s.id
   WHERE ba.is_fetch_enabled = TRUE
+    AND NOT EXISTS (SELECT 1 FROM eshop.bank_sync_connections c WHERE c.legacy_blocked_at IS NOT NULL
+      AND (c.bank_account_id=ba.id OR c.id IN (SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=ba.id)))
     -- Check if last_fetch_time is either null or the waiting period has elapsed
     AND (ba.last_fetch_time IS NULL
          OR NOW() - ba.last_fetch_time >= (COALESCE(ba.min_fetch_wait_seconds, 0) || ' seconds')::INTERVAL)

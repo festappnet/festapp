@@ -6,15 +6,17 @@ import sys
 
 path = pathlib.Path(sys.argv[1])
 source = path.read_text()
-source = source.replace('"google-auth-complete"].includes', '"google-auth-complete", "auth-email-hook", "email-provider-events", "email-confirmation-status", "process-email-queue"].includes')
-source = source.replace('"email-confirmation-status"].includes', '"email-confirmation-status", "process-email-queue"].includes')
+source = source.replace('"google-auth-complete"].includes', '"google-auth-complete", "auth-email-hook", "email-provider-events", "email-confirmation-status", "process-email-queue", "bank-sync-webhook", "bank-sync-reconcile"].includes')
+source = source.replace('"email-confirmation-status"].includes', '"email-confirmation-status", "process-email-queue", "bank-sync-webhook", "bank-sync-reconcile"].includes')
 marker = '/* festapp-google-proof-v1 */'
+if marker in source and '"bank-sync-webhook"' not in source:
+    source=source.replace('"process-email-queue"].includes', '"process-email-queue", "bank-sync-webhook", "bank-sync-reconcile"].includes')
 if marker not in source:
     condition = re.compile(r"if \(req.method !== (['\"])OPTIONS\1 && VERIFY_JWT\)")
     match = condition.search(source)
     if match is None or not re.search(r'const service_name\s*=\s*path_parts\[1\]', source[match.end():]):
         raise SystemExit('upstream Function JWT routing contract changed')
-    replacement = 'if (req.method !== "OPTIONS" && VERIFY_JWT && !["google-auth-start", "google-auth-callback", "google-auth-complete", "auth-email-hook", "email-provider-events", "email-confirmation-status", "process-email-queue"].includes(new URL(req.url).pathname.split("/")[1])) ' + marker
+    replacement = 'if (req.method !== "OPTIONS" && VERIFY_JWT && !["google-auth-start", "google-auth-callback", "google-auth-complete", "auth-email-hook", "email-provider-events", "email-confirmation-status", "process-email-queue", "bank-sync-webhook", "bank-sync-reconcile"].includes(new URL(req.url).pathname.split("/")[1])) ' + marker
     source = source[:match.start()] + replacement + source[match.end():]
 
 # Remove the former standalone sender route guard from an installed router.
