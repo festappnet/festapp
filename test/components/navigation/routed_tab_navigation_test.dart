@@ -46,6 +46,21 @@ class _ActivityProbeState extends State<_ActivityProbe> {
 }
 
 void main() {
+  testWidgets('nested forms route follows the containing tab activity',
+      (tester) async {
+    final activity = <bool>[];
+    final router = FixtureRouter(Access());
+    router.formsListBuilder = (_) => _ActivityProbe(activity.add);
+    await mount(tester, router, '/occasion-a/reservations/forms');
+    expect(activity.last, isTrue);
+    await tester.tap(find.text('Orders'));
+    await tester.pumpAndSettle();
+    expect(activity.last, isFalse);
+    await tester.tap(find.text('Forms'));
+    await tester.pumpAndSettle();
+    expect(activity.last, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets(
       'retained nested route reports activity on inner and outer returns',
       (tester) async {
