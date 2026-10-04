@@ -106,13 +106,13 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   Future<void> remove(ProductPriceWave wave) async {
     final confirmed = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (_) => AlertDialog(scrollable: true,
                 title: Text(OrdersStrings.cancelWave),
                 content: Text(OrdersStrings.cancelWaveConfirm),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: Text(CommonStrings.cancel)),
+                      child: Text(CommonStrings.storno)),
                   FilledButton(
                       onPressed: () => Navigator.pop(context, true),
                       child: Text(CommonStrings.confirm))
@@ -129,182 +129,261 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   @override
   Widget build(BuildContext context) {
     final waves = ProductPriceWave.columns(bundle.priceWaves, bundle.products);
-    final colors = Theme.of(context).colorScheme;
-    final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
     return Dialog.fullscreen(
-        child: Scaffold(
-            appBar: AppBar(
-                title: Text(OrdersStrings.priceWaves),
-                leading: IconButton(
-                    tooltip: CommonStrings.close,
-                    onPressed: busy ? null : () => Navigator.pop(context),
-                    icon: const Icon(Icons.close)),
-                actions: [
-                  IconButton(
-                      tooltip: OrdersStrings.priceRefreshAction,
-                      onPressed: busy ? null : reload,
-                      icon: const Icon(Icons.refresh))
-                ]),
-            body: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Wrap(
-                          spacing: 16,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(OrdersStrings.priceWaves),
+          leading: IconButton(
+            tooltip: CommonStrings.close,
+            onPressed: busy ? null : () => Navigator.pop(context),
+            icon: const Icon(Icons.close),
+          ),
+          actions: [
+            IconButton(
+              tooltip: OrdersStrings.priceRefreshAction,
+              onPressed: busy ? null : reload,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (widget.canEdit)
+                      FilledButton.icon(
+                        onPressed: busy ? null : () => term(),
+                        icon: const Icon(Icons.add),
+                        label: Text(OrdersStrings.addWave),
+                      ),
+                    Text(
+                      OrdersStrings.waveEmptyPrice,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (busy) const LinearProgressIndicator(minHeight: 2),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        child: Column(
                           children: [
-                            if (widget.canEdit)
-                              FilledButton.icon(
-                                  onPressed: busy ? null : () => term(),
-                                  icon: const Icon(Icons.add),
-                                  label: Text(OrdersStrings.addWave)),
-                            Text(OrdersStrings.waveEmptyPrice,
-                                style: Theme.of(context).textTheme.bodySmall),
-                          ])),
-                  if (busy) const LinearProgressIndicator(minHeight: 2),
-                  Expanded(
-                      child: waves.isEmpty
-                          ? Center(child: Text(OrdersStrings.noWaves))
-                          : SingleChildScrollView(
-                              child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: DataTable(
-                                      headingRowHeight: 86 * scale,
-                                      dataRowMinHeight: 76 * scale,
-                                      dataRowMaxHeight: 110 * scale,
-                                      columnSpacing: 20,
-                                      horizontalMargin: 20,
-                                      headingRowColor: WidgetStatePropertyAll(
-                                          colors.surfaceContainerLow),
-                                      columns: [
-                                        DataColumn(
-                                            label: SizedBox(
-                                                width: 200,
-                                                child: Text(OrdersStrings
-                                                    .waveProduct))),
-                                        DataColumn(
-                                            label: SizedBox(
-                                                width: 130,
-                                                child: Text(OrdersStrings
-                                                    .scheduledCurrentPrice))),
-                                        for (final wave in waves)
-                                          DataColumn(
-                                              label: SizedBox(
-                                                  width: 180,
-                                                  child: Row(children: [
-                                                    Expanded(
-                                                        child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                          Text(
-                                                              DateFormat(
-                                                                      'dd. MM. yyyy')
-                                                                  .format(wave
-                                                                      .time
-                                                                      .toLocal()),
-                                                              style: const TextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600)),
-                                                          Text(
-                                                              DateFormat(
-                                                                      'HH:mm')
-                                                                  .format(wave
-                                                                      .time
-                                                                      .toLocal()),
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodySmall)
-                                                        ])),
-                                                    if (widget.canEdit &&
-                                                        wave.id != null)
-                                                      PopupMenuButton<String>(
-                                                          enabled: !busy,
-                                                          onSelected: (value) =>
-                                                              value == 'move'
-                                                                  ? term(wave)
-                                                                  : remove(
-                                                                      wave),
-                                                          itemBuilder: (_) => [
-                                                                PopupMenuItem(
-                                                                    value:
-                                                                        'move',
-                                                                    child: Text(
-                                                                        OrdersStrings
-                                                                            .moveWave)),
-                                                                PopupMenuItem(
-                                                                    value:
-                                                                        'remove',
-                                                                    child: Text(
-                                                                        OrdersStrings
-                                                                            .cancelWave))
-                                                              ])
-                                                  ])))
-                                      ],
-                                      rows: [
-                                        for (final product in bundle.products)
-                                          DataRow(cells: [
-                                            DataCell(SizedBox(
-                                                width: 200,
-                                                child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(product.title ?? '',
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow
-                                                              .ellipsis),
-                                                      if (product.isHidden ==
-                                                          true)
-                                                        Text(
-                                                            OrdersStrings
-                                                                .waveHidden,
-                                                            style: TextStyle(
-                                                                color: colors
-                                                                    .onSurfaceVariant,
-                                                                fontSize: 12))
-                                                    ]))),
-                                            DataCell(Text(scheduledPrice(
+                            _timelinePoint(
+                              title: OrdersStrings.waveNow,
+                              current: true,
+                              last: waves.isEmpty,
+                              children: [
+                                for (final product in bundle.products)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product.title ?? '',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Wrap(
+                                          spacing: 12,
+                                          runSpacing: 4,
+                                          children: [
+                                            Text(
+                                              scheduledPrice(
                                                 context,
                                                 product.price,
-                                                product.currencyCode))),
-                                            for (final wave in waves)
-                                              DataCell(WaveProductCell(
-                                                  wave: wave,
-                                                  product: product,
-                                                  onOpen: widget.canEdit &&
-                                                          !busy &&
-                                                          wave.time.isAfter(
-                                                              product
-                                                                  .priceNow) &&
-                                                          wave
-                                                                  .prices(
-                                                                      product)
-                                                                  .length <=
-                                                              1 &&
-                                                          wave
-                                                                  .visibility(
-                                                                      product)
-                                                                  .length <=
-                                                              1
-                                                      ? () =>
-                                                          target(wave, product)
-                                                      : null)),
-                                          ])
-                                      ])))),
-                ])));
+                                                product.currencyCode,
+                                              ),
+                                            ),
+                                            if (product.isHidden == true)
+                                              Text(
+                                                OrdersStrings.waveHiddenState,
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            for (var i = 0; i < waves.length; i++)
+                              _timelinePoint(
+                                title: scheduledTime(waves[i].time),
+                                last: i == waves.length - 1,
+                                menu: widget.canEdit && waves[i].id != null
+                                    ? PopupMenuButton<String>(
+                                        enabled: !busy,
+                                        onSelected: (value) => value == 'move'
+                                            ? term(waves[i])
+                                            : remove(waves[i]),
+                                        itemBuilder: (_) => [
+                                          PopupMenuItem(
+                                            value: 'move',
+                                            child: Text(OrdersStrings.moveWave),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'remove',
+                                            child: Text(
+                                              OrdersStrings.cancelWave,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : null,
+                                children: [
+                                  for (final product in bundle.products)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      child: LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final compact = constraints.maxWidth <
+                                                  420 ||
+                                              MediaQuery.textScalerOf(context)
+                                                      .scale(16) >
+                                                  24;
+                                          final title = Text(
+                                            product.title ?? '',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          );
+                                          final cell = WaveProductCell(
+                                            wave: waves[i],
+                                            product: product,
+                                            width:
+                                                compact ? double.infinity : 180,
+                                            onOpen: widget.canEdit &&
+                                                    !busy &&
+                                                    waves[i].time.isAfter(
+                                                          product.priceNow,
+                                                        ) &&
+                                                    waves[i]
+                                                            .prices(product)
+                                                            .length <=
+                                                        1 &&
+                                                    waves[i]
+                                                            .visibility(product)
+                                                            .length <=
+                                                        1
+                                                ? () =>
+                                                    target(waves[i], product)
+                                                : null,
+                                          );
+                                          return compact
+                                              ? Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .stretch,
+                                                  children: [
+                                                    title,
+                                                    const SizedBox(height: 8),
+                                                    cell,
+                                                  ],
+                                                )
+                                              : Row(
+                                                  children: [
+                                                    Expanded(child: title),
+                                                    const SizedBox(width: 16),
+                                                    cell,
+                                                  ],
+                                                );
+                                        },
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _timelinePoint({
+    required String title,
+    bool current = false,
+    bool last = false,
+    Widget? menu,
+    required List<Widget> children,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return Stack(children: [
+      if (!last)
+        Positioned(
+            left: 9,
+            top: 20,
+            bottom: 0,
+            child: Container(width: 2, color: colors.outlineVariant)),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+            width: 20,
+            child: Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Center(
+                    child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: current ? colors.primary : colors.surface,
+                            border: Border.all(
+                                color: colors.primary, width: 2)))))),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: current
+                      ? colors.primaryContainer
+                      : colors.surfaceContainerLow,
+                  child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(children: [
+                            Expanded(
+                                child: Text(title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.w700))),
+                            if (menu != null) menu
+                          ]),
+                          const Divider(height: 24),
+                          ...children,
+                        ],
+                      )),
+                ))),
+      ]),
+    ]);
   }
 }
 
@@ -312,8 +391,9 @@ class WaveProductCell extends StatelessWidget {
   final ProductPriceWave wave;
   final ProductModel product;
   final VoidCallback? onOpen;
+  final double width;
   const WaveProductCell(
-      {super.key, required this.wave, required this.product, this.onOpen});
+      {super.key, required this.wave, required this.product, this.onOpen, this.width = 180});
   @override
   Widget build(BuildContext context) {
     final price = wave.prices(product).firstOrNull;
@@ -330,7 +410,7 @@ class WaveProductCell extends StatelessWidget {
             ? colors.onSurfaceVariant
             : colors.primary;
     return SizedBox(
-        width: 180,
+        width: width,
         child: OutlinedButton(
             onPressed: onOpen,
             style: OutlinedButton.styleFrom(
@@ -407,13 +487,13 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
     if (dirty) {
       final discard = await showDialog<bool>(
           context: context,
-          builder: (_) => AlertDialog(
+          builder: (_) => AlertDialog(scrollable: true,
                   title: Text(CommonStrings.discardChanges),
                   content: Text(CommonStrings.discardChangesConfirmation),
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: Text(CommonStrings.cancel)),
+                        child: Text(CommonStrings.storno)),
                     FilledButton(
                         onPressed: () => Navigator.pop(context, true),
                         child: Text(CommonStrings.confirm))
@@ -451,7 +531,7 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
       onPopInvokedWithResult: (popped, _) {
         if (!popped) close();
       },
-      child: AlertDialog(
+      child: AlertDialog(scrollable: true,
           title: Text(widget.product.title ?? ''),
           content: SizedBox(
               width: 360,
@@ -503,7 +583,7 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
           actions: [
             TextButton(
                 onPressed: busy ? null : close,
-                child: Text(CommonStrings.cancel)),
+                child: Text(CommonStrings.storno)),
             FilledButton(
                 onPressed: busy ? null : submit,
                 child: Text(CommonStrings.save))
@@ -555,7 +635,7 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: !busy,
-      child: AlertDialog(
+      child: AlertDialog(scrollable: true,
           title: Text(widget.wave == null
               ? OrdersStrings.addWave
               : OrdersStrings.moveWave),
@@ -616,7 +696,7 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
           actions: [
             TextButton(
                 onPressed: busy ? null : () => Navigator.pop(context, false),
-                child: Text(CommonStrings.cancel)),
+                child: Text(CommonStrings.storno)),
             FilledButton(
                 onPressed: busy ? null : submit,
                 child: Text(CommonStrings.save))
