@@ -83,4 +83,36 @@ void main() {
             call['p_occasion'] == null && call['p_organization'] == 2),
         isTrue);
   });
+  testWidgets('order-only history keeps scope and filters read-only',
+      (tester) async {
+    final calls = <Map<String, dynamic>>[];
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: EmailDeliveryHistory(
+      occasionId: 3,
+      organizationId: 2,
+      embedded: true,
+      ordersOnly: true,
+      read: (name, args) async {
+        calls.add({'name': name, ...args});
+        return <dynamic>[];
+      },
+    ))));
+    await tester.pumpAndSettle();
+    expect(calls.single['name'], 'get_email_delivery_page');
+    expect(calls.single['p_orders_only'], true);
+    expect(calls.single['p_occasion'], 3);
+    expect(find.byType(SwitchListTile), findsNothing);
+    await tester.tap(find.byType(DropdownButton<String>).last);
+    await tester.pumpAndSettle();
+    expect(find.text('EmailDelivery.kind.registration'), findsNothing);
+    expect(find.text('EmailDelivery.kind.sign_in'), findsNothing);
+    expect(find.text('EmailDelivery.kind.reset_password'), findsNothing);
+    await tester.tap(find.text('EmailDelivery.kind.order_update').last);
+    await tester.pumpAndSettle();
+    expect(calls.last['p_kind'], 'order_update');
+    expect(calls.last['p_orders_only'], true);
+    expect(calls.every((call) => call['name'] == 'get_email_delivery_page'),
+        isTrue);
+  });
 }
