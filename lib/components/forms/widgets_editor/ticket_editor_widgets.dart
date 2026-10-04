@@ -91,7 +91,23 @@ class TicketEditorWidgets {
       VoidCallback refresh) {
     List<Widget> children = [];
     if (FeatureService.isFeatureEnabled(FeatureConstants.blueprint)) {
-      children.add(buildSpotFieldEditor(context, form, refresh));
+      children.add(buildSpotFieldEditor(context, form, () {
+        if (!form.usesSeatSelection) {
+          for (final productType in allProductTypes
+              .where((type) => type.type == ProductModel.spotType)) {
+            final alreadyAdded = form.relatedFields.any((field) =>
+                field.isTicketField == true &&
+                field.type == FormHelper.fieldTypeProductType &&
+                (identical(field.productType, productType) ||
+                    (productType.id != null &&
+                        field.productType?.id == productType.id)));
+            if (!alreadyAdded) {
+              _addExistingProductType(form, productType);
+            }
+          }
+        }
+        refresh();
+      }));
       children.add(const SizedBox(height: 16));
     }
 
