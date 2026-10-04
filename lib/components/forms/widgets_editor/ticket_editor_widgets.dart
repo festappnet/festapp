@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'package:fstapp/components/eshop/models/product_type_model.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -51,7 +52,8 @@ class TicketEditorWidgets {
     final productTypeFields = form.relatedFields
         .where((f) =>
             f.isTicketField == true &&
-            f.type == FormHelper.fieldTypeProductType)
+            f.type == FormHelper.fieldTypeProductType &&
+            f.productType?.type != ProductModel.spotType)
         .toList();
     if (productTypeFields.isEmpty) {
       children.add(Padding(
@@ -96,7 +98,8 @@ class TicketEditorWidgets {
     final productTypeFields = form.relatedFields
         .where((f) =>
             f.isTicketField == true &&
-            f.type == FormHelper.fieldTypeProductType)
+            f.type == FormHelper.fieldTypeProductType &&
+            f.productType?.type != ProductModel.spotType)
         .toList();
     productTypeFields.sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
     children.add(Text(
@@ -125,7 +128,9 @@ class TicketEditorWidgets {
                 .toSet();
 
             final availableProductTypes = allProductTypes
-                .where((pt) => !existingPtIds.contains(pt.id))
+                .where((pt) =>
+                    pt.type != ProductModel.spotType &&
+                    !existingPtIds.contains(pt.id))
                 .toList();
 
             dynamic result;

@@ -1,6 +1,8 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -30,6 +32,8 @@ class _FormsTabState extends State<FormsListView> {
   List<FormModel> _forms = [];
   String? occasionLink;
   bool _isLoading = true;
+  String? _loadError;
+  int _loadGeneration = 0;
 
   String? _previousOccasionLink;
 
@@ -48,18 +52,22 @@ class _FormsTabState extends State<FormsListView> {
 
   Future<void> loadData() async {
     if (!mounted) return;
-    if (!_isLoading) {
-      setState(() => _isLoading = true);
-    }
-    if (occasionLink != null) {
+    final generation = ++_loadGeneration;
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    try {
       final identity = occasionLink;
+      if (identity == null) return;
       final forms = await (widget.loadForms ??
-          DbForms.getAllFormsByOccasionLink)(identity!);
-      if (!mounted || occasionLink != identity) return;
+          DbForms.getAllFormsByOccasionLink)(identity);
+      if (!mounted || generation != _loadGeneration) return;
       _forms = forms;
       if (forms.length == 1 &&
           forms.single.link?.isNotEmpty == true &&
-          context.routeData.queryParams.optBool('list') != true) {
+          context.routeData.queryParams.get('list')?.toString().toLowerCase() !=
+              'true') {
         // Replace the selector so Back does not bounce through it again.
         context.router.markUrlStateForReplace();
         await context.router.replaceAll([
@@ -70,9 +78,14 @@ class _FormsTabState extends State<FormsListView> {
         ]);
         return;
       }
-    }
-    if (mounted) {
-      setState(() => _isLoading = false);
+    } catch (error) {
+      if (mounted && generation == _loadGeneration) {
+        _loadError = ExceptionHandler.toFriendlyMessage(error);
+      }
+    } finally {
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -172,9 +185,22 @@ class _FormsTabState extends State<FormsListView> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _forms.isEmpty
-              ? _buildEmptyState()
-              : _buildFormsGrid(),
+          : _loadError != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_loadError!),
+                      TextButton(
+                        onPressed: loadData,
+                        child: Text(CommonStrings.retry),
+                      ),
+                    ],
+                  ),
+                )
+              : _forms.isEmpty
+                  ? _buildEmptyState()
+                  : _buildFormsGrid(),
     );
   }
 }
