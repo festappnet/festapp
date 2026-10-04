@@ -1,3 +1,4 @@
+import 'product_price_wave.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'product_price_change.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ class ProductModel extends ITrinaRowModel {
   bool? deletionAllowed;
   bool get canDelete => id == null || deletionAllowed == true;
   List<ProductPriceChange> priceChanges = [];
+  List<ProductVisibilityChange> visibilityChanges = [];
   DateTime? priceServerTime;
   Duration priceClockOffset = Duration.zero;
   DateTime get priceNow =>
@@ -178,6 +180,7 @@ class ProductModel extends ITrinaRowModel {
     this.deleteBlockedReason,
     this.deletionAllowed,
     List<ProductPriceChange>? priceChanges,
+    List<ProductVisibilityChange>? visibilityChanges,
     this.priceServerTime,
     this.priceClockOffset = Duration.zero,
     this.createdAt,
@@ -202,7 +205,8 @@ class ProductModel extends ITrinaRowModel {
     this.isDynamicallyAvailable,
     List<int>? formIds,
     this.formTitles,
-  })  : priceChanges = priceChanges ?? [],
+  })  : visibilityChanges = visibilityChanges ?? [],
+        priceChanges = priceChanges ?? [],
         includedInventories = includedInventories ?? [],
         formIds = formIds ?? [];
 
@@ -210,6 +214,9 @@ class ProductModel extends ITrinaRowModel {
     Map<String, dynamic>? data = json[TbEshop.products.data];
 
     return ProductModel(
+      visibilityChanges: (json['visibility_changes'] as List? ?? [])
+          .map((c) => ProductVisibilityChange.fromJson(c))
+          .toList(),
       priceChanges: (json['price_changes'] as List? ?? [])
           .map((c) => ProductPriceChange.fromJson(c))
           .toList(),
@@ -350,6 +357,7 @@ class ProductModel extends ITrinaRowModel {
       order: json[EshopColumns.PRODUCT_ORDER],
       maximum: json[EshopColumns.PRODUCT_MAXIMUM],
       priceChanges: model?.priceChanges,
+      visibilityChanges: model?.visibilityChanges,
       priceServerTime: model?.priceServerTime,
       priceClockOffset: model?.priceClockOffset ?? Duration.zero,
       includedInventories: model?.includedInventories ?? [],
@@ -399,6 +407,7 @@ class ProductModel extends ITrinaRowModel {
   }) {
     return ProductModel(
       priceChanges: priceChanges,
+      visibilityChanges: visibilityChanges,
       priceServerTime: priceServerTime,
       priceClockOffset: priceClockOffset,
       id: id ?? this.id,
