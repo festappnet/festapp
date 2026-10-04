@@ -36,6 +36,7 @@ class _UsersTabState extends State<UsersTab> {
     final identifiers = [
       UserColumns.ID,
       UserColumns.EMAIL,
+      if (RightsService.isAdmin()) UserColumns.EMAIL_HISTORY,
       UserColumns.NAME,
       UserColumns.SURNAME,
       UserColumns.GROUP,

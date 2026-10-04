@@ -1,9 +1,12 @@
 import type { DeliverEmailInput } from "../_shared/emailDelivery.ts";
 
-export const csmOrganizationId = 9;
+export function configuredAppLinksOrganization() {
+  const value = Number(Deno.env.get("APP_LINKS_ORGANIZATION_ID"));
+  return Number.isSafeInteger(value) && value > 0 ? value : null;
+}
 
 export function isCsmOrganization(organizationId: unknown) {
-  return organizationId === csmOrganizationId;
+  return organizationId === configuredAppLinksOrganization();
 }
 
 export type AppLinksDeliveryInput = {
@@ -19,17 +22,7 @@ export type AppLinksDeliveryInput = {
 
 export type AppLinksDeliveryDependencies = {
   deliverEmail(input: DeliverEmailInput): Promise<unknown>;
-  markSent(occasionId: number, userId: string): Promise<void>;
 };
-
-export class AppLinksStatusUpdateError extends Error {
-  constructor(cause: unknown) {
-    super("Application links were delivered but the status update failed", {
-      cause,
-    });
-    this.name = "AppLinksStatusUpdateError";
-  }
-}
 
 export async function deliverAppLinks(
   input: AppLinksDeliveryInput,
@@ -47,14 +40,5 @@ export async function deliverAppLinks(
     substitutions: { appLinks: input.appLinks },
     from: `${input.appName} | Festapp <${input.fromEmail}>`,
   });
-  let lastStatusError: unknown;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      await dependencies.markSent(input.occasionId, input.userId);
-      return;
-    } catch (error) {
-      lastStatusError = error;
-    }
-  }
-  throw new AppLinksStatusUpdateError(lastStatusError);
+  // Acceptance and the app_links_sent projection are owned by canonical SQL.
 }

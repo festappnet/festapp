@@ -310,8 +310,7 @@
   let deferredPrompt;
 
   window.addEventListener('beforeinstallprompt', (e) => {
-    // Retain the browser event for Festapp's explicit install button.
-    e.preventDefault();
+    // Retain the event without suppressing the browser's native installation affordance.
     deferredPrompt = e;
     if (typeof hasPrompt === 'function') hasPrompt();
   });

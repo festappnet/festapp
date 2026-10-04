@@ -60,7 +60,10 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.match(compose, /FESTAPP_SUPABASE_ADMIN_HOSTNAME/);
   assert.match(compose, /FESTAPP_SUPABASE_ADMIN_BASIC_AUTH/);
   assert.match(compose, /QR_RATE_SALT: \$\{QR_RATE_SALT:\?configure QR_RATE_SALT/);
-  assert.match(compose, /SMTP_HOSTNAME: \$\{SMTP_HOST\}/);
+  assert.doesNotMatch(compose, /SMTP_HOSTNAME:/);
+  const emailCompose=fs.readFileSync(path.join(runtime,'docker-compose.email.yml'),'utf8');
+  assert.match(emailCompose,/EMAIL_SES_ACCESS_KEY_ID:/);
+  assert.doesNotMatch(compose,/EMAIL_SES_ACCESS_KEY_ID:/);
   assert.match(compose, /PROJECT_URL: http:\/\/api-gw:8000/);
   assert.doesNotMatch(compose, /5432:5432/);
   assert.equal((compose.match(/@sha256:/g) ?? []).length, 13);

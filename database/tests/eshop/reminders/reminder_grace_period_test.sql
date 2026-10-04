@@ -85,26 +85,20 @@ BEGIN
         data = COALESCE(data, '{}'::jsonb) || '{"current_version_reminded": false}'::jsonb
     WHERE id = v_payment_info_id;
 
-    DELETE FROM public.queue_emails WHERE occasion = v_occasion_id;
+    DELETE FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND occasion = v_occasion_id;
 
     -- ==================================================================
     -- Test 1: stale entry (target_time 8 days in past) is invalidated + deleted
     -- ==================================================================
 
-    INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
-    VALUES (
-        NOW() - interval '8 days',
-        'TICKET_ORDER_REMINDER',
-        jsonb_build_object('order_id', v_order_id),
-        v_org_id, v_occasion_id, v_unit_id
-    )
-    RETURNING id INTO v_stale_id;
+    SELECT public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object('order_id', v_order_id),v_org_id,v_occasion_id,v_unit_id,NOW() - interval '8 days',gen_random_uuid()::text) INTO v_result;
+    SELECT id INTO v_stale_id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid;
 
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     PERFORM assert_true(
-        NOT EXISTS(SELECT 1 FROM public.queue_emails WHERE id = v_stale_id),
-        'Test 1: stale entry (8d old) should be deleted from queue'
+        NOT EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND id = v_stale_id),
+        'Test 1: stale entry (8d old) should be ineligible for delivery, with audit retained'
     );
 
     PERFORM assert_true(
@@ -122,19 +116,13 @@ BEGIN
     -- Test 2: entry within grace period (6 days old) is still returned
     -- ==================================================================
 
-    INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
-    VALUES (
-        NOW() - interval '6 days',
-        'TICKET_ORDER_REMINDER',
-        jsonb_build_object('order_id', v_order_id),
-        v_org_id, v_occasion_id, v_unit_id
-    )
-    RETURNING id INTO v_fresh_id;
+    SELECT public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object('order_id', v_order_id),v_org_id,v_occasion_id,v_unit_id,NOW() - interval '6 days',gen_random_uuid()::text) INTO v_result;
+    SELECT id INTO v_fresh_id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid;
 
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     PERFORM assert_true(
-        EXISTS(SELECT 1 FROM public.queue_emails WHERE id = v_fresh_id),
+        EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND id = v_fresh_id),
         'Test 2: entry within grace period (6d) should remain in queue'
     );
 
@@ -153,21 +141,15 @@ BEGIN
     -- Test 3: boundary — entry exactly at 7-day boundary (slightly before) is dropped
     -- ==================================================================
 
-    DELETE FROM public.queue_emails WHERE occasion = v_occasion_id;
+    DELETE FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND occasion = v_occasion_id;
 
-    INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
-    VALUES (
-        NOW() - interval '7 days' - interval '1 minute',
-        'TICKET_ORDER_REMINDER',
-        jsonb_build_object('order_id', v_order_id),
-        v_org_id, v_occasion_id, v_unit_id
-    )
-    RETURNING id INTO v_stale_id;
+    SELECT public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object('order_id', v_order_id),v_org_id,v_occasion_id,v_unit_id,NOW() - interval '7 days' - interval '1 minute',gen_random_uuid()::text) INTO v_result;
+    SELECT id INTO v_stale_id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid;
 
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     PERFORM assert_true(
-        NOT EXISTS(SELECT 1 FROM public.queue_emails WHERE id = v_stale_id),
+        NOT EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND id = v_stale_id),
         'Test 3: entry just past 7-day boundary should be dropped'
     );
 
@@ -177,41 +159,30 @@ BEGIN
     -- Test 4: deposit reminder (with is_deposit_reminder flag) also respects grace
     -- ==================================================================
 
-    INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
-    VALUES (
-        NOW() - interval '10 days',
-        'TICKET_ORDER_REMINDER',
-        jsonb_build_object('order_id', v_order_id, 'is_deposit_reminder', true),
-        v_org_id, v_occasion_id, v_unit_id
-    )
-    RETURNING id INTO v_stale_id;
+    SELECT public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object('order_id', v_order_id, 'is_deposit_reminder', true),v_org_id,v_occasion_id,v_unit_id,NOW() - interval '10 days',gen_random_uuid()::text) INTO v_result;
+    SELECT id INTO v_stale_id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid;
 
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     PERFORM assert_true(
-        NOT EXISTS(SELECT 1 FROM public.queue_emails WHERE id = v_stale_id),
+        NOT EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND id = v_stale_id),
         'Test 4: stale deposit reminder should also be dropped by grace period'
     );
 
     RAISE NOTICE 'Test 4 PASSED: grace period applies to deposit reminders too';
 
     -- ==================================================================
+    UPDATE eshop.orders SET state='paid' WHERE id=v_order_id;
     -- Test 5: PAYMENT_DONE is NOT affected by grace (different code path)
     -- ==================================================================
 
-    INSERT INTO public.queue_emails (target_time, code, data, organization, occasion, unit)
-    VALUES (
-        NOW() - interval '30 days',
-        'TICKET_ORDER_PAYMENT_DONE',
-        jsonb_build_object('order_id', v_order_id),
-        v_org_id, v_occasion_id, v_unit_id
-    )
-    RETURNING id INTO v_fresh_id;
+    SELECT public.enqueue_order_email('TICKET_ORDER_PAYMENT_DONE',jsonb_build_object('order_id', v_order_id),v_org_id,v_occasion_id,v_unit_id,NOW() - interval '30 days',gen_random_uuid()::text) INTO v_result;
+    SELECT id INTO v_fresh_id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid;
 
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     PERFORM assert_true(
-        EXISTS(SELECT 1 FROM public.queue_emails WHERE id = v_fresh_id),
+        EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND id = v_fresh_id),
         'Test 5: old PAYMENT_DONE should NOT be dropped (grace applies only to reminders)'
     );
 

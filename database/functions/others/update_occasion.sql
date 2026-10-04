@@ -25,6 +25,7 @@ SET search_path = public, extensions
      v_form_link_base TEXT;
      v_form_link_suffix INTEGER;
      v_reminder_interval_seconds BIGINT;
+     v_email_order record;
 
      input_features JSONB;
      old_features JSONB;
@@ -137,6 +138,7 @@ SET search_path = public, extensions
                 organization = COALESCE((input_data->>'organization')::BIGINT, organization),
                 services    = COALESCE(input_data->'services', services),
                 unit        = final_unit,
+                is_order_synchronization_enabled=COALESCE((input_data->>'is_order_synchronization_enabled')::boolean,is_order_synchronization_enabled),
                 features    = processed_features -- Use the processed features
           WHERE id = occ_id
           RETURNING * INTO updated_occ;
@@ -243,10 +245,17 @@ SET search_path = public, extensions
                  86400
              );
              -- Call the function to queue payment reminders for all relevant orders
-             PERFORM public.queue_payment_reminders(occ_id, v_reminder_interval_seconds);
+
          END IF;
      END IF;
 
+     -- Revalidate in-flight reminders after every relevant occasion update.
+     PERFORM public.queue_payment_reminders(occ_id,coalesce(v_reminder_interval_seconds,86400));
+     IF updated_occ.is_order_synchronization_enabled THEN
+       FOR v_email_order IN SELECT id FROM eshop.orders WHERE occasion=occ_id AND state='paid' LOOP
+         PERFORM public.enqueue_paid_order_tickets(v_email_order.id);
+       END LOOP;
+     END IF;
      -- Check if the blueprint feature is enabled in the final, saved state
      IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
          -- Find the associated form to attach the blueprint to

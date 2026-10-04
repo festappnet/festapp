@@ -98,8 +98,8 @@ BEGIN
     PERFORM assert_eq(v_paid, 1000::numeric, 'Step 2: paid should be 1000');
 
     -- Verify TICKET_ORDER_PAYMENT_DONE email queued (fully paid)
-    SELECT COUNT(*) INTO v_paid_email_count FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_PAYMENT_DONE' AND occasion = v_occasion_id
+    SELECT COUNT(*) INTO v_paid_email_count FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_PAYMENT_DONE' AND message_kind='order_payment_notice' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_paid_email_count, 1::bigint, 'Step 2: TICKET_ORDER_PAYMENT_DONE email should be queued');
     RAISE NOTICE 'Step 2 PASSED: Full payment triggers TICKET_ORDER_PAYMENT_DONE';
@@ -108,8 +108,8 @@ BEGIN
     -- Step 3: No active deposit reminder
     -- ==================================================================
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
-    SELECT COUNT(*) INTO v_reminder_count FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 3: No reminder for fully-paid order');
     RAISE NOTICE 'Step 3 PASSED: No deposit reminder';
 
