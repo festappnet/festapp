@@ -1,7 +1,9 @@
 # Product price waves
 
 Shared occasion terms are metadata over the existing `eshop.planned_changes` queue.
-Each term is a column; each product cell can change its price, availability, or both.
+The grid toolbar opens a vertical timeline: current product state first, followed
+by shared terms in chronological order. Product controls stack on narrow screens.
+Each product at a term can change its price, availability, or both.
 Blank price and unchanged availability remove only that cell's pending targets.
 Currency stays fixed. Input and displayed time use device local time; RPCs persist UTC.
 

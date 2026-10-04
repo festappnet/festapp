@@ -664,7 +664,9 @@
     "waveChange": "Set",
     "waveFailed": "Failed",
     "waveEmptyPrice": "Empty price = unchanged",
-    "noWaves": "No price waves yet."
+    "noWaves": "No price waves yet.",
+    "waveNow": "Current",
+    "waveHiddenState": "Hidden"
   },
   "UserColumns": {
     "id": "Id",

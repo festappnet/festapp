@@ -271,7 +271,7 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,isEmpty);
     await tester.pumpWidget(const SizedBox.shrink());
   });
-  testWidgets('wave matrix keeps price and availability readable on narrow larger text', (tester) async {
+  testWidgets('wave timeline starts with current state and needs no horizontal scrolling', (tester) async {
     tester.view.physicalSize=const Size(390,844);tester.view.devicePixelRatio=1;
     addTearDown(tester.view.resetPhysicalSize);addTearDown(tester.view.resetDevicePixelRatio);
     final instant=DateTime.now().toUtc().add(const Duration(days:5));
@@ -282,6 +282,9 @@ void main() {
       child:ProductPriceWavesDialog(occasionLink:'test',initialBundle:bundle,canEdit:false,loader:() async=>bundle))));
     await tester.pumpAndSettle();
     expect(find.text('Cenové vlny'),findsOneWidget);
+    expect(find.text('Aktuálně'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Aktuálně')).dy, lessThan(tester.getTopLeft(find.textContaining('550')).dy));
+    expect(tester.widgetList<Scrollable>(find.byType(Scrollable)).every((s) => s.axisDirection == AxisDirection.down), isTrue);
     expect(find.text('Skrýt'),findsOneWidget);
     expect(find.textContaining('550'),findsOneWidget);
     expect(tester.takeException(),isNull);

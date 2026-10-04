@@ -664,7 +664,9 @@
     "waveChange": "Nastavit",
     "waveFailed": "Selhalo",
     "waveEmptyPrice": "Prázdná cena = beze změny",
-    "noWaves": "Zatím nejsou žádné cenové vlny."
+    "noWaves": "Zatím nejsou žádné cenové vlny.",
+    "waveNow": "Aktuálně",
+    "waveHiddenState": "Skryto"
   },
   "UserColumns": {
     "id": "Id",
