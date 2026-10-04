@@ -6,7 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "x-operationRequirements": {
-    "canonicalEmailDelivery": ["EMAIL_PAYLOAD_KEY", "EMAIL_GATEWAY_TOKEN", "EMAIL_GATEWAY_URL", "EMAIL_SNS_TOPIC_ARN", "EMAIL_SES_ACCOUNT_ID", "EMAIL_SES_REGION", "EMAIL_SES_ACCESS_KEY_ID", "EMAIL_SES_SECRET_ACCESS_KEY", "EMAIL_SES_TRANSACTIONAL_SET", "EMAIL_SES_SECURITY_SET", "AUTH_EMAIL_PUBLIC_URL", "AUTH_EMAIL_HOOK_SECRET", "APP_LINKS_ORGANIZATION_ID", "EMAIL_GATEWAY_DENO_IMAGE", "EMAIL_DELIVERY_OWNER_EMAIL"],
+    "canonicalEmailDelivery": ["EMAIL_PAYLOAD_KEY", "EMAIL_SNS_TOPIC_ARN", "EMAIL_SES_ACCOUNT_ID", "EMAIL_SES_REGION", "EMAIL_SES_ACCESS_KEY_ID", "EMAIL_SES_SECRET_ACCESS_KEY", "EMAIL_SES_TRANSACTIONAL_SET", "EMAIL_SES_SECURITY_SET", "AUTH_EMAIL_PUBLIC_URL", "AUTH_EMAIL_HOOK_SECRET", "APP_LINKS_ORGANIZATION_ID", "EMAIL_DELIVERY_OWNER_EMAIL"],
     "googleSignInBroker": ["GOOGLE_OIDC_CLIENT_ID", "GOOGLE_OIDC_CLIENT_SECRET", "GOOGLE_OIDC_CALLBACK_URL", "GOOGLE_AUTH_ENCRYPTION_KEY", "GOOGLE_AUTH_MAILBOX_HMAC_KEY"],
     "supabaseManagement": ["SUPABASE_ACCESS_TOKEN"],
     "databaseAdministration": ["DATABASE_URL"],
@@ -34,8 +34,6 @@
   },
   "properties": {
     "EMAIL_PAYLOAD_KEY": {"type": "string", "pattern": "^[A-Za-z0-9+/]{43}=$"},
-    "EMAIL_GATEWAY_TOKEN": {"type": "string", "minLength": 1},
-    "EMAIL_GATEWAY_URL": {"type": "string", "minLength": 1},
     "EMAIL_SNS_TOPIC_ARN": {"type": "string", "minLength": 1},
     "EMAIL_SES_ACCOUNT_ID": {"type": "string", "pattern": "^[0-9]{12}$"},
     "EMAIL_SES_REGION": {"type": "string", "minLength": 1},
@@ -46,7 +44,6 @@
     "AUTH_EMAIL_PUBLIC_URL": {"type": "string", "minLength": 1},
     "AUTH_EMAIL_HOOK_SECRET": {"type": "string", "minLength": 1},
     "APP_LINKS_ORGANIZATION_ID": {"type": "string", "minLength": 1},
-    "EMAIL_GATEWAY_DENO_IMAGE": {"type": "string", "pattern": "^.+@sha256:[0-9a-f]{64}$"},
     "EMAIL_DELIVERY_OWNER_EMAIL": {"type": "string", "minLength": 1},
     "EMAIL_SES_SESSION_TOKEN": {"type": "string"},
     "EMAIL_SES_ENGAGEMENT_SET": {"type": "string"},
