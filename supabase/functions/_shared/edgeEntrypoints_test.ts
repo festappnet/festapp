@@ -209,7 +209,7 @@ for (
 
 for (
   const name of [
-    "send-email-gateway",
+    "process-email-queue",
     "email-provider-events",
     "auth-email-hook",
   ]

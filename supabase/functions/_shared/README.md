@@ -8,7 +8,7 @@ Utility modules shared across Supabase Edge Functions.
 Request authorization via shared secret (system/admin) or user token + editor role check. Exports `authorizeRequest` and `AuthError`.
 
 ### `emailDelivery.ts`
-Canonical email delivery renders existing templates into encrypted immutable snapshots. Domain producers enqueue in PostgreSQL; `process-email-queue` prepares and the private `send-email-gateway` alone owns SES credentials and the fenced send permit. Acceptance, feedback, retries and post-actions are persisted by canonical SQL. There is no SMTP fallback or production `log_emails` writer.
+Canonical email delivery renders existing templates into encrypted immutable snapshots. Domain producers enqueue in PostgreSQL; `process-email-queue` prepares and sends through the shared `emailSender` module with the fenced send permit; the host router passes SES credentials only to that queue worker. Acceptance, feedback, retries and post-actions are persisted by canonical SQL. There is no SMTP fallback or production `log_emails` writer.
 
 ### `supabaseUtil.ts`
 `supabaseAdmin` (service-role client), `createUserClient` (RLS-scoped client from a Bearer token), `getSupabaseUser`, `isUserEditor`, `isUserEditorOrder`, `getEmailTemplateAndWrapper` (resolves templates via Occasion > Unit > Organization hierarchy).
