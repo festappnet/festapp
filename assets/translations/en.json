@@ -1670,7 +1670,13 @@
     "safeSenderInfo": "This address is safe. It is a special robot that only reads payment e-mails and nothing else.",
     "forwardingEmailWarning": "Warning: Please keep this e-mail secret. Do not share it with anyone.",
     "creditorNameLabel": "Account holder name",
-    "creditorNameHelp": "For EUR payments. If empty, the organization name is used."
+    "creditorNameHelp": "For EUR payments. If empty, the organization name is used.",
+    "connection_state": "Connection status",
+    "bank_pull": "Bank statement downloaded",
+    "receiver_commit": "Movement received",
+    "not_received": "Not received yet",
+    "email_identity_notice": "Messages without verified bank movement identity await operator review and do not automatically pay orders.",
+    "connect_email": "Connect bank email"
   },
   "FeatureContract": {
     "title": "Contract",

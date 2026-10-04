@@ -15,6 +15,7 @@ DECLARE
   v_skipped integer := 0;
 BEGIN
   PERFORM public.require_service_role();
+  PERFORM public.require_legacy_bank_authority(bank_account_id);
   IF jsonb_typeof(transactions) <> 'array' THEN RAISE EXCEPTION 'TRANSACTIONS_ARRAY_REQUIRED'; END IF;
 
   FOR v_input IN SELECT value FROM jsonb_array_elements(transactions) LOOP

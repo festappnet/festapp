@@ -11,7 +11,8 @@ RETURNS TABLE (
     token_masked text,
     token_expiry_date timestamptz,
     supported_currencies text[],
-    last_fio_fetch_time timestamptz
+    last_fio_fetch_time timestamptz,
+    bank_sync jsonb
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -40,7 +41,9 @@ BEGIN
         END as token_masked,
         s.expiry_date as token_expiry_date,
         ba.supported_currencies,
-        ba.last_fio_fetch_time
+        ba.last_fio_fetch_time,
+        CASE WHEN EXISTS(SELECT 1 FROM eshop.bank_account_users WHERE bank_account=ba.id AND "user"=auth.uid() AND is_admin)
+          THEN public.get_bank_sync_connection(ba.id) ELSE (SELECT jsonb_build_object('state',state,'mode',mode) FROM eshop.bank_sync_connections WHERE bank_account_id=ba.id) END AS bank_sync
     FROM eshop.bank_accounts ba
     JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
     LEFT JOIN eshop.secrets s ON ba.secret = s.id

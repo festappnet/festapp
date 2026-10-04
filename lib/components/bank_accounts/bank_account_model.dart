@@ -13,6 +13,7 @@ class BankAccountModel {
   final List<String> supportedCurrencies;
   final List<String> linkedUnits;
   final String? pairingCode;
+  final BankSyncConnection? bankSync;
   final String? accountNumberHumanReadable;
   final DateTime? lastFetchTime;
   final DateTime? lastFioFetchTime;
@@ -33,11 +34,16 @@ class BankAccountModel {
     this.lastFetchTime,
     this.lastFioFetchTime,
     this.pairingCode,
+    this.bankSync,
   });
 
   factory BankAccountModel.fromJson(Map<String, dynamic> json) {
     return BankAccountModel(
       id: json['id'],
+      bankSync: json['bank_sync'] is Map
+          ? BankSyncConnection.fromJson(
+              Map<String, dynamic>.from(json['bank_sync']))
+          : null,
       accountNumber: json['account_number'],
       title: json['title'],
       creditorName: json['creditor_name'],
@@ -48,13 +54,11 @@ class BankAccountModel {
       tokenExpiryDate: json['token_expiry_date'] != null
           ? DateTime.parse(json['token_expiry_date'])
           : null,
-      supportedCurrencies:
-          (json['supported_currencies'] as List<dynamic>?)
+      supportedCurrencies: (json['supported_currencies'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
-      linkedUnits:
-          (json['linked_units'] as List<dynamic>?)
+      linkedUnits: (json['linked_units'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
@@ -65,9 +69,8 @@ class BankAccountModel {
       lastFetchTime: json['last_fetch_time'] != null
           ? DateTime.parse(json['last_fetch_time'])
           : null,
-      pairingCode: json['pairing_code'] == '************'
-          ? null
-          : json['pairing_code'],
+      pairingCode:
+          json['pairing_code'] == '************' ? null : json['pairing_code'],
     );
   }
 
@@ -87,6 +90,7 @@ class BankAccountModel {
       'last_fio_fetch_time': lastFioFetchTime?.toIso8601String(),
       'last_fetch_time': lastFetchTime?.toIso8601String(),
       'pairing_code': pairingCode,
+      'bank_sync': bankSync?.toJson(),
     };
   }
 
@@ -106,6 +110,7 @@ class BankAccountModel {
     DateTime? lastFetchTime,
     DateTime? lastFioFetchTime,
     String? pairingCode,
+    BankSyncConnection? bankSync,
   }) {
     return BankAccountModel(
       id: id ?? this.id,
@@ -124,6 +129,7 @@ class BankAccountModel {
       lastFetchTime: lastFetchTime ?? this.lastFetchTime,
       lastFioFetchTime: lastFioFetchTime ?? this.lastFioFetchTime,
       pairingCode: pairingCode ?? this.pairingCode,
+      bankSync: bankSync ?? this.bankSync,
     );
   }
 }
@@ -155,4 +161,29 @@ class BankAccountUser {
       isSupport: json['is_support'] ?? false,
     );
   }
+}
+
+class BankSyncConnection {
+  final String state;
+  final String mode;
+  final String? receivingAddress;
+  final DateTime? bankPullAt;
+  final DateTime? receiverCommitAt;
+  final String? lastError;
+  BankSyncConnection.fromJson(Map<String, dynamic> json)
+      : state = json['state'] as String,
+        mode = json['mode'] as String,
+        receivingAddress = json['receiving_address'] as String?,
+        bankPullAt = DateTime.tryParse(json['bank_pull_at']?.toString() ?? ''),
+        receiverCommitAt =
+            DateTime.tryParse(json['receiver_commit_at']?.toString() ?? ''),
+        lastError = json['last_error'] as String?;
+  Map<String, dynamic> toJson() => {
+        'state': state,
+        'mode': mode,
+        'receiving_address': receivingAddress,
+        'bank_pull_at': bankPullAt?.toIso8601String(),
+        'receiver_commit_at': receiverCommitAt?.toIso8601String(),
+        'last_error': lastError
+      };
 }

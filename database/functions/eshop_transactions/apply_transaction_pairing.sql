@@ -42,7 +42,8 @@ BEGIN
       RAISE EXCEPTION 'PAIRING_CURRENCY_MISMATCH';
     END IF;
     IF v_transaction.transaction_type IS DISTINCT FROM 'manual'
-       AND v_transaction.bank_account_id <> v_target.bank_account THEN
+       AND v_transaction.bank_account_id <> v_target.bank_account
+       AND NOT public.bank_sync_accounts_match(p_transaction_id,v_target.bank_account) THEN
       RAISE EXCEPTION 'PAIRING_BANK_ACCOUNT_MISMATCH';
     END IF;
   END IF;
