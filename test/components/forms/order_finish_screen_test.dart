@@ -7,6 +7,49 @@ import 'package:fstapp/components/forms/views/order_finish_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  testWidgets(
+      'queued confirmation renders before acceptance and status failure never claims sent',
+      (tester) async {
+    for (final fail in [false, true]) {
+      final status = Completer<String?>();
+      await tester.pumpWidget(MaterialApp(
+          home: FinishOrderScreen(
+              key: ValueKey(fail),
+              hasTickets: false,
+              orderFutureFunction: () async => const FunctionResponse(data: {
+                    'code': 200,
+                    'delivery_receipt': 'opaque',
+                    'ticketOrder': {
+                      'order': {
+                        'data': {'email': 'fixture@example.invalid'}
+                      }
+                    }
+                  }, status: 200),
+              deliveryStatusReader: (_) => status.future)));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 2));
+      expect(
+          find.text(PublicOrderStrings.confirmationInfo(null,
+              hasPayment: false,
+              email: 'fixture@example.invalid',
+              state: 'queued')),
+          findsOneWidget);
+      if (fail) {
+        status.completeError(Exception('endpoint unavailable'));
+      } else {
+        status.complete('accepted');
+      }
+      await tester.pumpAndSettle();
+      expect(
+          find.text(PublicOrderStrings.confirmationInfo(null,
+              hasPayment: false,
+              email: 'fixture@example.invalid',
+              state: fail ? 'queued' : 'accepted')),
+          findsOneWidget);
+    }
+  });
+
   testWidgets('order submission always transitions from progress to success',
       (tester) async {
     final response = Completer<FunctionResponse>();

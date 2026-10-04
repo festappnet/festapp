@@ -1,0 +1,42 @@
+BEGIN;
+DO $$
+DECLARE org bigint; u bigint; occ bigint; oid bigint; paid_ticket bigint; used_ticket bigint; storno_ticket bigint; a jsonb; b jsonb; r public.email_messages;
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Ticket email contract') RETURNING id INTO org;
+ INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO u;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time,is_order_synchronization_enabled)
+ VALUES('Occasion',org,u,gen_random_uuid()::text,now(),now()+interval '1 day',true) RETURNING id INTO occ;
+ INSERT INTO eshop.orders(occasion,state,data,price,currency_code) VALUES(occ,'paid','{"email":"tickets@example.invalid"}',100,'CZK') RETURNING id INTO oid;
+ PERFORM public.enqueue_paid_order_tickets(oid);
+ SELECT to_jsonb(m) INTO a FROM public.email_messages m WHERE order_id=oid AND message_kind='order_tickets';
+ b:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',oid,'manual',true,'requested_by','fixture-editor'),org,occ,u,now(),'manual-one');
+ PERFORM assert_eq(a->>'message_id',b->>'message_id','manual request joins automatic pending ticket set');
+ UPDATE public.email_messages SET workflow_state='unknown' WHERE message_id=(a->>'message_id')::uuid;
+ b:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',oid,'manual',true,'requested_by','fixture-editor'),org,occ,u,now(),'manual-two');
+ PERFORM assert_eq(a->>'message_id',b->>'message_id','manual timeout cannot resend unknown ticket set');
+ PERFORM assert_eq((SELECT post_action->'last_manual_request'->>'request' FROM public.email_messages WHERE message_id=(a->>'message_id')::uuid),'manual-two','joined manual request has audit evidence');
+ UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now() WHERE message_id=(a->>'message_id')::uuid;
+ b:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',oid,'manual',true,'requested_by','fixture-editor'),org,occ,u,now(),'manual-three');
+ PERFORM assert_true(a->>'message_id'<>b->>'message_id','explicit resend after known acceptance has a separate intent');
+ PERFORM public.enqueue_paid_order_tickets(oid);
+ PERFORM assert_eq((SELECT count(*)::int FROM public.email_messages WHERE order_id=oid AND message_kind='order_tickets'),2,'automatic producer joins the explicit unresolved resend');
+ SELECT * INTO r FROM public.email_messages WHERE message_id=(b->>'message_id')::uuid;
+ UPDATE eshop.orders SET state='ordered',email_payment_version=email_payment_version+1 WHERE id=oid;
+ PERFORM assert_true(NOT public.email_intent_valid(r),'payment removal invalidates prepared ticket version');
+ UPDATE eshop.orders SET state='paid' WHERE id=oid;
+ PERFORM assert_true(NOT public.email_intent_valid(r),'repaid order does not revive the stale source version');
+ PERFORM public.enqueue_paid_order_tickets(oid);
+ SELECT * INTO r FROM public.email_messages WHERE order_id=oid AND source_version=(SELECT email_payment_version FROM eshop.orders WHERE id=oid) AND message_kind='order_tickets';
+ PERFORM assert_true(public.email_intent_valid(r),'current repaid version can send');
+ INSERT INTO eshop.tickets(occasion,state) VALUES(occ,'paid') RETURNING id INTO paid_ticket;
+ INSERT INTO eshop.tickets(occasion,state) VALUES(occ,'used') RETURNING id INTO used_ticket;
+ INSERT INTO eshop.tickets(occasion,state) VALUES(occ,'storno') RETURNING id INTO storno_ticket;
+ INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(oid,paid_ticket),(oid,used_ticket),(oid,storno_ticket);
+ UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now(),post_action=jsonb_build_object('ticket_ids',jsonb_build_array(paid_ticket,used_ticket,storno_ticket)) WHERE message_id=r.message_id;
+ PERFORM public.apply_email_post_actions(r.message_id);
+ PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=paid_ticket),'sent','acceptance projects eligible paid ticket');
+ PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=used_ticket),'used','acceptance preserves used ticket');
+ PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=storno_ticket),'storno','acceptance preserves cancelled ticket');
+ PERFORM assert_eq((SELECT post_action_state FROM public.email_messages WHERE message_id=r.message_id),'done','domain projection succeeds');
+END $$;
+ROLLBACK;

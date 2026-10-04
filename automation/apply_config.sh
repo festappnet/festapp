@@ -216,6 +216,9 @@ for asset_path in "$LOGO_ASSET" "$DARK_LOGO_ASSET" "$PROGRAM_LOGO_ASSET"; do
         echo "Error: configured asset does not exist: $asset_path"; exit 1;
     }
 done
+# The loading wordmark is derived from the configured brand logo, never from
+# the square PWA installation icon.
+cp "$PROJECT_ROOT/$DARK_LOGO_ASSET" "$PROJECT_ROOT/web/loading-logo.svg"
 [ -f "$PROJECT_ROOT/web/$WEB_LOADING_LOGO_ASSET" ] || {
     echo "Error: configured web loading asset does not exist: $WEB_LOADING_LOGO_ASSET"; exit 1;
 }
@@ -359,6 +362,9 @@ source = re.sub(r"occasion: '[^']*'", f"occasion: '{occasion}'", source)
 open(path, "w", encoding="utf-8").write(source)
 PY
     sed_inplace "s|<img class=\"initial-logo\" src=\"[^\"]*\"|<img class=\"initial-logo\" src=\"$WEB_LOADING_LOGO_ASSET\"|" "$FLUTTER_INDEX"
+    if [ ! -z "$THEME_SEED_2" ]; then
+        sed_inplace "s|--festapp-loading-accent: [^;]*;|--festapp-loading-accent: $THEME_SEED_2;|" "$FLUTTER_INDEX"
+    fi
     echo "✔ Updated web/index.html"
 else
     echo "Warning: $FLUTTER_INDEX not found."
@@ -788,6 +794,10 @@ for relative in (
     with path.open('wb') as destination:
         plistlib.dump(data, destination, sort_keys=False)
 PY
+
+# Public certificate fingerprints are optional; an empty list disables Android verification.
+python3 "$PROJECT_ROOT/automation/google-auth-links.py" "$PROJECT_ROOT" "$WEB_LINK" \
+    "$ANDROID_APPLICATION_ID" "${ANDROID_APP_LINK_SHA256_FINGERPRINTS:-}"
 
 # 5b. Update lib/theme_config.dart (Flutter Theme — seed colors live here, not in app_config.dart).
 # Generate visible/internal iOS names while preserving the bundle ID.

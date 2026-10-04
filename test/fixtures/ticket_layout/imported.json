@@ -1,0 +1,141 @@
+{
+  "font": "robotoSlab",
+  "page": {
+    "width": 595.28,
+    "height": 841.89
+  },
+  "ticketArea": {
+    "x": 29.764,
+    "y": 29.764,
+    "width": 535.752,
+    "height": 301.36049999999994
+  },
+  "flow": [
+    "spotGroup",
+    "food",
+    "note",
+    "price"
+  ],
+  "flowStep": 16.74225,
+  "qrAppearance": {
+    "background": "000000",
+    "opacity": 0.7529411764705882,
+    "margin": 1.6
+  },
+  "elements": [
+    {
+      "id": "qr",
+      "binding": "qr",
+      "visible": true,
+      "locked": false,
+      "box": {
+        "x": 405.162109375,
+        "y": 174.119140625,
+        "width": 80.36328125,
+        "height": 80.36328125
+      },
+      "style": {
+        "fontSize": 12,
+        "minFontSize": 6,
+        "maxLines": 1,
+        "color": "FFFFFF",
+        "align": "left"
+      }
+    },
+    {
+      "id": "ticketSymbol",
+      "binding": "ticketSymbol",
+      "visible": true,
+      "locked": false,
+      "box": {
+        "x": 405.1624499999999,
+        "y": 257.3820100195312,
+        "width": 80.3628,
+        "height": 12.724109999999998
+      },
+      "style": {
+        "fontSize": 9.375659999999998,
+        "minFontSize": 6,
+        "maxLines": 1,
+        "color": "FFFFFF",
+        "align": "center"
+      }
+    },
+    {
+      "id": "spotGroup",
+      "binding": "spotGroup",
+      "visible": true,
+      "locked": false,
+      "box": {
+        "x": 50.226749999999996,
+        "y": 193.56918574218744,
+        "width": 344.89034999999996,
+        "height": 17.66538173828125
+      },
+      "style": {
+        "fontSize": 13.393799999999999,
+        "minFontSize": 6,
+        "maxLines": 1,
+        "color": "FFFFFF",
+        "align": "left"
+      }
+    },
+    {
+      "id": "food",
+      "binding": "food",
+      "visible": true,
+      "locked": false,
+      "box": {
+        "x": 50.226749999999996,
+        "y": 210.31143574218746,
+        "width": 344.89034999999996,
+        "height": 17.66538173828125
+      },
+      "style": {
+        "fontSize": 13.393799999999999,
+        "minFontSize": 6,
+        "maxLines": 1,
+        "color": "FFFFFF",
+        "align": "left"
+      }
+    },
+    {
+      "id": "note",
+      "binding": "note",
+      "visible": true,
+      "locked": false,
+      "box": {
+        "x": 50.226749999999996,
+        "y": 227.05368574218744,
+        "width": 344.89034999999996,
+        "height": 17.66538173828125
+      },
+      "style": {
+        "fontSize": 13.393799999999999,
+        "minFontSize": 6,
+        "maxLines": 1,
+        "color": "FFFFFF",
+        "align": "left"
+      }
+    },
+    {
+      "id": "price",
+      "binding": "price",
+      "visible": true,
+      "locked": false,
+      "box": {
+        "x": 50.226749999999996,
+        "y": 243.79593574218742,
+        "width": 344.89034999999996,
+        "height": 17.66538173828125
+      },
+      "style": {
+        "fontSize": 13.393799999999999,
+        "minFontSize": 6,
+        "maxLines": 1,
+        "color": "FFFFFF",
+        "align": "left"
+      }
+    }
+  ]
+}

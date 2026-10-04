@@ -78,10 +78,18 @@ export function buildSpdPayload(payment: any, message = ""): string {
   return payload;
 }
 
+export function normalizeEpcCreditorName(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFC")
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function buildEpcSctPayload(payment: any): string {
   const amount = Number(payment.amount);
   const iban = normalizeIban(payment.account_number);
-  const creditorName = String(payment.creditor_name ?? "").trim();
+  const creditorName = normalizeEpcCreditorName(payment.creditor_name);
   const reference = String(payment.creditor_reference ?? "").replace(/\s/g, "")
     .toUpperCase();
   if (

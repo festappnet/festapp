@@ -1,13 +1,12 @@
 import 'package:collection/collection.dart';
-import 'package:fstapp/app_router.gr.dart';
-import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/html_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/custom_three_state_checkbox.dart';
@@ -25,9 +24,10 @@ class DataGridHelper {
         loadContent, // Used for both editor and potentially tooltip
     bool showTooltipWithContent = true,
     int? occasionId,
+    int? unitId,
+    HtmlContentProfile profile = HtmlContentProfile.appContent,
     String? title,
   }) {
-    String? textToEdit = rendererContext.row.cells[field]?.value as String?;
 
     Widget buttonChild = Row(
       mainAxisSize: MainAxisSize.min,
@@ -40,30 +40,22 @@ class DataGridHelper {
       ],
     );
 
-    Widget button = ElevatedButton(
-      onPressed: () async {
-        Map<String, dynamic> param = {
-          HtmlEditorPage.parContent: textToEdit,
-          HtmlEditorPage.parLoad: loadContent,
-        };
-
-        RouterService.navigatePageInfo(context,
-                HtmlEditorRoute(content: param, occasionId: occasionId))
-            .then((value) async {
-          if (value != null) {
-            var newText = value as String;
-            // Compare with the value that was in the cell when edit was initiated
-            if (newText != textToEdit) {
-              rendererContext.row.cells[field]?.value = newText;
-              var cell = rendererContext.row.cells[field]!;
-              rendererContext.stateManager
-                  .changeCellValue(cell, cell.value, force: true);
-            }
-          }
-        });
-      },
-      child: buttonChild,
-    );
+    Widget button = Builder(builder: (buttonContext) {
+      final coordinator = HtmlEditingScope.maybeOf(buttonContext);
+      final cell = rendererContext.row.cells[field]!;
+      final owner = unitId != null ? HtmlMediaOwner.unit(unitId) : HtmlMediaOwner.occasion(occasionId);
+      coordinator?.registerValue(HtmlFieldIdentity(rendererContext.row.key, field),
+        read: () => cell.value as String?, write: (html) => cell.value = html, owner: owner);
+      return ElevatedButton(onPressed: () async {
+        final initial = cell.value as String?;
+        final value = await RichHtmlEditorDialog.show(buttonContext,
+          initialHtml: initial, loadHtml: loadContent, title: title,
+          owner: owner, profile: profile, coordinator: coordinator);
+        if (value != null && value != initial) {
+          rendererContext.stateManager.changeCellValue(cell, value, force: true);
+        }
+      }, child: buttonChild);
+    });
 
     if (showTooltipWithContent) {
       final tooltipTheme = TooltipTheme.of(context);

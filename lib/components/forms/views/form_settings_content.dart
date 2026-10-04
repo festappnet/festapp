@@ -1,3 +1,5 @@
+import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/app_router.gr.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/form_feature.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -50,14 +53,31 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   late FormFeature _formFeature;
   String? _linkError;
   bool _isLoading = true;
+  bool _hasChanges = false;
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
-  String _communicationTone = 'formal';
+  String _communicationTone = 'inherit';
+
+  String get _unitTone =>
+      RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
+              'informal'
+          ? 'informal'
+          : 'formal';
 
   @override
   void initState() {
     super.initState();
+    for (final controller in [
+      _titleController,
+      _linkController,
+      _deadlineDaysController,
+      _startingNumberController
+    ]) {
+      controller.addListener(() {
+        if (!_isLoading) _hasChanges = true;
+      });
+    }
     _formFeature =
         FeatureService.getFeatureDetails(FeatureConstants.form) as FormFeature;
   }
@@ -130,8 +150,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentMessageType =
           msgData?[FormModel.metaType] as String? ?? 'name_surname';
 
-      _communicationTone =
-          _form!.data?[FormHelper.metaCommunicationTone] as String? ?? 'formal';
+      final savedTone = _form!.data?[FormHelper.metaCommunicationTone];
+      _communicationTone = savedTone == 'formal' || savedTone == 'informal'
+          ? savedTone as String
+          : 'inherit';
 
       if (_form!.deadlineDurationSeconds != null &&
           _form!.deadlineDurationSeconds! > 0) {
@@ -143,7 +165,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     } else {
       _form = null;
     }
-    setState(() => _isLoading = false);
+    setState(() {
+      _isLoading = false;
+      _hasChanges = false;
+    });
   }
 
   void _validateLink(String? value) {
@@ -189,7 +214,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       FormModel.metaType: _paymentMessageType,
     };
 
-    _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
+    if (_communicationTone == 'inherit') {
+      _form!.data!.remove(FormHelper.metaCommunicationTone);
+    } else {
+      _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
+    }
 
     final days = int.tryParse(_deadlineDaysController.text);
     if (days != null && days > 0) {
@@ -204,13 +233,23 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       ToastHelper.Show(
           currentContext, "${CommonStrings.saved}: ${_form?.title ?? ""}",
           severity: ToastSeverity.Ok);
-      if (_formLink != _form!.link) {
+      _hasChanges = false;
+      final renamed = _formLink != _form!.link;
+      if (renamed) {
         setState(() {
           _formLink = _form!.link;
         });
       }
       await _loadData();
-      widget.onDataUpdated?.call();
+      if (renamed && mounted) {
+        context.router.markUrlStateForReplace();
+        await context.router
+            .navigate(FormDetailRoute(formLink: _form!.link!, children: [
+          const FormTabsRoute(children: [FormSettingsRoute()])
+        ]));
+      } else {
+        widget.onDataUpdated?.call();
+      }
     } catch (e) {
       if (!mounted) return;
       final errorMessage = e.toString().replaceFirst("Exception: ", "");
@@ -401,7 +440,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => NavigationDraftBoundary(
+      isDirty: () => _hasChanges, child: _buildContent(context));
+
+  Widget _buildContent(BuildContext context) {
     final bool isReminderFeatureEnabled =
         _formFeature.isEnabled && (_formFeature.reminderIsEnabled ?? false);
 
@@ -440,6 +482,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     onChanged: isReminderFeatureEnabled
                                         ? (value) {
                                             setState(() {
+                                              _hasChanges = true;
                                               _isReminderEnabled = value;
                                             });
                                           }
@@ -462,7 +505,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       border: const OutlineInputBorder(),
                                       errorText: _linkError,
                                     ),
-                                    onChanged: _validateLink,
+                                    onChanged: (value) {
+                                      _hasChanges = true;
+                                      _validateLink(value);
+                                    },
                                   ),
                                   const SizedBox(height: 16),
                                   ValueListenableBuilder<String>(
@@ -524,6 +570,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                               Text(FormStrings.vsTypeSequence)),
                                     ],
                                     onChanged: (value) {
+                                      _hasChanges = true;
                                       if (value != null) {
                                         setState(() {
                                           _variableSymbolType = value;
@@ -578,6 +625,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                               .msgTypeOccasionTitle)),
                                     ],
                                     onChanged: (value) {
+                                      _hasChanges = true;
                                       if (value != null) {
                                         setState(() {
                                           _paymentMessageType = value;
@@ -611,6 +659,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                     items: [
                                       DropdownMenuItem(
+                                          value: 'inherit',
+                                          child: Text(FormStrings.toneInherit(
+                                              _unitTone == 'informal'
+                                                  ? FormStrings.toneInformal
+                                                  : FormStrings.toneFormal))),
+                                      DropdownMenuItem(
                                           value: 'formal',
                                           child: Text(FormStrings.toneFormal)),
                                       DropdownMenuItem(
@@ -619,6 +673,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                               Text(FormStrings.toneInformal)),
                                     ],
                                     onChanged: (value) {
+                                      _hasChanges = true;
                                       if (value != null) {
                                         setState(() {
                                           _communicationTone = value;
@@ -642,11 +697,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child: Text(
                                             FormStrings.deleteFormTitle,
                                             style: TextStyle(
-                                                color: (_form?.canDelete ??
-                                                        true)
-                                                    ? ThemeConfig.redColor(
-                                                        innerContext)
-                                                    : Colors.grey),
+                                                color:
+                                                    (_form?.canDelete ?? true)
+                                                        ? ThemeConfig.redColor(
+                                                            innerContext)
+                                                        : Colors.grey),
                                           ),
                                         ),
                                       ),

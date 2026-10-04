@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { handleCors } from '../../src/cors';
 import { handleDelete } from '../../src/delete';
@@ -26,6 +27,20 @@ function env(): Env {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('control plane', () => {
+  it('allows live uploads through the actual configured origin list', async () => {
+    const config = readFileSync(new URL('../../wrangler.toml', import.meta.url), 'utf8');
+    const origins = config.match(/^CONTROL_ALLOWED_ORIGINS = "([^"]+)"/m)![1];
+    const configured = { ...env(), CONTROL_ALLOWED_ORIGINS: origins };
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/upload', {
+      method: 'OPTIONS', headers: { Origin: 'https://live.festapp.net' },
+    }), configured);
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://live.festapp.net');
+    expect(handleCors(new Request('https://image-api.festapp.net/upload', {
+      method: 'OPTIONS', headers: { Origin: 'https://live.festapp.net.evil.example' },
+    }), configured).status).toBe(403);
+  });
+
   it('uses exact CORS origins and Vary', () => {
     const configured = env();
     const allowed = handleCors(new Request('https://image-api.festapp.net/upload', {

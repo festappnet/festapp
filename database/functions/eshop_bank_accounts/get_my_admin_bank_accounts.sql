@@ -12,7 +12,8 @@ RETURNS TABLE (
     token_expiry_date timestamptz,
     supported_currencies text[],
     linked_units text[],
-    last_fetch_time timestamptz
+    last_fetch_time timestamptz,
+    last_fio_fetch_time timestamptz
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -39,7 +40,8 @@ BEGIN
             JOIN public.units u ON uba.unit = u.id
             WHERE uba.bank_account = ba.id
         ) as linked_units,
-        ba.last_fetch_time
+        ba.last_fetch_time,
+        ba.last_fio_fetch_time
     FROM eshop.bank_accounts ba
     JOIN eshop.bank_account_users bau ON ba.id = bau.bank_account
     LEFT JOIN eshop.secrets s ON ba.secret = s.id
@@ -48,3 +50,6 @@ BEGIN
     ORDER BY ba.title;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.get_my_admin_bank_accounts() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_my_admin_bank_accounts() TO authenticated, service_role;

@@ -33,7 +33,9 @@ async function loadHandler(name: string): Promise<EdgeHandler> {
     } as unknown as Deno.HttpServer;
   }) as typeof Deno.serve;
   try {
-    for (const [key, value] of Object.entries(testEnvironment)) Deno.env.set(key, value);
+    for (const [key, value] of Object.entries(testEnvironment)) {
+      Deno.env.set(key, value);
+    }
     await import(`../${name}/index.ts?edge-entrypoint-test=${name}`);
   } finally {
     Deno.serve = originalServe;
@@ -48,6 +50,10 @@ async function loadHandler(name: string): Promise<EdgeHandler> {
 }
 
 const optionEntrypoints = [
+  "report-exchange-rates",
+  "process-email-queue",
+  "email-confirmation-status",
+  "preview-ticket-layout",
   "cancel-reception-registration",
   "confirm-account-deletion",
   "download-ticket",
@@ -70,10 +76,12 @@ const optionEntrypoints = [
 for (const name of optionEntrypoints) {
   Deno.test(`${name} registers a reachable CORS preflight`, async () => {
     const handler = await loadHandler(name);
-    const response = await handler(new Request("https://edge-test.invalid", {
-      method: "OPTIONS",
-      headers: { origin: "https://app.example.invalid" },
-    }));
+    const response = await handler(
+      new Request("https://edge-test.invalid", {
+        method: "OPTIONS",
+        headers: { origin: "https://app.example.invalid" },
+      }),
+    );
     assertEquals(response.status, 200);
   });
 }
@@ -86,74 +94,141 @@ Deno.test("notify rejects an unauthenticated public request", async () => {
 
 Deno.test("download-ticket rejects invalid input before privileged reads", async () => {
   const handler = await loadHandler("download-ticket");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    body: "{}",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
   assertEquals(response.status, 400);
 });
 
 Deno.test("fetch-transactions rejects a missing occasion before privileged reads", async () => {
   const handler = await loadHandler("fetch-transactions");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    body: "{}",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
   assertEquals(response.status, 400);
 });
 
 Deno.test("request-account-deletion requires a bearer identity", async () => {
   const handler = await loadHandler("request-account-deletion");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    body: "{}",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
   assertEquals(response.status, 401);
 });
 
 Deno.test("send-custom-email validates its public request before authorization", async () => {
   const handler = await loadHandler("send-custom-email");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    body: "{}",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
   assertEquals(response.status, 400);
 });
 
 Deno.test("send-reset-password-link rejects malformed JSON without account disclosure", async () => {
   const handler = await loadHandler("send-reset-password-link");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    headers: { origin: "https://app.example.invalid" },
-    body: "{",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      headers: { origin: "https://app.example.invalid" },
+      body: "{",
+    }),
+  );
   assertEquals(response.status, 400);
   assertEquals(await response.json(), { accepted: true });
 });
 
 Deno.test("send-sign-in-code rejects invalid identities before changing a password", async () => {
   const handler = await loadHandler("send-sign-in-code");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    body: "{}",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
   assertEquals(response.status, 400);
 });
 
 Deno.test("send-tickets rejects invalid input before privileged reads", async () => {
   const handler = await loadHandler("send-tickets");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    body: "{}",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
   assertEquals(response.status, 400);
 });
 
 Deno.test("synchronize-orders rejects a request without system authorization", async () => {
   const handler = await loadHandler("synchronize-orders");
-  const response = await handler(new Request("https://edge-test.invalid", {
-    method: "POST",
-    body: "{}",
-  }));
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
   assertEquals(response.status, 401);
+});
+
+Deno.test("preview rejects missing JWT before privileged work", async () => {
+  const response = await (await loadHandler("preview-ticket-layout"))(
+    new Request("https://edge-test.invalid", { method: "POST", body: "{}" }),
+  );
+  assertEquals(response.status, 401);
+});
+
+for (
+  const name of [
+    "google-auth-start",
+    "google-auth-callback",
+    "google-auth-complete",
+  ]
+) {
+  Deno.test(`${name} registers but stays unavailable without private OAuth inputs`, async () => {
+    const handler = await loadHandler(name);
+    const response = await handler(
+      new Request("https://edge-test.invalid", { method: "POST", body: "{}" }),
+    );
+    assertEquals(response.status, 400);
+    assertEquals(await response.json(), { error: "provider_unavailable" });
+    assertEquals(response.headers.get("Cache-Control"), "no-store");
+  });
+}
+
+for (
+  const name of [
+    "send-email-gateway",
+    "email-provider-events",
+    "auth-email-hook",
+  ]
+) {
+  Deno.test(`${name} rejects an untrusted request before privileged work`, async () => {
+    const handler = await loadHandler(name);
+    const response = await handler(
+      new Request("https://edge-test.invalid", { method: "POST", body: "{}" }),
+    );
+    assertEquals(response.status >= 400, true);
+  });
+}
+Deno.test("confirmation status needs an opaque capability, never an order ID", async () => {
+  const handler = await loadHandler("email-confirmation-status");
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: JSON.stringify({ orderId: 1 }),
+    }),
+  );
+  assertEquals(response.status, 403);
 });

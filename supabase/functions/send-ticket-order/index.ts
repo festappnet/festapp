@@ -1,6 +1,7 @@
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { presentPayment } from "../_shared/paymentPresentation.ts";
 import { resolveTicketOrderCommandIdentity } from "./commandIdentity.ts";
+import { fakturoidGateway } from "./fakturoid.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -116,6 +117,80 @@ Deno.serve(async (req) => {
       });
     }
 
+    const order = ticketOrder.order;
+    if (Number(order?.payment_info?.amount) > 0) {
+      const { data: services, error: servicesError } = await supabaseAdmin.rpc(
+        "get_external_services",
+        { p_order_id: order.id },
+      );
+      if (servicesError) throw servicesError;
+      const fakturoid = services?.find((service: any) =>
+        service.type === "FAKTUROID"
+      );
+      if (fakturoid) {
+        const config = fakturoid.data;
+        const { data: orderState, error: stateError } = await supabaseAdmin.rpc(
+          "get_fakturoid_ticket_order_state_v1",
+          { p_order_id: order.id },
+        );
+        if (stateError) throw stateError;
+        if (orderState === "storno") {
+          return new Response(
+            JSON.stringify({
+              code: 503,
+              message: "Fakturoid could not complete this order",
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            },
+          );
+        }
+        let variableSymbol = String(order.payment_info.variable_symbol);
+        if (orderState === "preparing_payment") {
+          try {
+            variableSymbol = await fakturoidGateway.preparePayment({
+              config: {
+                client_id: config.client_id,
+                client_secret: config.client_secret,
+                slug: config.slug,
+                subject_id: config.subject_id,
+                note: config.note,
+              },
+              order,
+              unitName: order.occasion.title,
+              commandId,
+            });
+          } catch (error) {
+            console.error("Fakturoid order preparation failed:", error);
+            const { error: abortError } = await supabaseAdmin.rpc(
+              "abort_fakturoid_ticket_order_v1",
+              { p_order_id: order.id, p_command_id: commandId },
+            );
+            if (abortError) throw abortError;
+            return new Response(
+              JSON.stringify({
+                code: 503,
+                message: "Fakturoid could not complete this order",
+              }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+              },
+            );
+          }
+        }
+        const { data: confirmedSymbol, error: completionError } =
+          await supabaseAdmin.rpc("complete_fakturoid_ticket_order_v1", {
+            p_order_id: order.id,
+            p_command_id: commandId,
+            p_variable_symbol: Number(variableSymbol),
+          });
+        if (completionError) throw completionError;
+        order.payment_info.variable_symbol = String(confirmedSymbol);
+      }
+    }
+
     const paymentInfo = ticketOrder.order?.payment_info;
     const payment = paymentInfo && Number(paymentInfo.amount) > 0
       ? presentPayment(paymentInfo)
@@ -134,12 +209,35 @@ Deno.serve(async (req) => {
       }
       : null;
 
+    // Capability creation is an additive read feature; failure must not fail a committed order.
+    let deliveryReceipt: string | undefined;
+    try {
+      const capability = Array.from(
+        crypto.getRandomValues(new Uint8Array(32)),
+        (b) => b.toString(16).padStart(2, "0"),
+      ).join("");
+      const hash = Array.from(
+        new Uint8Array(
+          await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(capability),
+          ),
+        ),
+        (b) => b.toString(16).padStart(2, "0"),
+      ).join("");
+      const { data, error } = await supabaseAdmin.rpc(
+        "create_email_confirmation_receipt",
+        { p_command: commandId, p_order: ticketOrder.order.id, p_hash: hash },
+      );
+      if (!error && data === true) deliveryReceipt = capability;
+    } catch { /* success and QR remain authoritative */ }
     return new Response(
       JSON.stringify({
         ticketOrder,
         payment_qr: paymentQr,
         code: 200,
         delivery: "queued",
+        ...(deliveryReceipt ? { delivery_receipt: deliveryReceipt } : {}),
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

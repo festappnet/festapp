@@ -19,7 +19,8 @@ class NewsCommandResult {
 
 abstract interface class NewsCommands {
   Future<NewsCommandResult> create(int occasionId, String message);
-  Future<NewsCommandResult> update(int occasionId, NewsModel news);
+  Future<NewsCommandResult> update(int occasionId, NewsModel news,
+      {String? originalMessage});
   Future<NewsCommandResult> delete(int occasionId, NewsModel news);
   Future<NewsCommandResult> publish({
     required int occasionId,
@@ -46,8 +47,20 @@ class SupabaseNewsCommands implements NewsCommands {
       _save(occasionId, message, null, null);
 
   @override
-  Future<NewsCommandResult> update(int occasionId, NewsModel news) =>
-      _save(occasionId, news.message ?? '', news.id, news.aggregateVersion);
+  Future<NewsCommandResult> update(int occasionId, NewsModel news,
+      {String? originalMessage}) async {
+    final result = await _save(
+        occasionId, news.message ?? '', news.id, news.aggregateVersion);
+    // Readers without aggregate versions still carry an exact HTML snapshot.
+    // Bind a version only if the server confirms that snapshot is unchanged.
+    // A second conflict is returned to the caller, never retried indefinitely.
+    if (result.status == NewsCommandStatus.conflict &&
+        originalMessage != null &&
+        result.news?.message == originalMessage) {
+      return _save(occasionId, news.message ?? '', news.id, result.version);
+    }
+    return result;
+  }
 
   Future<NewsCommandResult> _save(
     int occasionId,

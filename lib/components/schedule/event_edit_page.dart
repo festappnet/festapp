@@ -2,7 +2,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_strings.dart';
@@ -22,12 +21,12 @@ import 'package:fstapp/components/speakers/speakers_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/widgets/mouse_detector.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 import '../map/place_model.dart';
@@ -46,6 +45,13 @@ class EventEditPage extends StatefulWidget {
 }
 
 class _EventEditPageState extends State<EventEditPage> {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
+  @override
+  void dispose() { _htmlSave.dispose(); super.dispose(); }
+
   final eventDayRangeTolerance = 7;
   final _formKey = GlobalKey<FormState>();
   EventModel? originalEvent;
@@ -174,11 +180,17 @@ class _EventEditPageState extends State<EventEditPage> {
   }
 
   Future<void> saveChanges() async {
+    await ExceptionHandler.guardVoid(context, futureFunction: () =>
+      _htmlSave.save(() => _performHtmlSave(), context: context));
+  }
+
+  Future<void> _performHtmlSave() async {
     if (isFormValid && _formKey.currentState!.validate()) {
       _formKey.currentState!
           .save(); // This will call onSaved for all fields, including the new dropdown if it has one
 
       if (originalEvent != null) {
+        content = await _htmlSave.prepare(content ?? '', HtmlMediaOwner.occasion(originalEvent!.occasionId));
         originalEvent!
           ..isHidden = isHidden!
           ..title = title!
@@ -209,6 +221,7 @@ class _EventEditPageState extends State<EventEditPage> {
         // updateEvent returns an EventModel carrying the id even after an
         // insert, so speaker attachment never relies on widget.id (decision R6a).
         final updatedEvent = await DbEvents.updateEvent(originalEvent!);
+      _htmlSave.markSaved();
 
         if (updatedEvent.id != null) {
           final speakerVersion = await ExceptionHandler.guard(
@@ -231,7 +244,8 @@ class _EventEditPageState extends State<EventEditPage> {
     }
   }
 
-  void cancelEdit() {
+  Future<void> cancelEdit() async {
+    if (!await confirmHtmlDiscard(context, _htmlSave) || !mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -263,8 +277,8 @@ class _EventEditPageState extends State<EventEditPage> {
     return result.id;
   }
 
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildHtmlParent(BuildContext context) {
     return MouseDetector(
       builder: (context, mouseIsConnected) {
         return Scaffold(
@@ -446,53 +460,9 @@ class _EventEditPageState extends State<EventEditPage> {
                               CommonStrings.content,
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            Center(
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  RouterService.navigatePageInfo(
-                                    context,
-                                    HtmlEditorRoute(
-                                        content: {
-                                          HtmlEditorPage.parContent: content
-                                        },
-                                        occasionId: originalEvent!
-                                            .occasionId // Assuming originalEvent is not null here, or handle new event case
-                                        ),
-                                  ).then((value) {
-                                    if (value != null) {
-                                      setState(() {
-                                        content = value as String;
-                                      });
-                                    }
-                                  });
-                                },
-                                child: Text(CommonStrings.editContent),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ClipRect(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(maxHeight: 400),
-                                child: ShaderMask(
-                                  shaderCallback: (bounds) {
-                                    return LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.white,
-                                        Colors.transparent,
-                                      ],
-                                      stops: const [0.9, 1.0],
-                                    ).createShader(bounds);
-                                  },
-                                  blendMode: BlendMode.dstIn,
-                                  child: HtmlView(
-                                    html: content ?? "",
-                                    isSelectable: true,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            EditableHtmlField(html: content, coordinator: _htmlSave,
+                              owner: HtmlMediaOwner.occasion(originalEvent!.occasionId),
+                              onChanged: (html) => setState(() => content = html)),
                             const SizedBox(height: 16),
                             ExpansionTile(
                               title: Text(
