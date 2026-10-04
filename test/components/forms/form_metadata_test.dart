@@ -14,6 +14,12 @@ void main() {
     final form = FormModel(relatedFields: [
       FormFieldModel(id: 1, type: FormHelper.fieldTypeTicket),
       FormFieldModel(
+        id: 5,
+        type: FormHelper.fieldTypeSpot,
+        isTicketField: true,
+        isHidden: false,
+      ),
+      FormFieldModel(
         id: 2,
         type: FormHelper.fieldTypeProductType,
         isTicketField: true,
@@ -35,7 +41,7 @@ void main() {
     ]);
     final holder = FormHolder.fromFormFieldModel(form);
     expect(holder.fields.map((field) => field.id), [1]);
-    expect(holder.getTicket()!.fields.map((field) => field.id), [3]);
+    expect(holder.getTicket()!.fields.map((field) => field.id), [5, 3]);
   });
   test('reading design and schedule defaults does not create an unsaved change',
       () {

@@ -61,8 +61,10 @@ class FormHolder {
     final ticketChildFields = formModel.relatedFields
         .where((f) =>
             f.isTicketField == true &&
+            !(f.type == FormHelper.fieldTypeSpot && f.isHidden == true) &&
             !(f.type == FormHelper.fieldTypeProductType &&
-                f.productType?.type == ProductModel.spotType))
+                f.productType?.type == ProductModel.spotType &&
+                formModel.usesSeatSelection))
         .toList()
       ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
 
@@ -71,7 +73,8 @@ class FormHolder {
         .where((f) =>
             f.isTicketField != true &&
             !(f.type == FormHelper.fieldTypeProductType &&
-                f.productType?.type == ProductModel.spotType))
+                f.productType?.type == ProductModel.spotType &&
+                formModel.usesSeatSelection))
         .map((f) => createFieldHolder(f))
         .toList();
 
@@ -84,10 +87,10 @@ class FormHolder {
     return FormHolder(
         fields: otherFields,
         isCardDesign: formModel.isCardDesign,
-        phonePrefixes: formModel.data != null &&
-                formModel.data!['phone_prefixes'] != null
-            ? List<String>.from(formModel.data!['phone_prefixes'])
-            : [],
+        phonePrefixes:
+            formModel.data != null && formModel.data!['phone_prefixes'] != null
+                ? List<String>.from(formModel.data!['phone_prefixes'])
+                : [],
         communicationTone: formModel.communicationTone);
   }
 
