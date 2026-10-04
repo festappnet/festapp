@@ -15,17 +15,11 @@ BEGIN
     'SELECT apply_planned_changes()'
   );
 
-  -- Schedule the synchronize_orders cron job (runs every 10 minutes)
-  PERFORM cron.schedule(
-      'synchronize_orders',
-      '*/10 * * * *',
-      format($$
-        SELECT net.http_post(
-          url := '%s/functions/v1/synchronize-orders'::text,
-          body := jsonb_build_object('requestSecret', public.generate_request_secret(3600))
-        );
-      $$, p_project_url)
-  );
+  -- BankSync owns bank polling. This job only recovers durable control intents.
+  PERFORM cron.schedule('festapp_canonical_bank_sync_reconcile','*/5 * * * *',
+    format($$SELECT net.http_post(url:='%s/functions/v1/bank-sync-reconcile',
+      body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)),
+      timeout_milliseconds:=360000)$$,p_project_url));
 
   PERFORM cron.schedule('festapp_canonical_process_email_queue','*/1 * * * *','SELECT public.recover_email_delivery()');
 END;

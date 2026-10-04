@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -15,7 +13,7 @@ class ProgressDialogs {
     Duration? delay,
     bool isBasic = false,
   }) async {
-    final completer = Completer<bool>();
+    final navigator = Navigator.of(context, rootNavigator: true);
     final progressNotifier = ValueNotifier<int>(0);
     final isCancelled = ValueNotifier<bool>(false);
     final statusMessage = ValueNotifier<String>("");
@@ -95,7 +93,6 @@ class ProgressDialogs {
                                         onPressed: isActive
                                             ? () {
                                                 Navigator.of(context).pop();
-                                                completer.complete(false);
                                               }
                                             : null,
                                         child: Text(CommonStrings.ok),
@@ -132,8 +129,8 @@ class ProgressDialogs {
           }
         } catch (e) {
           if (isBasic) {
+            if (navigator.mounted) navigator.pop();
             if (context.mounted) {
-              Navigator.of(context).pop();
               await ExceptionHandler.handle(context, error: e);
             }
             return false;
@@ -156,17 +153,12 @@ class ProgressDialogs {
       statusMessage.value = CommonStrings.processingCancelled;
     } else {
       statusMessage.value = CommonStrings.processingCompleted;
-      if (isBasic && context.mounted) {
-        Navigator.of(context).pop();
-        completer.complete(true);
+      if (isBasic && navigator.mounted) {
+        navigator.pop();
       }
     }
 
-    if (!completer.isCompleted) {
-      completer.complete(!hasError.value && !isCancelled.value);
-    }
-
-    return completer.future;
+    return !hasError.value && !isCancelled.value;
   }
 
   static Future<T?> showFutureProgressDialog<T>({
@@ -174,6 +166,7 @@ class ProgressDialogs {
     required String title,
     required Future<T> Function() futureCallback,
   }) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -195,13 +188,11 @@ class ProgressDialogs {
     try {
       final result = await futureCallback();
 
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
+      if (navigator.mounted) navigator.pop();
       return result;
     } catch (e) {
+      if (navigator.mounted) navigator.pop();
       if (context.mounted) {
-        Navigator.of(context).pop();
         ToastHelper.Show(context, "Error: $e");
       }
       return null;

@@ -43,9 +43,11 @@ class BlueprintGroupsPanel extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              BlueprintStrings.groupsTitle,
-              style: Theme.of(context).textTheme.titleMedium,
+            Flexible(
+              child: Text(
+                BlueprintStrings.groupsTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
             Row(
               children: [

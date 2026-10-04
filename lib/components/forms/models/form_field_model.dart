@@ -10,6 +10,9 @@ import 'package:trina_grid/trina_grid.dart';
 class FormFieldModel extends ITrinaRowModel {
   @override
   int? id;
+  String? deleteBlockedReason;
+  bool? deletionAllowed;
+  bool get canDelete => id == null || deletionAllowed == true;
   DateTime? createdAt;
   DateTime? updatedAt;
   String? title;
@@ -32,6 +35,8 @@ class FormFieldModel extends ITrinaRowModel {
 
   FormFieldModel({
     this.id,
+    this.deleteBlockedReason,
+    this.deletionAllowed,
     this.createdAt,
     this.updatedAt,
     this.title,
@@ -61,6 +66,8 @@ class FormFieldModel extends ITrinaRowModel {
     }
     return FormFieldModel(
         id: json[Tb.form_fields.id],
+        deleteBlockedReason: json['delete_blocked_reason'],
+        deletionAllowed: json['can_delete'],
         createdAt: json[Tb.form_fields.created_at] != null
             ? DateTime.parse(json[Tb.form_fields.created_at])
             : null,

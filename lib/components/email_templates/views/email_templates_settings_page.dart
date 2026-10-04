@@ -33,9 +33,12 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
   @override
-  void dispose() { _htmlSave.dispose(); super.dispose(); }
+  void dispose() {
+    _htmlSave.dispose();
+    super.dispose();
+  }
 
   final _formKey = GlobalKey<FormState>();
   late String? _subject;
@@ -49,17 +52,20 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   }
 
   Future<void> _saveSettings() async {
-    await ExceptionHandler.guardVoid(context, futureFunction: () =>
-      _htmlSave.save(() => _performHtmlSave(), context: context));
+    await ExceptionHandler.guardVoid(context,
+        futureFunction: () =>
+            _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState!.save();
-      _htmlContent = await _htmlSave.prepare(_htmlContent ?? '',
-        widget.emailTemplatesResponse.occasion?.id != null
-          ? HtmlMediaOwner.occasion(widget.emailTemplatesResponse.occasion!.id)
-          : HtmlMediaOwner.unit(widget.emailTemplatesResponse.unit.id));
+      _htmlContent = await _htmlSave.prepare(
+          _htmlContent ?? '',
+          widget.emailTemplatesResponse.occasion?.id != null
+              ? HtmlMediaOwner.occasion(
+                  widget.emailTemplatesResponse.occasion!.id)
+              : HtmlMediaOwner.unit(widget.emailTemplatesResponse.unit.id));
       widget.template.subject = _subject;
       widget.template.html = _htmlContent;
 
@@ -115,7 +121,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     return const SizedBox();
   }
 
-
   Widget _buildHtmlParent(BuildContext context) {
     // Get usage details from the email template (read-only info).
     final usageDetails = widget.template.getUsageDetails();
@@ -131,7 +136,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           ),
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () async { if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted) Navigator.of(context).pop(); },
+            onPressed: () async {
+              if (await confirmHtmlDiscard(context, _htmlSave) &&
+                  context.mounted) Navigator.of(context).pop();
+            },
           )
         ],
       ),
@@ -230,30 +238,36 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              EditableHtmlField(html: _htmlContent, coordinator: _htmlSave,
-                profile: HtmlContentProfile.emailContent,
-                owner: widget.emailTemplatesResponse.occasion?.id != null
-                  ? HtmlMediaOwner.occasion(widget.emailTemplatesResponse.occasion!.id)
-                  : HtmlMediaOwner.unit(widget.emailTemplatesResponse.unit.id),
-                onChanged: (html) => setState(() => _htmlContent = html)),
+              EditableHtmlField(
+                  html: _htmlContent,
+                  coordinator: _htmlSave,
+                  profile: HtmlContentProfile.emailContent,
+                  owner: widget.emailTemplatesResponse.occasion?.id != null
+                      ? HtmlMediaOwner.occasion(
+                          widget.emailTemplatesResponse.occasion!.id)
+                      : HtmlMediaOwner.unit(
+                          widget.emailTemplatesResponse.unit.id),
+                  onChanged: (html) => setState(() => _htmlContent = html)),
               const SizedBox(height: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if ((widget.template.occasion != null &&
-                          widget.template.occasion ==
-                              widget.emailTemplatesResponse.occasion?.id) ||
-                      (widget.template.unit != null &&
-                          widget.template.unit ==
-                              widget.emailTemplatesResponse.unit.id &&
-                          widget.emailTemplatesResponse.occasion == null))
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ThemeConfig.redColor(context),
-                          foregroundColor: Colors.white,
-                        ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        Row(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ((widget.template.occasion != null &&
+                            widget.template.occasion ==
+                                widget.emailTemplatesResponse.occasion?.id) ||
+                        (widget.template.unit != null &&
+                            widget.template.unit ==
+                                widget.emailTemplatesResponse.unit.id &&
+                            widget.emailTemplatesResponse.occasion == null))
+                    ? TextButton(
                         onPressed: () async {
                           final confirmed =
                               await DialogHelper.showConfirmationDialog(
@@ -281,23 +295,23 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                           }
                         },
                         child: Text(EmailTemplatesStrings.resetToDefault),
-                      ),
-                    ),
-                ],
+                      )
+                    : null,
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () async { if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted) Navigator.of(context).pop(); },
-          child: Text(CommonStrings.storno),
-        ),
-        ElevatedButton(
-          onPressed: _saveSettings,
-          child: Text(CommonStrings.save),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (await confirmHtmlDiscard(context, _htmlSave) &&
+                    context.mounted) Navigator.of(context).pop();
+              },
+              child: Text(CommonStrings.storno),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _saveSettings,
+              child: Text(CommonStrings.save),
+            ),
+          ],
         ),
       ],
     );

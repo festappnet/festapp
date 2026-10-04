@@ -2,6 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 
 void main() {
+  test('reading design and schedule defaults does not create an unsaved change',
+      () {
+    final form = FormModel(data: {});
+    expect(form.startTime, isNull);
+    expect(form.endTime, isNull);
+    expect(form.enableCountdown, false);
+    expect(form.primaryColor, isNull);
+    expect(form.fontFamily, isNull);
+    expect(form.data, isEmpty);
+    form.primaryColor = 0xff123456;
+    form.enableCountdown = true;
+    expect(form.primaryColor, 0xff123456);
+    expect(form.enableCountdown, true);
+  });
   test('festapp2025 metadata loads and saves as an object', () {
     final form = FormModel.fromJson({
       'id': 22,

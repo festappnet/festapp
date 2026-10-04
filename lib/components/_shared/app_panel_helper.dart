@@ -92,7 +92,8 @@ class AppPanelHelper {
 
     // Separator, Occasion Selector, and new Action Selector
     // Skip on unit-level pages (e.g. /unit/5/edit) where occasion context is stale
-    final currentRoutePath = context.routeData.path;
+    // App-bar builders can inherit a different route scope than the page.
+    final currentRoutePath = originalContext.routeData.path;
     final isUnitLevelPage = currentRoutePath.contains('/unit/') &&
         currentRoutePath.contains('/edit');
     if (currentUnit != null && currentOccasion != null && !isUnitLevelPage) {
@@ -186,12 +187,11 @@ class AppPanelHelper {
         // View App is always available if the app is supported
         availableActions.add(viewAppAction);
 
-        final currentPath = context.routeData.path;
         _ActionMenuItem currentAction;
 
-        if (currentPath.endsWith(ReservationsPage.ROUTE)) {
+        if (currentRoutePath.endsWith(ReservationsPage.ROUTE)) {
           currentAction = reservationsAction;
-        } else if (currentPath.endsWith(AdminPage.ROUTE)) {
+        } else if (currentRoutePath.endsWith(AdminPage.ROUTE)) {
           currentAction = adminAction;
         } else {
           currentAction = viewAppAction;
@@ -383,13 +383,13 @@ class AppPanelHelper {
     final theme = Theme.of(context);
     final onAppBarColor = theme.appBarTheme.foregroundColor ?? Colors.white;
     final textStyle = TextStyle(
-        fontSize: 16,
+        fontSize: 17,
         color: onAppBarColor,
         fontWeight: isBold ? FontWeight.bold : FontWeight.normal);
     // The bold face is Gill Sans; keep both title weights on Futura's line metrics.
     final titleStrut = StrutStyle(
       fontFamily: ThemeConfig.fontFamily,
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: FontWeight.normal,
       forceStrutHeight: true,
     );
@@ -596,8 +596,9 @@ class AppPanelHelper {
     List<RoutedTabDefinition>? activeTabs,
     TabController? tabController,
   ) {
+    final compact = activeTabs != null;
     return AppBar(
-      toolbarHeight: 60,
+      toolbarHeight: compact ? 52 : 60,
       automaticallyImplyLeading: false,
       // Use a fully custom title area
       leading: null,
@@ -613,7 +614,8 @@ class AppPanelHelper {
             },
             child: Padding(
               // Add padding to space it from the screen edge and from the breadcrumbs
-              padding: const EdgeInsets.fromLTRB(16, 8, 24, 8),
+              padding:
+                  EdgeInsets.fromLTRB(16, compact ? 6 : 8, 24, compact ? 6 : 8),
               child: LogoWidget(height: 40, forceDark: true),
             ),
           ),
@@ -633,6 +635,7 @@ class AppPanelHelper {
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             child: UserHeaderWidget(
+              compact: compact,
               appBarIconColor: ThemeConfig.lllBackground,
             ))
       ],

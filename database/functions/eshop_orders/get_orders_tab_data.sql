@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_orders_tab_data(
+CREATE OR REPLACE FUNCTION public.get_orders_tab_data(
     p_occasion_link TEXT
 )
 RETURNS JSONB
@@ -23,7 +23,9 @@ BEGIN
     END IF;
 
     RETURN (v_orders_data->'data') || jsonb_build_object('forms', v_forms_data->'data', 'email_delivery',
-      public.get_order_email_summaries((SELECT id FROM public.occasions WHERE link=p_occasion_link),
+      public.get_order_email_summaries((SELECT id FROM public.occasions
+        WHERE link = p_occasion_link
+          AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid())),
         ARRAY(SELECT (ord->>'id')::bigint FROM jsonb_array_elements(v_orders_data#>'{data,orders}') ord)));
 END;
 $$;

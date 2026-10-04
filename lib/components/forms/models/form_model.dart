@@ -50,6 +50,21 @@ class FormModel {
   String? link;
   // UPDATED: Now non-nullable.
   List<FormFieldModel> relatedFields;
+  final Set<int> deletedFieldIds = {};
+  final Set<int> deletedProductIds = {};
+
+  void removeField(FormFieldModel field) {
+    final removed = [
+      field,
+      if (field.type == 'ticket')
+        ...relatedFields.where((f) => f.isTicketField == true)
+    ];
+    for (final item in removed) {
+      if (item.id != null) deletedFieldIds.add(item.id!);
+      relatedFields.remove(item);
+    }
+  }
+
   List<BankAccountModel>? availableBankAccounts;
   FormStatsModel? stats;
   bool? isReminderEnabled;
@@ -189,6 +204,8 @@ class FormModel {
       };
 
   Map<String, dynamic> toEditedJson() => {
+        'deleted_field_ids': deletedFieldIds.toList(),
+        'deleted_product_ids': deletedProductIds.toList(),
         Tb.forms.id: id,
         Tb.forms.created_at: createdAt?.toIso8601String(),
         Tb.forms.title: title,
@@ -210,14 +227,20 @@ class FormModel {
       };
 
   // Helper for Design Data
-  Map<String, dynamic> get _designData {
+  Map<String, dynamic> get _designData =>
+      data?[metaDesign] as Map<String, dynamic>? ?? {};
+
+  Map<String, dynamic> get _mutableDesignData {
     data ??= {};
     return data!.putIfAbsent(metaDesign, () => <String, dynamic>{})
         as Map<String, dynamic>;
   }
 
   // Helper for Schedule Data
-  Map<String, dynamic> get _scheduleData {
+  Map<String, dynamic> get _scheduleData =>
+      data?[metaSchedule] as Map<String, dynamic>? ?? {};
+
+  Map<String, dynamic> get _mutableScheduleData {
     data ??= {};
     return data!.putIfAbsent(metaSchedule, () => <String, dynamic>{})
         as Map<String, dynamic>;
@@ -234,7 +257,7 @@ class FormModel {
     if (value == null) {
       _scheduleData.remove(metaStartTime);
     } else {
-      _scheduleData[metaStartTime] =
+      _mutableScheduleData[metaStartTime] =
           value.toUtcFromOccasionTime().toIso8601String();
     }
   }
@@ -250,7 +273,7 @@ class FormModel {
     if (value == null) {
       _scheduleData.remove(metaEndTime);
     } else {
-      _scheduleData[metaEndTime] =
+      _mutableScheduleData[metaEndTime] =
           value.toUtcFromOccasionTime().toIso8601String();
     }
   }
@@ -263,7 +286,7 @@ class FormModel {
   }
 
   set enableCountdown(bool value) {
-    _scheduleData[metaEnableCountdown] = value;
+    _mutableScheduleData[metaEnableCountdown] = value;
   }
 
   String get countdownStyle {
@@ -274,7 +297,7 @@ class FormModel {
   }
 
   set countdownStyle(String value) {
-    _designData[metaCountdownStyle] = value;
+    _mutableDesignData[metaCountdownStyle] = value;
   }
 
   String? get countdownTitle {
@@ -288,7 +311,7 @@ class FormModel {
     if (value == null) {
       _scheduleData.remove(metaCountdownTitle);
     } else {
-      _scheduleData[metaCountdownTitle] = value;
+      _mutableScheduleData[metaCountdownTitle] = value;
     }
   }
 
@@ -322,7 +345,7 @@ class FormModel {
     if (value == null) {
       _designData.remove(metaPrimaryColor);
     } else {
-      _designData[metaPrimaryColor] = _colorToHex(value);
+      _mutableDesignData[metaPrimaryColor] = _colorToHex(value);
     }
   }
 
@@ -337,7 +360,7 @@ class FormModel {
     if (value == null) {
       _designData.remove(metaSecondaryColor);
     } else {
-      _designData[metaSecondaryColor] = _colorToHex(value);
+      _mutableDesignData[metaSecondaryColor] = _colorToHex(value);
     }
   }
 
@@ -352,7 +375,7 @@ class FormModel {
     if (value == null) {
       _designData.remove(metaFontFamily);
     } else {
-      _designData[metaFontFamily] = value;
+      _mutableDesignData[metaFontFamily] = value;
     }
   }
 
@@ -364,7 +387,7 @@ class FormModel {
   }
 
   set isCardDesign(bool value) {
-    _designData['is_card_design'] = value;
+    _mutableDesignData['is_card_design'] = value;
   }
 
   static const String metaCommunicationTone = "communication_tone";

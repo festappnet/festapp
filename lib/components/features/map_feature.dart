@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
@@ -67,7 +68,12 @@ class MapFeature extends Feature {
   @override
   Widget buildFormField(BuildContext context) {
     return StatefulBuilder(
-      builder: (ctx, setLocalState) {
+      builder: (ctx, updateLocal) {
+        void setLocalState(VoidCallback change) {
+          updateLocal(change);
+          EditorDraftScope.changed(ctx);
+        }
+
         // controllers local to this builder
         final zoomCtrl = TextEditingController(text: defaultMapZoom.toString());
         final latCtrl =

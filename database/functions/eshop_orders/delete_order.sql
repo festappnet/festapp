@@ -17,7 +17,8 @@ BEGIN
   SELECT occasion, payment_info
     INTO order_oc, payment_info_id
     FROM eshop.orders
-   WHERE id = order_id;
+   WHERE id = order_id
+   FOR UPDATE;
 
   IF order_oc IS NULL THEN
     RAISE EXCEPTION 'Order not found.';
@@ -30,6 +31,20 @@ BEGIN
   WHERE id = order_oc;
 
   PERFORM public.check_is_manager_on_unit(unit_id);
+
+  -- Fence unsent mail immediately; retain in-flight/accepted/unknown evidence.
+  WITH cancelled AS (
+    UPDATE public.email_messages m
+       SET workflow_state = 'cancelled', last_error = 'order_deleted',
+           lease_token = NULL, lease_until = NULL
+     WHERE m.order_id = delete_order_221.order_id
+       AND m.workflow_state IN ('pending', 'retry_wait', 'blocked', 'preparing')
+     RETURNING m.message_id
+  )
+  UPDATE public.email_attempts a
+     SET state = 'cancelled', finished_at = now(), error_code = 'order_deleted'
+   WHERE a.message_id IN (SELECT message_id FROM cancelled)
+     AND a.state = 'preparing';
 
   -- Collect all order_product_ticket IDs for the order.
   SELECT ARRAY(SELECT id FROM eshop.order_product_ticket WHERE "order" = order_id)

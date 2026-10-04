@@ -10,7 +10,7 @@ BEGIN
     INTO v_occasion_id
   FROM eshop.products p
   JOIN eshop.product_types pt ON p.product_type = pt.id
-  WHERE p.id = p_product_id;
+  WHERE p.id = p_product_id FOR UPDATE OF p;
 
   -- If the product does not exist, raise a structured error.
   IF NOT FOUND THEN
@@ -38,6 +38,8 @@ BEGIN
   -- **INTEGRATION:** Before deleting the product, clear all its inventory context associations.
   -- This call will also trigger the necessary de-allocation of spots.
   PERFORM public.update_product_inventory_contexts_internal_v1(p_product_id, '[]'::jsonb);
+
+  DELETE FROM eshop.planned_changes WHERE subject_id=p_product_id AND change_type IN('products.price','products.is_hidden') AND NOT applied;
 
   -- Finally, delete the product itself.
   DELETE FROM eshop.products

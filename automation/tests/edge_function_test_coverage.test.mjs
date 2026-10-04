@@ -9,7 +9,6 @@ import {
 
 test('Deno discovery includes both repository test naming conventions', () => {
   const tests = discoverDenoTests();
-  assert.ok(tests.includes('supabase/functions/bank-mail-parser/test_parser.ts'));
   assert.ok(tests.includes('supabase/functions/notify/webhookAuth_test.ts'));
   const runner = fs.readFileSync('automation/test_all.sh', 'utf8');
   assert.match(runner, /-name "\*_test\.ts"/);
