@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:flutter/material.dart';
 import 'feature.dart';
 import 'feature_constants.dart';
@@ -7,6 +8,7 @@ class DepositFeature extends Feature {
   String? depositDeadline;
   int? depositDeadlineDays;
   String? metaSurchargeDescription;
+
   /// Mutually exclusive modes:
   ///   "real"    → payment-linked deposit (default)
   ///   "virtual" → visual-only meta doplatek (no payment impact, slevy allowed)
@@ -32,8 +34,7 @@ class DepositFeature extends Feature {
       isEnabled: json[FeatureConstants.metaIsEnabled] ?? false,
       depositDeadline: json[FeatureConstants.depositDeadline],
       depositDeadlineDays: json[FeatureConstants.depositDeadlineDays],
-      metaSurchargeDescription:
-          json[FeatureConstants.metaSurchargeDescription],
+      metaSurchargeDescription: json[FeatureConstants.metaSurchargeDescription],
       mode: json[FeatureConstants.depositMode],
     );
   }
@@ -64,7 +65,12 @@ class DepositFeature extends Feature {
 
   @override
   Widget buildFormField(BuildContext context) {
-    return StatefulBuilder(builder: (ctx, setLocal) {
+    return StatefulBuilder(builder: (ctx, updateLocal) {
+      void setLocal(VoidCallback change) {
+        updateLocal(change);
+        EditorDraftScope.changed(ctx);
+      }
+
       final daysController = TextEditingController(
         text: depositDeadlineDays?.toString() ?? '7',
       );

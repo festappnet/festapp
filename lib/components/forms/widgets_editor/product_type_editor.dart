@@ -454,6 +454,7 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                     Expanded(
                       child: TicketProductEditorRow(
                         product: group.products![i],
+                        onChanged: refresh,
                         onDelete: () {
                           final removed = group.products!.removeAt(i);
                           if (removed.id != null) {

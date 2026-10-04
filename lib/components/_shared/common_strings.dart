@@ -1,6 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class CommonStrings {
+  static String get discardChanges => 'Common.discardChanges'.tr();
+  static String get discardChangesConfirmation =>
+      'Common.discardChangesConfirmation'.tr();
+  static String get keepEditing => 'Common.keepEditing'.tr();
   // --- Common Actions ---
   static String get save => 'Common.save'.tr(); // "Save"
   static String get unexpectedError =>
@@ -13,8 +17,7 @@ class CommonStrings {
   static String get confirm => 'Common.confirm'.tr(); // "Confirm"
   static String get rename => 'Common.rename'.tr(); // "Rename"
   static String get addNew => 'Common.addNew'.tr(); // "Add new"
-  static String get addExisting =>
-      'Common.addExisting'.tr(); // "Add existing"
+  static String get addExisting => 'Common.addExisting'.tr(); // "Add existing"
   static String get create => 'Common.create'.tr(); // "Create"
   static String get cancel => 'Common.cancel'.tr(); // "Cancel"
   static String get reset => 'Common.reset'.tr(); // "Reset"
@@ -24,7 +27,8 @@ class CommonStrings {
   static String get send => 'Common.send'.tr(); // "Send"
   static String get update => 'Common.update'.tr(); // "Update"
   static String get retry => 'Common.retry'.tr();
-  static String get continueAction => 'Common.continueAction'.tr(); // "Continue"
+  static String get continueAction =>
+      'Common.continueAction'.tr(); // "Continue"
   static String get proceed => 'Common.proceed'.tr(); // "Proceed"
   static String get saveChanges => 'Common.saveChanges'.tr(); // "Save changes"
   static String get editContent => 'Common.editContent'.tr(); // "Edit content"
@@ -104,8 +108,8 @@ class CommonStrings {
       'Common.updatedItem'.tr(namedArgs: {'item': item}); // "Updated {item}."
   static String get processing => 'Common.processing'.tr(); // "Processing..."
   static String get progress => 'Common.progress'.tr(); // "Progress"
-  static String get processingCancelled => 'Common.processingCancelled'
-      .tr(); // "The processing has been cancelled."
+  static String get processingCancelled =>
+      'Common.processingCancelled'.tr(); // "The processing has been cancelled."
   static String get processingCompleted => 'Common.processingCompleted'
       .tr(); // "The processing has completed successfully."
   static String get processingFailed => 'Common.processingFailed'
@@ -117,8 +121,8 @@ class CommonStrings {
       'Common.newVersionAvailable'.tr(); // "New Version Available"
   static String get updateAppPrompt => 'Common.updateAppPrompt'
       .tr(); // "Update the app to the latest version to access all features."
-  static String get notificationsAllowed => 'Common.notificationsAllowed'
-      .tr(); // "Notifications have been allowed."
+  static String get notificationsAllowed =>
+      'Common.notificationsAllowed'.tr(); // "Notifications have been allowed."
   static String get notificationsDisabled => 'Common.notificationsDisabled'
       .tr(); // "Notifications have been disabled."
   static String get notifications =>
@@ -142,9 +146,8 @@ class CommonStrings {
   static String get languageSettings =>
       'Common.languageSettings'.tr(); // "Language Settings"
   static String currentLanguage({required String language}) =>
-      'Common.currentLanguage'.tr(namedArgs: {
-        'language': language
-      }); // "Current Language: {language}"
+      'Common.currentLanguage'.tr(
+          namedArgs: {'language': language}); // "Current Language: {language}"
   static String get chooseLanguage =>
       'Common.chooseLanguage'.tr(); // "Choose language"
   static String languageSetTo({required String language}) =>
@@ -173,6 +176,6 @@ class CommonStrings {
   static String get import => 'Common.import'.tr(); // "Import"
   static String get dropFileHere =>
       'Common.dropFileHere'.tr(); // "Drop file here"
-  static String get dropFileHereOrClick => 'Common.dropFileHereOrClick'
-      .tr(); // "Drop file here or click to upload"
+  static String get dropFileHereOrClick =>
+      'Common.dropFileHereOrClick'.tr(); // "Drop file here or click to upload"
 }

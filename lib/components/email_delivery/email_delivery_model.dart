@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -63,7 +64,7 @@ class EmailDeliveryModel implements ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) => TrinaRow(cells: {
         'id': TrinaCell(value: id),
-        'order_id': TrinaCell(value: orderId),
+        EshopColumns.ORDER_SYMBOL: TrinaCell(value: orderId ?? ''),
         'created_at': TrinaCell(
             value: createdAt == null
                 ? ''
