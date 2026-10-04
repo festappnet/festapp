@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
+import 'package:fstapp/theme_config.dart';
 
 void main() {
   test(
@@ -26,12 +27,12 @@ void main() {
 
   for (final brightness in Brightness.values) {
     testWidgets(
-        'actions use a matching surface in $brightness and block duplicate saves',
+        'actions match the compact header in $brightness and block duplicate saves',
         (tester) async {
       final saved = Completer<void>();
       var saves = 0;
       await tester.pumpWidget(MaterialApp(
-          theme: ThemeData(brightness: brightness),
+          theme: ThemeConfig.theme(brightness: brightness),
           home: Scaffold(
               bottomNavigationBar: EditorActionBar(
                   hasChanges: true,
@@ -42,7 +43,9 @@ void main() {
                   onDiscard: () async {}))));
       final bar = tester.widget<BottomAppBar>(find.byType(BottomAppBar));
       final context = tester.element(find.byType(EditorActionBar));
-      expect(bar.color, Theme.of(context).colorScheme.surface);
+      expect(bar.color, Theme.of(context).appBarTheme.backgroundColor);
+      expect(tester.getSize(find.byType(BottomAppBar)).height, 48);
+      expect(tester.takeException(), isNull);
       await tester.tap(find.byType(FilledButton));
       await tester.pump();
       expect(saves, 1);
