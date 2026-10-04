@@ -11,7 +11,7 @@ const REQUIRED_FREEZE_LANES = Object.freeze([
 const REQUIRED_PROBES = Object.freeze(['auth', 'rest', 'storage', 'realtime']);
 const REQUIRED_INTEGRATIONS = Object.freeze([
   'auth-password', 'auth-oauth', 'auth-refresh', 'aws-sns', 'edge-functions',
-  'onesignal', 'payment-callbacks', 'realtime', 'smtp', 'storage', 'sync-worker',
+  'onesignal', 'payment-callbacks', 'realtime', 'email-ses', 'storage', 'sync-worker',
 ]);
 const MAX_EVIDENCE_AGE_MS = 30 * 60 * 1000;
 const MAX_CANARY_AGE_MS = 24 * 60 * 60 * 1000;

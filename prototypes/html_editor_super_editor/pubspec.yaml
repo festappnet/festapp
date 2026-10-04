@@ -1,0 +1,22 @@
+name: super_editor_clipboard_demo
+description: Local rich-paste and HTML-export experiment for Festapp.
+publish_to: none
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  super_editor: 0.3.0-dev.52
+  super_editor_clipboard: 0.2.10
+  mime: 2.1.0
+  cached_network_image: 3.4.1
+  cached_network_image_platform_interface: 4.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

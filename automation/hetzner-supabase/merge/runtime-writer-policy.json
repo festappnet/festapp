@@ -2,41 +2,325 @@
   "version": 1,
   "canonical_origin": "https://api.festapp.net",
   "edge_functions": {
-    "bank-mail-parser": { "trigger": "aws-sns-callback", "effects": ["database-rpc", "aws-sns-subscription-confirmation"], "mutates_authority": true },
-    "cancel-reception-registration": { "trigger": "client-http", "effects": ["database-rpc", "auth-session-revocation"], "mutates_authority": true },
-    "confirm-account-deletion": { "trigger": "client-http", "effects": ["database-rpc", "auth-delete", "storage-delete", "onesignal-delete", "smtp"], "mutates_authority": true },
-    "download-ticket": { "trigger": "client-http", "effects": ["database-read", "remote-asset-read"], "mutates_authority": false },
-    "exchange-login-qr": { "trigger": "client-http", "effects": ["database-rpc", "auth-session-create"], "mutates_authority": true },
-    "fetch-http-data": { "trigger": "client-http", "effects": ["remote-http-read"], "mutates_authority": false },
-    "fetch-transactions": { "trigger": "client-http", "effects": ["database-rpc", "fio-api"], "mutates_authority": true },
-    "generate-order-agreement": { "trigger": "client-http", "effects": ["database-read", "remote-asset-read"], "mutates_authority": false },
-    "instance-install": { "trigger": "operator-http", "effects": ["direct-sql", "github-api"], "mutates_authority": true },
-    "notify": { "trigger": "database-webhook", "effects": ["database-read", "onesignal-notification"], "mutates_authority": false },
-    "register": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "request-account-deletion": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-app-links": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-custom-email": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-email": { "trigger": "database-cron-or-client-http", "effects": ["database-rpc", "fakturoid-api", "smtp"], "mutates_authority": true },
-    "send-reset-password-link": { "trigger": "client-http", "effects": ["database-rpc", "smtp"], "mutates_authority": true },
-    "send-sign-in-code": { "trigger": "client-http", "effects": ["database-rpc", "auth-update", "smtp"], "mutates_authority": true },
-    "send-ticket-order": { "trigger": "client-http", "effects": ["database-rpc"], "mutates_authority": true },
-    "send-tickets": { "trigger": "edge-function-http", "effects": ["database-rpc", "remote-asset-read", "smtp"], "mutates_authority": true },
-    "synchronize-orders": { "trigger": "database-cron-or-client-http", "effects": ["database-rpc", "fio-api", "edge-function-http"], "mutates_authority": true }
+    "preview-ticket-layout": {
+      "trigger": "client-http",
+      "effects": [
+        "database-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
+    },
+    "bank-mail-parser": {
+      "trigger": "aws-sns-callback",
+      "effects": [
+        "database-rpc",
+        "aws-sns-subscription-confirmation"
+      ],
+      "mutates_authority": true
+    },
+    "cancel-reception-registration": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-session-revocation"
+      ],
+      "mutates_authority": true
+    },
+    "confirm-account-deletion": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-delete",
+        "storage-delete",
+        "onesignal-delete",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "download-ticket": {
+      "trigger": "client-http",
+      "effects": [
+        "database-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
+    },
+    "exchange-login-qr": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-session-create"
+      ],
+      "mutates_authority": true
+    },
+    "fetch-http-data": {
+      "trigger": "client-http",
+      "effects": [
+        "remote-http-read"
+      ],
+      "mutates_authority": false
+    },
+    "fetch-transactions": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "fio-api"
+      ],
+      "mutates_authority": true
+    },
+    "generate-order-agreement": {
+      "trigger": "client-http",
+      "effects": [
+        "database-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
+    },
+    "instance-install": {
+      "trigger": "operator-http",
+      "effects": [
+        "direct-sql",
+        "github-api"
+      ],
+      "mutates_authority": true
+    },
+    "notify": {
+      "trigger": "database-webhook",
+      "effects": [
+        "database-read",
+        "onesignal-notification"
+      ],
+      "mutates_authority": false
+    },
+    "register": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "request-account-deletion": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "send-app-links": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "send-custom-email": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "send-email": {
+      "trigger": "database-cron-or-client-http",
+      "effects": [
+        "database-rpc",
+        "fakturoid-api",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "send-reset-password-link": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "send-sign-in-code": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-update",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "send-ticket-order": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc"
+      ],
+      "mutates_authority": true
+    },
+    "send-tickets": {
+      "trigger": "edge-function-http",
+      "effects": [
+        "database-rpc",
+        "remote-asset-read",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "synchronize-orders": {
+      "trigger": "database-cron-or-client-http",
+      "effects": [
+        "database-rpc",
+        "fio-api",
+        "edge-function-http"
+      ],
+      "mutates_authority": true
+    },
+    "google-auth-start": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "google-oidc"
+      ],
+      "mutates_authority": true
+    },
+    "google-auth-callback": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "google-oidc"
+      ],
+      "mutates_authority": true
+    },
+    "google-auth-complete": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "google-oidc",
+        "auth-session-create",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "process-email-queue": {
+      "trigger": "post-commit-pg-net",
+      "effects": [
+        "database-rpc",
+        "private-email-gateway"
+      ],
+      "mutates_authority": true
+    },
+    "send-email-gateway": {
+      "trigger": "private-worker-http",
+      "effects": [
+        "database-rpc",
+        "ses-api"
+      ],
+      "mutates_authority": true
+    },
+    "email-provider-events": {
+      "trigger": "aws-sns-callback",
+      "effects": [
+        "database-rpc",
+        "aws-sns-subscription-confirmation"
+      ],
+      "mutates_authority": true
+    },
+    "email-confirmation-status": {
+      "trigger": "receipt-capability-http",
+      "effects": [
+        "database-read"
+      ],
+      "mutates_authority": false
+    },
+    "auth-email-hook": {
+      "trigger": "signed-gotrue-hook",
+      "effects": [
+        "database-rpc"
+      ],
+      "mutates_authority": true
+    },
+    "report-exchange-rates": {
+      "trigger": "client-http",
+      "effects": [
+        "auth-user-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": false
+    }
   },
   "workers": {
-    "image-worker": { "entrypoint": "workers/image-worker/src/index.ts", "deployment_contract": "workers/image-worker/wrangler.toml", "trigger": "public-http", "effects": ["database-rpc", "r2-write", "cloudflare-cache-purge"], "mutates_authority": true },
-    "self-hosted-preactivation-guard": { "entrypoint": "workers/self-hosted-preactivation-guard/src/index.mjs", "deployment_contract": "workers/self-hosted-preactivation-guard/wrangler.toml", "trigger": "canonical-function-route", "effects": ["fail-closed-http-response"], "mutates_authority": false },
-    "self-hosted-monitor": { "entrypoint": "workers/self-hosted-monitor/src/index.mjs", "deployment_contract": "workers/self-hosted-monitor/wrangler.toml", "trigger": "cloudflare-cron", "effects": ["canonical-and-rehearsal-health-read", "r2-evidence-write", "healthchecks-heartbeat"], "mutates_authority": false },
-    "supabase-legacy-keepalive": { "entrypoint": "workers/supabase-legacy-keepalive/src/index.mjs", "deployment_contract": "workers/supabase-legacy-keepalive/wrangler.toml", "trigger": "cloudflare-cron", "effects": ["legacy-database-read"], "mutates_authority": false },
-    "sync-publisher": { "entrypoint": "workers/sync-publisher/src/worker.ts", "deployment_contract": "workers/sync-publisher/wrangler.example.toml", "trigger": "cloudflare-cron-or-internal-http", "effects": ["database-rpc", "r2-write"], "mutates_authority": true },
-    "sync-worker": { "entrypoint": "workers/sync-worker/src/index.ts", "deployment_contract": "workers/sync-worker/wrangler.toml", "trigger": "public-http", "effects": ["r2-read", "cloudflare-cache-write"], "mutates_authority": false }
+    "image-worker": {
+      "entrypoint": "workers/image-worker/src/index.ts",
+      "deployment_contract": "workers/image-worker/wrangler.toml",
+      "trigger": "public-http",
+      "effects": [
+        "database-rpc",
+        "r2-write",
+        "cloudflare-cache-purge"
+      ],
+      "mutates_authority": true
+    },
+    "self-hosted-preactivation-guard": {
+      "entrypoint": "workers/self-hosted-preactivation-guard/src/index.mjs",
+      "deployment_contract": "workers/self-hosted-preactivation-guard/wrangler.toml",
+      "trigger": "canonical-function-route",
+      "effects": [
+        "fail-closed-http-response"
+      ],
+      "mutates_authority": false
+    },
+    "self-hosted-monitor": {
+      "entrypoint": "workers/self-hosted-monitor/src/index.mjs",
+      "deployment_contract": "workers/self-hosted-monitor/wrangler.toml",
+      "trigger": "cloudflare-cron",
+      "effects": [
+        "canonical-and-rehearsal-health-read",
+        "r2-evidence-write",
+        "healthchecks-heartbeat"
+      ],
+      "mutates_authority": false
+    },
+    "supabase-legacy-keepalive": {
+      "entrypoint": "workers/supabase-legacy-keepalive/src/index.mjs",
+      "deployment_contract": "workers/supabase-legacy-keepalive/wrangler.toml",
+      "trigger": "cloudflare-cron",
+      "effects": [
+        "legacy-database-read"
+      ],
+      "mutates_authority": false
+    },
+    "sync-publisher": {
+      "entrypoint": "workers/sync-publisher/src/worker.ts",
+      "deployment_contract": "workers/sync-publisher/wrangler.example.toml",
+      "trigger": "cloudflare-cron-or-internal-http",
+      "effects": [
+        "database-rpc",
+        "r2-write"
+      ],
+      "mutates_authority": true
+    },
+    "sync-worker": {
+      "entrypoint": "workers/sync-worker/src/index.ts",
+      "deployment_contract": "workers/sync-worker/wrangler.toml",
+      "trigger": "public-http",
+      "effects": [
+        "r2-read",
+        "cloudflare-cache-write"
+      ],
+      "mutates_authority": false
+    }
   },
   "canonical_function_security": {
     "blocked": {},
     "resolved": {
       "bank-mail-parser": "signature-v2-exact-topic-aws-certificate-and-confirmation-url-verification",
       "fetch-http-data": "occasion-editor-auth-public-dns-and-redirect-validation-image-only-bounded-response",
-      "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled"
+      "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled",
+      "process-email-queue": "private-service-only-minted-machine-request-secret",
+      "send-email-gateway": "private-network-bearer-and-fenced-one-shot-database-permit",
+      "auth-email-hook": "standardwebhooks-hmac-and-server-resolved-tenant",
+      "email-provider-events": "signature-v2-exact-topic-aws-certificate-and-durable-redacted-journal",
+      "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"
@@ -46,7 +330,10 @@
     "pre-activation Function guard remains active until the reviewed canonical Function bundle is promoted and internally verified, then its exact route is removed before external Function canaries",
     "AWS SNS topic uses SignatureVersion 2 and a signed canonical endpoint canary passes",
     "festapp_notify_webhook_token_v1 in target Vault matches NOTIFY_WEBHOOK_TOKEN and setup_triggers installs only the canonical HTTPS endpoint",
-    "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin"
+    "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin",
+    "Email cutover requires verified tenant activation, SES account/region quotas and allocated shared budget",
+    "Private email gateway is the only runtime injected with SES credentials; general router rejects its route",
+    "Signed GoTrue hook, SNS v2 feedback plus DLQ replay, paused migration rehearsal and legacy ambiguity reconciliation must pass before email_capacity is unpaused"
   ],
   "controls": {
     "mutating_edge_function": "deploy-canonical-disable-source-function-and-revoke-source-service-role",

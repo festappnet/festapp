@@ -464,12 +464,11 @@ class _FormPageState extends State<FormPage> {
             scaffoldBackgroundColor: Color.alphaBlend(
                 primary.withOpacity(isDark ? 0.05 : 0.07),
                 isDark ? Colors.grey.shade900 : Colors.white),
-            colorScheme: theme.colorScheme.copyWith(
+            colorScheme: ThemeConfig.colorSchemeForBrand(
               primary: primary,
-              onPrimary: isDark
-                  ? Colors.black
-                  : Colors.white, // Ensure text on primary is readable
               secondary: secondary,
+              brightness: theme.brightness,
+            ).copyWith(
               // Only force white surface if strictly desired, otherwise let theme decide or use a light tint
               surface: isDark ? null : Colors.white,
             ),
@@ -518,7 +517,7 @@ class _FormPageState extends State<FormPage> {
             elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
               backgroundColor: primary,
-              foregroundColor: Colors.white, // Ensure text is white on primary
+              foregroundColor: ThemeConfig.textColorForBackground(primary),
             )));
       }
     }

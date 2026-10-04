@@ -1,0 +1,139 @@
+[
+  {
+    "element": {
+      "id": "occasionTitle",
+      "binding": "occasionTitle",
+      "box": {
+        "x": 6.25,
+        "y": 77,
+        "width": 187.5,
+        "height": 32
+      },
+      "visible": true,
+      "locked": false,
+      "style": {
+        "fontSize": 12.5,
+        "minFontSize": 6,
+        "maxLines": 2,
+        "color": "2A2A2A",
+        "align": "center"
+      }
+    },
+    "text": "Příliš žluťoučký kůň - večerní slavnost",
+    "expected": {
+      "size": 12.5,
+      "lines": [
+        "Příliš žluťoučký kůň - večerní slavnost"
+      ],
+      "overflow": false,
+      "replaced": false,
+      "widths": [
+        176.9875
+      ]
+    }
+  },
+  {
+    "element": {
+      "id": "occasionTitle",
+      "binding": "occasionTitle",
+      "box": {
+        "x": 6.25,
+        "y": 77,
+        "width": 187.5,
+        "height": 32
+      },
+      "visible": true,
+      "locked": false,
+      "style": {
+        "fontSize": 12.5,
+        "minFontSize": 6,
+        "maxLines": 2,
+        "color": "2A2A2A",
+        "align": "center",
+        "bold": true
+      }
+    },
+    "text": "Příliš žluťoučký kůň - večerní slavnost",
+    "expected": {
+      "size": 12.5,
+      "lines": [
+        "Příliš žluťoučký kůň - večerní slavnost"
+      ],
+      "overflow": false,
+      "replaced": false,
+      "widths": [
+        177.4875
+      ]
+    }
+  },
+  {
+    "element": {
+      "id": "occasionTitle",
+      "binding": "occasionTitle",
+      "box": {
+        "x": 6.25,
+        "y": 77,
+        "width": 187.5,
+        "height": 32
+      },
+      "visible": true,
+      "locked": false,
+      "style": {
+        "fontSize": 12.5,
+        "minFontSize": 6,
+        "maxLines": 2,
+        "color": "2A2A2A",
+        "align": "center",
+        "italic": true
+      }
+    },
+    "text": "Příliš žluťoučký kůň - večerní slavnost",
+    "expected": {
+      "size": 12.5,
+      "lines": [
+        "Příliš žluťoučký kůň - večerní slavnost"
+      ],
+      "overflow": false,
+      "replaced": false,
+      "widths": [
+        180.3937189007621
+      ]
+    }
+  },
+  {
+    "element": {
+      "id": "occasionTitle",
+      "binding": "occasionTitle",
+      "box": {
+        "x": 6.25,
+        "y": 77,
+        "width": 187.5,
+        "height": 32
+      },
+      "visible": true,
+      "locked": false,
+      "style": {
+        "fontSize": 12.5,
+        "minFontSize": 6,
+        "maxLines": 2,
+        "color": "2A2A2A",
+        "align": "center",
+        "bold": true,
+        "italic": true,
+        "underline": true
+      }
+    },
+    "text": "Příliš žluťoučký kůň - večerní slavnost",
+    "expected": {
+      "size": 12.5,
+      "lines": [
+        "Příliš žluťoučký kůň - večerní slavnost"
+      ],
+      "overflow": false,
+      "replaced": false,
+      "widths": [
+        180.8937189007621
+      ]
+    }
+  }
+]

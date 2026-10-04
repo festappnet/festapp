@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.20.19+503
+version: 0.20.83+567
 
 environment:
   sdk: '>=3.0.0 <3.32.8'
@@ -39,6 +39,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   maplibre: 0.3.6
+  app_links: ^7.2.1
   crypto: ^3.0.6
   convert: ^3.1.2
   flutter_map: ^8.2.0
@@ -51,12 +52,12 @@ dependencies:
   collection: ^1.18.0
   geolocator: ^14.0.2
   flutter_widget_from_html: ^0.17.1
-  quill_html_editor:
-    git:
-      url: https://github.com/the-airbender/quill_html_editor.git
-      ref: a2beeb5bfd436e86f2635c8db1154b4190eeedb5
-  flutter_quill: ^11.5.1
-  vsc_quill_delta_to_html: ^1.0.5
+  super_editor: 0.3.0-dev.52
+  follow_the_leader: 0.5.3
+  super_editor_clipboard: 0.2.10
+  super_clipboard: 0.9.1
+  http_parser: ^4.1.2
+  csslib: ^1.0.2
   trina_grid: ^2.1.1
   # trina_grid's select-column popup requires a ShadTheme ancestor; we wrap
   # our grids in one (see single_table_data_grid.dart).
@@ -108,7 +109,10 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   google_fonts: ^8.0.1
   file_picker: ^8.1.7
-  venue_seat_picker: ^0.1.1
+  venue_seat_picker:
+    git:
+      url: https://github.com/festappnet/venue_seat_picker.git
+      ref: c829a33d07de9a8fa376b407658875d22abd246e
 
   cached_network_image: any
   cached_network_image_platform_interface: any
@@ -147,10 +151,6 @@ dependency_overrides:
     git:
       url: https://github.com/miakh/flutter-vector-map-tiles.git
       ref: 429de4cda07a6dfa7141a9f044aa5f7576765c5b
-  # The Quill editor fork still declares Android WebView 3.x, but only uses
-  # APIs retained by 4.x. Keep one WebView implementation for the current
-  # YouTube player until the editor updates its dependency constraint.
-  webview_flutter_android: ^4.12.0
   maplibre_android:
     path: packages/maplibre_android
   maplibre_ios:
@@ -178,6 +178,7 @@ flutter:
         - asset: fonts/Gill Sans Bold.otf
           weight: 700
   assets:
+    - assets/fonts/
     - assets/icons/
     - assets/translations/
     - packages/timezone/data/latest.tzf

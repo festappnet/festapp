@@ -1,0 +1,14 @@
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4">
+  <tbody><tr><td align="center">
+    <table role="presentation" width="600" style="width:100%;max-width:600px;background-color:#ffffff">
+      <thead><tr><td colspan="2" style="padding:24px;color:#234567"><h1>Potvrzení rezervace</h1></td></tr></thead>
+      <tbody><tr><td colspan="2" style="padding:16px;font-family:Arial,sans-serif">
+        <p>Ahoj <strong>{{name}}</strong>,</p>
+        <p>Vaše rezervace je připravena. Číslo objednávky: <span style="color:#884422">{{orderNumber}}</span>.</p>
+        <p><a href="{{resetLink}}" target="_blank" style="background-color:#334455;color:white;padding:12px">Otevřít rezervaci</a></p>
+      </td></tr><tr><th scope="col">Položka</th><th scope="col">Cena</th></tr>
+      <tr><td rowspan="2">Vstupenka</td><td>{{price}}&nbsp;Kč</td></tr><tr><td>{{tax}}&nbsp;Kč</td></tr></tbody>
+      <tfoot><tr><td colspan="2" style="padding:12px;font-size:12px">Děkujeme &amp; těšíme se na vás.</td></tr></tfoot>
+    </table>
+  </td></tr></tbody>
+</table>
