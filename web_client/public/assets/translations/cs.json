@@ -421,7 +421,9 @@
     "depositDeadline": "Doplatek do",
     "depositPaymentDeadline": "Záloha do",
     "depositOnSiteLabel": "Na místě",
-    "paymentReference": "Reference platby"
+    "paymentReference": "Reference platby",
+    "shortTitleHelp": "Název pro tisk na vstupence, například u večeře. Pokud není vyplněný, použije se plný název produktu.",
+    "maxHelp": "Maximální počet kusů produktu, které lze objednat. Prázdná hodnota nebo 0 znamená bez omezení."
   },
   "FormsFeature": {
     "showDepositDescription": "Zobrazit popisek zálohy / doplatku u produktů",
@@ -514,7 +516,17 @@
     "validationMode": "Režim validace",
     "tabDesign": "Design",
     "textFieldType": "Text",
-    "viewMore": "Zobrazit více"
+    "viewMore": "Zobrazit více",
+    "deleteBlocked": {
+      "responses": "Toto pole již má odpověď, proto ho nelze smazat.",
+      "orders": "Produkt již byl použit v objednávce, proto ho nelze smazat.",
+      "blueprint": "Produkt je použit v plánku míst, proto ho nelze smazat.",
+      "inventory": "Produkt je propojen se skladem, proto ho nelze smazat.",
+      "shared": "Produktová skupina je použita i v jiném poli nebo formuláři.",
+      "changed": "Položka se mezitím změnila. Načtěte formulář znovu.",
+      "unknown": "Použití položky nebylo ověřeno. Načtěte formulář znovu."
+    },
+    "deleteSaveFailed": "Formulář nebyl uložen. {} Rozpracované změny zůstaly v editoru."
   },
   "FeatureOrders": {
     "searchUnpairedTransactions": "Vyhledat nespárované transakce",
@@ -613,7 +625,48 @@
     "fieldTypeParticipant": "Typ účastníka",
     "fieldMemberAnima": "Člen Anima Iuventutis",
     "fieldDietary": "Dietní omezení",
-    "fieldPrepTeam": "Přípravný tým"
+    "fieldPrepTeam": "Přípravný tým",
+    "currentPrice": "Aktuální cena",
+    "priceChanges": "Změna ceny",
+    "priceChangesTitle": "Plánované změny ceny",
+    "schedulePrice": "Naplánovat změnu",
+    "newPrice": "Nová cena",
+    "priceDate": "Datum",
+    "priceTime": "Čas",
+    "addPriceChange": "Přidat další změnu",
+    "cancelPriceChange": "Zrušit změnu",
+    "pricePending": "Čeká na provedení",
+    "priceDelayed": "Provedení má zpoždění. Obnovte data.",
+    "priceFailed": "Změna selhala - upravte nebo zrušte termín",
+    "priceHelp": "Cena platí pro nové objednávky. Stávající se nepřepočítají. Automatické provedení běží přibližně po minutě.",
+    "futurePricesRemain": "Naplánované změny ceny zůstávají platné.",
+    "priceExpected": "Očekávaná návaznost",
+    "priceMore": "+{} další",
+    "priceSummary": "Od {} bude cena {}.",
+    "priceInvalid": "Zadejte platnou nezápornou cenu a budoucí datum a čas.",
+    "priceMissingTime": "Tento lokální čas neexistuje.",
+    "priceOffset": "Vyberte časový offset",
+    "priceCancelConfirm": "Zrušit změnu na {} od {}?",
+    "priceRefresh": "Je dostupná aktualizace cen. Uložte nebo zahoďte rozepsané úpravy.",
+    "priceSaveFailed": "Změnu se nepodařilo uložit. Obnovte plány před opakováním, pokud se přerušilo spojení.",
+    "priceRefreshAction": "Obnovit plány",
+    "priceSame": "Cena je stejná jako očekávaná předchozí cena.",
+    "priceWaves": "Cenové vlny",
+    "addWave": "Přidat vlnu",
+    "moveWave": "Změnit termín",
+    "cancelWave": "Zrušit vlnu",
+    "cancelWaveConfirm": "Zrušit vlnu a její naplánované změny?",
+    "waveProduct": "Produkt",
+    "waveAvailability": "Dostupnost",
+    "waveNoChange": "Beze změny",
+    "waveHidden": "Skrýt",
+    "waveShown": "Nabízet",
+    "waveChange": "Nastavit",
+    "waveFailed": "Selhalo",
+    "waveEmptyPrice": "Prázdná cena = beze změny",
+    "noWaves": "Zatím nejsou žádné cenové vlny.",
+    "waveNow": "Aktuálně",
+    "waveHiddenState": "Skryto"
   },
   "UserColumns": {
     "id": "Id",
@@ -1506,7 +1559,10 @@
     "unknownDatabaseError": "Došlo k neznámé chybě databáze.",
     "detailsLabel": "Podrobnosti:",
     "moreOptions": "Další možnosti",
-    "user": "Uživatel"
+    "user": "Uživatel",
+    "discardChanges": "Zahodit změny",
+    "discardChangesConfirmation": "Opravdu chcete zahodit neuložené změny?",
+    "keepEditing": "Pokračovat v úpravách"
   },
   "BankAccount": {
     "settingsTitle": "Nastavení bankovního účtu",
@@ -1614,7 +1670,25 @@
     "safeSenderInfo": "Tato adresa je bezpečná. Je to speciální robot, který čte pouze e-maily o platbách a nic jiného.",
     "forwardingEmailWarning": "Upozornění: Prosím, udržujte tento e-mail v tajnosti. S nikým jej nesdílejte.",
     "creditorNameLabel": "Jméno majitele účtu",
-    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace."
+    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace.",
+    "fioTokenInactive": "Fio zatím token nepřijímá. Pokud jste ho právě autorizovali, vyčkejte až 5 minut a potom obnovte stav připojení. Kontroly probíhají automaticky, token není potřeba znovu ukládat. Pokud autorizace ještě neproběhla, dokončete ji ve Fio Internetbankingu v Nastavení → API. Pokud potíže trvají, ověřte platnost tokenu.",
+    "syncRetryRequired": "Spojení s bankou se nepodařilo ověřit. Zkuste to prosím později.",
+    "tokenSavedNeedsAuthorization": "Token je uložený v BankSync. Připojení ale zatím není ověřené.",
+    "syncState": {
+      "connected": "Připojeno",
+      "degraded": "Vyžaduje pozornost",
+      "provisioning": "Připojování",
+      "shadow": "Ověřování",
+      "suspended": "Pozastaveno"
+    },
+    "linkedAccountIdentity": "Číslo napojeného účtu nelze přepsat. Přidejte nový bankovní účet a nastavte jej pro další platby.",
+    "detailsSyncPending": "Údaje jsou uložené ve Festappu. Přenos do BankSync se zatím nepodařil a bude automaticky zopakován.",
+    "fioAccountMismatch": "Fio token patří k jinému bankovnímu účtu. Zadejte token pro tento účet, nebo přidejte správný účet do Festappu. Platby z jiného účtu se nepřiřazují.",
+    "tokenVerifying": "Ukládám a ověřuji token…",
+    "tokenVerificationWait": "Čekáme na odpověď Fio. Ověření může trvat několik desítek sekund.",
+    "tokenAwaitingActivation": "Token uložen - čeká na aktivaci",
+    "tokenSavedNeedsVerification": "Token uložen - připojení vyžaduje pozornost",
+    "errorTitle": "Chyba"
   },
   "FeatureContract": {
     "title": "Smlouva",
@@ -1900,7 +1974,9 @@
     "tabReport": "Report",
     "savingChanges": "Ukládání změn",
     "tabService": "Pobyt",
-    "noItems": "Tabulka neobsahuje žádné položky"
+    "noItems": "Tabulka neobsahuje žádné položky",
+    "refreshPending": "Data mohou být zastaralá. Nejdřív uložte nebo zahoďte rozepsané změny.",
+    "refreshData": "Obnovit data"
   },
   "FeatureSongbook": {
     "description": "Zobrazí zpěvník a možnost přidávat vlastní písně."

@@ -44,14 +44,21 @@ class SelectManyEditor {
   }
 
   static Widget buildSelectManyEditor(
-      BuildContext context, FormFieldModel field, int? occasionId) {
+      BuildContext context, FormFieldModel field, int? occasionId,
+      {VoidCallback? onChanged}) {
     final optionsController = TextEditingController();
-    return StatefulBuilder(builder: (ctx, setLocal) {
+    return StatefulBuilder(builder: (ctx, updateLocal) {
+      void setLocal(VoidCallback change) {
+        updateLocal(change);
+        onChanged?.call();
+      }
+
       final defaults = DefaultValueHelper.readList(field);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(FormStrings.options, style: Theme.of(context).textTheme.titleSmall),
+          Text(FormStrings.options,
+              style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 2),
           Text(
             FormStrings.defaultSelectionHintMulti,
@@ -95,7 +102,8 @@ class SelectManyEditor {
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'additional_settings') {
-                        final htmlCoordinator = HtmlEditingScope.maybeOf(context);
+                        final htmlCoordinator =
+                            HtmlEditingScope.maybeOf(context);
                         showDialog(
                           context: context,
                           builder: (context) => OptionDetailEditorDialog(
@@ -163,5 +171,4 @@ class SelectManyEditor {
       );
     });
   }
-
 }

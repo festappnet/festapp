@@ -11,10 +11,10 @@ export type DispatcherDependencies = {
     row: any,
   ) => Promise<{ prepared: unknown; postAction: Record<string, unknown> }>;
   seal: (value: unknown) => Promise<unknown>;
-  gateway: (row: DispatchRow) => Promise<void>;
+  send: (row: DispatchRow) => Promise<void>;
   now: () => number;
 };
-/** One bounded worker; gateway owns begin and all provider outcomes. */
+/** One bounded worker; sender owns begin and all provider outcomes. */
 export async function drainEmails(
   d: DispatcherDependencies,
   budgetMs = 35_000,
@@ -95,9 +95,9 @@ export async function drainEmails(
       });
       continue;
     }
-    // An HTTP failure cannot prove whether gateway began/sent. Leave its fenced lease for recovery.
+    // A sender failure cannot prove provider acceptance. Leave its fenced lease for recovery.
     try {
-      await d.gateway(row);
+      await d.send(row);
     } catch {
       break;
     }

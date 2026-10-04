@@ -36,10 +36,10 @@ class _UsersTabState extends State<UsersTab> {
     final identifiers = [
       UserColumns.ID,
       UserColumns.EMAIL,
-      if (RightsService.isAdmin()) UserColumns.EMAIL_HISTORY,
       UserColumns.NAME,
       UserColumns.SURNAME,
-      UserColumns.GROUP,
+      if (FeatureService.isFeatureEnabled(FeatureConstants.userGroups))
+        UserColumns.GROUP,
       UserColumns.SEX,
       if (FeatureService.isServiceAccommodationEnabled())
         UserColumns.ACCOMMODATION,
@@ -63,6 +63,7 @@ class _UsersTabState extends State<UsersTab> {
       if (FeatureService.isFeatureEnabled(FeatureConstants.reception))
         UserColumns.RECEPTIONIST,
       UserColumns.INVITED,
+      if (RightsService.isAdmin()) UserColumns.EMAIL_HISTORY,
       UserColumns.CREATED_AT,
       UserColumns.LAST_SIGN_IN_AT,
     ];

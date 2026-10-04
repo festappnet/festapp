@@ -63,25 +63,6 @@ BEGIN
 
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
-            'id', ff.id,
-            'form', ff.form,
-            'title', ff.title,
-            'description', ff.description,
-            'data', ff.data,
-            'type', ff.type,
-            'is_required', ff.is_required,
-            'is_hidden', ff.is_hidden,
-            'is_ticket_field', ff.is_ticket_field,
-            'order', ff."order",
-            'product_type', ff.product_type
-        ) ORDER BY COALESCE(ff."order", 0)
-    ), '[]'::jsonb)
-    INTO formFieldsData
-    FROM public.form_fields ff
-    WHERE ff.form = v_form_id;
-
-    SELECT COALESCE(jsonb_agg(
-        jsonb_build_object(
             'id', pt.id,
             'title', pt.title,
             'description', pt.description,
@@ -94,9 +75,24 @@ BEGIN
     FROM eshop.product_types pt
     WHERE pt.occasion = v_occasion_id;
 
+    -- Materialize occasion history once rather than scanning it for every
+    -- product and every field. Only current orders and current references determine eligibility.
+    WITH occasion_orders AS MATERIALIZED (
+      SELECT id, data FROM eshop.orders WHERE occasion = v_occasion_id
+    ), snapshots AS MATERIALIZED (
+      SELECT data FROM occasion_orders
+    ), used_products AS MATERIALIZED (
+      SELECT opt.product::text AS product FROM eshop.order_product_ticket opt
+      JOIN eshop.products p ON p.id = opt.product WHERE p.occasion = v_occasion_id
+      UNION
+      SELECT value #>> '{}' FROM snapshots s
+      CROSS JOIN LATERAL jsonb_path_query(s.data, '$.tickets[*].products[*].id') ids(value)
+    )
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'id', p.id,
+            'can_delete', usage.reason IS NULL,
+            'delete_blocked_reason', usage.reason,
             'occasion', p.occasion,
             'title', p.title,
             'description', p.description,
@@ -117,7 +113,59 @@ BEGIN
     ), '[]'::jsonb)
     INTO productsData
     FROM eshop.products p
+    CROSS JOIN LATERAL (SELECT CASE
+      WHEN EXISTS (SELECT 1 FROM used_products u WHERE u.product = p.id::text) THEN 'orders'
+      WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+      WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+      WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+    END AS reason) usage
     WHERE p.product_type IN (SELECT id FROM eshop.product_types WHERE occasion = v_occasion_id);
+
+    WITH form_orders AS MATERIALIZED (
+      SELECT id, data FROM eshop.orders WHERE form = v_form_id
+    ), form_snapshots AS MATERIALIZED (
+      SELECT data FROM form_orders
+    ), form_tickets AS MATERIALIZED (
+      SELECT t.note FROM eshop.order_product_ticket opt
+      JOIN form_orders o ON o.id = opt."order"
+      JOIN eshop.tickets t ON t.id = opt.ticket
+    )
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', ff.id,
+            'can_delete', usage.reason IS NULL,
+            'delete_blocked_reason', usage.reason,
+            'form', ff.form,
+            'title', ff.title,
+            'description', ff.description,
+            'data', ff.data,
+            'type', ff.type,
+            'is_required', ff.is_required,
+            'is_hidden', ff.is_hidden,
+            'is_ticket_field', ff.is_ticket_field,
+            'order', ff."order",
+            'product_type', ff.product_type
+        ) ORDER BY COALESCE(ff."order", 0)
+    ), '[]'::jsonb)
+    INTO formFieldsData
+    FROM public.form_fields ff
+    CROSS JOIN LATERAL (SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM form_snapshots s WHERE
+        EXISTS (SELECT 1 FROM jsonb_array_elements(
+          CASE WHEN jsonb_typeof(s.data->'fields') = 'array' THEN s.data->'fields' ELSE '[]'::jsonb END) answer
+          WHERE answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb, '{}'::jsonb))
+        OR (ff.type = 'ticket' AND jsonb_path_exists(s.data, '$.tickets[*]'))
+        OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(s.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
+    ) OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM form_tickets))
+      OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (SELECT 1 FROM form_tickets WHERE NULLIF(note, '') IS NOT NULL))
+    THEN 'responses' ELSE (
+      SELECT p->>'delete_blocked_reason' FROM public.form_fields member
+      JOIN jsonb_array_elements(productsData) p ON (p->>'product_type')::bigint = member.product_type
+      WHERE (member.id = ff.id OR (ff.type = 'ticket' AND member.form = ff.form AND member.is_ticket_field))
+        AND p->>'delete_blocked_reason' IS NOT NULL
+      ORDER BY (p->>'id')::bigint LIMIT 1
+    ) END AS reason) usage
+    WHERE ff.form = v_form_id;
 
     -- FIX: Exclude CASH accounts and ensure deterministic sorting by Priority
     SELECT COALESCE(jsonb_agg(

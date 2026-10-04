@@ -3,6 +3,37 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 
 class OrdersStrings {
+  static String get waveNow => 'FeatureOrders.waveNow'.tr();
+  static String get waveHiddenState => 'FeatureOrders.waveHiddenState'.tr();
+  static String get scheduledCurrentPrice => 'FeatureOrders.currentPrice'.tr();
+  static String get priceChanges => 'FeatureOrders.priceChanges'.tr();
+  static String get priceChangesTitle => 'FeatureOrders.priceChangesTitle'.tr();
+  static String get schedulePrice => 'FeatureOrders.schedulePrice'.tr();
+  static String get newPrice => 'FeatureOrders.newPrice'.tr();
+  static String get priceDate => 'FeatureOrders.priceDate'.tr();
+  static String get priceTime => 'FeatureOrders.priceTime'.tr();
+  static String get addPriceChange => 'FeatureOrders.addPriceChange'.tr();
+  static String get cancelPriceChange => 'FeatureOrders.cancelPriceChange'.tr();
+  static String get pricePending => 'FeatureOrders.pricePending'.tr();
+  static String get priceDelayed => 'FeatureOrders.priceDelayed'.tr();
+  static String get priceFailed => 'FeatureOrders.priceFailed'.tr();
+  static String get priceHelp => 'FeatureOrders.priceHelp'.tr();
+  static String get futurePricesRemain =>
+      'FeatureOrders.futurePricesRemain'.tr();
+  static String get priceExpected => 'FeatureOrders.priceExpected'.tr();
+  static String get priceMore => 'FeatureOrders.priceMore'.tr();
+  static String get priceSummary => 'FeatureOrders.priceSummary'.tr();
+  static String get priceInvalid => 'FeatureOrders.priceInvalid'.tr();
+  static String get priceMissingTime => 'FeatureOrders.priceMissingTime'.tr();
+  static String get priceOffset => 'FeatureOrders.priceOffset'.tr();
+  static String get priceCancelConfirm =>
+      'FeatureOrders.priceCancelConfirm'.tr();
+  static String get priceRefresh => 'FeatureOrders.priceRefresh'.tr();
+  static String get priceSaveFailed => 'FeatureOrders.priceSaveFailed'.tr();
+  static String get priceRefreshAction =>
+      'FeatureOrders.priceRefreshAction'.tr();
+  static String get priceSame => 'FeatureOrders.priceSame'.tr();
+
   // --- Orders Tab ---
   static String get synchronizePayments =>
       'FeatureOrders.synchronizePayments'.tr(); // "Synchronize Payments"
@@ -318,6 +349,9 @@ class OrdersStrings {
       'OrderGridColumns.usedInForms'.tr(); // "Used in Forms"
   static String get gridShortTitle =>
       'OrderGridColumns.shortTitle'.tr(); // "Short Title"
+  static String get gridShortTitleHelp =>
+      'OrderGridColumns.shortTitleHelp'.tr();
+  static String get gridMaxHelp => 'OrderGridColumns.maxHelp'.tr();
   static String get gridSurcharge => 'OrderGridColumns.surcharge'.tr();
   static String get gridDeposit => 'OrderGridColumns.deposit'.tr();
   static String get gridDepositDeadline =>
@@ -478,4 +512,18 @@ class OrdersStrings {
         "id": id.toString(),
         "orderId": orderId.toString()
       }); // "Item {id} (Order {orderId})"
+  static String get priceWaves => 'FeatureOrders.priceWaves'.tr();
+  static String get addWave => 'FeatureOrders.addWave'.tr();
+  static String get moveWave => 'FeatureOrders.moveWave'.tr();
+  static String get cancelWave => 'FeatureOrders.cancelWave'.tr();
+  static String get cancelWaveConfirm => 'FeatureOrders.cancelWaveConfirm'.tr();
+  static String get waveProduct => 'FeatureOrders.waveProduct'.tr();
+  static String get waveAvailability => 'FeatureOrders.waveAvailability'.tr();
+  static String get waveNoChange => 'FeatureOrders.waveNoChange'.tr();
+  static String get waveHidden => 'FeatureOrders.waveHidden'.tr();
+  static String get waveShown => 'FeatureOrders.waveShown'.tr();
+  static String get waveChange => 'FeatureOrders.waveChange'.tr();
+  static String get waveFailed => 'FeatureOrders.waveFailed'.tr();
+  static String get waveEmptyPrice => 'FeatureOrders.waveEmptyPrice'.tr();
+  static String get noWaves => 'FeatureOrders.noWaves'.tr();
 }

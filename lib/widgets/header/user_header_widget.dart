@@ -17,10 +17,15 @@ import 'package:fstapp/app_router.gr.dart';
 
 class UserHeaderWidget extends StatefulWidget {
   final Color? appBarIconColor;
+  final bool compact;
   final Future<void> Function()? onSignIn;
   final VoidCallback? onAdminPressed;
   const UserHeaderWidget(
-      {super.key, this.appBarIconColor, this.onSignIn, this.onAdminPressed});
+      {super.key,
+      this.appBarIconColor,
+      this.onSignIn,
+      this.onAdminPressed,
+      this.compact = false});
 
   @override
   State<UserHeaderWidget> createState() => _UserHeaderWidgetState();
@@ -371,28 +376,42 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     return InkWell(
       key: _userKey,
       onTap: _showSignedInPopover,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: ThemeConfig.brandAccentColor,
-            width: 2,
-          ),
-          color: ThemeConfig.brandAccentColor,
-        ),
-        child: Center(
-          child: Text(
-            _getUserInitial(),
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+      child: SizedBox(
+          width: widget.compact ? 40 : 38,
+          height: widget.compact ? 40 : 38,
+          child: Center(
+              child: Container(
+            width: widget.compact ? 36 : 38,
+            height: widget.compact ? 36 : 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: ThemeConfig.brandAccentColor,
+                width: 2,
+              ),
+              color: ThemeConfig.brandAccentColor,
             ),
-          ),
-        ),
-      ),
+            child: Center(
+              // The bundled bold face has 0.682em cap height and 0.318em
+              // descent. Center the capital itself, rather than its line box.
+              child: Transform.translate(
+                  offset: Offset(
+                      0, MediaQuery.textScalerOf(context).scale(20) * .159),
+                  child: Text(
+                    _getUserInitial(),
+                    textHeightBehavior: const TextHeightBehavior(
+                        applyHeightToFirstAscent: false,
+                        applyHeightToLastDescent: false),
+                    style: TextStyle(
+                      fontFamily: ThemeConfig.fontFamily,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      height: 1,
+                      color: Colors.white,
+                    ),
+                  )),
+            ),
+          ))),
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/contract_defaults.dart';
 import 'package:fstapp/components/features/feature.dart';
@@ -132,7 +133,12 @@ class ContractFeature extends Feature {
     if (isEnabled && (transport == null && departurePoint == null)) {
       loadFromDescription();
     }
-    return StatefulBuilder(builder: (ctx, setLocal) {
+    return StatefulBuilder(builder: (ctx, updateLocal) {
+      void setLocal(VoidCallback change) {
+        updateLocal(change);
+        EditorDraftScope.changed(ctx);
+      }
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

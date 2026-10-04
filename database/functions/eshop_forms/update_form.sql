@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_form(input_data JSONB)
+CREATE OR REPLACE FUNCTION public.update_form_internal_v1(input_data JSONB)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -9,6 +9,10 @@ DECLARE
     -- Declarations
     ----------------------------------------------------------------------------
     result JSONB;
+    deleted_fields BIGINT[];
+    deleted_products BIGINT[];
+    deletion_reason TEXT;
+    deletion_row RECORD;
 
     form_id          BIGINT;               -- ID of the form being created/updated
     occasion_id      BIGINT;               -- ID of the occasion to which the form belongs
@@ -79,7 +83,7 @@ BEGIN
         END IF;
 
         -- Ensure user is authorized to edit this occasion
-        IF (SELECT get_is_editor_order_on_occasion(occasion_id)) <> TRUE THEN
+        IF NOT COALESCE(get_is_editor_order_on_occasion(occasion_id), false) THEN
             RAISE EXCEPTION '%',
                 JSONB_BUILD_OBJECT('code', 403, 'message', 'User is not authorized to edit this occasion')::TEXT;
         END IF;
@@ -151,6 +155,8 @@ BEGIN
                     )::TEXT;
             END IF;
 
+            PERFORM 1 FROM public.forms f WHERE f.id = form_id FOR UPDATE;
+
             SELECT 1
               INTO conflict_check
               FROM public.forms f
@@ -168,6 +174,100 @@ BEGIN
                     )::TEXT;
             END IF;
         END IF;
+
+        -- Explicit removals are part of this save transaction, never inferred from
+        -- omitted fields in partial/older-client payloads. Exceptions roll back the save.
+        SELECT COALESCE(array_agg(value::bigint), '{}'::bigint[]) INTO deleted_fields
+        FROM jsonb_array_elements_text(COALESCE(input_data->'deleted_field_ids', '[]'::jsonb));
+        SELECT COALESCE(array_agg(value::bigint), '{}'::bigint[]) INTO deleted_products
+        FROM jsonb_array_elements_text(COALESCE(input_data->'deleted_product_ids', '[]'::jsonb));
+
+        IF EXISTS (SELECT 1 FROM unnest(deleted_fields) AS removed(id) WHERE NOT EXISTS (
+            SELECT 1 FROM public.form_fields ff WHERE ff.id = removed.id AND ff.form = form_id))
+          OR EXISTS (SELECT 1 FROM unnest(deleted_products) AS removed(id) WHERE NOT EXISTS (
+            SELECT 1 FROM eshop.products p JOIN public.form_fields ff ON ff.product_type = p.product_type
+            WHERE p.id = removed.id AND ff.form = form_id)) THEN
+            RAISE EXCEPTION 'FORM_DELETE_changed';
+        END IF;
+
+        -- Removing the ticket container also removes its nested fields.
+        IF EXISTS (SELECT 1 FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields) AND ff.type = 'ticket') THEN
+            SELECT deleted_fields || COALESCE(array_agg(ff.id), '{}'::bigint[]) INTO deleted_fields
+            FROM public.form_fields ff WHERE ff.form = form_id AND ff.is_ticket_field;
+        END IF;
+
+        -- Serialize product-type references and product FK insertions before checking
+        -- usage, including ON DELETE CASCADE inventory links.
+        PERFORM 1 FROM eshop.product_types pt WHERE pt.id IN (
+            SELECT ff.product_type FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields)
+            UNION SELECT p.product_type FROM eshop.products p WHERE p.id = ANY(deleted_products)
+        ) ORDER BY pt.id FOR UPDATE;
+        SELECT deleted_products || COALESCE(array_agg(p.id), '{}'::bigint[]) INTO deleted_products
+        FROM eshop.products p JOIN public.form_fields ff ON ff.product_type = p.product_type
+        WHERE ff.id = ANY(deleted_fields);
+        PERFORM 1 FROM eshop.products p WHERE p.id = ANY(deleted_products) ORDER BY p.id FOR UPDATE;
+
+        FOR deletion_row IN SELECT ff.* FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields)
+        LOOP
+            SELECT CASE WHEN EXISTS (
+          SELECT 1 FROM (
+            SELECT current_order.id, current_order.form, current_order.data FROM eshop.orders current_order WHERE current_order.form = ff.form
+          ) o
+          WHERE o.form = ff.form AND (
+            EXISTS (SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(o.data->'fields') = 'array' THEN o.data->'fields' ELSE '[]'::jsonb END) answer
+              WHERE answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb, '{}'::jsonb))
+            OR (ff.type = 'ticket' AND jsonb_path_exists(o.data, '$.tickets[*]'))
+            OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(o.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
+            OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt."order" = o.id AND opt.ticket IS NOT NULL))
+            OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (
+              SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id = opt.ticket
+              WHERE opt."order" = o.id AND NULLIF(t.note, '') IS NOT NULL))
+          )) THEN 'responses'
+        ELSE (
+          SELECT reason FROM public.form_fields member
+          JOIN eshop.products p ON p.product_type = member.product_type
+          CROSS JOIN LATERAL (SELECT CASE
+          WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
+            OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+          WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+          WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+          WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+        END AS reason) usage
+          WHERE (member.id = ff.id OR (ff.type = 'ticket' AND member.form = ff.form AND member.is_ticket_field))
+            AND reason IS NOT NULL
+          ORDER BY p.id LIMIT 1
+        ) END INTO deletion_reason
+            FROM public.form_fields ff WHERE ff.id = deletion_row.id;
+            IF deletion_reason IS NOT NULL THEN
+                RAISE EXCEPTION 'FORM_DELETE_%', deletion_reason;
+            END IF;
+        END LOOP;
+        FOR deletion_row IN SELECT p.* FROM eshop.products p WHERE p.id = ANY(deleted_products)
+        LOOP
+            SELECT CASE
+          WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
+            OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+          WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+          WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+          WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+        END INTO deletion_reason
+            FROM eshop.products p WHERE p.id = deletion_row.id;
+            IF deletion_reason IS NOT NULL THEN
+                RAISE EXCEPTION 'FORM_DELETE_%', deletion_reason;
+            END IF;
+        END LOOP;
+        IF EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(input_data->'form_fields', '[]'::jsonb)) f
+            WHERE (f->>'id')::bigint = ANY(deleted_fields))
+          OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(input_data->'form_fields', '[]'::jsonb)) f,
+            jsonb_array_elements(COALESCE(NULLIF(f->'product_type'->'products', 'null'::jsonb), '[]'::jsonb)) p
+            WHERE (p->>'id')::bigint = ANY(deleted_products)) THEN
+            RAISE EXCEPTION 'FORM_DELETE_changed';
+        END IF;
+        DELETE FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields);
+        DELETE FROM eshop.planned_changes WHERE subject_id=ANY(deleted_products) AND change_type IN('products.price','products.is_hidden') AND NOT applied;
+        DELETE FROM eshop.products p WHERE p.id = ANY(deleted_products);
 
         ----------------------------------------------------------------------------
         -- Process form_fields array from input_data if present
@@ -287,6 +387,7 @@ BEGIN
                                 ----------------------------------------------------------------------------
                                 -- New product
                                 ----------------------------------------------------------------------------
+                                PERFORM public.validate_product_price(price_val,product_data->'data',left(product_data->>'currency_code',3));
                                 INSERT INTO eshop.products (
                                     created_at,
                                     updated_at,
@@ -349,6 +450,7 @@ BEGIN
                                         )::TEXT;
                                 END IF;
 
+                                PERFORM public.validate_product_price_update(product_id,price_val,product_data->'data',left(product_data->>'currency_code',3));
                                 UPDATE eshop.products
                                    SET
                                        updated_at = now_ts,

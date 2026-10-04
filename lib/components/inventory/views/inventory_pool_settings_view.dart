@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,19 +52,36 @@ class _LoadResult {
 
 class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
   final _htmlSave = HtmlSaveCoordinator();
+  final _snapshot = EditorSnapshot();
+  final _draftRevision = ValueNotifier<int>(0);
+  Object get _draft => [
+        _poolTitleController.text,
+        _sellableCapacityController.text,
+        _selectedType.name,
+        _bundle?.pool.toJson(),
+        _bundle?.pool.isEditableByUser,
+        _bundle?.contexts?.map((c) => c.toJsonWithSpots()).toList()
+      ];
+  void _draftChanged() => scheduleMicrotask(() {
+        if (mounted) _draftRevision.value++;
+      });
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   static const int _datePickerPaddingDays = 7;
   final _formKey = GlobalKey<FormState>();
   InventoryPoolBundle? _bundle;
   List<InventoryContextModel> _originalContexts = [];
+  String? _originalTitle;
+  int? _originalCapacity;
+  InventoryPoolType _originalType = InventoryPoolType.other;
   String? _originalDescription;
   bool _originalIsAutoResourceAssignment = true;
   bool _originalIsEditableByUser = false;
   PlaceModel? _originalPlace;
   OccasionModel? _occasion;
+  int _editorGeneration = 0;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -80,6 +99,7 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
 
   @override
   void dispose() {
+    _draftRevision.dispose();
     _htmlSave.dispose();
     _poolTitleController.dispose();
     _sellableCapacityController.dispose();
@@ -134,6 +154,10 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
           _originalPlace = result.bundle.places
               ?.firstWhereOrNull((p) => p.id == result.bundle.pool.placeId);
           _bundle!.pool.place = _originalPlace;
+          _originalTitle = _bundle!.pool.title;
+          _originalCapacity = _bundle!.pool.sellableCapacity;
+          _originalType = _bundle!.pool.type;
+          _snapshot.accept(_draft);
         });
       }
       setState(() => _isLoading = false);
@@ -148,8 +172,10 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
   }
 
   Future<void> _saveChanges(BuildContext currentContext) async {
-    await ExceptionHandler.guardVoid(currentContext, futureFunction: () =>
-      _htmlSave.save(() => _performHtmlSave(currentContext), context: currentContext));
+    await ExceptionHandler.guardVoid(currentContext,
+        futureFunction: () => _htmlSave.save(
+            () => _performHtmlSave(currentContext),
+            context: currentContext));
     if (mounted) setState(() => _isSaving = false);
   }
 
@@ -180,8 +206,10 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
     _bundle!.pool.type = _selectedType;
     _updateContextsOrder();
 
-    _bundle!.pool.description = await _htmlSave.prepare(_bundle!.pool.description ?? '',
-      HtmlMediaOwner.occasion(_bundle!.pool.occasionId), originalHtml: _originalDescription);
+    _bundle!.pool.description = await _htmlSave.prepare(
+        _bundle!.pool.description ?? '',
+        HtmlMediaOwner.occasion(_bundle!.pool.occasionId),
+        originalHtml: _originalDescription);
     final updatedBundle = await ExceptionHandler.guard(
       currentContext,
       futureFunction: () =>
@@ -191,7 +219,7 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
 
     if (mounted) {
       if (updatedBundle != null) {
-      _htmlSave.markSaved();
+        _htmlSave.markSaved();
         // Link products to contexts BEFORE creating the original backup
         if (updatedBundle.contexts != null && updatedBundle.products != null) {
           for (var context in updatedBundle.contexts!) {
@@ -216,6 +244,10 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
           _originalPlace = updatedBundle.places
               ?.firstWhereOrNull((p) => p.id == updatedBundle.pool.placeId);
           _bundle!.pool.place = _originalPlace;
+          _originalTitle = _bundle!.pool.title;
+          _originalCapacity = _bundle!.pool.sellableCapacity;
+          _originalType = _bundle!.pool.type;
+          _snapshot.accept(_draft);
         });
         await ToastHelper.Show(
             currentContext, InventoryStrings.settingsSuccessSave,
@@ -252,15 +284,17 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
   }
 
   Future<void> _cancelEdit() async {
-    if (!await confirmHtmlDiscard(context, _htmlSave) || !mounted) return;
     _htmlSave.markSaved();
     setState(() {
+      _editorGeneration++;
       _bundle?.contexts = _originalContexts.map((c) => c.copyWith()).toList();
-      _poolTitleController.text = _bundle?.pool.title ?? '';
-      _sellableCapacityController.text =
-          _bundle?.pool.sellableCapacity?.toString() ?? '';
-      _selectedType = _bundle?.pool.type ?? InventoryPoolType.other;
+      _poolTitleController.text = _originalTitle ?? '';
+      _sellableCapacityController.text = _originalCapacity?.toString() ?? '';
+      _selectedType = _originalType;
       if (_bundle != null) {
+        _bundle!.pool.title = _originalTitle;
+        _bundle!.pool.sellableCapacity = _originalCapacity;
+        _bundle!.pool.type = _originalType;
         _bundle!.pool.description = _originalDescription;
         _bundle!.pool.isAutoResourceAssignment =
             _originalIsAutoResourceAssignment;
@@ -512,7 +546,6 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
     });
   }
 
-
   Widget _buildHtmlParent(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -541,7 +574,9 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
               constraints: BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
               child: Form(
                 key: _formKey,
+                onChanged: _draftChanged,
                 child: CustomScrollView(
+                  key: ValueKey(_editorGeneration),
                   slivers: [
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -593,10 +628,16 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
                                 style: Theme.of(context).textTheme.labelLarge),
                             const SizedBox(height: 8),
                             InputDecorator(
-                              decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.all(12)),
-                              child: EditableHtmlField(html: _bundle!.pool.description, coordinator: _htmlSave,
-                                owner: HtmlMediaOwner.occasion(_bundle!.pool.occasionId),
-                                onChanged: (html) => setState(() => _bundle!.pool.description = html))),
+                                decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.all(12)),
+                                child: EditableHtmlField(
+                                    html: _bundle!.pool.description,
+                                    coordinator: _htmlSave,
+                                    owner: HtmlMediaOwner.occasion(
+                                        _bundle!.pool.occasionId),
+                                    onChanged: (html) => setState(() =>
+                                        _bundle!.pool.description = html))),
                             const SizedBox(height: 24),
                             _buildTypeSelector(context),
                             const SizedBox(height: 24),
@@ -709,37 +750,17 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
           );
         },
       ),
-      bottomNavigationBar: Builder(builder: (innerContext) {
-        return Container(
-          color: ThemeConfig.appBarColor(),
-          padding: const EdgeInsets.all(10),
-          child: SafeArea(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: _isSaving ? null : _cancelEdit,
-                  child: Text(CommonStrings.storno),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  icon: _isSaving
-                      ? const SizedBox.shrink()
-                      : const Icon(Icons.save, size: 18),
-                  label: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text(InventoryStrings.settingsSaveChanges),
-                  onPressed:
-                      _isSaving ? null : () => _saveChanges(innerContext),
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
+      bottomNavigationBar: AnimatedBuilder(
+        animation: Listenable.merge([_htmlSave, _draftRevision]),
+        builder: (context, _) => EditorActionBar(
+          hasChanges: !_isLoading &&
+              _bundle != null &&
+              (_snapshot.differs(_draft) || _htmlSave.hasActiveDraft),
+          enabled: !_isSaving,
+          onSave: () => _saveChanges(context),
+          onDiscard: _cancelEdit,
+        ),
+      ),
     );
   }
 }

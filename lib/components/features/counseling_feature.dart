@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/speakers/speakers_strings.dart';
@@ -49,7 +50,8 @@ class CounselingFeature extends Feature {
           : FeatureConstants.counselingDefaultEventType,
       registrationStartTime: parsed,
       maxActiveBookings:
-          (json[FeatureConstants.counselingMaxActiveBookings] as num?)?.toInt() ??
+          (json[FeatureConstants.counselingMaxActiveBookings] as num?)
+                  ?.toInt() ??
               1,
     );
   }
@@ -72,7 +74,12 @@ class CounselingFeature extends Feature {
   @override
   Widget buildFormField(BuildContext context) {
     return StatefulBuilder(
-      builder: (ctx, setLocalState) {
+      builder: (ctx, updateLocal) {
+        void setLocalState(VoidCallback change) {
+          updateLocal(change);
+          EditorDraftScope.changed(ctx);
+        }
+
         final locale = context.locale.toString();
         final dateFmt = DateFormat.yMd(locale).add_jm();
         final displayStart = registrationStartTime != null

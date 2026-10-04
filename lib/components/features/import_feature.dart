@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import 'feature.dart';
@@ -67,6 +68,11 @@ class _ImportFeatureForm extends StatefulWidget {
 }
 
 class _ImportFeatureFormState extends State<_ImportFeatureForm> {
+  void _refresh(VoidCallback change) {
+    setState(change);
+    EditorDraftScope.changed(context);
+  }
+
   late bool _importFromCsv;
   late bool _importFromTickets;
   late bool _autoImport;
@@ -89,7 +95,7 @@ class _ImportFeatureFormState extends State<_ImportFeatureForm> {
           title: Text(FeaturesStrings.labelImportFromCsv),
           value: _importFromCsv,
           onChanged: (bool value) {
-            setState(() {
+            _refresh(() {
               _importFromCsv = value;
               widget.feature.importFromCsv = value;
             });
@@ -99,7 +105,7 @@ class _ImportFeatureFormState extends State<_ImportFeatureForm> {
           title: Text(FeaturesStrings.labelImportFromTickets),
           value: _importFromTickets,
           onChanged: (bool value) {
-            setState(() {
+            _refresh(() {
               _importFromTickets = value;
               widget.feature.importFromTickets = value;
 
@@ -123,7 +129,7 @@ class _ImportFeatureFormState extends State<_ImportFeatureForm> {
                 // This creates a disabled (greyed out) UI state.
                 onChanged: _importFromTickets
                     ? (bool value) {
-                        setState(() {
+                        _refresh(() {
                           _autoImport = value;
                           widget.feature.autoImport = value;
                         });
