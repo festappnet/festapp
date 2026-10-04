@@ -8,7 +8,9 @@ class BankAccountStrings {
   static String syncError(String? code) =>
       (code == 'fio_token_invalid_or_inactive'
               ? 'BankAccount.fioTokenInactive'
-              : 'BankAccount.syncRetryRequired')
+              : code == 'fio_receiving_account_mismatch'
+                  ? 'BankAccount.fioAccountMismatch'
+                  : 'BankAccount.syncRetryRequired')
           .tr();
   static String get tokenSavedNeedsAuthorization =>
       'BankAccount.tokenSavedNeedsAuthorization'.tr();
