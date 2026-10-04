@@ -1,7 +1,5 @@
-import {
-  deliverEmail,
-  EmailTemplateNotFoundError,
-} from "../_shared/emailDelivery.ts";
+import { emailRpc, prepareAccountEmail } from "../_shared/emailQueueClient.ts";
+import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
 import { translatePlatformLinks } from "../_shared/translatePlatformLinks.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL")!;
@@ -148,18 +146,6 @@ Deno.serve(async (req) => {
   }
   const token = crypto.randomUUID();
 
-  const { error: tokenError } = await supabaseAdmin
-    .from("user_reset_token")
-    .upsert({
-      "user": userId,
-      "token": token,
-      "created_at": new Date().toISOString(),
-    }, { onConflict: "user" });
-  if (tokenError) {
-    console.error("Password reset token could not be stored", tokenError);
-    return json(origin);
-  }
-
   const context = { organization: organizationId };
 
   const resetPasswordLink = `${defaultUrl}/resetPassword?token=${token}`;
@@ -173,13 +159,26 @@ Deno.serve(async (req) => {
   };
 
   try {
-    await deliverEmail({
+    const emailInput = {
       to: deliveryEmail,
       recipientUser: userId,
       templateCode: "RESET_PASSWORD",
       context,
       substitutions: subs,
       from: `${appName} | Festapp <${_DEFAULT_EMAIL}>`,
+    };
+    const snapshot = await prepareAccountEmail(emailInput);
+    await emailRpc("enqueue_account_email", {
+      p_operation: "reset_token",
+      p_domain: { user_id: userId, token },
+      p_context: context,
+      p_recipient: deliveryEmail,
+      ...snapshot,
+      p_dedupe: `reset:${userId}:${
+        reqData.requestId ?? Math.floor(Date.now() / 300000)
+      }`,
+      p_code: "RESET_PASSWORD",
+      p_expires: new Date(Date.now() + 3600000).toISOString(),
     });
   } catch (error) {
     if (error instanceof EmailTemplateNotFoundError) {

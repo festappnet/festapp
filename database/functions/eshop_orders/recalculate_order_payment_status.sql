@@ -32,12 +32,13 @@ BEGIN
         END IF;
     ELSE
         -- Underpaid -> Revert to Ordered (if currently Paid)
-        IF v_state = 'paid' THEN
+        IF v_state IN ('paid','sent') THEN
+            PERFORM public.cancel_order_email_intents(p_order_id);
             -- Revert Order
             UPDATE eshop.orders
-            SET state = 'ordered', updated_at = now()
+            SET state = 'ordered', updated_at = now(),email_payment_version=email_payment_version+1
             WHERE id = p_order_id;
-            
+
             -- Revert Tickets (only those that are 'paid')
             UPDATE eshop.tickets
             SET state = 'ordered', updated_at = now() -- Reverted to 'ordered' as 'valid' is not a supported state
@@ -45,7 +46,7 @@ BEGIN
             FROM eshop.order_product_ticket
             WHERE eshop.order_product_ticket.ticket = eshop.tickets.id
             AND eshop.order_product_ticket."order" = p_order_id
-            AND eshop.tickets.state = 'paid';
+            AND eshop.tickets.state IN ('paid','sent');
         END IF;
     END IF;
 END;

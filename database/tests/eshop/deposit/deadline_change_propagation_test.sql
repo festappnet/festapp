@@ -84,18 +84,18 @@ BEGIN
     -- ==================================================================
     -- Step 1: Queue reminder with deadline_days = 7
     -- ==================================================================
-    DELETE FROM public.queue_emails WHERE occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
+    DELETE FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
     PERFORM queue_payment_reminders(v_occasion_id, 259200);  -- 3 days reminder interval
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 1: 1 reminder queued with 7d deadline');
 
     SELECT target_time INTO v_target_time
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
 
     v_expected_after_7d := v_occ_start_time - interval '7 days' - interval '3 days';  -- start - 10d
@@ -119,14 +119,14 @@ BEGIN
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 3: Still 1 reminder (DELETE+INSERT, no duplicate)');
 
     SELECT target_time INTO v_target_time
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
 
     v_expected_after_14d := v_occ_start_time - interval '14 days' - interval '3 days';  -- start - 17d

@@ -1,12 +1,4 @@
-import nodemailer from "npm:nodemailer@6.9.16";
-
-const _SMTP_HOSTNAME = Deno.env.get("SMTP_HOSTNAME") || "";
-const _SMTP_USER_NAME = Deno.env.get("SMTP_USER_NAME") || "";
-const _SMTP_USER_PASSWORD = Deno.env.get("SMTP_USER_PASSWORD") || "";
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL") || "";
-const _SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
-const _SMTP_SECURE = (Deno.env.get("SMTP_SECURE") || "true") === "true";
-
 export type EmailContext = {
   organization: number;
   occasion?: number | null;
@@ -61,60 +53,12 @@ export type EmailDeliveryResult = {
   logged: boolean;
 };
 
-type EmailLog = {
-  from: string;
-  to: string;
-  template: string | number | null;
-  organization: number;
-  occasion?: number | null;
-  unit?: number | null;
-  recipient_user?: string | null;
-};
-
-export type EmailDeliveryDependencies = {
-  resolveTemplateAndWrapper(
-    templateCode: string,
-    context: EmailContext,
-  ): Promise<ResolvedEmail>;
-  sendMail(message: Record<string, unknown>): Promise<unknown>;
-  logEmail(entry: EmailLog): Promise<void>;
-};
-
 export class EmailTemplateNotFoundError extends Error {
   constructor(templateCode: string) {
     super(`Template not found for code ${templateCode}`);
     this.name = "EmailTemplateNotFoundError";
   }
 }
-
-export class EmailDeliveryError extends Error {
-  constructor(cause: unknown) {
-    super("Email transport failed", { cause });
-    this.name = "EmailDeliveryError";
-  }
-}
-
-const transporter = nodemailer.createTransport({
-  host: _SMTP_HOSTNAME,
-  port: _SMTP_PORT,
-  secure: _SMTP_SECURE,
-  ...(_SMTP_USER_NAME && _SMTP_USER_PASSWORD
-    ? { auth: { user: _SMTP_USER_NAME, pass: _SMTP_USER_PASSWORD } }
-    : {}),
-});
-
-const defaultDependencies: EmailDeliveryDependencies = {
-  async resolveTemplateAndWrapper(templateCode, context) {
-    const { getEmailTemplateAndWrapper } = await import("./supabaseUtil.ts");
-    return await getEmailTemplateAndWrapper(templateCode, context);
-  },
-  sendMail: (message) => transporter.sendMail(message),
-  async logEmail(entry) {
-    const { supabaseAdmin } = await import("./supabaseUtil.ts");
-    const { error } = await supabaseAdmin.from("log_emails").insert(entry);
-    if (error) throw error;
-  },
-};
 
 function substitute(value: string, substitutions: Record<string, unknown>) {
   let result = value;
@@ -124,84 +68,65 @@ function substitute(value: string, substitutions: Record<string, unknown>) {
   return result;
 }
 
-export function createEmailDelivery(
-  dependencies: EmailDeliveryDependencies,
-) {
-  return async function deliverEmail(
+export type PreparedEmail = {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  replyTo: string;
+  attachments: Array<
     {
-      to,
-      recipientUser,
-      templateCode = "",
-      context,
-      substitutions,
-      attachments = [],
-      from = _DEFAULT_EMAIL,
-      replyTo = _DEFAULT_EMAIL,
-      messageId,
-      template: templateOverride,
-    }: DeliverEmailInput,
-  ): Promise<EmailDeliveryResult> {
-    const resolved = await dependencies.resolveTemplateAndWrapper(
-      templateCode,
-      context,
-    );
-    const template = templateOverride ?? resolved?.template;
-
-    if (
-      !template || typeof template.subject !== "string" ||
-      typeof template.html !== "string"
-    ) {
-      throw new EmailTemplateNotFoundError(templateCode || "<inline>");
+      filename: string;
+      content: string;
+      contentType: string;
+      encoding: "base64";
     }
-
-    const subject = substitute(template.subject, substitutions);
-    let html = substitute(template.html, substitutions);
-    const wrapper = resolved?.wrapper?.html;
-    if (wrapper) html = wrapper.replace("{{content}}", html);
-
-    try {
-      await dependencies.sendMail({
-        from,
-        to,
-        subject,
-        // Template links and layout are authoritative. Send the assembled HTML
-        // without automatic link detection or whitespace postprocessing.
-        html,
-        replyTo,
-        ...(messageId ? { messageId } : {}),
-        attachments: attachments.map((attachment) => ({
-          filename: attachment.filename,
-          content: attachment.content,
-          contentType: attachment.contentType,
-          encoding: attachment.encoding,
-        })),
-      });
-    } catch (error) {
-      console.error("Email transport failed");
-      throw new EmailDeliveryError(error);
-    }
-
-    let logged = true;
-    try {
-      await dependencies.logEmail({
-        from: _DEFAULT_EMAIL,
-        to,
-        template: template.id,
-        organization: context.organization,
-        occasion: context.occasion,
-        unit: context.unit,
-        recipient_user: recipientUser,
-      });
-    } catch (error) {
-      // The email is already accepted by SMTP. Failing the request here could
-      // cause a retry and duplicate delivery, so evidence failure is reported
-      // separately without turning a successful delivery into an error.
-      logged = false;
-      console.error("Email accepted, but delivery evidence logging failed");
-    }
-
-    return { templateId: template.id, logged };
+  >;
+};
+export function encodeAttachment(content: unknown, encoding: string): string {
+  if (encoding === "base64" && typeof content === "string") return content;
+  const bytes = content instanceof Uint8Array
+    ? content
+    : typeof content === "string"
+    ? new TextEncoder().encode(content)
+    : null;
+  if (!bytes) throw new Error("invalid_email_attachment");
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+  }
+  return btoa(binary);
+}
+export async function renderEmail(
+  input: DeliverEmailInput,
+  resolver?: (code: string, context: EmailContext) => Promise<ResolvedEmail>,
+): Promise<PreparedEmail> {
+  if (!resolver) {
+    const { getEmailTemplateAndWrapper } = await import("./supabaseUtil.ts");
+    resolver = getEmailTemplateAndWrapper;
+  }
+  const resolved = await resolver(input.templateCode ?? "", input.context);
+  const template = input.template ?? resolved?.template;
+  if (
+    !template || typeof template.subject !== "string" ||
+    typeof template.html !== "string"
+  ) throw new EmailTemplateNotFoundError(input.templateCode ?? "inline");
+  const subject = substitute(template.subject, input.substitutions);
+  let html = substitute(template.html, input.substitutions);
+  if (resolved?.wrapper?.html) {
+    html = resolved.wrapper.html.replace("{{content}}", html);
+  }
+  return {
+    from: input.from ?? _DEFAULT_EMAIL,
+    to: input.to,
+    subject,
+    html,
+    replyTo: input.replyTo ?? _DEFAULT_EMAIL,
+    attachments: (input.attachments ?? []).map((a) => ({
+      filename: a.filename,
+      content: encodeAttachment(a.content, a.encoding),
+      contentType: a.contentType,
+      encoding: "base64",
+    })),
   };
 }
-
-export const deliverEmail = createEmailDelivery(defaultDependencies);

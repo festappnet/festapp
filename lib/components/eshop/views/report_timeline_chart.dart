@@ -109,11 +109,31 @@ class ReportTimelineChart extends StatefulWidget {
   State<ReportTimelineChart> createState() => _ReportTimelineChartState();
 }
 
+Size _measureLegend(BuildContext context, Set<String> values, double maxWidth,
+    TextStyle? style) {
+  final painter = TextPainter(
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context));
+  var width = 0.0, height = 0.0;
+  for (final value in values) {
+    painter.text = TextSpan(text: value, style: style);
+    painter.layout(maxWidth: maxWidth);
+    width = math.max(width, painter.width);
+    height = math.max(height, painter.height);
+  }
+  painter.dispose();
+  return Size(width, height);
+}
+
 class _ReportTimelineChartState extends State<ReportTimelineChart> {
   int? _selected;
+  Object? _legendLayoutKey;
+  List<Size>? _legendSizes;
   @override
   void didUpdateWidget(covariant ReportTimelineChart oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _legendLayoutKey = null;
+    _legendSizes = null;
     if (oldWidget.start != widget.start ||
         oldWidget.end != widget.end ||
         oldWidget.cumulative != widget.cumulative) {
@@ -151,9 +171,36 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
       if (index != _selected) setState(() => _selected = index);
     }
 
+    final axisWidth = 54 * MediaQuery.textScalerOf(context).scale(1);
     return LayoutBuilder(builder: (context, constraints) {
       final ticks = _dateTicks(context, widget.start, widget.end,
-          math.max(1.0, constraints.maxWidth - 54));
+          math.max(1.0, constraints.maxWidth - axisWidth));
+      final style = Theme.of(context).textTheme.titleSmall;
+      final layoutKey = (
+        constraints.maxWidth,
+        style,
+        MediaQuery.textScalerOf(context),
+        Directionality.of(context),
+        Localizations.localeOf(context)
+      );
+      // Reserve each field's largest size for this data and layout. Hovering
+      // changes only its text, so neither wrapping nor the plot position moves.
+      // Measure once per data/layout change, rather than on each pointer event.
+      if (_legendSizes == null || _legendLayoutKey != layoutKey) {
+        _legendLayoutKey = layoutKey;
+        final alternatives = [
+          days.map((day) => DateFormat('d. M. yyyy').format(day)).toSet(),
+          for (var i = 0; i < widget.series.length; i++)
+            amounts[i]
+                .map((amount) =>
+                    '${widget.series[i].label}: ${reportChartAmount(amount, widget.series[i].currency ?? widget.currency)}')
+                .toSet(),
+        ];
+        _legendSizes = [
+          for (final values in alternatives)
+            _measureLegend(context, values, constraints.maxWidth, style),
+        ];
+      }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -161,17 +208,18 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
             spacing: 20,
             runSpacing: 8,
             children: [
-              Text(
-                DateFormat('d. M. yyyy').format(days[selected]),
-                style: Theme.of(context).textTheme.titleSmall,
+              SizedBox.fromSize(
+                size: _legendSizes![0],
+                child: Text(DateFormat('d. M. yyyy').format(days[selected]),
+                    style: style),
               ),
               for (var i = 0; i < widget.series.length; i++)
-                Text(
-                  '${widget.series[i].label}: ${reportChartAmount(amounts[i][selected], widget.series[i].currency ?? widget.currency)}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(color: widget.series[i].color),
+                SizedBox.fromSize(
+                  size: _legendSizes![i + 1],
+                  child: Text(
+                    '${widget.series[i].label}: ${reportChartAmount(amounts[i][selected], widget.series[i].currency ?? widget.currency)}',
+                    style: style?.copyWith(color: widget.series[i].color),
+                  ),
                 ),
             ],
           ),
@@ -180,7 +228,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 54,
+                width: axisWidth,
                 height: 160,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -236,7 +284,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
           ),
           const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.only(left: 54),
+            padding: EdgeInsets.only(left: axisWidth),
             child: SizedBox(
               height: ticks.map((tick) => tick.height).reduce(math.max),
               child: Stack(children: [

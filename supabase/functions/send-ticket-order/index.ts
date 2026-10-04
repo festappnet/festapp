@@ -135,13 +135,16 @@ Deno.serve(async (req) => {
         );
         if (stateError) throw stateError;
         if (orderState === "storno") {
-          return new Response(JSON.stringify({
-            code: 503,
-            message: "Fakturoid could not complete this order",
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
+          return new Response(
+            JSON.stringify({
+              code: 503,
+              message: "Fakturoid could not complete this order",
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            },
+          );
         }
         let variableSymbol = String(order.payment_info.variable_symbol);
         if (orderState === "preparing_payment") {
@@ -165,13 +168,16 @@ Deno.serve(async (req) => {
               { p_order_id: order.id, p_command_id: commandId },
             );
             if (abortError) throw abortError;
-            return new Response(JSON.stringify({
-              code: 503,
-              message: "Fakturoid could not complete this order",
-            }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 200,
-            });
+            return new Response(
+              JSON.stringify({
+                code: 503,
+                message: "Fakturoid could not complete this order",
+              }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+              },
+            );
           }
         }
         const { data: confirmedSymbol, error: completionError } =
@@ -203,12 +209,35 @@ Deno.serve(async (req) => {
       }
       : null;
 
+    // Capability creation is an additive read feature; failure must not fail a committed order.
+    let deliveryReceipt: string | undefined;
+    try {
+      const capability = Array.from(
+        crypto.getRandomValues(new Uint8Array(32)),
+        (b) => b.toString(16).padStart(2, "0"),
+      ).join("");
+      const hash = Array.from(
+        new Uint8Array(
+          await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(capability),
+          ),
+        ),
+        (b) => b.toString(16).padStart(2, "0"),
+      ).join("");
+      const { data, error } = await supabaseAdmin.rpc(
+        "create_email_confirmation_receipt",
+        { p_command: commandId, p_order: ticketOrder.order.id, p_hash: hash },
+      );
+      if (!error && data === true) deliveryReceipt = capability;
+    } catch { /* success and QR remain authoritative */ }
     return new Response(
       JSON.stringify({
         ticketOrder,
         payment_qr: paymentQr,
         code: 200,
         delivery: "queued",
+        ...(deliveryReceipt ? { delivery_receipt: deliveryReceipt } : {}),
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
