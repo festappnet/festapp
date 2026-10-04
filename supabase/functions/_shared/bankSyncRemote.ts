@@ -1,4 +1,5 @@
 export const FIO_TOKEN_ERROR = 'fio_token_invalid_or_inactive';
+export const FIO_ACCOUNT_ERROR = 'fio_receiving_account_mismatch';
 export class BankSyncRemoteError extends Error {
   constructor(readonly code: string) { super(code); }
 }
@@ -9,7 +10,9 @@ export function bankSyncErrorCode(error: unknown): string {
 
 export function bankSyncAccountError(value: unknown): string | null {
   if (value === null || value === undefined || value === '') return null;
-  return value === FIO_TOKEN_ERROR ? FIO_TOKEN_ERROR : 'bank_sync_retry_required';
+  if (value === FIO_TOKEN_ERROR) return FIO_TOKEN_ERROR;
+  if (value === FIO_ACCOUNT_ERROR || value === `Error: ${FIO_ACCOUNT_ERROR}`) return FIO_ACCOUNT_ERROR;
+  return 'bank_sync_retry_required';
 }
 
 export async function bankSyncRemote(path: string, method = 'GET', body?: unknown, idempotency?: string) {
@@ -25,8 +28,8 @@ export async function bankSyncRemote(path: string, method = 'GET', body?: unknow
   const result = await response.json().catch(() => null);
   if (!response.ok) {
     // Never pass bank payloads, token material, or arbitrary upstream strings to clients.
-    throw new BankSyncRemoteError(response.status === 422 && result?.error === FIO_TOKEN_ERROR
-      ? FIO_TOKEN_ERROR : 'bank_sync_retry_required');
+    throw new BankSyncRemoteError(response.status === 422 && [FIO_TOKEN_ERROR,FIO_ACCOUNT_ERROR].includes(result?.error)
+      ? result.error : 'bank_sync_retry_required');
   }
   return result;
 }

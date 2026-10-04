@@ -6,8 +6,9 @@ class BankSyncError implements Exception {
   factory BankSyncError.fromResponse(Map<dynamic, dynamic> response) {
     final value = response['verification_error'] ?? response['error'];
     return BankSyncError(
-      value == 'fio_token_invalid_or_inactive'
-          ? 'fio_token_invalid_or_inactive'
+      const ['fio_token_invalid_or_inactive', 'fio_receiving_account_mismatch']
+              .contains(value)
+          ? value as String
           : 'bank_sync_retry_required',
       tokenSaved: response['token_saved'] == true,
     );

@@ -24,7 +24,8 @@ void main() {
               'operation': 'update_bank_account',
               ...jsonDecode(request.body)
             });
-            return http.Response('159', 200, request: request,
+            return http.Response('159', 200,
+                request: request,
                 headers: {'content-type': 'application/json'});
           }
           expect(request.url.path, '/functions/v1/bank-sync-manage');
@@ -110,5 +111,17 @@ void main() {
     outcome = {'error': 'bank_sync_retry_required'};
     await expectLater(DbBankAccounts.updateBankAccount(account),
         throwsA(isA<BankSyncError>()));
+  });
+  test('Wrong-account token preserves the specific bank error', () async {
+    outcome = {
+      'token_saved': true,
+      'verification_error': 'fio_receiving_account_mismatch'
+    };
+    await expectLater(
+        DbBankAccounts.updateBankAccountToken(
+            159, 'wrong-account-fixture', null),
+        throwsA(isA<BankSyncError>()
+            .having((e) => e.code, 'code', 'fio_receiving_account_mismatch')
+            .having((e) => e.tokenSaved, 'saved', true)));
   });
 }

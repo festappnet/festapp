@@ -1679,7 +1679,7 @@
     "connect_email": "Connect bank email",
     "fioTokenInactive": "The Fio token does not exist or is inactive. Open Settings → API in Fio Internetbanking and complete its authorization. Activation can take up to 5 minutes. If the token was revoked or expired, create and authorize a new one.",
     "syncRetryRequired": "The bank connection could not be verified. Please try again later.",
-    "tokenSavedNeedsAuthorization": "The token is saved in BankSync, but Fio has not accepted it yet.",
+    "tokenSavedNeedsAuthorization": "The token is saved in BankSync, but the connection is not yet verified.",
     "syncState": {
       "connected": "Connected",
       "degraded": "Needs attention",
@@ -1688,7 +1688,8 @@
       "suspended": "Suspended"
     },
     "linkedAccountIdentity": "A connected account number cannot be replaced. Add a new bank account and select it for future payments.",
-    "detailsSyncPending": "Details are saved in Festapp. The update to BankSync is pending and will be retried automatically."
+    "detailsSyncPending": "Details are saved in Festapp. The update to BankSync is pending and will be retried automatically.",
+    "fioAccountMismatch": "The Fio token belongs to a different bank account. Enter a token for this account, or add the correct account in Festapp. Payments from another account will not be matched."
   },
   "FeatureContract": {
     "title": "Contract",
