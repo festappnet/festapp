@@ -1,3 +1,4 @@
+-- Qualify the bank-admin column so it cannot collide with the RETURNS TABLE variable.
 DROP FUNCTION IF EXISTS public.get_bank_accounts_for_unit_management(bigint);
 
 CREATE FUNCTION public.get_bank_accounts_for_unit_management(p_unit_id bigint)

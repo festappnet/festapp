@@ -75,8 +75,23 @@ BEGIN
          RAISE EXCEPTION 'Incorrect type returned.';
     END IF;
     
-    -- import_token might be null or generated default
-    -- We just check it's present in the record structure (implied by SELECT * INTO rec)
+    -- Manager without bank admin rights sees only connection health.
+    INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,
+      bank_account_id,physical_account,provider,mode,state,pairing_code,manifest_sha256)
+    VALUES('management-test','festapp','management-test',v_acc_fio,'123/2010',
+      'FIO','api','connected','abcdef0123',repeat('a',64));
+    SELECT * INTO v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    IF v_fio_rec.is_admin IS DISTINCT FROM false OR
+       v_fio_rec.bank_sync IS DISTINCT FROM '{"state":"connected","mode":"api"}'::jsonb THEN
+      RAISE EXCEPTION 'Non-admin must receive only connection state and mode';
+    END IF;
+    INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin)
+      VALUES(v_acc_fio,v_user_manager,true);
+    SELECT * INTO v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    IF v_fio_rec.is_admin IS DISTINCT FROM true OR
+       v_fio_rec.bank_sync->>'receiving_address' IS DISTINCT FROM 'abcdef0123@banksync.festapp.net' THEN
+      RAISE EXCEPTION 'Bank admin must receive authorized connection details';
+    END IF;
     
     RAISE NOTICE 'Success Case Passed.';
 
@@ -87,12 +102,8 @@ BEGIN
     BEGIN
         PERFORM public.get_bank_accounts_for_unit_management(v_unit_id);
         RAISE EXCEPTION 'Should have failed with permission error.';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Got expected error: %', SQLERRM;
-        -- Check SQLERRM contains 'permission' or 'manager' or 'denied'
-        IF SQLERRM NOT ILIKE '%manager%' AND SQLERRM NOT ILIKE '%permission%' AND SQLERRM NOT ILIKE '%denied%' THEN
-             RAISE NOTICE 'Warning: Unexpected error message (might be correct logic though): %', SQLERRM;
-        END IF;
+    EXCEPTION WHEN raise_exception THEN
+        IF SQLERRM <> 'User is not manager.' THEN RAISE; END IF;
     END;
 
     RAISE NOTICE 'get_bank_accounts_for_unit_management Test Passed.';
