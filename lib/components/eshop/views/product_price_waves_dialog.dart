@@ -107,7 +107,8 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   Future<void> remove(ProductPriceWave wave) async {
     final confirmed = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(scrollable: true,
+        builder: (_) => AlertDialog(
+                scrollable: true,
                 title: Text(OrdersStrings.cancelWave),
                 content: Text(OrdersStrings.cancelWaveConfirm),
                 actions: [
@@ -351,18 +352,18 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
                         height: 14,
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: current ? colors.primary : colors.surface,
+                            color: current
+                                ? colors.onSurfaceVariant
+                                : colors.surface,
                             border: Border.all(
-                                color: colors.primary, width: 2)))))),
+                                color: colors.outline, width: 2)))))),
         const SizedBox(width: 12),
         Expanded(
             child: Padding(
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Card(
                   margin: EdgeInsets.zero,
-                  color: current
-                      ? colors.primaryContainer
-                      : colors.surfaceContainerLow,
+                  color: colors.surfaceContainerLow,
                   child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -394,7 +395,11 @@ class WaveProductCell extends StatelessWidget {
   final VoidCallback? onOpen;
   final double width;
   const WaveProductCell(
-      {super.key, required this.wave, required this.product, this.onOpen, this.width = 180});
+      {super.key,
+      required this.wave,
+      required this.product,
+      this.onOpen,
+      this.width = 180});
   @override
   Widget build(BuildContext context) {
     final price = wave.prices(product).firstOrNull;
@@ -488,7 +493,8 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
     if (dirty) {
       final discard = await showDialog<bool>(
           context: context,
-          builder: (_) => AlertDialog(scrollable: true,
+          builder: (_) => AlertDialog(
+                  scrollable: true,
                   title: Text(CommonStrings.discardChanges),
                   content: Text(CommonStrings.discardChangesConfirmation),
                   actions: [
@@ -532,7 +538,8 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
       onPopInvokedWithResult: (popped, _) {
         if (!popped) close();
       },
-      child: AlertDialog(scrollable: true,
+      child: AlertDialog(
+          scrollable: true,
           title: Text(widget.product.title ?? ''),
           content: SizedBox(
               width: 360,
@@ -636,7 +643,8 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: !busy,
-      child: AlertDialog(scrollable: true,
+      child: AlertDialog(
+          scrollable: true,
           title: Text(widget.wave == null
               ? OrdersStrings.addWave
               : OrdersStrings.moveWave),
@@ -644,10 +652,13 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
               width: 360,
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 TimeDatePicker(
-                  date: date.text.isEmpty ? null : scheduleWallTime(date.text, '00:00'),
+                  date: date.text.isEmpty
+                      ? null
+                      : scheduleWallTime(date.text, '00:00'),
                   time: time.text.isEmpty
                       ? null
-                      : TimeOfDay.fromDateTime(scheduleWallTime('2000-01-01', time.text)!),
+                      : TimeOfDay.fromDateTime(
+                          scheduleWallTime('2000-01-01', time.text)!),
                   dateLabel: OrdersStrings.priceDate,
                   timeLabel: OrdersStrings.priceTime,
                   enabled: !busy,

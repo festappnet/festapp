@@ -90,7 +90,7 @@ void main() {
       if (dirty) {
         await tester.enterText(find.byType(TextField).first, '550');
       }
-      await tester.tap(find.text('Nastavit cenové vlny'));
+      await tester.tap(find.text('Cenové vlny'));
       await tester.pumpAndSettle();
       if (dirty) {
         expect(opened, isFalse);
@@ -98,7 +98,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(ProductPriceChangesDialog), findsOneWidget);
         expect(opened, isFalse);
-        await tester.tap(find.text('Nastavit cenové vlny'));
+        await tester.tap(find.text('Cenové vlny'));
         await tester.pumpAndSettle();
         await tester.tap(find.widgetWithText(FilledButton, CommonStrings.discardChanges));
         await tester.pumpAndSettle();
