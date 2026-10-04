@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-04",
+  "verification": "standard",
+  "festapp_base": "148385676d1d6bef68169ef9decf941ca76c11a2",
+  "banksync_version": "0.2.2",
+  "banksync_head": "3ac47d90461c31dbcd4810643b73a14aab65bab7",
+  "release_url": "https://github.com/festappnet/banksync/actions/runs/37205459633",
+  "npm_integrity": "sha512-h6s1rEAKEQpbQhlnucBV9Y9YVapO/cCdVbvrdKFBNS85BBytTAQWabQe1lTWqd9rjAcXAEP80QAAdCryvHf/KQ==",
+  "tests": [
+    {
+      "name": "banksync_check",
+      "check": "pnpm check",
+      "passed": 565,
+      "log": "/tmp/banksync-022-check.log",
+      "log_sha256": "7eafffd61c51963fc1377545bbe638f01868cdc08d6d2ef215c68079978eb87b"
+    },
+    {
+      "name": "banksync_release",
+      "check": "protected promote/release workflow",
+      "passed": true,
+      "log": null,
+      "log_sha256": null
+    },
+    {
+      "name": "festapp_sql",
+      "check": "five BankSync SQL suites and five existing payment regressions",
+      "passed": 10,
+      "log": "/tmp/banksync-final-payment-tests.log",
+      "log_sha256": "0f1409497b3a869201942400bc79cb70dec32253ce1842a71314aa91f1bc6280"
+    },
+    {
+      "name": "festapp_concurrency",
+      "check": "two-session PostgreSQL concurrency",
+      "passed": true,
+      "log": "/tmp/banksync-atomic-email-concurrency.log",
+      "log_sha256": "5a6ebcf1b561489d6932b44350cb35f1fa460a2a9f37cfb349a0e55a8e4445df"
+    },
+    {
+      "name": "deno_check",
+      "check": "Deno checks using the published exact npm pin",
+      "passed": true,
+      "log": "/tmp/banksync-022-deno-check.log",
+      "log_sha256": "7e66f17cc47727ac88fd51f5d3a86a5bd6d96933c5c370813b1cd76c87f0c1f7"
+    },
+    {
+      "name": "deno_tests",
+      "check": "receiver, encryption and worker credential scoping",
+      "passed": 7,
+      "log": "/tmp/banksync-022-deno-tests.log",
+      "log_sha256": "9346c396439c689fc798b6b58cceb4ec59d7dea49c69d86cfec6bbcd76e5a8ef"
+    },
+    {
+      "name": "registry_receiver_sql",
+      "check": "published package -> raw HMAC -> real SQL -> receipt and immediately due globally gated ticket intent",
+      "passed": true,
+      "log": "/tmp/banksync-022-receiver-sql.log",
+      "log_sha256": "0ffaba1062d35695cbc41786a9ed137e5fe97896903e25ef3986d56d4eb52fcf"
+    },
+    {
+      "name": "dart_tests",
+      "check": "bank account tests",
+      "passed": 7,
+      "log": "/tmp/banksync-merged-flutter-tests.log",
+      "log_sha256": "9318eda2799169f2bab3af78d6e3775869851da898a8888ba61161842d2e6751"
+    },
+    {
+      "name": "dart_analyze",
+      "check": "bank account component analysis: no errors, eight existing infos",
+      "passed": true,
+      "log": "/tmp/banksync-merged-dart-analyze.log",
+      "log_sha256": "3aec6300ddcb41ddec8f5dfeb0dabc75f1f4ff3222221cf5f7a31b03148b2e38"
+    },
+    {
+      "name": "merged_settings_analyze",
+      "check": "last affected settings file analysis: no errors",
+      "passed": true,
+      "log": "/tmp/banksync-last-dart-analyze.log",
+      "log_sha256": "931d6204e83bf62bd58e93d31047fece5c0974e5e5ac2487983775f0545d2ee6"
+    },
+    {
+      "name": "universal_email_sql",
+      "passed": 5,
+      "log": "/tmp/banksync-universal-email-sql-final.log",
+      "check": "canonical queue, order intents, account intents, preparation/outage and quota/wake",
+      "log_sha256": "8f314324df8460c32ece78a8a9df932554d23b794ebf67c77d1a4c8d7f2d2008"
+    },
+    {
+      "name": "universal_email_auth",
+      "passed": 5,
+      "log": "/tmp/banksync-universal-email-deno-tests.log",
+      "check": "registration, Auth hooks and email adapters",
+      "log_sha256": "bb7909c94a95f43dc03de8c53a3d168004321330d49776b63025858d0d97ca8f"
+    }
+  ],
+  "limits": [
+    "Disposable local PostgreSQL includes the current upstream canonical email migrations. Immediate ticket intent, atomic rollback, global pause and quota gates were verified without real delivery.",
+    "No browser E2E or real bank/email transaction was run. M1/M2 production gates remain open.",
+    "New email IDs remain unproven observations and cannot yet establish automatic email payment completion.",
+    "Shared Worker composition patch is prepared but unapplied; neither the Worker nor Festapp production backend was deployed."
+  ]
+}

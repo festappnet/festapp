@@ -1654,7 +1654,13 @@
     "safeSenderInfo": "Tato adresa je bezpečná. Je to speciální robot, který čte pouze e-maily o platbách a nic jiného.",
     "forwardingEmailWarning": "Upozornění: Prosím, udržujte tento e-mail v tajnosti. S nikým jej nesdílejte.",
     "creditorNameLabel": "Jméno majitele účtu",
-    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace."
+    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace.",
+    "connection_state": "Stav připojení",
+    "bank_pull": "Bankovní výpis stažen",
+    "receiver_commit": "Pohyb přijat",
+    "not_received": "Zatím nepřijato",
+    "email_identity_notice": "Zprávy bez ověřené bankovní identity čekají na kontrolu správce a automaticky nehradí objednávky.",
+    "connect_email": "Připojit bankovní email"
   },
   "FeatureContract": {
     "title": "Smlouva",
