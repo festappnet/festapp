@@ -150,7 +150,7 @@ class _FormEditorContentState extends State<FormEditorContent>
       widget.onDataUpdated?.call();
     } catch (e) {
       if (!mounted) return;
-      ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
+      ToastHelper.Show(context, FormStrings.saveError(e),
           severity: ToastSeverity.NotOk);
     }
   }

@@ -39,7 +39,8 @@ class _UsersTabState extends State<UsersTab> {
       if (RightsService.isAdmin()) UserColumns.EMAIL_HISTORY,
       UserColumns.NAME,
       UserColumns.SURNAME,
-      UserColumns.GROUP,
+      if (FeatureService.isFeatureEnabled(FeatureConstants.userGroups))
+        UserColumns.GROUP,
       UserColumns.SEX,
       if (FeatureService.isServiceAccommodationEnabled())
         UserColumns.ACCOMMODATION,
