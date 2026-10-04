@@ -1,6 +1,6 @@
 # Editor drafts, form loading and order-email presentation
 
-Status: validated locally, pending canonical merge and production rollout. Scope: shared backend and only vstupenky.online frontend.
+Status: shared SQL ACTIVE; vstupenky.online frontend deployment in progress. Scope: shared backend and only vstupenky.online frontend.
 
 Prepared editor changes were ported from the existing workspace onto current main, preserving newer canonical routes, ticket editor/save behavior and reports. Shared EditorActionBar/EditorSnapshot and EditorDraftScope track nested edits and HTML drafts, disable unchanged actions, confirm discard and reload embedded editors without navigating away. Coverage includes forms, design/settings, blueprint, inventory, occasion features and schedule. Rendering design/schedule defaults no longer mutates form data. Existing retained-navigation guards remain in place.
 
@@ -11,3 +11,10 @@ The form editor handles failed/null loading with an error state and Retry instea
 Migration: 20261004133000_form_editor_read_usage_performance.sql, exact canonical get_form_for_edit and update_form_internal_v1 bodies. Before production application: verified authoritative main, fresh protected dump/catalog/digests, before-function definitions, atomic SQL/ledger transaction and PostgREST notification. No production fixtures or bulk e-mail sends.
 
 Validation: full automation/test_all.sh passed (110 SQL files, 1069 Flutter tests with one skip, 242 Deno tests, web/automation checks and three local worker integration tests; 27 remote credential-dependent cases skipped). Targeted editor/history tests passed (91 tests). Current-state SQL regression went red on the previous implementation and green on the replacement, covering historical-only fields/products, current usage, permissions, rollback and other references. Final loading/design widget checks include existing configured colors. Changed-file analysis has no errors; two existing warnings remain in contract_feature and EventEditPage. Production evidence will be appended after completion.
+
+
+Canonical merge: main `31c421fd6da2b4b5ac93c879d60318326a750a74` (PR #282). Migration `20261004133000` was applied with its ledger atomically after a fresh protected backup/catalog/hash and comparison of unchanged before-function definitions. Evidence: `/var/lib/festapp-rehearsal-evidence/editor-form-loading-20261004`. PostgREST was notified. A read-only authorized-editor request for the reported form returned code 200, nine fields and 19 products in **47.677 ms**, within a five-second timeout. Both read/save functions exclude orders_history; private internal execution remains denied to anon/authenticated. No historical records were changed.
+
+Frontend candidate: `0.20.89+573`, production `75d426bb3d18d6bc8d971cc9ce2ee4b53874da86`, exact main base above. Tenant drift check passed; deployment run `37196706049` dispatched only for prod/festapptickets.
+
+Final prepared-change inventory found two additional small changes: read the app-bar page route from its original page context, and expose ticket confirmation only when the ticket feature is enabled. These are included in the sequential follow-up release. The existing report implementation, released form/product changes and invitation-column placement remain canonical. Changes subsequently appearing in other active workspaces are not copied as unfinished work.

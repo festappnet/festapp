@@ -92,7 +92,8 @@ class AppPanelHelper {
 
     // Separator, Occasion Selector, and new Action Selector
     // Skip on unit-level pages (e.g. /unit/5/edit) where occasion context is stale
-    final currentRoutePath = context.routeData.path;
+    // App-bar builders can inherit a different route scope than the page.
+    final currentRoutePath = originalContext.routeData.path;
     final isUnitLevelPage = currentRoutePath.contains('/unit/') &&
         currentRoutePath.contains('/edit');
     if (currentUnit != null && currentOccasion != null && !isUnitLevelPage) {
@@ -186,12 +187,11 @@ class AppPanelHelper {
         // View App is always available if the app is supported
         availableActions.add(viewAppAction);
 
-        final currentPath = context.routeData.path;
         _ActionMenuItem currentAction;
 
-        if (currentPath.endsWith(ReservationsPage.ROUTE)) {
+        if (currentRoutePath.endsWith(ReservationsPage.ROUTE)) {
           currentAction = reservationsAction;
-        } else if (currentPath.endsWith(AdminPage.ROUTE)) {
+        } else if (currentRoutePath.endsWith(AdminPage.ROUTE)) {
           currentAction = adminAction;
         } else {
           currentAction = viewAppAction;
