@@ -1,0 +1,1219 @@
+-- Pending rows are preserved, including invalid legacy plans for explicit repair.
+ALTER TABLE eshop.planned_changes ADD COLUMN IF NOT EXISTS revision bigint NOT NULL DEFAULT 1;
+ALTER TABLE eshop.planned_changes ADD COLUMN IF NOT EXISTS failed_at timestamptz;
+ALTER TABLE eshop.planned_changes ADD COLUMN IF NOT EXISTS failure_code text;
+REVOKE ALL ON TABLE eshop.planned_changes FROM anon,authenticated;
+REVOKE ALL ON SEQUENCE eshop.planned_changes_id_seq FROM anon,authenticated;
+
+
+-- Internal validation shared by immediate writes and scheduled application.
+CREATE OR REPLACE FUNCTION public.validate_product_price(p_price numeric, p_data jsonb, p_currency text)
+RETURNS void LANGUAGE plpgsql SET search_path = public, extensions AS $$
+DECLARE v_deposit numeric; v_digits integer;
+BEGIN
+  -- Match ISO currency minor units, including currencies without cents.
+  v_digits := CASE WHEN p_currency IN ('JPY','KRW','VND','CLP','ISK','BIF','DJF','GNF','KMF','PYG','RWF','UGX','VUV','XAF','XOF','XPF') THEN 0
+    WHEN p_currency IN ('BHD','IQD','JOD','KWD','LYD','OMR','TND') THEN 3 ELSE 2 END;
+  -- Current products.price is numeric(10,2); never schedule an unrepresentable target.
+  v_digits := least(v_digits,2);
+  IF p_price IS NULL OR p_price::text IN ('NaN','Infinity','-Infinity') OR p_price < 0 OR p_price > 99999999.99
+    OR p_price <> round(p_price,v_digits) THEN
+    RAISE EXCEPTION USING ERRCODE='22023', MESSAGE='INVALID_PRODUCT_PRICE';
+  END IF;
+  v_deposit := NULLIF(p_data->'deposit'->>'amount','')::numeric;
+  IF v_deposit > 0 AND v_deposit >= p_price THEN
+    RAISE EXCEPTION USING ERRCODE='22023', MESSAGE='DEPOSIT_AMOUNT_TOO_HIGH';
+  END IF;
+END; $$;
+REVOKE ALL ON FUNCTION public.validate_product_price(numeric,jsonb,text) FROM PUBLIC,anon,authenticated;
+
+-- Caller holds the product lock before inspecting plans (also used by form saves).
+CREATE OR REPLACE FUNCTION public.validate_product_price_update(p_id bigint, p_price numeric, p_data jsonb, p_currency text)
+RETURNS void LANGUAGE plpgsql SET search_path = public, extensions AS $$
+DECLARE v_product eshop.products%ROWTYPE;
+BEGIN
+  SELECT * INTO STRICT v_product FROM eshop.products WHERE id=p_id FOR UPDATE;
+  PERFORM public.validate_product_price(p_price,p_data,p_currency);
+  IF p_currency IS DISTINCT FROM v_product.currency_code AND EXISTS (
+    SELECT 1 FROM eshop.planned_changes WHERE subject_id=p_id AND change_type='products.price' AND NOT applied
+  ) THEN RAISE EXCEPTION USING ERRCODE='22023', MESSAGE='CANCEL_PRICE_CHANGES_BEFORE_CURRENCY_CHANGE'; END IF;
+END; $$;
+REVOKE ALL ON FUNCTION public.validate_product_price_update(bigint,numeric,jsonb,text) FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION public.save_product_price_change(
+  p_product_id bigint, p_price numeric, p_change_time timestamptz,
+  p_change_id bigint DEFAULT NULL, p_expected_revision bigint DEFAULT NULL
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_product eshop.products%ROWTYPE; v_change eshop.planned_changes%ROWTYPE; v_occasion bigint;
+BEGIN
+  SELECT p.* INTO STRICT v_product FROM eshop.products p WHERE p.id=p_product_id FOR UPDATE;
+  SELECT pt.occasion INTO STRICT v_occasion FROM eshop.product_types pt WHERE pt.id=v_product.product_type;
+  IF auth.uid() IS NULL OR NOT EXISTS (SELECT 1 FROM public.occasions o JOIN public.user_info ui
+    ON ui.organization=o.organization WHERE o.id=v_occasion AND ui.id=auth.uid()) THEN
+    RAISE insufficient_privilege USING MESSAGE='ORDER_EDITOR_REQUIRED'; END IF;
+  PERFORM public.check_is_editor_order_on_occasion(v_occasion);
+  IF v_product.occasion IS DISTINCT FROM v_occasion THEN RAISE EXCEPTION 'PRODUCT_OCCASION_MISMATCH'; END IF;
+  PERFORM public.validate_product_price(p_price,v_product.data,v_product.currency_code);
+  IF p_change_time IS NULL OR NOT isfinite(p_change_time) OR p_change_time <= clock_timestamp() THEN
+    RAISE invalid_parameter_value USING MESSAGE='FUTURE_TIME_REQUIRED'; END IF;
+  IF p_change_id IS NULL THEN
+    IF p_expected_revision IS NOT NULL THEN RAISE invalid_parameter_value USING MESSAGE='INVALID_REVISION'; END IF;
+    INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion)
+    VALUES ('products.price',p_product_id,p_price::text,p_change_time,v_occasion) RETURNING * INTO v_change;
+  ELSE
+    SELECT * INTO v_change FROM eshop.planned_changes WHERE id=p_change_id FOR UPDATE;
+    IF NOT FOUND OR v_change.subject_id<>p_product_id OR v_change.change_type<>'products.price'
+      OR v_change.applied OR v_change.revision IS DISTINCT FROM p_expected_revision THEN
+      RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
+    UPDATE eshop.planned_changes SET new_value=p_price::text,change_time=p_change_time,
+      occasion=v_occasion,revision=revision+1,failed_at=NULL,failure_code=NULL
+      WHERE id=p_change_id RETURNING * INTO v_change;
+  END IF;
+  RETURN to_jsonb(v_change);
+END; $$;
+REVOKE ALL ON FUNCTION public.save_product_price_change(bigint,numeric,timestamptz,bigint,bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.save_product_price_change(bigint,numeric,timestamptz,bigint,bigint) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.cancel_product_price_change(p_product_id bigint,p_change_id bigint,p_expected_revision bigint)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_occasion bigint; v_change eshop.planned_changes%ROWTYPE;
+BEGIN
+  SELECT pt.occasion INTO STRICT v_occasion FROM eshop.products p JOIN eshop.product_types pt
+    ON pt.id=p.product_type WHERE p.id=p_product_id FOR UPDATE OF p;
+  IF auth.uid() IS NULL OR NOT EXISTS (SELECT 1 FROM public.occasions o JOIN public.user_info ui
+    ON ui.organization=o.organization WHERE o.id=v_occasion AND ui.id=auth.uid()) THEN
+    RAISE insufficient_privilege USING MESSAGE='ORDER_EDITOR_REQUIRED'; END IF;
+  PERFORM public.check_is_editor_order_on_occasion(v_occasion);
+  SELECT * INTO v_change FROM eshop.planned_changes WHERE id=p_change_id FOR UPDATE;
+  IF NOT FOUND OR v_change.subject_id<>p_product_id OR v_change.change_type<>'products.price'
+    OR v_change.applied OR v_change.revision IS DISTINCT FROM p_expected_revision THEN
+    RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
+  DELETE FROM eshop.planned_changes WHERE id=p_change_id;
+END; $$;
+REVOKE ALL ON FUNCTION public.cancel_product_price_change(bigint,bigint,bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.cancel_product_price_change(bigint,bigint,bigint) TO authenticated;
+
+
+
+-- Backfill only verifiable owners. Never choose a winner among duplicate prices.
+UPDATE eshop.planned_changes pc SET occasion=pt.occasion FROM eshop.products p
+JOIN eshop.product_types pt ON pt.id=p.product_type
+WHERE pc.subject_id=p.id AND pc.change_type IN ('products.price','products.is_hidden')
+AND pc.occasion IS NULL AND p.occasion=pt.occasion;
+UPDATE eshop.planned_changes pc SET occasion=f.occasion FROM public.forms f
+WHERE pc.subject_id=f.id AND pc.change_type='forms.is_open' AND pc.occasion IS NULL;
+DO $$ DECLARE r record; p eshop.products%ROWTYPE; o bigint;
+BEGIN
+  FOR r IN SELECT * FROM eshop.planned_changes WHERE NOT applied AND failed_at IS NULL LOOP
+    BEGIN
+      IF r.change_type IN ('products.price','products.is_hidden') THEN
+        SELECT * INTO STRICT p FROM eshop.products WHERE id=r.subject_id;
+        SELECT occasion INTO STRICT o FROM eshop.product_types WHERE id=p.product_type;
+        IF r.occasion IS DISTINCT FROM o OR p.occasion IS DISTINCT FROM o THEN RAISE EXCEPTION 'INVALID_OCCASION'; END IF;
+        IF r.change_type='products.price' THEN
+          PERFORM public.validate_product_price(r.new_value::numeric,p.data,p.currency_code);
+          IF (SELECT count(*) FROM eshop.planned_changes WHERE NOT applied AND change_type='products.price'
+            AND subject_id=r.subject_id AND change_time=r.change_time)>1 THEN RAISE EXCEPTION 'DUPLICATE_TIME'; END IF;
+        ELSE PERFORM r.new_value::boolean; END IF;
+      ELSIF r.change_type='forms.is_open' THEN
+        SELECT occasion INTO STRICT o FROM public.forms WHERE id=r.subject_id;
+        IF o IS NULL OR r.occasion IS DISTINCT FROM o THEN RAISE EXCEPTION 'INVALID_OCCASION'; END IF;
+        PERFORM r.new_value::boolean;
+      ELSE RAISE EXCEPTION 'UNKNOWN_CHANGE_TYPE'; END IF;
+      IF NOT isfinite(r.change_time) THEN RAISE EXCEPTION 'INVALID_TIME'; END IF;
+    EXCEPTION WHEN OTHERS THEN
+      UPDATE eshop.planned_changes SET failed_at=now(),failure_code='LEGACY_INVALID_PLAN' WHERE id=r.id;
+    END;
+  END LOOP;
+END; $$;
+CREATE UNIQUE INDEX planned_product_price_instant_unique ON eshop.planned_changes(subject_id,change_time)
+WHERE change_type='products.price' AND NOT applied AND failed_at IS NULL;
+CREATE INDEX planned_product_price_pending ON eshop.planned_changes(subject_id,change_time,id)
+WHERE change_type='products.price' AND NOT applied;
+CREATE INDEX planned_changes_due ON eshop.planned_changes(change_time,id) WHERE NOT applied AND failed_at IS NULL;
+
+
+-- The canonical entrypoint retains Client Sync v1 delivery.
+CREATE OR REPLACE FUNCTION public.apply_planned_changes_client_sync_v1()
+RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_candidate record; v_change eshop.planned_changes%ROWTYPE;
+  v_product eshop.products%ROWTYPE; v_occasion bigint; v_impacts jsonb; v_changed integer;
+  v_failure text;
+BEGIN
+  PERFORM public.require_client_sync_service_role_v1();
+  -- Serializes workers, including backlog across multiple instants of one product.
+  IF NOT pg_try_advisory_xact_lock(7310420261004::bigint) THEN RETURN; END IF;
+  FOR v_candidate IN SELECT id,subject_id,change_type FROM eshop.planned_changes
+    WHERE change_time<=now() AND NOT applied AND failed_at IS NULL ORDER BY change_time,id
+  LOOP
+    -- Same lock order as editor commands: subject, then plan. Recheck after lock.
+    IF v_candidate.change_type IN ('products.price','products.is_hidden') THEN
+      PERFORM 1 FROM eshop.products WHERE id=v_candidate.subject_id FOR UPDATE;
+    ELSIF v_candidate.change_type='forms.is_open' THEN
+      PERFORM 1 FROM public.forms WHERE id=v_candidate.subject_id FOR UPDATE;
+    END IF;
+    SELECT * INTO v_change FROM eshop.planned_changes WHERE id=v_candidate.id FOR UPDATE;
+    IF NOT FOUND OR v_change.applied OR v_change.failed_at IS NOT NULL OR v_change.change_time>now() THEN CONTINUE; END IF;
+    BEGIN
+      v_changed:=0; v_occasion:=NULL; v_impacts:='[]'::jsonb;
+      IF v_change.change_type IN ('products.price','products.is_hidden') THEN
+        SELECT * INTO v_product FROM eshop.products WHERE id=v_change.subject_id;
+        IF NOT FOUND THEN RAISE EXCEPTION 'INVALID_SUBJECT'; END IF;
+        SELECT occasion INTO v_occasion FROM eshop.product_types WHERE id=v_product.product_type;
+        IF v_occasion IS NULL OR v_change.occasion IS DISTINCT FROM v_occasion
+          OR v_product.occasion IS DISTINCT FROM v_occasion THEN RAISE EXCEPTION 'INVALID_OCCASION'; END IF;
+        IF v_change.change_type='products.price' THEN
+          PERFORM public.validate_product_price(v_change.new_value::numeric,v_product.data,v_product.currency_code);
+          UPDATE eshop.products SET price=v_change.new_value::numeric,updated_at=now()
+          WHERE id=v_change.subject_id AND price IS DISTINCT FROM v_change.new_value::numeric;
+        ELSE
+          UPDATE eshop.products SET is_hidden=v_change.new_value::boolean,updated_at=now()
+          WHERE id=v_change.subject_id AND is_hidden IS DISTINCT FROM v_change.new_value::boolean;
+        END IF;
+        GET DIAGNOSTICS v_changed=ROW_COUNT;
+      ELSIF v_change.change_type='forms.is_open' THEN
+        SELECT occasion INTO v_occasion FROM public.forms WHERE id=v_change.subject_id;
+        IF NOT FOUND THEN RAISE EXCEPTION 'INVALID_SUBJECT'; END IF;
+        IF v_occasion IS NULL OR v_change.occasion IS DISTINCT FROM v_occasion THEN RAISE EXCEPTION 'INVALID_OCCASION'; END IF;
+        UPDATE public.forms SET is_open=v_change.new_value::boolean WHERE id=v_change.subject_id;
+      ELSE RAISE EXCEPTION 'UNKNOWN_CHANGE_TYPE'; END IF;
+      IF v_changed>0 THEN
+        SELECT COALESCE(jsonb_agg(jsonb_build_object('component','private_inventory','userId',ou."user")),'[]'::jsonb)
+          INTO v_impacts FROM eshop.order_product_ticket opt JOIN public.occasion_users ou
+          ON ou.ticket=opt.ticket AND ou.occasion=v_occasion WHERE opt.product=v_change.subject_id;
+        PERFORM public.record_client_sync_commit_v1(v_occasion,
+          'inventory.product.planned','inventory',jsonb_build_array(jsonb_build_object(
+          'entityType','product','entityId',v_change.subject_id,'operation','update',
+          'safeLabel','Scheduled product change','changedFields',jsonb_build_array(split_part(v_change.change_type,'.',2)))),
+          '{}',v_impacts,'[]','service','planned_change:'||v_change.id::text);
+      END IF;
+      UPDATE eshop.planned_changes SET applied=true,revision=revision+1 WHERE id=v_change.id;
+    EXCEPTION WHEN OTHERS THEN
+      -- This subtransaction rolls back price AND sync on any failure.
+      v_failure := CASE WHEN SQLERRM IN ('INVALID_SUBJECT','INVALID_OCCASION','UNKNOWN_CHANGE_TYPE',
+        'INVALID_PRODUCT_PRICE','DEPOSIT_AMOUNT_TOO_HIGH') THEN SQLERRM
+        WHEN SQLSTATE IN ('22P02','22003') THEN 'INVALID_VALUE' ELSE 'APPLICATION_FAILED' END;
+      UPDATE eshop.planned_changes SET failed_at=clock_timestamp(),failure_code=v_failure,revision=revision+1 WHERE id=v_change.id;
+    END;
+  END LOOP;
+END; $$;
+REVOKE ALL ON FUNCTION public.apply_planned_changes_client_sync_v1() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_planned_changes_client_sync_v1() TO service_role;
+CREATE OR REPLACE FUNCTION public.apply_planned_changes()
+RETURNS void LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+  SELECT public.apply_planned_changes_client_sync_v1();
+$$;
+REVOKE ALL ON FUNCTION public.apply_planned_changes() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_planned_changes() TO service_role;
+
+
+CREATE OR REPLACE FUNCTION public.get_products_and_types_for_edit(occasion_link text)
+RETURNS json LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE
+  product_types json;
+  products json;
+  inventory_pools_data json;
+  inventory_contexts_data json;
+  product_inventory_contexts_data json;
+  forms_data json;
+  occ_id bigint;
+BEGIN
+  -- Resolve occasion_id from the provided occasion_link
+  SELECT id
+    INTO occ_id
+  FROM public.occasions
+  WHERE link = occasion_link
+    AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
+
+  -- If the occasion link is invalid, raise an exception.
+  IF occ_id IS NULL THEN
+    RAISE EXCEPTION 'Occasion not found for link: %', occasion_link;
+  END IF;
+
+  -- Verify if the current user is an editor for the order's occasion
+  IF NOT get_is_editor_order_view_on_occasion(occ_id) THEN
+      RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to view this.');
+  END IF;
+
+-- Fetch all product types for the given occasion
+  SELECT json_agg(
+           json_build_object(
+             'id', pt.id,
+             'type', pt.type,
+             'title', pt.title
+           )
+         )
+    INTO product_types
+  FROM eshop.product_types pt
+  WHERE pt.occasion = occ_id;
+
+  -- Fetch all products for the given occasion, including form IDs
+  SELECT json_agg(
+           json_build_object(
+             'id', p.id,
+             'title', p.title,
+             'description', p.description,
+             'short_title', p.data->>'short_title',
+             'product_type', p.product_type,
+             'data', p.data,
+             'price', p.price,
+             'price_changes', (SELECT COALESCE(json_agg(pc ORDER BY pc.change_time,pc.id),'[]'::json)
+               FROM eshop.planned_changes pc WHERE pc.subject_id=p.id AND pc.change_type='products.price' AND NOT pc.applied),
+             'currency_code', p.currency_code,
+             'is_hidden', p.is_hidden,
+             'order', p."order",
+             'maximum', p.maximum,
+             'form_ids', (
+               SELECT COALESCE(json_agg(DISTINCT ff.form), '[]'::json)
+               FROM public.form_fields ff
+               WHERE ff.product_type = p.product_type
+             ),
+             'ordered_count', (
+               SELECT count(*)
+               FROM eshop.order_product_ticket opt
+               WHERE opt.product = p.id
+             ),
+             'paid_count', (
+               SELECT count(*)
+               FROM eshop.order_product_ticket opt
+               JOIN eshop.orders o ON o.id = opt.order
+               WHERE opt.product = p.id
+                 AND o.state = 'paid'
+             ),
+             'sent_count', (
+               SELECT count(*)
+               FROM eshop.order_product_ticket opt
+               JOIN eshop.orders o ON o.id = opt.order
+               WHERE opt.product = p.id
+                 AND o.state = 'sent'
+             )
+           )
+         )
+    INTO products
+  FROM eshop.products p
+  WHERE p.product_type IN (
+    SELECT pt.id
+    FROM eshop.product_types pt
+    WHERE pt.occasion = occ_id
+  );
+
+  -- Fetch all inventory pools for the occasion
+  SELECT json_agg(ip.*)
+  INTO inventory_pools_data
+  FROM public.inventory_pools ip
+  WHERE ip.occasion = occ_id;
+
+  -- Fetch all inventory contexts for the occasion
+  SELECT json_agg(ic.*)
+  INTO inventory_contexts_data
+  FROM public.inventory_contexts ic
+  JOIN public.inventory_pools ip ON ic.inventory_pool = ip.id
+  WHERE ip.occasion = occ_id;
+
+  -- Fetch all links between products and inventory contexts for the occasion
+  SELECT json_agg(pic.*)
+  INTO product_inventory_contexts_data
+  FROM eshop.product_inventory_contexts pic
+  JOIN eshop.products p ON pic.product = p.id
+  JOIN eshop.product_types pt ON p.product_type = pt.id
+  WHERE pt.occasion = occ_id;
+
+  -- Fetch only the id, title, and link for each form associated with the occasion
+  SELECT json_agg(
+           json_build_object(
+             'id', f.id,
+             'title', f.title,
+             'link', f.link
+           )
+         )
+    INTO forms_data
+  FROM public.forms f
+  WHERE f.occasion = occ_id;
+
+  RETURN json_build_object(
+    'server_time', clock_timestamp(),
+    'product_types', COALESCE(product_types, '[]'::json),
+    'products', COALESCE(products, '[]'::json),
+    'inventory_pools', COALESCE(inventory_pools_data, '[]'::json),
+    'inventory_contexts', COALESCE(inventory_contexts_data, '[]'::json),
+    'product_inventory_contexts', COALESCE(product_inventory_contexts_data, '[]'::json),
+    'forms', COALESCE(forms_data, '[]'::json)
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_products_and_types_for_edit(text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_products_and_types_for_edit(text) TO authenticated;
+
+
+
+
+CREATE OR REPLACE FUNCTION public.update_product_internal_v1(p_input JSONB)
+RETURNS BIGINT LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE
+  v_product_id BIGINT;
+  v_occasion_id BIGINT;
+  v_product_type_id BIGINT;
+  v_existing_price NUMERIC;
+  v_input_price NUMERIC;
+  v_effective_price NUMERIC;
+  v_input_deposit NUMERIC;
+BEGIN
+  -- Extract product id from the input JSON
+  v_product_id := (p_input->>'id')::BIGINT;
+
+  -- Try to find the product to determine if we are updating or creating.
+  -- This also gets the *current* occasion for the permission check on UPDATE.
+  IF v_product_id IS NOT NULL THEN
+    SELECT pt.occasion, p.price
+    INTO v_occasion_id, v_existing_price
+    FROM eshop.products p
+    JOIN eshop.product_types pt ON p.product_type = pt.id
+    WHERE p.id = v_product_id FOR UPDATE OF p;
+  END IF;
+
+  -- CASE 1: Product was found (v_product_id was not null and existed)
+  IF FOUND THEN
+    -- We are UPDATING.
+
+    -- Ensure the caller has permission to edit this product's *current* occasion.
+    -- This function is expected to raise an exception on failure.
+    PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
+
+    -- VALIDATION: deposit amount must be less than effective price (input price overrides existing)
+    v_input_price := NULLIF(p_input->>'price', '')::NUMERIC;
+    v_effective_price := COALESCE(v_input_price, v_existing_price);
+    v_input_deposit := NULLIF(p_input->'data'->'deposit'->>'amount', '')::NUMERIC;
+    IF v_input_deposit IS NOT NULL AND v_input_deposit > 0
+       AND v_effective_price IS NOT NULL AND v_input_deposit >= v_effective_price THEN
+      RAISE EXCEPTION '%', jsonb_build_object(
+          'code', 'DEPOSIT_AMOUNT_TOO_HIGH',
+          'message', 'Deposit amount (' || v_input_deposit || ') must be less than price (' || v_effective_price || ').'
+      )::text;
+    END IF;
+
+    PERFORM public.validate_product_price_update(v_product_id,v_effective_price,
+      COALESCE(p_input->'data',(SELECT data FROM eshop.products WHERE id=v_product_id)),
+      COALESCE(p_input->>'currency_code',(SELECT currency_code FROM eshop.products WHERE id=v_product_id)));
+    -- A product with schedules cannot silently move to another occasion/type.
+    IF EXISTS (SELECT 1 FROM eshop.planned_changes WHERE subject_id=v_product_id
+      AND change_type='products.price' AND NOT applied) AND (
+      NULLIF(p_input->>'occasion','')::bigint IS DISTINCT FROM v_occasion_id AND p_input->>'occasion' IS NOT NULL
+      OR NULLIF(p_input->>'product_type','')::bigint IS DISTINCT FROM
+        (SELECT product_type FROM eshop.products WHERE id=v_product_id) AND p_input->>'product_type' IS NOT NULL
+    ) THEN RAISE EXCEPTION 'CANCEL_PRICE_CHANGES_BEFORE_PRODUCT_MOVE'; END IF;
+
+    -- Update only the fields that are provided in the input JSON.
+    -- COALESCE is used to keep the existing value if a new one isn't provided.
+    -- NULLIF is added to safely handle empty strings '' during casting.
+    UPDATE eshop.products p
+    SET
+      occasion      = COALESCE(NULLIF(p_input->>'occasion', '')::BIGINT, p.occasion),
+      title         = COALESCE(p_input->>'title',         p.title),
+      description   = COALESCE(p_input->>'description',   p.description),
+      price         = COALESCE(NULLIF(p_input->>'price', '')::NUMERIC, p.price),
+      currency_code = COALESCE(p_input->>'currency_code', p.currency_code),
+      data          = COALESCE(p_input->'data',           p.data),
+      product_type  = COALESCE(NULLIF(p_input->>'product_type', '')::BIGINT, p.product_type),
+      "order"       = COALESCE(NULLIF(p_input->>'order', '')::INT,  p."order"),
+      maximum       = COALESCE(NULLIF(p_input->>'maximum', '')::INT, p.maximum),
+      is_hidden     = COALESCE(NULLIF(p_input->>'is_hidden', '')::BOOLEAN, p.is_hidden),
+      updated_at    = NOW()
+    WHERE p.id = v_product_id;
+
+    -- Return the ID of the updated product on success.
+    RETURN v_product_id;
+
+  -- CASE 2: Product was NOT found (v_product_id was NULL or was an ID that doesn't exist)
+  ELSE
+    -- We are CREATING, as per the request.
+
+    -- 1. Get the product_type from the JSON.
+    v_product_type_id := (p_input->>'product_type')::BIGINT;
+
+    -- 2. Validate product_type is provided (it's required for creation).
+    IF v_product_type_id IS NULL THEN
+      RAISE EXCEPTION '%', jsonb_build_object(
+          'code', 'PRD422',
+          'message', 'Field "product_type" is required when creating a new product.'
+      )::text;
+    END IF;
+
+    -- 3. Find the occasion for the *new* product_type to check permissions.
+    SELECT occasion
+    INTO v_occasion_id
+    FROM eshop.product_types
+    WHERE id = v_product_type_id;
+
+    -- 4. Handle invalid product_type.
+    IF NOT FOUND THEN
+      RAISE EXCEPTION '%', jsonb_build_object(
+          'code', 'PTY404',
+          'message', 'Product type with ID ' || v_product_type_id || ' not found.'
+      )::text;
+    END IF;
+
+    -- 5. Ensure the caller has permission to create a product on this occasion.
+    PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
+
+    -- 6. VALIDATION: deposit amount must be less than price (both from input on CREATE)
+    v_input_price := NULLIF(p_input->>'price', '')::NUMERIC;
+    v_input_deposit := NULLIF(p_input->'data'->'deposit'->>'amount', '')::NUMERIC;
+    IF v_input_deposit IS NOT NULL AND v_input_deposit > 0
+       AND v_input_price IS NOT NULL AND v_input_deposit >= v_input_price THEN
+      RAISE EXCEPTION '%', jsonb_build_object(
+          'code', 'DEPOSIT_AMOUNT_TOO_HIGH',
+          'message', 'Deposit amount (' || v_input_deposit || ') must be less than price (' || v_input_price || ').'
+      )::text;
+    END IF;
+
+    PERFORM public.validate_product_price(v_input_price,p_input->'data',p_input->>'currency_code');
+
+    -- 7. Insert the new product.
+    -- We ignore the `id` from the JSON (v_product_id) and let the sequence generate a new one.
+    -- We use NULLIF to safely cast potentially empty strings.
+    INSERT INTO eshop.products (
+      occasion,
+      title,
+      description,
+      price,
+      currency_code,
+      data,
+      product_type,
+      "order",
+      maximum,
+      is_hidden
+      -- created_at and updated_at are assumed to have defaults (e.g., NOW())
+    )
+    VALUES (
+      v_occasion_id,
+      p_input->>'title',
+      p_input->>'description',
+      NULLIF(p_input->>'price', '')::NUMERIC,
+      p_input->>'currency_code',
+      p_input->'data',
+      v_product_type_id, -- We already extracted and validated this
+      NULLIF(p_input->>'order', '')::INT,
+      NULLIF(p_input->>'maximum', '')::INT,
+      -- Default to 'false' if is_hidden is not provided on create
+      COALESCE(NULLIF(p_input->>'is_hidden', '')::BOOLEAN, false)
+    )
+    RETURNING id INTO v_product_id; -- Get the newly created ID
+
+    -- Return the ID of the newly created product.
+    RETURN v_product_id;
+
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.delete_product_internal_v1(p_product_id BIGINT)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE
+  v_occasion_id BIGINT;
+  v_order_count INT;
+BEGIN
+  -- Determine the occasion of the product to check permissions.
+  SELECT pt.occasion
+    INTO v_occasion_id
+  FROM eshop.products p
+  JOIN eshop.product_types pt ON p.product_type = pt.id
+  WHERE p.id = p_product_id FOR UPDATE OF p;
+
+  -- If the product does not exist, raise a structured error.
+  IF NOT FOUND THEN
+    RAISE EXCEPTION '%', jsonb_build_object(
+        'code', 'PRD404',
+        'message', 'Product with ID ' || p_product_id || ' not found.'
+    )::text;
+  END IF;
+
+  -- Authorization check. This function is expected to throw on failure.
+  PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
+
+  -- Safety Check: Ensure the product is not part of any existing orders.
+  SELECT COUNT(*) INTO v_order_count
+    FROM eshop.order_product_ticket
+   WHERE product = p_product_id;
+  IF v_order_count > 0 THEN
+    RAISE EXCEPTION '%', jsonb_build_object(
+        'code', 'PRD409',
+        'message', 'Cannot delete product because it is included in ' || v_order_count || ' order(s).',
+        'hint', 'Remove this product from all orders before deleting it.'
+    )::text;
+  END IF;
+
+  -- **INTEGRATION:** Before deleting the product, clear all its inventory context associations.
+  -- This call will also trigger the necessary de-allocation of spots.
+  PERFORM public.update_product_inventory_contexts_internal_v1(p_product_id, '[]'::jsonb);
+
+  DELETE FROM eshop.planned_changes WHERE subject_id=p_product_id AND change_type='products.price' AND NOT applied;
+
+  -- Finally, delete the product itself.
+  DELETE FROM eshop.products
+   WHERE id = p_product_id;
+
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION public.update_form_internal_v1(input_data JSONB)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    ----------------------------------------------------------------------------
+    -- Declarations
+    ----------------------------------------------------------------------------
+    result JSONB;
+    deleted_fields BIGINT[];
+    deleted_products BIGINT[];
+    deletion_reason TEXT;
+    deletion_row RECORD;
+
+    form_id          BIGINT;               -- ID of the form being created/updated
+    occasion_id      BIGINT;               -- ID of the occasion to which the form belongs
+    now_ts           TIMESTAMPTZ := NOW(); -- Current timestamp for record updates
+
+    link_param           TEXT;         -- Unique link for the form, must not conflict within the same org
+    occasion_org         BIGINT;       -- Organization stored in the occasions table
+    occasion_unit        BIGINT;       -- The 'unit' that must match for bank accounts
+    conflict_check       INT;          -- Used for verifying uniqueness constraints
+    deadline_val         BIGINT;       -- Field for validating form deadlines
+    price_val            NUMERIC;      -- Field for validating product price
+
+    bank_account_val     BIGINT;       -- Bank account from input_data
+    bank_account_unit    BIGINT;       -- Unit of the bank account, must match occasion_unit
+
+    v_seconds_before_deadline BIGINT; -- For calling the reminder queue function
+
+    ----------------------------------------------------------------------------
+    -- Since product_type data is now inside form_fields, we no longer read from
+    -- a top-level product_types array. Instead, we will parse product_type objects
+    -- directly from each form_field (if present).
+    ----------------------------------------------------------------------------
+
+    product_type_data    JSONB;        -- The JSONB data for product_type within a form_field
+    product_type_id      BIGINT;       -- ID (new or existing) of the product_type
+    product_type_occ     BIGINT;       -- For checking product_type's occasion
+
+    products_data        JSONB;        -- JSONB array of products inside a product_type
+    product_array_data   JSONB;        -- Rebuilt array of products
+    product_data         JSONB;        -- Each product object from the products array
+    product_id           BIGINT;       -- ID for a product (new or existing)
+    product_occ          BIGINT;       -- Occasion check for an existing product
+
+    ----------------------------------------------------------------------------
+    -- form_fields data
+    ----------------------------------------------------------------------------
+    form_fields_data     JSONB := '[]'::JSONB; -- Final array of form_fields for the response
+    field_data           JSONB;                -- Each form_field from input
+    field_id             BIGINT;               -- ID for a form_field (new or existing)
+    field_product_type   BIGINT;               -- Will store the final product_type.id for the form_field
+    field_occ            BIGINT;               -- Verify product_type's occasion if referenced
+BEGIN
+    BEGIN
+        /* All logic is inside this sub-block so we can catch exceptions similarly
+           to how it's done in create_ticket_order, with a single EXCEPTION WHEN OTHERS THEN.
+           We raise exceptions in JSON form, and if it's JSON, we return it as-is; otherwise,
+           we build a default JSON error response. */
+
+        ----------------------------------------------------------------------------
+        -- Begin main logic
+        ----------------------------------------------------------------------------
+
+        -- Validate that input_data and essential fields exist
+        IF input_data IS NULL THEN
+            RAISE EXCEPTION '%',
+                JSONB_BUILD_OBJECT('code', 4001, 'message', 'Input data is missing')::TEXT;
+        END IF;
+
+        IF input_data->>'occasion' IS NULL THEN
+            RAISE EXCEPTION '%',
+                JSONB_BUILD_OBJECT('code', 4002, 'message', 'Missing occasion ID in input data')::TEXT;
+        END IF;
+
+        occasion_id := (input_data->>'occasion')::BIGINT;
+        IF occasion_id IS NULL THEN
+            RAISE EXCEPTION '%',
+                JSONB_BUILD_OBJECT('code', 4002, 'message', 'Invalid or missing occasion ID')::TEXT;
+        END IF;
+
+        -- Ensure user is authorized to edit this occasion
+        IF NOT COALESCE(get_is_editor_order_on_occasion(occasion_id), false) THEN
+            RAISE EXCEPTION '%',
+                JSONB_BUILD_OBJECT('code', 403, 'message', 'User is not authorized to edit this occasion')::TEXT;
+        END IF;
+
+        -- Retrieve the occasion's organization and unit
+        SELECT o.organization, o.unit
+          INTO occasion_org, occasion_unit
+          FROM public.occasions o
+         WHERE o.id = occasion_id
+         LIMIT 1;
+
+        IF occasion_org IS NULL OR occasion_unit IS NULL THEN
+            RAISE EXCEPTION '%',
+                JSONB_BUILD_OBJECT('code', 4017, 'message', 'Occasion not found or missing required fields')::TEXT;
+        END IF;
+
+        -- Validate the link field, which must be unique within the same organization
+        link_param := input_data->>'link';
+        IF link_param IS NULL OR link_param = '' THEN
+            RAISE EXCEPTION '%',
+                JSONB_BUILD_OBJECT('code', 4013, 'message', 'Missing link in input data')::TEXT;
+        END IF;
+
+        -- Determine if we are creating a new form or updating an existing one
+        form_id := NULLIF(input_data->>'id', '')::BIGINT;
+
+        IF form_id IS NULL THEN
+            -- New form: ensure link uniqueness via a join to occasions
+            SELECT 1
+              INTO conflict_check
+              FROM public.forms f
+              JOIN public.occasions o ON f.occasion = o.id
+             WHERE o.organization = occasion_org
+               AND f.link = link_param
+             LIMIT 1;
+
+            IF conflict_check IS NOT NULL THEN
+                RAISE EXCEPTION '%',
+                    JSONB_BUILD_OBJECT(
+                        'code', 4014,
+                        'message', 'Link is already used by another form in the same organization'
+                    )::TEXT;
+            END IF;
+
+            INSERT INTO public.forms (
+                created_at,
+                occasion,
+                link
+            )
+            VALUES (
+                now_ts,
+                occasion_id,
+                link_param
+            )
+            RETURNING id INTO form_id;
+        ELSE
+            -- Existing form: ensure form belongs to the occasion and link is still unique
+            IF NOT EXISTS (
+                SELECT 1
+                FROM public.forms
+                WHERE id = form_id
+                  AND occasion = occasion_id
+            ) THEN
+                RAISE EXCEPTION '%',
+                    JSONB_BUILD_OBJECT(
+                        'code', 4005,
+                        'message', 'Form does not exist or does not match the given occasion',
+                        'form_id', form_id
+                    )::TEXT;
+            END IF;
+
+            PERFORM 1 FROM public.forms f WHERE f.id = form_id FOR UPDATE;
+
+            SELECT 1
+              INTO conflict_check
+              FROM public.forms f
+              JOIN public.occasions o ON f.occasion = o.id
+             WHERE o.organization = occasion_org
+               AND f.link = link_param
+               AND f.id <> form_id
+             LIMIT 1;
+
+            IF conflict_check IS NOT NULL THEN
+                RAISE EXCEPTION '%',
+                    JSONB_BUILD_OBJECT(
+                        'code', 4014,
+                        'message', 'Link is already used by another form in the same organization'
+                    )::TEXT;
+            END IF;
+        END IF;
+
+        -- Explicit removals are part of this save transaction, never inferred from
+        -- omitted fields in partial/older-client payloads. Exceptions roll back the save.
+        SELECT COALESCE(array_agg(value::bigint), '{}'::bigint[]) INTO deleted_fields
+        FROM jsonb_array_elements_text(COALESCE(input_data->'deleted_field_ids', '[]'::jsonb));
+        SELECT COALESCE(array_agg(value::bigint), '{}'::bigint[]) INTO deleted_products
+        FROM jsonb_array_elements_text(COALESCE(input_data->'deleted_product_ids', '[]'::jsonb));
+
+        IF EXISTS (SELECT 1 FROM unnest(deleted_fields) AS removed(id) WHERE NOT EXISTS (
+            SELECT 1 FROM public.form_fields ff WHERE ff.id = removed.id AND ff.form = form_id))
+          OR EXISTS (SELECT 1 FROM unnest(deleted_products) AS removed(id) WHERE NOT EXISTS (
+            SELECT 1 FROM eshop.products p JOIN public.form_fields ff ON ff.product_type = p.product_type
+            WHERE p.id = removed.id AND ff.form = form_id)) THEN
+            RAISE EXCEPTION 'FORM_DELETE_changed';
+        END IF;
+
+        -- Removing the ticket container also removes its nested fields.
+        IF EXISTS (SELECT 1 FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields) AND ff.type = 'ticket') THEN
+            SELECT deleted_fields || COALESCE(array_agg(ff.id), '{}'::bigint[]) INTO deleted_fields
+            FROM public.form_fields ff WHERE ff.form = form_id AND ff.is_ticket_field;
+        END IF;
+
+        -- Serialize product-type references and product FK insertions before checking
+        -- usage, including ON DELETE CASCADE inventory links.
+        PERFORM 1 FROM eshop.product_types pt WHERE pt.id IN (
+            SELECT ff.product_type FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields)
+            UNION SELECT p.product_type FROM eshop.products p WHERE p.id = ANY(deleted_products)
+        ) ORDER BY pt.id FOR UPDATE;
+        SELECT deleted_products || COALESCE(array_agg(p.id), '{}'::bigint[]) INTO deleted_products
+        FROM eshop.products p JOIN public.form_fields ff ON ff.product_type = p.product_type
+        WHERE ff.id = ANY(deleted_fields);
+        PERFORM 1 FROM eshop.products p WHERE p.id = ANY(deleted_products) ORDER BY p.id FOR UPDATE;
+
+        FOR deletion_row IN SELECT ff.* FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields)
+        LOOP
+            SELECT CASE WHEN EXISTS (
+          SELECT 1 FROM (
+            SELECT current_order.id, current_order.form, current_order.data FROM eshop.orders current_order WHERE current_order.form = ff.form
+          ) o
+          WHERE o.form = ff.form AND (
+            EXISTS (SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(o.data->'fields') = 'array' THEN o.data->'fields' ELSE '[]'::jsonb END) answer
+              WHERE answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb, '{}'::jsonb))
+            OR (ff.type = 'ticket' AND jsonb_path_exists(o.data, '$.tickets[*]'))
+            OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(o.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
+            OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt."order" = o.id AND opt.ticket IS NOT NULL))
+            OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (
+              SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id = opt.ticket
+              WHERE opt."order" = o.id AND NULLIF(t.note, '') IS NOT NULL))
+          )) THEN 'responses'
+        ELSE (
+          SELECT reason FROM public.form_fields member
+          JOIN eshop.products p ON p.product_type = member.product_type
+          CROSS JOIN LATERAL (SELECT CASE
+          WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
+            OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+          WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+          WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+          WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+        END AS reason) usage
+          WHERE (member.id = ff.id OR (ff.type = 'ticket' AND member.form = ff.form AND member.is_ticket_field))
+            AND reason IS NOT NULL
+          ORDER BY p.id LIMIT 1
+        ) END INTO deletion_reason
+            FROM public.form_fields ff WHERE ff.id = deletion_row.id;
+            IF deletion_reason IS NOT NULL THEN
+                RAISE EXCEPTION 'FORM_DELETE_%', deletion_reason;
+            END IF;
+        END LOOP;
+        FOR deletion_row IN SELECT p.* FROM eshop.products p WHERE p.id = ANY(deleted_products)
+        LOOP
+            SELECT CASE
+          WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
+            OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+          WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+          WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+          WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+        END INTO deletion_reason
+            FROM eshop.products p WHERE p.id = deletion_row.id;
+            IF deletion_reason IS NOT NULL THEN
+                RAISE EXCEPTION 'FORM_DELETE_%', deletion_reason;
+            END IF;
+        END LOOP;
+        IF EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(input_data->'form_fields', '[]'::jsonb)) f
+            WHERE (f->>'id')::bigint = ANY(deleted_fields))
+          OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(input_data->'form_fields', '[]'::jsonb)) f,
+            jsonb_array_elements(COALESCE(NULLIF(f->'product_type'->'products', 'null'::jsonb), '[]'::jsonb)) p
+            WHERE (p->>'id')::bigint = ANY(deleted_products)) THEN
+            RAISE EXCEPTION 'FORM_DELETE_changed';
+        END IF;
+        DELETE FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields);
+        DELETE FROM eshop.planned_changes WHERE subject_id=ANY(deleted_products) AND change_type='products.price' AND NOT applied;
+        DELETE FROM eshop.products p WHERE p.id = ANY(deleted_products);
+
+        ----------------------------------------------------------------------------
+        -- Process form_fields array from input_data if present
+        -- Each form_field may contain a product_type object. If so, we insert/update
+        -- the product_type and its products, then set the resulting product_type.id
+        -- in the form_field.
+        ----------------------------------------------------------------------------
+        IF (input_data->'form_fields') IS NOT NULL THEN
+            form_fields_data := '[]'::JSONB;
+
+            FOR field_data IN SELECT * FROM JSONB_ARRAY_ELEMENTS(input_data->'form_fields')
+            LOOP
+                field_id := NULLIF(field_data->>'id', '')::BIGINT;
+
+                ----------------------------------------------------------------------------
+                -- product_type logic now lives here, inside each form_field
+                ----------------------------------------------------------------------------
+                product_type_data := field_data->'product_type';  -- This is JSONB (could be null)
+                field_product_type := NULL;                        -- We'll store numeric ID here if we have a product_type
+
+                IF product_type_data IS NOT NULL AND product_type_data::TEXT <> 'null' THEN
+                    -- Attempt to parse the product_type.id if it exists
+                    product_type_id := NULLIF(product_type_data->>'id', '')::BIGINT;
+
+                    IF product_type_id IS NULL THEN
+                        ----------------------------------------------------------------------------
+                        -- New product_type
+                        ----------------------------------------------------------------------------
+                        INSERT INTO eshop.product_types (
+                            created_at,
+                            updated_at,
+                            occasion,
+                            title,
+                            description,
+                            type,
+                            data
+                        )
+                        VALUES (
+                            now_ts,
+                            now_ts,
+                            occasion_id,
+                            product_type_data->>'title',
+                            product_type_data->>'description',
+                            product_type_data->>'type',
+                            product_type_data->'data'
+                        )
+                        RETURNING id INTO product_type_id;
+
+                        product_type_data := jsonb_set(
+                            product_type_data,
+                            '{id}',
+                            TO_JSONB(product_type_id)
+                        );
+                    ELSE
+                        ----------------------------------------------------------------------------
+                        -- Existing product_type: check existence and occasion
+                        ----------------------------------------------------------------------------
+                        SELECT pt.occasion
+                          INTO product_type_occ
+                          FROM eshop.product_types pt
+                         WHERE pt.id = product_type_id
+                         LIMIT 1;
+
+                        IF NOT FOUND THEN
+                            RAISE EXCEPTION '%',
+                                JSONB_BUILD_OBJECT(
+                                    'code', 4006,
+                                    'message', 'Product type not found',
+                                    'details', product_type_data
+                                )::TEXT;
+                        END IF;
+
+                        IF product_type_occ <> occasion_id THEN
+                            RAISE EXCEPTION '%',
+                                JSONB_BUILD_OBJECT(
+                                    'code', 4007,
+                                    'message', 'product_type occasion does not match form occasion',
+                                    'product_type_occasion', product_type_occ,
+                                    'form_occasion', occasion_id,
+                                    'details', product_type_data
+                                )::TEXT;
+                        END IF;
+
+                        UPDATE eshop.product_types
+                           SET
+                               updated_at = now_ts,
+                               title = product_type_data->>'title',
+                               description = product_type_data->>'description',
+                               type = product_type_data->>'type',
+                               data = product_type_data->'data'
+                         WHERE id = product_type_id;
+                    END IF;
+
+                    ----------------------------------------------------------------------------
+                    -- Process products within this product_type, if any
+                    ----------------------------------------------------------------------------
+                    products_data := product_type_data->'products';
+                    IF products_data IS NOT NULL AND products_data::TEXT <> 'null' THEN
+                        product_array_data := '[]'::JSONB;
+
+                        FOR product_data IN SELECT * FROM JSONB_ARRAY_ELEMENTS(products_data)
+                        LOOP
+                            product_id := NULLIF(product_data->>'id', '')::BIGINT;
+
+                            -- Validate product price must be > 0
+                            price_val := COALESCE(NULLIF(product_data->>'price',''), '0')::NUMERIC;
+                            IF price_val < 0 THEN
+                                RAISE EXCEPTION '%',
+                                    JSONB_BUILD_OBJECT(
+                                        'code', 4015,
+                                        'message', 'Product price must be greater or equal to zero',
+                                        'details', product_data
+                                    )::TEXT;
+                            END IF;
+
+                            IF product_id IS NULL THEN
+                                ----------------------------------------------------------------------------
+                                -- New product
+                                ----------------------------------------------------------------------------
+                                PERFORM public.validate_product_price(price_val,product_data->'data',left(product_data->>'currency_code',3));
+                                INSERT INTO eshop.products (
+                                    created_at,
+                                    updated_at,
+                                    product_type,
+                                    occasion,
+                                    title,
+                                    description,
+                                    price,
+                                    currency_code,
+                                    data,
+                                    is_hidden,
+                                    "order",
+                                    maximum
+                                )
+                                VALUES (
+                                    now_ts,
+                                    now_ts,
+                                    product_type_id,
+                                    occasion_id,
+                                    product_data->>'title',
+                                    product_data->>'description',
+                                    price_val,
+                                    left(product_data->>'currency_code', 3),
+                                    product_data->'data',
+                                    COALESCE((product_data->>'is_hidden')::BOOLEAN, false),
+                                    NULLIF(product_data->>'order','')::BIGINT,
+                                    NULLIF(product_data->>'maximum','')::BIGINT
+                                )
+                                RETURNING id INTO product_id;
+
+                                product_data := jsonb_set(product_data, '{id}', TO_JSONB(product_id));
+                            ELSE
+                                ----------------------------------------------------------------------------
+                                -- Existing product: must match the same occasion and product_type
+                                ----------------------------------------------------------------------------
+                                SELECT p.occasion
+                                  INTO product_occ
+                                  FROM eshop.products p
+                                 WHERE p.id = product_id
+                                   AND p.product_type = product_type_id
+                                 LIMIT 1;
+
+                                IF NOT FOUND THEN
+                                    RAISE EXCEPTION '%',
+                                        JSONB_BUILD_OBJECT(
+                                            'code', 4008,
+                                            'message', 'Product not found or does not match product_type',
+                                            'details', product_data
+                                        )::TEXT;
+                                END IF;
+
+                                IF product_occ <> occasion_id THEN
+                                    RAISE EXCEPTION '%',
+                                        JSONB_BUILD_OBJECT(
+                                            'code', 4009,
+                                            'message', 'Product occasion does not match form occasion',
+                                            'product_occasion', product_occ,
+                                            'form_occasion', occasion_id,
+                                            'details', product_data
+                                        )::TEXT;
+                                END IF;
+
+                                PERFORM public.validate_product_price_update(product_id,price_val,product_data->'data',left(product_data->>'currency_code',3));
+                                UPDATE eshop.products
+                                   SET
+                                       updated_at = now_ts,
+                                       title = product_data->>'title',
+                                       description = product_data->>'description',
+                                       price = price_val,
+                                       currency_code = left(product_data->>'currency_code', 3),
+                                       data = product_data->'data',
+                                       is_hidden = COALESCE((product_data->>'is_hidden')::BOOLEAN, false),
+                                       "order" = NULLIF(product_data->>'order','')::BIGINT,
+                                       maximum = NULLIF(product_data->>'maximum','')::BIGINT
+                                 WHERE id = product_id
+                                   AND product_type = product_type_id;
+                            END IF;
+
+                            product_array_data := product_array_data || product_data;
+                        END LOOP;
+
+                        product_type_data := jsonb_set(
+                            product_type_data,
+                            '{products}',
+                            product_array_data
+                        );
+                    END IF;
+
+                    ----------------------------------------------------------------------------
+                    -- Store product_type_id in field_product_type for the form_fields table
+                    ----------------------------------------------------------------------------
+                    field_product_type := product_type_id;
+
+                    ----------------------------------------------------------------------------
+                    -- Merge updated product_type_data back into the field_data
+                    ----------------------------------------------------------------------------
+                    field_data := jsonb_set(field_data, '{product_type}', product_type_data);
+                END IF;
+
+                ----------------------------------------------------------------------------
+                -- Insert or update the form_field itself
+                ----------------------------------------------------------------------------
+                IF field_id IS NOT NULL THEN
+                    -- Update existing form_field
+                    UPDATE public.form_fields
+                       SET
+                           title = field_data->>'title',
+                           description = field_data->>'description',
+                           data = field_data->'data',
+                           type = field_data->>'type',
+                           is_required = COALESCE((field_data->>'is_required')::BOOLEAN, false),
+                           is_hidden = COALESCE((field_data->>'is_hidden')::BOOLEAN, false),
+                           "order" = NULLIF(field_data->>'order','')::BIGINT,
+                           product_type = field_product_type,
+                           is_ticket_field = COALESCE((field_data->>'is_ticket_field')::BOOLEAN, false),
+                           form = form_id
+                     WHERE id = field_id
+                       AND form = form_id;
+
+                    IF NOT FOUND THEN
+                        RAISE EXCEPTION '%',
+                            JSONB_BUILD_OBJECT(
+                                'code', 4012,
+                                'message', 'No matching form_field found to update (or does not belong to this form)',
+                                'details', field_data
+                            )::TEXT;
+                    END IF;
+                ELSE
+                    -- Insert new form_field
+                    INSERT INTO public.form_fields (
+                        created_at,
+                        title,
+                        description,
+                        data,
+                        type,
+                        is_required,
+                        form,
+                        is_hidden,
+                        "order",
+                        product_type,
+                        is_ticket_field
+                    )
+                    VALUES (
+                        now_ts,
+                        field_data->>'title',
+                        field_data->>'description',
+                        field_data->'data',
+                        field_data->>'type',
+                        COALESCE((field_data->>'is_required')::BOOLEAN, false),
+                        form_id,
+                        COALESCE((field_data->>'is_hidden')::BOOLEAN, false),
+                        NULLIF(field_data->>'order','')::BIGINT,
+                        field_product_type,
+                        COALESCE((field_data->>'is_ticket_field')::BOOLEAN, false)
+                    )
+                    RETURNING id INTO field_id;
+
+                    field_data := jsonb_set(field_data, '{id}', TO_JSONB(field_id));
+                END IF;
+
+                form_fields_data := form_fields_data || field_data;
+            END LOOP;
+        END IF;
+
+        ----------------------------------------------------------------------------
+        -- Validate that deadline_duration_seconds is zero, positive, or null
+        ----------------------------------------------------------------------------
+        deadline_val := NULLIF(input_data->>'deadline_duration_seconds','')::BIGINT;
+        IF deadline_val IS NOT NULL AND deadline_val < 0 THEN
+            RAISE EXCEPTION '%',
+                JSONB_BUILD_OBJECT(
+                    'code', 4016,
+                    'message', 'deadline_duration_seconds must be zero or higher or null'
+                )::TEXT;
+        END IF;
+
+        ----------------------------------------------------------------------------
+        -- Validate bank_account belongs to the same unit as the occasion, if provided
+        ----------------------------------------------------------------------------
+        bank_account_val := NULLIF(input_data->>'bank_account','')::BIGINT;
+        IF bank_account_val IS NOT NULL THEN
+            SELECT ba.unit
+              INTO bank_account_unit
+              FROM eshop.unit_bank_accounts ba
+             WHERE ba.bank_account = bank_account_val
+               AND ba.unit = occasion_unit
+             LIMIT 1;
+
+            IF NOT FOUND THEN
+                RAISE EXCEPTION '%',
+                    JSONB_BUILD_OBJECT(
+                        'code', 4020,
+                        'message', 'Bank account not found',
+                        'bank_account', bank_account_val
+                    )::TEXT;
+            END IF;
+
+            IF bank_account_unit <> occasion_unit THEN
+                RAISE EXCEPTION '%',
+                    JSONB_BUILD_OBJECT(
+                        'code', 4021,
+                        'message', 'Bank account does not belong to the same unit as the occasion',
+                        'bank_account_unit', bank_account_unit,
+                        'occasion_unit', occasion_unit
+                    )::TEXT;
+            END IF;
+        END IF;
+
+        ----------------------------------------------------------------------------
+        -- Update the main form record with all validated fields
+        ----------------------------------------------------------------------------
+        UPDATE public.forms
+           SET
+               title = input_data->>'title',
+               data = input_data->'data',
+               header = input_data->>'header',
+               header_off = input_data->>'header_off',
+               link = link_param,
+               blueprint = NULLIF(input_data->>'blueprint','')::BIGINT,
+               bank_account = bank_account_val,
+               deadline_duration_seconds = deadline_val,
+               is_open = COALESCE((input_data->>'is_open')::BOOLEAN, true)
+         WHERE id = form_id;
+
+        ----------------------------------------------------------------------------
+        -- After updating the form, requeue payment reminders for the whole occasion
+        -- as the form's settings (e.g., is_reminder_enabled) might have changed.
+        ----------------------------------------------------------------------------
+        -- First, find the 'seconds_before_deadline' setting from the occasion's 'form' feature.
+        SELECT (elem->>'reminder_interval_seconds')::BIGINT
+          INTO v_seconds_before_deadline
+          FROM public.occasions, jsonb_array_elements(features) AS elem
+         WHERE id = occasion_id
+           AND elem->>'code' = 'form'
+         LIMIT 1;
+
+        -- If the setting is found, call the function to rebuild the reminder queue.
+        IF v_seconds_before_deadline IS NOT NULL THEN
+            PERFORM public.queue_payment_reminders(occasion_id, v_seconds_before_deadline);
+        END IF;
+
+        ----------------------------------------------------------------------------
+        -- Prepare a success response
+        ----------------------------------------------------------------------------
+        result := JSONB_BUILD_OBJECT(
+            'code', 200,
+            'message', 'Form updated successfully',
+            'form_id', form_id,
+            'form_fields', form_fields_data
+        );
+
+    EXCEPTION WHEN OTHERS THEN
+        -- Catch any exception and attempt to parse it as JSON; if not JSON, wrap it in our own JSON.
+        result := CASE
+            WHEN left(SQLERRM, 1) = '{' THEN SQLERRM::JSONB
+            ELSE JSONB_BUILD_OBJECT('code', 5001, 'message', SQLERRM)
+        END;
+    END;
+
+    RETURN result;
+END;
+$$;
+
+
+
+REVOKE ALL ON FUNCTION public.update_product_internal_v1(jsonb), public.delete_product_internal_v1(bigint), public.update_form_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;

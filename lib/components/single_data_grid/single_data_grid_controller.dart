@@ -37,9 +37,61 @@ class SingleDataGridController<T extends ITrinaRowModel> {
         ...updatedRows,
         ...newRows
       }.any((row) => row.key == identity.entity && !deletedRows.contains(row)));
+  final ValueNotifier<int> reloadGeneration = ValueNotifier(0);
   ValueNotifier<Key> refreshKeyNotifier = ValueNotifier(UniqueKey());
 
+  bool isGridLoaded = false;
+  bool _autoRefreshing = false;
+  final bool refreshOnTabActivation;
   late TrinaGridStateManager stateManager;
+  bool get hasUnsavedChanges =>
+      updatedRows.isNotEmpty ||
+      deletedRows.isNotEmpty ||
+      newRows.isNotEmpty ||
+      (_htmlSave?.hasDraft ?? false) ||
+      (isGridLoaded && stateManager.isEditing);
+
+  /// Fetch first, then recheck drafts: edits can start while awaiting the server.
+  Future<bool> reloadIfClean({bool Function()? canApply}) async {
+    if (_autoRefreshing || !isGridLoaded || hasUnsavedChanges) return false;
+    _autoRefreshing = true;
+    try {
+      final data = await loadData();
+      if (!context.mounted ||
+          hasUnsavedChanges ||
+          (canApply != null && !canApply())) {
+        return false;
+      }
+      final horizontal = stateManager.scroll.horizontalOffset;
+      final vertical = stateManager.scroll.verticalOffset;
+      final sorted =
+          stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
+      rows = data.map((item) {
+        final row = item.toTrinaRow(context);
+        row.cells[firstColumnTypeId] = TrinaCell(value: 'delete');
+        return row;
+      }).toList();
+      applyDataToGrid();
+      if (sorted != null) {
+        if (sorted.sort.isAscending) {
+          stateManager.sortAscending(sorted);
+        } else {
+          stateManager.sortDescending(sorted);
+        }
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted || !isGridLoaded) return;
+        stateManager.scroll.horizontal?.jumpTo(
+            horizontal.clamp(0, stateManager.scroll.maxScrollHorizontal));
+        stateManager.scroll.vertical
+            ?.jumpTo(vertical.clamp(0, stateManager.scroll.maxScrollVertical));
+      });
+      return true;
+    } finally {
+      _autoRefreshing = false;
+    }
+  }
+
   Set<TrinaRow> updatedRows = {};
   Set<TrinaRow> deletedRows = {};
   Set<TrinaRow> newRows = {};
@@ -73,6 +125,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     required this.firstColumnType,
     required this.idColumn,
     required this.columns,
+    this.refreshOnTabActivation = true,
     this.headerChildren,
     this.actionsExtended,
     this.getNewObject,
@@ -228,11 +281,13 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   Future<void> reloadData() async {
     await loadDataOnly();
     applyDataToGrid();
+    reloadGeneration.value++;
   }
 
   /// Force-reloads the entire datagrid by updating the key and reloading data.
   Future<void> forceReload() async {
     await loadDataOnly();
     refreshKeyNotifier.value = UniqueKey();
+    reloadGeneration.value++;
   }
 }

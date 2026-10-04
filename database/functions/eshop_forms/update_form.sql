@@ -266,6 +266,7 @@ BEGIN
             RAISE EXCEPTION 'FORM_DELETE_changed';
         END IF;
         DELETE FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields);
+        DELETE FROM eshop.planned_changes WHERE subject_id=ANY(deleted_products) AND change_type IN('products.price','products.is_hidden') AND NOT applied;
         DELETE FROM eshop.products p WHERE p.id = ANY(deleted_products);
 
         ----------------------------------------------------------------------------
@@ -386,6 +387,7 @@ BEGIN
                                 ----------------------------------------------------------------------------
                                 -- New product
                                 ----------------------------------------------------------------------------
+                                PERFORM public.validate_product_price(price_val,product_data->'data',left(product_data->>'currency_code',3));
                                 INSERT INTO eshop.products (
                                     created_at,
                                     updated_at,
@@ -448,6 +450,7 @@ BEGIN
                                         )::TEXT;
                                 END IF;
 
+                                PERFORM public.validate_product_price_update(product_id,price_val,product_data->'data',left(product_data->>'currency_code',3));
                                 UPDATE eshop.products
                                    SET
                                        updated_at = now_ts,
