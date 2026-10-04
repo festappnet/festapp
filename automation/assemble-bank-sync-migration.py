@@ -6,7 +6,7 @@ parser.add_argument('--output',required=True,help='New migration path; existing 
 args=parser.parse_args()
 output=Path(args.output)
 if output.exists(): raise SystemExit('Refusing to overwrite an existing migration')
-files=['eshop_bank_sync/schema.sql','eshop_bank_sync/bank_sync_authority.sql','eshop_bank_sync/bank_sync_manage.sql','eshop_transactions/match_bank_transaction.sql','eshop_orders/recalculate_order_payment_status.sql','eshop_transactions/apply_transaction_pairing.sql','eshop_bank_sync/ingest_bank_sync_transaction.sql','eshop_bank_accounts/update_bank_account.sql','eshop_bank_accounts/get_my_admin_bank_accounts.sql','eshop_bank_accounts/get_bank_accounts_for_unit_management.sql']
+files=['eshop_bank_sync/schema.sql','eshop_bank_sync/bank_sync_authority.sql','eshop_bank_sync/bank_sync_manage.sql','eshop_transactions/match_bank_transaction.sql','eshop_orders/recalculate_order_payment_status.sql','eshop_transactions/apply_transaction_pairing.sql','eshop_bank_sync/bank_sync_existing_facts_match.sql','eshop_bank_sync/ingest_bank_sync_transaction.sql','eshop_bank_accounts/update_bank_account.sql','eshop_bank_accounts/get_my_admin_bank_accounts.sql','eshop_bank_accounts/get_bank_accounts_for_unit_management.sql']
 output.write_text('-- Canonical sources: database/functions/eshop_bank_sync.\n'+''.join('\n-- SOURCE: '+f+'\n'+(r/'database/functions'/f).read_text()+'\n' for f in files))
 p=r/'database/tables/tables.sql';s=p.read_text()
 start='\n-- BankSync canonical import authority and audit.\n'

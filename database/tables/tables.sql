@@ -1301,6 +1301,8 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_inbox (
   epoch bigint,
   payload jsonb NOT NULL CHECK(octet_length(payload::text)<=65536),
   outcome text,
+  resolution jsonb,
+  resolved_at timestamptz,
   receipt jsonb,
   received_at timestamptz NOT NULL DEFAULT now(),
   committed_at timestamptz,
