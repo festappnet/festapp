@@ -33,6 +33,7 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
 
   Future<void> initialLoad() async {
     await widget.controller.loadDataOnly();
+    if (!mounted) return;
     setState(() {
       isLoading = false;
     });
