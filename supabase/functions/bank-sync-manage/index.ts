@@ -45,6 +45,14 @@ Deno.serve(async (req) => {
       return json({...refreshed.data,token_masked:remote.api_token_prefix ? `${remote.api_token_prefix}********` : null});
     } catch { return json({...status,last_error:status.last_error ?? 'bank_sync_retry_required'}); }
   }
+  if (input.operation === 'update_details') {
+    try {
+      const pending = await supabaseAdmin.rpc('get_pending_bank_sync_details', {p_bank_account_id:input.account_id});
+      if (pending.error) throw new Error('details_read_failed');
+      if (!pending.data) return json({details_saved:true});
+      return json(await runBankSyncOperation(pending.data.request, pending.data.payload_sha256));
+    } catch (error) { return json({error:bankSyncErrorCode(error)},503); }
+  }
   if (!operations.has(input.operation) || typeof input.operation_id !== "string" || !/^[0-9a-f-]{36}$/i.test(input.operation_id)) {
     return json({ error: "operation_required" }, 400);
   }

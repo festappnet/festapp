@@ -1686,7 +1686,9 @@
       "provisioning": "Connecting",
       "shadow": "Verifying",
       "suspended": "Suspended"
-    }
+    },
+    "linkedAccountIdentity": "A connected account number cannot be replaced. Add a new bank account and select it for future payments.",
+    "detailsSyncPending": "Details are saved in Festapp. The update to BankSync is pending and will be retried automatically."
   },
   "FeatureContract": {
     "title": "Contract",

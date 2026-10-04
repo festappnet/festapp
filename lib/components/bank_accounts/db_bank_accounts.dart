@@ -96,7 +96,9 @@ class DbBankAccounts {
             unitId, // organizationId currently ignored/handled by context
       },
     );
-    return response as int;
+    final id = response as int;
+    if (account.id != 0) await manage(id, 'update_details');
+    return id;
   }
 
   static Future<String> regenerateBankAccountPairingCode(

@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_operations (
   id uuid PRIMARY KEY,
   bank_account_id bigint NOT NULL REFERENCES eshop.bank_accounts(id),
   actor uuid NOT NULL REFERENCES public.user_info(id),
-  operation text NOT NULL CHECK(operation IN ('create','set_token','rotate_pairing','sync','suspend')),
+  operation text NOT NULL CHECK(operation IN ('create','set_token','rotate_pairing','sync','suspend','update_details')),
   payload_sha256 text NOT NULL CHECK(payload_sha256 ~ '^[0-9a-f]{64}$'),
   state text NOT NULL CHECK(state IN ('pending','running','uncertain','completed','failed')),
   remote_reference text,

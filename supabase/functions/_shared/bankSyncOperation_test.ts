@@ -62,3 +62,26 @@ for (const scenario of ['valid','inactive','digest-mismatch'] as const) {
     } finally { requestHandler=undefined; }
   });
 }
+
+for (const mismatch of [false, true]) {
+  Deno.test(`account label update verifies persistence (mismatch=${mismatch})`, async () => {
+    const calls: any[] = []; let stored='old';
+    requestHandler = (async (input: any, init?: RequestInit) => {
+      const url=new URL(input instanceof Request ? input.url : String(input));
+      const body=init?.body ? JSON.parse(String(init.body)) : {};
+      const response=(v:unknown)=>new Response(JSON.stringify(v),{headers:{'content-type':'application/json'}});
+      if(url.hostname==='127.0.0.1') {
+        calls.push(body);
+        return response(url.pathname.endsWith('claim_bank_sync_operation') ? {connection_id:1,remote_id:'9',barrier:'active',lease_token:'lease',title:'New label'} : null);
+      }
+      assertEquals(url.pathname,'/bank-accounts/9');
+      if(init?.method==='PUT') {assertEquals(body,{label:'New label'});stored=body.label;}
+      return response({label:mismatch?'old':stored});
+    }) as typeof fetch;
+    try {
+      const run=()=>runBankSyncOperation({operation_id:'fixture',operation:'update_details'},'hash');
+      if(mismatch) {await assertRejects(run,Error,'account_details_not_verified'); assertEquals(calls.at(-1).p_state,'uncertain');}
+      else {assertEquals(await run(),{details_saved:true});assertEquals(calls.at(-1).p_state,'completed');}
+    } finally {requestHandler=undefined;}
+  });
+}

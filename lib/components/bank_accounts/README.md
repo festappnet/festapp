@@ -45,3 +45,9 @@ The UI distinguishes token storage success from bank verification failure.
 Polling stays enabled so authorization later recovers without re-uploading.
 Account settings refresh BankSync status and clear stale errors after a successful
 bank pull. A transport timeout or proxy 500 must never be called an invalid token.
+
+### Account details and bank identity
+
+Updating a connected account commits its Festapp details and a durable `update_details` intent in one SQL transaction. The client immediately flushes the intent through `bank-sync-manage`; `bank-sync-reconcile` retries interrupted or failed delivery. BankSync receives the current account label and storage is read back before completion. Beneficiary name, display account formatting and accepted currencies remain Festapp payment-instruction fields, not duplicated BankSync configuration. The existing account-operation fence prevents overlap with credential rotation.
+
+Connected physical account identity remains immutable: add/select a new account for future orders rather than reassigning historical bank transactions. Creation and token/email setup are separate operations; API ingestion currently supports Fio. BankSync's public API supports Fio and Air Bank adapters, not arbitrary bank API providers.

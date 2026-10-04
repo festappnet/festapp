@@ -39,7 +39,12 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
     } else {
       if (!context.remote_id || !/^[0-9]+$/.test(context.remote_id) || !context.barrier) throw new Error("canonical_connection_required");
       const path = `/bank-accounts/${context.remote_id}`;
-      if (input.operation === "set_token") {
+      if (input.operation === "update_details") {
+        await remote(path, 'PUT', {label:context.title ?? ''});
+        const stored = await remote(path);
+        if (stored.label !== (context.title ?? '')) throw new Error('account_details_not_verified');
+        result = {details_saved:true};
+      } else if (input.operation === "set_token") {
         // A timeout is reconciled by the full credential digest, not its prefix.
         const proof = await remote(`${path}/ingest-state`);
         if (proof.api_token_hash !== await hash(input.token)) {
