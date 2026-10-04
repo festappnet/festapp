@@ -3,6 +3,8 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 
 class OrdersStrings {
+  static String get waveNow => 'FeatureOrders.waveNow'.tr();
+  static String get waveHiddenState => 'FeatureOrders.waveHiddenState'.tr();
   static String get scheduledCurrentPrice => 'FeatureOrders.currentPrice'.tr();
   static String get priceChanges => 'FeatureOrders.priceChanges'.tr();
   static String get priceChangesTitle => 'FeatureOrders.priceChangesTitle'.tr();
@@ -510,4 +512,18 @@ class OrdersStrings {
         "id": id.toString(),
         "orderId": orderId.toString()
       }); // "Item {id} (Order {orderId})"
+  static String get priceWaves => 'FeatureOrders.priceWaves'.tr();
+  static String get addWave => 'FeatureOrders.addWave'.tr();
+  static String get moveWave => 'FeatureOrders.moveWave'.tr();
+  static String get cancelWave => 'FeatureOrders.cancelWave'.tr();
+  static String get cancelWaveConfirm => 'FeatureOrders.cancelWaveConfirm'.tr();
+  static String get waveProduct => 'FeatureOrders.waveProduct'.tr();
+  static String get waveAvailability => 'FeatureOrders.waveAvailability'.tr();
+  static String get waveNoChange => 'FeatureOrders.waveNoChange'.tr();
+  static String get waveHidden => 'FeatureOrders.waveHidden'.tr();
+  static String get waveShown => 'FeatureOrders.waveShown'.tr();
+  static String get waveChange => 'FeatureOrders.waveChange'.tr();
+  static String get waveFailed => 'FeatureOrders.waveFailed'.tr();
+  static String get waveEmptyPrice => 'FeatureOrders.waveEmptyPrice'.tr();
+  static String get noWaves => 'FeatureOrders.noWaves'.tr();
 }

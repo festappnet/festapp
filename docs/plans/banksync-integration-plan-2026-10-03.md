@@ -1,8 +1,8 @@
 # Festapp přes existující BankSync: průzkum a plán bezpečného přepnutí
 
-Datum: 2026-10-03  
-Stav: implementace v izolovaném checkoutu zahájena 2026-10-04; produkční přepnutí má brány níže  
-Verification: standard - platby, autorizace, sdílená instance a databázové migrace  
+Datum: 2026-10-03
+Stav: implementace v izolovaném checkoutu zahájena 2026-10-04; produkční přepnutí má brány níže
+Verification: standard - platby, autorizace, sdílená instance a databázové migrace
 Rozsah aktuálního zadání: uživatel 2026-10-04 autorizoval implementaci a potřebnou publikaci balíčku; produkční změny vyžadují samostatný schválený manifest.
 
 ## Výsledek a závěr
@@ -267,12 +267,12 @@ Serverový adaptér má allowlist operací, nikoli obecné proxy path/URL. Použ
 
 ## Rozhodnutí, předpoklady a brány
 
-**D1:** Jedna stávající BankSync instance, consumer `festapp`; žádný nový Worker/D1/provider fork.  
-**D2:** Festapp SQL matcher zůstává jedinou platební doménou; žádný Mendelio kreditový `markPaid` přenos.  
-**D3:** Zachovat bankovní historii včetně odchozích pohybů. Proto v2 kontrakt pro Festapp a consumer capability; stávající Mendelio v1 smlouva se nemění.  
-**D4:** Migrují se pouze Fio tokeny. Nová emailová schopnost je povinná v tomto zadání, nepotřebuje migraci starých adres; její identity/durable ingress brány neblokují dřívější bezpečné předání tokenů.  
-**D5:** Účty migrovat postupně přes explicitní manifest. Dočasný per-account stav slouží k rollout/shadow/suspended, ne jako permanentní dva importní systémy.  
-**D6:** Účetní identity a audit se nezkracují podle 90denní D1 retention.  
+**D1:** Jedna stávající BankSync instance, consumer `festapp`; žádný nový Worker/D1/provider fork.
+**D2:** Festapp SQL matcher zůstává jedinou platební doménou; žádný Mendelio kreditový `markPaid` přenos.
+**D3:** Zachovat bankovní historii včetně odchozích pohybů. Proto v2 kontrakt pro Festapp a consumer capability; stávající Mendelio v1 smlouva se nemění.
+**D4:** Migrují se pouze Fio tokeny. Nová emailová schopnost je povinná v tomto zadání, nepotřebuje migraci starých adres; její identity/durable ingress brány neblokují dřívější bezpečné předání tokenů.
+**D5:** Účty migrovat postupně přes explicitní manifest. Dočasný per-account stav slouží k rollout/shadow/suspended, ne jako permanentní dva importní systémy.
+**D6:** Účetní identity a audit se nezkracují podle 90denní D1 retention.
 **D7:** V2 facts dostává připravený Festapp consumer. Mendelio v1 serializer je podporovaná external boundary nad stejnými canonical facts; archivní payloady se nikdy nepřepisují.
 
 | Brána / předpoklad | Vlastník a přesné uzavření | Dopad, pokud není splněno |
