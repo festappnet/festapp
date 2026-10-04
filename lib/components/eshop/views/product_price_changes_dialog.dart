@@ -503,9 +503,22 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
       children: [
         Padding(
           padding: const EdgeInsets.all(20),
-          child: Text(
-            OrdersStrings.priceChangesTitle,
-            style: Theme.of(context).textTheme.titleLarge,
+          child: Row(
+            children: [
+              const SizedBox(width: 48),
+              Expanded(
+                child: Text(
+                  OrdersStrings.priceChangesTitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              IconButton(
+                tooltip: CommonStrings.close,
+                onPressed: busy ? null : close,
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
         ),
         Flexible(
