@@ -404,14 +404,19 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                     ],
                     icon: const Icon(Icons.more_vert),
                   ),
-                  if (ptField.id == null)
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        form.relatedFields.remove(ptField);
-                        refresh();
-                      },
-                    ),
+                  IconButton(
+                    tooltip: ptField.canDelete
+                        ? CommonStrings.delete
+                        : FormStrings.deletionReason(
+                            ptField.deleteBlockedReason),
+                    icon: const Icon(Icons.delete),
+                    onPressed: !ptField.canDelete
+                        ? null
+                        : () {
+                            form.removeField(ptField);
+                            refresh();
+                          },
+                  ),
                 ],
               ),
               // Description Editor
@@ -450,9 +455,12 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                       child: TicketProductEditorRow(
                         product: group.products![i],
                         onDelete: () {
-                          group.products!.removeAt(i);
+                          final removed = group.products!.removeAt(i);
+                          if (removed.id != null) {
+                            form.deletedProductIds.add(removed.id!);
+                          }
                           ProductTypeEditorWidgets._removeProductFromDefault(
-                              ptField, group.products![i].id);
+                              ptField, removed.id);
                           refresh();
                         },
                         availableCurrencies: form.getSupportedCurrencies(),
