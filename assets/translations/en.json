@@ -625,7 +625,32 @@
     "fieldTypeParticipant": "Participant Type",
     "fieldMemberAnima": "Member of Anima Iuventutis",
     "fieldDietary": "Dietary restrictions",
-    "fieldPrepTeam": "Preparatory team"
+    "fieldPrepTeam": "Preparatory team",
+    "currentPrice": "Current price",
+    "priceChanges": "Price change",
+    "priceChangesTitle": "Scheduled price changes",
+    "schedulePrice": "Schedule change",
+    "newPrice": "New price",
+    "priceDate": "Date (YYYY-MM-DD)",
+    "priceTime": "Time (HH:mm)",
+    "addPriceChange": "Add another change",
+    "cancelPriceChange": "Cancel change",
+    "pricePending": "Waiting to apply",
+    "priceDelayed": "Application is delayed. Refresh the data.",
+    "priceFailed": "Change failed - edit or cancel the schedule",
+    "priceHelp": "The price applies to new orders. Existing orders keep their prices. Automatic application runs approximately every minute.",
+    "futurePricesRemain": "Future scheduled prices remain in effect. Cancel all schedules before changing currency.",
+    "priceExpected": "Expected sequence",
+    "priceMore": "+{} more",
+    "priceSummary": "From {} the price will be {}.",
+    "priceInvalid": "Enter a valid nonnegative price and a future date and time.",
+    "priceMissingTime": "This time does not exist in the occasion timezone.",
+    "priceOffset": "Choose a time offset",
+    "priceCancelConfirm": "Cancel the change to {} from {}?",
+    "priceRefresh": "Updated prices are available. Save or discard your edits.",
+    "priceSaveFailed": "Could not save the change. Refresh schedules before retrying if the connection was interrupted.",
+    "priceRefreshAction": "Refresh schedules",
+    "priceSame": "The price is the same as the expected preceding price."
   },
   "UserColumns": {
     "id": "Id",
@@ -1915,7 +1940,9 @@
     "tabReport": "Report",
     "savingChanges": "Saving changes",
     "tabService": "Service",
-    "noItems": "Table does not contain any items"
+    "noItems": "Table does not contain any items",
+    "refreshPending": "Data may be outdated. Save or discard your edits first.",
+    "refreshData": "Refresh data"
   },
   "FeatureSongbook": {
     "description": "Displays a songbook and allows adding custom songs."

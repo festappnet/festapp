@@ -1,3 +1,4 @@
+import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
@@ -26,7 +27,47 @@ Future<void> mount(WidgetTester tester, FixtureRouter router, String path,
   await tester.pumpAndSettle();
 }
 
+class _ActivityProbe extends StatefulWidget {
+  final ValueChanged<bool> changed;
+  const _ActivityProbe(this.changed);
+  @override
+  State<_ActivityProbe> createState() => _ActivityProbeState();
+}
+
+class _ActivityProbeState extends State<_ActivityProbe> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widget.changed(AdminTabActivity.isActive(context));
+  }
+
+  @override
+  Widget build(BuildContext context) => const Text('CURRENT CONTENT');
+}
+
 void main() {
+  testWidgets(
+      'retained nested route reports activity on inner and outer returns',
+      (tester) async {
+    final activity = <bool>[];
+    final router = FixtureRouter(Access());
+    router.ordersCurrentBuilder = (_) => _ActivityProbe(activity.add);
+    await mount(tester, router, '/occasion-a/reservations/orders/current');
+    expect(activity.last, isTrue);
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+    expect(activity.last, isFalse);
+    await tester.tap(find.text('Current'));
+    await tester.pumpAndSettle();
+    expect(activity.last, isTrue);
+    await tester.tap(find.text('Report'));
+    await tester.pumpAndSettle();
+    expect(activity.last, isFalse);
+    await tester.tap(find.text('Orders'));
+    await tester.pumpAndSettle();
+    expect(activity.last, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets('occasion switch keeps header visible while destination loads',
       (tester) async {
     final pending = Completer<void>();

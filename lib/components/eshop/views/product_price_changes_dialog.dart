@@ -1,0 +1,445 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/services/utilities_all.dart';
+import '../db_eshop.dart';
+import '../models/product_model.dart';
+import '../models/product_price_change.dart';
+import '../orders_strings.dart';
+
+String priceChangeText(String template, List<String> values) {
+  for (final value in values) {
+    template = template.replaceFirst('{}', value);
+  }
+  return template;
+}
+
+String scheduledPrice(BuildContext context, double? price, String? currency) =>
+    price == null
+        ? '?'
+        : Utilities.formatPrice(context, price,
+            currencyCode: currency, decimalDigits: 2);
+String scheduledTime(DateTime time, String timezone) =>
+    DateFormat('dd. MM. yyyy HH:mm').format(time.toOccasionTime(timezone));
+
+class ProductPriceChangesDialog extends StatefulWidget {
+  final ProductModel product;
+  final String timezone;
+  final bool canEdit;
+  final Future<ProductModel> Function() reload;
+  final Future<void> Function(double, DateTime, ProductPriceChange?)? save;
+  final Future<void> Function(ProductPriceChange)? cancel;
+  const ProductPriceChangesDialog(
+      {super.key,
+      required this.product,
+      required this.timezone,
+      required this.canEdit,
+      required this.reload,
+      this.save,
+      this.cancel});
+  @override
+  State<ProductPriceChangesDialog> createState() =>
+      _ProductPriceChangesDialogState();
+}
+
+class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
+  Timer? _timer;
+  bool _reloading = false;
+  late ProductModel product = widget.product;
+  final price = TextEditingController();
+  final date = TextEditingController();
+  final time = TextEditingController();
+  ProductPriceChange? editing;
+  bool formOpen = false, busy = false, changed = false, allowClose = false;
+  String? error;
+  DateTime? offsetChoice;
+  bool get dirty =>
+      price.text.isNotEmpty || date.text.isNotEmpty || time.text.isNotEmpty;
+  tz.Location get location => tz.getLocation(widget.timezone);
+  List<ProductPriceChange> get plans =>
+      ProductPriceChange.pending(product.priceChanges);
+  @override
+  void initState() {
+    super.initState();
+    formOpen = widget.canEdit && plans.isEmpty;
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted || busy) return;
+      if (dirty) {
+        setState(() {});
+      } else {
+        reload();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    price.dispose();
+    date.dispose();
+    time.dispose();
+    super.dispose();
+  }
+
+  DateTime? get wallTime {
+    try {
+      return DateFormat('yyyy-MM-dd HH:mm')
+          .parseStrict('${date.text} ${time.text}', true);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  List<DateTime> get candidates =>
+      wallTime == null ? [] : ProductPriceChange.instants(wallTime!, location);
+
+  void edit(ProductPriceChange? plan) {
+    setState(() {
+      editing = plan;
+      formOpen = true;
+      error = null;
+      offsetChoice = null;
+      price.text = plan?.price?.toString() ?? '';
+      date.text = plan == null
+          ? ''
+          : DateFormat('yyyy-MM-dd')
+              .format(plan.time.toOccasionTime(widget.timezone));
+      time.text = plan == null
+          ? ''
+          : DateFormat('HH:mm')
+              .format(plan.time.toOccasionTime(widget.timezone));
+      if (plan != null) offsetChoice = plan.time;
+    });
+  }
+
+  Future<bool> discard() async {
+    if (!dirty) return true;
+    return await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+                  title: Text(CommonStrings.discardChanges),
+                  content: Text(CommonStrings.discardChangesConfirmation),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(CommonStrings.cancel)),
+                    FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(CommonStrings.discardChanges))
+                  ],
+                )) ==
+        true;
+  }
+
+  Future<void> close() async {
+    if (busy || !await discard() || !mounted) return;
+    setState(() => allowClose = true);
+    Navigator.pop(context, changed);
+  }
+
+  Future<void> reload() async {
+    if (_reloading) return;
+    _reloading = true;
+    final result = await ExceptionHandler.guard(context,
+        futureFunction: widget.reload,
+        defaultErrorMessage: OrdersStrings.priceSaveFailed);
+    _reloading = false;
+    if (result != null && mounted) {
+      setState(() => product = result);
+    }
+  }
+
+  Future<void> submit() async {
+    final amount = double.tryParse(price.text.replaceAll(',', '.'));
+    final instants = candidates;
+    final instant = instants.length == 1
+        ? instants.first
+        : instants.where((i) => i == offsetChoice).firstOrNull;
+    if (amount == null ||
+        !amount.isFinite ||
+        amount < 0 ||
+        instant == null ||
+        !instant.isAfter(product.priceNow)) {
+      setState(() => error = instants.isEmpty && wallTime != null
+          ? OrdersStrings.priceMissingTime
+          : OrdersStrings.priceInvalid);
+      return;
+    }
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    final success =
+        await ExceptionHandler.guardVoid(context, futureFunction: () async {
+      if (widget.save != null) {
+        await widget.save!(amount, instant, editing);
+      } else {
+        await DbEshop.saveProductPriceChange(product.id!, amount, instant,
+            changeId: editing?.id, revision: editing?.revision);
+      }
+    }, defaultErrorMessage: OrdersStrings.priceSaveFailed);
+    if (!mounted) return;
+    if (success) {
+      changed = true;
+      price.clear();
+      date.clear();
+      time.clear();
+      editing = null;
+      formOpen = false;
+      await reload();
+    }
+    if (mounted) {
+      setState(() {
+        busy = false;
+        if (!success) error = OrdersStrings.priceSaveFailed;
+      });
+    }
+  }
+
+  Future<void> cancel(ProductPriceChange plan) async {
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+                title: Text(OrdersStrings.cancelPriceChange),
+                content:
+                    Text(priceChangeText(OrdersStrings.priceCancelConfirm, [
+                  scheduledPrice(context, plan.price, product.currencyCode),
+                  scheduledTime(plan.time, widget.timezone)
+                ])),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(CommonStrings.close)),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(OrdersStrings.cancelPriceChange))
+                ]));
+    if (confirmed != true || !mounted) return;
+    setState(() => busy = true);
+    final success =
+        await ExceptionHandler.guardVoid(context, futureFunction: () async {
+      if (widget.cancel != null) {
+        await widget.cancel!(plan);
+      } else {
+        await DbEshop.cancelProductPriceChange(
+            product.id!, plan.id, plan.revision);
+      }
+    }, defaultErrorMessage: OrdersStrings.priceSaveFailed);
+    if (success) {
+      changed = true;
+      await reload();
+    }
+    if (mounted) setState(() => busy = false);
+  }
+
+  double? precedingPrice(DateTime instant) {
+    double? result = product.price;
+    for (final plan in plans) {
+      if (plan.id != editing?.id &&
+          plan.failureCode == null &&
+          plan.time.isBefore(instant)) result = plan.price;
+    }
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final instants = candidates;
+    final amount = double.tryParse(price.text.replaceAll(',', '.'));
+    final instant = instants.length == 1 ? instants.first : offsetChoice;
+    final children = <Widget>[
+      Text(product.title ?? '', style: Theme.of(context).textTheme.titleMedium),
+      Text(
+          '${OrdersStrings.scheduledCurrentPrice}: ${scheduledPrice(context, product.price, product.currencyCode)}'),
+      Text(widget.timezone),
+      const SizedBox(height: 12),
+      Text(OrdersStrings.priceHelp),
+      const SizedBox(height: 12),
+    ];
+    double? previous = product.price;
+    for (final plan in plans) {
+      final label =
+          '${scheduledPrice(context, previous, product.currencyCode)} → ${scheduledPrice(context, plan.price, product.currencyCode)}';
+      final overdue = !plan.time.isAfter(product.priceNow);
+      children.add(Card(
+          child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: Theme.of(context).textTheme.titleSmall),
+                    Text(scheduledTime(plan.time, widget.timezone)),
+                    if (plan.failureCode != null)
+                      Text('${OrdersStrings.priceFailed} (${plan.failureCode})')
+                    else if (overdue)
+                      Text(OrdersStrings.pricePending),
+                    if (overdue &&
+                        plan.failureCode == null &&
+                        product.priceNow.difference(plan.time) >
+                            const Duration(minutes: 2))
+                      Text(OrdersStrings.priceDelayed),
+                    if (previous != product.price)
+                      Text(OrdersStrings.priceExpected),
+                    if (widget.canEdit)
+                      Wrap(children: [
+                        TextButton(
+                            onPressed: busy || formOpen && dirty
+                                ? null
+                                : () => edit(plan),
+                            child: Text(
+                                '${CommonStrings.edit} ${scheduledTime(plan.time, widget.timezone)}')),
+                        TextButton(
+                            onPressed: busy ? null : () => cancel(plan),
+                            child: Semantics(
+                                excludeSemantics: true,
+                                label:
+                                    '${product.title}: ${OrdersStrings.cancelPriceChange} ${scheduledTime(plan.time, widget.timezone)}',
+                                child: Text(OrdersStrings.cancelPriceChange))),
+                      ]),
+                  ]))));
+      if (plan.failureCode == null) previous = plan.price;
+    }
+    if (formOpen) {
+      children.addAll([
+        const Divider(),
+        TextField(
+            controller: price,
+            enabled: !busy,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+                labelText: OrdersStrings.newPrice,
+                suffixText: product.currencyCode),
+            onChanged: (_) => setState(() {})),
+        TextField(
+            controller: date,
+            enabled: !busy,
+            decoration: InputDecoration(
+                labelText: OrdersStrings.priceDate,
+                suffixIcon: IconButton(
+                    tooltip: OrdersStrings.priceDate,
+                    onPressed: busy
+                        ? null
+                        : () async {
+                            final day = await showDatePicker(
+                                context: context,
+                                initialDate: TimeHelper.now(),
+                                firstDate: TimeHelper.now(),
+                                lastDate: DateTime(2100));
+                            if (day != null && mounted) {
+                              setState(() {
+                                date.text =
+                                    DateFormat('yyyy-MM-dd').format(day);
+                                offsetChoice = null;
+                              });
+                            }
+                          },
+                    icon: const Icon(Icons.calendar_month))),
+            onChanged: (_) => setState(() => offsetChoice = null)),
+        TextField(
+            controller: time,
+            enabled: !busy,
+            decoration: InputDecoration(
+                labelText: OrdersStrings.priceTime,
+                suffixIcon: IconButton(
+                    tooltip: OrdersStrings.priceTime,
+                    onPressed: busy
+                        ? null
+                        : () async {
+                            final selected =
+                                await TimeHelper.showUniversalTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.fromDateTime(
+                                        TimeHelper.now()));
+                            if (selected != null && mounted) {
+                              setState(() {
+                                time.text =
+                                    '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
+                                offsetChoice = null;
+                              });
+                            }
+                          },
+                    icon: const Icon(Icons.schedule))),
+            onChanged: (_) => setState(() => offsetChoice = null)),
+        if (instants.length > 1)
+          DropdownButtonFormField<DateTime>(
+              key: ValueKey('${date.text} ${time.text}'),
+              initialValue:
+                  instants.contains(offsetChoice) ? offsetChoice : null,
+              decoration: InputDecoration(labelText: OrdersStrings.priceOffset),
+              items: instants
+                  .map((i) => DropdownMenuItem(
+                      value: i,
+                      child: Text(
+                          '${i.toOccasionTime(widget.timezone).timeZoneName} (UTC${i.toOccasionTime(widget.timezone).timeZoneOffset.inMinutes / 60})')))
+                  .toList(),
+              onChanged: busy
+                  ? null
+                  : (value) => setState(() => offsetChoice = value)),
+        if (amount != null && instant != null)
+          Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(priceChangeText(OrdersStrings.priceSummary, [
+                scheduledTime(instant, widget.timezone),
+                scheduledPrice(context, amount, product.currencyCode)
+              ]))),
+        if (amount != null &&
+            instant != null &&
+            amount == precedingPrice(instant))
+          Text(OrdersStrings.priceSame),
+        if (error != null)
+          Text(error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+      ]);
+    }
+    final actions = [
+      TextButton(
+          onPressed: busy ? null : close, child: Text(CommonStrings.close)),
+      TextButton(
+          onPressed: busy ? null : reload,
+          child: Text(OrdersStrings.priceRefreshAction)),
+      if (widget.canEdit && !formOpen)
+        FilledButton(
+            onPressed: busy ? null : () => edit(null),
+            child: Text(OrdersStrings.addPriceChange)),
+      if (widget.canEdit && formOpen)
+        FilledButton(
+            onPressed: busy ? null : submit,
+            child: busy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(editing == null
+                    ? OrdersStrings.schedulePrice
+                    : CommonStrings.saveChanges)),
+    ];
+    final body = Column(mainAxisSize: MainAxisSize.min, children: [
+      Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(OrdersStrings.priceChangesTitle,
+              style: Theme.of(context).textTheme.titleLarge)),
+      Flexible(
+          child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: children))),
+      Padding(
+          padding: const EdgeInsets.all(12),
+          child: Wrap(alignment: WrapAlignment.end, children: actions)),
+    ]);
+    return PopScope(
+        canPop: allowClose,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) close();
+        },
+        child: MediaQuery.sizeOf(context).width < 600
+            ? Dialog.fullscreen(child: SafeArea(child: body))
+            : Dialog(child: SizedBox(width: 560, child: body)));
+  }
+}

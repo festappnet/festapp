@@ -274,6 +274,9 @@ class DbEshop {
 
     // Join all data to the final product models
     for (var product in products) {
+      product.priceServerTime = DateTime.parse(response['server_time']).toUtc();
+      product.priceClockOffset =
+          product.priceServerTime!.difference(DateTime.now().toUtc());
       product.productType = typesMap[product.productTypeId];
       product.includedInventories = (productLinksMap[product.id] ?? [])
           .where((link) => link.inventoryContext != null)
@@ -300,6 +303,27 @@ class DbEshop {
       inventoryContexts: contexts,
       forms: forms,
     );
+  }
+
+  static Future<void> saveProductPriceChange(
+      int productId, double price, DateTime time,
+      {int? changeId, int? revision}) async {
+    await _supabase.rpc('save_product_price_change', params: {
+      'p_product_id': productId,
+      'p_price': price,
+      'p_change_time': time.toUtc().toIso8601String(),
+      'p_change_id': changeId,
+      'p_expected_revision': revision,
+    });
+  }
+
+  static Future<void> cancelProductPriceChange(
+      int productId, int changeId, int revision) async {
+    await _supabase.rpc('cancel_product_price_change', params: {
+      'p_product_id': productId,
+      'p_change_id': changeId,
+      'p_expected_revision': revision,
+    });
   }
 
   static Future<int> updateProduct(ProductModel product) async {
