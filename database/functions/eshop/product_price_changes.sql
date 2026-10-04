@@ -62,7 +62,8 @@ BEGIN
       OR v_change.applied OR v_change.revision IS DISTINCT FROM p_expected_revision THEN
       RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
     UPDATE eshop.planned_changes SET new_value=p_price::text,change_time=p_change_time,
-      occasion=v_occasion,revision=revision+1,failed_at=NULL,failure_code=NULL
+      occasion=v_occasion,revision=revision+1,failed_at=NULL,failure_code=NULL,
+      wave_id=CASE WHEN change_time=p_change_time THEN wave_id ELSE NULL END
       WHERE id=p_change_id RETURNING * INTO v_change;
   END IF;
   RETURN to_jsonb(v_change);
