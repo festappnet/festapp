@@ -200,6 +200,8 @@ class DbOrders {
 
     // Main loop to assemble the final OrderModel objects
     for (var order in orders) {
+      final delivery = (json['email_delivery'] as Map?)?[order.id.toString()];
+      order.emailDelivery = delivery is Map ? Map<String,dynamic>.from(delivery) : null;
       final orderOpts = orderToOpt[order.id] ?? [];
       final ticketIds = orderOpts.map((opt) => opt.ticketId).toSet();
       final relatedTickets = ticketIds

@@ -27,6 +27,13 @@ class PublicOrderStrings {
 
   static String paymentInfo(String? tone) => _tr('$_prefix.paymentInfo', tone);
 
+  static String confirmationInfo(String? tone, {required bool hasPayment, String email = '', String state = 'queued'}) {
+    final key = hasPayment ? 'paymentInfo' : 'confirmationInfo';
+    final suffix = state == 'accepted' ? 'Accepted' : ['failed','unknown','dead','suppressed','expired','cancelled','retry_wait'].contains(state) ? 'Unconfirmed' : '';
+    final text = _tr('$_prefix.$key${email.isEmpty ? '' : 'WithEmail'}$suffix', tone);
+    return email.isEmpty ? text : text.replaceAll('{email}', email);
+  }
+
   static String selectSeat(String? tone) => _tr('$_prefix.selectSeat', tone);
 
   static String getSubmitButton(bool hasTickets, String? tone) {

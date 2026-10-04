@@ -25,9 +25,9 @@ export class PublicOrderStrings {
         return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.paymentInfo`, tone);
     }
 
-    static confirmationInfo(tone, hasPayment, email) {
+    static confirmationInfo(tone, hasPayment, email, state = 'queued') {
         const key = hasPayment ? 'paymentInfo' : 'confirmationInfo';
-        const template = PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.${key}${email ? 'WithEmail' : ''}`, tone);
+        const template = PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.${key}${email ? 'WithEmail' : ''}${state === 'accepted' ? 'Accepted' : ['failed','unknown','dead','suppressed','expired','cancelled','retry_wait'].includes(state) ? 'Unconfirmed' : ''}`, tone);
         return email ? template.replace('{email}', email) : template;
     }
 

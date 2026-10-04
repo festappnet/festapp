@@ -1,10 +1,16 @@
-import { getSupabaseUser, isUserEditor, isUserEditorOrder } from "../_shared/supabaseUtil.ts";
-import { deliverEmail } from "../_shared/emailDelivery.ts";
+import { emailRpc } from "../_shared/emailQueueClient.ts";
+import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
+import {
+  getSupabaseUser,
+  isUserEditor,
+  isUserEditorOrder,
+} from "../_shared/supabaseUtil.ts";
 
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL")!;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
@@ -24,16 +30,26 @@ Deno.serve(async (req) => {
 
     if (!template || !subs || !email) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: template, subs, or email" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+        JSON.stringify({
+          error: "Missing required fields: template, subs, or email",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
       );
     }
 
     // Ensure that the template contains an 'occasion' (or organization) field to check editor permission.
     if (!template.occasion) {
       return new Response(
-        JSON.stringify({ error: "Template does not contain occasion information" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+        JSON.stringify({
+          error: "Template does not contain occasion information",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
       );
     }
 
@@ -43,7 +59,10 @@ Deno.serve(async (req) => {
     if (!user?.user?.id) {
       return new Response(
         JSON.stringify({ error: "Authentication required" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 },
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        },
       );
     }
 
@@ -51,23 +70,35 @@ Deno.serve(async (req) => {
     const userId = user.user.id;
     var isEditor = await isUserEditor(userId, template.occasion);
     if (!isEditor) {
-        isEditor = await isUserEditorOrder(userId, template.occasion);
+      isEditor = await isUserEditorOrder(userId, template.occasion);
     }
 
     if (!isEditor) {
-      console.error(`User ${userId} is not an editor for occasion ${template.occasion}`);
+      console.error(
+        `User ${userId} is not an editor for occasion ${template.occasion}`,
+      );
       return new Response(
         JSON.stringify({ error: "Forbidden: User is not an editor" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 },
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        },
       );
     }
 
-    await deliverEmail({
+    const occasion = await emailRpc("get_email_occasion_context", {
+      p_occasion: template.occasion,
+    });
+    await enqueueAndAwaitEmail({
       to: email,
+      kind: "custom",
+      ...(reqData.requestId
+        ? { dedupeKey: `custom:${userId}:${reqData.requestId}` }
+        : {}),
       templateCode: template.code,
       context: {
-        organization: template.organization,
-        unit: template.unit,
+        organization: occasion.organization,
+        unit: occasion.unit,
         occasion: template.occasion,
       },
       substitutions: subs,
@@ -81,9 +112,12 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("Unexpected error:", error);
-    return new Response(JSON.stringify({ error: "Unexpected error occurred" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ error: "Unexpected error occurred" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      },
+    );
   }
 });
