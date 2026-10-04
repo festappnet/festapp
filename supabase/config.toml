@@ -300,3 +300,14 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+[functions.email-provider-events]
+verify_jwt = false
+[functions.email-confirmation-status]
+verify_jwt = false
+[functions.auth-email-hook]
+verify_jwt = false
+
+# Machine requestSecret is checked against a private service-only store.
+[functions.process-email-queue]
+verify_jwt = false

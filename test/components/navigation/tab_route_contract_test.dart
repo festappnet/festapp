@@ -44,12 +44,14 @@ void main() {
       'volunteers',
       'users',
       'email-templates',
+      'email-delivery',
       'changes',
       'settings'
     ])
       'admin/$section': '${{
             'services': 'Service',
-            'email-templates': 'EmailTemplates'
+            'email-templates': 'EmailTemplates',
+            'email-delivery': 'EmailDelivery'
           }[section] ?? '${section[0].toUpperCase()}${section.substring(1)}'}SectionRoute',
     for (final section in [
       'tickets',
@@ -58,10 +60,12 @@ void main() {
       'report',
       'users',
       'email-templates',
+      'email-delivery',
       'settings'
     ])
       'reservations/$section': '${{
-            'email-templates': 'EmailTemplates'
+            'email-templates': 'EmailTemplates',
+            'email-delivery': 'EmailDelivery'
           }[section] ?? '${section[0].toUpperCase()}${section.substring(1)}'}SectionRoute',
   };
   for (final entry in paths.entries) {

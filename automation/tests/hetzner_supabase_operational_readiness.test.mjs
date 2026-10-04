@@ -49,7 +49,7 @@ function fixture() {
     },
     integrations: named([
       'auth-password', 'auth-oauth', 'auth-refresh', 'aws-sns', 'edge-functions',
-      'onesignal', 'payment-callbacks', 'realtime', 'smtp', 'storage', 'sync-worker',
+      'onesignal', 'payment-callbacks', 'realtime', 'email-ses', 'storage', 'sync-worker',
     ], { status: 'pass', tested_at: testedAt, evidence_sha256: digest }),
     rollback: {
       cloud_sources_retained_read_only: true, before_target_writes: 'route-to-frozen-cloud',

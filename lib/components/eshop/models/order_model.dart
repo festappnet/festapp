@@ -33,6 +33,7 @@ class OrderModel extends ITrinaRowModel {
   int? formId;
   String? currencyCode;
   String? noteHidden;
+  Map<String, dynamic>? emailDelivery;
 
   // Relating to top-level DB tables
   FormModel? form;
@@ -271,6 +272,7 @@ class OrderModel extends ITrinaRowModel {
               : ""),
       EshopColumns.ORDER_DATA_NOTE: TrinaCell(value: toCustomerNote()),
       EshopColumns.ORDER_NOTE_HIDDEN: TrinaCell(value: noteHidden ?? ""),
+      EshopColumns.ORDER_EMAIL_DELIVERY: TrinaCell(value: emailDelivery),
       EshopColumns.ORDER_HISTORY: TrinaCell(value: ""),
       EshopColumns.ORDER_TRANSACTIONS: TrinaCell(value: ""),
       EshopColumns.ORDER_FORM: TrinaCell(value: form?.toString() ?? ""),
