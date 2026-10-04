@@ -73,6 +73,7 @@ class _BankAccountGeneralTabState extends State<BankAccountGeneralTab> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: widget.titleController,
+                maxLength: 120,
                 decoration: InputDecoration(
                   labelText: BankAccountStrings.titleLabel,
                 ),

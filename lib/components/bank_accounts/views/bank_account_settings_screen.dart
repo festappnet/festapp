@@ -291,7 +291,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
             : _creditorNameController.text.trim(),
         accountNumber: _ibanController.text.trim(),
         priority: int.tryParse(_priorityController.text) ?? _account.priority,
-        type: _isFio ? 'FIO' : 'OTHER',
+        type: _account.bankSync != null ? _account.type : (_isFio ? 'FIO' : 'OTHER'),
         isAdmin: _account.isAdmin,
         supportedCurrencies: _supportedCurrencies,
         accountNumberHumanReadable: _buildLegacyHumanReadable(),
@@ -350,6 +350,10 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     } catch (e) {
       if (e.toString().contains("ACCOUNT_NUMBER_EXISTS")) {
         _showError(BankAccountStrings.accountNumberExists);
+      } else if (e.toString().contains('BANK_SYNC_ACCOUNT_IDENTITY_IMMUTABLE')) {
+        _showError(BankAccountStrings.linkedAccountIdentity);
+      } else if (e is BankSyncError) {
+        _showError(BankAccountStrings.detailsSyncPending);
       } else {
         _showError("$e");
       }
