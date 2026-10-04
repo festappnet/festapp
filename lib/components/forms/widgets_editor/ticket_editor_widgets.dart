@@ -304,7 +304,15 @@ class TicketEditorWidgets {
       type: FormHelper.fieldTypeProductType,
       isTicketField: true,
       productType: productType,
-      order: (form.relatedFields.map((x) => x.order ?? 0).fold(0, max)) + 1,
+      // Apply the first-position default only when adding a seat section.
+      // Existing sections retain their saved/manual order.
+      order: productType.type == ProductModel.spotType
+          ? form.relatedFields
+                  .where((field) => field.isTicketField == true)
+                  .map((field) => field.order ?? 0)
+                  .fold(0, min) -
+              1
+          : (form.relatedFields.map((x) => x.order ?? 0).fold(0, max)) + 1,
     );
     form.relatedFields.add(newProductTypeField);
   }
@@ -397,9 +405,10 @@ class TicketEditorWidgets {
                       type: FormHelper.fieldTypeSpot,
                       isTicketField: true,
                       isHidden: false,
-                      order: (form.relatedFields
-                              .map((x) => x.order ?? 0)
-                              .fold(0, max)) +
+                      order: form.relatedFields
+                              .where((field) => field.isTicketField == true)
+                              .map((field) => field.order ?? 0)
+                              .fold(0, min) -
                           1,
                     );
                     form.relatedFields.add(spotField!);
