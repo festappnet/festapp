@@ -381,8 +381,8 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
           height: widget.compact ? 40 : 38,
           child: Center(
               child: Container(
-            width: widget.compact ? 32 : 38,
-            height: widget.compact ? 32 : 38,
+            width: widget.compact ? 36 : 38,
+            height: widget.compact ? 36 : 38,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(

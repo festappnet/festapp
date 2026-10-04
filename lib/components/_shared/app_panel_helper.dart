@@ -598,7 +598,7 @@ class AppPanelHelper {
   ) {
     final compact = activeTabs != null;
     return AppBar(
-      toolbarHeight: compact ? 44 : 60,
+      toolbarHeight: compact ? 52 : 60,
       automaticallyImplyLeading: false,
       // Use a fully custom title area
       leading: null,
@@ -615,7 +615,7 @@ class AppPanelHelper {
             child: Padding(
               // Add padding to space it from the screen edge and from the breadcrumbs
               padding:
-                  EdgeInsets.fromLTRB(16, compact ? 2 : 8, 24, compact ? 2 : 8),
+                  EdgeInsets.fromLTRB(16, compact ? 6 : 8, 24, compact ? 6 : 8),
               child: LogoWidget(height: 40, forceDark: true),
             ),
           ),
@@ -633,8 +633,7 @@ class AppPanelHelper {
 
       actions: [
         Padding(
-            padding:
-                EdgeInsets.symmetric(vertical: compact ? 2 : 6, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             child: UserHeaderWidget(
               compact: compact,
               appBarIconColor: ThemeConfig.lllBackground,
