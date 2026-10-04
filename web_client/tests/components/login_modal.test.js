@@ -103,6 +103,20 @@ describe('LoginModal Conditional Registration', () => {
         }
     });
 
+    it('prefills Google proof email and preserves manual edits across retry rendering', () => {
+        const modal = new LoginModal();
+        modal._render();
+        modal.showGoogleResult({status: 'needs_account_proof', email: 'provider@example.com'});
+        let email = modal.authContainer.querySelector('#email');
+        assert.equal(email.value, 'provider@example.com');
+        email.value = 'existing@example.com';
+        email.dispatchEvent(new Event('input'));
+        modal.googleError = 'account_proof_failed';
+        modal._updateContent();
+        email = modal.authContainer.querySelector('#email');
+        assert.equal(email.value, 'existing@example.com');
+    });
+
     it('should HIDE registration link when IS_REGISTRATION_ENABLED is false', () => {
         // Mock Context
         RightsService._context = {

@@ -430,6 +430,7 @@ class UnitsTb {
   String get features => "features";
   String get data => "data";
   String get data_reply_to => "reply_to";
+  String get data_communication_tone => "communication_tone";
 }
 
 class UnitUsersTb {

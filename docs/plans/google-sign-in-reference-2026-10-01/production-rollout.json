@@ -1,0 +1,29 @@
+{
+  "target": "https://live.festapp.net",
+  "organization": 1,
+  "tenant": "festapp",
+  "version": "0.20.41+525",
+  "productionBranch": "prod/festapp",
+  "productionSha": "a2edae64b94529ca771aea467b1d41c7617163b8",
+  "baseMainSha": "9702ec9fe50960f6684dd7b80c9beecd8bcad1d0",
+  "deploymentRun": "https://github.com/festappnet/festapp/actions/runs/36946566649",
+  "deploymentSucceeded": true,
+  "consecutiveDeploymentProbes": 3,
+  "serverInputsInstalled": true,
+  "migrationApplied": true,
+  "canonicalDatabase": "festapp_rehearsal_20260909220601",
+  "cleanupScheduled": true,
+  "enabledPlatforms": [
+    "web",
+    "flutter-web"
+  ],
+  "nativePlatformsEnabled": false,
+  "realGoogleOidcAndCallbackVerified": true,
+  "visibleExistingAccountProofVerified": true,
+  "callbackQueryCleared": true,
+  "productionAccountMutationsPerformed": false,
+  "fullProductionAccountMutationE2eVerified": false,
+  "temporarySshRuleRemoved": true,
+  "localTargetedTestCount": 43,
+  "screenshot": "production-web-account-proof.png"
+}

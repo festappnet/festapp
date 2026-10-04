@@ -203,8 +203,9 @@ BEGIN
     END IF;
   END IF;
 
+  PERFORM public.cancel_order_email_intents(v_order_id);
   UPDATE eshop.orders
-     SET state      = v_new_state,
+     SET email_payment_version=email_payment_version+1, state      = v_new_state,
          updated_at = now()
    WHERE id = v_order_id;
 
@@ -227,6 +228,7 @@ BEGIN
   END IF;
 
   PERFORM apply_allocations(v_order_id);
+  PERFORM public.enqueue_paid_order_tickets(v_order_id);
 
   /* 6) append history */
   INSERT INTO eshop.orders_history("order", data, state, price, currency_code)

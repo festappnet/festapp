@@ -1,16 +1,14 @@
-import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/information/game/game_settings_model.dart';
-import 'package:fstapp/components/images/image_model.dart';
-import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/occasion/occasion_commands.dart';
+import 'package:fstapp/components/occasion/occasion_media_copier.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion_services/service_item_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
-import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/components/features/feature_constants.dart';
-import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbOccasions {
@@ -178,39 +176,35 @@ class DbOccasions {
           : await _commands.save(occasionModel);
       occasionModel.id = saved.id;
       occasionModel.aggregateVersion = saved.aggregateVersion;
+      occasionModel.features = saved.features;
+      occasionModel.markTicketLayoutSaved();
       return;
     }
-    final Map<String, dynamic> occasionJson = occasionModel.toJson();
+    final Map<String, dynamic> occasionJson = occasionModel.toSaveJson();
     await _supabase.rpc("update_occasion_203", params: {
       "input_data": occasionJson,
     });
+    occasionModel.markTicketLayoutSaved();
   }
 
-  static Future<void> duplicateOccasion(int oc, int? unit) async {
+  /// Returns false only when the event exists but its media could not be copied.
+  static Future<bool> duplicateOccasion(int oc) async {
     final ocId = ClientSyncRuntime.isV1Selected
         ? await _commands.duplicate(oc)
         : await _supabase.rpc("duplicate_occasion", params: {"oc": oc}) as int;
 
-    var occasion = await getOccasion(ocId);
-
-    var ticketDetails = FeatureService.getFeatureDetails(
-        FeatureConstants.ticket,
-        features: occasion.features);
-    if (ticketDetails is TicketFeature &&
-        ticketDetails.ticketBackground != null &&
-        ticketDetails.ticketBackground!.isNotEmpty) {
-      var cpy = await DbImages.createCopyOfImage(
-          ticketDetails.ticketBackground!, ocId, unit);
-      ticketDetails.ticketBackground = cpy;
+    try {
+      final occasion = await getOccasion(ocId);
+      await copyOccasionMedia(occasion, DbImages.createCopyOfImage);
+      await updateOccasion(occasion);
+      return true;
+    } catch (error, stackTrace) {
+      // The database copy is committed. Keep its existing public media links
+      // and report the partial result instead of inviting a second copy.
+      debugPrint('Occasion $ocId was copied, but media setup failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return false;
     }
-
-    var ocImage = occasion.data?["image"];
-    if (ocImage != null) {
-      var cpy = await DbImages.createCopyOfImage(ocImage, ocId, unit);
-      occasion.data!["image"] = cpy;
-    }
-
-    await updateOccasion(occasion);
   }
 
   static Future<void> deleteOccasion(int oc) async {
@@ -219,23 +213,5 @@ class DbOccasions {
     } else {
       await _supabase.rpc('delete_occasion', params: {'oc': oc});
     }
-
-    final data = await _supabase
-        .from(Tb.images.table)
-        .select()
-        .isFilter(Tb.images.occasion, null)
-        .isFilter(Tb.images.unit, null);
-    final orphanImages =
-        List<ImageModel>.from(data.map((x) => ImageModel.fromJson(x)));
-
-    for (var img in orphanImages) {
-      await DbImages.removeImage(img.link!);
-    }
-
-    await _supabase
-        .from(Tb.images.table)
-        .delete()
-        .isFilter(Tb.images.occasion, null)
-        .isFilter(Tb.images.unit, null);
   }
 }

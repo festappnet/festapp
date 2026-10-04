@@ -1,3 +1,4 @@
+import 'package:uuid/uuid.dart';
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
@@ -95,10 +96,12 @@ class DbTickets {
   static Future<FunctionResponse> sendTicketsToEmail({
     required int orderId,
     required String email,
+    String? requestId,
   }) async {
     final body = {
       "orderId": orderId,
       "email": email,
+      "requestId": requestId ?? const Uuid().v4(),
     };
 
     try {

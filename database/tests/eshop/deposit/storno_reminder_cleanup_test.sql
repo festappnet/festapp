@@ -81,12 +81,12 @@ BEGIN
     -- ==================================================================
     -- Step 1: Queue deposit reminder
     -- ==================================================================
-    DELETE FROM public.queue_emails WHERE occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
+    DELETE FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 1: 1 deposit reminder should be queued for paid order');
     RAISE NOTICE 'Step 1 PASSED: Deposit reminder queued before storno';
@@ -108,21 +108,21 @@ BEGIN
     -- Step 3: get_due_queue_emails validation removes the reminder
     -- ==================================================================
     -- Force target_time to past so the email is "due"
-    UPDATE public.queue_emails
+    UPDATE public.email_messages
     SET target_time = NOW() - interval '1 minute'
     WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
 
     -- Call get_due_queue_emails — validation should delete the now-stale reminder
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     -- Verify the reminder is no longer in the queue
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
-    PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 3: Reminder should be removed by validation after storno');
-    RAISE NOTICE 'Step 3 PASSED: Storno reminder removed by validation';
+    PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 3: Reminder should be ineligible after validation after storno');
+    RAISE NOTICE 'Step 3 PASSED: Storno reminder ineligible after validation';
 
     RAISE NOTICE '=============================================';
     RAISE NOTICE 'Storno cleanup test PASSED!';
