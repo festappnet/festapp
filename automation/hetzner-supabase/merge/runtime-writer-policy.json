@@ -205,14 +205,6 @@
       "trigger": "post-commit-pg-net",
       "effects": [
         "database-rpc",
-        "private-email-gateway"
-      ],
-      "mutates_authority": true
-    },
-    "send-email-gateway": {
-      "trigger": "private-worker-http",
-      "effects": [
-        "database-rpc",
         "ses-api"
       ],
       "mutates_authority": true
@@ -316,8 +308,7 @@
       "bank-mail-parser": "signature-v2-exact-topic-aws-certificate-and-confirmation-url-verification",
       "fetch-http-data": "occasion-editor-auth-public-dns-and-redirect-validation-image-only-bounded-response",
       "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled",
-      "process-email-queue": "private-service-only-minted-machine-request-secret",
-      "send-email-gateway": "private-network-bearer-and-fenced-one-shot-database-permit",
+      "process-email-queue": "service-only-machine-proof-fenced-ses-send-and-worker-scoped-credentials",
       "auth-email-hook": "standardwebhooks-hmac-and-server-resolved-tenant",
       "email-provider-events": "signature-v2-exact-topic-aws-certificate-and-durable-redacted-journal",
       "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only"
@@ -332,7 +323,7 @@
     "festapp_notify_webhook_token_v1 in target Vault matches NOTIFY_WEBHOOK_TOKEN and setup_triggers installs only the canonical HTTPS endpoint",
     "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin",
     "Email cutover requires verified tenant activation, SES account/region quotas and allocated shared budget",
-    "Private email gateway is the only runtime injected with SES credentials; general router rejects its route",
+    "Only process-email-queue user worker receives SES credentials; host router strips them from every other worker",
     "Signed GoTrue hook, SNS v2 feedback plus DLQ replay, paused migration rehearsal and legacy ambiguity reconciliation must pass before email_capacity is unpaused"
   ],
   "controls": {

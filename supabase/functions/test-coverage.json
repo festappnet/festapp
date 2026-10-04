@@ -203,14 +203,6 @@
         "supabase/functions/_shared/canonicalEmail_test.ts"
       ]
     },
-    "send-email-gateway": {
-      "smokeTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
-      ],
-      "behaviorTests": [
-        "supabase/functions/_shared/canonicalEmail_test.ts"
-      ]
-    },
     "email-provider-events": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"

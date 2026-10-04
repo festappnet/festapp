@@ -7,7 +7,7 @@ import {
   sesRequest,
   verifySesAccount,
 } from "./sesProvider.ts";
-import { gatewayAttempt } from "../send-email-gateway/gateway.ts";
+import { sendEmailAttempt } from "./emailSender.ts";
 import { normalizeSesEvents } from "../email-provider-events/events.ts";
 import { openEmail, sealEmail } from "./emailPayload.ts";
 import { drainEmails } from "./emailDispatcher.ts";
@@ -91,7 +91,7 @@ Deno.test("SES accepted needs MessageId; ambiguous network and response never re
   );
   assertEquals(throttle.outcome, "retry");
 });
-Deno.test("gateway replay cannot call provider twice; failed acceptance write never retries SES", async () => {
+Deno.test("sender replay cannot call provider twice; failed acceptance write never retries SES", async () => {
   let state = "preparing", sent = 0;
   const d = {
     config,
@@ -123,8 +123,8 @@ Deno.test("gateway replay cannot call provider twice; failed acceptance write ne
       return Promise.reject(new Error("DB down after acceptance"));
     },
   };
-  await assertRejects(() => gatewayAttempt("a", "t", d));
-  await gatewayAttempt("a", "t", d);
+  await assertRejects(() => sendEmailAttempt("a", "t", d));
+  await sendEmailAttempt("a", "t", d);
   assertEquals(sent, 1);
 });
 Deno.test("SNS normalization strips click URL, tokens, IP and UA", () => {
@@ -165,7 +165,7 @@ Deno.test("prepared payload is encrypted and authenticated", async () => {
     else Deno.env.set("EMAIL_PAYLOAD_KEY", before);
   }
 });
-Deno.test("worker reuses immutable preparation; gateway uncertainty does not release for retry", async () => {
+Deno.test("worker reuses immutable preparation; sender uncertainty does not release for retry", async () => {
   let clock = 0, preparedCount = 0;
   const calls: string[] = [];
   const row = {
@@ -185,7 +185,7 @@ Deno.test("worker reuses immutable preparation; gateway uncertainty does not rel
       throw new Error("must reuse");
     },
     seal: () => Promise.resolve({}),
-    gateway: () => {
+    send: () => {
       clock = 40000;
       return Promise.reject(new Error("timeout"));
     },
@@ -195,7 +195,7 @@ Deno.test("worker reuses immutable preparation; gateway uncertainty does not rel
   assert(!calls.includes("finish_email_attempt"));
 });
 
-Deno.test("gateway verifies actual credential account and signs STS independently", async () => {
+Deno.test("sender verifies actual credential account and signs STS independently", async () => {
   const stub: typeof fetch = async (url, init) => {
     assert(String(url).includes("sts.eu-central-1.amazonaws.com"));
     assert(
@@ -313,16 +313,16 @@ Deno.test("blocked preparation or stale quota does not create an empty continuat
       throw new Error("unreachable");
     },
     seal: async () => ({}),
-    gateway: async () => {},
+    send: async () => {},
   });
   assert(!calls.includes("wake_email_worker"));
 });
 
-Deno.test("gateway rejects corrupt or mismatched frozen payload before provider call", async () => {
+Deno.test("sender rejects corrupt or mismatched frozen payload before provider call", async () => {
   for (const corrupt of [false, true]) {
     let sent = 0;
     const finishes: any[] = [];
-    const result = await gatewayAttempt("a", "t", {
+    const result = await sendEmailAttempt("a", "t", {
       config,
       open: () =>
         corrupt
@@ -437,7 +437,7 @@ Deno.test("a preparation timeout keeps its permit until the renderer stops", asy
     },
     prepare: () => work,
     seal: async (value) => value,
-    gateway: async () => {
+    send: async () => {
       throw Error("timed-out work must not send");
     },
     now: Date.now,
