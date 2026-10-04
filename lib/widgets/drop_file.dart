@@ -83,7 +83,7 @@ class _DropFileState extends State<DropFile> {
   Future<void> _pickFile() async {
     if (!PlatformHelper.isWeb) return;
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: widget.allowedExtensions != null ? FileType.custom : FileType.any,
       allowedExtensions: widget.allowedExtensions,
       allowMultiple: widget.onMultipleFilesChanged != null,

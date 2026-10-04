@@ -89,8 +89,7 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
       decoration: BoxDecoration(
         color: ThemeConfig.whiteColor(widget.controller.context),
       ),
-      // trina_grid's select-column popup editor calls ShadTheme.of(context),
-      // so the grid must have a ShadTheme ancestor or every dropdown crashes.
+      // Keep select-column popups consistent with the application's theme.
       child: ShadTheme(
         data: ShadThemeData(
           brightness: ThemeConfig.isDarkMode(context)
