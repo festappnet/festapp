@@ -209,10 +209,18 @@ class _ReportTabState extends State<ReportTab> {
   }) =>
       Card(
         elevation: 0,
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outlineVariant
+                  .withValues(alpha: .55)),
+        ),
         margin: const EdgeInsets.symmetric(vertical: 4),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -221,13 +229,16 @@ class _ReportTabState extends State<ReportTab> {
                   Expanded(
                     child: Text(
                       title,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                   _ReportInfoIcon(help: details ?? help, label: title),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
               ...children,
             ],
           ),
@@ -304,52 +315,50 @@ class _ReportTabState extends State<ReportTab> {
     }
 
     return [
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final currency in currencies)
-            ChoiceChip(
-              label: Text(currency),
-              selected: selected == currency,
-              onSelected: (_) => setState(() => _currency = currency),
-            ),
-          if (currencies.length > 1)
-            ChoiceChip(
-              label: Text(ReportStrings.compareCurrencies),
-              selected: selected == '*',
-              onSelected: (_) => setState(() => _currency = '*'),
-            ),
-        ],
-      ),
-      const SizedBox(height: 12),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final range in [30, 90, 0])
-            ChoiceChip(
-              label: Text(
-                range == 0
-                    ? ReportStrings.allDays
-                    : range == 30
-                        ? ReportStrings.days30
-                        : ReportStrings.days90,
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Wrap(
+          spacing: 16,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (currencies.length > 1)
+              _filterGroup([
+                for (final currency in currencies)
+                  _filter(currency, selected == currency,
+                      () => setState(() => _currency = currency)),
+                _filter(ReportStrings.compareCurrencies, selected == '*',
+                    () => setState(() => _currency = '*')),
+              ])
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(selected,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(color: colors.onSurfaceVariant)),
               ),
-              selected: _rangeDays == range,
-              onSelected: (_) => setState(() => _rangeDays = range),
-            ),
-          ChoiceChip(
-            label: Text(ReportStrings.daily),
-            selected: !_cumulative,
-            onSelected: (_) => setState(() => _cumulative = false),
-          ),
-          ChoiceChip(
-            label: Text(ReportStrings.cumulative),
-            selected: _cumulative,
-            onSelected: (_) => setState(() => _cumulative = true),
-          ),
-        ],
+            _filterGroup([
+              for (final range in [30, 90, 0])
+                _filter(
+                  range == 0
+                      ? ReportStrings.allDays
+                      : range == 30
+                          ? ReportStrings.days30
+                          : ReportStrings.days90,
+                  _rangeDays == range,
+                  () => setState(() => _rangeDays = range),
+                ),
+            ]),
+            _filterGroup([
+              _filter(ReportStrings.daily, !_cumulative,
+                  () => setState(() => _cumulative = false)),
+              _filter(ReportStrings.cumulative, _cumulative,
+                  () => setState(() => _cumulative = true)),
+            ]),
+          ],
+        ),
       ),
       _columns([
         _section(ReportStrings.orderTimeline, ReportStrings.orderTimelineHelp, [
@@ -416,6 +425,36 @@ class _ReportTabState extends State<ReportTab> {
         ),
       ]),
     ];
+  }
+
+  Widget _filterGroup(List<Widget> children) => Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outlineVariant
+                  .withValues(alpha: .55)),
+        ),
+        child: Wrap(spacing: 4, runSpacing: 4, children: children),
+      );
+
+  Widget _filter(String label, bool selected, VoidCallback onSelected) {
+    final colors = Theme.of(context).colorScheme;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: false,
+      selectedColor: colors.primary,
+      backgroundColor: colors.surface,
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+      labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: selected ? colors.onPrimary : colors.onSurfaceVariant),
+      onSelected: (_) => onSelected(),
+    );
   }
 
   Widget _columns(List<Widget> children) => LayoutBuilder(
@@ -558,63 +597,37 @@ class _ReportTabState extends State<ReportTab> {
   Widget _states(String title, ReportCounts counts) =>
       _section(title, ReportStrings.statesHelp, [
         _value(title, '${counts.total}'),
-        LayoutBuilder(builder: (context, constraints) {
-          final scale = MediaQuery.textScalerOf(context).scale(1);
-          final columns = math.max(
-              1,
-              math.min(counts.states.length,
-                  (constraints.maxWidth / (90 * scale)).floor()));
-          final width = constraints.maxWidth / columns;
-          final colors = Theme.of(context).colorScheme;
-          return Wrap(
-            runSpacing: 16,
-            children: [
-              for (final entry in counts.states.entries)
-                Semantics(
-                  label:
-                      '${_stateLabel(entry.key)}: ${entry.value} / ${counts.total}',
-                  child: ExcludeSemantics(
-                    child: SizedBox(
-                      width: width,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Column(
-                          children: [
-                            Container(
-                              height: 100,
-                              alignment: Alignment.bottomCenter,
-                              decoration: BoxDecoration(
-                                  border: Border(
-                                bottom:
-                                    BorderSide(color: colors.outlineVariant),
-                              )),
-                              child: Container(
-                                width: math.min(40, width * .45),
-                                height: counts.total == 0
-                                    ? 0
-                                    : 100 * entry.value / counts.total,
-                                decoration: BoxDecoration(
-                                  color: colors.primary,
-                                  borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(4)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text('${entry.value}',
-                                style: Theme.of(context).textTheme.titleSmall),
-                            Text(_stateLabel(entry.key),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodySmall),
-                          ],
-                        ),
-                      ),
+        for (final entry in counts.states.entries)
+          Semantics(
+            label:
+                '${_stateLabel(entry.key)}: ${entry.value} / ${counts.total}',
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(children: [
+                      Expanded(
+                          child: Text(_stateLabel(entry.key),
+                              style: Theme.of(context).textTheme.bodySmall)),
+                      const SizedBox(width: 12),
+                      Text('${entry.value}',
+                          style: Theme.of(context).textTheme.labelLarge),
+                    ]),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: counts.total == 0 ? 0 : entry.value / counts.total,
+                      minHeight: 5,
+                      borderRadius: BorderRadius.circular(3),
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
-                  ),
+                  ],
                 ),
-            ],
-          );
-        }),
+              ),
+            ),
+          ),
       ]);
 
   @override
@@ -627,72 +640,106 @@ class _ReportTabState extends State<ReportTab> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1240),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (r != null) ...[
-                    Text(
-                      r.title,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    Text(
-                      '${ReportStrings.snapshot}: ${DateFormat('d. M. yyyy HH:mm').format(r.generatedAt.toLocal())}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      TextButton.icon(
-                        onPressed: _loading
-                            ? null
-                            : () => setState(() {
-                                  _load();
-                                }),
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(48, 48),
+                  LayoutBuilder(builder: (context, constraints) {
+                    final title = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (r != null) ...[
+                          Text(r.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${ReportStrings.snapshot}: ${DateFormat('d. M. yyyy HH:mm').format(r.generatedAt.toLocal())}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant),
+                          ),
+                        ],
+                      ],
+                    );
+                    final actions = Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _loading
+                              ? null
+                              : () => setState(() {
+                                    _load();
+                                  }),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                          ),
+                          icon: const Icon(Icons.refresh),
+                          label: Text(ReportStrings.refresh),
                         ),
-                        icon: const Icon(Icons.refresh),
-                        label: Text(ReportStrings.refresh),
-                      ),
-                      if (r != null)
-                        PopupMenuButton<String>(
-                          tooltip: ReportStrings.details,
-                          constraints: const BoxConstraints(minWidth: 48),
-                          onSelected: (value) {
-                            if (value == 'export') {
-                              _export();
-                            } else {
-                              setState(() => _text = !_text);
-                            }
-                          },
-                          itemBuilder: (_) => [
-                            PopupMenuItem(
-                              value: 'text',
-                              child: Text(
-                                _text
-                                    ? ReportStrings.graphic
-                                    : ReportStrings.text,
+                        if (r != null)
+                          PopupMenuButton<String>(
+                            tooltip: ReportStrings.details,
+                            constraints: const BoxConstraints(minWidth: 48),
+                            onSelected: (value) {
+                              if (value == 'export') {
+                                _export();
+                              } else {
+                                setState(() => _text = !_text);
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              PopupMenuItem(
+                                value: 'text',
+                                child: Text(
+                                  _text
+                                      ? ReportStrings.graphic
+                                      : ReportStrings.text,
+                                ),
                               ),
-                            ),
-                            PopupMenuItem(
-                              value: 'export',
-                              enabled: !_exporting,
-                              child: Text(ReportStrings.export),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
+                              PopupMenuItem(
+                                value: 'export',
+                                enabled: !_exporting,
+                                child: Text(ReportStrings.export),
+                              ),
+                            ],
+                          ),
+                      ],
+                    );
+                    if (constraints.maxWidth < 600 ||
+                        MediaQuery.textScalerOf(context).scale(1) > 1.4) {
+                      return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            title,
+                            const SizedBox(height: 8),
+                            actions
+                          ]);
+                    }
+                    return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [Expanded(child: title), actions]);
+                  }),
+                  const SizedBox(height: 24),
                   if (_loading) const LinearProgressIndicator(),
                   if (_error) Text(ReportStrings.error),
                   if (r != null && _text) SelectableText(formatReportText(r)),
                   if (r != null && !_text) ...[
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        final columns =
+                        final metricCount = 1 +
+                            (ReportStrings.hasTickets ? 1 : 0) +
+                            (r.spotsTotal > 0 ? 1 : 0) +
+                            r.money.length;
+                        final columns = math.min(
+                            metricCount,
                             MediaQuery.textScalerOf(context).scale(1) > 1.4
                                 ? 1
                                 : constraints.maxWidth >= 1100
@@ -701,7 +748,7 @@ class _ReportTabState extends State<ReportTab> {
                                         ? 4
                                         : constraints.maxWidth >= 350
                                             ? 2
-                                            : 1;
+                                            : 1);
                         final width =
                             (constraints.maxWidth - (columns - 1) * 12) /
                                 columns;
@@ -738,7 +785,7 @@ class _ReportTabState extends State<ReportTab> {
                     ),
                     const SizedBox(height: 12),
                     ..._timelines(r),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 24),
                     Text(
                       ReportStrings.overview,
                       style: Theme.of(context).textTheme.titleMedium,
@@ -827,23 +874,30 @@ class _ReportTabState extends State<ReportTab> {
         width: width,
         child: Card(
           elevation: 0,
-          color: Theme.of(context)
-              .colorScheme
-              .primaryContainer
-              .withValues(alpha: 0.35),
+          margin: EdgeInsets.zero,
+          color: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+                color: Theme.of(context)
+                    .colorScheme
+                    .outlineVariant
+                    .withValues(alpha: .55)),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 4),
+                Text(label,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 12),
                 Text(
                   value,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary),
                 ),
               ],
             ),
