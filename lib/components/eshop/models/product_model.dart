@@ -14,6 +14,9 @@ import '../eshop_columns.dart';
 class ProductModel extends ITrinaRowModel {
   @override
   int? id;
+  String? deleteBlockedReason;
+  bool? deletionAllowed;
+  bool get canDelete => id == null || deletionAllowed == true;
   DateTime? createdAt;
   DateTime? updatedAt;
   String? title;
@@ -165,6 +168,8 @@ class ProductModel extends ITrinaRowModel {
 
   ProductModel({
     this.id,
+    this.deleteBlockedReason,
+    this.deletionAllowed,
     this.createdAt,
     this.updatedAt,
     this.title,
@@ -195,6 +200,8 @@ class ProductModel extends ITrinaRowModel {
 
     return ProductModel(
       id: json[TbEshop.products.id],
+      deleteBlockedReason: json['delete_blocked_reason'],
+      deletionAllowed: json['can_delete'],
       createdAt: json[TbEshop.products.created_at] != null
           ? DateTime.parse(json[TbEshop.products.created_at])
           : null,
@@ -250,7 +257,8 @@ class ProductModel extends ITrinaRowModel {
         data[TbEshop.products.data_deposit] = depositMap;
       } else {
         if (data[TbEshop.products.data_deposit] is Map) {
-          var depositMap = Map<String, dynamic>.from(data[TbEshop.products.data_deposit]);
+          var depositMap =
+              Map<String, dynamic>.from(data[TbEshop.products.data_deposit]);
           depositMap.remove('amount');
           if (depositMap.isEmpty) {
             data.remove(TbEshop.products.data_deposit);

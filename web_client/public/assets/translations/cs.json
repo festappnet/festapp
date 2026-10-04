@@ -421,7 +421,9 @@
     "depositDeadline": "Doplatek do",
     "depositPaymentDeadline": "Záloha do",
     "depositOnSiteLabel": "Na místě",
-    "paymentReference": "Reference platby"
+    "paymentReference": "Reference platby",
+    "shortTitleHelp": "Název pro tisk na vstupence, například u večeře. Pokud není vyplněný, použije se plný název produktu.",
+    "maxHelp": "Maximální počet kusů produktu, které lze objednat. Prázdná hodnota nebo 0 znamená bez omezení."
   },
   "FormsFeature": {
     "showDepositDescription": "Zobrazit popisek zálohy / doplatku u produktů",
@@ -514,7 +516,17 @@
     "validationMode": "Režim validace",
     "tabDesign": "Design",
     "textFieldType": "Text",
-    "viewMore": "Zobrazit více"
+    "viewMore": "Zobrazit více",
+    "deleteBlocked": {
+      "responses": "Toto pole již má odpověď, proto ho nelze smazat.",
+      "orders": "Produkt již byl použit v objednávce, proto ho nelze smazat.",
+      "blueprint": "Produkt je použit v plánku míst, proto ho nelze smazat.",
+      "inventory": "Produkt je propojen se skladem, proto ho nelze smazat.",
+      "shared": "Produktová skupina je použita i v jiném poli nebo formuláři.",
+      "changed": "Položka se mezitím změnila. Načtěte formulář znovu.",
+      "unknown": "Použití položky nebylo ověřeno. Načtěte formulář znovu."
+    },
+    "deleteSaveFailed": "Formulář nebyl uložen. {} Rozpracované změny zůstaly v editoru."
   },
   "FeatureOrders": {
     "searchUnpairedTransactions": "Vyhledat nespárované transakce",

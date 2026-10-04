@@ -1,0 +1,11 @@
+# Prepared form editor release
+
+Status: validated, pending backend migration and vstupenky.online rollout. User explicitly requested the remaining prepared changes, including form-box deletion, only on vstupenky.online.
+
+Prepared changes were ported from the user's older dirty working branch into a clean worktree on current canonical main using three-way application. The user's working tree was not edited. Current main's canonical email enqueue paths and newer report were preserved; the older report draft and already released editor/navigation changes were not reapplied. Translation additions were merged by changed keys, preserving current report text.
+
+Included: removal of saved unused form boxes/product groups/products through explicit deleted-ID payloads; disabled deletion controls with reasons for responses, order history, blueprint seats, inventory and shared references; transaction-time eligibility checks and form/product locks; older payloads that omit fields remain compatible. Product deletion also removes its default selection correctly. Products have short-title/maximum help and a narrower type column; the Users group column respects the user-groups feature. Existing ticket short-title rendering has new regression coverage.
+
+The runtime migration updates get_form_for_edit, versioned update_form/create_ticket_order implementation bodies and update_order_responses while preserving the public command wrappers. It was regenerated from the merged canonical bodies, including canonical e-mail enqueue logic. No Edge Function or separate worker is added.
+
+Validation: full test_all.sh passed (110 SQL files, 1060 Flutter tests with one skip, 242 Deno tests, web/automation checks and three worker integration tests; remote credential-dependent cases skipped). The form deletion SQL regression additionally uses real editor permissions, covering denied saves, late answers, historical data, blueprint/inventory/shared/order references, wrong-form IDs and older partial payloads. Changed-file analysis has no errors/warnings (existing informational diagnostics remain). A fresh protected production dump and old function definitions are staged under /var/lib/festapp-rehearsal-evidence/form-editor-safe-deletion-20261004. Production results will follow after deployment.

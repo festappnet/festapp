@@ -66,7 +66,7 @@ BEGIN
         SELECT id, occasion, bank_account, deadline_duration_seconds, data, is_open
         INTO form_id, occasion_id, bank_account_id, form_deadline_duration, form_data, is_open_val
         FROM public.forms
-        WHERE key = form_key;
+        WHERE key = form_key FOR SHARE;
 
         IF occasion_id IS NULL THEN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1003, 'message', 'Form is not linked to any occasion')::TEXT;
