@@ -1,7 +1,8 @@
 import {
-  deliverEmail,
-  EmailTemplateNotFoundError,
-} from "../_shared/emailDelivery.ts";
+  awaitEmailAccepted,
+  prepareAccountEmail,
+} from "../_shared/emailQueueClient.ts";
+import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
 import { translatePlatformLinks } from "../_shared/translatePlatformLinks.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
@@ -35,13 +36,17 @@ Deno.serve(async (req) => {
     const occasionId = reqData.oc; // ID of the occasion
     if (
       typeof userId !== "string" ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId) ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        .test(userId) ||
       !Number.isSafeInteger(occasionId) || occasionId <= 0
     ) {
-      return new Response(JSON.stringify({ error: "Invalid input parameters" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
+      return new Response(
+        JSON.stringify({ error: "Invalid input parameters" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
+      );
     }
 
     const supabaseUser = createClient(
@@ -56,22 +61,6 @@ Deno.serve(async (req) => {
 
     // Generate a 6-digit sign in code.
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const { data: answer, error: passwordSetError } = await supabaseUser.rpc(
-      "reset_user_password",
-      {
-        p_user_id: userId,
-        p_password: code,
-      },
-    );
-
-    if (passwordSetError || !answer) {
-      console.error("Password change has failed.");
-      return new Response(JSON.stringify({ error: "Password change fail" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 403,
-      });
-    }
 
     // Retrieve occasion user data.
     const occasionUser = await supabaseAdmin
@@ -164,14 +153,34 @@ Deno.serve(async (req) => {
     }
 
     try {
-      const delivery = await deliverEmail({
+      const emailInput = {
         to: userEmail,
         recipientUser: userId,
         templateCode: "SIGN_IN_CODE",
         context,
         substitutions: subs,
         from: `${appName} | Festapp <${_DEFAULT_EMAIL}>`,
-      });
+      };
+
+      const snapshot = await prepareAccountEmail(emailInput);
+      const { data: queued, error: queueError } = await supabaseUser.rpc(
+        "reset_password_and_enqueue_email",
+        {
+          p_user: userId,
+          p_password: code,
+          p_occasion: occasionId,
+          ...snapshot,
+          p_dedupe: `sign-in:${userId}:${occasionId}:${
+            reqData.requestId ?? Math.floor(Date.now() / 300000)
+          }`,
+          p_expires: new Date(Date.now() + 600000).toISOString(),
+        },
+      );
+      if (queueError) {
+        throw new Error("Password change or email enqueue failed");
+      }
+      await awaitEmailAccepted(queued.message_id);
+      const delivery = { logged: true };
       if (!delivery.logged) {
         return new Response(
           JSON.stringify({

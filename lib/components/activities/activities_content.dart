@@ -5,12 +5,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/activities/activity_model.dart';
 import 'package:fstapp/components/activities/db_activities.dart';
 import 'package:fstapp/widgets/detail_dialog.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
-import 'package:fstapp/router_service.dart';
+import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -41,6 +40,11 @@ class ActivitiesContent extends StatefulWidget {
 
 class _ActivitiesContentState extends State<ActivitiesContent>
     with SingleTickerProviderStateMixin {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
+
   EditDataBundle? _bundle;
   DateTime? _timelineStart, _timelineEnd;
   late final ActivityHistoryHelper _historyHelper;
@@ -127,6 +131,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
   @override
   void dispose() {
+    _htmlSave.dispose();
     _hideAssignmentDetailOverlay();
     _autosaveDebounce?.cancel();
     _mainController.dispose();
@@ -200,7 +205,29 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
   bool _isShowingConflictDialog = false;
 
-  Future<void> _autosave() async {
+  Future<EditDataBundle> _prepareActivityHtml() async {
+    final bundle = _bundle!;
+    final snapshot = EditDataBundle(id: bundle.id, parentHistoryId: bundle.parentHistoryId,
+      aggregateVersion: bundle.aggregateVersion, events: bundle.events, places: bundle.places,
+      users: bundle.users, assignmentPlaceLinks: bundle.assignmentPlaceLinks,
+      assignmentEventLinks: bundle.assignmentEventLinks, activityAssignments: bundle.activityAssignments,
+      activities: bundle.activities?.map((activity) => ActivityModel.fromJson(activity.toJson())).toList());
+    for (final activity in snapshot.activities ?? <ActivityModel>[]) {
+      activity.description = await _htmlSave.prepare(activity.description ?? '', HtmlMediaOwner.occasion(widget.occasionId));
+    }
+    return snapshot;
+  }
+
+  Future<void>? _autosaving;
+  Future<void> _autosave() {
+    if (_autosaving != null) return _autosaving!;
+    if (_isPublishing || _htmlSave.media.hasUnknownUploads) return Future.value();
+    final operation = _performAutosave();
+    _autosaving = operation;
+    return operation.whenComplete(() => _autosaving = null);
+  }
+
+  Future<void> _performAutosave() async {
     if (!mounted || _bundle == null || _isShowingConflictDialog) return;
 
     setState(() {
@@ -210,7 +237,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     bool didSaveSuccessfully = false;
     try {
       final response =
-          await DbActivities.autosaveActivities(widget.occasionId, _bundle!);
+          await DbActivities.autosaveActivities(widget.occasionId, await _prepareActivityHtml());
 
       if (response != null && response['code'] == 409) {
         final conflictData = response['data'] as Map<String, dynamic>?;
@@ -1357,17 +1384,8 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   }
 
   void _showActivityDescriptionEditor(ActivityModel activity) {
-    RouterService.navigatePageInfo(
-      context,
-      HtmlEditorRoute(
-        content: {
-          HtmlEditorPage.parContent: activity.description,
-          HtmlEditorPage.parLoad: () async => activity.description,
-        },
-        occasionId: widget.occasionId,
-      ),
-    ).then((value) {
-      if (value != null && value is String && value != activity.description) {
+    RichHtmlEditorDialog.show(context, initialHtml: activity.description, loadHtml: () async => activity.description, owner: HtmlMediaOwner.occasion(widget.occasionId), coordinator: _htmlSave).then((value) {
+      if (value != null && value != activity.description) {
         setState(() {
           activity.description = value;
         });
@@ -1376,8 +1394,8 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildHtmlParent(BuildContext context) {
     if (_bundle == null || _timelineStart == null || _timelineEnd == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1633,7 +1651,10 @@ class _ActivitiesContentState extends State<ActivitiesContent>
                                 // Cancel any pending autosave operation to prevent race conditions.
                                 _autosaveDebounce?.cancel();
 
+                                if (!await confirmHtmlUploadRetry(context, _htmlSave.media, html: _bundle?.activities?.map((activity) => activity.description ?? '').join() ?? '') || !mounted) return;
                                 setState(() => _isPublishing = true);
+                                await _autosaving;
+                                if (!mounted) return;
                                 _bundle!.activities ??= [];
                                 for (var activityInBundle
                                     in _bundle!.activities!) {
@@ -1653,7 +1674,8 @@ class _ActivitiesContentState extends State<ActivitiesContent>
                                 }
                                 try {
                                   await DbActivities.saveActivitiesForEdit(
-                                      context, widget.occasionId, _bundle!);
+                                      context, widget.occasionId, await _prepareActivityHtml());
+                                  _htmlSave.markSaved();
                                   await DbActivities.deleteAutosave(
                                       widget.occasionId);
                                   _isAutosaveLoaded = false;

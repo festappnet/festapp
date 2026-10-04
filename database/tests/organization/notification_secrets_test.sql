@@ -29,15 +29,20 @@ BEGIN
   ) VALUES (v_org, 'server-only-test-value');
 
   PERFORM set_config('request.jwt.claim.role', 'service_role', true);
+  SET LOCAL ROLE service_role;
   v_config := public.get_organization_notification_delivery_config(v_org);
   PERFORM assert_eq(v_config->>'onesignal_app_id', 'test-app',
     'service role should receive the OneSignal app id');
   PERFORM assert_eq(v_config->>'onesignal_rest_api_key',
     'server-only-test-value',
     'service role should receive the server-only credential');
+  RESET ROLE;
 
   PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
   BEGIN
+    -- JWT claims alone do not impersonate a caller on the postgres maintenance
+    -- connection. Exercise the RPC's actual database execution privilege too.
+    SET LOCAL ROLE authenticated;
     PERFORM public.get_organization_notification_delivery_config(v_org);
     PERFORM assert_fail('authenticated callers must not receive delivery credentials');
   EXCEPTION WHEN insufficient_privilege THEN

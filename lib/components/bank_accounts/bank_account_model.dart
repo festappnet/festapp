@@ -15,6 +15,7 @@ class BankAccountModel {
   final String? pairingCode;
   final String? accountNumberHumanReadable;
   final DateTime? lastFetchTime;
+  final DateTime? lastFioFetchTime;
 
   BankAccountModel({
     required this.id,
@@ -30,6 +31,7 @@ class BankAccountModel {
     this.linkedUnits = const [],
     this.accountNumberHumanReadable,
     this.lastFetchTime,
+    this.lastFioFetchTime,
     this.pairingCode,
   });
 
@@ -57,6 +59,9 @@ class BankAccountModel {
               .toList() ??
           [],
       accountNumberHumanReadable: json['account_number_human_readable'],
+      lastFioFetchTime: json['last_fio_fetch_time'] != null
+          ? DateTime.parse(json['last_fio_fetch_time'])
+          : null,
       lastFetchTime: json['last_fetch_time'] != null
           ? DateTime.parse(json['last_fetch_time'])
           : null,
@@ -79,6 +84,7 @@ class BankAccountModel {
       'token_expiry_date': tokenExpiryDate?.toIso8601String(),
       'supported_currencies': supportedCurrencies,
       'account_number_human_readable': accountNumberHumanReadable,
+      'last_fio_fetch_time': lastFioFetchTime?.toIso8601String(),
       'last_fetch_time': lastFetchTime?.toIso8601String(),
       'pairing_code': pairingCode,
     };
@@ -98,6 +104,7 @@ class BankAccountModel {
     List<String>? linkedUnits,
     String? accountNumberHumanReadable,
     DateTime? lastFetchTime,
+    DateTime? lastFioFetchTime,
     String? pairingCode,
   }) {
     return BankAccountModel(
@@ -115,6 +122,7 @@ class BankAccountModel {
       accountNumberHumanReadable:
           accountNumberHumanReadable ?? this.accountNumberHumanReadable,
       lastFetchTime: lastFetchTime ?? this.lastFetchTime,
+      lastFioFetchTime: lastFioFetchTime ?? this.lastFioFetchTime,
       pairingCode: pairingCode ?? this.pairingCode,
     );
   }

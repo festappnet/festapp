@@ -230,6 +230,7 @@ class OccasionUserModel extends ITrinaRowModel {
       UserColumns.APPROVED: TrinaCell(value: isApproved.toString()),
       UserColumns.APPROVER: TrinaCell(value: isApprover.toString()),
       UserColumns.ROLE: TrinaCell(value: role?.toString() ?? ""),
+      UserColumns.EMAIL_HISTORY: TrinaCell(value: ''),
       UserColumns.EMAIL:
           TrinaCell(value: data?[Tb.occasion_users.data_email] ?? ""),
       UserColumns.NAME:

@@ -1,11 +1,12 @@
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
-import { authorizeRequest, AuthError } from "../_shared/auth.ts";
+import { AuthError, authorizeRequest } from "../_shared/auth.ts";
 
 const _PROJECT_URL = Deno.env.get("PROJECT_URL")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
@@ -24,15 +25,19 @@ Deno.serve(async (req) => {
     const { requestSecret } = requestData;
     await authorizeRequest({ requestSecret });
 
-    const { data: bankAccounts, error: bankAccountsError } = await supabaseAdmin.rpc("get_fetchable_bank_accounts_with_t_count");
+    const { data: bankAccounts, error: bankAccountsError } = await supabaseAdmin
+      .rpc("get_fetchable_bank_accounts_with_t_count");
     if (bankAccountsError) {
-      console.error("Error retrieving fetchable bank accounts", bankAccountsError);
+      console.error(
+        "Error retrieving fetchable bank accounts",
+        bankAccountsError,
+      );
       return new Response(
         JSON.stringify({ error: "Failed to retrieve fetchable bank accounts" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
-        }
+        },
       );
     }
 
@@ -42,19 +47,23 @@ Deno.serve(async (req) => {
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
-        }
+        },
       );
     }
 
     // Filter accounts to process only those with type "FIO".
-    const fioAccounts = bankAccounts.filter((account: any) => account.account_type === "FIO");
+    const fioAccounts = bankAccounts.filter((account: any) =>
+      account.account_type === "FIO"
+    );
     if (fioAccounts.length === 0) {
       return new Response(
-        JSON.stringify({ message: "No FIO bank accounts available for fetching" }),
+        JSON.stringify({
+          message: "No FIO bank accounts available for fetching",
+        }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
-        }
+        },
       );
     }
 
@@ -73,106 +82,115 @@ Deno.serve(async (req) => {
           startDate.setDate(startDate.getDate() - 90);
           const formattedStartDate = startDate.toISOString().split("T")[0];
 
-          const setDateUrl = `https://fioapi.fio.cz/v1/rest/set-last-date/${bankSecret}/${formattedStartDate}/`;
+          const setDateUrl =
+            `https://fioapi.fio.cz/v1/rest/set-last-date/${bankSecret}/${formattedStartDate}/`;
           const setDateResponse = await fetch(setDateUrl);
           if (!setDateResponse.ok) {
-              // Log the error but proceed anyway, as the subsequent 'last' fetch might still work or provide a useful error.
-              console.error(`Failed to set last date for account ${bankAccountId}. Status: ${setDateResponse.status}`);
-              fetchResults.push({ bankAccountId, error: `Failed to set Fio API pointer with status: ${setDateResponse.status}` });
+            // Log the error but proceed anyway, as the subsequent 'last' fetch might still work or provide a useful error.
+            console.error(
+              `Failed to set last date for account ${bankAccountId}. Status: ${setDateResponse.status}`,
+            );
+            fetchResults.push({
+              bankAccountId,
+              error:
+                `Failed to set Fio API pointer with status: ${setDateResponse.status}`,
+            });
           }
         }
 
         // Always fetch the latest transactions.
         // If the date was just set, this will get everything since that date.
         // If transactions already exist in our DB, this gets transactions since the last fetch.
-        const apiUrl = `https://fioapi.fio.cz/v1/rest/last/${bankSecret}/transactions.json`;
+        const apiUrl =
+          `https://fioapi.fio.cz/v1/rest/last/${bankSecret}/transactions.json`;
 
         const apiResponse = await fetch(apiUrl);
 
         if (!apiResponse.ok) {
-            console.error(`Fio API request failed for account ${bankAccountId} with status: ${apiResponse.status}`);
-            fetchResults.push({ bankAccountId, error: `Fio API request failed with status: ${apiResponse.status}` });
-            continue; // Move to the next account
+          console.error(
+            `Fio API request failed for account ${bankAccountId} with status: ${apiResponse.status}`,
+          );
+          fetchResults.push({
+            bankAccountId,
+            error: `Fio API request failed with status: ${apiResponse.status}`,
+          });
+          continue; // Move to the next account
         }
 
         const transactionData = await apiResponse.json();
-        const transactions = transactionData?.accountStatement?.transactionList?.transaction || [];
+        const transactions =
+          transactionData?.accountStatement?.transactionList?.transaction || [];
 
         if (transactions.length > 0) {
           // Insert transactions using the "insert_transactions" RPC.
-          const { data: insertResult, error: insertError } = await supabaseAdmin.rpc("insert_transactions", {
-            transactions,
-            bank_account_id: bankAccountId,
-          });
+          const { data: insertResult, error: insertError } = await supabaseAdmin
+            .rpc("insert_transactions", {
+              transactions,
+              bank_account_id: bankAccountId,
+            });
           if (insertError) {
-            console.error(`Error inserting transactions for account ${bankAccountId}:`, insertError);
-            fetchResults.push({ bankAccountId, error: "Failed to insert transactions" });
+            console.error(
+              `Error inserting transactions for account ${bankAccountId}:`,
+              insertError,
+            );
+            fetchResults.push({
+              bankAccountId,
+              error: "Failed to insert transactions",
+            });
           } else {
-            fetchResults.push({ bankAccountId, message: "Transactions processed successfully", result: insertResult });
+            fetchResults.push({
+              bankAccountId,
+              message: "Transactions processed successfully",
+              result: insertResult,
+            });
           }
         } else {
-          fetchResults.push({ bankAccountId, message: "No new transactions to process" });
+          fetchResults.push({
+            bankAccountId,
+            message: "No new transactions to process",
+          });
         }
 
         // Update the last fetch time for this bank account.
-        const { error: updateError } = await supabaseAdmin.rpc("set_last_fetch_time", { p_bank_account_id: bankAccountId });
+        const { error: updateError } = await supabaseAdmin.rpc(
+          "set_last_fetch_time",
+          { p_bank_account_id: bankAccountId },
+        );
         if (updateError) {
-          console.error(`Error updating last fetch time for account ${bankAccountId}:`, updateError);
+          console.error(
+            `Error updating last fetch time for account ${bankAccountId}:`,
+            updateError,
+          );
           // Note: This error is pushed in addition to any transaction processing results.
-          fetchResults.push({ bankAccountId, updateError: "Failed to update last fetch time" });
+          fetchResults.push({
+            bankAccountId,
+            updateError: "Failed to update last fetch time",
+          });
         }
       } catch (error) {
-        console.error(`Unexpected error processing account ${bankAccountId}:`, error);
-        fetchResults.push({ bankAccountId, error: "Unexpected error occurred" });
+        console.error(
+          `Unexpected error processing account ${bankAccountId}:`,
+          error,
+        );
+        fetchResults.push({
+          bankAccountId,
+          error: "Unexpected error occurred",
+        });
       }
     }
 
-    // --- PART 2: Retrieve Orders and Call Send-Tickets Endpoint ---
+    const finalResults = { fetchResults };
 
-    // Retrieve all orders that are paid and eligible for ticket sending.
-    const { data: orders, error: ordersError } = await supabaseAdmin.rpc("get_orders_for_ticket_sending");
-    let sendTicketResults = [];
-    if (ordersError) {
-      console.error("Error retrieving orders for ticket sending:", ordersError);
-    } else if (orders && orders.length > 0) {
-      for (const order of orders) {
-        // Check if the elapsed time is nearing 400 seconds (using a 10 second buffer).
-        if (Date.now() - startTime >= maxDuration - 10000) {
-          console.warn("Approaching maximum execution time. Skipping remaining tickets.");
-          break;
-        }
-
-        const orderId = order.order_id;
-        const email = order.order_email;
-        try {
-          // Call the send-tickets endpoint with orderId, email and the same request secret.
-          const response = await fetch(_PROJECT_URL + "/functions/v1/send-tickets", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requestSecret, orderId, email }),
-          });
-          const responseData = await response.json();
-          sendTicketResults.push({ orderId, result: responseData });
-        } catch (err) {
-          console.error(`Error sending tickets for order ${orderId}:`, err);
-          sendTicketResults.push({
-            orderId,
-            error: err instanceof Error ? err.message : "Ticket delivery failed",
-          });
-        }
-      }
-    }
-
-    // Combine results and return the final outcome.
-    const finalResults = {
-      fetchResults,
-      sendTicketResults,
-    };
-
-    return new Response(JSON.stringify({ message: "Operations completed", results: finalResults }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        message: "Operations completed",
+        results: finalResults,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      },
+    );
   } catch (error) {
     // Handle both custom AuthError and any other unexpected errors.
     const isAuthError = error instanceof AuthError;
@@ -181,7 +199,7 @@ Deno.serve(async (req) => {
       ? error.message
       : "Unexpected error occurred";
 
-    console.error(`Error [${status}]: ${message}`, isAuthError ? '' : error);
+    console.error(`Error [${status}]: ${message}`, isAuthError ? "" : error);
 
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
