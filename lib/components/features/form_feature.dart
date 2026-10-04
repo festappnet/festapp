@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 // form_feature.dart
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart'; // Import AppConfig
@@ -99,6 +100,11 @@ class _FormFeatureEditor extends StatefulWidget {
 }
 
 class _FormFeatureEditorState extends State<_FormFeatureEditor> {
+  void _refresh(VoidCallback change) {
+    setState(change);
+    EditorDraftScope.changed(context);
+  }
+
   late final TextEditingController _externalLinkController;
   late final TextEditingController _externalPriceController;
   late final TextEditingController _reserveButtonController;
@@ -151,7 +157,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
           title: Text(FormStrings.labelUseExternalForm),
           value: widget.formFeature.formUseExternal ?? false,
           onChanged: (v) {
-            setState(() {
+            _refresh(() {
               widget.formFeature.formUseExternal = v;
               // When toggling, clear the fields of the other mode to prevent confusion.
               if (v) {
@@ -209,7 +215,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (_) =>
-                      setState(() {}), // Rebuild for live validation
+                      _refresh(() {}), // Rebuild for live validation
                   onSaved: (val) {
                     final days = int.tryParse(val ?? '');
                     widget.formFeature.deadlineDurationSeconds =
@@ -222,7 +228,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                 subtitle: Text(FormStrings.helperReminderEnabled),
                 value: widget.formFeature.reminderIsEnabled ?? true,
                 onChanged: (v) =>
-                    setState(() => widget.formFeature.reminderIsEnabled = v),
+                    _refresh(() => widget.formFeature.reminderIsEnabled = v),
               ),
               if (widget.formFeature.reminderIsEnabled ?? true)
                 Padding(
@@ -241,7 +247,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                     ),
                     keyboardType: TextInputType.number,
                     onChanged: (_) =>
-                        setState(() {}), // Rebuild for live validation
+                        _refresh(() {}), // Rebuild for live validation
                     onSaved: (val) {
                       final days = int.tryParse(val ?? '');
                       widget.formFeature.reminderIntervalSeconds =

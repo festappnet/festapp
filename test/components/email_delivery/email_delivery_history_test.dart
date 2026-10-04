@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/views/order_state_display.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +14,7 @@ import 'package:trina_grid/trina_grid.dart';
 Map<String, dynamic> message(int id) => {
       'id': id,
       'message_id': 'message-$id',
-      'order_id': 7,
+      'order_id': 6500,
       'message_kind': 'order_tickets',
       'state': 'unknown',
     };
@@ -87,6 +89,12 @@ void main() {
     final grid = tester.widget<SingleTableDataGrid<EmailDeliveryModel>>(
         find.byType(SingleTableDataGrid<EmailDeliveryModel>));
     final c = grid.controller;
+    expect(
+        c.columns.singleWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).type,
+        isA<TrinaColumnTypeText>());
+    expect(find.text('6500'), findsOneWidget);
+    expect(find.text('6,500'), findsNothing);
+    expect(find.byType(OrderStateDisplay), findsOneWidget);
     expect(c.firstColumnType, DataGridFirstColumn.none);
     expect(c.columns.every((column) => column.readOnly), isTrue);
     expect(c.actionsExtended!.isAddActionPossible!(), isFalse);

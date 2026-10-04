@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -10,7 +12,6 @@ import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
-import 'package:fstapp/theme_config.dart';
 import 'package:collection/collection.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
@@ -53,6 +54,19 @@ class BlueprintTab extends StatefulWidget {
 }
 
 class _BlueprintTabState extends State<BlueprintTab> {
+  final _snapshot = EditorSnapshot();
+  String? _prototypeBaseline;
+  Object? get _draft => blueprint == null
+      ? null
+      : {
+          'title': blueprint!.title,
+          'data': blueprint!.data,
+          'configuration': blueprint!.configuration,
+          'groups': blueprint!.groups,
+          'background_svg': blueprint!.backgroundSvg,
+          'objects':
+              _seatLayoutController.slots.map((s) => s.seat).nonNulls.toList(),
+        };
   BlueprintModel? blueprint;
   BlueprintGroupModel? currentGroup;
   String? occasionLink;
@@ -234,25 +248,13 @@ class _BlueprintTabState extends State<BlueprintTab> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        color: ThemeConfig.appBarColor(),
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: _canEdit ? loadData : null,
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-              ),
-              child: Text(CommonStrings.reset),
-            ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed: _canEdit ? saveChanges : null,
-              child: Text(CommonStrings.save),
-            ),
-          ],
+      bottomNavigationBar: AnimatedBuilder(
+        animation: _seatLayoutController,
+        builder: (context, _) => EditorActionBar(
+          hasChanges: blueprint != null && _snapshot.differs(_draft),
+          enabled: _canEdit,
+          onSave: saveChanges,
+          onDiscard: loadData,
         ),
       ),
     );
@@ -689,7 +691,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
     setState(() {});
   }
 
-  void saveChanges() async {
+  Future<void> saveChanges() async {
     if (blueprint == null) return;
     try {
       // Ensure blueprint model objects are in sync
@@ -704,6 +706,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
       if (_isPrototype) {
         widget.onPrototypeSave?.call(blueprint!);
+        _prototypeBaseline = jsonEncode(blueprint);
       } else {
         await DbForms.updateBlueprint(blueprint!);
       }
@@ -719,7 +722,9 @@ class _BlueprintTabState extends State<BlueprintTab> {
   Future<void> loadData() async {
     _resetAllSelections(); // Ensure clean state
     blueprint = _isPrototype
-        ? widget.prototypeBlueprint
+        ? BlueprintModel.fromJson(jsonDecode(
+                _prototypeBaseline ??= jsonEncode(widget.prototypeBlueprint))
+            as Map<String, dynamic>)
         : await DbForms.getBlueprintForEdit(occasionLink!);
     if (blueprint != null) {
       _seatLayoutController.loadPlan(
@@ -735,6 +740,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
         },
       );
     }
+    _snapshot.accept(_draft);
     if (mounted) {
       setState(() {});
     }

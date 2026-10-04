@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/theme_config.dart';
 
@@ -196,6 +197,11 @@ class _ScheduleFeatureForm extends StatefulWidget {
 }
 
 class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
+  void _refresh(VoidCallback change) {
+    setState(change);
+    EditorDraftScope.changed(context);
+  }
+
   late String _scheduleType;
   late bool _enableChildren;
   late String _breakDefinition;
@@ -243,7 +249,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
       initialTime: initialTime,
     );
     if (picked != null && picked != initialTime) {
-      setState(() {
+      _refresh(() {
         onTimeChanged(picked);
       });
     }
@@ -274,7 +280,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
   }
 
   void _addEventType() {
-    setState(() {
+    _refresh(() {
       _eventTypes.add(EventType(
           code: 'new_type_${_eventTypes.length + 1}',
           title: FeaturesStrings.eventTypeDefaultTitle,
@@ -283,14 +289,14 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
   }
 
   void _removeEventType(int index) {
-    setState(() {
+    _refresh(() {
       _eventTypes.removeAt(index);
     });
   }
 
   void _updateEventType(int index, EventType updatedType) {
     if (index >= 0 && index < _eventTypes.length) {
-      setState(() {
+      _refresh(() {
         _eventTypes[index] = updatedType;
       });
     }
@@ -304,8 +310,8 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
       children: [
         DropdownButtonFormField<String>(
             initialValue: _scheduleType,
-            decoration: InputDecoration(
-                labelText: FeaturesStrings.labelScheduleType),
+            decoration:
+                InputDecoration(labelText: FeaturesStrings.labelScheduleType),
             items: <String>[
               ScheduleFeature.scheduleTypeBasic,
               ScheduleFeature.scheduleTypeAdvanced,
@@ -318,7 +324,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
                 .toList(),
             onChanged: (val) {
               if (val != null) {
-                setState(() => _scheduleType = val);
+                _refresh(() => _scheduleType = val);
               }
             },
             onSaved: (val) {
@@ -332,7 +338,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
           subtitle: Text(FeaturesStrings.subtitleEnableChildren),
           value: _enableChildren,
           onChanged: (bool value) {
-            setState(() {
+            _refresh(() {
               _enableChildren = value;
               widget.feature.enableChildren =
                   value; // Directly update the feature object
@@ -356,7 +362,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
                 .toList(),
             onChanged: (val) {
               if (val != null) {
-                setState(() => _breakDefinition = val);
+                _refresh(() => _breakDefinition = val);
               }
             },
             onSaved: (val) {
@@ -471,8 +477,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
             TextFormField(
               initialValue: eventType.code,
               decoration: InputDecoration(
-                  labelText: FeaturesStrings.labelEventTypeCode,
-                  filled: true),
+                  labelText: FeaturesStrings.labelEventTypeCode, filled: true),
               onChanged: (value) {
                 _updateEventType(
                     index,
@@ -486,8 +491,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
             TextFormField(
               initialValue: eventType.title,
               decoration: InputDecoration(
-                  labelText: FeaturesStrings.labelEventTypeTitle,
-                  filled: true),
+                  labelText: FeaturesStrings.labelEventTypeTitle, filled: true),
               onChanged: (value) {
                 _updateEventType(
                     index,
