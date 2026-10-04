@@ -448,10 +448,9 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         child: Text(OrdersStrings.priceRefreshAction),
       ),
       if (widget.onOpenWaves != null)
-        OutlinedButton.icon(
+        OutlinedButton(
           onPressed: busy ? null : () => close(openWaves: true),
-          icon: const Icon(Icons.timeline),
-          label: Text(OrdersStrings.priceWaves),
+          child: Text(OrdersStrings.priceWaves),
         ),
       if (widget.canEdit && !formOpen)
         FilledButton(
@@ -508,7 +507,12 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         ),
         Padding(
           padding: const EdgeInsets.all(12),
-          child: Wrap(alignment: WrapAlignment.end, children: actions),
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: actions,
+          ),
         ),
       ],
     );

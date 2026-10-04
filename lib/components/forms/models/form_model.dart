@@ -1,4 +1,5 @@
 import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
@@ -50,6 +51,11 @@ class FormModel {
   String? link;
   // UPDATED: Now non-nullable.
   List<FormFieldModel> relatedFields;
+  bool get usesSeatSelection => relatedFields.any((field) =>
+      field.isTicketField == true &&
+      field.type == FormHelper.fieldTypeSpot &&
+      field.isHidden != true);
+
   final Set<int> deletedFieldIds = {};
   final Set<int> deletedProductIds = {};
 

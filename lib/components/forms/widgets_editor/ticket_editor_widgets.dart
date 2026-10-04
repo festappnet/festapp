@@ -22,15 +22,10 @@ class TicketEditorWidgets {
     return '$count / $maxStr';
   }
 
-  static String _emptyProductTypesMessage(FormModel form) {
-    final hasBlueprintProducts = form.relatedFields.any((field) =>
-        field.isTicketField == true &&
-        ((field.type == FormHelper.fieldTypeSpot && field.isHidden != true) ||
-            field.productType?.type == ProductModel.spotType));
-    return hasBlueprintProducts
-        ? FormStrings.productsInBlueprint
-        : FormStrings.noProductTypes;
-  }
+  static String _emptyProductTypesMessage(FormModel form) =>
+      form.usesSeatSelection
+          ? FormStrings.productsInBlueprint
+          : FormStrings.noProductTypes;
 
   /// Helper to get the `max_tickets` value, defaulting to 1.
   static int _getMaxTickets(FormFieldModel ticketField) {
@@ -63,7 +58,8 @@ class TicketEditorWidgets {
         .where((f) =>
             f.isTicketField == true &&
             f.type == FormHelper.fieldTypeProductType &&
-            f.productType?.type != ProductModel.spotType)
+            (f.productType?.type != ProductModel.spotType ||
+                !form.usesSeatSelection))
         .toList();
     if (productTypeFields.isEmpty) {
       children.add(Padding(
@@ -109,7 +105,8 @@ class TicketEditorWidgets {
         .where((f) =>
             f.isTicketField == true &&
             f.type == FormHelper.fieldTypeProductType &&
-            f.productType?.type != ProductModel.spotType)
+            (f.productType?.type != ProductModel.spotType ||
+                !form.usesSeatSelection))
         .toList();
     productTypeFields.sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
     children.add(Text(
@@ -146,7 +143,8 @@ class TicketEditorWidgets {
 
             final availableProductTypes = allProductTypes
                 .where((pt) =>
-                    pt.type != ProductModel.spotType &&
+                    (pt.type != ProductModel.spotType ||
+                        !form.usesSeatSelection) &&
                     !existingPtIds.contains(pt.id))
                 .toList();
 
