@@ -69,6 +69,7 @@ class FeatureConstants {
   static const String ticketDarkColor = "darkColor";
   static const String ticketBackground = "background";
   static const String ticketType = "ticket_type";
+  static const String ticketLayout = "layout";
   static const String ticketCanScanManually = "can_scan_manually";
   static const String ticketShowHiddenNote = "show_hidden_note";
 

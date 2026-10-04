@@ -11,9 +11,9 @@ const html = await readFile(
 const moduleSource = [...html.matchAll(
   /<script type="module">([\s\S]*?)<\/script>/g,
 )].map((match) => match[1]).find((source) =>
-  source.includes('FESTAPP_CLIENT_VERSION'));
+  source.includes('serviceWorker.register'));
 
-test('production web client reports its exact version from one executable module scope', async () => {
+test('web client reports before module loading and keeps its worker generation current', async () => {
   assert.ok(moduleSource, 'PWA adapter module is missing');
   const dom = new JSDOM('<!doctype html><body></body>', {
     url: 'https://app.test/',
@@ -41,11 +41,15 @@ test('production web client reports its exact version from one executable module
     value: () => [],
   });
 
-  const executable = moduleSource.replace(
-    /import \{ APP_VERSION \} from '\/src\/version\.js';/,
-    "const APP_VERSION = '7.8.9+123';",
-  );
-  window.eval(executable);
+  const classicSource = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+    .map((match) => match[1]).find((source) => source.includes('FESTAPP_CLIENT_VERSION'));
+  assert.ok(classicSource, 'generation reporting must be independent of module loading');
+  window.eval(classicSource.replace(
+    /(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/,
+    '$1"7.8.9+123"',
+  ));
+  assert.equal(messages.length, 1, 'cached HTML must report before its first module runs');
+  window.eval(moduleSource);
   window.dispatchEvent(new window.Event('load'));
   await window.festappOfflineReady;
 
@@ -62,7 +66,7 @@ test('production web client reports its exact version from one executable module
     data: { type: 'FESTAPP_REPORT_VERSION' },
   });
   serviceWorker.dispatchEvent(reportRequest);
-  assert.equal(messages.length, 4);
+  assert.equal(messages.length, 5);
   assert.ok(messages.every((message) => message.version === '7.8.9+123'));
   dom.window.close();
 });

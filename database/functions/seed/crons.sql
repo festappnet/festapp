@@ -27,24 +27,6 @@ BEGIN
       $$, p_project_url)
   );
 
-  -- Schedule the process_email_queue cron job (runs every minute, if tasks exist)
-  PERFORM cron.schedule(
-      'process_email_queue',
-      '*/1 * * * *',
-      format(
-        $$
-          -- This query will only execute the http_post if the get_due_queue_emails() function
-          -- returns a JSON array with one or more items.
-          -- This is a more explicit check than 'IS NOT NULL' and directly verifies
-          -- that there are emails to process.
-          SELECT net.http_post(
-            url := '%s/functions/v1/send-email',
-            body := jsonb_build_object('processQueue', true, 'requestSecret', public.generate_request_secret(3600))
-          )
-          WHERE jsonb_array_length(public.get_due_queue_emails()) > 0;
-        $$,
-        p_project_url
-      )
-    );
+  PERFORM cron.schedule('festapp_canonical_process_email_queue','*/1 * * * *','SELECT public.recover_email_delivery()');
 END;
 $func$;

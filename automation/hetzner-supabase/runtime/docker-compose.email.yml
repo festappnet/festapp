@@ -1,0 +1,50 @@
+# Reviewed opt-in email cutover overlay. No sends while email_capacity.paused=true.
+# Gateway is private and owns the only SES credentials; no host ports.
+services:
+  functions:
+    environment:
+      EMAIL_SAFE_CLICK_ORIGINS: ${EMAIL_SAFE_CLICK_ORIGINS:-}
+      EMAIL_PAYLOAD_KEY: ${EMAIL_PAYLOAD_KEY:?configure a base64 32-byte payload key}
+      EMAIL_GATEWAY_URL: http://email-gateway:8000
+      EMAIL_GATEWAY_TOKEN: ${EMAIL_GATEWAY_TOKEN:?configure the internal gateway token}
+      EMAIL_SNS_TOPIC_ARN: ${EMAIL_SNS_TOPIC_ARN:?configure the exact feedback topic}
+      APP_LINKS_ORGANIZATION_ID: ${APP_LINKS_ORGANIZATION_ID:?resolve organization from tenant activation}
+      AUTH_EMAIL_PUBLIC_URL: ${AUTH_EMAIL_PUBLIC_URL:?configure the public HTTPS Auth API origin}
+      AUTH_EMAIL_HOOK_SECRET: ${AUTH_EMAIL_HOOK_SECRET:?configure the signed GoTrue hook}
+    # Existing SMTP variables are removed only in the approved cutover overlay.
+    # SMTP configuration for unrelated incoming bank mail is untouched.
+  auth:
+    environment:
+      GOTRUE_HOOK_SEND_EMAIL_ENABLED: "true"
+      GOTRUE_HOOK_SEND_EMAIL_URI: ${AUTH_EMAIL_PUBLIC_URL:?configure the public HTTPS Auth API origin}/functions/v1/auth-email-hook
+      GOTRUE_HOOK_SEND_EMAIL_SECRETS: ${AUTH_EMAIL_HOOK_SECRET:?configure the signed GoTrue hook}
+      GOTRUE_SMTP_HOST: ""
+      GOTRUE_SMTP_USER: ""
+      GOTRUE_SMTP_PASS: ""
+  email-gateway:
+    image: ${EMAIL_GATEWAY_DENO_IMAGE:?set a reviewed digest-pinned Deno image}
+    restart: unless-stopped
+    command: ["run", "--cached-only", "--allow-env", "--allow-net=email.${EMAIL_SES_REGION}.amazonaws.com,sts.${EMAIL_SES_REGION}.amazonaws.com,api-gw:8000,0.0.0.0:8000", "--allow-read=/functions", "/functions/send-email-gateway/index.ts"]
+    volumes:
+      - ./volumes/functions:/functions:ro
+    environment:
+      DENO_DIR: /opt/deno-cache
+      SUPABASE_URL: http://api-gw:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      DEFAULT_EMAIL: ${SMTP_ADMIN_EMAIL}
+      EMAIL_PAYLOAD_KEY: ${EMAIL_PAYLOAD_KEY}
+      EMAIL_GATEWAY_TOKEN: ${EMAIL_GATEWAY_TOKEN}
+      EMAIL_SNS_TOPIC_ARN: ${EMAIL_SNS_TOPIC_ARN}
+      EMAIL_SES_ACCOUNT_ID: ${EMAIL_SES_ACCOUNT_ID:?verify account identity and shared budget}
+      EMAIL_SES_REGION: ${EMAIL_SES_REGION:?verify SES region}
+      EMAIL_SES_ACCESS_KEY_ID: ${EMAIL_SES_ACCESS_KEY_ID:?gateway-only SES credential}
+      EMAIL_SES_SECRET_ACCESS_KEY: ${EMAIL_SES_SECRET_ACCESS_KEY:?gateway-only SES credential}
+      EMAIL_SES_SESSION_TOKEN: ${EMAIL_SES_SESSION_TOKEN:-}
+      EMAIL_SES_TRANSACTIONAL_SET: ${EMAIL_SES_TRANSACTIONAL_SET:?configure provider feedback and safe open-only tracking}
+      EMAIL_SES_ENGAGEMENT_SET: ${EMAIL_SES_ENGAGEMENT_SET:-}
+      EMAIL_SES_SECURITY_SET: ${EMAIL_SES_SECURITY_SET:?configure feedback without engagement tracking}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]

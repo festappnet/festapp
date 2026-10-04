@@ -86,6 +86,11 @@ BEGIN
        SET payment_info = NULL
      WHERE id = order_id;
 
+    -- Retain imported/manual bank transactions while removing their payment link.
+    UPDATE eshop.transactions
+       SET payment_info = NULL
+     WHERE payment_info = payment_info_id;
+
     DELETE FROM eshop.payment_info WHERE id = payment_info_id;
   END IF;
 

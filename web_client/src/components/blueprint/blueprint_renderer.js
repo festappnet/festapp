@@ -62,6 +62,7 @@ export class BlueprintRenderer {
     render(data, onSeatClick) {
         // Process Data via Preparer
         const prepared = BlueprintDataPreparer.prepare(data);
+        if (!prepared) throw new Error('Blueprint data unavailable');
         this.data = prepared;
         // Map meta to instance properties for compatibility
         if (prepared.meta) {
