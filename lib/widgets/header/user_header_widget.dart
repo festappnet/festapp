@@ -83,7 +83,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                 },
                 icon: Icon(
                   Icons.translate,
-                  color: ThemeConfig.bottomNavSelectedItemColor(context),
+                  color: ThemeConfig.brandAccentColor,
                 ),
               ),
             ],
@@ -193,6 +193,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
 
   /// Combined popover for signed in state.
   void _showSignedInPopover() {
+    final rootRouter = context.router.root;
     final RenderBox? button =
         _userKey.currentContext?.findRenderObject() as RenderBox?;
     if (button == null) return;
@@ -239,12 +240,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color:
-                                ThemeConfig.bottomNavSelectedItemColor(context),
+                            color: ThemeConfig.brandAccentColor,
                             width: 2,
                           ),
-                          color:
-                              ThemeConfig.bottomNavSelectedItemColor(context),
+                          color: ThemeConfig.brandAccentColor,
                         ),
                         child: Center(
                           child: Text(
@@ -303,13 +302,9 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                             color: ThemeConfig.blackColor(context)),
                       ),
                       onTap: () async {
-                        final unitId = RightsService.currentUnit()?.id;
                         Navigator.pop(context);
                         await AuthService.logout();
-                        if (context.mounted && unitId != null) {
-                          setState(() {});
-                          await RouterService.goToUnit(context, unitId);
-                        }
+                        await RouterService.goToApplicationHome(rootRouter);
                       },
                     ),
                   ],
@@ -382,10 +377,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: ThemeConfig.bottomNavSelectedItemColor(context),
+            color: ThemeConfig.brandAccentColor,
             width: 2,
           ),
-          color: ThemeConfig.bottomNavSelectedItemColor(context),
+          color: ThemeConfig.brandAccentColor,
         ),
         child: Center(
           child: Text(

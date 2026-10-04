@@ -9,7 +9,7 @@ import {
 } from "../_shared/utilities.ts";
 import { translations } from "../_shared/translations/translations.ts";
 import type { Tone } from "../_shared/translations/translations.ts";
-import { useFakturoid } from "../send-ticket-order/fakturoid.ts";
+import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
 
 type Attachment = {
   filename: string;
@@ -80,8 +80,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     service.type === "FAKTUROID"
   );
   if (fakturoid) {
-    await useFakturoid(
-      {
+    const invoice = await fakturoidGateway.getEmailAttachment({
+      config: {
         client_id: fakturoid.data.client_id,
         client_secret: fakturoid.data.client_secret,
         slug: fakturoid.data.slug,
@@ -89,10 +89,12 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
         note: fakturoid.data.note,
       },
       order,
-      occasion.title,
-      String(task.data.command_id),
-      attachments,
-    );
+      commandId: String(task.data.command_id),
+    });
+    if (invoice.attachment) attachments.push(invoice.attachment);
+    if (String(paymentInfo.currency_code).toUpperCase() === "CZK") {
+      paymentInfo.variable_symbol = invoice.variableSymbol;
+    }
   } else if (paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount

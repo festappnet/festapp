@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_order_details_for_email(p_order_id bigint)
+CREATE OR REPLACE FUNCTION public.get_order_details_for_email(p_order_id bigint)
 RETURNS jsonb
 SET search_path = public, extensions AS $$
 DECLARE
@@ -15,11 +15,22 @@ BEGIN
         'order', to_jsonb(o.*),
         'occasion', to_jsonb(occ.*),
         'payment_info', to_jsonb(pi.*),
-        'bank_account', to_jsonb(ba.*)
+        'bank_account', CASE
+            WHEN upper(o.currency_code) = 'EUR'
+              AND ba.id IS NOT NULL
+              AND nullif(trim(ba.creditor_name), '') IS NULL
+            THEN jsonb_set(
+              to_jsonb(ba.*),
+              '{creditor_name}',
+              to_jsonb(left(trim(regexp_replace(org.title, '[[:space:][:cntrl:]]+', ' ', 'g')), 70))
+            )
+            ELSE to_jsonb(ba.*)
+        END
     )
     INTO result_data
     FROM eshop.orders AS o
     LEFT JOIN public.occasions AS occ ON o.occasion = occ.id
+    LEFT JOIN public.organizations AS org ON occ.organization = org.id
     LEFT JOIN eshop.payment_info AS pi ON o.payment_info = pi.id
     LEFT JOIN eshop.bank_accounts AS ba ON pi.bank_account = ba.id
     WHERE o.id = p_order_id;
@@ -75,7 +86,7 @@ BEGIN
         -- 2. Modified query to fetch both form_fields and form_data at the same time
         SELECT
             jsonb_object_agg(ff.id, to_jsonb(ff.*)), -- All fields
-            f.data                                   -- The form's data
+            public.get_effective_form_data(f.id)     -- Form data with unit defaults
         INTO
             form_fields_data,
             form_data
@@ -86,7 +97,7 @@ BEGIN
         WHERE
             f.key = form_key
         GROUP BY
-            f.data; -- Group by the non-aggregated column
+            f.id; -- Group by the form used for effective data
 
         -- If form fields were found, add them to the result data
         IF form_fields_data IS NOT NULL THEN

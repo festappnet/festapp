@@ -1,4 +1,7 @@
+import 'bank_accounts_load_scope.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
@@ -15,7 +18,8 @@ import 'package:fstapp/components/users/db_users.dart';
 class UnitBankAccountsScreen extends StatefulWidget {
   final int unitId;
 
-  const UnitBankAccountsScreen({super.key, required this.unitId});
+  const UnitBankAccountsScreen(
+      {super.key, @PathParam.inherit('id') required this.unitId});
 
   @override
   State<UnitBankAccountsScreen> createState() => _UnitBankAccountsScreenState();
@@ -25,9 +29,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   List<BankAccountModel> _unitAccounts = [];
 
   bool _isLoading = true;
+  bool _hasLoaded = false;
   int? _organizationId;
-
-
 
   @override
   void initState() {
@@ -54,16 +57,16 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      // 1. Get Organization ID (if admin)
-      // 1. Get Organization ID (if admin)
+      // Share the initial list request with a routed detail; mutations refresh.
+      final accounts = BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
+          DbBankAccounts.getBankAccountsForUnit(widget.unitId);
+      _hasLoaded = true;
+      _unitAccounts = await accounts;
+      // Get Organization ID (if admin)
       final orgData = await DbUsers.getCurrentOrganization();
       _organizationId = orgData?.id;
 
-      // 2. Load Unit Accounts
-      _unitAccounts = await DbBankAccounts.getBankAccountsForUnit(widget.unitId);
-
-
-
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -76,18 +79,13 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   }
 
   Future<void> _addOrEditAccount([BankAccountModel? account]) async {
-    bool readOnly = false;
-    if (account != null) {
-      readOnly = !account.isAdmin;
-    }
-
     // If editing existing, we check if it is org account
 
     if (account == null) {
       // Creation Flow
       // Create new account logic
       // However, we need to link it to the current Unit too? Ideally yes.
-      
+
       BankAccountModel? selectedAccount;
       bool createNew = true;
 
@@ -123,18 +121,22 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
         List<BankAccountModel> availableAccounts = [];
         try {
           if (_organizationId != null) {
-             availableAccounts = await DbBankAccounts.getBankAccountsForOrganization(_organizationId!);
+            availableAccounts =
+                await DbBankAccounts.getBankAccountsForOrganization(
+                    _organizationId!);
           }
           // Also fetch "My Admin" just in case they are not in Org view but I am admin
           final myAccounts = await DbBankAccounts.getMyAdminBankAccounts();
           // Merge and distinct
           final existingIds = availableAccounts.map((a) => a.id).toSet();
-          availableAccounts.addAll(myAccounts.where((a) => !existingIds.contains(a.id)));
-          
+          availableAccounts
+              .addAll(myAccounts.where((a) => !existingIds.contains(a.id)));
+
           // Filter out already linked to THIS unit
           final linkedIds = _unitAccounts.map((a) => a.id).toSet();
-          availableAccounts = availableAccounts.where((a) => !linkedIds.contains(a.id)).toList();
-
+          availableAccounts = availableAccounts
+              .where((a) => !linkedIds.contains(a.id))
+              .toList();
         } catch (e) {
           // ignore
         } finally {
@@ -142,7 +144,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
         }
 
         if (availableAccounts.isEmpty) {
-          if (mounted) ToastHelper.Show(context, "No existing accounts found to link.");
+          if (mounted)
+            ToastHelper.Show(context, "No existing accounts found to link.");
           return;
         }
 
@@ -161,7 +164,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(a.title ?? BankAccountStrings.untitled,
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
                             Text(
                               '${a.accountNumber}',
                               style: Theme.of(context).textTheme.bodySmall,
@@ -193,7 +197,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
         try {
           // Link it to the unit
           int bankAccountId = selectedAccount.id;
-          int priority = _unitAccounts.isEmpty ? 0 : _unitAccounts.last.priority + 1;
+          int priority =
+              _unitAccounts.isEmpty ? 0 : _unitAccounts.last.priority + 1;
           await DbBankAccounts.linkBankAccountToUnit(
               widget.unitId, bankAccountId, priority);
 
@@ -205,18 +210,9 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
         }
       }
     } else {
-      // Edit Flow
-      await showDialog(
-        context: context,
-        builder: (context) => BankAccountSettingsScreen(
-          unitId: widget.unitId,
-          organizationId: _organizationId,
-          account: account,
-          readOnly: readOnly,
-          isDialog: true,
-        ),
-      );
-      _loadData();
+      await context.router
+          .push(BankAccountDetailRoute(accountId: account.id.toString()));
+      // The navigation owner refreshes the underlay once when detail closes.
     }
   }
 

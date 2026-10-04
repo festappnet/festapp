@@ -1,15 +1,9 @@
-import {
-  deliverEmail,
-  EmailTemplateNotFoundError,
-} from "../_shared/emailDelivery.ts";
+import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
+import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
 import { AuthError, authorizeRequest } from "../_shared/auth.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { translatePlatformLinks } from "../_shared/translatePlatformLinks.ts";
-import {
-  AppLinksStatusUpdateError,
-  deliverAppLinks,
-  isCsmOrganization,
-} from "./appLinksDelivery.ts";
+import { deliverAppLinks, isCsmOrganization } from "./appLinksDelivery.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -137,23 +131,9 @@ Deno.serve(async (request) => {
       appLinks,
       fromEmail: Deno.env.get("DEFAULT_EMAIL") || "",
     }, {
-      deliverEmail,
-      async markSent(markOccasionId, markUserId) {
-        const { data, error } = await supabaseAdmin.rpc("mark_app_links_sent", {
-          p_occasion_id: markOccasionId,
-          p_user_id: markUserId,
-        });
-        if (error || data?.code !== 200) {
-          throw new Error("app_links_status_update_failed");
-        }
-      },
+      deliverEmail: enqueueAndAwaitEmail,
     });
   } catch (error) {
-    if (error instanceof AppLinksStatusUpdateError) {
-      // SMTP already succeeded. Do not return a retryable failure that could
-      // send duplicate messages; the UI reports the unrecorded status.
-      return jsonResponse({ status: "sent_unrecorded" }, 200);
-    }
     if (error instanceof EmailTemplateNotFoundError) {
       return jsonResponse({ error: "email_template_not_found" }, 404);
     }

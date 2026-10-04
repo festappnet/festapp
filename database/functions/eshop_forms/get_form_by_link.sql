@@ -53,7 +53,7 @@ BEGIN
             'id', f.id,
             'key', f.key,
             'created_at', f.created_at,
-            'data', f.data,
+            'data', public.get_effective_form_data(f.id),
             'type', f.type,
             'title', f.title,
             'is_open', f.is_open,
