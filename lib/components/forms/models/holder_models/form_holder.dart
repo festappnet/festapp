@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'package:fstapp/components/forms/models/form_option_product_model.dart';
 import 'field_holder.dart';
 import 'id_document_field_holder.dart';
@@ -58,13 +59,19 @@ class FormHolder {
   factory FormHolder.fromFormFieldModel(FormModel formModel) {
     // Extract and sort ticket child fields.
     final ticketChildFields = formModel.relatedFields
-        .where((f) => f.isTicketField == true)
+        .where((f) =>
+            f.isTicketField == true &&
+            !(f.type == FormHelper.fieldTypeProductType &&
+                f.productType?.type == ProductModel.spotType))
         .toList()
       ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
 
     // Process non-ticket fields.
     final otherFields = formModel.relatedFields
-        .where((f) => f.isTicketField != true)
+        .where((f) =>
+            f.isTicketField != true &&
+            !(f.type == FormHelper.fieldTypeProductType &&
+                f.productType?.type == ProductModel.spotType))
         .map((f) => createFieldHolder(f))
         .toList();
 

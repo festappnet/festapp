@@ -652,6 +652,7 @@
     "priceRefreshAction": "Refresh schedules",
     "priceSame": "The price is the same as the expected preceding price.",
     "priceWaves": "Price waves",
+    "configurePriceWaves": "Configure price waves",
     "addWave": "Add wave",
     "moveWave": "Change time",
     "cancelWave": "Cancel wave",
@@ -1688,7 +1689,13 @@
     "tokenVerificationWait": "Waiting for Fio to respond. Verification may take several dozen seconds.",
     "tokenAwaitingActivation": "Token saved - awaiting activation",
     "tokenSavedNeedsVerification": "Token saved - connection needs attention",
-    "errorTitle": "Error"
+    "errorTitle": "Error",
+    "connection_state": "Connection status",
+    "bank_pull": "Bank statement downloaded",
+    "receiver_commit": "Movement received",
+    "not_received": "Not received yet",
+    "email_identity_notice": "Messages without verified bank movement identity await operator review and do not automatically pay orders.",
+    "connect_email": "Connect bank email"
   },
   "FeatureContract": {
     "title": "Contract",
