@@ -2,7 +2,6 @@ DO $$
 DECLARE
     v_account_id bigint;
     v_fio_time timestamptz;
-    v_general_time timestamptz;
 BEGIN
     IF has_function_privilege('anon', 'public.get_my_admin_bank_accounts()', 'EXECUTE')
        OR has_function_privilege('anon', 'public.get_bank_accounts_for_unit_management(bigint)', 'EXECUTE') THEN
@@ -20,11 +19,8 @@ BEGIN
     SELECT last_fio_fetch_time INTO v_fio_time FROM eshop.bank_accounts WHERE id = v_account_id;
     IF v_fio_time IS NOT NULL THEN RAISE EXCEPTION 'General activity changed FIO status'; END IF;
 
-    PERFORM public.set_last_fetch_time(v_account_id);
-    SELECT last_fio_fetch_time, last_fetch_time INTO v_fio_time, v_general_time
-    FROM eshop.bank_accounts WHERE id = v_account_id;
-    IF v_fio_time IS DISTINCT FROM now() OR v_general_time IS DISTINCT FROM now() THEN
-        RAISE EXCEPTION 'API success did not record both timestamps';
-    END IF;
+    PERFORM assert_true(to_regprocedure('public.set_last_fetch_time(bigint)') IS NULL,
+        'legacy polling must not report fetch success after BankSync cutover');
+
 END;
 $$;
