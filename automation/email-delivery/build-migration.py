@@ -15,11 +15,21 @@ DROP FUNCTION IF EXISTS public.queue_deposit_reminders(bigint,bigint);
 DROP FUNCTION IF EXISTS public.queue_surcharge_reminders(bigint,bigint);
 -- Preserve the former implicit paid-ticket backlog without assuming absence of SMTP acceptance.
 DO $$ DECLARE o record; v_result jsonb; BEGIN
- FOR o IN SELECT ord.id,oc.organization,oc.id occ_id,oc.unit FROM eshop.orders ord JOIN public.occasions oc ON oc.id=ord.occasion
+ FOR o IN SELECT ord.id,ord.data->>'email' recipient,ord.email_payment_version,oc.organization,oc.id occ_id,oc.unit FROM eshop.orders ord JOIN public.occasions oc ON oc.id=ord.occasion
  WHERE ord.state='paid' AND oc.is_order_synchronization_enabled AND ord.data ? 'email'
  AND (coalesce(ord.price,0)<>0 OR EXISTS(SELECT 1 FROM jsonb_array_elements(oc.features) f WHERE f->>'code'='ticket' AND (f->>'is_enabled')::boolean)) LOOP
-  v_result:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',o.id),o.organization,o.occ_id,o.unit);
-  UPDATE public.email_messages SET workflow_state='unknown',last_error='legacy_ticket_candidate_requires_reconciliation' WHERE message_id=(v_result->>'message_id')::uuid;
+  IF nullif(btrim(o.recipient),'') IS NULL OR length(o.recipient)>320 OR position('@' in o.recipient)=0 THEN
+   -- Historical addresses may violate today's producer contract. Preserve the
+   -- candidate and its original address as trouble; never send or silently skip it.
+   INSERT INTO public.email_messages(target_time,code,data,organization,occasion,unit,message_kind,dedupe_key,input_hash,
+     recipient,order_id,source_version,workflow_state,last_error,tracking_policy)
+   VALUES(now(),'TICKET_ORDER_PAYMENT_DONE',jsonb_build_object('order_id',o.id),o.organization,o.occ_id,o.unit,
+     'order_tickets','legacy-invalid-ticket:'||o.id,encode(extensions.digest(jsonb_build_object('order_id',o.id,'recipient',o.recipient)::text,'sha256'),'hex'),
+     o.recipient,o.id,o.email_payment_version,'unknown','legacy_ticket_invalid_recipient_requires_reconciliation','open');
+  ELSE
+   v_result:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',o.id),o.organization,o.occ_id,o.unit);
+   UPDATE public.email_messages SET workflow_state='unknown',last_error='legacy_ticket_candidate_requires_reconciliation' WHERE message_id=(v_result->>'message_id')::uuid;
+  END IF;
  END LOOP;
 END $$;
 -- Old cron names cannot run alongside the canonical worker.
