@@ -125,7 +125,14 @@ export async function sesRequest(
   const scope = `${date}/${config.region}/${service}/aws4_request`;
   const request = [
     method,
-    path,
+    // SES SigV4 canonical paths escape the already URL-encoded path again.
+    // An email identity contains %40 on the wire and %2540 in the signature.
+    path.split("/").map((segment) =>
+      encodeURIComponent(segment).replace(
+        /[!'()*]/g,
+        (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+      )
+    ).join("/"),
     "",
     canonical,
     names.join(";"),

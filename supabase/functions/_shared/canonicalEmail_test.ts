@@ -4,6 +4,7 @@ import {
   sesBody,
   type SesConfig,
   SesFailure,
+  sesRequest,
   verifySesAccount,
 } from "./sesProvider.ts";
 import { gatewayAttempt } from "../send-email-gateway/gateway.ts";
@@ -350,4 +351,63 @@ Deno.test("gateway rejects corrupt or mismatched frozen payload before provider 
     assertEquals(result.disposition, "dead");
     assertEquals(finishes[0].p_error, "prepared_payload_invalid");
   }
+});
+
+Deno.test("SES signs an encoded email identity using the AWS double-escaped canonical path", async () => {
+  const hex = (bytes: ArrayBuffer) =>
+    Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  const hash = async (text: string) =>
+    hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
+  const hmac = async (raw: Uint8Array<ArrayBuffer>, text: string) => {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      raw,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    return new Uint8Array(
+      await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text)),
+    );
+  };
+  const stub: typeof fetch = async (url, init) => {
+    assertEquals(
+      String(url),
+      "https://email.eu-central-1.amazonaws.com/v2/email/identities/sender%40example.invalid",
+    );
+    const headers = init!.headers as Record<string, string>;
+    const time = headers["x-amz-date"], date = time.slice(0, 8);
+    const scope = `${date}/eu-central-1/ses/aws4_request`;
+    const canonical = [
+      "GET",
+      "/v2/email/identities/sender%2540example.invalid",
+      "",
+      `content-type:application/json\nhost:email.eu-central-1.amazonaws.com\nx-amz-date:${time}\n`,
+      "content-type;host;x-amz-date",
+      await hash(""),
+    ].join("\n");
+    let key = await hmac(new TextEncoder().encode("AWS4fixture-only"), date);
+    for (const part of ["eu-central-1", "ses", "aws4_request"]) {
+      key = await hmac(key, part);
+    }
+    const signature = hex(
+      (await hmac(
+        key,
+        ["AWS4-HMAC-SHA256", time, scope, await hash(canonical)].join("\n"),
+      )).buffer,
+    );
+    assertEquals(
+      headers.authorization,
+      `AWS4-HMAC-SHA256 Credential=fixture/${scope}, SignedHeaders=content-type;host;x-amz-date, Signature=${signature}`,
+    );
+    return Response.json({ VerifiedForSendingStatus: true });
+  };
+  await sesRequest(
+    config,
+    "GET",
+    "/v2/email/identities/sender%40example.invalid",
+    null,
+    stub,
+  );
 });
