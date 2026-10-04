@@ -596,8 +596,9 @@ class AppPanelHelper {
     List<RoutedTabDefinition>? activeTabs,
     TabController? tabController,
   ) {
+    final compact = activeTabs != null;
     return AppBar(
-      toolbarHeight: 44,
+      toolbarHeight: compact ? 44 : 60,
       automaticallyImplyLeading: false,
       // Use a fully custom title area
       leading: null,
@@ -613,7 +614,8 @@ class AppPanelHelper {
             },
             child: Padding(
               // Add padding to space it from the screen edge and from the breadcrumbs
-              padding: const EdgeInsets.fromLTRB(16, 2, 24, 2),
+              padding:
+                  EdgeInsets.fromLTRB(16, compact ? 2 : 8, 24, compact ? 2 : 8),
               child: LogoWidget(height: 40, forceDark: true),
             ),
           ),
@@ -631,9 +633,10 @@ class AppPanelHelper {
 
       actions: [
         Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 12),
+            padding:
+                EdgeInsets.symmetric(vertical: compact ? 2 : 6, horizontal: 12),
             child: UserHeaderWidget(
-              compact: true,
+              compact: compact,
               appBarIconColor: ThemeConfig.lllBackground,
             ))
       ],
