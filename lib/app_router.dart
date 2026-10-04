@@ -204,7 +204,10 @@ class AppRouter extends RootStackRouter {
                                     path: NavigationPaths.current),
                                 AutoRoute(
                                     page: OrdersHistoryRoute.page,
-                                    path: NavigationPaths.history)
+                                    path: NavigationPaths.history),
+                                AutoRoute(
+                                    page: OrdersEmailHistoryRoute.page,
+                                    path: NavigationPaths.emailHistory)
                               ]),
                           AutoRoute(
                               page: NavigationNotFoundRoute.page, path: '*')
@@ -306,9 +309,6 @@ class AppRouter extends RootStackRouter {
                     AutoRoute(
                         page: ReportSectionRoute.page,
                         path: NavigationPaths.report),
-                    AutoRoute(
-                        page: EmailDeliverySectionRoute.page,
-                        path: NavigationPaths.emailDelivery),
                     AutoRoute(
                         page: EmailTemplatesSectionRoute.page,
                         path: NavigationPaths.emailTemplates),
@@ -454,9 +454,6 @@ class AppRouter extends RootStackRouter {
                     AutoRoute(
                         page: VolunteersSectionRoute.page,
                         path: NavigationPaths.volunteers),
-                    AutoRoute(
-                        page: EmailDeliverySectionRoute.page,
-                        path: NavigationPaths.emailDelivery),
                     AutoRoute(
                         page: EmailTemplatesSectionRoute.page,
                         path: NavigationPaths.emailTemplates),

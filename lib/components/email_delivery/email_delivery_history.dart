@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +10,7 @@ class EmailDeliveryHistory extends StatefulWidget {
   final int? organizationId;
   final String? userId;
   final bool embedded;
+  final bool ordersOnly;
   final int? orderId;
   final Future<dynamic> Function(String, Map<String, dynamic>)? read;
   const EmailDeliveryHistory(
@@ -18,6 +20,7 @@ class EmailDeliveryHistory extends StatefulWidget {
       this.organizationId,
       this.userId,
       this.embedded = false,
+      this.ordersOnly = false,
       this.read});
   @override
   State<EmailDeliveryHistory> createState() => _EmailDeliveryHistoryState();
@@ -42,14 +45,17 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
   }
 
   Future<void> _loadOverview() async {
-    if (widget.orderId != null || widget.userId != null) return;
+    if (widget.ordersOnly || widget.orderId != null || widget.userId != null) {
+      return;
+    }
     final result = await ExceptionHandler.guard(context,
         futureFunction: () => _read('get_email_delivery_overview', params: {
               'p_occasion': _organizationScope ? null : widget.occasionId,
               'p_organization': widget.organizationId
             }));
-    if (mounted && result is Map)
+    if (mounted && result is Map) {
       setState(() => _overview = Map<String, dynamic>.from(result));
+    }
   }
 
   @override
@@ -74,6 +80,7 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
               'p_state': _state,
               'p_kind': _kind,
               'p_since': _since?.toUtc().toIso8601String(),
+              if (widget.ordersOnly) 'p_orders_only': true,
               if (_messages.isNotEmpty) 'p_before': _messages.last['id'],
             }));
     if (!mounted) return;
@@ -128,14 +135,15 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
   @override
   Widget build(BuildContext context) {
     final content = SizedBox(
-        width: 600,
-        height: 480,
+        width: widget.embedded ? double.infinity : 600,
+        height: widget.embedded ? double.infinity : 480,
         child: Column(children: [
           Padding(
               padding: const EdgeInsets.all(16),
               child: Text(EmailDeliveryStrings.history,
                   style: Theme.of(context).textTheme.titleLarge)),
-          if (widget.organizationId != null &&
+          if (!widget.ordersOnly &&
+              widget.organizationId != null &&
               widget.occasionId != null &&
               widget.orderId == null &&
               widget.userId == null)
@@ -192,10 +200,15 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
                         'order_confirmation',
                         'order_tickets',
                         'order_reminder',
-                        'registration',
-                        'sign_in',
-                        'reset_password',
-                        'gotrue'
+                        'order_payment_notice',
+                        'order_update',
+                        'order_storno',
+                        if (!widget.ordersOnly) ...[
+                          'registration',
+                          'sign_in',
+                          'reset_password',
+                          'gotrue'
+                        ]
                       ])
                         DropdownMenuItem(
                             value: kind,
@@ -257,9 +270,13 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
             for (final m in _messages)
               ListTile(
                 title: Text(
-                    EmailDeliveryStrings.kind(m['message_kind'].toString())),
-                subtitle:
-                    Text(EmailDeliveryStrings.state(m['state'].toString())),
+                    '${widget.ordersOnly ? '#${m['order_id']} - ' : ''}${EmailDeliveryStrings.kind(m['message_kind'].toString())}'),
+                subtitle: Text([
+                  EmailDeliveryStrings.state(m['state'].toString()),
+                  if (m['created_at'] != null)
+                    DateFormat.yMd().add_Hm().format(
+                        DateTime.parse(m['created_at'].toString()).toLocal()),
+                ].join(' - ')),
                 onTap: () => _detail(m['message_id'].toString()),
               )
           ])),
