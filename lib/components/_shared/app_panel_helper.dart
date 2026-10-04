@@ -597,7 +597,7 @@ class AppPanelHelper {
     TabController? tabController,
   ) {
     return AppBar(
-      toolbarHeight: 52,
+      toolbarHeight: 44,
       automaticallyImplyLeading: false,
       // Use a fully custom title area
       leading: null,
@@ -613,8 +613,8 @@ class AppPanelHelper {
             },
             child: Padding(
               // Add padding to space it from the screen edge and from the breadcrumbs
-              padding: const EdgeInsets.fromLTRB(16, 6, 24, 6),
-              child: LogoWidget(height: 36, forceDark: true),
+              padding: const EdgeInsets.fromLTRB(16, 4, 24, 4),
+              child: LogoWidget(height: 32, forceDark: true),
             ),
           ),
           // Breadcrumbs take up the remaining space
@@ -631,8 +631,9 @@ class AppPanelHelper {
 
       actions: [
         Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 12),
             child: UserHeaderWidget(
+              compact: true,
               appBarIconColor: ThemeConfig.lllBackground,
             ))
       ],

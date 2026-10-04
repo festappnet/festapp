@@ -17,10 +17,15 @@ import 'package:fstapp/app_router.gr.dart';
 
 class UserHeaderWidget extends StatefulWidget {
   final Color? appBarIconColor;
+  final bool compact;
   final Future<void> Function()? onSignIn;
   final VoidCallback? onAdminPressed;
   const UserHeaderWidget(
-      {super.key, this.appBarIconColor, this.onSignIn, this.onAdminPressed});
+      {super.key,
+      this.appBarIconColor,
+      this.onSignIn,
+      this.onAdminPressed,
+      this.compact = false});
 
   @override
   State<UserHeaderWidget> createState() => _UserHeaderWidgetState();
@@ -371,28 +376,37 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     return InkWell(
       key: _userKey,
       onTap: _showSignedInPopover,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: ThemeConfig.brandAccentColor,
-            width: 2,
-          ),
-          color: ThemeConfig.brandAccentColor,
-        ),
-        child: Center(
-          child: Text(
-            _getUserInitial(),
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+      child: SizedBox(
+          width: widget.compact ? 40 : 38,
+          height: widget.compact ? 40 : 38,
+          child: Center(
+              child: Container(
+            width: widget.compact ? 32 : 38,
+            height: widget.compact ? 32 : 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: ThemeConfig.brandAccentColor,
+                width: 2,
+              ),
+              color: ThemeConfig.brandAccentColor,
             ),
-          ),
-        ),
-      ),
+            child: Center(
+              child: Text(
+                _getUserInitial(),
+                textHeightBehavior: const TextHeightBehavior(
+                    applyHeightToFirstAscent: false,
+                    applyHeightToLastDescent: false),
+                style: TextStyle(
+                  fontFamily: ThemeConfig.fontFamily,
+                  fontSize: widget.compact ? 18 : 20,
+                  fontWeight: FontWeight.w500,
+                  height: 1,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ))),
     );
   }
 
