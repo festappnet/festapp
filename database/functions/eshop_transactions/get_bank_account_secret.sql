@@ -5,6 +5,7 @@ DECLARE
   v_bank_secret bigint;
   v_secret_rec RECORD;
 BEGIN
+  PERFORM public.require_legacy_bank_authority(p_bank_account_id);
   -- Fetch the secret associated with the bank account
   SELECT secret
     INTO v_bank_secret

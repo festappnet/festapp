@@ -1,3 +1,4 @@
+import { synchronizeCanonicalBankConnections } from "../_shared/bankSyncClient.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { authorizeRequest, AuthError } from "../_shared/auth.ts";
 
@@ -47,6 +48,8 @@ Deno.serve(async (req) => {
       occasionId: occasionId,
     });
 
+    const canonicalSyncResults = await synchronizeCanonicalBankConnections(unitId);
+
     // 3. Fetch all fetchable bank accounts for the unit using the new RPC function
     const { data: bankAccounts, error: accountsError } = await supabaseAdmin.rpc(
       'get_fetchable_bank_accounts_for_unit',
@@ -62,13 +65,13 @@ Deno.serve(async (req) => {
     }
 
     if (!bankAccounts || bankAccounts.length === 0) {
-        return new Response(JSON.stringify({ message: "No fetchable bank accounts associated with this unit." }), {
+        return new Response(JSON.stringify({ syncResults: canonicalSyncResults }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
         });
     }
 
-    const syncResults = [];
+    const syncResults: Record<string, unknown>[] = [...canonicalSyncResults];
 
     // 4. Loop through each bank account and synchronize transactions
     for (const account of bankAccounts) {

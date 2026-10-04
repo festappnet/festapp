@@ -9,6 +9,7 @@ DECLARE
     v_deposit_amount numeric;
     v_price numeric;
     v_state text;
+    v_transition jsonb;
 BEGIN
     -- Get Order Details
     SELECT payment_info, price, state INTO v_payment_info_id, v_price, v_state
@@ -28,7 +29,14 @@ BEGIN
     IF COALESCE(v_paid, 0) >= COALESCE(v_deposit_amount, v_price) THEN
         -- Fully Paid (or Deposit Paid) -> Move to Paid
         IF v_state != 'paid' AND (v_state = 'ordered' OR v_state = 'created' OR v_state = 'expired') THEN
-             PERFORM public.update_order_and_tickets_to_paid(p_order_id);
+             -- The legacy JSON boundary reports failures instead of raising.
+             -- Propagate them so payment, order, ticket intent and webhook receipt
+             -- cannot commit independently of the canonical paid transition.
+             v_transition := public.update_order_and_tickets_to_paid(p_order_id);
+             IF (v_transition->>'code') IS DISTINCT FROM '200' THEN
+                 RAISE EXCEPTION 'ORDER_PAID_TRANSITION_FAILED: %',
+                     COALESCE(v_transition->>'message','invalid transition receipt');
+             END IF;
         END IF;
     ELSE
         -- Underpaid -> Revert to Ordered (if currently Paid)

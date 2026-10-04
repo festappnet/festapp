@@ -1670,7 +1670,23 @@
     "safeSenderInfo": "Tato adresa je bezpečná. Je to speciální robot, který čte pouze e-maily o platbách a nic jiného.",
     "forwardingEmailWarning": "Upozornění: Prosím, udržujte tento e-mail v tajnosti. S nikým jej nesdílejte.",
     "creditorNameLabel": "Jméno majitele účtu",
-    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace."
+    "creditorNameHelp": "Pro EUR platby. Nevyplněné: použije se název organizace.",
+    "connection_state": "Stav připojení",
+    "bank_pull": "Bankovní výpis stažen",
+    "receiver_commit": "Pohyb přijat",
+    "not_received": "Zatím nepřijato",
+    "email_identity_notice": "Zprávy bez ověřené bankovní identity čekají na kontrolu správce a automaticky nehradí objednávky.",
+    "connect_email": "Připojit bankovní email",
+    "fioTokenInactive": "Fio token neexistuje nebo není aktivní. Ve Fio Internetbankingu otevřete Nastavení → API a dokončete jeho autorizaci. Po autorizaci může aktivace trvat až 5 minut. Pokud je token zrušený nebo vypršel, vytvořte a autorizujte nový.",
+    "syncRetryRequired": "Spojení s bankou se nepodařilo ověřit. Zkuste to prosím později.",
+    "tokenSavedNeedsAuthorization": "Token je uložený v BankSync, ale Fio ho zatím nepřijalo.",
+    "syncState": {
+      "connected": "Připojeno",
+      "degraded": "Vyžaduje pozornost",
+      "provisioning": "Připojování",
+      "shadow": "Ověřování",
+      "suspended": "Pozastaveno"
+    }
   },
   "FeatureContract": {
     "title": "Smlouva",

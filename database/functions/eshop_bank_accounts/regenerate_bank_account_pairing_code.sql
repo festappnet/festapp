@@ -1,3 +1,4 @@
+DROP FUNCTION IF EXISTS public.regenerate_bank_account_pairing_code(bigint);
 CREATE OR REPLACE FUNCTION public.regenerate_bank_account_pairing_code(p_account_id bigint)
 RETURNS text
 LANGUAGE plpgsql
@@ -7,6 +8,7 @@ AS $$
 DECLARE
     v_new_code text;
 BEGIN
+  PERFORM public.require_legacy_bank_authority(p_account_id);
     -- Check Permissions
     IF NOT EXISTS (
         SELECT 1 FROM eshop.bank_account_users 
