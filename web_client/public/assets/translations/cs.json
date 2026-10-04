@@ -1680,7 +1680,9 @@
       "provisioning": "Připojování",
       "shadow": "Ověřování",
       "suspended": "Pozastaveno"
-    }
+    },
+    "linkedAccountIdentity": "Číslo napojeného účtu nelze přepsat. Přidejte nový bankovní účet a nastavte jej pro další platby.",
+    "detailsSyncPending": "Údaje jsou uložené ve Festappu. Přenos do BankSync se zatím nepodařil a bude automaticky zopakován."
   },
   "FeatureContract": {
     "title": "Smlouva",
