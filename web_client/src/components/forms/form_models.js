@@ -159,6 +159,16 @@ export class FormModel {
              ticketField.subFields.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
 
+        const usesSeatSelection = [...this.relatedFields, ...(ticketField?.subFields || [])]
+            .some(f => f.type === 'spot' && f.isHidden !== true);
+        const usesRegularChoice = f =>
+            !(f.type === 'spot' && f.isHidden === true) &&
+            !(usesSeatSelection && f.type === 'product_type' && f.productTypeData?.type === 'spot');
+        this.relatedFields = this.relatedFields.filter(usesRegularChoice);
+        if (ticketField?.subFields) {
+            ticketField.subFields = ticketField.subFields.filter(usesRegularChoice);
+        }
+
         this.stats = data.stats ? new FormStatsModel(data.stats) : null;
         
         // Capture Features for FeatureService
