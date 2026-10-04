@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -420,14 +421,14 @@ class _SchedulePageState extends State<SchedulePage>
       body: SafeArea(
         top: true,
         bottom: false,
-        child: DefaultTabController(
+        child: RoutedDayTabs(
           key: ValueKey<String>(
             'SchedulePage_TabController_${occasionId}_'
             '${datedEvents.map((group) => group.dateTime?.millisecondsSinceEpoch ?? 0).join('_')}_'
             '$currentTargetTabIndex',
           ),
           initialIndex: currentTargetTabIndex,
-          length: datedEvents.length,
+          days: datedEvents.map((day) => day.dateTime!).toList(),
           child: _TabSelectionObserver(
             onChanged: (index) {
               if (_dots.isNotEmpty && index < datedEvents.length) {

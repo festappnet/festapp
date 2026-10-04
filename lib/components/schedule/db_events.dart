@@ -147,7 +147,7 @@ class DbEvents {
         ? "${Tb.event_groups.table}!${Tb.event_groups.table}_${Tb.event_groups.event_child}_fkey(${Tb.event_groups.event_parent})"
         : "${Tb.event_groups.table}!${Tb.event_groups.table}_${Tb.event_groups.event_parent}_fkey(${Tb.event_groups.event_child})";
     late EventModel event;
-    if (ClientSyncRuntime.isV1Selected && RightsService.canSeeAdmin()) {
+    if (RightsService.canSeeAdmin()) {
       final response = await _supabase.rpc('get_event_editor_v1', params: {
         'p_occasion': RightsService.currentOccasionId()!,
         'p_event': eventId,
@@ -597,76 +597,21 @@ class DbEvents {
   }
 
   static Future<EventModel> updateEvent(EventModel event) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      event.occasionId ??= RightsService.currentOccasionId();
-      final result = await _commands.save(event);
-      if (result.status == EventCommandStatus.conflict) {
-        throw StateError('Event was changed by another editor');
-      }
-      if (result.status == EventCommandStatus.rejected ||
-          result.event == null) {
-        throw StateError('Event save was rejected');
-      }
-      return result.event!;
+    // Editor commands are canonical even when the occasion uses legacy readers.
+    event.occasionId ??= RightsService.currentOccasionId();
+    final result = await _commands.save(event);
+    if (result.status == EventCommandStatus.conflict) {
+      throw StateError('Event was changed by another editor');
     }
-    var upsertObj = event.toUpsertMap();
-
-    if (event.description != null) {
-      upsertObj.addAll({Tb.events.description: event.description});
+    if (result.status == EventCommandStatus.rejected || result.event == null) {
+      throw StateError('Event save was rejected');
     }
-    dynamic eventData;
-    if (event.id != null) {
-      upsertObj.addAll({Tb.events.id: event.id});
-      eventData = await _supabase
-          .from(Tb.events.table)
-          .update(upsertObj)
-          .eq(Tb.events.id, event.id!)
-          .select()
-          .single();
-    } else {
-      upsertObj
-          .addAll({Tb.events.occasion: RightsService.currentOccasionId()!});
-      eventData = await _supabase
-          .from(Tb.events.table)
-          .insert(upsertObj)
-          .select()
-          .single();
-    }
-    var updatedEvent = EventModel.fromJson(eventData);
-
-    await removeEventFromEventGroups(updatedEvent);
-    if (event.parentEventIds?.isNotEmpty ?? false) {
-      var insert = [];
-      for (var eParent in event.parentEventIds!) {
-        insert.add({
-          Tb.event_groups.event_child: updatedEvent.id,
-          Tb.event_groups.event_parent: eParent
-        });
-      }
-      await _supabase.from(Tb.event_groups.table).insert(insert);
-    }
-    return updatedEvent;
+    return result.event!;
   }
 
   static Future<void> updateEventFromDataGrid(EventModel event) async {
-    var updatedEvent = await updateEvent(event);
-
-    if (ClientSyncRuntime.isV1Selected) return;
-
-    var insertRoles = [];
-    for (var eParent in event.eventRolesIds!) {
-      insertRoles.add({
-        Tb.event_roles.event: updatedEvent.id,
-        Tb.event_roles.role: eParent
-      });
-    }
-
-    await _supabase
-        .from(Tb.event_roles.table)
-        .delete()
-        .eq(Tb.event_roles.event, updatedEvent.id!);
-
-    await _supabase.from(Tb.event_roles.table).insert(insertRoles);
+    // The command saves parent links and roles atomically with the event.
+    await updateEvent(event);
   }
 
   static Future<void> removeEventFromSaved(EventModel updatedEvent) async {

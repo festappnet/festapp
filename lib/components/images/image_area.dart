@@ -12,6 +12,9 @@ class ImageArea extends StatefulWidget {
   /// Initial image URL
   final String? imageUrl;
 
+  /// Optional rendered preview; upload and removal behavior remain shared.
+  final Widget? preview;
+
   /// Called when a file is dropped/selected. Must return the uploaded image's URL.
   final FileUploadCallback onFileSelected;
 
@@ -30,6 +33,7 @@ class ImageArea extends StatefulWidget {
     required this.onFileSelected,
     required this.onRemove,
     this.hint,
+    this.preview,
     this.enabled = true,
   });
 
@@ -129,7 +133,7 @@ class _ImageAreaState extends State<ImageArea> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
+            child: widget.preview ?? Image.network(
               ImageUrlHelper.transformImageUrl(_currentUrl!, width: ImageUrlHelper.mediumWidth),
               height: 200,
               width: double.infinity,

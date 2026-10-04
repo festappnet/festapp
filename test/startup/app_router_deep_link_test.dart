@@ -10,6 +10,16 @@ void main() {
     expect(AppRouter.getOccasionLandingPath('av2025'), '/av2025/event');
   });
 
+  test(
+      'Google callback without a handoff resolves to login rather than a blank route',
+      () {
+    final matches = AppRouter()
+        .matcher
+        .match('/app/google-auth', includePrefixMatches: false);
+    expect(matches, isNotNull);
+    expect(matches!.single.name, 'LoginRoute');
+  });
+
   test('matches an occasion program deep link including its schedule root', () {
     final matches = AppRouter().matcher.match(
           '/2025-copy-98cf835a/event',

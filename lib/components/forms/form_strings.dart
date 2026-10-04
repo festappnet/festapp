@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get moreFonts => 'FeatureFormSettings.moreFonts'.tr();
+  static String get fontSearchHint => 'FeatureFormSettings.fontSearchHint'.tr();
 // Form Settings Feature
   static String get formSettingsTitle => 'FeatureFormSettings.title'.tr();
   static String get formNotFound => 'FeatureFormSettings.formNotFound'.tr();
@@ -82,6 +84,8 @@ class FormStrings {
       'FeatureFormSettings.labelCommunicationTone'.tr(); // "Tone"
   static String get toneFormal =>
       'FeatureFormSettings.toneFormal'.tr(); // "Formal"
+  static String toneInherit(String tone) =>
+      'FeatureFormSettings.toneInherit'.tr(namedArgs: {'tone': tone});
   static String get toneInformal =>
       'FeatureFormSettings.toneInformal'.tr(); // "Informal "
   static String get pickColor =>
@@ -301,8 +305,9 @@ class FormStrings {
       'FormsFeature.groupUpcoming'.tr(); // "Upcoming"
   static String get groupOther => 'FormsFeature.groupOther'.tr(); // "Other"
   static String numberOfResponsesTooltip(int count) =>
-      'FormsFeature.numberOfResponsesTooltip'
-          .tr(namedArgs: {'count': count.toString()}); // "Number of responses: {count}"
+      'FormsFeature.numberOfResponsesTooltip'.tr(namedArgs: {
+        'count': count.toString()
+      }); // "Number of responses: {count}"
 
 // --- Field & Product Editors (widgets_editor) ---
   static String get addProduct =>

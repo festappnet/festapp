@@ -7,6 +7,7 @@ DECLARE
     ticket_ids BIGINT[];
     updated_order_data jsonb;
 BEGIN
+    PERFORM public.cancel_order_email_intents(order_id);
     -- Retrieve all ticket ids associated with the order
     SELECT ARRAY_AGG(t.id) INTO ticket_ids
     FROM eshop.tickets t
