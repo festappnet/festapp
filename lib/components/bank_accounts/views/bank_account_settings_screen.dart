@@ -1,3 +1,4 @@
+import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
@@ -70,20 +71,22 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   List<Object?> _savedGeneral = [];
   List<Object?> _savedConnection = [];
   List<Object?> get _generalValues => [
-        _titleController.text,
-        _creditorNameController.text,
-        _ibanController.text,
-        _prefixController.text,
-        _accountBodyController.text,
-        _selectedBankCode,
-        _supportedCurrencies.join(','),
-        _useIbanInput
-      ];
+    _titleController.text,
+    _creditorNameController.text,
+    _ibanController.text,
+    _prefixController.text,
+    _accountBodyController.text,
+    _selectedBankCode,
+    _supportedCurrencies.join(','),
+    _useIbanInput,
+  ];
   List<Object?> get _connectionValues => [_tokenController.text, _expiryDate];
   bool get _hasDraft =>
       !const ListEquality<Object?>().equals(_generalValues, _savedGeneral) ||
-      !const ListEquality<Object?>()
-          .equals(_connectionValues, _savedConnection);
+      !const ListEquality<Object?>().equals(
+        _connectionValues,
+        _savedConnection,
+      );
 
   // Validation State
   String? _ibanError;
@@ -117,7 +120,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     _parseInitialIban();
 
     bool hasData = _ibanController.text.isNotEmpty;
-    bool isCzParsed = _prefixController.text.isNotEmpty ||
+    bool isCzParsed =
+        _prefixController.text.isNotEmpty ||
         _accountBodyController.text.isNotEmpty ||
         (_selectedBankCode != null);
 
@@ -141,24 +145,33 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   }
 
   Future<void> _loadBankSyncConnection() async {
-    await ExceptionHandler.guard(context, futureFunction: () async {
-      final connection = await DbBankAccounts.getConnection(_account.id);
-      if (mounted && connection != null) {
-        setState(() {
-          _account = _account.copyWith(bankSync: connection);
-          _pairingCode = connection.receivingAddress?.split('@').first;
-        });
-        widget.onUpdated?.call(_account);
-      }
-    });
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        final connection = await DbBankAccounts.getConnection(_account.id);
+        if (mounted && connection != null) {
+          setState(() {
+            _account = _account.copyWith(bankSync: connection);
+            _pairingCode = connection.receivingAddress?.split('@').first;
+          });
+          widget.onUpdated?.call(_account);
+        }
+      },
+    );
   }
 
   Future<void> _connectBankSync(String mode) async {
-    await ExceptionHandler.guard(context, futureFunction: () async {
-      await DbBankAccounts.manage(_account.id, 'create',
-          values: {'mode': mode});
-      await _loadBankSyncConnection();
-    });
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        await DbBankAccounts.manage(
+          _account.id,
+          'create',
+          values: {'mode': mode},
+        );
+        await _loadBankSyncConnection();
+      },
+    );
   }
 
   bool get _isFio {
@@ -306,12 +319,16 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
 
       if (isCreation) {
         if (widget.routed) {
-          context.router.navigate(BankAccountDetailRoute(
+          context.router.navigate(
+            BankAccountDetailRoute(
               accountId: _account.id.toString(),
               children: [
                 const BankAccountTabsRoute(
-                    children: [BankAccountConnectionRoute()])
-              ]));
+                  children: [BankAccountConnectionRoute()],
+                ),
+              ],
+            ),
+          );
         } else {
           _tabController?.animateTo(1);
         }
@@ -373,6 +390,17 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     );
   }
 
+  void _rememberSavedToken() {
+    final newToken = _tokenController.text;
+    if (newToken.isNotEmpty) {
+      final mask =
+          "************${newToken.length >= 4 ? newToken.substring(newToken.length - 4) : newToken}";
+      setState(() {
+        _account = _account.copyWith(tokenMasked: mask);
+      });
+    }
+  }
+
   Future<void> _saveToken() async {
     setState(() => _isSaving = true);
     try {
@@ -383,14 +411,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       );
       if (!mounted) return;
 
-      final newToken = _tokenController.text;
-      if (newToken.isNotEmpty) {
-        final mask =
-            "************${newToken.length >= 4 ? newToken.substring(newToken.length - 4) : newToken}";
-        setState(() {
-          _account = _account.copyWith(tokenMasked: mask);
-        });
-      }
+      _rememberSavedToken();
 
       await _loadBankSyncConnection();
       if (!mounted) return;
@@ -398,7 +419,20 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       _tokenController.clear();
       _savedConnection = _connectionValues;
     } catch (e) {
-      if (mounted) _showError("${BankAccountStrings.errorSavingToken}: $e");
+      if (!mounted) return;
+      if (e is BankSyncError && e.tokenSaved) {
+        _rememberSavedToken();
+        _tokenController.clear();
+        _savedConnection = _connectionValues;
+      }
+      await _loadBankSyncConnection();
+      if (mounted) {
+        _showError(
+          e is BankSyncError
+              ? '${e.tokenSaved ? BankAccountStrings.tokenSavedNeedsAuthorization : BankAccountStrings.errorSavingToken}\n${BankAccountStrings.syncError(e.code)}'
+              : BankAccountStrings.syncError(null),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -515,47 +549,46 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   }
 
   Widget _general(BuildContext context) => BankAccountGeneralTab(
-        isReadOnly: _isReadOnly,
-        isSaving: _isSaving,
-        formKey: _formKey,
-        titleController: _titleController,
-        creditorNameController: _creditorNameController,
-        ibanController: _ibanController,
-        prefixController: _prefixController,
-        accountBodyController: _accountBodyController,
-        useIbanInput: _useIbanInput,
-        onUseIbanInputChanged: (v) => setState(() => _useIbanInput = v),
-        selectedBankCode: _selectedBankCode,
-        onSelectedBankCodeChanged: (v) => setState(() => _selectedBankCode = v),
-        ibanError: _ibanError,
-        supportedCurrencies: _supportedCurrencies,
-        onAddCurrency: _showAddCurrencyDialog,
-        onRemoveCurrency: (c) => setState(() => _supportedCurrencies.remove(c)),
-        buildLegacyHumanReadable: _buildLegacyHumanReadable,
-        onSave: _saveGeneralInfo,
-        onIbanChanged: _onIbanChanged,
-        onHumanChanged: _onHumanChanged,
-      );
+    isReadOnly: _isReadOnly,
+    isSaving: _isSaving,
+    formKey: _formKey,
+    titleController: _titleController,
+    creditorNameController: _creditorNameController,
+    ibanController: _ibanController,
+    prefixController: _prefixController,
+    accountBodyController: _accountBodyController,
+    useIbanInput: _useIbanInput,
+    onUseIbanInputChanged: (v) => setState(() => _useIbanInput = v),
+    selectedBankCode: _selectedBankCode,
+    onSelectedBankCodeChanged: (v) => setState(() => _selectedBankCode = v),
+    ibanError: _ibanError,
+    supportedCurrencies: _supportedCurrencies,
+    onAddCurrency: _showAddCurrencyDialog,
+    onRemoveCurrency: (c) => setState(() => _supportedCurrencies.remove(c)),
+    buildLegacyHumanReadable: _buildLegacyHumanReadable,
+    onSave: _saveGeneralInfo,
+    onIbanChanged: _onIbanChanged,
+    onHumanChanged: _onHumanChanged,
+  );
   Widget _connection(BuildContext context) => BankAccountConnectionTab(
-        account: _account,
-        isReadOnly: _isReadOnly,
-        isFio: _isFio,
-        isSaving: _isSaving,
-        pairingCode: _pairingCode,
-        emailDomain: _emailDomain,
-        onConnectEmail:
-            _account.id == 0 ? null : () => _connectBankSync('email'),
-        onRegenerateToken: _regenerateToken,
-        tokenController: _tokenController,
-        expiryDate: _expiryDate,
-        onExpiryDateChanged: (d) => setState(() => _expiryDate = d),
-        onSaveToken: _saveToken,
-      );
+    account: _account,
+    isReadOnly: _isReadOnly,
+    isFio: _isFio,
+    isSaving: _isSaving,
+    pairingCode: _pairingCode,
+    emailDomain: _emailDomain,
+    onConnectEmail: _account.id == 0 ? null : () => _connectBankSync('email'),
+    onRegenerateToken: _regenerateToken,
+    tokenController: _tokenController,
+    expiryDate: _expiryDate,
+    onExpiryDateChanged: (d) => setState(() => _expiryDate = d),
+    onSaveToken: _saveToken,
+  );
   Widget _users(BuildContext context) => BankAccountUsersTab(
-        accountId: _account.id,
-        unitId: widget.unitId,
-        isReadOnly: _isReadOnly,
-      );
+    accountId: _account.id,
+    unitId: widget.unitId,
+    isReadOnly: _isReadOnly,
+  );
   @override
   Widget build(BuildContext context) {
     if (widget.routed) {
@@ -638,25 +671,25 @@ class _BankAccountDialogHeader extends StatelessWidget {
   const _BankAccountDialogHeader({required this.title, required this.onClose});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const SizedBox(width: 48),
-            Expanded(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            IconButton(
-              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: onClose,
-              icon: const Icon(Icons.close),
-            ),
-          ],
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      children: [
+        const SizedBox(width: 48),
+        Expanded(
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
         ),
-      );
+        IconButton(
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          onPressed: onClose,
+          icon: const Icon(Icons.close),
+        ),
+      ],
+    ),
+  );
 }
 
 /// URL-backed editor with the same compact presentation as the creation dialog.
@@ -694,65 +727,64 @@ class _RoutedBankAccountDialogState extends State<RoutedBankAccountDialog> {
 
   @override
   Widget build(BuildContext context) => OverlayPortal.targetsRootOverlay(
-        controller: _overlay,
-        overlayChildBuilder: _buildDialog,
-        child: const SizedBox.shrink(),
-      );
+    controller: _overlay,
+    overlayChildBuilder: _buildDialog,
+    child: const SizedBox.shrink(),
+  );
   Widget _buildDialog(BuildContext context) => Offstage(
-        offstage: !_visible,
-        child: BlockSemantics(
-          child: FocusScope(
-            autofocus: true,
-            canRequestFocus: _visible,
-            child: CallbackShortcuts(
-              bindings: {
-                const SingleActivator(LogicalKeyboardKey.escape):
-                    widget.onClose,
-              },
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ModalBarrier(
-                    color: Colors.black54,
-                    onDismiss: widget.onClose,
-                    semanticsLabel: MaterialLocalizations.of(context)
-                        .modalBarrierDismissLabel,
-                  ),
-                  Dialog(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: 600,
-                        maxHeight: 800,
-                      ),
-                      child: Column(
-                        children: [
-                          _BankAccountDialogHeader(
-                            title: widget.title,
-                            onClose: widget.onClose,
-                          ),
-                          Expanded(child: widget.child),
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton(
-                                  onPressed: widget.onClose,
-                                  child: Text(BankAccountStrings.cancel),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+    offstage: !_visible,
+    child: BlockSemantics(
+      child: FocusScope(
+        autofocus: true,
+        canRequestFocus: _visible,
+        child: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.escape): widget.onClose,
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ModalBarrier(
+                color: Colors.black54,
+                onDismiss: widget.onClose,
+                semanticsLabel: MaterialLocalizations.of(context)
+                    .modalBarrierDismissLabel,
               ),
-            ),
+              Dialog(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 600,
+                    maxHeight: 800,
+                  ),
+                  child: Column(
+                    children: [
+                      _BankAccountDialogHeader(
+                        title: widget.title,
+                        onClose: widget.onClose,
+                      ),
+                      Expanded(child: widget.child),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: widget.onClose,
+                              child: Text(BankAccountStrings.cancel),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class BankAccountEditorScope extends InheritedWidget {

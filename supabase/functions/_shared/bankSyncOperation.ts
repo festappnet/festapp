@@ -1,3 +1,4 @@
+import { bankSyncRemote as remote, bankSyncErrorCode, FIO_TOKEN_ERROR } from './bankSyncRemote.ts';
 import { bankSyncHash as hash } from "./bankSyncToken.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 export async function runBankSyncOperation(input: Record<string, any>, fingerprint: string) {
@@ -7,16 +8,6 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
   if (!instanceId || !origin.startsWith("https://") || !adminKey) throw new Error("management_not_configured");
   const { data: context, error: claimError } = await supabaseAdmin.rpc("claim_bank_sync_operation", { p_id: input.operation_id });
   if (claimError) throw new Error("operation_busy");
-  async function remote(path: string, method = "GET", body?: unknown, idempotency?: string) {
-    const response = await fetch(`${origin.replace(/\/$/, "")}${path}`, {
-      method, redirect: "error", signal: AbortSignal.timeout(20_000),
-      headers: { "x-tenant-secret": adminKey, "content-type": "application/json",
-        ...(idempotency ? { "idempotency-key": idempotency } : {}) },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
-    if (!response.ok) throw new Error("remote_operation_failed");
-    return await response.json();
-  }
   async function rpc(name: string, params: Record<string, unknown>) {
     const { data, error } = await supabaseAdmin.rpc(name, params).abortSignal(AbortSignal.timeout(10_000));
     if (error) throw new Error("operation_database_failed");
@@ -55,12 +46,24 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
           await remote(`${path}/fio-token`, 'PUT', { fetch_enabled: false });
           await remote(`${path}/fio-token`, "PUT", { fio_api_token: input.token, fetch_enabled: false, ingest_mode: "api" });
         }
-        const pull = await remote(`${path}/fio-sync`, "POST", {});
-        await rpc("record_bank_sync_pull",{p_id:context.connection_id,p_success_at:pull.api_last_success_at,p_error:null});
+        // Persisted digest must match before the UI is allowed to report storage success.
+        const stored = await remote(`${path}/ingest-state`);
+        if (stored.api_token_hash !== await hash(input.token)) throw new Error('token_storage_not_verified');
+        let verificationError: string | null = null;
+        try {
+          const pull = await remote(`${path}/fio-sync`, "POST", {});
+          await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:pull.api_last_success_at,p_error:null});
+        } catch (error) {
+          if (bankSyncErrorCode(error) !== FIO_TOKEN_ERROR) throw error;
+          verificationError = FIO_TOKEN_ERROR;
+          await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:null,p_error:verificationError});
+        }
+        // Authorization can happen later in Fio; the same stored token is retried.
         await remote(`${path}/fio-token`, "PUT", { fetch_enabled: true, ingest_mode: "api" });
         await rpc("update_bank_sync_connection_metadata", { p_id: context.connection_id,
-          p_pairing_code: null, p_expiry: input.expiry ?? null, p_state: "connected" });
-        result = { state: "connected" };
+          p_pairing_code: null, p_expiry: input.expiry ?? null, p_state: verificationError ? "degraded" : "connected" });
+        result = { state: verificationError ? "degraded" : "connected", token_saved:true,
+          ...(verificationError ? {verification_error:verificationError} : {}) };
       } else if (input.operation === "rotate_pairing") {
         let account = await remote(path);
         if (account.pairing_code === context.request.expected_pairing) account = await remote(`${path}/regenerate-pairing`, "POST", {});
@@ -80,8 +83,12 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
     }
     await rpc("complete_bank_sync_operation", { p_id: input.operation_id, p_state: "completed", p_result: result,p_lease_token:context.lease_token });
     return result;
-  } catch {
+  } catch (error) {
+    const code = bankSyncErrorCode(error);
+    if (context.connection_id) await supabaseAdmin.rpc('record_bank_sync_pull', {
+      p_id:context.connection_id,p_success_at:null,p_error:code,
+    });
     await supabaseAdmin.rpc("complete_bank_sync_operation", { p_id: input.operation_id, p_state: "uncertain", p_result: null,p_lease_token:context.lease_token });
-    throw new Error("operation_needs_reconciliation");
+    throw error;
   }
 }

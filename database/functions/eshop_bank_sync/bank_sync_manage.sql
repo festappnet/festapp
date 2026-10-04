@@ -3,7 +3,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE v_result jsonb;
 BEGIN
   PERFORM public.check_is_admin_for_bank_account(p_bank_account_id);
-  SELECT jsonb_build_object('id',c.id,'state',c.state,'mode',c.mode,
+  SELECT jsonb_build_object('id',c.id,'remote_bank_account_id',c.remote_bank_account_id,'state',c.state,'mode',c.mode,
     'receiving_address',CASE WHEN c.pairing_code IS NOT NULL THEN c.pairing_code||'@banksync.festapp.net' END,
     'bank_pull_at',c.bank_pull_at,'receiver_commit_at',c.receiver_commit_at,'last_error',c.last_error,
     'token_expiry_at',c.token_expiry_at) INTO v_result FROM eshop.bank_sync_connections c
@@ -122,7 +122,10 @@ CREATE OR REPLACE FUNCTION public.record_bank_sync_pull(p_id bigint,p_success_at
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
   PERFORM public.require_service_role();
-  UPDATE eshop.bank_sync_connections SET bank_pull_at=COALESCE(p_success_at,bank_pull_at),last_error=left(p_error,256) WHERE id=p_id;
+  UPDATE eshop.bank_sync_connections SET bank_pull_at=COALESCE(p_success_at,bank_pull_at),last_error=left(p_error,256),
+    state=CASE WHEN state IN ('connected','degraded') THEN
+      CASE WHEN p_error IS NOT NULL THEN 'degraded' WHEN p_success_at IS NOT NULL THEN 'connected' ELSE state END
+      ELSE state END WHERE id=p_id;
 END;
 $$;
 REVOKE ALL ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text) FROM PUBLIC,anon,authenticated;

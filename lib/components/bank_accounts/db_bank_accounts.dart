@@ -1,37 +1,60 @@
+import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
 import 'package:uuid/uuid.dart';
+
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
+
 import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
 
 class DbBankAccounts {
   static final Map<String, String> _operationIds = {};
-  static Future<Map<String, dynamic>> manage(int accountId, String operation,
-      {Map<String, dynamic> values = const {}}) async {
-    final key = '$accountId:$operation';
+  static Future<Map<String, dynamic>> manage(
+    int accountId,
+    String operation, {
+    Map<String, dynamic> values = const {},
+  }) async {
+    final payloadHash = sha256.convert(utf8.encode(jsonEncode(values)));
+    final key = '$accountId:$operation:$payloadHash';
     final operationId = _operationIds.putIfAbsent(key, () => const Uuid().v4());
-    final response =
-        await _supabase.functions.invoke('bank-sync-manage', body: {
-      'account_id': accountId,
-      'operation': operation,
-      'operation_id': operationId,
-      ...values,
-    });
+    late final FunctionResponse response;
+    try {
+      response = await _supabase.functions.invoke(
+        'bank-sync-manage',
+        body: {
+          'account_id': accountId,
+          'operation': operation,
+          'operation_id': operationId,
+          ...values,
+        },
+      );
+    } on FunctionException catch (error) {
+      throw BankSyncError.fromResponse(
+        error.details is Map ? error.details as Map : const {},
+      );
+    }
     final result = Map<String, dynamic>.from(response.data as Map);
     if (response.status >= 400 || result.containsKey('error')) {
-      throw Exception(result['error']);
+      throw BankSyncError.fromResponse(result);
     }
     _operationIds.remove(key);
+    if (result.containsKey('verification_error')) {
+      throw BankSyncError.fromResponse(result);
+    }
     return result;
   }
 
   static Future<BankSyncConnection?> getConnection(int accountId) async {
-    final response = await _supabase.rpc('get_bank_sync_connection',
-        params: {'p_bank_account_id': accountId});
-    return response == null
+    final response = await _supabase.functions.invoke(
+      'bank-sync-manage',
+      body: {'account_id': accountId, 'operation': 'status'},
+    );
+    return response.data == null
         ? null
         : BankSyncConnection.fromJson(
-            Map<String, dynamic>.from(response as Map));
+            Map<String, dynamic>.from(response.data as Map),
+          );
   }
 
   static final _supabase = Supabase.instance.client;
@@ -84,8 +107,10 @@ class DbBankAccounts {
       final result = await manage(bankAccountId, 'rotate_pairing');
       return (result['receiving_address'] as String).split('@').first;
     }
-    final response = await _supabase.rpc('regenerate_bank_account_pairing_code',
-        params: {'p_account_id': bankAccountId});
+    final response = await _supabase.rpc(
+      'regenerate_bank_account_pairing_code',
+      params: {'p_account_id': bankAccountId},
+    );
     return response as String;
   }
 
@@ -149,8 +174,11 @@ class DbBankAccounts {
     if (await getConnection(bankAccountId) == null) {
       await manage(bankAccountId, 'create', values: {'mode': 'api'});
     }
-    await manage(bankAccountId, 'set_token',
-        values: {'token': token, 'expiry': expiryDate?.toIso8601String()});
+    await manage(
+      bankAccountId,
+      'set_token',
+      values: {'token': token, 'expiry': expiryDate?.toIso8601String()},
+    );
   }
 
   static Future<List<BankAccountModel>> getMyAdminBankAccounts() async {

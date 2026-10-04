@@ -46,6 +46,11 @@ class BankAccountConnectionTab extends StatefulWidget {
 
 class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   bool _isTokenVisible = false;
+  String? get _storedToken => widget.account.bankSync != null
+      ? widget.account.bankSync!.tokenMasked
+      : widget.account.tokenMasked;
+  DateTime? get _lastBankPull =>
+      widget.account.bankSync?.bankPullAt ?? widget.account.lastFioFetchTime;
 
   @override
   Widget build(BuildContext context) {
@@ -60,13 +65,21 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
           children: [
             if (widget.account.bankSync != null) ...[
               Text(
-                  '${BankAccountStrings.connectionState}: ${widget.account.bankSync!.state}'),
+                '${BankAccountStrings.connectionState}: ${BankAccountStrings.connectionStatus(widget.account.bankSync!.state)}',
+              ),
               Text(
-                  '${BankAccountStrings.bankPull}: ${widget.account.bankSync!.bankPullAt ?? BankAccountStrings.notReceived}'),
+                '${BankAccountStrings.bankPull}: ${widget.account.bankSync!.bankPullAt ?? BankAccountStrings.notReceived}',
+              ),
               Text(
-                  '${BankAccountStrings.receiverCommit}: ${widget.account.bankSync!.receiverCommitAt ?? BankAccountStrings.notReceived}'),
+                '${BankAccountStrings.receiverCommit}: ${widget.account.bankSync!.receiverCommitAt ?? BankAccountStrings.notReceived}',
+              ),
               if (widget.account.bankSync!.lastError != null)
-                Text(widget.account.bankSync!.lastError!),
+                Text(
+                  BankAccountStrings.syncError(
+                    widget.account.bankSync!.lastError,
+                  ),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               if (widget.account.bankSync!.mode == 'email')
                 Text(BankAccountStrings.emailIdentityNotice),
               const SizedBox(height: 16),
@@ -76,8 +89,9 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                 widget.isFio &&
                 !widget.isReadOnly)
               OutlinedButton(
-                  onPressed: widget.onConnectEmail,
-                  child: Text(BankAccountStrings.connectEmail)),
+                onPressed: widget.onConnectEmail,
+                child: Text(BankAccountStrings.connectEmail),
+              ),
             if (widget.account.bankSync?.mode == 'email') ...[
               if (widget.isFio) ...[
                 const SizedBox(height: 24),
@@ -86,9 +100,13 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                     const Expanded(child: Divider()),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(CommonStrings.or.toUpperCase(),
-                          style: const TextStyle(
-                              color: Colors.grey, fontSize: 12)),
+                      child: Text(
+                        CommonStrings.or.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                     const Expanded(child: Divider()),
                   ],
@@ -112,12 +130,14 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                         children: [
                           const Text("💡 ", style: TextStyle(fontSize: 14)),
                           Expanded(
-                              child: Text(
-                                  BankAccountStrings
-                                      .setupGuideExplanationFioNote,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13))),
+                            child: Text(
+                              BankAccountStrings.setupGuideExplanationFioNote,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -132,9 +152,11 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                       children: [
                         const Text("✅ ", style: TextStyle(fontSize: 14)),
                         Expanded(
-                            child: Text(
-                                BankAccountStrings.setupGuideExplanationSet,
-                                style: const TextStyle(fontSize: 13))),
+                          child: Text(
+                            BankAccountStrings.setupGuideExplanationSet,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -143,9 +165,11 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                       children: [
                         const Text("❌ ", style: TextStyle(fontSize: 14)),
                         Expanded(
-                            child: Text(
-                                BankAccountStrings.setupGuideExplanationNotSet,
-                                style: const TextStyle(fontSize: 13))),
+                          child: Text(
+                            BankAccountStrings.setupGuideExplanationNotSet,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -174,16 +198,21 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                           icon: const Icon(Icons.copy),
                           onPressed: () {
                             Clipboard.setData(
-                                ClipboardData(text: forwardingEmail));
+                              ClipboardData(text: forwardingEmail),
+                            );
                             ToastHelper.Show(
-                                context, BankAccountStrings.copyEmail);
+                              context,
+                              BankAccountStrings.copyEmail,
+                            );
                           },
                         ),
                 ),
                 child: SelectableText(
                   forwardingEmail,
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               if (widget.pairingCode == null)
@@ -192,16 +221,20 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline,
-                          size: 16, color: Colors.grey),
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           BankAccountStrings.maskedEmailExplanation,
                           style: const TextStyle(
-                              color: Colors.grey,
-                              fontStyle: FontStyle.italic,
-                              fontSize: 13),
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -216,8 +249,9 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                     child: Text(
                       BankAccountStrings.emailSecurityNote,
                       style: TextStyle(
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                          fontSize: 13),
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -265,18 +299,18 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
         ],
       ),
       const SizedBox(height: 16),
-      if (widget.account.tokenMasked != null)
+      if (_storedToken != null)
         Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text(
-            "${BankAccountStrings.tokenMaskedInfo}: ${widget.account.tokenMasked}",
+            "${BankAccountStrings.tokenMaskedInfo}: ${_storedToken}",
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Text(
-          "${BankAccountStrings.lastFioFetchTime}: ${widget.account.lastFioFetchTime == null ? BankAccountStrings.fioFetchNever : timeago.format(widget.account.lastFioFetchTime!.toLocal(), locale: context.locale.languageCode)}",
+          "${BankAccountStrings.lastFioFetchTime}: ${_lastBankPull == null ? BankAccountStrings.fioFetchNever : timeago.format(_lastBankPull!.toLocal(), locale: context.locale.languageCode)}",
           style: const TextStyle(color: Colors.grey, fontSize: 13),
         ),
       ),
@@ -292,12 +326,13 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
         decoration: InputDecoration(
           labelText: BankAccountStrings.fioTokenLabel,
           hintText: BankAccountStrings.fioTokenHint,
-          helperText: widget.account.tokenMasked != null
+          helperText: _storedToken != null
               ? BankAccountStrings.leaveEmptyToKeepToken
               : null,
           suffixIcon: IconButton(
-            icon:
-                Icon(_isTokenVisible ? Icons.visibility : Icons.visibility_off),
+            icon: Icon(
+              _isTokenVisible ? Icons.visibility : Icons.visibility_off,
+            ),
             onPressed: () {
               setState(() {
                 _isTokenVisible = !_isTokenVisible;
@@ -347,21 +382,19 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
     ];
   }
 
-  Widget _buildGuideCard(BuildContext context,
-      {required String title, required List<String> steps}) {
+  Widget _buildGuideCard(
+    BuildContext context, {
+    required String title,
+    required List<String> steps,
+  }) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: Theme.of(context).dividerColor,
-        ),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       child: ExpansionTile(
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
           steps.first,
           maxLines: 1,
