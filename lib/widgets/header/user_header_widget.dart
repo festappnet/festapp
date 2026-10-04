@@ -399,8 +399,8 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                     applyHeightToLastDescent: false),
                 style: TextStyle(
                   fontFamily: ThemeConfig.fontFamily,
-                  fontSize: widget.compact ? 18 : 20,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                   height: 1,
                   color: Colors.white,
                 ),

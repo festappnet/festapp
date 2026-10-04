@@ -383,13 +383,13 @@ class AppPanelHelper {
     final theme = Theme.of(context);
     final onAppBarColor = theme.appBarTheme.foregroundColor ?? Colors.white;
     final textStyle = TextStyle(
-        fontSize: 16,
+        fontSize: 17,
         color: onAppBarColor,
         fontWeight: isBold ? FontWeight.bold : FontWeight.normal);
     // The bold face is Gill Sans; keep both title weights on Futura's line metrics.
     final titleStrut = StrutStyle(
       fontFamily: ThemeConfig.fontFamily,
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: FontWeight.normal,
       forceStrutHeight: true,
     );
@@ -613,8 +613,8 @@ class AppPanelHelper {
             },
             child: Padding(
               // Add padding to space it from the screen edge and from the breadcrumbs
-              padding: const EdgeInsets.fromLTRB(16, 4, 24, 4),
-              child: LogoWidget(height: 32, forceDark: true),
+              padding: const EdgeInsets.fromLTRB(16, 2, 24, 2),
+              child: LogoWidget(height: 40, forceDark: true),
             ),
           ),
           // Breadcrumbs take up the remaining space
