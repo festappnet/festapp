@@ -22,6 +22,16 @@ class TicketEditorWidgets {
     return '$count / $maxStr';
   }
 
+  static String _emptyProductTypesMessage(FormModel form) {
+    final hasBlueprintProducts = form.relatedFields.any((field) =>
+        field.isTicketField == true &&
+        ((field.type == FormHelper.fieldTypeSpot && field.isHidden != true) ||
+            field.productType?.type == ProductModel.spotType));
+    return hasBlueprintProducts
+        ? FormStrings.productsInBlueprint
+        : FormStrings.noProductTypes;
+  }
+
   /// Helper to get the `max_tickets` value, defaulting to 1.
   static int _getMaxTickets(FormFieldModel ticketField) {
     ticketField.data ??= {};
@@ -59,7 +69,7 @@ class TicketEditorWidgets {
       children.add(Padding(
         padding: const EdgeInsets.only(top: 8.0),
         child: Text(
-          FormStrings.noProductTypes,
+          _emptyProductTypesMessage(form),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ));
@@ -107,6 +117,13 @@ class TicketEditorWidgets {
       style: Theme.of(context).textTheme.titleSmall,
     ));
     children.add(const SizedBox(height: 8));
+    if (productTypeFields.isEmpty) {
+      children.add(Text(
+        _emptyProductTypesMessage(form),
+        style: Theme.of(context).textTheme.bodyMedium,
+      ));
+      children.add(const SizedBox(height: 16));
+    }
     for (var ptField in productTypeFields) {
       children.add(ProductTypeEditorWidgets.buildProductTypeEditor(
           context, form, ptField, refresh));

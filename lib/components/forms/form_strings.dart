@@ -286,6 +286,9 @@ class FormStrings {
       'FormsFeature.phoneFormatValidation'.tr();
 
   // --- Strings from TicketEditorWidgets ---
+  static String get productsInBlueprint =>
+      'FormsFeature.productsInBlueprint'.tr();
+
   static String get noProductTypes =>
       'FormsFeature.noProductTypes'.tr(); // "No Product Types"
   static String get productTypes =>
