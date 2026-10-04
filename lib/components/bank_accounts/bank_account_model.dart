@@ -170,6 +170,7 @@ class BankSyncConnection {
   final DateTime? bankPullAt;
   final DateTime? receiverCommitAt;
   final String? lastError;
+  final String? tokenMasked;
   BankSyncConnection.fromJson(Map<String, dynamic> json)
       : state = json['state'] as String,
         mode = json['mode'] as String,
@@ -177,13 +178,15 @@ class BankSyncConnection {
         bankPullAt = DateTime.tryParse(json['bank_pull_at']?.toString() ?? ''),
         receiverCommitAt =
             DateTime.tryParse(json['receiver_commit_at']?.toString() ?? ''),
-        lastError = json['last_error'] as String?;
+        lastError = json['last_error'] as String?,
+        tokenMasked = json['token_masked'] as String?;
   Map<String, dynamic> toJson() => {
         'state': state,
         'mode': mode,
         'receiving_address': receivingAddress,
         'bank_pull_at': bankPullAt?.toIso8601String(),
         'receiver_commit_at': receiverCommitAt?.toIso8601String(),
-        'last_error': lastError
+        'last_error': lastError,
+        'token_masked': tokenMasked
       };
 }

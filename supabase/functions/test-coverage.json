@@ -236,6 +236,31 @@
       "behaviorTests": [
         "supabase/functions/report-exchange-rates/handler_test.ts"
       ]
+    },
+    "bank-sync-manage": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/bankSyncOperation_test.ts"
+      ]
+    },
+    "bank-sync-reconcile": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/bankSyncOperation_test.ts",
+        "supabase/functions/_shared/bankSyncToken_test.ts"
+      ]
+    },
+    "bank-sync-webhook": {
+      "smokeTests": [
+        "supabase/functions/bank-sync-webhook/handler_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/bank-sync-webhook/handler_test.ts"
+      ]
     }
   },
   "excluded": {

@@ -1,3 +1,4 @@
+import { bankSyncRemote, bankSyncAccountError, bankSyncErrorCode } from '../_shared/bankSyncRemote.ts';
 import { runBankSyncOperation } from "../_shared/bankSyncOperation.ts";
 import { sealBankSyncToken } from "../_shared/bankSyncToken.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
@@ -29,7 +30,21 @@ Deno.serve(async (req) => {
   if (!Number.isSafeInteger(input.account_id) || input.account_id <= 0) return json({ error: "account_required" }, 400);
   const { data: status, error: rightsError } = await user.rpc("get_bank_sync_connection", { p_bank_account_id: input.account_id });
   if (rightsError) return json({ error: "bank_account_admin_required" }, 403);
-  if (input.operation === "status") return json(status);
+  if (input.operation === "status") {
+    if (!status || !status.remote_bank_account_id) return json(status);
+    try {
+      if (!/^[0-9]+$/.test(status.remote_bank_account_id)) throw new Error('invalid_remote_mapping');
+      const remote = await bankSyncRemote(`/bank-accounts/${status.remote_bank_account_id}`);
+      const lastError = bankSyncAccountError(remote.api_last_error);
+      const recorded = await supabaseAdmin.rpc('record_bank_sync_pull', {
+        p_id:status.id,p_success_at:remote.api_last_success_at,p_error:lastError,
+      });
+      if (recorded.error) throw new Error('status_update_failed');
+      const refreshed = await user.rpc('get_bank_sync_connection', {p_bank_account_id:input.account_id});
+      if (refreshed.error) throw new Error('status_read_failed');
+      return json({...refreshed.data,token_masked:remote.api_token_prefix ? `${remote.api_token_prefix}********` : null});
+    } catch { return json({...status,last_error:status.last_error ?? 'bank_sync_retry_required'}); }
+  }
   if (!operations.has(input.operation) || typeof input.operation_id !== "string" || !/^[0-9a-f-]{36}$/i.test(input.operation_id)) {
     return json({ error: "operation_required" }, 400);
   }
@@ -57,7 +72,7 @@ Deno.serve(async (req) => {
     });
     if (stage.error) return json({ error: "operation_busy", operation_id: input.operation_id }, 409);
     return json(await runBankSyncOperation(input, fingerprint));
-  } catch {
-    return json({ error: "operation_needs_reconciliation", operation_id: input.operation_id }, 503);
+  } catch (error) {
+    return json({ error: bankSyncErrorCode(error), operation_id: input.operation_id }, 503);
   }
 });

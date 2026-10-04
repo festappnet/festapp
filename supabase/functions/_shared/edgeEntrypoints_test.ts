@@ -232,3 +232,11 @@ Deno.test("confirmation status needs an opaque capability, never an order ID", a
   );
   assertEquals(response.status, 403);
 });
+
+for (const name of ["bank-sync-manage", "bank-sync-reconcile"]) {
+  Deno.test(`${name} rejects missing authorization before bank access`, async () => {
+    const handler = await loadHandler(name);
+    const response = await handler(new Request("https://edge-test.invalid", {method:"POST",body:"{}"}));
+    assertEquals(response.status, 401);
+  });
+}

@@ -2,6 +2,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class BankAccountStrings {
+  static String syncError(String? code) =>
+      (code == 'fio_token_invalid_or_inactive'
+              ? 'BankAccount.fioTokenInactive'
+              : 'BankAccount.syncRetryRequired')
+          .tr();
+  static String get tokenSavedNeedsAuthorization =>
+      'BankAccount.tokenSavedNeedsAuthorization'.tr();
+  static String connectionStatus(String state) =>
+      'BankAccount.syncState.$state'.tr();
   static String get connectEmail => 'BankAccount.connect_email'.tr();
   static String get connectionState => 'BankAccount.connection_state'.tr();
   static String get bankPull => 'BankAccount.bank_pull'.tr();

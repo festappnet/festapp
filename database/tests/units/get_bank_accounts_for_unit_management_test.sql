@@ -96,6 +96,24 @@ BEGIN
     RAISE NOTICE 'Success Case Passed.';
 
 
+    -- The provider failure remains visible until a successful bank pull.
+    PERFORM set_config('request.jwt.claim.role','service_role',true);
+    PERFORM public.record_bank_sync_pull(c.id,NULL,'fio_token_invalid_or_inactive')
+      FROM eshop.bank_sync_connections c WHERE c.bank_account_id=v_acc_fio;
+    SELECT * INTO v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    IF v_fio_rec.bank_sync->>'state' <> 'degraded' OR
+       v_fio_rec.bank_sync->>'last_error' <> 'fio_token_invalid_or_inactive' THEN
+      RAISE EXCEPTION 'Bank failure must be visible in account settings';
+    END IF;
+    PERFORM public.record_bank_sync_pull(c.id,'2026-10-04T12:00:00Z',NULL)
+      FROM eshop.bank_sync_connections c WHERE c.bank_account_id=v_acc_fio;
+    SELECT * INTO v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    IF v_fio_rec.bank_sync->>'state' <> 'connected' OR
+       v_fio_rec.bank_sync->>'last_error' IS NOT NULL THEN
+      RAISE EXCEPTION 'Successful pull must clear the previous bank error';
+    END IF;
+    PERFORM set_config('request.jwt.claim.role','authenticated',true);
+
     -- 3. Test Failure (As Non-Manager)
     PERFORM set_config('request.jwt.claim.sub', v_user_other::text, true);
     
