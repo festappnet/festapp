@@ -1,6 +1,6 @@
 # Order email history navigation
 
-Status: ACTIVE on vstupenky.online, version 0.20.84+568. User explicitly requested removal of the standalone Email tab and a read-only Email history subtab under Orders. UI deployment is authorized only for `prod/festapptickets` / https://vstupenky.online.
+Status: ACTIVE on vstupenky.online, version 0.20.85+569. Standard-grid follow-up implemented below, awaiting deployment. User explicitly requested removal of the standalone Email tab and a read-only Email history subtab under Orders. UI deployment is authorized only for `prod/festapptickets` / https://vstupenky.online.
 
 Remove standalone admin/reservations Email routes and navigation items. Add `/reservations/orders/email-history` alongside current Orders and Orders history. Reuse the read-only event/attempt detail, scoped to the current occasion; show order ID, message kind, state and timestamp. Hide organization-wide switching and account email kinds in this subtab.
 
@@ -17,3 +17,17 @@ Validation: 109 Flutter email history/navigation tests and six local SQL email s
 - Queue remains unpaused, verified quota refresh continues through the new Edge Function and health reports no operational alerts. Both owner Edge canaries remain accepted/delivered with completed post-actions. The two historical unknown messages remain quarantined.
 
 The standalone tab is removed on this authorized web release. Email history is read-only under Orders and includes only messages with an order association. The generic user-specific history and existing email template editor retain their existing roles.
+
+
+## Prepared editor release
+
+- Canonical main `13ce208e0f870836a57273eb1c17f9bb9d53c0fe` ([PR #274](https://github.com/festappnet/festapp/pull/274)) contains the remaining prepared ticket-editor branding and contrast changes, preserving newer editor canvas/zoom/save behavior. The newer occasion report and navigation title metrics were already canonical, so the earlier local report draft was not reapplied.
+- `prod/festapptickets` advanced to `02502792c06d5a31fd235828cef0e27d1d79a410`, version `0.20.85+569`, with matching main ancestry and a passing canonical tenant drift check. [Deployment 37192057969](https://github.com/festappnet/festapp/actions/runs/37192057969) succeeded. Independent live manifest verification confirmed this version. 183 targeted editor/navigation tests passed.
+
+## Standard-grid follow-up
+
+Email delivery history now uses the same `SingleTableDataGrid`, `SingleDataGridController` and `ITrinaRowModel` flow as Orders history. The custom list, dropdown filters and load-more controls are removed; the shared grid provides column filters and sorting. Columns show order ID, date, kind, delivery state and a redacted detail action. All columns are read-only, creation/deletion are disabled, and persistence actions are disabled. Refresh reloads the authorized reporting source.
+
+The model drains the existing read-only RPC's descending-ID keyset pages (100 records per request) before local grid filtering, retaining occasion/order/user and orders-only scope on every request. Malformed/non-progressing pages fail visibly through the existing exception handler. Row references retain metadata without interpreting formatted display values. Context changes recreate the controller; the shared grid now ignores late initial-load completion after disposal. Organization overview and per-user/per-order dialogs keep their existing scope, with no parallel legacy list implementation.
+
+No SQL, RPC contract, backend deployment, e-mail sending or other tenant rollout is needed. Targeted email/grid/navigation checks: 123 passing tests. Targeted changed email/model/test analyzer: no issues. Full `automation/test_all.sh` passed against the isolated database on port 55434: 1056 Flutter tests (one skip), 240 Deno tests, web/SQL/automation checks and three worker integration tests. 27 remote integration cases were intentionally skipped without external test credentials; no production fixtures or capacity test was used. Deployment evidence will be recorded after completion.
