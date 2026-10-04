@@ -1518,7 +1518,10 @@
     "unknownDatabaseError": "An unknown database error occurred.",
     "detailsLabel": "Details:",
     "moreOptions": "More Options",
-    "user": "User"
+    "user": "User",
+    "discardChanges": "Discard changes",
+    "discardChangesConfirmation": "Discard unsaved changes?",
+    "keepEditing": "Keep editing"
   },
   "BankAccount": {
     "settingsTitle": "Bank Account Settings",

@@ -1,4 +1,7 @@
 import '../ticket_layout/ticket_layout_saver.dart';
+import 'dart:async';
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -45,9 +48,31 @@ class OccasionSettingsTab extends StatefulWidget {
 
 class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   final _htmlSave = HtmlSaveCoordinator();
+  final _snapshot = EditorSnapshot();
+  final _draftRevision = ValueNotifier<int>(0);
+  Object get _draft => [
+        _title,
+        _linkController.text,
+        _replyToEmailController.text,
+        _from?.toIso8601String(),
+        _to?.toIso8601String(),
+        _description,
+        _isOpen,
+        _isHidden,
+        _isPromoted,
+        _selectedTimezone,
+        occasion?.features.map((f) => f.toJson()).toList()
+      ];
+  void _draftChanged() => scheduleMicrotask(() {
+        if (!mounted || _isLoading) return;
+        _formKey.currentState?.save();
+        _draftRevision.value++;
+      });
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-      coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave,
+      child: EditorDraftScope(
+          onChanged: _draftChanged, child: _buildHtmlParent(context)));
 
   final _formKey = GlobalKey<FormState>();
 
@@ -92,6 +117,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
   @override
   void dispose() {
+    _draftRevision.dispose();
     _htmlSave.dispose();
     _linkController.dispose();
     _replyToEmailController.dispose();
@@ -101,7 +127,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   Future<void> _loadData() async {
     if (occasionLink == null) return;
     setState(() {
-      _isLoading = true;
+      _isLoading = occasion == null;
     });
 
     final identity = occasionLink!;
@@ -111,6 +137,13 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       setState(() {
         occasion = fetchedOccasion;
         _initializeFormState();
+        _snapshot.accept(_draft);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !identical(occasion, fetchedOccasion)) return;
+          _formKey.currentState?.save();
+          _snapshot.accept(_draft);
+          _draftRevision.value++;
+        });
         _isLoading = false;
       });
     }
@@ -220,6 +253,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
           // 5. Persist the changes to the database.
           await DbOccasions.updateOccasion(occasion!);
           _htmlSave.markSaved();
+          _snapshot.accept(_draft);
 
           // 6. Check if the component is still mounted and the new link is valid.
           if (mounted && occasion!.link != null) {
@@ -392,7 +426,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
             padding: const EdgeInsets.all(16.0),
             child: Form(
               key: _formKey,
+              onChanged: _draftChanged,
               child: Column(
+                key: ObjectKey(occasion),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   TextFormField(
@@ -607,33 +643,18 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Theme.of(context).appBarTheme.backgroundColor,
-        padding: const EdgeInsets.all(10),
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: _isSaving || !isEditingEnabled ? null : _loadData,
-                child: Text(CommonStrings.storno),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                icon: _isSaving
-                    ? const SizedBox.shrink()
-                    : const Icon(Icons.save, size: 18),
-                label: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(CommonStrings.save),
-                onPressed:
-                    _isSaving || !isEditingEnabled ? null : _saveSettings,
-              ),
-            ],
-          ),
+      bottomNavigationBar: AnimatedBuilder(
+        animation: Listenable.merge([_htmlSave, _draftRevision]),
+        builder: (context, _) => EditorActionBar(
+          hasChanges: !_isLoading &&
+              occasion != null &&
+              (_snapshot.differs(_draft) || _htmlSave.hasActiveDraft),
+          enabled: !_isSaving && isEditingEnabled,
+          onSave: _saveSettings,
+          onDiscard: () async {
+            await _loadData();
+            if (mounted) _htmlSave.markSaved();
+          },
         ),
       ),
     );
