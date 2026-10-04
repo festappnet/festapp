@@ -1,5 +1,11 @@
 # Jedna e-mailová fronta, okamžité zpracování a AWS SES reporting
 
+## Produkční dodatek 2026-10-04
+
+Uživatel následně autorizoval skutečné e-maily, AWS nastavení, merge/push a úplné produkční nasazení. Společný backend je zapnutý a všech 11 schválených aktivních webů má verzi 0.20.83+567 s e-mailovým stavem v Orders. Důkazy a přesné commity jsou v [produkčním záznamu](canonical-email-delivery-PRODUCTION-2026-10-04.md).
+
+Živá data odhalila historickou placenou objednávku s neplatnou adresou, kterou přísný enqueue původně odmítl. Migrace atomicky rollbackovala; opravený převod takové kandidáty zachovává jako unknown s původní adresou a chybou pro ruční řešení. Produkční PostgREST safeupdate také vyžaduje WHERE u singleton aktualizací a GoTrue nepovoluje HTTP hook mimo loopback. Následné kanonické migrace ochranu zachovávají, hook používá veřejný HTTPS API origin a stávající recovery obnovuje kvótu i při nečinné frontě. Tyto skutečnosti nahrazují původní provozní předpoklady níže.
+
 Datum: 2026-10-03  
 Stav: Návrh připravený pro implementaci; produkční inventura a nasazení neprovedeny  
 Verification: standard - sdílené chování, souběh, autentizace, platby a migrace  
