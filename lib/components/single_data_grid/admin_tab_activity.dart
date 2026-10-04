@@ -25,9 +25,15 @@ class AdminTabActivity extends InheritedNotifier<TabController> {
     final scope =
         context.dependOnInheritedWidgetOfExactType<AdminTabActivity>();
     if (scope == null) return true;
-    final index = scope.routeNames == null
-        ? scope.index
-        : scope.routeNames!.indexOf(context.routeData.name);
+    var index = scope.index;
+    if (scope.routeNames != null) {
+      index = -1;
+      RouteData? route = context.routeData;
+      while (route != null && index < 0) {
+        index = scope.routeNames!.indexOf(route.name);
+        route = route.parent;
+      }
+    }
     return scope.parentActive && (index < 0 || scope.notifier!.index == index);
   }
 }
