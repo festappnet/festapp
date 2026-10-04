@@ -3,6 +3,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/models/product_price_wave.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
 import 'package:flutter/services.dart';
+import 'package:fstapp/widgets/time_data_range_picker.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -89,7 +90,7 @@ void main() {
       if (dirty) {
         await tester.enterText(find.byType(TextField).first, '550');
       }
-      await tester.tap(find.text('Nastavit cenové vlny'));
+      await tester.tap(find.text('Cenové vlny'));
       await tester.pumpAndSettle();
       if (dirty) {
         expect(opened, isFalse);
@@ -97,7 +98,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(ProductPriceChangesDialog), findsOneWidget);
         expect(opened, isFalse);
-        await tester.tap(find.text('Nastavit cenové vlny'));
+        await tester.tap(find.text('Cenové vlny'));
         await tester.pumpAndSettle();
         await tester.tap(find.widgetWithText(FilledButton, CommonStrings.discardChanges));
         await tester.pumpAndSettle();
@@ -232,8 +233,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), '550');
-    await tester.enterText(find.byType(TextField).at(1), '2090-10-15');
-    await tester.enterText(find.byType(TextField).at(2), '09:00');
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onDateChanged(
+        DateTime(2090, 10, 15));
+    await tester.pump();
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onTimeChanged(
+        const TimeOfDay(hour: 9, minute: 0));
+    await tester.pump();
     await tester.tap(find.widgetWithText(FilledButton, 'Naplánovat změnu'));
     await tester.pump();
     expect(calls, 1);
@@ -271,8 +276,12 @@ void main() {
     expect(find.text('Europe/Amsterdam'), findsNothing);
     expect(find.textContaining('Cena platí pro nové objednávky'), findsNothing);
     await tester.enterText(find.byType(TextField).at(0), '550');
-    await tester.enterText(find.byType(TextField).at(1), '2090-10-15');
-    await tester.enterText(find.byType(TextField).at(2), '09:00');
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onDateChanged(
+        DateTime(2090, 10, 15));
+    await tester.pump();
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onTimeChanged(
+        const TimeOfDay(hour: 9, minute: 0));
+    await tester.pump();
     await tester.tap(find.widgetWithText(FilledButton, 'Naplánovat změnu'));
     await tester.pumpAndSettle();
     expect(saved, DateTime(2090, 10, 15, 9).toUtc());
