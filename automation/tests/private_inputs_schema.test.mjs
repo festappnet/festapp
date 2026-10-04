@@ -8,6 +8,25 @@ const schema = JSON.parse(readFileSync(
 ));
 
 const consumedPrivateInputs = [
+  "EMAIL_PAYLOAD_KEY",
+  "EMAIL_GATEWAY_TOKEN",
+  "EMAIL_GATEWAY_URL",
+  "EMAIL_SNS_TOPIC_ARN",
+  "EMAIL_SES_ACCOUNT_ID",
+  "EMAIL_SES_REGION",
+  "EMAIL_SES_ACCESS_KEY_ID",
+  "EMAIL_SES_SECRET_ACCESS_KEY",
+  "EMAIL_SES_TRANSACTIONAL_SET",
+  "EMAIL_SES_SECURITY_SET",
+  "AUTH_EMAIL_PUBLIC_URL",
+  "AUTH_EMAIL_HOOK_SECRET",
+  "APP_LINKS_ORGANIZATION_ID",
+  "EMAIL_GATEWAY_DENO_IMAGE",
+  "EMAIL_DELIVERY_OWNER_EMAIL",
+  "EMAIL_SES_SESSION_TOKEN",
+  "EMAIL_SES_ENGAGEMENT_SET",
+  "EMAIL_SAFE_CLICK_ORIGINS",
+
   "SUPABASE_ACCESS_TOKEN",
   "SUPABASE_DB_PASSWORD",
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -43,6 +62,12 @@ const consumedPrivateInputs = [
   "FESTAPP_BACKUP_IDENTITY_FILE",
   "SMTP_USER_PASSWORD",
   "QR_RATE_SALT",
+  "GOOGLE_OIDC_CLIENT_ID",
+  "GOOGLE_OIDC_CLIENT_SECRET",
+  "GOOGLE_OIDC_CALLBACK_URL",
+  "GOOGLE_AUTH_ENCRYPTION_KEY",
+  "GOOGLE_AUTH_MAILBOX_HMAC_KEY",
+
 ];
 
 test("public private-input schema uses the exact consumer names", () => {
@@ -65,18 +90,21 @@ test("required environment names are derived from their consumers", () => {
     "../release/ios_build_and_upload.sh",
     "../release/fastlane/Fastfile",
     "../release/play_release_readback.rb",
+    "../hetzner-supabase/runtime/docker-compose.email.yml",
   ];
   const consumerText = consumerFiles.map((path) =>
     readFileSync(new URL(path, import.meta.url), "utf8")
   ).join("\n");
   const referenced = new Set([
+    ...consumerText.matchAll(/\$\{((?:EMAIL_|AUTH_EMAIL_)[A-Z0-9_]*|APP_LINKS_ORGANIZATION_ID)(?::[?+-][^}]*)?\}/g),
     ...consumerText.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g),
     ...consumerText.matchAll(/ENV(?:\.fetch)?\(['"]([A-Z][A-Z0-9_]*)['"]\)?/g),
     ...consumerText.matchAll(/^:\s*"\$\{([A-Z][A-Z0-9_]*)[:}]/gm),
     ...consumerText.matchAll(/['"]((?:DATABASE_URL|CF_ACCOUNT_ID|R2_[A-Z0-9_]+))['"]/g),
   ].map((match) => match[1]).filter(Boolean));
   const ignoredNonPrivateRuntimeNames = new Set([
-    "PATH", "NODE_PATH", "VERSION", "IPA_PATH", "PLAY_AAB_PATH",
+    "ANON_KEY", "SERVICE_ROLE_KEY", "SMTP_ADMIN_EMAIL",
+    "GITHUB_WORKSPACE", "PATH", "NODE_PATH", "VERSION", "IPA_PATH", "PLAY_AAB_PATH",
     "PLAY_CONFIRMATION", "PLAY_TARGET_TRACK", "CUTOVER_CONFIRMATION",
     "FASTLANE_ENABLE_BETA_DELIVER_SYNC_SCREENSHOTS", "READ_ONLY_TARGET_VERSION",
   ]);

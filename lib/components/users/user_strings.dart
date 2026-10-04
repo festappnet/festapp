@@ -1,6 +1,35 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class UserStrings {
+  static String get googlePasswordVisibility =>
+      'FeatureUser.googlePasswordVisibility'.tr();
+  static String get googleUnlinkProof => 'FeatureUser.googleUnlinkProof'.tr();
+  static String get googleTerms => 'FeatureUser.googleTerms'.tr();
+  static String get googlePrivacy => 'FeatureUser.googlePrivacy'.tr();
+  static String get googleContinue => 'FeatureUser.googleContinue'.tr();
+  static String get googleSubtitle => 'FeatureUser.googleSubtitle'.tr();
+  static String get googleOr => 'FeatureUser.googleOr'.tr();
+  static String get googleClose => 'FeatureUser.googleClose'.tr();
+  static String get googleOpening => 'FeatureUser.googleOpening'.tr();
+  static String get googleCompleting => 'FeatureUser.googleCompleting'.tr();
+  static String get googleProof => 'FeatureUser.googleProof'.tr();
+  static String get googleLink => 'FeatureUser.googleLink'.tr();
+  static String get googleProfile => 'FeatureUser.googleProfile'.tr();
+  static String get googleConsent => 'FeatureUser.googleConsent'.tr();
+  static String get googleCreate => 'FeatureUser.googleCreate'.tr();
+  static String get googleRetry => 'FeatureUser.googleRetry'.tr();
+  static String get googleCancelled => 'FeatureUser.googleCancelled'.tr();
+  static String get googleExpired => 'FeatureUser.googleExpired'.tr();
+  static String get googleError => 'FeatureUser.googleError'.tr();
+  static String get googleProofError => 'FeatureUser.googleProofError'.tr();
+  static String get googleLeaveDraft => 'FeatureUser.googleLeaveDraft'.tr();
+  static String get googleMailbox => 'FeatureUser.googleMailbox'.tr();
+  static String get googleSendCode => 'FeatureUser.googleSendCode'.tr();
+  static String get googleVerifyCode => 'FeatureUser.googleVerifyCode'.tr();
+  static String get googleCode => 'FeatureUser.googleCode'.tr();
+  static String get googleUnlink => 'FeatureUser.googleUnlink'.tr();
+  static String get googleMfa => 'FeatureUser.googleMfa'.tr();
+
   static String get receptionist => 'UserColumns.receptionist'.tr();
   // Column Titles
   static String get id => 'UserColumns.id'.tr();
@@ -36,6 +65,25 @@ class UserStrings {
   static String get approver => 'UserColumns.approver'.tr();
   static String get approved => 'UserColumns.approved'.tr();
   static String get invited => 'UserColumns.invited'.tr();
+
+  // Role and status column help
+  static String get administratorHelp => 'UserColumns.administratorHelp'.tr();
+  static String get editorHelp => 'UserColumns.editorHelp'.tr();
+  static String get readOnlyHelp => 'UserColumns.readOnlyHelp'.tr();
+  static String get editOrdersHelp => 'UserColumns.editOrdersHelp'.tr();
+  static String get readOrdersHelp => 'UserColumns.readOrdersHelp'.tr();
+  static String get unitAdministratorHelp =>
+      'UserColumns.unitAdministratorHelp'.tr();
+  static String get unitEditorHelp => 'UserColumns.unitEditorHelp'.tr();
+  static String get unitReadOnlyHelp => 'UserColumns.unitReadOnlyHelp'.tr();
+  static String get approverHelp => 'UserColumns.approverHelp'.tr();
+  static String get approvedHelp => 'UserColumns.approvedHelp'.tr();
+  static String get receptionistHelp => 'UserColumns.receptionistHelp'.tr();
+  static String get cleaningCrewHelp => 'UserColumns.cleaningCrewHelp'.tr();
+  static String get cleaningBlockedHelp =>
+      'UserColumns.cleaningBlockedHelp'.tr();
+  static String get volunteerHelp => 'UserColumns.volunteerHelp'.tr();
+  static String get invitedHelp => 'UserColumns.invitedHelp'.tr();
 
   // FeatureUser
   static String get signIn => 'FeatureUser.signIn'.tr();

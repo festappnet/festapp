@@ -219,6 +219,28 @@ body.dark-mode .popover-logout-row {
 body.dark-mode .popover-logout-row:hover {
     color: white;
 }
+.popover-account-action {
+    width: 100%;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+}
+.popover-account-action .material-icons {
+    flex: 0 0 24px;
+    text-align: center;
+}
+.popover-account-action:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+    opacity: 1;
+}
+.popover-account-action:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
 .logout-icon {
     transform: rotate(180deg); /* If using 'logout' icon, usually points out. Check visuals. */
     /* Screenshot has arrow pointing right from bracket. 'logout' icon does this. */

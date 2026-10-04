@@ -9,6 +9,7 @@ import 'package:fstapp/components/_shared/async_reload_coordinator.dart';
 import 'package:fstapp/components/occasion/occasion_home_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/news_badge_controller.dart';
+import 'package:fstapp/components/occasion/occasion_navigation_bar.dart';
 import 'package:fstapp/components/offline/offline_banner.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/router_service.dart';
@@ -93,9 +94,8 @@ class _OccasionHomePageState extends State<OccasionHomePage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    SystemChrome.setSystemUIOverlayStyle(ThemeConfig.systemUiOverlayStyle(
       statusBarColor: ThemeConfig.logoBackgroundColor(context),
-      systemNavigationBarColor: ThemeConfig.appBarColor(),
     ));
     WebStylesHelper.setBodyBackgroundColor(ThemeConfig.appBarColor());
     WebStylesHelper.setMetaThemeColor(ThemeConfig.seed1);
@@ -218,21 +218,10 @@ class _OccasionHomePageState extends State<OccasionHomePage>
                     final suppressSelection =
                         visibleTabKeys[tabsRouter.activeIndex] ==
                             OccasionTab.search;
-                    final unselectedColor =
-                        ThemeConfig.bottomNavUnselectedItemColor(
-                            listenableContext);
-                    return BottomNavigationBar(
-                      backgroundColor: ThemeConfig.bottomNavBackgroundColor(
-                          listenableContext),
-                      selectedItemColor: suppressSelection
-                          ? unselectedColor
-                          : ThemeConfig.bottomNavSelectedItemColor(
-                              listenableContext),
-                      unselectedItemColor: unselectedColor,
-                      selectedFontSize: suppressSelection ? 12 : 14,
-                      currentIndex: tabsRouter.activeIndex,
-                      type: BottomNavigationBarType.fixed,
-                      onTap: (int index) async {
+                    return OccasionNavigationBar(
+                      suppressSelection: suppressSelection,
+                      selectedIndex: tabsRouter.activeIndex,
+                      onDestinationSelected: (int index) async {
                         final isReselected = isBottomNavigationReselection(
                           activeIndex: tabsRouter.activeIndex,
                           selectedIndex: index,
@@ -286,12 +275,12 @@ class _OccasionHomePageState extends State<OccasionHomePage>
                           tabsRouter.setActiveIndex(index);
                         }
                       },
-                      items: visibleTabKeys.map((key) {
+                      destinations: visibleTabKeys.map((key) {
                         final tab = _availableTabs[key]!;
-                        return BottomNavigationBarItem(
+                        return NavigationDestination(
                           icon: tab.buildIcon(listenableContext, _messageCount,
                               messageCountString),
-                          activeIcon: suppressSelection
+                          selectedIcon: suppressSelection
                               ? tab.buildIcon(listenableContext, _messageCount,
                                   messageCountString)
                               : tab.buildActiveIcon(listenableContext,

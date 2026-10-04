@@ -256,6 +256,13 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Text(
+          "${BankAccountStrings.lastFioFetchTime}: ${widget.account.lastFioFetchTime == null ? BankAccountStrings.fioFetchNever : timeago.format(widget.account.lastFioFetchTime!.toLocal(), locale: context.locale.languageCode)}",
+          style: const TextStyle(color: Colors.grey, fontSize: 13),
+        ),
+      ),
       TextFormField(
         controller: widget.tokenController,
         readOnly: widget.isReadOnly,

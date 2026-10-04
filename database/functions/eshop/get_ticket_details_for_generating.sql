@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_ticket_details_for_generating(ticket_id_input BIGINT)
+CREATE OR REPLACE FUNCTION public.get_ticket_details_for_generating(ticket_id_input BIGINT)
 RETURNS JSONB
 LANGUAGE plpgsql
 SET search_path = public, extensions
@@ -20,7 +20,7 @@ BEGIN
                     b.title AS table_title,
                     -- Subquery for Spot/Product details
                     (
-                        SELECT jsonb_agg(ticket_prod)
+                        SELECT jsonb_agg(ticket_prod ORDER BY ticket_prod.id)
                         FROM (
                             SELECT
                                 opt2.id,
@@ -74,7 +74,8 @@ BEGIN
         ),
 
         -- 2. Build the 'occasion' key (dumps the whole occasion row including 'features')
-        'occasion', to_jsonb(o)
+        'occasion', to_jsonb(o),
+        'order_data', jsonb_build_object('name', ord.data->'name', 'surname', ord.data->'surname')
     )
     INTO result
     FROM eshop.tickets t

@@ -1,0 +1,59 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "ses:SendEmail",
+      "Resource": [
+        "arn:aws:ses:eu-central-1:274371802740:identity/festapp.net",
+        "arn:aws:ses:eu-central-1:274371802740:identity/info@festapp.net",
+        "arn:aws:ses:eu-central-1:274371802740:configuration-set/festapp-transactional",
+        "arn:aws:ses:eu-central-1:274371802740:configuration-set/festapp-security",
+        "arn:aws:ses:eu-central-1:274371802740:configuration-set/festapp-engagement"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "ses:FromAddress": "info@festapp.net",
+          "aws:RequestedRegion": "eu-central-1"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ses:GetAccount",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "eu-central-1"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ses:GetEmailIdentity",
+      "Resource": [
+        "arn:aws:ses:eu-central-1:274371802740:identity/festapp.net",
+        "arn:aws:ses:eu-central-1:274371802740:identity/info@festapp.net"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "eu-central-1"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ses:GetConfigurationSetEventDestinations",
+      "Resource": [
+        "arn:aws:ses:eu-central-1:274371802740:configuration-set/festapp-transactional",
+        "arn:aws:ses:eu-central-1:274371802740:configuration-set/festapp-security",
+        "arn:aws:ses:eu-central-1:274371802740:configuration-set/festapp-engagement"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "eu-central-1"
+        }
+      }
+    }
+  ]
+}

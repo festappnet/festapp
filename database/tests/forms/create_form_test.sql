@@ -27,6 +27,25 @@ BEGIN
     v_form_id := (v_form_json->>'id')::bigint;
     PERFORM assert_not_null(v_form_id, 'Form ID should be returned');
     PERFORM assert_eq((v_form_json->>'link')::text, (v_form_json->>'link')::text, 'Link should match'); 
+    PERFORM assert_true(NOT (v_form_json->'data' ? 'communication_tone'),
+        'New form should inherit the unit tone, not snapshot it');
+    PERFORM assert_eq(public.get_effective_form_data(v_form_id)->>'communication_tone',
+        'formal', 'A new unit without a tone should default to formal');
+
+    UPDATE public.units SET data = jsonb_build_object('communication_tone', 'informal')
+    WHERE id = v_unit_id;
+    PERFORM assert_eq(public.get_effective_form_data(v_form_id)->>'communication_tone',
+        'informal', 'An inherited form should follow a later unit change');
+
+    UPDATE public.forms SET data = data || '{"communication_tone":"formal"}'::jsonb
+    WHERE id = v_form_id;
+    PERFORM assert_eq(public.get_effective_form_data(v_form_id)->>'communication_tone',
+        'formal', 'An explicit form setting should override its unit');
+
+    UPDATE public.forms SET data = data - 'communication_tone'
+    WHERE id = v_form_id;
+    PERFORM assert_eq(public.get_effective_form_data(v_form_id)->>'communication_tone',
+        'informal', 'Removing the override should resume inheritance');
     
     -- 4. Verify: Default Fields Created (email, ticket, spot)
     SELECT count(*) INTO v_field_count FROM public.form_fields WHERE form = v_form_id;

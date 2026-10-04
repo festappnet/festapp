@@ -1,6 +1,7 @@
 # Web Client SPA Routes
 # Explicitly match specific Web Client routes to ensure they hit the Web Client index
 /form/*  /index.html  200
+/google-auth /index.html 200
 /        /index.html  200
 
 # Flutter SPA Routes (Explicit)
