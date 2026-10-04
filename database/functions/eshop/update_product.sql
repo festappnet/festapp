@@ -50,7 +50,7 @@ BEGIN
       COALESCE(p_input->>'currency_code',(SELECT currency_code FROM eshop.products WHERE id=v_product_id)));
     -- A product with schedules cannot silently move to another occasion/type.
     IF EXISTS (SELECT 1 FROM eshop.planned_changes WHERE subject_id=v_product_id
-      AND change_type='products.price' AND NOT applied) AND (
+      AND change_type IN('products.price','products.is_hidden') AND NOT applied) AND (
       NULLIF(p_input->>'occasion','')::bigint IS DISTINCT FROM v_occasion_id AND p_input->>'occasion' IS NOT NULL
       OR NULLIF(p_input->>'product_type','')::bigint IS DISTINCT FROM
         (SELECT product_type FROM eshop.products WHERE id=v_product_id) AND p_input->>'product_type' IS NOT NULL

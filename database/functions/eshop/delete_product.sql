@@ -39,7 +39,7 @@ BEGIN
   -- This call will also trigger the necessary de-allocation of spots.
   PERFORM public.update_product_inventory_contexts_internal_v1(p_product_id, '[]'::jsonb);
 
-  DELETE FROM eshop.planned_changes WHERE subject_id=p_product_id AND change_type='products.price' AND NOT applied;
+  DELETE FROM eshop.planned_changes WHERE subject_id=p_product_id AND change_type IN('products.price','products.is_hidden') AND NOT applied;
 
   -- Finally, delete the product itself.
   DELETE FROM eshop.products

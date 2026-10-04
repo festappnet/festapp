@@ -1,3 +1,4 @@
+import 'models/product_price_wave.dart';
 import 'models/report_exchange_rates.dart';
 import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:collection/collection.dart';
@@ -298,11 +299,53 @@ class DbEshop {
 
     return ProductsEditBundle(
       products: products,
+      priceWaves: (response['price_waves'] as List? ?? [])
+          .map((w) => ProductPriceWave.fromJson(w))
+          .toList(),
       productTypes: types,
       inventoryPools: pools,
       inventoryContexts: contexts,
       forms: forms,
     );
+  }
+
+  static Future<ProductPriceWave> createProductPriceWave(
+          String link, DateTime time) async =>
+      ProductPriceWave.fromJson(await _supabase.rpc('create_product_price_wave',
+          params: {
+            'p_occasion_link': link,
+            'p_change_time': time.toUtc().toIso8601String()
+          }));
+  static Future<void> saveProductWaveTarget(
+      ProductPriceWave wave,
+      int productId,
+      double? price,
+      bool? hidden,
+      int? priceRevision,
+      int? visibilityRevision) async {
+    await _supabase.rpc('save_product_wave_target', params: {
+      'p_wave_id': wave.id,
+      'p_product_id': productId,
+      'p_expected_wave_revision': wave.revision,
+      'p_price': price,
+      'p_is_hidden': hidden,
+      'p_expected_price_revision': priceRevision,
+      'p_expected_visibility_revision': visibilityRevision
+    });
+  }
+
+  static Future<void> moveProductPriceWave(
+      ProductPriceWave wave, DateTime time) async {
+    await _supabase.rpc('move_product_price_wave', params: {
+      'p_wave_id': wave.id,
+      'p_expected_revision': wave.revision,
+      'p_change_time': time.toUtc().toIso8601String()
+    });
+  }
+
+  static Future<void> cancelProductPriceWave(ProductPriceWave wave) async {
+    await _supabase.rpc('cancel_product_price_wave',
+        params: {'p_wave_id': wave.id, 'p_expected_revision': wave.revision});
   }
 
   static Future<void> saveProductPriceChange(

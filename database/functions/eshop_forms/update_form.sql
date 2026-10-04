@@ -266,7 +266,7 @@ BEGIN
             RAISE EXCEPTION 'FORM_DELETE_changed';
         END IF;
         DELETE FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields);
-        DELETE FROM eshop.planned_changes WHERE subject_id=ANY(deleted_products) AND change_type='products.price' AND NOT applied;
+        DELETE FROM eshop.planned_changes WHERE subject_id=ANY(deleted_products) AND change_type IN('products.price','products.is_hidden') AND NOT applied;
         DELETE FROM eshop.products p WHERE p.id = ANY(deleted_products);
 
         ----------------------------------------------------------------------------

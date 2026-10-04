@@ -3,6 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 class ProductPriceChange {
   final int id;
   final int revision;
+  final int? waveId;
   final double? price;
   final DateTime time;
   final String? failureCode;
@@ -11,6 +12,7 @@ class ProductPriceChange {
   const ProductPriceChange(
       {required this.id,
       required this.revision,
+      this.waveId,
       required this.price,
       required this.time,
       this.failureCode,
@@ -20,6 +22,7 @@ class ProductPriceChange {
       ProductPriceChange(
         id: json['id'],
         revision: json['revision'],
+        waveId: json['wave_id'],
         price: double.tryParse(json['new_value'].toString()),
         time: DateTime.parse(json['change_time']).toUtc(),
         failureCode: json['failure_code'],

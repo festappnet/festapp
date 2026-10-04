@@ -63,5 +63,31 @@ try {
   await waitLock(aPid);
   await b.query('commit'); await waiting;
   assert.equal(await current(),600);
-  console.log('PASS: two workers, cancel vs apply in both orders, edit vs apply');
+  // Shared waves use the same executor, including visibility. Both lock orders.
+  await a.query("select set_config('request.jwt.claim.sub',$1,false)",[actor.id]);
+  const wave = async () => {
+    const link=(await setup.query('select link from public.occasions where id=$1',[occasion])).rows[0].link;
+    const id=(await b.query("select public.create_product_price_wave($1,clock_timestamp()+interval '2 days') wave",[link])).rows[0].wave.id;
+    await b.query('select public.save_product_wave_target($1,$2,1,900,true)',[id,product]);
+    await setup.query("update eshop.planned_changes set change_time=now()-interval '1 minute' where wave_id=$1",[id]);
+    return id;
+  };
+  const wave1=await wave();
+  await b.query('begin'); await b.query('select public.cancel_product_price_wave($1,1)',[wave1]);
+  const cancelledWaveWorker=a.query('select public.apply_planned_changes()');
+  await waitLock(aPid); await b.query('commit'); await cancelledWaveWorker;
+  assert.equal(await current(),600);
+  const wave2=await wave();
+  await a.query('begin'); await a.query('select public.apply_planned_changes()');
+  const waveCancel=b.query('select public.cancel_product_price_wave($1,1)',[wave2]);
+  await waitLock(bPid); await a.query('commit'); await waveCancel;
+  assert.equal(await current(),900);
+  assert.equal((await setup.query('select is_hidden from eshop.products where id=$1',[product])).rows[0].is_hidden,true);
+  assert.equal(Number((await setup.query('select count(*) from eshop.planned_changes where wave_id is null and subject_id=$1 and applied',[product])).rows[0].count),6);
+  const wave3=await wave();
+  await a.query('begin'); await a.query('select id from eshop.products where id=$1 for update',[product]);
+  const waveMove=b.query("select public.move_product_price_wave($1,1,now()+interval '3 days')",[wave3]).then(()=>null,e=>e);
+  await waitLock(bPid); await a.query('select public.apply_planned_changes()'); await a.query('commit');
+  assert.equal((await waveMove)?.message,'WAVE_ALREADY_APPLIED');
+  console.log('PASS: workers, single plans and shared price/visibility waves: cancel and move vs apply');
 } finally { await Promise.all(connections.map(c => c.end())); }
