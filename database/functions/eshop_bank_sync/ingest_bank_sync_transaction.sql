@@ -79,10 +79,7 @@ BEGIN
       END IF;
     END IF;
     IF v_outcome IS NULL AND v_tx.id IS NOT NULL THEN
-      IF v_tx.amount IS DISTINCT FROM v_amount OR trim(v_tx.currency) IS DISTINCT FROM v_data->>'currency'
-        OR v_tx.date::date IS DISTINCT FROM (v_date AT TIME ZONE 'UTC')::date
-        OR nullif(trim(v_tx.vs),'') IS DISTINCT FROM nullif(v_data->>'raw_vs','')
-        OR (v_tx.payer_reference IS NOT NULL AND v_tx.payer_reference IS DISTINCT FROM v_data->>'payer_reference') THEN
+      IF NOT public.bank_sync_existing_facts_match(v_tx,v_data) THEN
         v_outcome:='quarantined_conflict';
       ELSE v_outcome:='already_ingested';
       END IF;
