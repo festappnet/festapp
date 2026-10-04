@@ -195,6 +195,48 @@
         "supabase/functions/_shared/issueExistingUserSession_test.ts"
       ]
     },
+    "process-email-queue": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/canonicalEmail_test.ts"
+      ]
+    },
+    "send-email-gateway": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/canonicalEmail_test.ts"
+      ]
+    },
+    "email-provider-events": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/canonicalEmail_test.ts",
+        "supabase/functions/email-provider-events/handler_test.ts"
+      ]
+    },
+    "email-confirmation-status": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/canonicalEmail_test.ts"
+      ]
+    },
+    "auth-email-hook": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/auth-email-hook/content_test.ts",
+        "supabase/functions/auth-email-hook/handler_test.ts"
+      ]
+    },
     "report-exchange-rates": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"

@@ -1,0 +1,306 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "SES feedback infrastructure for the approved canonical email rollout.",
+  "Parameters": {
+    "FeedbackEndpoint": {
+      "Type": "String",
+      "AllowedPattern": "https://.+/functions/v1/email-provider-events"
+    },
+    "TransactionalSetName": {
+      "Type": "String"
+    },
+    "SecuritySetName": {
+      "Type": "String"
+    },
+    "EngagementSetName": {
+      "Type": "String"
+    },
+    "AlarmTopicArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:aws:sns:.+"
+    },
+    "OwnerEmail": {
+      "Type": "String",
+      "AllowedPattern": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+"
+    }
+  },
+  "Resources": {
+    "FeedbackTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "SignatureVersion": "2"
+      }
+    },
+    "FeedbackTopicPolicy": {
+      "Type": "AWS::SNS::TopicPolicy",
+      "Properties": {
+        "Topics": [
+          {
+            "Ref": "FeedbackTopic"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ses.amazonaws.com"
+              },
+              "Action": "sns:Publish",
+              "Resource": {
+                "Ref": "FeedbackTopic"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "AWS:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:configuration-set/*"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "FeedbackDeadLetter": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "SqsManagedSseEnabled": true,
+        "MessageRetentionPeriod": 1209600
+      }
+    },
+    "FeedbackDeadLetterPolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "Queues": [
+          {
+            "Ref": "FeedbackDeadLetter"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com"
+              },
+              "Action": "sqs:SendMessage",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "FeedbackDeadLetter",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "FeedbackTopic"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "FeedbackSubscription": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "FeedbackTopic"
+        },
+        "Protocol": "https",
+        "Endpoint": {
+          "Ref": "FeedbackEndpoint"
+        },
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "FeedbackDeadLetter",
+              "Arn"
+            ]
+          }
+        },
+        "DeliveryPolicy": {
+          "healthyRetryPolicy": {
+            "minDelayTarget": 20,
+            "maxDelayTarget": 60,
+            "numRetries": 50,
+            "numNoDelayRetries": 0,
+            "numMinDelayRetries": 2,
+            "numMaxDelayRetries": 30,
+            "backoffFunction": "exponential"
+          }
+        }
+      },
+      "DependsOn": [
+        "FeedbackDeadLetterPolicy"
+      ]
+    },
+    "DeadLetterAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "FeedbackDeadLetter",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Threshold": 0,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      }
+    },
+    "TransactionalSet": {
+      "Type": "AWS::SES::ConfigurationSet",
+      "Properties": {
+        "Name": {
+          "Ref": "TransactionalSetName"
+        }
+      }
+    },
+    "SecuritySet": {
+      "Type": "AWS::SES::ConfigurationSet",
+      "Properties": {
+        "Name": {
+          "Ref": "SecuritySetName"
+        }
+      }
+    },
+    "EngagementSet": {
+      "Type": "AWS::SES::ConfigurationSet",
+      "Properties": {
+        "Name": {
+          "Ref": "EngagementSetName"
+        }
+      }
+    },
+    "TransactionalEvents": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "TransactionalSet"
+        },
+        "EventDestination": {
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "SEND",
+            "REJECT",
+            "BOUNCE",
+            "COMPLAINT",
+            "DELIVERY",
+            "DELIVERY_DELAY",
+            "RENDERING_FAILURE",
+            "OPEN"
+          ],
+          "SnsDestination": {
+            "TopicARN": {
+              "Ref": "FeedbackTopic"
+            }
+          }
+        }
+      },
+      "DependsOn": "FeedbackTopicPolicy"
+    },
+    "SecurityEvents": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "SecuritySet"
+        },
+        "EventDestination": {
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "SEND",
+            "REJECT",
+            "BOUNCE",
+            "COMPLAINT",
+            "DELIVERY",
+            "DELIVERY_DELAY",
+            "RENDERING_FAILURE"
+          ],
+          "SnsDestination": {
+            "TopicARN": {
+              "Ref": "FeedbackTopic"
+            }
+          }
+        }
+      },
+      "DependsOn": "FeedbackTopicPolicy"
+    },
+    "EngagementEvents": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "EngagementSet"
+        },
+        "EventDestination": {
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "SEND",
+            "REJECT",
+            "BOUNCE",
+            "COMPLAINT",
+            "DELIVERY",
+            "DELIVERY_DELAY",
+            "RENDERING_FAILURE",
+            "OPEN",
+            "CLICK"
+          ],
+          "SnsDestination": {
+            "TopicARN": {
+              "Ref": "FeedbackTopic"
+            }
+          }
+        }
+      },
+      "DependsOn": "FeedbackTopicPolicy"
+    },
+    "OwnerAlarmSubscription": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "AlarmTopicArn"
+        },
+        "Protocol": "email",
+        "Endpoint": {
+          "Ref": "OwnerEmail"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "TopicArn": {
+      "Value": {
+        "Ref": "FeedbackTopic"
+      }
+    },
+    "DeadLetterQueue": {
+      "Value": {
+        "Ref": "FeedbackDeadLetter"
+      }
+    }
+  }
+}

@@ -11,6 +11,7 @@ class FinishOrderScreen extends StatefulWidget {
   final VoidCallback? onOrderConfirmed;
   final String? tone;
   final bool hasTickets;
+  final Future<String?> Function(String)? deliveryStatusReader;
 
   const FinishOrderScreen({
     super.key,
@@ -19,6 +20,7 @@ class FinishOrderScreen extends StatefulWidget {
     this.onOrderConfirmed,
     this.tone,
     this.hasTickets = true,
+    this.deliveryStatusReader,
   });
 
   @override
@@ -32,6 +34,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
   int? code;
   Map<String, dynamic>? _errorProduct;
   Map<String, dynamic>? _orderData;
+  String _deliveryState = 'queued';
 
   late AnimationController _mainController;
   late AnimationController _loadingController;
@@ -59,8 +62,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     try {
       final result = await widget.orderFutureFunction();
       final elapsed = DateTime.now().difference(start).inMilliseconds;
-      code =
-          int.tryParse(
+      code = int.tryParse(
             result.data["code"].toString().replaceAll(RegExp(r'\D'), ''),
           ) ??
           0;
@@ -78,9 +80,58 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     } catch (_) {
       _isSuccess = false;
     }
+    if (!mounted) return;
     setState(() => _isLoading = false);
     _loadingController.stop();
     _mainController.forward();
+    if (_isSuccess) _observeDelivery();
+  }
+
+  Future<void> _observeDelivery() async {
+    final capability = _orderData?['delivery_receipt'];
+    if (capability is! String) return;
+    final start = DateTime.now();
+    for (var attempt = 0;
+        attempt < 5 &&
+            mounted &&
+            DateTime.now().difference(start).inSeconds < 15;
+        attempt++) {
+      if (WidgetsBinding.instance.lifecycleState != null &&
+          WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed)
+        break;
+      try {
+        final String? state;
+        if (widget.deliveryStatusReader != null) {
+          state = await widget.deliveryStatusReader!(capability);
+        } else {
+          final response = await Supabase.instance.client.functions.invoke(
+              'email-confirmation-status',
+              body: {'capability': capability});
+          state =
+              response.data is Map ? response.data['state'] as String? : null;
+        }
+        if (!mounted) return;
+        if (state == 'accepted') setState(() => _deliveryState = 'accepted');
+        if ([
+          'delivered',
+          'invalid_email',
+          'failed',
+          'unknown',
+          'dead',
+          'suppressed',
+          'expired',
+          'cancelled',
+          'retry_wait'
+        ].contains(state)) {
+          setState(() => _deliveryState = state as String);
+          return;
+        }
+      } catch (_) {
+        return;
+      }
+      if (attempt < 4)
+        await Future<void>.delayed(const Duration(milliseconds: 2500));
+    }
   }
 
   @override
@@ -141,7 +192,17 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
         widget.tone,
         hasTickets: widget.hasTickets,
       );
-      subtitle = PublicOrderStrings.paymentInfo(widget.tone);
+      final email = ((_orderData?['ticketOrder'] as Map?)?['order']
+          as Map?)?['data']?['email'];
+      final formData = (((_orderData?['form'] ??
+              (_orderData?['ticketOrder'] as Map?)?['order']?['form'])
+          as Map?)?['data'] as Map?);
+      final hasPayment = _orderData?['payment_qr'] is Map &&
+          formData?[FeatureConstants.formShowPaymentQr]?.toString() == 'true';
+      subtitle = PublicOrderStrings.confirmationInfo(widget.tone,
+          hasPayment: hasPayment,
+          email: email is String ? email.trim() : '',
+          state: _deliveryState);
     } else if (code == 1017) {
       final prodTitle = _errorProduct?["title"] ?? "";
       title = PublicOrderStrings.productUnavailable(prodTitle);
@@ -176,23 +237,23 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              // Use Theme text style
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: _isSuccess
-                  ? ThemeConfig.darkGreen
-                  : ThemeConfig.redColor(context),
-            ),
+                  // Use Theme text style
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _isSuccess
+                      ? ThemeConfig.darkGreen
+                      : ThemeConfig.redColor(context),
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              // Use Theme text style
-              fontSize: 14,
-              color: ThemeConfig.blackColor(context).withOpacity(0.7),
-            ),
+                  // Use Theme text style
+                  fontSize: 14,
+                  color: ThemeConfig.blackColor(context).withOpacity(0.7),
+                ),
             textAlign: TextAlign.center,
           ),
           if (_isSuccess) _buildPaymentQr(),
@@ -221,8 +282,10 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     if (data == null) return const SizedBox.shrink();
     final pq = (data['payment_qr'] as Map?)?.cast<String, dynamic>();
     if (pq == null) return const SizedBox.shrink();
-    final formData = ((data['form'] as Map?)?['data'] as Map?)
-        ?.cast<String, dynamic>();
+    final formData =
+        (((data['form'] ?? (data['ticketOrder'] as Map?)?['order']?['form'])
+                as Map?)?['data'] as Map?)
+            ?.cast<String, dynamic>();
     final showQr =
         formData?[FeatureConstants.formShowPaymentQr]?.toString() == 'true';
     if (!showQr) return const SizedBox.shrink();

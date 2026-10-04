@@ -114,6 +114,7 @@ class _OrdersContentState extends State<OrdersContent> {
       EshopColumns.PAYMENT_INFO_DEADLINE,
       if (FeatureService.isFeatureEnabled(FeatureConstants.deposit))
         EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE,
+      EshopColumns.ORDER_EMAIL_DELIVERY,
       EshopColumns.ORDER_TRANSACTIONS,
       EshopColumns.ORDER_HISTORY,
     ];

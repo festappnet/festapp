@@ -86,8 +86,8 @@ BEGIN
     PERFORM assert_eq(v_order_state, 'ordered', 'Step 1: Initial state should be ordered');
 
     -- Verify deposit reminder queued at order creation
-    SELECT COUNT(*) INTO v_reminder_count FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 1: Deposit reminder should be queued at order creation');
     RAISE NOTICE 'Step 1 PASSED: Order created, deposit=500, reminder queued';
@@ -108,8 +108,8 @@ BEGIN
 
     -- Verify TICKET_ORDER_PAYMENT_DONE email queued (deposit paid)
     PERFORM assert_true(
-        EXISTS(SELECT 1 FROM public.queue_emails
-            WHERE code = 'TICKET_ORDER_PAYMENT_DONE' AND occasion = v_occasion_id
+        EXISTS(SELECT 1 FROM public.email_messages
+            WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_PAYMENT_DONE' AND message_kind='order_payment_notice' AND occasion = v_occasion_id
             AND (data->>'order_id')::bigint = v_order_id),
         'Step 2: TICKET_ORDER_PAYMENT_DONE email should be queued'
     );
@@ -118,8 +118,8 @@ BEGIN
     -- ==================================================================
     -- Step 3: Deposit reminder still queued (deposit paid, remaining outstanding)
     -- ==================================================================
-    SELECT COUNT(*) INTO v_reminder_count FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 3: Deposit reminder should still be queued');
     RAISE NOTICE 'Step 3 PASSED: Deposit reminder still active';
@@ -160,8 +160,8 @@ BEGIN
     -- Step 6: Batch reminder function removes reminder (fully paid)
     -- ==================================================================
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
-    SELECT COUNT(*) INTO v_reminder_count FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 6: No reminder after full payment');
     RAISE NOTICE 'Step 6 PASSED: Reminder cleaned up';
 
