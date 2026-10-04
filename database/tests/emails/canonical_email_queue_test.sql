@@ -58,6 +58,16 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
  PERFORM assert_eq(public.get_order_email_summary(v_order_id)->>'state','bounce','later success does not hide bounced tickets');
  PERFORM assert_eq(public.get_order_email_summary(v_order_id)->>'attention_count','1','attention is per message');
+ -- Order history excludes unrelated mail before limiting/pagination, preserving old callers.
+ PERFORM assert_eq(jsonb_array_length(public.get_email_delivery_page(occ,p_orders_only=>true)),2,'only order messages in occasion');
+ PERFORM assert_true(jsonb_array_length(public.get_email_delivery_page(occ))>2,'default page retains unrelated messages for old clients');
+ row:=public.get_email_delivery_page(occ,p_limit=>1,p_orders_only=>true)->0;
+ PERFORM assert_eq((row->>'order_id')::bigint,v_order_id,'first order-only page carries order identity');
+ PERFORM assert_eq(jsonb_array_length(public.get_email_delivery_page(occ,p_before=>(row->>'id')::bigint,p_limit=>1,p_orders_only=>true)),1,'next order-only page does not disappear behind unrelated mail');
+ UPDATE email_messages SET message_kind='legacy_unknown' WHERE order_id=v_order_id AND message_kind='order_update';
+ PERFORM assert_eq(jsonb_array_length(public.get_email_delivery_page(occ,p_orders_only=>true)),2,'historical order mail remains visible');
+ UPDATE email_messages SET message_kind='order_update' WHERE order_id=v_order_id AND message_kind='legacy_unknown';
+ PERFORM assert_true(NOT has_function_privilege('anon','public.get_email_delivery_page(bigint,bigint,integer,bigint,text,text,bigint,uuid,timestamptz,boolean)','EXECUTE'),'order history remains private');
  SELECT count(*) INTO v_history FROM eshop.orders_history WHERE "order"=v_order_id;
  PERFORM public.apply_email_post_actions((msg->>'message_id')::uuid);
  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=v_order_id),'sent','accepted current ticket projection updates paid order');

@@ -1,6 +1,5 @@
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -102,11 +101,6 @@ class AdministrationTabs {
       route: const EmailTemplatesSectionRoute(),
       label: EmailTemplatesStrings.title,
       icon: Icons.email);
-  static RoutedTabDefinition get emailDelivery => RoutedTabDefinition(
-      slug: NavigationPaths.emailDelivery,
-      route: const EmailDeliverySectionRoute(),
-      label: EmailDeliveryStrings.title,
-      icon: Icons.mail_outline);
   static RoutedTabDefinition get settings => RoutedTabDefinition(
       slug: NavigationPaths.settings,
       route: const SettingsSectionRoute(),
@@ -130,8 +124,6 @@ class AdministrationTabs {
         if (FeatureService.isFeatureEnabled(FeatureConstants.volunteers))
           volunteers,
         emailTemplates,
-        if (RightsService.isEditorOrderView() || RightsService.isAdmin())
-          emailDelivery,
         users,
         if (RightsService.isManager() || RightsService.isAdmin()) changes,
         if (RightsService.isUnitEditor()) settings
@@ -147,8 +139,6 @@ class AdministrationTabs {
           inventoryPools,
         report,
         emailTemplates,
-        if (RightsService.isEditorOrderView() || RightsService.isAdmin())
-          emailDelivery,
         users,
         if (RightsService.isUnitEditor()) settings
       ];
