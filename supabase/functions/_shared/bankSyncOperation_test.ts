@@ -13,7 +13,7 @@ globalThis.fetch = ((...args: Parameters<typeof fetch>) => {
 }) as typeof fetch;
 const {runBankSyncOperation} = await import('./bankSyncOperation.ts');
 
-for (const scenario of ['valid','inactive','digest-mismatch'] as const) {
+for (const scenario of ['valid','inactive','throttled','transient','digest-mismatch'] as const) {
   Deno.test(`token update reaches BankSync and reports ${scenario} accurately`, async () => {
     let stored = 'old-fixture-token';
     let enabled = false;
@@ -39,6 +39,8 @@ for (const scenario of ['valid','inactive','digest-mismatch'] as const) {
         bankChecks++;assertEquals(stored,'new-fixture-token');
         return scenario==='inactive'
           ? respond({error:'fio_token_invalid_or_inactive'},422)
+          : scenario==='throttled' ? respond({error:'api_fetch_throttled'},429)
+          : scenario==='transient' ? respond({error:'fio_api_transient_failure'},503)
           : respond({api_last_success_at:'2026-10-04T12:00:00Z'});
       }
       throw new Error('Unexpected request path');
@@ -53,10 +55,10 @@ for (const scenario of ['valid','inactive','digest-mismatch'] as const) {
         const result=await run();
         assertEquals(stored,'new-fixture-token');assertEquals(tokenWrites,1);assertEquals(enabled,true);
         assertEquals(result.token_saved,true);
-        assertEquals(result.state,scenario==='inactive'?'degraded':'connected');
-        assertEquals(result.verification_error,scenario==='inactive'?'fio_token_invalid_or_inactive':undefined);
+        assertEquals(result.state,scenario==='valid'?'connected':'degraded');
+        assertEquals(result.verification_error,scenario==='inactive'?'fio_token_invalid_or_inactive':scenario==='valid'?undefined:'bank_sync_retry_required');
         assertEquals(calls.find(c=>c.name==='record_bank_sync_pull')?.body.p_error,
-          scenario==='inactive'?'fio_token_invalid_or_inactive':null);
+          scenario==='inactive'?'fio_token_invalid_or_inactive':scenario==='valid'?null:'bank_sync_retry_required');
         assertEquals(calls.at(-1)?.body.p_state,'completed');
       }
     } finally { requestHandler=undefined; }

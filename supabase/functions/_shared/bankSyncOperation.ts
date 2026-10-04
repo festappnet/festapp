@@ -1,4 +1,4 @@
-import { bankSyncRemote as remote, bankSyncErrorCode, FIO_TOKEN_ERROR } from './bankSyncRemote.ts';
+import { bankSyncRemote as remote, bankSyncErrorCode } from './bankSyncRemote.ts';
 import { bankSyncHash as hash } from "./bankSyncToken.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 export async function runBankSyncOperation(input: Record<string, any>, fingerprint: string) {
@@ -59,8 +59,9 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
           const pull = await remote(`${path}/fio-sync`, "POST", {});
           await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:pull.api_last_success_at,p_error:null});
         } catch (error) {
-          if (bankSyncErrorCode(error) !== FIO_TOKEN_ERROR) throw error;
-          verificationError = FIO_TOKEN_ERROR;
+          // Storage is already proven. Cooldown, an in-flight poll or bank downtime
+          // must not turn a saved token into a reported storage failure.
+          verificationError = bankSyncErrorCode(error);
           await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:null,p_error:verificationError});
         }
         // Authorization can happen later in Fio; the same stored token is retried.
