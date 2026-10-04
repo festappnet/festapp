@@ -22,7 +22,7 @@ BEGIN
     INTO v_occasion_id, v_existing_price
     FROM eshop.products p
     JOIN eshop.product_types pt ON p.product_type = pt.id
-    WHERE p.id = v_product_id;
+    WHERE p.id = v_product_id FOR UPDATE OF p;
   END IF;
 
   -- CASE 1: Product was found (v_product_id was not null and existed)
@@ -44,6 +44,17 @@ BEGIN
           'message', 'Deposit amount (' || v_input_deposit || ') must be less than price (' || v_effective_price || ').'
       )::text;
     END IF;
+
+    PERFORM public.validate_product_price_update(v_product_id,v_effective_price,
+      COALESCE(p_input->'data',(SELECT data FROM eshop.products WHERE id=v_product_id)),
+      COALESCE(p_input->>'currency_code',(SELECT currency_code FROM eshop.products WHERE id=v_product_id)));
+    -- A product with schedules cannot silently move to another occasion/type.
+    IF EXISTS (SELECT 1 FROM eshop.planned_changes WHERE subject_id=v_product_id
+      AND change_type='products.price' AND NOT applied) AND (
+      NULLIF(p_input->>'occasion','')::bigint IS DISTINCT FROM v_occasion_id AND p_input->>'occasion' IS NOT NULL
+      OR NULLIF(p_input->>'product_type','')::bigint IS DISTINCT FROM
+        (SELECT product_type FROM eshop.products WHERE id=v_product_id) AND p_input->>'product_type' IS NOT NULL
+    ) THEN RAISE EXCEPTION 'CANCEL_PRICE_CHANGES_BEFORE_PRODUCT_MOVE'; END IF;
 
     -- Update only the fields that are provided in the input JSON.
     -- COALESCE is used to keep the existing value if a new one isn't provided.
@@ -108,6 +119,8 @@ BEGIN
           'message', 'Deposit amount (' || v_input_deposit || ') must be less than price (' || v_input_price || ').'
       )::text;
     END IF;
+
+    PERFORM public.validate_product_price(v_input_price,p_input->'data',p_input->>'currency_code');
 
     -- 7. Insert the new product.
     -- We ignore the `id` from the JSON (v_product_id) and let the sequence generate a new one.

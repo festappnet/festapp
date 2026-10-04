@@ -1,3 +1,5 @@
+import 'admin_tab_activity.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -21,14 +23,41 @@ class SingleTableDataGrid<T extends ITrinaRowModel> extends StatefulWidget {
 }
 
 class _SingleTableDataGridState<T extends ITrinaRowModel>
-    extends State<SingleTableDataGrid<T>> {
+    extends State<SingleTableDataGrid<T>> with AutomaticKeepAliveClientMixin {
+  bool _active = true, _refreshPending = false;
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final active = AdminTabActivity.isActive(context);
+    if (active && !_active && widget.controller.refreshOnTabActivation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refreshOnReturn());
+    }
+    _active = active;
+  }
+
+  Future<void> _refreshOnReturn() async {
+    if (!mounted || !_active) return;
+    final success = await ExceptionHandler.guard(context,
+        futureFunction: () => widget.controller
+            .reloadIfClean(canApply: () => mounted && _active));
+    if (mounted) setState(() => _refreshPending = success != true);
+  }
+
   bool isLoading = true;
   bool isDataGridLoading = true;
 
   @override
   void initState() {
     super.initState();
+    widget.controller.reloadGeneration.addListener(_explicitReloaded);
     initialLoad();
+  }
+
+  void _explicitReloaded() {
+    if (mounted && _refreshPending) setState(() => _refreshPending = false);
   }
 
   Future<void> initialLoad() async {
@@ -40,11 +69,33 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   }
 
   @override
-  Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: widget.controller.htmlSave, child: _buildGrid(context));
+  Widget build(BuildContext context) {
+    super.build(context);
+    return HtmlEditingScope(
+        coordinator: widget.controller.htmlSave,
+        child: Column(children: [
+          if (_refreshPending)
+            Padding(
+                padding: const EdgeInsets.all(8),
+                child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(DataGridStrings.refreshPending),
+                      TextButton(
+                          onPressed: _refreshOnReturn,
+                          child: Text(DataGridStrings.refreshData)),
+                    ])),
+          Expanded(child: _buildGrid(context)),
+        ]));
+  }
 
   @override
-  void dispose() { widget.controller.disposeHtml(); super.dispose(); }
+  void dispose() {
+    widget.controller.reloadGeneration.removeListener(_explicitReloaded);
+    widget.controller.isGridLoaded = false;
+    widget.controller.disposeHtml();
+    super.dispose();
+  }
 
   Widget _buildGrid(BuildContext context) {
     return ValueListenableBuilder<Key>(
@@ -100,53 +151,54 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
               : const ShadSlateColorScheme.light(),
         ),
         child: _withColumnHelpTraversal(TrinaGrid(
-        noRowsWidget: isDataGridLoading
-            ? null
-            : Center(child: Text(DataGridStrings.noItems)),
-        columns: widget.controller.columns,
-        rows: [],
-        onChanged: (TrinaGridOnChangedEvent event) {
-          if (event.row.state == TrinaRowState.updated) {
-            if (event.row.cells[widget.controller.idColumn]?.value != -1) {
-              widget.controller.deletedRows.remove(event.row);
-              if (!widget.controller.newRows.contains(event.row)) {
-                widget.controller.updatedRows.add(event.row);
+          noRowsWidget: isDataGridLoading
+              ? null
+              : Center(child: Text(DataGridStrings.noItems)),
+          columns: widget.controller.columns,
+          rows: [],
+          onChanged: (TrinaGridOnChangedEvent event) {
+            if (event.row.state == TrinaRowState.updated) {
+              if (event.row.cells[widget.controller.idColumn]?.value != -1) {
+                widget.controller.deletedRows.remove(event.row);
+                if (!widget.controller.newRows.contains(event.row)) {
+                  widget.controller.updatedRows.add(event.row);
+                }
               }
             }
-          }
-          widget.controller.stateManager.notifyListeners();
-        },
-        onLoaded: (TrinaGridOnLoadedEvent event) {
-          widget.controller.stateManager = event.stateManager;
-          event.stateManager.setSelectingMode(TrinaGridSelectingMode.cell);
-          event.stateManager.setShowColumnFilter(true);
-          widget.controller.applyDataToGrid();
-          isDataGridLoading = false;
-          setState(() {});
-        },
-        rowColorCallback: (rowContext) {
-          var row = widget.controller.deletedRows
-              .firstWhereOrNull((element) => element.key == rowContext.row.key);
-          if (row != null) {
-            return Colors.redAccent.withOpacity(0.3);
-          }
-          row = widget.controller.updatedRows
-              .firstWhereOrNull((element) => element.key == rowContext.row.key);
-          if (row != null) {
-            return Colors.orangeAccent.withOpacity(0.3);
-          }
-          row = widget.controller.newRows
-              .firstWhereOrNull((element) => element.key == rowContext.row.key);
-          if (row != null) {
-            return Colors.orangeAccent.withOpacity(0.3);
-          }
-          return Colors.transparent;
-        },
-        createHeader: (stateManager) => SingleDataGridHeader(
-          stateManager: stateManager,
-          controller: widget.controller,
-        ),
-        configuration: configuration,
+            widget.controller.stateManager.notifyListeners();
+          },
+          onLoaded: (TrinaGridOnLoadedEvent event) {
+            widget.controller.stateManager = event.stateManager;
+            widget.controller.isGridLoaded = true;
+            event.stateManager.setSelectingMode(TrinaGridSelectingMode.cell);
+            event.stateManager.setShowColumnFilter(true);
+            widget.controller.applyDataToGrid();
+            isDataGridLoading = false;
+            setState(() {});
+          },
+          rowColorCallback: (rowContext) {
+            var row = widget.controller.deletedRows.firstWhereOrNull(
+                (element) => element.key == rowContext.row.key);
+            if (row != null) {
+              return Colors.redAccent.withOpacity(0.3);
+            }
+            row = widget.controller.updatedRows.firstWhereOrNull(
+                (element) => element.key == rowContext.row.key);
+            if (row != null) {
+              return Colors.orangeAccent.withOpacity(0.3);
+            }
+            row = widget.controller.newRows.firstWhereOrNull(
+                (element) => element.key == rowContext.row.key);
+            if (row != null) {
+              return Colors.orangeAccent.withOpacity(0.3);
+            }
+            return Colors.transparent;
+          },
+          createHeader: (stateManager) => SingleDataGridHeader(
+            stateManager: stateManager,
+            controller: widget.controller,
+          ),
+          configuration: configuration,
         )),
       ),
     );
