@@ -111,7 +111,8 @@ const EdgeInsets dayListContentPadding = EdgeInsets.fromLTRB(
   0,
   4,
   0,
-  kBottomNavigationBarHeight + 16,
+  // The occasion Scaffold lays out this list above its NavigationBar.
+  16,
 );
 
 bool isDark(context) => Theme.of(context).brightness == Brightness.dark;

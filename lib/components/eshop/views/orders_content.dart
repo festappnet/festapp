@@ -46,8 +46,8 @@ class _OrdersContentState extends State<OrdersContent> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink =
-        context.routeData.params.getString(AppRouter.linkFormatted);
+    final newOccasionLink = context.routeData.inheritedPathParams
+        .getString(AppRouter.linkFormatted);
     // Initialize only once when the link is available
     if (occasionLink == null) {
       occasionLink = newOccasionLink;
@@ -114,6 +114,7 @@ class _OrdersContentState extends State<OrdersContent> {
       EshopColumns.PAYMENT_INFO_DEADLINE,
       if (FeatureService.isFeatureEnabled(FeatureConstants.deposit))
         EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE,
+      EshopColumns.ORDER_EMAIL_DELIVERY,
       EshopColumns.ORDER_TRANSACTIONS,
       EshopColumns.ORDER_HISTORY,
     ];
@@ -155,6 +156,7 @@ class _OrdersContentState extends State<OrdersContent> {
       headerChildren: [
         DataGridAction(
           name: CommonStrings.cancel,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               cancelOrders(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,
@@ -167,6 +169,7 @@ class _OrdersContentState extends State<OrdersContent> {
         ),
         DataGridAction(
           name: OrdersStrings.sendActionText,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               sendTicketsOrConfirmations(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,

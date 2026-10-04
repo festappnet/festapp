@@ -1,5 +1,6 @@
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/components/forms/form_html_content.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
@@ -10,8 +11,8 @@ import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/html/html_view.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../form_strings.dart';
@@ -24,8 +25,20 @@ const double kHiddenOpacity = 0.5;
 class FormEditorContent extends StatefulWidget {
   final String formLink;
   final VoidCallback? onDataUpdated;
+  final FormEditBundle? prototypeBundle;
+  final ValueChanged<FormEditBundle>? onPrototypeSave;
   const FormEditorContent(
-      {super.key, required this.formLink, this.onDataUpdated});
+      {super.key, required this.formLink, this.onDataUpdated})
+      : prototypeBundle = null,
+        onPrototypeSave = null;
+
+  const FormEditorContent.prototype({
+    super.key,
+    required FormEditBundle bundle,
+    required this.onPrototypeSave,
+  })  : formLink = '',
+        onDataUpdated = null,
+        prototypeBundle = bundle;
 
   @override
   _FormEditorContentState createState() => _FormEditorContentState();
@@ -33,13 +46,40 @@ class FormEditorContent extends StatefulWidget {
 
 class _FormEditorContentState extends State<FormEditorContent>
     with TickerProviderStateMixin {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
+
   FormEditBundle? _bundle;
   String? _formLink;
   final ScrollController _scrollController = ScrollController();
+  bool _prototypeSaved = false;
+  bool get _prototype => widget.prototypeBundle != null;
+  bool get _canEdit => _prototype || RightsService.isOrderEditor();
+  bool get _canSeeReservations =>
+      !_prototype && RightsService.canSeeReservations();
+
+  @override
+  void initState() {
+    super.initState();
+    _bundle = widget.prototypeBundle;
+  }
+
+  @override
+  void dispose() {
+    _htmlSave.dispose();
+    if (_prototype && !_prototypeSaved && _bundle != null) {
+      widget.onPrototypeSave?.call(_bundle!);
+    }
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_prototype) return;
     final newFormLink = widget.formLink;
     if (newFormLink != _formLink) {
       _formLink = newFormLink;
@@ -58,6 +98,11 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Future<void> saveChanges() async {
+    await ExceptionHandler.guardVoid(context, futureFunction: () =>
+      _htmlSave.save(() => _performHtmlSave(), context: context));
+  }
+
+  Future<void> _performHtmlSave() async {
     // UPDATED: Check for bundle and use bundle.form
     if (_bundle == null) return;
     final form = _bundle!.form;
@@ -89,7 +134,15 @@ class _FormEditorContentState extends State<FormEditorContent>
     }
 
     try {
+      if (_prototype) {
+        _prototypeSaved = true;
+        widget.onPrototypeSave?.call(_bundle!);
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+      await prepareFormHtml(form, _htmlSave);
       await DbForms.updateForm(form);
+      _htmlSave.markSaved();
       if (!mounted) return;
       ToastHelper.Show(context, "${CommonStrings.saved}: ${form.link}",
           severity: ToastSeverity.Ok);
@@ -102,7 +155,8 @@ class _FormEditorContentState extends State<FormEditorContent>
     }
   }
 
-  void cancelEdit() {
+  Future<void> cancelEdit() async {
+    if (!await confirmHtmlDiscard(context, _htmlSave) || !mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -161,8 +215,8 @@ class _FormEditorContentState extends State<FormEditorContent>
                   ),
                 ),
                 Switch(
-                  value: form.isOpen ?? true,
-                  onChanged: RightsService.isOrderEditor()
+                  value: _prototype ? false : form.isOpen ?? true,
+                  onChanged: _canEdit && !_prototype
                       ? (val) => setState(() {
                             form.isOpen = val;
                           })
@@ -171,7 +225,7 @@ class _FormEditorContentState extends State<FormEditorContent>
               ],
             ),
             const SizedBox(height: 16),
-            if (RightsService.canSeeReservations()) ...[
+            if (_canSeeReservations) ...[
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
@@ -200,9 +254,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                               }
                             }
                           });
-                        },
-                            isStart: true,
-                            enabled: RightsService.isOrderEditor()),
+                        }, isStart: true, enabled: _canEdit),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -222,7 +274,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                         },
                             isEnd: true,
                             minDate: form.startTime,
-                            enabled: RightsService.isOrderEditor()),
+                            enabled: _canEdit),
                       ),
                     ],
                   ),
@@ -241,8 +293,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                           fontSize: 12),
                     ),
                     value: form.enableCountdown,
-                    onChanged: form.startTime != null &&
-                            RightsService.isOrderEditor()
+                    onChanged: form.startTime != null && _canEdit
                         ? (val) => setState(() => form.enableCountdown = val)
                         : null,
                   ),
@@ -264,7 +315,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                             showLabel: false,
                             minimal: true,
                             fontSize: 20,
-                            enabled: RightsService.isOrderEditor(),
+                            enabled: _canEdit,
                           ),
                           Transform.scale(
                             scale: 0.8,
@@ -297,7 +348,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                     helpText: FormStrings.helperClosedMessage,
                     defaultText: FormStrings.reservationUnavailableMessage,
                     showLabel: false,
-                    enabled: RightsService.isOrderEditor(),
+                    enabled: _canEdit,
                   ),
                 ],
               ),
@@ -468,48 +519,14 @@ class _FormEditorContentState extends State<FormEditorContent>
                           ? Colors.white24
                           : Colors.grey.withOpacity(0.3)),
                 ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: minimal
-                    ? const EdgeInsets.fromLTRB(4, 32, 4, 0)
-                    : const EdgeInsets.fromLTRB(12, 12, 80, 12),
-                child: HtmlView(
-                  html: minimal
-                      ? "<div style='text-align: center;'>${(content?.isNotEmpty ?? false) ? content! : (defaultText ?? FormStrings.notSet)}</div>"
-                      : ((content?.isNotEmpty ?? false)
-                          ? content!
-                          : '<div style="opacity: 0.7;">${defaultText ?? FormStrings.notSet}</div>'),
-                  isSelectable: true,
-                  fontSize: fontSize ?? 13,
-                ),
-              ),
-              Positioned(
-                top: 2,
-                right: 2,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: Text(CommonStrings.edit),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: Theme.of(context).primaryColor,
-                  ),
-                  onPressed: !enabled
-                      ? null
-                      : () async {
-                          final result = await RouterService.navigatePageInfo(
-                            context,
-                            HtmlEditorRoute(content: {
-                              HtmlEditorPage.parContent: content ?? ''
-                            }, occasionId: _bundle!.form.occasionId),
-                          );
-                          if (result != null && mounted) {
-                            onChanged(result as String);
-                          }
-                        },
-                ),
-              ),
-            ],
+          child: Padding(
+            padding: EdgeInsets.all(minimal ? 4 : 12),
+            child: EditableHtmlField(
+              html: content ?? '', placeholder: defaultText ?? FormStrings.notSet, enabled: enabled && !_prototype,
+              fontSize: fontSize ?? 13, coordinator: _htmlSave,
+              owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
+              onChanged: onChanged,
+            ),
           ),
         ),
       ],
@@ -644,8 +661,8 @@ class _FormEditorContentState extends State<FormEditorContent>
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildHtmlParent(BuildContext context) {
     if (_bundle == null)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
@@ -655,30 +672,33 @@ class _FormEditorContentState extends State<FormEditorContent>
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          FloatingActionButton(
-            heroTag: "viewFormFab",
-            onPressed: () {
-              if (_formLink != null) {
-                RouterService.navigate(context, "${FormPage.ROUTE}/$_formLink");
-              }
-            },
-            tooltip: FormStrings.publicView,
-            child: const Icon(Icons.remove_red_eye_outlined),
-          ),
-          const SizedBox.square(dimension: 12),
-          FloatingActionButton(
-            heroTag: "previewFormFab",
-            onPressed: () {
-              if (_formLink != null) {
-                RouterService.navigate(
-                    context, "${FormPage.ROUTE}/$_formLink?preview=true");
-              }
-            },
-            tooltip: FormStrings.editorPreview,
-            child: const Icon(Icons.developer_mode),
-          ),
-          const SizedBox.square(dimension: 12),
-          if (RightsService.isOrderEditor())
+          if (!_prototype)
+            FloatingActionButton(
+              heroTag: "viewFormFab",
+              onPressed: () {
+                if (_formLink != null) {
+                  RouterService.navigate(
+                      context, "${FormPage.ROUTE}/$_formLink");
+                }
+              },
+              tooltip: FormStrings.publicView,
+              child: const Icon(Icons.remove_red_eye_outlined),
+            ),
+          if (!_prototype) const SizedBox.square(dimension: 12),
+          if (!_prototype)
+            FloatingActionButton(
+              heroTag: "previewFormFab",
+              onPressed: () {
+                if (_formLink != null) {
+                  RouterService.navigate(
+                      context, "${FormPage.ROUTE}/$_formLink?preview=true");
+                }
+              },
+              tooltip: FormStrings.editorPreview,
+              child: const Icon(Icons.developer_mode),
+            ),
+          if (!_prototype) const SizedBox.square(dimension: 12),
+          if (_canEdit)
             FloatingActionButton(
               heroTag: "addFieldFab",
               onPressed: _addNewField,
@@ -707,37 +727,12 @@ class _FormEditorContentState extends State<FormEditorContent>
                           thickness: 1,
                           color: Colors.grey,
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // UPDATED: Use bundle.form
-                            if (_bundle!.form.header?.isNotEmpty ?? false)
-                              HtmlView(
-                                  html: _bundle!.form.header!,
-                                  isSelectable: true),
-                            const SizedBox(height: 16),
-                            if (RightsService.isOrderEditor())
-                              Center(
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.edit),
-                                  label: Text(FormStrings.editContent),
-                                  onPressed: () async {
-                                    final result =
-                                        await RouterService.navigatePageInfo(
-                                      context,
-                                      HtmlEditorRoute(content: {
-                                        HtmlEditorPage.parContent:
-                                            _bundle!.form.header ?? ""
-                                      }, occasionId: _bundle!.form.occasionId),
-                                    );
-                                    if (result != null && mounted) {
-                                      setState(() => _bundle!.form.header =
-                                          result as String);
-                                    }
-                                  },
-                                ),
-                              ),
-                          ],
+                        EditableHtmlField(
+                          key: const ValueKey('form-header'),
+                          html: _bundle!.form.header,
+                          enabled: _canEdit && !_prototype, coordinator: _htmlSave,
+                          owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
+                          onChanged: (html) => setState(() => _bundle!.form.header = html),
                         ),
                         const SizedBox(height: 24),
                         Column(
@@ -767,12 +762,13 @@ class _FormEditorContentState extends State<FormEditorContent>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                onPressed: RightsService.isOrderEditor() ? cancelEdit : null,
-                child: Text(CommonStrings.storno),
+                onPressed: _canEdit ? cancelEdit : null,
+                child: Text(
+                    _prototype ? CommonStrings.back : CommonStrings.storno),
               ),
               const SizedBox(width: 16),
               ElevatedButton(
-                onPressed: RightsService.isOrderEditor() ? saveChanges : null,
+                onPressed: _canEdit ? saveChanges : null,
                 child: Text(CommonStrings.save),
               ),
             ],

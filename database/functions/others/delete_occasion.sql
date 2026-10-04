@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION delete_occasion(oc bigint)
+CREATE OR REPLACE FUNCTION public.delete_occasion_internal_v1(oc bigint)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -91,7 +91,7 @@ BEGIN
   DELETE FROM public.log_notifications
     WHERE occasion = oc;
 
-  DELETE FROM public.queue_emails
+  UPDATE public.email_messages SET workflow_state='cancelled',last_error='occasion_deleted',data='{}',prepared=NULL,recipient=NULL,occasion=NULL,unit=NULL
     WHERE occasion = oc;
 
   DELETE FROM public.log_emails

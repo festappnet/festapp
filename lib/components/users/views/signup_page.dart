@@ -1,3 +1,5 @@
+import 'package:fstapp/components/users/widgets/google_login_panel.dart';
+import 'package:fstapp/services/google_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
@@ -44,7 +46,18 @@ class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormBuilderState>();
 
   @override
+  void initState() {
+    super.initState();
+    GoogleAuthService.state.addListener(_googleStateChanged);
+  }
+
+  void _googleStateChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    GoogleAuthService.state.removeListener(_googleStateChanged);
     super.dispose();
   }
 
@@ -94,74 +107,82 @@ class _SignupPageState extends State<SignupPage> {
                       key: _formKey,
                       child: AutofillGroup(
                         child: Column(children: [
-                          ...FormHelper.getAllFormFields(context,
-                              formHolder!.controller!.globalKey, formHolder!),
-                          const SizedBox(
-                            height: 16,
-                          ),
-                          Semantics(
-                            link: true,
-                            child: TextButton.icon(
-                              onPressed: () => LaunchUrlService.openExternalUrl(
-                                  AppConfig.privacyUrl),
-                              icon: const Icon(Icons.privacy_tip_outlined),
-                              label: Text(UserStrings.signupPrivacyNotice),
+                          GoogleLoginPanel(
+                              onAuthenticated: () =>
+                                  RouterService.handlePostLoginNavigation(
+                                      context,
+                                      useReplacement: true)),
+                          if (!GoogleAuthService.isContinuation) ...[
+                            ...FormHelper.getAllFormFields(context,
+                                formHolder!.controller!.globalKey, formHolder!),
+                            const SizedBox(
+                              height: 16,
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          ButtonsHelper.bigButton(
-                            context: context,
-                            onPressed: _isLoading
-                                ? null
-                                : () async {
-                                    TextInput.finishAutofillContext();
-                                    if (_formKey.currentState
-                                            ?.saveAndValidate() ??
-                                        false) {
-                                      setState(() {
-                                        _isLoading = true;
-                                      });
-                                      var data = FormHelper.getDataFromForm(
-                                          formHolder!, true);
-                                      fieldsData = Map<String, dynamic>.from(
-                                          data[FormHelper.metaFields]);
-                                      fieldsData![AuthService.metaLang] =
-                                          EasyLocalization.of(context)
-                                              ?.locale
-                                              .toString();
-                                      var resp = await AuthService.register(
-                                          fieldsData!);
-                                      if (resp["code"] == 200) {
-                                        ToastHelper.Show(
-                                            context,
-                                            UserStrings
-                                                .registrationAlmostComplete);
+                            Semantics(
+                              link: true,
+                              child: TextButton.icon(
+                                onPressed: () =>
+                                    LaunchUrlService.openExternalUrl(
+                                        AppConfig.privacyUrl),
+                                icon: const Icon(Icons.privacy_tip_outlined),
+                                label: Text(UserStrings.signupPrivacyNotice),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ButtonsHelper.bigButton(
+                              context: context,
+                              onPressed: _isLoading
+                                  ? null
+                                  : () async {
+                                      TextInput.finishAutofillContext();
+                                      if (_formKey.currentState
+                                              ?.saveAndValidate() ??
+                                          false) {
                                         setState(() {
-                                          _isRegistrationSuccess = true;
+                                          _isLoading = true;
                                         });
-                                      } else if (resp["code"] == 409) {
-                                        ToastHelper.Show(
-                                            context,
-                                            UserStrings.emailInUse(
-                                                resp["email"]),
-                                            severity: ToastSeverity.NotOk);
-                                      } else {
-                                        ToastHelper.Show(context,
-                                            UserStrings.registrationFailed,
-                                            severity: ToastSeverity.NotOk);
+                                        var data = FormHelper.getDataFromForm(
+                                            formHolder!, true);
+                                        fieldsData = Map<String, dynamic>.from(
+                                            data[FormHelper.metaFields]);
+                                        fieldsData![AuthService.metaLang] =
+                                            EasyLocalization.of(context)
+                                                ?.locale
+                                                .toString();
+                                        var resp = await AuthService.register(
+                                            fieldsData!);
+                                        if (resp["code"] == 200) {
+                                          ToastHelper.Show(
+                                              context,
+                                              UserStrings
+                                                  .registrationAlmostComplete);
+                                          setState(() {
+                                            _isRegistrationSuccess = true;
+                                          });
+                                        } else if (resp["code"] == 409) {
+                                          ToastHelper.Show(
+                                              context,
+                                              UserStrings.emailInUse(
+                                                  resp["email"]),
+                                              severity: ToastSeverity.NotOk);
+                                        } else {
+                                          ToastHelper.Show(context,
+                                              UserStrings.registrationFailed,
+                                              severity: ToastSeverity.NotOk);
+                                        }
+                                        setState(() {
+                                          _isLoading = false;
+                                        });
                                       }
-                                      setState(() {
-                                        _isLoading = false;
-                                      });
-                                    }
-                                  },
-                            label: UserStrings.signUp,
-                            color: ThemeConfig.seed1,
-                            textColor: Colors.white,
-                            isEnabled: !_isLoading,
-                            height: 50.0,
-                            width: 250.0,
-                          ),
+                                    },
+                              label: UserStrings.signUp,
+                              color: ThemeConfig.seed1,
+                              textColor: Colors.white,
+                              isEnabled: !_isLoading,
+                              height: 50.0,
+                              width: 250.0,
+                            ),
+                          ],
                         ]),
                       ),
                     ),

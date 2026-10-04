@@ -33,8 +33,8 @@ class _TicketsTabState extends State<TicketsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink =
-        context.routeData.params.getString(AppRouter.linkFormatted);
+    final newOccasionLink = context.routeData.inheritedPathParams
+        .getString(AppRouter.linkFormatted);
     // Initialize only once when the link is available
     if (occasionLink == null) {
       occasionLink = newOccasionLink;
@@ -87,6 +87,7 @@ class _TicketsTabState extends State<TicketsTab> {
       headerChildren: [
         DataGridAction(
           name: CommonStrings.cancel,
+          requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               _stornoTickets(singleDataGrid),
           isEnabled: RightsService.isOrderEditor,
@@ -94,6 +95,7 @@ class _TicketsTabState extends State<TicketsTab> {
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
           DataGridAction(
             name: OrdersStrings.scanActionText,
+            requiresSelection: false,
             action: (SingleDataGridController singleDataGrid, [_]) =>
                 _scanTickets(singleDataGrid),
             isEnabled: RightsService.isOrderEditor,

@@ -176,6 +176,7 @@ BEGIN
   DELETE FROM public.occasion_users WHERE "user"=v_user;
   DELETE FROM public.unit_users WHERE "user"=v_user;
   DELETE FROM public.organization_users WHERE "user"=v_user;
+  PERFORM public.invalidate_external_login_for_user_v1(v_user);
   DELETE FROM public.user_info WHERE id=v_user;
 
   UPDATE public.account_deletion_requests SET public_deleted=true,

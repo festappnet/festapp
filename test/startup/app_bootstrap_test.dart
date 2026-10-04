@@ -18,6 +18,26 @@ void main() {
     );
   });
 
+  test('startup preserves nested tabs and both calendar query parameters', () {
+    const path =
+        '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10';
+    expect(initialRouteForUri(Uri.parse('https://preview.example$path')), path);
+    expect(
+        isUnitAdminStartupRoute(Uri.parse(
+            'https://preview.example/unit/5/edit/bank-accounts/9/users')),
+        isTrue);
+  });
+
+  test('Google callback resumes login after its query was consumed', () {
+    for (final path in [
+      '/app/google-auth',
+      '/app/google-auth?google_error=provider_cancelled'
+    ]) {
+      expect(initialRouteForUri(Uri.parse('https://live.festapp.net$path')),
+          '/login');
+    }
+  });
+
   test('unit admin deep links own their context load', () {
     expect(
       isUnitAdminStartupRoute(
