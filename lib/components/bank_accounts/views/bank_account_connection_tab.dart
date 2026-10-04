@@ -65,7 +65,7 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
           children: [
             if (widget.account.bankSync != null) ...[
               Text(
-                '${BankAccountStrings.connectionState}: ${BankAccountStrings.connectionStatus(widget.account.bankSync!.state)}',
+                widget.isSaving ? BankAccountStrings.tokenVerifying : '${BankAccountStrings.connectionState}: ${BankAccountStrings.connectionStatus(widget.account.bankSync!.state)}',
               ),
               Text(
                 '${BankAccountStrings.bankPull}: ${widget.account.bankSync!.bankPullAt ?? BankAccountStrings.notReceived}',
@@ -73,7 +73,7 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               Text(
                 '${BankAccountStrings.receiverCommit}: ${widget.account.bankSync!.receiverCommitAt ?? BankAccountStrings.notReceived}',
               ),
-              if (widget.account.bankSync!.lastError != null)
+              if (!widget.isSaving && widget.account.bankSync!.lastError != null)
                 Text(
                   BankAccountStrings.syncError(
                     widget.account.bankSync!.lastError,
@@ -375,10 +375,23 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
           child: ElevatedButton(
             onPressed: widget.isSaving ? null : widget.onSaveToken,
             child: widget.isSaving
-                ? const CircularProgressIndicator()
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2)),
+                      const SizedBox(width: 12),
+                      Flexible(child: Text(BankAccountStrings.tokenVerifying)),
+                    ],
+                  )
                 : Text(BankAccountStrings.updateToken),
           ),
         ),
+      if (widget.isSaving) ...[
+        const SizedBox(height: 12),
+        Text(BankAccountStrings.tokenVerificationWait,
+          textAlign: TextAlign.center),
+      ],
     ];
   }
 
