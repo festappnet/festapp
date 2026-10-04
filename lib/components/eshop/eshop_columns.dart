@@ -179,7 +179,7 @@ class EshopColumns {
             title: OrdersStrings.gridProductType,
             field: PRODUCT_TYPE,
             type: TrinaColumnType.text(),
-            width: 250,
+            width: 150,
           ),
         ],
         PRODUCT_ORDER: [

@@ -50,6 +50,21 @@ class FormModel {
   String? link;
   // UPDATED: Now non-nullable.
   List<FormFieldModel> relatedFields;
+  final Set<int> deletedFieldIds = {};
+  final Set<int> deletedProductIds = {};
+
+  void removeField(FormFieldModel field) {
+    final removed = [
+      field,
+      if (field.type == 'ticket')
+        ...relatedFields.where((f) => f.isTicketField == true)
+    ];
+    for (final item in removed) {
+      if (item.id != null) deletedFieldIds.add(item.id!);
+      relatedFields.remove(item);
+    }
+  }
+
   List<BankAccountModel>? availableBankAccounts;
   FormStatsModel? stats;
   bool? isReminderEnabled;
@@ -189,6 +204,8 @@ class FormModel {
       };
 
   Map<String, dynamic> toEditedJson() => {
+        'deleted_field_ids': deletedFieldIds.toList(),
+        'deleted_product_ids': deletedProductIds.toList(),
         Tb.forms.id: id,
         Tb.forms.created_at: createdAt?.toIso8601String(),
         Tb.forms.title: title,

@@ -421,7 +421,9 @@
     "depositDeadline": "Surcharge deadline",
     "depositPaymentDeadline": "Deposit by",
     "depositOnSiteLabel": "On site",
-    "paymentReference": "Payment reference"
+    "paymentReference": "Payment reference",
+    "shortTitleHelp": "Name printed on the ticket, for example for dinner. If empty, the full product name is used.",
+    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit."
   },
   "FormsFeature": {
     "showDepositDescription": "Show deposit / surcharge note on products",
@@ -514,7 +516,17 @@
     "validationMode": "Validation Mode",
     "tabDesign": "Design",
     "textFieldType": "Text",
-    "viewMore": "View more"
+    "viewMore": "View more",
+    "deleteBlocked": {
+      "responses": "This field already has a response and cannot be deleted.",
+      "orders": "This product has been used in an order and cannot be deleted.",
+      "blueprint": "This product is used in a seating plan and cannot be deleted.",
+      "inventory": "This product is linked to inventory and cannot be deleted.",
+      "shared": "This product group is also used by another field or form.",
+      "changed": "The item has changed. Reload the form.",
+      "unknown": "Item usage has not been verified. Reload the form."
+    },
+    "deleteSaveFailed": "The form was not saved. {} Your changes remain in the editor."
   },
   "FeatureOrders": {
     "searchUnpairedTransactions": "Search unpaired transactions",

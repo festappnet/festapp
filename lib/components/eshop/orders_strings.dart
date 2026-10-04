@@ -318,6 +318,9 @@ class OrdersStrings {
       'OrderGridColumns.usedInForms'.tr(); // "Used in Forms"
   static String get gridShortTitle =>
       'OrderGridColumns.shortTitle'.tr(); // "Short Title"
+  static String get gridShortTitleHelp =>
+      'OrderGridColumns.shortTitleHelp'.tr();
+  static String get gridMaxHelp => 'OrderGridColumns.maxHelp'.tr();
   static String get gridSurcharge => 'OrderGridColumns.surcharge'.tr();
   static String get gridDeposit => 'OrderGridColumns.deposit'.tr();
   static String get gridDepositDeadline =>

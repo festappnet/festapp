@@ -64,6 +64,8 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'id', ff.id,
+            'can_delete', usage.reason IS NULL,
+            'delete_blocked_reason', usage.reason,
             'form', ff.form,
             'title', ff.title,
             'description', ff.description,
@@ -78,6 +80,40 @@ BEGIN
     ), '[]'::jsonb)
     INTO formFieldsData
     FROM public.form_fields ff
+    CROSS JOIN LATERAL (SELECT CASE WHEN EXISTS (
+          SELECT 1 FROM (
+            SELECT current_order.id, current_order.form, current_order.data FROM eshop.orders current_order WHERE current_order.form = ff.form
+            UNION ALL
+            SELECT current_order.id, current_order.form, history.data FROM eshop.orders current_order
+            JOIN eshop.orders_history history ON history."order" = current_order.id WHERE current_order.form = ff.form
+          ) o
+          WHERE o.form = ff.form AND (
+            EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(o.data->'fields', '[]'::jsonb)) answer
+              WHERE answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb, '{}'::jsonb))
+            OR (ff.type = 'ticket' AND jsonb_path_exists(o.data, '$.tickets[*]'))
+            OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(o.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
+            OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt."order" = o.id AND opt.ticket IS NOT NULL))
+            OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (
+              SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id = opt.ticket
+              WHERE opt."order" = o.id AND NULLIF(t.note, '') IS NOT NULL))
+          )) THEN 'responses'
+        ELSE (
+          SELECT reason FROM public.form_fields member
+          JOIN eshop.products p ON p.product_type = member.product_type
+          CROSS JOIN LATERAL (SELECT CASE
+          WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
+            OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) OR EXISTS (SELECT 1 FROM eshop.orders_history h JOIN eshop.orders o ON o.id = h."order"
+              WHERE o.occasion = p.occasion AND jsonb_path_exists(h.data,
+                '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+          WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+          WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+          WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+        END AS reason) usage
+          WHERE (member.id = ff.id OR (ff.type = 'ticket' AND member.form = ff.form AND member.is_ticket_field))
+            AND reason IS NOT NULL
+          ORDER BY p.id LIMIT 1
+        ) END AS reason) usage
     WHERE ff.form = v_form_id;
 
     SELECT COALESCE(jsonb_agg(
@@ -97,6 +133,8 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'id', p.id,
+            'can_delete', usage.reason IS NULL,
+            'delete_blocked_reason', usage.reason,
             'occasion', p.occasion,
             'title', p.title,
             'description', p.description,
@@ -117,6 +155,16 @@ BEGIN
     ), '[]'::jsonb)
     INTO productsData
     FROM eshop.products p
+    CROSS JOIN LATERAL (SELECT CASE
+          WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
+            OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) OR EXISTS (SELECT 1 FROM eshop.orders_history h JOIN eshop.orders o ON o.id = h."order"
+              WHERE o.occasion = p.occasion AND jsonb_path_exists(h.data,
+                '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+          WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+          WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+          WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+        END AS reason) usage
     WHERE p.product_type IN (SELECT id FROM eshop.product_types WHERE occasion = v_occasion_id);
 
     -- FIX: Exclude CASH accounts and ensure deterministic sorting by Priority

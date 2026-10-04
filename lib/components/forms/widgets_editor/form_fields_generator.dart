@@ -391,20 +391,23 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               },
               icon: const Icon(Icons.more_vert),
             ),
-            if (field.id == null)
-              IconButton(
-                icon: Icon(Icons.delete,
-                    color: Theme.of(context).iconTheme.color),
-                onPressed: () {
-                  setState(() {
-                    displayList.remove(field);
-                    widget.bundle.form.relatedFields.remove(field);
-                    if (selectedIndex == index) {
-                      selectedIndex = null;
-                    }
-                  });
-                },
-              ),
+            IconButton(
+              tooltip: field.canDelete
+                  ? CommonStrings.delete
+                  : FormStrings.deletionReason(field.deleteBlockedReason),
+              icon: const Icon(Icons.delete),
+              onPressed: !field.canDelete
+                  ? null
+                  : () {
+                      setState(() {
+                        displayList.remove(field);
+                        widget.bundle.form.removeField(field);
+                        if (selectedIndex == index) {
+                          selectedIndex = null;
+                        }
+                      });
+                    },
+            ),
           ],
         ),
       ],
