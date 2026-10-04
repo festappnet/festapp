@@ -32,6 +32,7 @@ class OrganizationModel {
   String? defaultLanguage;
   String? oneSignalAppId;
   bool? isRegistrationEnabled;
+  bool? isGoogleLoginEnabled;
   bool?
       isUnitCreationEnabled; // Not in user JSON request but kept as it was there
   bool? isAppSupported;
@@ -47,6 +48,7 @@ class OrganizationModel {
     this.defaultLanguage,
     this.oneSignalAppId,
     this.isRegistrationEnabled,
+    this.isGoogleLoginEnabled,
     this.isUnitCreationEnabled,
     this.isAppSupported,
     this.defaultUnit,
@@ -66,6 +68,7 @@ class OrganizationModel {
       defaultLanguage: json['DEFAULT_LANGUAGE'] as String?,
       oneSignalAppId: json['ONESIGNAL_APP_ID'] as String?,
       isRegistrationEnabled: json['IS_REGISTRATION_ENABLED'] as bool?,
+      isGoogleLoginEnabled: json['IS_GOOGLE_LOGIN_ENABLED'] as bool?,
       isUnitCreationEnabled: json['IS_UNIT_CREATION_ENABLED'] as bool?,
       isAppSupported: json['IS_APP_SUPPORTED'] as bool?,
       defaultUnit: json['DEFAULT_UNIT'] as int?,
@@ -98,6 +101,7 @@ class OrganizationModel {
     addIfNotEmpty('DEFAULT_LANGUAGE', defaultLanguage);
     addIfNotEmpty('ONESIGNAL_APP_ID', oneSignalAppId);
     addIfNotEmpty('IS_REGISTRATION_ENABLED', isRegistrationEnabled);
+    addIfNotEmpty('IS_GOOGLE_LOGIN_ENABLED', isGoogleLoginEnabled);
     addIfNotEmpty('IS_UNIT_CREATION_ENABLED', isUnitCreationEnabled);
     addIfNotEmpty('IS_APP_SUPPORTED', isAppSupported);
     addIfNotEmpty('DEFAULT_UNIT', defaultUnit);

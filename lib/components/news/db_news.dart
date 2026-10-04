@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/news/news_model.dart';
@@ -11,6 +12,7 @@ import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
 import 'package:fstapp/components/news/news_commands.dart';
 import 'package:html/parser.dart';
+import 'news_submission.dart';
 
 class DbNews {
   static final _supabase = Supabase.instance.client;
@@ -65,24 +67,21 @@ class DbNews {
     await _supabase.from(Tb.news.table).delete().eq(Tb.news.id, message.id);
   }
 
-  static Future<void> updateNewsMessage(NewsModel message) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result =
-          await _commands.update(RightsService.currentOccasionId()!, message);
-      if (result.status == NewsCommandStatus.conflict) {
-        throw StateError('News was changed by another editor');
-      }
-      if (result.status == NewsCommandStatus.rejected || result.news == null) {
-        throw StateError('News save was rejected');
-      }
-      message
-        ..message = result.news!.message
-        ..aggregateVersion = result.version;
-      return;
+  static Future<void> updateNewsMessage(NewsModel message,
+      {String? originalMessage}) async {
+    final result = await _commands.update(
+        RightsService.currentOccasionId()!, message,
+        originalMessage:
+            ClientSyncRuntime.isV1Selected ? null : originalMessage);
+    if (result.status == NewsCommandStatus.conflict) {
+      throw StateError('News was changed by another editor');
     }
-    await _supabase
-        .from(Tb.news.table)
-        .update({Tb.news.message: message.message}).eq(Tb.news.id, message.id);
+    if (result.status == NewsCommandStatus.rejected || result.news == null) {
+      throw StateError('News save was rejected');
+    }
+    message
+      ..message = result.news!.message
+      ..aggregateVersion = result.version;
   }
 
   static Future<void> sendGroupNotification(
@@ -108,6 +107,10 @@ class DbNews {
     });
   }
 
+  static Future<void> publishSubmission(BuildContext context, NewsSubmission submission) =>
+    insertNewsMessage(context, submission.heading, submission.headingDefault,
+      submission.content, submission.addToNews, submission.withNotification, submission.recipients);
+
   static Future<void> insertNewsMessage(
       BuildContext context,
       String? heading,
@@ -117,7 +120,7 @@ class DbNews {
       bool withNotification,
       List<String>? to) async {
     var messageForNews =
-        heading != null ? "<strong>$heading</strong><br>$message" : message;
+        heading != null ? "<strong>${htmlEscape.convert(heading)}</strong><br>$message" : message;
     String? basicMessage;
     if (withNotification) {
       var plainText = '';
@@ -129,7 +132,7 @@ class DbNews {
       basicMessage = plainText.trim();
     }
     if (ClientSyncRuntime.isV1Selected) {
-      await _commands.publish(
+      final result = await _commands.publish(
         occasionId: RightsService.currentOccasionId()!,
         addToNews: addToNews,
         newsMessage: addToNews ? messageForNews : null,
@@ -139,6 +142,9 @@ class DbNews {
         notificationContent: basicMessage,
         recipients: to,
       );
+      if (result.status == NewsCommandStatus.rejected || result.status == NewsCommandStatus.conflict) {
+        throw StateError('News publication was rejected');
+      }
       if (!context.mounted) return;
       if (withNotification) {
         ToastHelper.Show(

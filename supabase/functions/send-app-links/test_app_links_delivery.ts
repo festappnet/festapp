@@ -1,9 +1,5 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
-import {
-  AppLinksStatusUpdateError,
-  deliverAppLinks,
-  isCsmOrganization,
-} from "./appLinksDelivery.ts";
+import { deliverAppLinks, isCsmOrganization } from "./appLinksDelivery.ts";
 
 const input = {
   userId: "00000000-0000-0000-0000-000000000001",
@@ -16,12 +12,21 @@ const input = {
   fromEmail: "info@example.test",
 };
 
-Deno.test("application links are restricted to the CSM organization", () => {
-  assertEquals(isCsmOrganization(9), true);
-  assertEquals(isCsmOrganization(1), false);
+Deno.test("application links require explicit tenant activation, never a hardcoded organization", () => {
+  const before = Deno.env.get("APP_LINKS_ORGANIZATION_ID");
+  try {
+    Deno.env.delete("APP_LINKS_ORGANIZATION_ID");
+    assertEquals(isCsmOrganization(9), false);
+    Deno.env.set("APP_LINKS_ORGANIZATION_ID", "77");
+    assertEquals(isCsmOrganization(77), true);
+    assertEquals(isCsmOrganization(9), false);
+  } finally {
+    if (before === undefined) Deno.env.delete("APP_LINKS_ORGANIZATION_ID");
+    else Deno.env.set("APP_LINKS_ORGANIZATION_ID", before);
+  }
 });
 
-Deno.test("application links delivery exposes only appLinks and marks after send", async () => {
+Deno.test("application links delivery exposes only appLinks and delegates post-actions to SQL", async () => {
   const calls: string[] = [];
   let emailInput: Record<string, unknown> | undefined;
 
@@ -31,54 +36,21 @@ Deno.test("application links delivery exposes only appLinks and marks after send
       emailInput = value as unknown as Record<string, unknown>;
       return Promise.resolve();
     },
-    markSent(occasionId, userId) {
-      calls.push("mark");
-      assertEquals([occasionId, userId], [input.occasionId, input.userId]);
-      return Promise.resolve();
-    },
   });
 
-  assertEquals(calls, ["deliver", "mark"]);
+  assertEquals(calls, ["deliver"]);
   assertEquals(emailInput?.templateCode, "APP_LINKS");
   assertEquals(emailInput?.recipientUser, input.userId);
   assertEquals(emailInput?.substitutions, { appLinks: input.appLinks });
 });
 
-Deno.test("failed application links delivery is not marked as sent", async () => {
-  let marked = false;
-
+Deno.test("failed or pending canonical application links delivery cannot claim success", async () => {
   await assertRejects(
     () =>
       deliverAppLinks(input, {
-        deliverEmail: () => Promise.reject(new Error("smtp unavailable")),
-        markSent: () => {
-          marked = true;
-          return Promise.resolve();
-        },
+        deliverEmail: () => Promise.reject(new Error("email_pending")),
       }),
     Error,
-    "smtp unavailable",
+    "email_pending",
   );
-
-  assertEquals(marked, false);
-});
-
-Deno.test("status updates retry without redelivering the email", async () => {
-  let deliveries = 0;
-  let marks = 0;
-
-  await assertRejects(() =>
-    deliverAppLinks(input, {
-      deliverEmail: () => {
-        deliveries += 1;
-        return Promise.resolve();
-      },
-      markSent: () => {
-        marks += 1;
-        return Promise.reject(new Error("database unavailable"));
-      },
-    }), AppLinksStatusUpdateError);
-
-  assertEquals(deliveries, 1);
-  assertEquals(marks, 3);
 });

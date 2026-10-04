@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/router_service.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
-import 'package:fstapp/components/html/html_view.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
@@ -13,7 +11,8 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 
 class ProductDetailEditorDialog extends StatefulWidget {
   final ProductModel product;
-  const ProductDetailEditorDialog({super.key, required this.product});
+  final HtmlSaveCoordinator? coordinator;
+  const ProductDetailEditorDialog({super.key, required this.product, this.coordinator});
 
   @override
   _ProductDetailEditorDialogState createState() =>
@@ -46,22 +45,6 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
     _quantityController.dispose();
     _shortTitleController.dispose();
     super.dispose();
-  }
-
-  Future<void> _editContent() async {
-    RouterService.navigatePageInfo(
-      context,
-      HtmlEditorRoute(
-          content: {HtmlEditorPage.parContent: _description},
-          occasionId: widget.product.occasion),
-    ).then((value) {
-      if (value != null) {
-        setState(() {
-          _description = value as String;
-          widget.product.description = _description;
-        });
-      }
-    });
   }
 
   @override
@@ -108,18 +91,9 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
             ),
             const SizedBox(height: 8),
             // Full HTML description (no height limit)
-            HtmlView(
-              html: _description,
-              isSelectable: true,
-            ),
-            const SizedBox(height: 16),
-            // Edit content button
-            Center(
-              child: ElevatedButton(
-                onPressed: _editContent,
-                child: Text(CommonStrings.editContent),
-              ),
-            ),
+            EditableHtmlField(html: _description, coordinator: widget.coordinator,
+              owner: HtmlMediaOwner.occasion(widget.product.occasion),
+              onChanged: (html) => setState(() { _description = html; widget.product.description = html; })),
             const SizedBox(height: 24),
           ],
         ),

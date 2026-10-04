@@ -12,6 +12,12 @@ export class SupabaseService {
         auth: Object.freeze({ storageKey: AppConfig.Keys.auth }),
     });
 
+    static async getEmailConfirmationStatus(capability) {
+        const {data, error} = await this.getClient().functions.invoke('email-confirmation-status', {body: {capability}});
+        if (error) throw error;
+        return data;
+    }
+
     static getClient() {
         if (!SupabaseService._client) {
             if (!SupabaseService._backend) {

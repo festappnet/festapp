@@ -45,7 +45,7 @@ BEGIN
     END IF;
 
     -- Add organization prefix to the email for auth tables
-    email := format('%s+%s', org, original_email);
+    email := public.format_auth_email(org, original_email);
 
     -- Trim all values in the data JSONB object and build a new trimmed_data JSONB object
     FOR _key, _value IN

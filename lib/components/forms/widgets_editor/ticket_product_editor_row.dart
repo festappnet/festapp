@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
@@ -308,10 +309,11 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'additional_settings') {
+                        final htmlCoordinator = HtmlEditingScope.maybeOf(context);
                   showDialog(
                     context: context,
                     builder: (context) =>
-                        ProductDetailEditorDialog(product: widget.product),
+                        ProductDetailEditorDialog(product: widget.product, coordinator: htmlCoordinator),
                   ).then((_) {
                     setState(() {}); // Refresh when dialog is closed.
                   });
