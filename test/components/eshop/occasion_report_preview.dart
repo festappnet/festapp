@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/views/report_tab.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import 'occasion_report_fixture.dart';
+import 'package:fstapp/theme_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,11 @@ void main() async {
     path: 'assets/translations',
     child: Builder(
         builder: (context) => MaterialApp(
+              theme: ThemeConfig.theme(),
+              darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
+              themeMode: Uri.base.queryParameters['theme'] == 'dark'
+                  ? ThemeMode.dark
+                  : ThemeMode.light,
               locale: context.locale,
               supportedLocales: context.supportedLocales,
               localizationsDelegates: context.localizationDelegates,
