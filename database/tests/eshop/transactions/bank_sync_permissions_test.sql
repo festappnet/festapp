@@ -22,23 +22,9 @@ BEGIN
   v_result:=public.get_bank_sync_connection(v_bank);
   PERFORM assert_eq(v_result->>'receiving_address','abcdef0123@banksync.festapp.net','server owns receiving address');
   PERFORM public.activate_bank_sync_connection(v_connection,repeat('a',64));
-  BEGIN
-    PERFORM public.update_bank_account_token(v_bank,'synthetic-token',NULL);
-    RAISE EXCEPTION 'old client restored token writer';
-  EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM<>'BANK_SYNC_CANONICAL_CONNECTION_REQUIRED' THEN RAISE; END IF;
-  END;
-  BEGIN
-    PERFORM public.regenerate_bank_account_pairing_code(v_bank);
-    RAISE EXCEPTION 'old client restored email recipient';
-  EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM<>'BANK_SYNC_CANONICAL_CONNECTION_REQUIRED' THEN RAISE; END IF;
-  END;
-  BEGIN
-    PERFORM public.get_bank_account_secret(v_bank);
-    RAISE EXCEPTION 'old client read migrated token';
-  EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM<>'BANK_SYNC_CANONICAL_CONNECTION_REQUIRED' THEN RAISE; END IF;
-  END;
+  PERFORM assert_true(to_regprocedure('public.update_bank_account_token(bigint,text,timestamptz)') IS NULL,'old token writer removed');
+  PERFORM assert_true(to_regprocedure('public.insert_transactions(jsonb,bigint)') IS NULL,'old bank importer removed');
+  PERFORM assert_true(to_regprocedure('public.process_email_transaction(jsonb)') IS NULL,'old email importer removed');
+  PERFORM assert_true(to_regprocedure('public.get_bank_account_secret(bigint)') IS NULL,'raw token reader removed');
 END;
 $$;

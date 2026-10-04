@@ -11,14 +11,6 @@
         "supabase/functions/_shared/ticketFonts_test.ts"
       ]
     },
-    "bank-mail-parser": {
-      "smokeTests": [
-        "supabase/functions/bank-mail-parser/snsVerification_test.ts"
-      ],
-      "behaviorTests": [
-        "supabase/functions/bank-mail-parser/test_parser_comprehensive.ts"
-      ]
-    },
     "cancel-reception-registration": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
@@ -155,14 +147,6 @@
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
         "supabase/functions/_shared/ticketFonts_test.ts"
-      ]
-    },
-    "synchronize-orders": {
-      "smokeTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
-      ],
-      "behaviorTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ]
     },
     "google-auth-start": {

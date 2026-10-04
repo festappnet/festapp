@@ -16,7 +16,7 @@ Creating a new account auto-grants Bank Account Admin rights to the creator.
 - **Unlink != Delete**: "Delete" in Unit UI only unlinks. Account persists for other units/history.
 - **Currency Routing**: Sorted by priority ASC. First account matching a currency = Primary (green badge), rest = Backup (gray).
 - **Two account number fields**: `account_number_human_readable` for invoices/UI, `account_number` for matching/API calls.
-- **Secrets**: API tokens in `eshop.secrets`. Frontend only sees masked last 4 chars. Write-only via `update_bank_account_token`.
+- **Tokens**: BankSync owns encrypted bank credentials. Updates use `bank-sync-manage`, with digest readback and durable recovery; Festapp exposes only a masked hint.
 - **Priority reorder**: Triggers batch update of ALL link items with new indices.
 
 ## Schema
@@ -24,15 +24,15 @@ Creating a new account auto-grants Bank Account Admin rights to the creator.
 - `eshop.bank_accounts` -- core entity (IBAN, Title, Type)
 - `eshop.unit_bank_accounts` -- link table (Unit ID, Account ID, Priority)
 - `eshop.bank_account_users` -- permissions (User ID, Account ID, `is_admin`, `is_support`)
-- `eshop.secrets` -- secure token storage
+- Historical `eshop.secrets` rows are retired credentials; no live bank path reads or writes them.
 
 
 ## Canonical token updates and activation errors
 
 For a BankSync account, “Update token” calls `bank-sync-manage` -> tenant-scoped
 BankSync `PUT /bank-accounts/:id/fio-token`. The operation verifies the full
-stored token digest before reporting storage success. Legacy SQL token updates
-are blocked after cutover; deploying the backend requires deploying the selected
+stored token digest before reporting storage success. Legacy SQL token update RPCs
+are removed after cutover; deploying the backend requires deploying the selected
 tenant client as well. Never claim end-to-end cutover from a backend deploy alone.
 
 Fio token creation is not authorization: the user must authorize it in Fio

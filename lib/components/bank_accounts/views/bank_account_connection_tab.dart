@@ -15,7 +15,6 @@ class BankAccountConnectionTab extends StatefulWidget {
   final bool isFio;
   final bool isSaving;
   final String? pairingCode;
-  final String emailDomain;
   final VoidCallback onRegenerateToken;
   final VoidCallback? onConnectEmail;
 
@@ -32,7 +31,6 @@ class BankAccountConnectionTab extends StatefulWidget {
     required this.isFio,
     required this.isSaving,
     required this.pairingCode,
-    required this.emailDomain,
     required this.onRegenerateToken,
     this.onConnectEmail,
     required this.tokenController,
@@ -67,8 +65,7 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   String? get _storedToken => widget.account.bankSync != null
       ? widget.account.bankSync!.tokenMasked
       : widget.account.tokenMasked;
-  DateTime? get _lastBankPull =>
-      widget.account.bankSync?.bankPullAt ?? widget.account.lastFioFetchTime;
+  DateTime? get _lastBankPull => widget.account.bankSync?.bankPullAt;
 
   Widget _buildConnectionStatus(BuildContext context) {
     final sync = widget.account.bankSync!;
@@ -160,8 +157,7 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
 
   @override
   Widget build(BuildContext context) {
-    final forwardingEmail = widget.account.bankSync?.receivingAddress ??
-        'bank.${widget.pairingCode ?? '**********'}@${widget.emailDomain}';
+    final forwardingEmail = widget.account.bankSync?.receivingAddress;
 
     return SelectionArea(
       child: SingleChildScrollView(
@@ -185,14 +181,13 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               const SizedBox(height: 16),
             ],
             if (widget.isFio) ..._buildFioTokenSectionWidgets(),
-            if (widget.account.bankSync == null &&
-                widget.isFio &&
-                !widget.isReadOnly)
+            if (widget.account.bankSync == null && !widget.isReadOnly)
               OutlinedButton(
                 onPressed: widget.onConnectEmail,
                 child: Text(BankAccountStrings.connectEmail),
               ),
-            if (widget.account.bankSync?.mode == 'email') ...[
+            if (widget.account.bankSync?.mode == 'email' &&
+                forwardingEmail != null) ...[
               if (widget.isFio) ...[
                 const SizedBox(height: 24),
                 Row(
@@ -368,12 +363,12 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                 ),
               const SizedBox(height: 24),
               const SizedBox(height: 24),
-              if (widget.account.lastFetchTime != null)
+              if (widget.account.bankSync?.receiverCommitAt != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Center(
                     child: Text(
-                      "${BankAccountStrings.lastFetchTime}: ${timeago.format(widget.account.lastFetchTime!.toLocal(), locale: context.locale.languageCode)}",
+                      "${BankAccountStrings.lastFetchTime}: ${timeago.format(widget.account.bankSync!.receiverCommitAt!.toLocal(), locale: context.locale.languageCode)}",
                       style: const TextStyle(color: Colors.grey, fontSize: 13),
                     ),
                   ),

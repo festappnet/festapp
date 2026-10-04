@@ -54,7 +54,6 @@ void main() {
                         isFio: true,
                         isSaving: saving,
                         pairingCode: null,
-                        emailDomain: 'example.invalid',
                         onRegenerateToken: () {},
                         tokenController: controller,
                         expiryDate: null,

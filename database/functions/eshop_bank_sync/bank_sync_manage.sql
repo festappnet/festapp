@@ -45,7 +45,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_OPERATION_BUSY'; END IF;
   SELECT * INTO STRICT v_account FROM eshop.bank_accounts WHERE id=v_op.bank_account_id;
   SELECT * INTO v_conn FROM eshop.bank_sync_connections WHERE bank_account_id=v_op.bank_account_id;
-  RETURN jsonb_build_object('lease_token',v_op.lease_token,'account_number',v_account.account_number,'provider',v_account.type,'title',v_account.title,
+  RETURN jsonb_build_object('lease_token',v_op.lease_token,'account_number',v_account.account_number,'provider',COALESCE(v_conn.provider,CASE WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}2010' OR v_account.account_number ~ '/2010$' THEN 'FIO' WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}3030' OR v_account.account_number ~ '/3030$' THEN 'AIRBANK' ELSE v_account.type END),'title',v_account.title,
     'connection_id',v_conn.id,'remote_id',v_conn.remote_bank_account_id,'pairing_code',v_conn.pairing_code,
     'state',v_conn.state,'mode',v_conn.mode,'barrier',v_conn.legacy_blocked_at,'manifest_sha256',v_conn.manifest_sha256,'request',v_op.request,'token_cipher',v_op.token_cipher);
 END;
@@ -73,14 +73,12 @@ BEGIN
   SELECT * INTO STRICT v_op FROM eshop.bank_sync_operations WHERE id=p_operation_id AND state='running';
   IF v_op.operation<>'create' THEN RAISE EXCEPTION 'BANK_SYNC_PROVISION_OPERATION_REQUIRED'; END IF;
   SELECT * INTO STRICT v_account FROM eshop.bank_accounts WHERE id=v_op.bank_account_id FOR UPDATE;
-  -- Existing automated accounts require the separately reviewed cutover manifest.
-  IF v_account.is_fetch_enabled OR EXISTS(SELECT 1 FROM eshop.transactions WHERE bank_account_id=v_account.id) THEN
-    RAISE EXCEPTION 'BANK_SYNC_EXISTING_ACCOUNT_REQUIRES_CUTOVER_MANIFEST';
-  END IF;
+  -- Activation adopts historical movement identities under the account lock.
+  -- Existing accounts use the same canonical provisioning path as new accounts.
   INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,
     provider,mode,state,pairing_code,manifest_sha256)
     VALUES(p_instance_id,'festapp',p_remote_id,v_account.id,upper(regexp_replace(v_account.account_number,'\s','','g')),
-      v_account.type,p_mode,'provisioning',p_pairing_code,v_op.payload_sha256)
+      CASE WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}2010' OR v_account.account_number ~ '/2010$' THEN 'FIO' WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}3030' OR v_account.account_number ~ '/3030$' THEN 'AIRBANK' ELSE v_account.type END,p_mode,'provisioning',p_pairing_code,v_op.payload_sha256)
     ON CONFLICT(bank_account_id) DO UPDATE SET pairing_code=EXCLUDED.pairing_code
     WHERE eshop.bank_sync_connections.remote_bank_account_id=EXCLUDED.remote_bank_account_id
       AND eshop.bank_sync_connections.instance_id=EXCLUDED.instance_id RETURNING id INTO v_id;
@@ -91,18 +89,21 @@ $$;
 REVOKE ALL ON FUNCTION public.save_bank_sync_connection(uuid,text,text,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.save_bank_sync_connection(uuid,text,text,text,text) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.update_bank_sync_connection_metadata(p_id bigint,p_pairing_code text,p_expiry timestamptz,p_state text)
+DROP FUNCTION IF EXISTS public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text);
+CREATE OR REPLACE FUNCTION public.update_bank_sync_connection_metadata(p_id bigint,p_pairing_code text,p_expiry timestamptz,p_state text,p_mode text DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
   PERFORM public.require_service_role();
   UPDATE eshop.bank_sync_connections SET pairing_history=CASE WHEN p_pairing_code IS NOT NULL AND pairing_code IS DISTINCT FROM p_pairing_code
       THEN pairing_history||jsonb_build_array(jsonb_build_object('code',pairing_code,'retired_at',now())) ELSE pairing_history END,
-    pairing_code=COALESCE(p_pairing_code,pairing_code),token_expiry_at=COALESCE(p_expiry,token_expiry_at),state=p_state WHERE id=p_id;
+    pairing_code=COALESCE(p_pairing_code,pairing_code),
+    token_expiry_at=CASE WHEN p_mode='api' THEN p_expiry ELSE COALESCE(p_expiry,token_expiry_at) END,
+    mode=COALESCE(p_mode,mode),state=p_state WHERE id=p_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_CONNECTION_NOT_FOUND'; END IF;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text) TO service_role;
+REVOKE ALL ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.get_bank_sync_connections_for_unit(p_unit_id bigint)
 RETURNS TABLE(connection_id bigint,remote_bank_account_id text)
