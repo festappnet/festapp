@@ -1,18 +1,17 @@
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:fstapp/app_router.gr.dart';
-import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
-import 'package:fstapp/components/html/html_editor_page.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/styles/styles_config.dart';
 
 class EmailTemplateSettingsPage extends StatefulWidget {
@@ -31,6 +30,13 @@ class EmailTemplateSettingsPage extends StatefulWidget {
 }
 
 class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
+  @override
+  void dispose() { _htmlSave.dispose(); super.dispose(); }
+
   final _formKey = GlobalKey<FormState>();
   late String? _subject;
   late String? _htmlContent;
@@ -43,8 +49,17 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   }
 
   Future<void> _saveSettings() async {
+    await ExceptionHandler.guardVoid(context, futureFunction: () =>
+      _htmlSave.save(() => _performHtmlSave(), context: context));
+  }
+
+  Future<void> _performHtmlSave() async {
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState!.save();
+      _htmlContent = await _htmlSave.prepare(_htmlContent ?? '',
+        widget.emailTemplatesResponse.occasion?.id != null
+          ? HtmlMediaOwner.occasion(widget.emailTemplatesResponse.occasion!.id)
+          : HtmlMediaOwner.unit(widget.emailTemplatesResponse.unit.id));
       widget.template.subject = _subject;
       widget.template.html = _htmlContent;
 
@@ -55,6 +70,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           widget.emailTemplatesResponse.organization.id;
 
       await DbEmailTemplates.updateEmailTemplate(widget.template);
+      _htmlSave.markSaved();
       ToastHelper.Show(
           context, "${CommonStrings.saved}: ${widget.template.subject ?? ''}");
       Navigator.of(context).pop();
@@ -99,8 +115,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     return const SizedBox();
   }
 
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildHtmlParent(BuildContext context) {
     // Get usage details from the email template (read-only info).
     final usageDetails = widget.template.getUsageDetails();
     return AlertDialog(
@@ -115,7 +131,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           ),
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () async { if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted) Navigator.of(context).pop(); },
           )
         ],
       ),
@@ -214,31 +230,16 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Preview of the HTML content.
-              HtmlView(
-                html: _htmlContent ?? "",
-                isSelectable: true,
-              ),
+              EditableHtmlField(html: _htmlContent, coordinator: _htmlSave,
+                profile: HtmlContentProfile.emailContent,
+                owner: widget.emailTemplatesResponse.occasion?.id != null
+                  ? HtmlMediaOwner.occasion(widget.emailTemplatesResponse.occasion!.id)
+                  : HtmlMediaOwner.unit(widget.emailTemplatesResponse.unit.id),
+                onChanged: (html) => setState(() => _htmlContent = html)),
               const SizedBox(height: 8),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ElevatedButton(
-                    onPressed: () async {
-                      final result = await RouterService.navigatePageInfo(
-                        context,
-                        HtmlEditorRoute(
-                            content: {HtmlEditorPage.parContent: _htmlContent},
-                            occasionId: widget.template.occasion),
-                      );
-                      if (result != null && result is String) {
-                        setState(() {
-                          _htmlContent = result;
-                        });
-                      }
-                    },
-                    child: Text(CommonStrings.editContent),
-                  ),
                   if ((widget.template.occasion != null &&
                           widget.template.occasion ==
                               widget.emailTemplatesResponse.occasion?.id) ||
@@ -291,7 +292,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () async { if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted) Navigator.of(context).pop(); },
           child: Text(CommonStrings.storno),
         ),
         ElevatedButton(

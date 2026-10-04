@@ -14,6 +14,7 @@ class BlueprintLegend extends StatelessWidget {
   final int selectedCount;
   final VoidCallback? onConfirmOrder;
   final Map<BlueprintSeatState, int> stateCounts;
+  final bool allowOrderActions;
 
   const BlueprintLegend({
     super.key,
@@ -22,6 +23,7 @@ class BlueprintLegend extends StatelessWidget {
     this.selectedCount = 0,
     this.onConfirmOrder,
     this.stateCounts = const {},
+    this.allowOrderActions = true,
   });
 
   @override
@@ -82,10 +84,10 @@ class BlueprintLegend extends StatelessWidget {
           drawBorder: true,
         ),
 
-        const SizedBox(height: 16),
+        if (allowOrderActions) const SizedBox(height: 16),
 
         // --- Action Tools ---
-        _buildLegendItem(
+        if (allowOrderActions) _buildLegendItem(
           context: context,
           label: BlueprintStrings.legendSwapSeats,
           state: BlueprintSeatState.empty,
@@ -94,10 +96,10 @@ class BlueprintLegend extends StatelessWidget {
               true, // Keeps orange border for Swap to indicate "special/warning"
           onTap: () => onModeSelected(BlueprintSelectionMode.swapSeats),
         ),
-        const SizedBox(height: 8),
+        if (allowOrderActions) const SizedBox(height: 8),
 
         // --- Create Order with Button ---
-        Column(
+        if (allowOrderActions) Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildLegendItem(

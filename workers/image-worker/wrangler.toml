@@ -52,6 +52,6 @@ binding = "IMAGES"
 
 [vars]
 CF_ZONE_ID = "02fd6ca8f4652d62e9b05f24a5e9d84f"
-CONTROL_ALLOWED_ORIGINS = "https://csmostrava.festapp.net,https://vstupenky.online,https://praha.akhcr.cz,https://akhweb.netlify.app"
+CONTROL_ALLOWED_ORIGINS = "https://live.festapp.net,https://csmostrava.festapp.net,https://vstupenky.online,https://praha.akhcr.cz,https://akhweb.netlify.app"
 # P1-only: set to "enabled" during verified private-object copying, then remove.
 PRIVATE_MIGRATION_FALLBACK = "disabled"

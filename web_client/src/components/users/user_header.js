@@ -4,6 +4,7 @@ import './user_header.css';
 import { RightsService } from '../../services/rights_service.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { AppConfig } from '../../app_config.js';
+import { GoogleAuthService } from '../../services/google_auth_service.js';
 
 import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 
@@ -286,9 +287,33 @@ export class UserHeader extends HTMLElement {
             const hr = document.createElement('div');
             hr.className = 'popover-divider';
             popover.appendChild(hr);
-            
-            const logoutRow = document.createElement('div');
-            logoutRow.className = 'popover-logout-row';
+
+            const accountActions = document.createElement('div');
+            popover.appendChild(accountActions);
+            const userId = this.user.id;
+            GoogleAuthService.identityStatus().then(status => {
+                if (!wrapper.isConnected || this.user?.id !== userId || status.enabled !== true) return;
+                const action = document.createElement('button');
+                action.type = 'button';
+                action.className = 'popover-logout-row popover-account-action';
+                const icon = document.createElement('i');
+                icon.className = 'material-icons';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.textContent = status.linked ? 'link_off' : 'link';
+                const label = document.createElement('span');
+                label.textContent = status.linked ? CommonStrings.googleUnlink : CommonStrings.googleContinue;
+                action.append(icon, label);
+                action.onclick = async () => {
+                    action.disabled = true;
+                    try { await GoogleAuthService.start(status.linked ? 'unlink' : 'login'); }
+                    catch { action.disabled = false; label.textContent = CommonStrings.googleError; }
+                };
+                accountActions.appendChild(action);
+            }).catch(() => {});
+
+            const logoutRow = document.createElement('button');
+            logoutRow.type = 'button';
+            logoutRow.className = 'popover-logout-row popover-account-action';
             logoutRow.onclick = async () => {
                  const { AuthService } = await import('../../services/auth_service.js'); 
                  await AuthService.logout();

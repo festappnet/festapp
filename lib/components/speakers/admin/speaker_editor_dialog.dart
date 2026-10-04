@@ -1,10 +1,9 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/html/html_editor_page.dart';
-import 'package:fstapp/components/html/html_view.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/images/image_compression_helper.dart';
@@ -21,7 +20,6 @@ import 'package:fstapp/components/speakers/speakers_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/time_helper.dart';
-import 'package:fstapp/router_service.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/theme_config.dart';
@@ -48,6 +46,11 @@ class SpeakerEditorDialog extends StatefulWidget {
 }
 
 class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
+  final _htmlSave = HtmlSaveCoordinator();
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+    coordinator: _htmlSave, child: _buildHtmlParent(context));
+
   late final TextEditingController _nameController;
   late final TextEditingController _subtitleController;
   late final TextEditingController _orderController;
@@ -83,6 +86,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
 
   @override
   void dispose() {
+    _htmlSave.dispose();
     _nameController.dispose();
     _subtitleController.dispose();
     _orderController.dispose();
@@ -99,20 +103,12 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
     }
   }
 
-  Future<void> _editBio() async {
-    final result = await RouterService.navigatePageInfo(
-      context,
-      HtmlEditorRoute(
-        content: {HtmlEditorPage.parContent: _description},
-        occasionId: _occasionId,
-      ),
-    );
-    if (result != null && mounted) {
-      setState(() => _description = result as String);
-    }
+  Future<void> _save() async {
+    await ExceptionHandler.guardVoid(context, futureFunction: () =>
+      _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
-  Future<void> _save() async {
+  Future<void> _performHtmlSave() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ToastHelper.Show(context, CommonStrings.fieldCannotBeEmpty,
@@ -120,6 +116,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       return;
     }
 
+    _description = await _htmlSave.prepare(_description ?? '', HtmlMediaOwner.occasion(_occasionId));
     final subtitle = _subtitleController.text.trim();
     final model = widget.speaker
       ..title = name
@@ -135,6 +132,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       futureFunction: () => DbSpeakers.updateSpeaker(_occasionId, model),
     );
     if (saved != null && mounted) {
+      _htmlSave.markSaved();
       ToastHelper.Show(context, CommonStrings.saved);
       // Pop the saved model so callers (e.g. the event edit speaker picker) can
       // pre-select the freshly created speaker (decision R6b). The close button
@@ -260,8 +258,8 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildHtmlParent(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
       title: Text(_isExisting
@@ -332,37 +330,9 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
               ),
               const SizedBox(height: 16),
               Text(SpeakersStrings.bio, style: theme.textTheme.labelMedium),
-              Center(
-                child: ElevatedButton(
-                  onPressed: _editBio,
-                  child: Text(CommonStrings.editContent),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if ((_description ?? '').isNotEmpty)
-                ClipRect(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 400),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) {
-                        return const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.white,
-                            Colors.transparent,
-                          ],
-                          stops: [0.9, 1.0],
-                        ).createShader(bounds);
-                      },
-                      blendMode: BlendMode.dstIn,
-                      child: HtmlView(
-                        html: _description ?? "",
-                        isSelectable: true,
-                      ),
-                    ),
-                  ),
-                ),
+              EditableHtmlField(html: _description, coordinator: _htmlSave,
+                owner: HtmlMediaOwner.occasion(_occasionId),
+                onChanged: (html) => setState(() => _description = html)),
               const SizedBox(height: 16),
               // Counseling competence areas only matter when counseling is on (R5).
               if (FeatureService.isCounselingEnabled()) ...[
@@ -404,7 +374,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(_changed),
+          onPressed: () async { if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted) Navigator.of(context).pop(_changed); },
           child: Text(CommonStrings.storno),
         ),
         FilledButton(

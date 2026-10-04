@@ -630,7 +630,7 @@ export class FormPage extends Component {
         container.style.boxSizing = 'border-box'; /* Ensure padding doesn't affect width calculations */
         container.style.display = 'flex';
         container.style.flexDirection = 'column';
-        container.style.justifyContent = 'center'; /* Center Vertically */
+        container.style.justifyContent = 'safe center'; /* Center short results without clipping tall results */
         container.style.alignItems = 'center'; /* Center Horizontally */
         
         document.body.appendChild(container);

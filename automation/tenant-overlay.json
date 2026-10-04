@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
   "tenantId": "absolventskyvelehrad",
-  "baseMainSha": "b70a2854fe9478fe306686258b7e61267a408b99",
-  "release": {
-    "version": "0.20.19+503",
-    "note": "Recover PWA assets when browsers report a false offline state"
-  }
+  "baseMainSha": "6835e2223cb7206d34e5b07647afc0be9c147475"
 }

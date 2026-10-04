@@ -53,6 +53,11 @@ mkdir -p "$TMP_ROOT/automation" \
          "$TMP_ROOT/assets/icons"
 
 cp "$PROJECT_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/apply_config.sh"
+cp "$PROJECT_ROOT/automation/google-auth-links.py" "$TMP_ROOT/automation/google-auth-links.py"
+cp "$PROJECT_ROOT/automation/configure_fonts.js" "$TMP_ROOT/automation/configure_fonts.js"
+mkdir -p "$TMP_ROOT/automation/fonts"
+# Font configuration inspects filenames; this fixture does not render glyphs.
+touch "$TMP_ROOT/automation/fonts/Futura-Regular.ttf"
 cp "$PROJECT_ROOT/automation/hetzner-supabase/merge/source-registry.json" \
    "$TMP_ROOT/automation/hetzner-supabase/merge/source-registry.json"
 cp "$PROJECT_ROOT/automation/lib/supabase_client_config.mjs" "$TMP_ROOT/automation/lib/supabase_client_config.mjs"
@@ -90,16 +95,14 @@ cp "$PROJECT_ROOT/web/.well-known/apple-app-site-association" "$TMP_ROOT/web/.we
 touch "$TMP_ROOT/assets/icons/fstapplogo.svg" \
       "$TMP_ROOT/assets/icons/fstapplogo.dark.svg" \
       "$TMP_ROOT/web/android-chrome-192x192.png"
+printf '<svg xmlns="http://www.w3.org/2000/svg"><text>Configured loading brand</text></svg>\n' > "$TMP_ROOT/assets/icons/fstapplogo.dark.svg"
 
 # theme_config.css is optional but typically present.
 if [ -f "$PROJECT_ROOT/web_client/src/theme_config.css" ]; then
     cp "$PROJECT_ROOT/web_client/src/theme_config.css" "$TMP_ROOT/web_client/src/theme_config.css"
 fi
 
-# Skip the optional helper scripts apply_config.sh calls at the end (fonts,
-# version) — they require Node and a fonts/ tree we are not staging.
-# apply_config.sh only invokes them if the files exist, so leaving them out
-# keeps the test focused.
+# Version generation is optional; keep this fixture focused on configuration.
 
 # 2. Run apply_config.sh in the temp tree.
 cd "$TMP_ROOT"
@@ -160,6 +163,21 @@ assert_contains "$TMP_ROOT/web/index.html" "app_generation: 'test_generation_v1'
 assert_contains "$TMP_ROOT/web/index.html" "occasion: 'test-occasion'"
 assert_contains "$TMP_ROOT/web/index.html" '<img class="initial-logo" src="android-chrome-192x192.png"'
 assert_missing "$TMP_ROOT/web/index.html" '<svg class="initial-logo"'
+assert_contains "$TMP_ROOT/web/index.html" '      --festapp-loading-accent: #445566;'
+assert_contains "$TMP_ROOT/web/index.html" 'border-color: var(--festapp-loading-accent) #0000;'
+assert_missing "$TMP_ROOT/web/index.html" '#fd6206'
+cmp "$TMP_ROOT/web/loading-logo.svg" "$TMP_ROOT/assets/icons/fstapplogo.dark.svg" || { echo "Loading logo must match the configured dark brand logo"; exit 1; }
+# Selecting the generated wordmark must not replace the PWA installation icon.
+python3 - "$TMP_ROOT/automation/project.conf" <<'LOADING_CONFIG'
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+p.write_text(p.read_text().replace('WEB_LOADING_LOGO_ASSET=android-chrome-192x192.png', 'WEB_LOADING_LOGO_ASSET=loading-logo.svg'))
+LOADING_CONFIG
+bash "$TMP_ROOT/automation/apply_config.sh" > "$TMP_ROOT/apply-loading-logo.log" 2>&1
+assert_contains "$TMP_ROOT/web/index.html" '<img class="initial-logo" src="loading-logo.svg"'
+[ -f "$TMP_ROOT/web/android-chrome-192x192.png" ] || { echo "PWA icon was removed"; exit 1; }
+
 assert_missing "$TMP_ROOT/web/index.html" 'CSM Ostrava 2026'
 
 echo

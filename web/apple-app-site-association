@@ -9,9 +9,13 @@
           "8WKBB6L8LT.festapp.absolventskyvelehrad"
         ],
         "paths": [
+          "/app/google-auth",
           "*"
         ],
         "components": [
+          {
+            "/": "/app/google-auth"
+          },
           {
             "/": "/*"
           }
