@@ -296,8 +296,8 @@ class HtmlSaveCoordinator extends ChangeNotifier {
   final _accepted = <Object, void Function()>{};
   final _applied = <RichHtmlEditorController>{};
   bool _disposed = false;
-  bool get hasDraft =>
-      _applied.isNotEmpty || _dirty.values.any((read) => read());
+  bool get hasActiveDraft => _dirty.values.any((read) => read());
+  bool get hasDraft => _applied.isNotEmpty || hasActiveDraft;
   bool _notificationScheduled = false;
   void draftChanged() {
     if (_disposed) return;

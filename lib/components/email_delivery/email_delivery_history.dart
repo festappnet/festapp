@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/views/order_state_display.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -113,12 +115,7 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
             hide: true,
             readOnly: true,
             type: TrinaColumnType.number()),
-        TrinaColumn(
-            title: OrdersStrings.gridOrderSymbol,
-            field: 'order_id',
-            readOnly: true,
-            width: 120,
-            type: TrinaColumnType.number()),
+        EshopColumns.orderSymbolColumn(),
         TrinaColumn(
             title: CommonStrings.date,
             field: 'created_at',
@@ -134,6 +131,36 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
         TrinaColumn(
             title: OrdersStrings.gridState,
             field: 'state',
+            renderer: (cell) {
+              final model = cell.row.cells[EmailDeliveryModel.reference]!.value
+                  as EmailDeliveryModel;
+              return OrderStateDisplay(
+                formattedState: '${model.state};${cell.cell.value}',
+                getBackground: (state) {
+                  final colors = Theme.of(context).colorScheme;
+                  if ([
+                    'bounce',
+                    'complaint',
+                    'reject',
+                    'rendering_failure',
+                    'dead',
+                    'unknown',
+                    'post_action_failed'
+                  ].contains(state)) return colors.errorContainer;
+                  if (['delivery', 'open', 'click'].contains(state))
+                    return colors.tertiaryContainer;
+                  if ([
+                    'pending',
+                    'preparing',
+                    'sending',
+                    'blocked',
+                    'retry_wait',
+                    'delay'
+                  ].contains(state)) return colors.secondaryContainer;
+                  return colors.surfaceContainerHighest;
+                },
+              );
+            },
             readOnly: true,
             width: 280,
             type: TrinaColumnType.text()),

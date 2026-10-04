@@ -212,12 +212,9 @@ BEGIN
             SELECT CASE WHEN EXISTS (
           SELECT 1 FROM (
             SELECT current_order.id, current_order.form, current_order.data FROM eshop.orders current_order WHERE current_order.form = ff.form
-            UNION ALL
-            SELECT current_order.id, current_order.form, history.data FROM eshop.orders current_order
-            JOIN eshop.orders_history history ON history."order" = current_order.id WHERE current_order.form = ff.form
           ) o
           WHERE o.form = ff.form AND (
-            EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(o.data->'fields', '[]'::jsonb)) answer
+            EXISTS (SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(o.data->'fields') = 'array' THEN o.data->'fields' ELSE '[]'::jsonb END) answer
               WHERE answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb, '{}'::jsonb))
             OR (ff.type = 'ticket' AND jsonb_path_exists(o.data, '$.tickets[*]'))
             OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(o.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
@@ -232,9 +229,7 @@ BEGIN
           CROSS JOIN LATERAL (SELECT CASE
           WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
             OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
-              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) OR EXISTS (SELECT 1 FROM eshop.orders_history h JOIN eshop.orders o ON o.id = h."order"
-              WHERE o.occasion = p.occasion AND jsonb_path_exists(h.data,
-                '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
           WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
           WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
           WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
@@ -253,9 +248,7 @@ BEGIN
             SELECT CASE
           WHEN EXISTS (SELECT 1 FROM eshop.order_product_ticket opt WHERE opt.product = p.id)
             OR EXISTS (SELECT 1 FROM eshop.orders o WHERE o.occasion = p.occasion
-              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) OR EXISTS (SELECT 1 FROM eshop.orders_history h JOIN eshop.orders o ON o.id = h."order"
-              WHERE o.occasion = p.occasion AND jsonb_path_exists(h.data,
-                '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
+              AND jsonb_path_exists(o.data, '$.tickets[*].products[*] ? (@.id == $id)', jsonb_build_object('id', p.id))) THEN 'orders'
           WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
           WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
           WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'

@@ -14,12 +14,14 @@ import 'description_tooltip.dart';
 class TicketProductEditorRow extends StatefulWidget {
   final ProductModel product;
   final VoidCallback onDelete;
+  final VoidCallback? onChanged;
   final List<String> availableCurrencies;
 
   const TicketProductEditorRow({
     super.key,
     required this.product,
     required this.onDelete,
+    this.onChanged,
     required this.availableCurrencies,
   });
 
@@ -28,6 +30,11 @@ class TicketProductEditorRow extends StatefulWidget {
 }
 
 class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
+  void _refresh(VoidCallback change) {
+    setState(change);
+    widget.onChanged?.call();
+  }
+
   late TextEditingController _titleController;
   late TextEditingController _priceController;
   late TextEditingController _depositController;
@@ -79,7 +86,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
         depositText.isNotEmpty ? double.tryParse(depositText) : null;
     final price = double.tryParse(priceText) ?? 0;
 
-    setState(() {
+    _refresh(() {
       if (deposit != null && deposit > 0 && deposit >= price) {
         _depositError = "< ${CommonStrings.price}";
       } else {
@@ -98,12 +105,14 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
     // Allow negative amounts (slevy / discounts); only null/0 clears the field.
     widget.product.metaSurchargeAmount =
         (parsed != null && parsed != 0) ? parsed : null;
+    widget.onChanged?.call();
   }
 
   void _onSurchargeCurrencyChanged() {
     final raw = _surchargeCurrencyController.text.trim().toUpperCase();
     final t = raw.length > 3 ? raw.substring(0, 3) : raw;
     widget.product.metaSurchargeCurrency = t.isEmpty ? null : t;
+    widget.onChanged?.call();
   }
 
   @override
@@ -152,7 +161,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
   }
 
   Widget buildCurrencySelectBox() => _buildCurrencyBox(selectedCurrency, (v) {
-        setState(() {
+        _refresh(() {
           selectedCurrency = v;
           widget.product.currencyCode = selectedCurrency;
         });
@@ -301,7 +310,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
                 Switch(
                   value: !(widget.product.isHidden ?? false),
                   onChanged: (val) {
-                    setState(() {
+                    _refresh(() {
                       widget.product.isHidden = !val;
                     });
                   },
@@ -318,7 +327,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
                     builder: (context) => ProductDetailEditorDialog(
                         product: widget.product, coordinator: htmlCoordinator),
                   ).then((_) {
-                    setState(() {}); // Refresh when dialog is closed.
+                    _refresh(() {}); // Refresh when dialog is closed.
                   });
                 }
               },
