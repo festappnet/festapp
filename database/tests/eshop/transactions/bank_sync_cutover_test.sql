@@ -4,7 +4,7 @@ DECLARE bank bigint; connection bigint; tx bigint; receipt jsonb; envelope jsonb
 BEGIN
   INSERT INTO eshop.bank_accounts(title,type,account_number) VALUES('Cutover fixture','FIO','12345/2010') RETURNING id INTO bank;
   INSERT INTO eshop.transactions(bank_account_id,transaction_id,amount,currency,date,vs,ingest_source)
-    VALUES(bank,887766,10,'CZK','2026-10-04 12:00:00','12345','legacy') RETURNING id INTO tx;
+    VALUES(bank,887766,10,'CZK','2026-10-03 22:00:00','12345','legacy') RETURNING id INTO tx;
   INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code) VALUES(bank,12345,10,'CZK');
   INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,
     provider,mode,state,pairing_code,manifest_sha256)
@@ -14,7 +14,7 @@ BEGIN
   PERFORM assert_eq((SELECT transaction_id FROM eshop.bank_transaction_identities WHERE instance_id='cutover-test'),tx,'historical movement adopted');
   envelope:=jsonb_build_object('event','transaction.received','event_version','2','delivery_id','01K00000000000000000000001',
     'data',jsonb_build_object('id',88,'bank_account_id',88,'amount_cents',1000,'currency','CZK','date','2026-10-04T12:00:00Z',
-      'direction','incoming','identity_kind','movement','identity_provenance','fio_api_column22','source','fio_api',
+      'date_offset_min',120,'direction','incoming','identity_kind','movement','identity_provenance','fio_api_column22','source','fio_api',
       'transaction_id','887766','raw_vs','12345'));
   receipt:=public.ingest_bank_sync_transaction('cutover-test','festapp',repeat('a',64),envelope);
   PERFORM assert_eq(receipt->>'outcome','already_ingested','history not imported again');
@@ -25,4 +25,11 @@ BEGIN
   receipt:=public.ingest_bank_sync_transaction('cutover-test','festapp',repeat('b',64),envelope);
   PERFORM assert_eq(receipt->>'outcome','quarantined_conflict','changed historical bank facts are quarantined');
   PERFORM assert_eq((SELECT amount FROM eshop.transactions WHERE id=tx),10::numeric,'ledger amount preserved');
+  UPDATE eshop.transactions SET date='2026-01-03 23:00:00' WHERE id=tx;
+  envelope:=jsonb_set(envelope,'{data,date}','"2026-01-04T12:00:00Z"');
+  envelope:=jsonb_set(envelope,'{data,date_offset_min}','60');
+  envelope:=jsonb_set(envelope,'{data,amount_cents}','1000');
+  PERFORM assert_true(public.bank_sync_existing_facts_match((SELECT t FROM eshop.transactions t WHERE id=tx),envelope->'data'),'winter offset preserves bank day');
+  envelope:=jsonb_set(envelope,'{data,date}','"2026-01-05T12:00:00Z"');
+  PERFORM assert_false(public.bank_sync_existing_facts_match((SELECT t FROM eshop.transactions t WHERE id=tx),envelope->'data'),'different bank day remains a conflict');
 END $$;

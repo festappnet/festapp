@@ -52,6 +52,8 @@ for local_id in ids:
       FROM eshop.bank_accounts b JOIN eshop.secrets s ON s.id=b.secret
       LEFT JOIN eshop.bank_sync_connections c ON c.bank_account_id=b.id
       WHERE b.id={local_id} AND b.type='FIO'; COMMIT;"""))
+    # The bank API and canonical credential endpoint trim surrounding whitespace.
+    account['token'] = account['token'].strip()
     assert account['token'] and account['iban']
     assert account['enabled'] or account['connection'] is not None, 'Do not activate an intentionally disabled account'
     remote_accounts = api('/bank-accounts')

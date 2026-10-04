@@ -142,7 +142,7 @@ BEGIN
       FROM eshop.bank_sync_inbox i JOIN eshop.bank_sync_connections c ON c.id=i.connection_id
       WHERE (c.bank_account_id=p_bank_account_id OR c.id IN
         (SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_bank_account_id))
-        AND i.outcome LIKE 'quarantined_%' ORDER BY i.received_at DESC,i.delivery_id LIMIT LEAST(GREATEST(p_limit,1),100)
+        AND i.outcome LIKE 'quarantined_%' AND i.resolution IS NULL ORDER BY i.received_at DESC,i.delivery_id LIMIT LEAST(GREATEST(p_limit,1),100)
   ) q;
   RETURN v_result;
 END;
