@@ -1,11 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
+
 import '../db_eshop.dart';
 import '../models/product_model.dart';
 import '../models/product_price_change.dart';
@@ -21,26 +22,57 @@ String priceChangeText(String template, List<String> values) {
 String scheduledPrice(BuildContext context, double? price, String? currency) =>
     price == null
         ? '?'
-        : Utilities.formatPrice(context, price,
-            currencyCode: currency, decimalDigits: 2);
-String scheduledTime(DateTime time, String timezone) =>
-    DateFormat('dd. MM. yyyy HH:mm').format(time.toOccasionTime(timezone));
+        : Utilities.formatPrice(
+            context,
+            price,
+            currencyCode: currency,
+            decimalDigits: 2,
+          );
+String scheduledTime(DateTime time) =>
+    DateFormat('dd. MM. yyyy HH:mm').format(time.toLocal());
+
+DateTime? scheduleWallTime(String date, String time) {
+  for (final format in ['yyyy-MM-dd HH:mm', 'dd.MM.yyyy HH:mm']) {
+    try {
+      return DateFormat(format)
+          .parseStrict('${date.trim()} ${time.trim()}', true);
+    } on FormatException {/* Try the other accepted date format. */}
+  }
+  return null;
+}
+
+DateTime? localScheduleTime(String date, String time, {DateTime? existing}) {
+  final wall = scheduleWallTime(date, time);
+  if (wall == null) return null;
+  bool matches(DateTime value) =>
+      value.year == wall.year &&
+      value.month == wall.month &&
+      value.day == wall.day &&
+      value.hour == wall.hour &&
+      value.minute == wall.minute;
+  final local =
+      DateTime(wall.year, wall.month, wall.day, wall.hour, wall.minute);
+  if (!matches(local)) return null;
+  if (existing != null && matches(existing.toLocal())) return existing.toUtc();
+  return local.toUtc();
+}
 
 class ProductPriceChangesDialog extends StatefulWidget {
   final ProductModel product;
-  final String timezone;
+  final List<DateTime> suggestedTimes;
   final bool canEdit;
   final Future<ProductModel> Function() reload;
   final Future<void> Function(double, DateTime, ProductPriceChange?)? save;
   final Future<void> Function(ProductPriceChange)? cancel;
-  const ProductPriceChangesDialog(
-      {super.key,
-      required this.product,
-      required this.timezone,
-      required this.canEdit,
-      required this.reload,
-      this.save,
-      this.cancel});
+  const ProductPriceChangesDialog({
+    super.key,
+    required this.product,
+    this.suggestedTimes = const [],
+    required this.canEdit,
+    required this.reload,
+    this.save,
+    this.cancel,
+  });
   @override
   State<ProductPriceChangesDialog> createState() =>
       _ProductPriceChangesDialogState();
@@ -59,7 +91,6 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
   DateTime? offsetChoice;
   bool get dirty =>
       price.text.isNotEmpty || date.text.isNotEmpty || time.text.isNotEmpty;
-  tz.Location get location => tz.getLocation(widget.timezone);
   List<ProductPriceChange> get plans =>
       ProductPriceChange.pending(product.priceChanges);
   @override
@@ -85,17 +116,12 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
     super.dispose();
   }
 
-  DateTime? get wallTime {
-    try {
-      return DateFormat('yyyy-MM-dd HH:mm')
-          .parseStrict('${date.text} ${time.text}', true);
-    } on FormatException {
-      return null;
-    }
+  DateTime? get wallTime => scheduleWallTime(date.text, time.text);
+  List<DateTime> get candidates {
+    final instant =
+        localScheduleTime(date.text, time.text, existing: offsetChoice);
+    return instant == null ? [] : [instant];
   }
-
-  List<DateTime> get candidates =>
-      wallTime == null ? [] : ProductPriceChange.instants(wallTime!, location);
 
   void edit(ProductPriceChange? plan) {
     setState(() {
@@ -106,12 +132,9 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
       price.text = plan?.price?.toString() ?? '';
       date.text = plan == null
           ? ''
-          : DateFormat('yyyy-MM-dd')
-              .format(plan.time.toOccasionTime(widget.timezone));
-      time.text = plan == null
-          ? ''
-          : DateFormat('HH:mm')
-              .format(plan.time.toOccasionTime(widget.timezone));
+          : DateFormat('dd.MM.yyyy').format(plan.time.toLocal());
+      time.text =
+          plan == null ? '' : DateFormat('HH:mm').format(plan.time.toLocal());
       if (plan != null) offsetChoice = plan.time;
     });
   }
@@ -119,19 +142,22 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
   Future<bool> discard() async {
     if (!dirty) return true;
     return await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-                  title: Text(CommonStrings.discardChanges),
-                  content: Text(CommonStrings.discardChangesConfirmation),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text(CommonStrings.cancel)),
-                    FilledButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: Text(CommonStrings.discardChanges))
-                  ],
-                )) ==
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(CommonStrings.discardChanges),
+            content: Text(CommonStrings.discardChangesConfirmation),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(CommonStrings.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(CommonStrings.discardChanges),
+              ),
+            ],
+          ),
+        ) ==
         true;
   }
 
@@ -144,9 +170,11 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
   Future<void> reload() async {
     if (_reloading) return;
     _reloading = true;
-    final result = await ExceptionHandler.guard(context,
-        futureFunction: widget.reload,
-        defaultErrorMessage: OrdersStrings.priceSaveFailed);
+    final result = await ExceptionHandler.guard(
+      context,
+      futureFunction: widget.reload,
+      defaultErrorMessage: OrdersStrings.priceSaveFailed,
+    );
     _reloading = false;
     if (result != null && mounted) {
       setState(() => product = result);
@@ -164,24 +192,34 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         amount < 0 ||
         instant == null ||
         !instant.isAfter(product.priceNow)) {
-      setState(() => error = instants.isEmpty && wallTime != null
-          ? OrdersStrings.priceMissingTime
-          : OrdersStrings.priceInvalid);
+      setState(
+        () => error = instants.isEmpty && wallTime != null
+            ? OrdersStrings.priceMissingTime
+            : OrdersStrings.priceInvalid,
+      );
       return;
     }
     setState(() {
       busy = true;
       error = null;
     });
-    final success =
-        await ExceptionHandler.guardVoid(context, futureFunction: () async {
-      if (widget.save != null) {
-        await widget.save!(amount, instant, editing);
-      } else {
-        await DbEshop.saveProductPriceChange(product.id!, amount, instant,
-            changeId: editing?.id, revision: editing?.revision);
-      }
-    }, defaultErrorMessage: OrdersStrings.priceSaveFailed);
+    final success = await ExceptionHandler.guardVoid(
+      context,
+      futureFunction: () async {
+        if (widget.save != null) {
+          await widget.save!(amount, instant, editing);
+        } else {
+          await DbEshop.saveProductPriceChange(
+            product.id!,
+            amount,
+            instant,
+            changeId: editing?.id,
+            revision: editing?.revision,
+          );
+        }
+      },
+      defaultErrorMessage: OrdersStrings.priceSaveFailed,
+    );
     if (!mounted) return;
     if (success) {
       changed = true;
@@ -202,33 +240,44 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
 
   Future<void> cancel(ProductPriceChange plan) async {
     final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-                title: Text(OrdersStrings.cancelPriceChange),
-                content:
-                    Text(priceChangeText(OrdersStrings.priceCancelConfirm, [
-                  scheduledPrice(context, plan.price, product.currencyCode),
-                  scheduledTime(plan.time, widget.timezone)
-                ])),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(CommonStrings.close)),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text(OrdersStrings.cancelPriceChange))
-                ]));
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(OrdersStrings.cancelPriceChange),
+        content: Text(
+          priceChangeText(OrdersStrings.priceCancelConfirm, [
+            scheduledPrice(context, plan.price, product.currencyCode),
+            scheduledTime(plan.time),
+          ]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(CommonStrings.close),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(OrdersStrings.cancelPriceChange),
+          ),
+        ],
+      ),
+    );
     if (confirmed != true || !mounted) return;
     setState(() => busy = true);
-    final success =
-        await ExceptionHandler.guardVoid(context, futureFunction: () async {
-      if (widget.cancel != null) {
-        await widget.cancel!(plan);
-      } else {
-        await DbEshop.cancelProductPriceChange(
-            product.id!, plan.id, plan.revision);
-      }
-    }, defaultErrorMessage: OrdersStrings.priceSaveFailed);
+    final success = await ExceptionHandler.guardVoid(
+      context,
+      futureFunction: () async {
+        if (widget.cancel != null) {
+          await widget.cancel!(plan);
+        } else {
+          await DbEshop.cancelProductPriceChange(
+            product.id!,
+            plan.id,
+            plan.revision,
+          );
+        }
+      },
+      defaultErrorMessage: OrdersStrings.priceSaveFailed,
+    );
     if (success) {
       changed = true;
       await reload();
@@ -254,10 +303,8 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
     final children = <Widget>[
       Text(product.title ?? '', style: Theme.of(context).textTheme.titleMedium),
       Text(
-          '${OrdersStrings.scheduledCurrentPrice}: ${scheduledPrice(context, product.price, product.currencyCode)}'),
-      Text(widget.timezone),
-      const SizedBox(height: 12),
-      Text(OrdersStrings.priceHelp),
+        '${OrdersStrings.scheduledCurrentPrice}: ${scheduledPrice(context, product.price, product.currencyCode)}',
+      ),
       const SizedBox(height: 12),
     ];
     double? previous = product.price;
@@ -265,181 +312,225 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
       final label =
           '${scheduledPrice(context, previous, product.currencyCode)} → ${scheduledPrice(context, plan.price, product.currencyCode)}';
       final overdue = !plan.time.isAfter(product.priceNow);
-      children.add(Card(
+      children.add(
+        Card(
           child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label, style: Theme.of(context).textTheme.titleSmall),
-                    Text(scheduledTime(plan.time, widget.timezone)),
-                    if (plan.failureCode != null)
-                      Text('${OrdersStrings.priceFailed} (${plan.failureCode})')
-                    else if (overdue)
-                      Text(OrdersStrings.pricePending),
-                    if (overdue &&
-                        plan.failureCode == null &&
-                        product.priceNow.difference(plan.time) >
-                            const Duration(minutes: 2))
-                      Text(OrdersStrings.priceDelayed),
-                    if (previous != product.price)
-                      Text(OrdersStrings.priceExpected),
-                    if (widget.canEdit)
-                      Wrap(children: [
-                        TextButton(
-                            onPressed: busy || formOpen && dirty
-                                ? null
-                                : () => edit(plan),
-                            child: Text(
-                                '${CommonStrings.edit} ${scheduledTime(plan.time, widget.timezone)}')),
-                        TextButton(
-                            onPressed: busy ? null : () => cancel(plan),
-                            child: Semantics(
-                                excludeSemantics: true,
-                                label:
-                                    '${product.title}: ${OrdersStrings.cancelPriceChange} ${scheduledTime(plan.time, widget.timezone)}',
-                                child: Text(OrdersStrings.cancelPriceChange))),
-                      ]),
-                  ]))));
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.titleSmall),
+                Text(scheduledTime(plan.time)),
+                if (plan.failureCode != null)
+                  Text('${OrdersStrings.priceFailed} (${plan.failureCode})')
+                else if (overdue)
+                  Text(OrdersStrings.pricePending),
+                if (overdue &&
+                    plan.failureCode == null &&
+                    product.priceNow.difference(plan.time) >
+                        const Duration(minutes: 2))
+                  Text(OrdersStrings.priceDelayed),
+                if (previous != product.price)
+                  Text(OrdersStrings.priceExpected),
+                if (widget.canEdit)
+                  Wrap(
+                    children: [
+                      TextButton(
+                        onPressed:
+                            busy || formOpen && dirty ? null : () => edit(plan),
+                        child: Text(
+                          '${CommonStrings.edit} ${scheduledTime(plan.time)}',
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: busy ? null : () => cancel(plan),
+                        child: Semantics(
+                          excludeSemantics: true,
+                          label:
+                              '${product.title}: ${OrdersStrings.cancelPriceChange} ${scheduledTime(plan.time)}',
+                          child: Text(OrdersStrings.cancelPriceChange),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
       if (plan.failureCode == null) previous = plan.price;
     }
     if (formOpen) {
+      if (widget.suggestedTimes.isNotEmpty)
+        children.add(Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final instant in widget.suggestedTimes)
+                ActionChip(
+                    avatar: const Icon(Icons.calendar_month, size: 16),
+                    label: Text(scheduledTime(instant)),
+                    onPressed: busy
+                        ? null
+                        : () => setState(() {
+                              date.text = DateFormat('dd.MM.yyyy')
+                                  .format(instant.toLocal());
+                              time.text =
+                                  DateFormat('HH:mm').format(instant.toLocal());
+                              offsetChoice = instant;
+                            }))
+            ])));
       children.addAll([
         const Divider(),
         TextField(
-            controller: price,
-            enabled: !busy,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-                labelText: OrdersStrings.newPrice,
-                suffixText: product.currencyCode),
-            onChanged: (_) => setState(() {})),
+          controller: price,
+          enabled: !busy,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: OrdersStrings.newPrice,
+            suffixText: product.currencyCode,
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
         TextField(
-            controller: date,
-            enabled: !busy,
-            decoration: InputDecoration(
-                labelText: OrdersStrings.priceDate,
-                suffixIcon: IconButton(
-                    tooltip: OrdersStrings.priceDate,
-                    onPressed: busy
-                        ? null
-                        : () async {
-                            final day = await showDatePicker(
-                                context: context,
-                                initialDate: TimeHelper.now(),
-                                firstDate: TimeHelper.now(),
-                                lastDate: DateTime(2100));
-                            if (day != null && mounted) {
-                              setState(() {
-                                date.text =
-                                    DateFormat('yyyy-MM-dd').format(day);
-                                offsetChoice = null;
-                              });
-                            }
-                          },
-                    icon: const Icon(Icons.calendar_month))),
-            onChanged: (_) => setState(() => offsetChoice = null)),
-        TextField(
-            controller: time,
-            enabled: !busy,
-            decoration: InputDecoration(
-                labelText: OrdersStrings.priceTime,
-                suffixIcon: IconButton(
-                    tooltip: OrdersStrings.priceTime,
-                    onPressed: busy
-                        ? null
-                        : () async {
-                            final selected =
-                                await TimeHelper.showUniversalTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.fromDateTime(
-                                        TimeHelper.now()));
-                            if (selected != null && mounted) {
-                              setState(() {
-                                time.text =
-                                    '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
-                                offsetChoice = null;
-                              });
-                            }
-                          },
-                    icon: const Icon(Icons.schedule))),
-            onChanged: (_) => setState(() => offsetChoice = null)),
-        if (instants.length > 1)
-          DropdownButtonFormField<DateTime>(
-              key: ValueKey('${date.text} ${time.text}'),
-              initialValue:
-                  instants.contains(offsetChoice) ? offsetChoice : null,
-              decoration: InputDecoration(labelText: OrdersStrings.priceOffset),
-              items: instants
-                  .map((i) => DropdownMenuItem(
-                      value: i,
-                      child: Text(
-                          '${i.toOccasionTime(widget.timezone).timeZoneName} (UTC${i.toOccasionTime(widget.timezone).timeZoneOffset.inMinutes / 60})')))
-                  .toList(),
-              onChanged: busy
+          controller: date,
+          enabled: !busy,
+          decoration: InputDecoration(
+            labelText: OrdersStrings.priceDate,
+            suffixIcon: IconButton(
+              tooltip: OrdersStrings.priceDate,
+              onPressed: busy
                   ? null
-                  : (value) => setState(() => offsetChoice = value)),
+                  : () async {
+                      final day = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (day != null && mounted) {
+                        setState(() {
+                          date.text = DateFormat('dd.MM.yyyy').format(day);
+                          offsetChoice = null;
+                        });
+                      }
+                    },
+              icon: const Icon(Icons.calendar_month),
+            ),
+          ),
+          onChanged: (_) => setState(() => offsetChoice = null),
+        ),
+        TextField(
+          controller: time,
+          enabled: !busy,
+          decoration: InputDecoration(
+            labelText: OrdersStrings.priceTime,
+            suffixIcon: IconButton(
+              tooltip: OrdersStrings.priceTime,
+              onPressed: busy
+                  ? null
+                  : () async {
+                      final selected = await TimeHelper.showUniversalTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(DateTime.now()),
+                      );
+                      if (selected != null && mounted) {
+                        setState(() {
+                          time.text =
+                              '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
+                          offsetChoice = null;
+                        });
+                      }
+                    },
+              icon: const Icon(Icons.schedule),
+            ),
+          ),
+          onChanged: (_) => setState(() => offsetChoice = null),
+        ),
         if (amount != null && instant != null)
           Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(priceChangeText(OrdersStrings.priceSummary, [
-                scheduledTime(instant, widget.timezone),
-                scheduledPrice(context, amount, product.currencyCode)
-              ]))),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              priceChangeText(OrdersStrings.priceSummary, [
+                scheduledTime(instant),
+                scheduledPrice(context, amount, product.currencyCode),
+              ]),
+            ),
+          ),
         if (amount != null &&
             instant != null &&
             amount == precedingPrice(instant))
           Text(OrdersStrings.priceSame),
         if (error != null)
-          Text(error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Text(
+            error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
       ]);
     }
     final actions = [
       TextButton(
-          onPressed: busy ? null : close, child: Text(CommonStrings.close)),
+        onPressed: busy ? null : close,
+        child: Text(CommonStrings.close),
+      ),
       TextButton(
-          onPressed: busy ? null : reload,
-          child: Text(OrdersStrings.priceRefreshAction)),
+        onPressed: busy ? null : reload,
+        child: Text(OrdersStrings.priceRefreshAction),
+      ),
       if (widget.canEdit && !formOpen)
         FilledButton(
-            onPressed: busy ? null : () => edit(null),
-            child: Text(OrdersStrings.addPriceChange)),
+          onPressed: busy ? null : () => edit(null),
+          child: Text(OrdersStrings.addPriceChange),
+        ),
       if (widget.canEdit && formOpen)
         FilledButton(
-            onPressed: busy ? null : submit,
-            child: busy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(editing == null
-                    ? OrdersStrings.schedulePrice
-                    : CommonStrings.saveChanges)),
+          onPressed: busy ? null : submit,
+          child: busy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(
+                  editing == null
+                      ? OrdersStrings.schedulePrice
+                      : CommonStrings.saveChanges,
+                ),
+        ),
     ];
-    final body = Column(mainAxisSize: MainAxisSize.min, children: [
-      Padding(
+    final body = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
           padding: const EdgeInsets.all(20),
-          child: Text(OrdersStrings.priceChangesTitle,
-              style: Theme.of(context).textTheme.titleLarge)),
-      Flexible(
+          child: Text(
+            OrdersStrings.priceChangesTitle,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        Flexible(
           child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: children))),
-      Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children,
+            ),
+          ),
+        ),
+        Padding(
           padding: const EdgeInsets.all(12),
-          child: Wrap(alignment: WrapAlignment.end, children: actions)),
-    ]);
+          child: Wrap(alignment: WrapAlignment.end, children: actions),
+        ),
+      ],
+    );
     return PopScope(
-        canPop: allowClose,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) close();
-        },
-        child: MediaQuery.sizeOf(context).width < 600
-            ? Dialog.fullscreen(child: SafeArea(child: body))
-            : Dialog(child: SizedBox(width: 560, child: body)));
+      canPop: allowClose,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) close();
+      },
+      child: MediaQuery.sizeOf(context).width < 600
+          ? Dialog.fullscreen(child: SafeArea(child: body))
+          : Dialog(child: SizedBox(width: 560, child: body)),
+    );
   }
 }

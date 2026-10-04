@@ -25,6 +25,7 @@ DECLARE
     v_amount numeric;
     v_report jsonb;
     v_report_user uuid;
+    v_wave_id bigint;
 BEGIN
     -- ==================================================================
     -- Setup: Two products - one with deposit, one without
@@ -102,4 +103,21 @@ BEGIN
     PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=v_order_id),1000::numeric,'Existing order price stays fixed');
     PERFORM assert_eq((SELECT amount FROM eshop.payment_info WHERE id=(SELECT payment_info FROM eshop.orders WHERE id=v_order_id)),1000::numeric,'Existing payment stays fixed');
     PERFORM assert_eq((SELECT price FROM eshop.orders_history WHERE "order"=v_order_id ORDER BY id LIMIT 1),1000::numeric,'Existing history stays fixed');
+    -- The same queue also controls availability: a stale public form cannot order a hidden product.
+    INSERT INTO eshop.spots(product,occasion,secret) VALUES(v_product_deposit_id,v_occasion_id,gen_random_uuid()) RETURNING id INTO v_spot_2_id;
+    INSERT INTO eshop.product_price_waves(occasion,change_time) VALUES(v_occasion_id,now()-interval '1 minute') RETURNING id INTO v_wave_id;
+    INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion,wave_id)
+      VALUES('products.is_hidden',v_product_deposit_id,'true',now()-interval '1 minute',v_occasion_id,v_wave_id);
+    PERFORM public.apply_planned_changes();
+    v_input_data := jsonb_build_object('form',v_form_key,'email','hidden@example.com',
+      'secret',(SELECT secret FROM eshop.spots WHERE id=v_spot_2_id),
+      'ticket',jsonb_build_array(jsonb_build_object('spot',v_spot_2_id,'price',1000)));
+    v_result := public.create_ticket_order(v_input_data);
+    PERFORM assert_eq((v_result->>'code')::int,1012,'Hidden wave target rejects stale checkout');
+    PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=v_order_id),1000::numeric,'Hiding does not modify existing orders');
+    INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion,wave_id)
+      VALUES('products.is_hidden',v_product_deposit_id,'false',now()-interval '30 seconds',v_occasion_id,v_wave_id);
+    PERFORM public.apply_planned_changes();
+    v_result := public.create_ticket_order(v_input_data);
+    PERFORM assert_eq((v_result->>'code')::int,200,'Later visibility target offers product again');
 END $$;
