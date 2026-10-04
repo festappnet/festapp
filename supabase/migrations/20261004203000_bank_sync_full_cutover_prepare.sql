@@ -1,3 +1,65 @@
+-- Prepare canonical onboarding and adopt historical identities before retiring old importers.
+
+-- SOURCE: eshop_bank_sync/bank_sync_authority.sql
+CREATE OR REPLACE FUNCTION public.bank_sync_accounts_match(p_transaction_id bigint,p_target_account bigint)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM eshop.transactions t
+    JOIN eshop.bank_transaction_identities i ON i.transaction_id=t.id AND i.identity_kind='movement'
+    JOIN eshop.bank_sync_connections c ON c.instance_id=i.instance_id AND c.provider=i.provider
+      AND c.physical_account=i.physical_account AND c.bank_account_id=t.bank_account_id
+    WHERE t.id=p_transaction_id AND t.ingest_source='banksync_api' AND c.legacy_blocked_at IS NOT NULL
+      AND (p_target_account=c.bank_account_id OR p_target_account IN
+        (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id))
+  );
+$$;
+REVOKE ALL ON FUNCTION public.bank_sync_accounts_match(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.activate_bank_sync_connection(p_connection_id bigint,p_manifest_sha256 text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE v_connection eshop.bank_sync_connections%ROWTYPE;
+BEGIN
+  PERFORM public.require_service_role();
+  SELECT * INTO STRICT v_connection FROM eshop.bank_sync_connections WHERE id=p_connection_id;
+  IF v_connection.manifest_sha256 IS DISTINCT FROM p_manifest_sha256 OR v_connection.pairing_code IS NULL THEN
+    RAISE EXCEPTION 'BANK_SYNC_MANIFEST_OR_PAIRING_MISMATCH';
+  END IF;
+  IF EXISTS(SELECT 1 FROM eshop.bank_sync_account_aliases WHERE bank_account_id=v_connection.bank_account_id AND connection_id<>p_connection_id)
+    OR EXISTS(SELECT 1 FROM eshop.bank_sync_connections c JOIN eshop.bank_sync_account_aliases a ON a.bank_account_id=c.bank_account_id WHERE a.connection_id=p_connection_id AND c.id<>p_connection_id) THEN
+    RAISE EXCEPTION 'BANK_SYNC_ALIAS_AUTHORITY_CONFLICT';
+  END IF;
+  PERFORM 1 FROM eshop.bank_accounts WHERE id=v_connection.bank_account_id OR id IN
+    (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id)
+    ORDER BY id FOR UPDATE;
+  -- Adopt known bank movement IDs before the first replay. Historical ledger
+  -- rows and manual pairing decisions remain unchanged; the receiver compares
+  -- bank facts and quarantines a mismatch instead of crediting history twice.
+  IF v_connection.provider='FIO' THEN
+    INSERT INTO eshop.bank_transaction_identities(instance_id,provider,physical_account,identity_kind,identity_value,transaction_id)
+      SELECT v_connection.instance_id,'FIO',v_connection.physical_account,'movement',t.transaction_id::text,t.id
+      FROM eshop.transactions t
+      WHERE (t.bank_account_id=v_connection.bank_account_id OR t.bank_account_id IN
+        (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id))
+        AND t.ingest_source IN ('fio_api','legacy_api','legacy') AND t.transaction_id IS NOT NULL
+      ON CONFLICT(instance_id,provider,physical_account,identity_kind,identity_value) DO UPDATE
+        SET transaction_id=eshop.bank_transaction_identities.transaction_id
+        WHERE eshop.bank_transaction_identities.transaction_id=EXCLUDED.transaction_id;
+    IF EXISTS(SELECT 1 FROM eshop.transactions t JOIN eshop.bank_transaction_identities i
+      ON i.instance_id=v_connection.instance_id AND i.provider='FIO' AND i.physical_account=v_connection.physical_account
+        AND i.identity_kind='movement' AND i.identity_value=t.transaction_id::text
+      WHERE t.bank_account_id=v_connection.bank_account_id AND t.ingest_source IN ('fio_api','legacy_api','legacy')
+        AND i.transaction_id<>t.id) THEN RAISE EXCEPTION 'BANK_SYNC_HISTORICAL_IDENTITY_CONFLICT'; END IF;
+  END IF;
+  UPDATE eshop.bank_accounts SET is_fetch_enabled=false WHERE id=v_connection.bank_account_id OR id IN
+    (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id);
+  UPDATE eshop.bank_sync_connections SET state='connected',legacy_blocked_at=COALESCE(legacy_blocked_at,now())
+    WHERE id=p_connection_id AND manifest_sha256=p_manifest_sha256;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.activate_bank_sync_connection(bigint,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.activate_bank_sync_connection(bigint,text) TO service_role;
+
+-- SOURCE: eshop_bank_sync/bank_sync_manage.sql
 CREATE OR REPLACE FUNCTION public.get_bank_sync_connection(p_bank_account_id bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_result jsonb;
@@ -192,3 +254,120 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.get_pending_bank_sync_details(bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.get_pending_bank_sync_details(bigint) TO service_role;
+
+-- SOURCE: eshop_bank_accounts/get_my_admin_bank_accounts.sql
+DROP FUNCTION IF EXISTS public.get_my_admin_bank_accounts();
+
+CREATE FUNCTION public.get_my_admin_bank_accounts()
+RETURNS TABLE (
+    id bigint,
+    account_number text,
+    account_number_human_readable text,
+    title text,
+    creditor_name text,
+    type text,
+    token_masked text,
+    token_expiry_date timestamptz,
+    supported_currencies text[],
+    linked_units text[],
+    last_fetch_time timestamptz,
+    last_fio_fetch_time timestamptz,
+    bank_sync jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        ba.id,
+        ba.account_number,
+        ba.account_number_human_readable,
+        ba.title,
+        ba.creditor_name,
+        ba.type,
+        NULL::text as token_masked,
+        (public.get_bank_sync_connection(ba.id)->>'token_expiry_at')::timestamptz as token_expiry_date,
+        ba.supported_currencies,
+        ARRAY(
+            SELECT u.title 
+            FROM eshop.unit_bank_accounts uba
+            JOIN public.units u ON uba.unit = u.id
+            WHERE uba.bank_account = ba.id
+        ) as linked_units,
+        ba.last_fetch_time,
+        ba.last_fio_fetch_time,
+        public.get_bank_sync_connection(ba.id) AS bank_sync
+    FROM eshop.bank_accounts ba
+    JOIN eshop.bank_account_users bau ON ba.id = bau.bank_account
+    WHERE bau."user" = auth.uid() AND bau.is_admin = true
+    AND ba.type != 'cash'
+    ORDER BY ba.title;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_my_admin_bank_accounts() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_my_admin_bank_accounts() TO authenticated, service_role;
+
+-- SOURCE: eshop_bank_accounts/get_bank_accounts_for_unit_management.sql
+DROP FUNCTION IF EXISTS public.get_bank_accounts_for_unit_management(bigint);
+
+CREATE FUNCTION public.get_bank_accounts_for_unit_management(p_unit_id bigint)
+RETURNS TABLE (
+    id bigint,
+    account_number text,
+    title text,
+    creditor_name text,
+    type text,
+    is_admin boolean,
+    token_masked text,
+    token_expiry_date timestamptz,
+    supported_currencies text[],
+    last_fio_fetch_time timestamptz,
+    bank_sync jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+BEGIN
+    PERFORM public.check_is_manager_on_unit(p_unit_id);
+    RETURN QUERY
+    SELECT 
+        ba.id,
+        ba.account_number,
+        ba.title,
+        ba.creditor_name,
+        ba.type,
+        EXISTS (
+            SELECT 1 
+            FROM eshop.bank_account_users bau
+            WHERE bau.bank_account = ba.id 
+            AND bau."user" = auth.uid() 
+            AND bau.is_admin = true
+        ) as is_admin,
+        NULL::text as token_masked,
+        NULL::timestamptz as token_expiry_date,
+        ba.supported_currencies,
+        ba.last_fio_fetch_time,
+        CASE WHEN EXISTS (
+            SELECT 1 FROM eshop.bank_account_users bank_admin
+            WHERE bank_admin.bank_account = ba.id
+              AND bank_admin."user" = auth.uid()
+              AND bank_admin.is_admin
+        ) THEN public.get_bank_sync_connection(ba.id)
+          ELSE (
+            SELECT jsonb_build_object('state',connection.state,'mode',connection.mode)
+            FROM eshop.bank_sync_connections connection
+            WHERE connection.bank_account_id = ba.id
+          ) END AS bank_sync
+    FROM eshop.bank_accounts ba
+    JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
+    WHERE uba.unit = p_unit_id
+    AND ba.type != 'CASH'; -- Exclude Cash Accounts from management list
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) TO authenticated, service_role;

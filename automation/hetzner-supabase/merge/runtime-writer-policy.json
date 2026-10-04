@@ -10,14 +10,6 @@
       ],
       "mutates_authority": false
     },
-    "bank-mail-parser": {
-      "trigger": "aws-sns-callback",
-      "effects": [
-        "database-rpc",
-        "aws-sns-subscription-confirmation"
-      ],
-      "mutates_authority": true
-    },
     "cancel-reception-registration": {
       "trigger": "client-http",
       "effects": [
@@ -64,7 +56,7 @@
       "trigger": "client-http",
       "effects": [
         "database-rpc",
-        "fio-api"
+        "banksync-owner-api"
       ],
       "mutates_authority": true
     },
@@ -163,15 +155,6 @@
         "database-rpc",
         "remote-asset-read",
         "canonical-email-enqueue"
-      ],
-      "mutates_authority": true
-    },
-    "synchronize-orders": {
-      "trigger": "database-cron-or-client-http",
-      "effects": [
-        "database-rpc",
-        "fio-api",
-        "edge-function-http"
       ],
       "mutates_authority": true
     },
@@ -328,7 +311,6 @@
   "canonical_function_security": {
     "blocked": {},
     "resolved": {
-      "bank-mail-parser": "signature-v2-exact-topic-aws-certificate-and-confirmation-url-verification",
       "fetch-http-data": "occasion-editor-auth-public-dns-and-redirect-validation-image-only-bounded-response",
       "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled",
       "process-email-queue": "service-only-machine-proof-fenced-ses-send-and-worker-scoped-credentials",

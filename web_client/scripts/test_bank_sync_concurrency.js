@@ -19,14 +19,13 @@ try {
   connection=(await a.query(`INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,
     provider,mode,state,pairing_code,manifest_sha256) VALUES('concurrency','festapp','42',$1,'771234/2010','FIO','api','shadow','0123456789',$2) RETURNING id`,[bank,'a'.repeat(64)])).rows[0].id;
   pi=(await a.query("INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code) VALUES($1,12345,20,'CZK') RETURNING id",[bank])).rows[0].id;
-  // A legacy transaction owns the same barrier that activation must wait for.
+  // Activation serializes with account updates before adopting movement IDs.
   await a.query('BEGIN');
-  await a.query('SELECT public.insert_transactions($1,$2)',[JSON.stringify([{column0:{value:'2026-10-04'},column1:{value:'1'},column14:{value:'CZK'},column22:{value:'770001'}}]),bank]);
+  await a.query('SELECT id FROM eshop.bank_accounts WHERE id=$1 FOR UPDATE',[bank]);
   let activated=false;
   const activation=b.query('SELECT public.activate_bank_sync_connection($1,$2)',[connection,'a'.repeat(64)]).then(()=>activated=true);
   await new Promise(r=>setTimeout(r,50));assert.equal(activated,false);
   await a.query('COMMIT');await activation;
-  await assert.rejects(a.query('SELECT public.insert_transactions($1,$2)',['[]',bank]),/CANONICAL_CONNECTION_REQUIRED/);
   const first=event('770002');
   await a.query('BEGIN');const r1=await ingest(a,first);
   let committed=false;const retry=ingest(b,first).then(r=>{committed=true;return r;});
@@ -39,7 +38,7 @@ try {
   const newTransport=ingest(b,event('770002'));await a.query('COMMIT');
   assert.equal((await newTransport).rows[0].receipt.outcome,'already_ingested');
   assert.equal((await a.query('SELECT paid FROM eshop.payment_info WHERE id=$1',[pi])).rows[0].paid,'20.00');
-  console.log('PASS: duplicate delivery, concurrent payments, manual unpair/replay and late legacy barrier (two sessions)');
+  console.log('PASS: duplicate delivery, concurrent payments, manual unpair/replay and account activation barrier (two sessions)');
 } finally {
   await Promise.all(clients.map(c=>c.query('ROLLBACK').catch(()=>{})));
   if(bank) {
