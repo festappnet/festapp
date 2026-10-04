@@ -264,8 +264,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         ],
         _buildAnswerWidget(context, field, true),
         const SizedBox(height: 16),
-        Row(
-          children: [
+        _FieldControlsBar(
+          controls: [
             if (!isTicket && field.type != FormHelper.fieldTypeEmail)
               SizedBox(
                 width: 150,
@@ -318,17 +318,21 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                   }),
                 ),
               ),
-            const Spacer(),
-            if (isTicket) ...[
-              Text(CommonStrings.note,
-                  style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(width: 4),
-              TicketEditorWidgets.buildTicketNoteCheckbox(context, form, () {
-                _refresh(() {});
-              }),
-              const SizedBox(width: 16),
-            ],
+            if (isTicket)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(CommonStrings.note,
+                      style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(width: 4),
+                  TicketEditorWidgets.buildTicketNoteCheckbox(context, form,
+                      () {
+                    _refresh(() {});
+                  }),
+                ],
+              ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(FormStrings.requiredLabel,
                     style: Theme.of(context).textTheme.bodySmall),
@@ -341,8 +345,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 ),
               ],
             ),
-            const SizedBox(width: 16),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(FormStrings.show,
                     style: Theme.of(context).textTheme.bodySmall),
@@ -355,68 +359,73 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 ),
               ],
             ),
-            // Popup Menu (Description & Deposit)
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == "add_description") {
-                  _refresh(() {
-                    if (HtmlHelper.isHtmlEmptyOrNull(field.description)) {
-                      field.description = defaultDescription;
-                    }
-                  });
-                } else if (value == "show_deposit_description") {
-                  _refresh(() {
-                    field.data ??= {};
-                    var current =
-                        field.data![TicketHolder.metaShowDepositDescription] ??
-                            true;
-                    field.data![TicketHolder.metaShowDepositDescription] =
-                        !current;
-                  });
-                }
-              },
-              itemBuilder: (context) {
-                List<PopupMenuEntry<String>> items = [];
-                // Add Description Option
-                items.add(PopupMenuItem<String>(
-                  value: "add_description",
-                  child: Text(FormStrings.addDescription),
-                ));
-
-                // Ticket Specific Options
-                if (isTicket) {
-                  bool showDeposit =
-                      field.data?[TicketHolder.metaShowDepositDescription] ??
-                          true;
-                  items.add(const PopupMenuDivider());
-                  items.add(CheckedPopupMenuItem<String>(
-                    value: "show_deposit_description",
-                    checked: showDeposit,
-                    child: Text(FormStrings.showDepositDescription),
-                  ));
-                }
-                return items;
-              },
-              icon: const Icon(Icons.more_vert),
-            ),
-            IconButton(
-              tooltip: field.canDelete
-                  ? CommonStrings.delete
-                  : FormStrings.deletionReason(field.deleteBlockedReason),
-              icon: const Icon(Icons.delete),
-              onPressed: !field.canDelete
-                  ? null
-                  : () {
-                      _refresh(() {
-                        displayList.remove(field);
-                        widget.bundle.form.removeField(field);
-                        if (selectedIndex == index) {
-                          selectedIndex = null;
-                        }
-                      });
-                    },
-            ),
           ],
+          actions: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Popup Menu (Description & Deposit)
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == "add_description") {
+                    _refresh(() {
+                      if (HtmlHelper.isHtmlEmptyOrNull(field.description)) {
+                        field.description = defaultDescription;
+                      }
+                    });
+                  } else if (value == "show_deposit_description") {
+                    _refresh(() {
+                      field.data ??= {};
+                      var current = field
+                              .data![TicketHolder.metaShowDepositDescription] ??
+                          true;
+                      field.data![TicketHolder.metaShowDepositDescription] =
+                          !current;
+                    });
+                  }
+                },
+                itemBuilder: (context) {
+                  List<PopupMenuEntry<String>> items = [];
+                  // Add Description Option
+                  items.add(PopupMenuItem<String>(
+                    value: "add_description",
+                    child: Text(FormStrings.addDescription),
+                  ));
+
+                  // Ticket Specific Options
+                  if (isTicket) {
+                    bool showDeposit =
+                        field.data?[TicketHolder.metaShowDepositDescription] ??
+                            true;
+                    items.add(const PopupMenuDivider());
+                    items.add(CheckedPopupMenuItem<String>(
+                      value: "show_deposit_description",
+                      checked: showDeposit,
+                      child: Text(FormStrings.showDepositDescription),
+                    ));
+                  }
+                  return items;
+                },
+                icon: const Icon(Icons.more_vert),
+              ),
+              IconButton(
+                tooltip: field.canDelete
+                    ? CommonStrings.delete
+                    : FormStrings.deletionReason(field.deleteBlockedReason),
+                icon: const Icon(Icons.delete),
+                onPressed: !field.canDelete
+                    ? null
+                    : () {
+                        _refresh(() {
+                          displayList.remove(field);
+                          widget.bundle.form.removeField(field);
+                          if (selectedIndex == index) {
+                            selectedIndex = null;
+                          }
+                        });
+                      },
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -504,5 +513,65 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
       }
       return !existingTypes.contains(type);
     }).toList();
+  }
+}
+
+class _FieldControlsBar extends StatefulWidget {
+  final List<Widget> controls;
+  final Widget actions;
+
+  const _FieldControlsBar({required this.controls, required this.actions});
+
+  @override
+  State<_FieldControlsBar> createState() => _FieldControlsBarState();
+}
+
+class _FieldControlsBarState extends State<_FieldControlsBar> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              thickness: 3,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      for (final control in widget.controls)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: control,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: widget.actions,
+        ),
+      ],
+    );
   }
 }
