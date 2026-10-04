@@ -33,7 +33,7 @@
         "auth-delete",
         "storage-delete",
         "onesignal-delete",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -96,7 +96,7 @@
       "trigger": "client-http",
       "effects": [
         "database-rpc",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -104,7 +104,7 @@
       "trigger": "client-http",
       "effects": [
         "database-rpc",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -112,7 +112,7 @@
       "trigger": "client-http",
       "effects": [
         "database-rpc",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -120,7 +120,7 @@
       "trigger": "client-http",
       "effects": [
         "database-rpc",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -129,7 +129,7 @@
       "effects": [
         "database-rpc",
         "fakturoid-api",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -137,7 +137,7 @@
       "trigger": "client-http",
       "effects": [
         "database-rpc",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -146,7 +146,7 @@
       "effects": [
         "database-rpc",
         "auth-update",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -162,7 +162,7 @@
       "effects": [
         "database-rpc",
         "remote-asset-read",
-        "smtp"
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     },
@@ -197,7 +197,45 @@
         "database-rpc",
         "google-oidc",
         "auth-session-create",
-        "smtp"
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "process-email-queue": {
+      "trigger": "post-commit-pg-net",
+      "effects": [
+        "database-rpc",
+        "private-email-gateway"
+      ],
+      "mutates_authority": true
+    },
+    "send-email-gateway": {
+      "trigger": "private-worker-http",
+      "effects": [
+        "database-rpc",
+        "ses-api"
+      ],
+      "mutates_authority": true
+    },
+    "email-provider-events": {
+      "trigger": "aws-sns-callback",
+      "effects": [
+        "database-rpc",
+        "aws-sns-subscription-confirmation"
+      ],
+      "mutates_authority": true
+    },
+    "email-confirmation-status": {
+      "trigger": "receipt-capability-http",
+      "effects": [
+        "database-read"
+      ],
+      "mutates_authority": false
+    },
+    "auth-email-hook": {
+      "trigger": "signed-gotrue-hook",
+      "effects": [
+        "database-rpc"
       ],
       "mutates_authority": true
     },
@@ -277,7 +315,12 @@
     "resolved": {
       "bank-mail-parser": "signature-v2-exact-topic-aws-certificate-and-confirmation-url-verification",
       "fetch-http-data": "occasion-editor-auth-public-dns-and-redirect-validation-image-only-bounded-response",
-      "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled"
+      "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled",
+      "process-email-queue": "private-service-only-minted-machine-request-secret",
+      "send-email-gateway": "private-network-bearer-and-fenced-one-shot-database-permit",
+      "auth-email-hook": "standardwebhooks-hmac-and-server-resolved-tenant",
+      "email-provider-events": "signature-v2-exact-topic-aws-certificate-and-durable-redacted-journal",
+      "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"
@@ -287,7 +330,10 @@
     "pre-activation Function guard remains active until the reviewed canonical Function bundle is promoted and internally verified, then its exact route is removed before external Function canaries",
     "AWS SNS topic uses SignatureVersion 2 and a signed canonical endpoint canary passes",
     "festapp_notify_webhook_token_v1 in target Vault matches NOTIFY_WEBHOOK_TOKEN and setup_triggers installs only the canonical HTTPS endpoint",
-    "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin"
+    "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin",
+    "Email cutover requires verified tenant activation, SES account/region quotas and allocated shared budget",
+    "Private email gateway is the only runtime injected with SES credentials; general router rejects its route",
+    "Signed GoTrue hook, SNS v2 feedback plus DLQ replay, paused migration rehearsal and legacy ambiguity reconciliation must pass before email_capacity is unpaused"
   ],
   "controls": {
     "mutating_edge_function": "deploy-canonical-disable-source-function-and-revoke-source-service-role",

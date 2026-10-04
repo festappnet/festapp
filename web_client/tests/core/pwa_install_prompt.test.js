@@ -38,7 +38,7 @@ describe('Flutter PWA install bridge', () => {
 
         window.dispatchEvent(event);
 
-        assert.equal(event.defaultPrevented, true);
+        assert.equal(event.defaultPrevented, false, 'native installation stays available');
         assert.equal(availabilityNotifications, 1);
     });
 

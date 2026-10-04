@@ -27,6 +27,11 @@ test('staged function bundle proof includes catalog and all three bundled defaul
 
 test('migration contains the canonical registry seed and validator without losing older identities',()=>{
  const migration=readFileSync('supabase/migrations/20261003130000_ticket_fonts.sql','utf8');
- for(const source of ['database/tables/ticket_font_assets.sql','database/seeds/ticket_font_assets.sql','database/policies/05_ticket_font_storage.sql','database/functions/others/ticket_layout.sql'])assert.ok(migration.includes(readFileSync(source,'utf8')));
+ for(const source of ['database/tables/ticket_font_assets.sql','database/seeds/ticket_font_assets.sql','database/policies/05_ticket_font_storage.sql'])assert.ok(migration.includes(readFileSync(source,'utf8')));
+ // Compare evolving function definitions with the complete ordered layout upgrade, not one older snapshot.
+ const layoutMigrations = migration + readFileSync('supabase/migrations/20261003150000_ticket_font_upgrade_save.sql','utf8') + readFileSync('supabase/migrations/20261003180000_ticket_canvas_opacity.sql','utf8');
+ const definitions = readFileSync('database/functions/others/ticket_layout.sql','utf8').match(/CREATE OR REPLACE FUNCTION[\s\S]*?\$\$;/g) ?? [];
+ assert.ok(definitions.length);
+ for (const definition of definitions) assert.ok(layoutMigrations.includes(definition));
  assert.match(migration,/ON CONFLICT\(id\) DO NOTHING/);
 });

@@ -1,3 +1,5 @@
+import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
+import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_saver/file_saver.dart'; // Added for file saving
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -102,6 +104,7 @@ class EshopColumns {
 
   static const String RESPONSES = "responses";
 
+  static const String ORDER_EMAIL_DELIVERY = "orderEmailDelivery";
   static const String HISTORY_ID = "historyId";
   static const String HISTORY_ORDER_SYMBOL = "historyOrderSymbol";
   static const String HISTORY_CHANGED_AT = "historyChangedAt";
@@ -574,6 +577,17 @@ class EshopColumns {
             field: ORDER_DATA,
             type: TrinaColumnType.text(),
             width: 150,
+          ),
+        ],
+        ORDER_EMAIL_DELIVERY: [
+          TrinaColumn(title: EmailDeliveryStrings.title, field: ORDER_EMAIL_DELIVERY,
+            type: TrinaColumnType.text(), width: 74, minWidth: 64, readOnly: true,
+            enableEditingMode: false, enableAutoEditing: false,
+            renderer: (r) => EmailDeliveryIndicator(
+              summary: r.cell.value is Map ? Map<String,dynamic>.from(r.cell.value as Map) : null,
+              orderId: r.row.cells[ORDER_ID]?.value as int?,
+              occasionId: (r.row.cells[ORDER_MODEL_REFERENCE]?.value as OrderModel?)?.occasion,
+            ),
           ),
         ],
         ORDER_EMAIL: [

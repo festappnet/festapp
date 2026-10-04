@@ -8,6 +8,7 @@ abstract final class NavigationPaths {
   static const current = 'current';
   static const design = 'design';
   static const editor = 'editor';
+  static const emailDelivery = 'email-delivery';
   static const emailTemplates = 'email-templates';
   static const events = 'events';
   static const exclusivity = 'exclusivity';
