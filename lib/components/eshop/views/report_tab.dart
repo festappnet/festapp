@@ -1,3 +1,4 @@
+import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'report_text.dart';
 import '../models/report_period.dart';
 import '../models/report_exchange_rates.dart';
@@ -42,6 +43,7 @@ class ReportTab extends StatefulWidget {
 }
 
 class _ReportTabState extends State<ReportTab> {
+  bool _tabActive = true;
   OccasionReport? _report;
   StreamSubscription<AuthState>? _authSubscription;
   String? _key, _link;
@@ -66,6 +68,19 @@ class _ReportTabState extends State<ReportTab> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _updateKey();
+    final active = AdminTabActivity.isActive(context);
+    if (active &&
+        !_tabActive &&
+        _link != null &&
+        (widget.identityKey != null || RightsService.isEditorOrderView())) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted)
+          setState(() {
+            _load();
+          });
+      });
+    }
+    _tabActive = active;
   }
 
   @override

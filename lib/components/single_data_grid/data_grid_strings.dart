@@ -3,6 +3,8 @@ import 'package:easy_localization/easy_localization.dart';
 /// Localized strings for the single data grid component and admin tabs.
 /// Keys live under the "DataGrid" namespace in assets/translations/*.json.
 class DataGridStrings {
+  static String get refreshPending => 'DataGrid.refreshPending'.tr();
+  static String get refreshData => 'DataGrid.refreshData'.tr();
   // --- SingleDataGridHeader ---
   static String get discardChanges =>
       'DataGrid.discardChanges'.tr(); // "Discard changes"
