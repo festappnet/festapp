@@ -1518,7 +1518,10 @@
     "unknownDatabaseError": "Došlo k neznámé chybě databáze.",
     "detailsLabel": "Podrobnosti:",
     "moreOptions": "Další možnosti",
-    "user": "Uživatel"
+    "user": "Uživatel",
+    "discardChanges": "Zahodit změny",
+    "discardChangesConfirmation": "Opravdu chcete zahodit neuložené změny?",
+    "keepEditing": "Pokračovat v úpravách"
   },
   "BankAccount": {
     "settingsTitle": "Nastavení bankovního účtu",

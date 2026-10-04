@@ -22,3 +22,8 @@ At `2026-10-04T10:19:23.650Z`, independent manifest/bundle fetch verified `0.20.
 ## Requested user-table follow-up
 
 After completing and verifying the prepared release, move the existing admin-only read-only email-history action immediately after `UserColumns.INVITED` (Invitation sent) in Users. No history/permissions/loading behavior changes. Rollout remains only vstupenky.online; live evidence will be recorded after the follow-up release.
+
+
+The Users-column follow-up is ACTIVE as `0.20.88+572`, main `f951abb918183ce9b074a19d953d0653856653a4` (PR #281), production `cdca343627af664af05aaa90724ca834f90b9f59`. Deployment run `37195147320` succeeded. Independent live proof at `2026-10-04T10:29:21.376Z` verified bundle SHA-256 `1505361568adcf1f76cd45e543178905d363e440e33484e3caeb2a16240cab35`.
+
+A later user instruction supersedes historical-usage protection: deletion eligibility must consider current order data and current references only. The next canonical migration updates both read metadata and save-time checks without deleting historical snapshots.

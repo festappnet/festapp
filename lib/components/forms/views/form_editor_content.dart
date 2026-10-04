@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';
 import 'package:flutter/material.dart';
@@ -24,11 +26,12 @@ const double kHiddenOpacity = 0.5;
 
 class FormEditorContent extends StatefulWidget {
   final String formLink;
+  final Future<FormEditBundle?> Function(String)? loadBundle;
   final VoidCallback? onDataUpdated;
   final FormEditBundle? prototypeBundle;
   final ValueChanged<FormEditBundle>? onPrototypeSave;
   const FormEditorContent(
-      {super.key, required this.formLink, this.onDataUpdated})
+      {super.key, required this.formLink, this.onDataUpdated, this.loadBundle})
       : prototypeBundle = null,
         onPrototypeSave = null;
 
@@ -36,7 +39,8 @@ class FormEditorContent extends StatefulWidget {
     super.key,
     required FormEditBundle bundle,
     required this.onPrototypeSave,
-  })  : formLink = '',
+  })  : loadBundle = null,
+        formLink = '',
         onDataUpdated = null,
         prototypeBundle = bundle;
 
@@ -47,11 +51,29 @@ class FormEditorContent extends StatefulWidget {
 class _FormEditorContentState extends State<FormEditorContent>
     with TickerProviderStateMixin {
   final _htmlSave = HtmlSaveCoordinator();
+  final _snapshot = EditorSnapshot();
+  final _draftRevision = ValueNotifier<int>(0);
+  bool get _hasChanges =>
+      _bundle != null &&
+      (_snapshot.differs(_bundle!.form.toEditedJson()) ||
+          _htmlSave.hasActiveDraft);
+  void _acceptRenderedDraft(FormEditBundle bundle) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !identical(_bundle, bundle)) return;
+      _snapshot.accept(bundle.form.toEditedJson());
+      _draftChanged();
+    });
+  }
+
+  void _draftChanged() => scheduleMicrotask(() {
+        if (mounted) _draftRevision.value++;
+      });
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   FormEditBundle? _bundle;
+  bool _loadFailed = false;
   String? _formLink;
   final ScrollController _scrollController = ScrollController();
   bool _prototypeSaved = false;
@@ -64,10 +86,15 @@ class _FormEditorContentState extends State<FormEditorContent>
   void initState() {
     super.initState();
     _bundle = widget.prototypeBundle;
+    if (_bundle != null) {
+      _snapshot.accept(_bundle!.form.toEditedJson());
+      _acceptRenderedDraft(_bundle!);
+    }
   }
 
   @override
   void dispose() {
+    _draftRevision.dispose();
     _htmlSave.dispose();
     if (_prototype && !_prototypeSaved && _bundle != null) {
       widget.onPrototypeSave?.call(_bundle!);
@@ -89,17 +116,26 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   Future<void> loadData() async {
     if (_formLink == null) return;
-    final bundle = await DbForms.getFormForEdit(_formLink!);
-    if (mounted) {
-      setState(() {
-        _bundle = bundle;
-      });
-    }
+    final link = _formLink!;
+    setState(() => _loadFailed = false);
+    final bundle = await ExceptionHandler.guard<FormEditBundle?>(context,
+        futureFunction: () =>
+            (widget.loadBundle ?? DbForms.getFormForEdit)(link));
+    if (!mounted || link != _formLink) return;
+    setState(() {
+      _bundle = bundle;
+      _loadFailed = bundle == null;
+      if (bundle != null) {
+        _snapshot.accept(bundle.form.toEditedJson());
+        _acceptRenderedDraft(bundle);
+      }
+    });
   }
 
   Future<void> saveChanges() async {
-    await ExceptionHandler.guardVoid(context, futureFunction: () =>
-      _htmlSave.save(() => _performHtmlSave(), context: context));
+    await ExceptionHandler.guardVoid(context,
+        futureFunction: () =>
+            _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
@@ -156,8 +192,8 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Future<void> cancelEdit() async {
-    if (!await confirmHtmlDiscard(context, _htmlSave) || !mounted) return;
-    Navigator.of(context).pop();
+    await loadData();
+    if (mounted) _htmlSave.markSaved();
   }
 
   List<String> get _availableFieldTypes {
@@ -522,8 +558,11 @@ class _FormEditorContentState extends State<FormEditorContent>
           child: Padding(
             padding: EdgeInsets.all(minimal ? 4 : 12),
             child: EditableHtmlField(
-              html: content ?? '', placeholder: defaultText ?? FormStrings.notSet, enabled: enabled && !_prototype,
-              fontSize: fontSize ?? 13, coordinator: _htmlSave,
+              html: content ?? '',
+              placeholder: defaultText ?? FormStrings.notSet,
+              enabled: enabled && !_prototype,
+              fontSize: fontSize ?? 13,
+              coordinator: _htmlSave,
               owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
               onChanged: onChanged,
             ),
@@ -661,10 +700,20 @@ class _FormEditorContentState extends State<FormEditorContent>
     });
   }
 
-
   Widget _buildHtmlParent(BuildContext context) {
-    if (_bundle == null)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_bundle == null) {
+      return Scaffold(
+          body: Center(
+              child: _loadFailed
+                  ? Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text(CommonStrings.unexpectedError),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                          onPressed: loadData,
+                          child: Text(CommonStrings.retry)),
+                    ])
+                  : const CircularProgressIndicator()));
+    }
 
     return Scaffold(
       floatingActionButtonAnimator: _NoScalingAnimation(),
@@ -712,6 +761,7 @@ class _FormEditorContentState extends State<FormEditorContent>
       body: _bundle == null
           ? const Center(child: CircularProgressIndicator())
           : Align(
+              key: ObjectKey(_bundle),
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints:
@@ -730,9 +780,12 @@ class _FormEditorContentState extends State<FormEditorContent>
                         EditableHtmlField(
                           key: const ValueKey('form-header'),
                           html: _bundle!.form.header,
-                          enabled: _canEdit && !_prototype, coordinator: _htmlSave,
-                          owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
-                          onChanged: (html) => setState(() => _bundle!.form.header = html),
+                          enabled: _canEdit && !_prototype,
+                          coordinator: _htmlSave,
+                          owner:
+                              HtmlMediaOwner.occasion(_bundle!.form.occasionId),
+                          onChanged: (html) =>
+                              setState(() => _bundle!.form.header = html),
                         ),
                         const SizedBox(height: 24),
                         Column(
@@ -746,7 +799,12 @@ class _FormEditorContentState extends State<FormEditorContent>
                           ],
                         ),
                         const SizedBox(height: 16),
-                        FormFieldsGenerator(bundle: _bundle!),
+                        Form(
+                            onChanged: _draftChanged,
+                            child: FormFieldsGenerator(
+                                key: ObjectKey(_bundle),
+                                bundle: _bundle!,
+                                onChanged: _draftChanged)),
                         const SizedBox(height: 102),
                       ],
                     ),
@@ -754,26 +812,23 @@ class _FormEditorContentState extends State<FormEditorContent>
                 ),
               ),
             ),
-      bottomNavigationBar: Container(
-        color: ThemeConfig.appBarColor(),
-        padding: const EdgeInsets.all(10),
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: _canEdit ? cancelEdit : null,
-                child: Text(
-                    _prototype ? CommonStrings.back : CommonStrings.storno),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton(
-                onPressed: _canEdit ? saveChanges : null,
-                child: Text(CommonStrings.save),
-              ),
-            ],
-          ),
-        ),
+      bottomNavigationBar: AnimatedBuilder(
+        animation: Listenable.merge([_htmlSave, _draftRevision]),
+        builder: (context, _) => _prototype
+            ? BottomAppBar(
+                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(CommonStrings.back)),
+                FilledButton(
+                    onPressed: _hasChanges ? saveChanges : null,
+                    child: Text(CommonStrings.save))
+              ]))
+            : EditorActionBar(
+                hasChanges: _hasChanges,
+                enabled: _canEdit && _bundle != null,
+                onSave: saveChanges,
+                onDiscard: cancelEdit),
       ),
     );
   }

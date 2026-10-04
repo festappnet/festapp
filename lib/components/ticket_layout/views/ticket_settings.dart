@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -31,6 +32,11 @@ class TicketSettings extends StatefulWidget {
 }
 
 class _TicketSettingsState extends State<TicketSettings> {
+  void _refresh(VoidCallback change) {
+    setState(change);
+    EditorDraftScope.changed(context);
+  }
+
   TicketLayoutService get service => widget.service;
   TicketLayoutResources? thumbnail;
   TicketLayoutController? thumbnailController;
@@ -66,7 +72,7 @@ class _TicketSettingsState extends State<TicketSettings> {
         return;
       }
       final old = thumbnail, oldController = thumbnailController;
-      setState(() {
+      _refresh(() {
         thumbnail = next;
         thumbnailController = TicketLayoutController(next.template);
       });
@@ -100,7 +106,7 @@ class _TicketSettingsState extends State<TicketSettings> {
   Future<void> edit() async {
     if (busy || unsupported || _editorOpen) return;
     _editorOpen = true;
-    setState(() => busy = true);
+    _refresh(() => busy = true);
     try {
       await ExceptionHandler.guard(context, futureFunction: () async {
         final r = await service.resolve(widget.occasionId, type,
@@ -120,7 +126,7 @@ class _TicketSettingsState extends State<TicketSettings> {
         final initialTemplate = jsonEncode(r.template.toJson());
         final initialBackground = widget.feature.ticketBackground;
         // Loading the editor and refreshing its thumbnail are separate operations.
-        setState(() => busy = false);
+        _refresh(() => busy = false);
         final routeRouter = context
             .findAncestorWidgetOfExactType<RouterScope>()
             ?.controller
@@ -159,7 +165,7 @@ class _TicketSettingsState extends State<TicketSettings> {
                     service: service)));
         if (!mounted) return;
         if (result != null) {
-          setState(() {
+          _refresh(() {
             widget.feature.ticketType = type;
             widget.feature.layout = upgradeTicketLayout({
               'schemaVersion': 1,
@@ -184,7 +190,7 @@ class _TicketSettingsState extends State<TicketSettings> {
       if (root != null && mounted)
         await DayRouteSelection.write(root, 'panel', null, replace: true);
     }
-    if (mounted) setState(() => busy = false);
+    if (mounted) _refresh(() => busy = false);
   }
 
   @override
@@ -195,13 +201,13 @@ class _TicketSettingsState extends State<TicketSettings> {
             title: Text(FeaturesStrings.enableManualTicketScan),
             subtitle: Text(FeaturesStrings.enableManualTicketScanDescription),
             onChanged: (v) =>
-                setState(() => widget.feature.canScanManually = v)),
+                _refresh(() => widget.feature.canScanManually = v)),
         CheckboxListTile(
             value: widget.feature.showHiddenNote ?? false,
             title: Text(FeaturesStrings.labelShowHiddenNote),
             subtitle: Text(FeaturesStrings.descriptionShowHiddenNote),
             onChanged: (v) =>
-                setState(() => widget.feature.showHiddenNote = v)),
+                _refresh(() => widget.feature.showHiddenNote = v)),
         const SizedBox(height: 12),
         if (unsupported) Text(TicketLayoutStrings.unsupported),
         if (thumbnail?.missingBackground == true)
@@ -223,7 +229,7 @@ class _TicketSettingsState extends State<TicketSettings> {
         if (widget.feature.conflictDraft != null)
           TextButton(
               onPressed: () {
-                setState(() => widget.feature.restoreConflictDraft());
+                _refresh(() => widget.feature.restoreConflictDraft());
                 refresh();
               },
               child: Text(TicketLayoutStrings.restoreDraft)),

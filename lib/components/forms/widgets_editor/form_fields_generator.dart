@@ -23,7 +23,8 @@ const double kHiddenOpacity = 0.5;
 
 class FormFieldsGenerator extends StatefulWidget {
   final FormEditBundle bundle;
-  const FormFieldsGenerator({super.key, required this.bundle});
+  final VoidCallback? onChanged;
+  const FormFieldsGenerator({super.key, required this.bundle, this.onChanged});
 
   @override
   _FormFieldsGeneratorState createState() => _FormFieldsGeneratorState();
@@ -31,6 +32,10 @@ class FormFieldsGenerator extends StatefulWidget {
 
 class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   int? selectedIndex;
+  void _refresh(VoidCallback change) {
+    setState(change);
+    widget.onChanged?.call();
+  }
 
   @override
   void initState() {
@@ -65,7 +70,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         return _buildFieldItem(context, index, field, topLevelFields);
       },
       onReorder: (oldIndex, newIndex) {
-        setState(() {
+        _refresh(() {
           if (oldIndex < newIndex) newIndex -= 1;
           final item = topLevelFields.removeAt(oldIndex);
           topLevelFields.insert(newIndex, item);
@@ -103,7 +108,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
       key: field.id != null ? ValueKey(field.id) : ObjectKey(field),
       onTap: () {
         if (!isSelected) {
-          setState(() {
+          _refresh(() {
             selectedIndex = index;
           });
         }
@@ -235,7 +240,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
             ),
             initialValue: field.title,
-            onChanged: (value) => field.title = value,
+            onChanged: (value) {
+              field.title = value;
+              widget.onChanged?.call();
+            },
           ),
           if (!HtmlHelper.isHtmlEmptyOrNull(field.description))
             Column(
@@ -244,7 +252,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                   description: field.description!,
                   defaultDescription: defaultDescription,
                   onDescriptionChanged: (newDescription) {
-                    setState(() {
+                    _refresh(() {
                       field.description = newDescription;
                     });
                   },
@@ -292,7 +300,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                             ),
                           ))
                       .toList(),
-                  onSelected: (newType) => setState(() {
+                  onSelected: (newType) => _refresh(() {
                     if (!((field.type == FormHelper.fieldTypeSelectOne ||
                             field.type == FormHelper.fieldTypeSelectMany) &&
                         (newType == FormHelper.fieldTypeSelectOne ||
@@ -316,7 +324,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                   style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(width: 4),
               TicketEditorWidgets.buildTicketNoteCheckbox(context, form, () {
-                setState(() {});
+                _refresh(() {});
               }),
               const SizedBox(width: 16),
             ],
@@ -329,7 +337,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                       (field.isRequired ?? false),
                   onChanged: FormHelper.isAlwaysRequired(field.type ?? '')
                       ? null
-                      : (value) => setState(() => field.isRequired = value),
+                      : (value) => _refresh(() => field.isRequired = value),
                 ),
               ],
             ),
@@ -343,7 +351,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                   onChanged:
                       (field.type == FormHelper.fieldTypeEmail || isTicket)
                           ? null
-                          : (value) => setState(() => field.isHidden = !value),
+                          : (value) => _refresh(() => field.isHidden = !value),
                 ),
               ],
             ),
@@ -351,13 +359,13 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == "add_description") {
-                  setState(() {
+                  _refresh(() {
                     if (HtmlHelper.isHtmlEmptyOrNull(field.description)) {
                       field.description = defaultDescription;
                     }
                   });
                 } else if (value == "show_deposit_description") {
-                  setState(() {
+                  _refresh(() {
                     field.data ??= {};
                     var current =
                         field.data![TicketHolder.metaShowDepositDescription] ??
@@ -399,7 +407,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               onPressed: !field.canDelete
                   ? null
                   : () {
-                      setState(() {
+                      _refresh(() {
                         displayList.remove(field);
                         widget.bundle.form.removeField(field);
                         if (selectedIndex == index) {
@@ -422,31 +430,35 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         return isEditable
             ? TicketEditorWidgets.buildTicketEditor(
                 context, form, field, widget.bundle.productTypes, () {
-                setState(() {});
+                _refresh(() {});
               })
             : TicketEditorWidgets.buildTicketEditorReadOnly(
                 context, form, field);
       case FormHelper.fieldTypeSelectOne:
         return isEditable
             ? SelectOneEditor.buildSelectOneEditor(
-                context, field, form.occasionId)
+                context, field, form.occasionId,
+                onChanged: widget.onChanged)
             : SelectOneEditor.buildSelectOneReadOnly(context, field);
       case FormHelper.fieldTypeSelectMany:
         return isEditable
             ? SelectManyEditor.buildSelectManyEditor(
-                context, field, form.occasionId)
+                context, field, form.occasionId,
+                onChanged: widget.onChanged)
             : SelectManyEditor.buildSelectManyReadOnly(context, field);
       case FormHelper.fieldTypeSex:
         return SexEditor.buildSexFieldReadOnly(context, field);
       case FormHelper.fieldTypeBirthDate:
         return isEditable
             ? BirthDateEditor.buildBirthDateEditor(
-                context, field, form.occasionId)
+                context, field, form.occasionId,
+                onChanged: widget.onChanged)
             : BirthDateEditor.buildBirthDateReadOnly(context, field);
       case FormHelper.fieldTypeIdDocument:
         return isEditable
             ? IdDocumentEditor.buildIdDocumentEditor(
-                context, field, form.occasionId)
+                context, field, form.occasionId,
+                onChanged: widget.onChanged)
             : IdDocumentEditor.buildIdDocumentReadOnly(context, field);
       default:
         if (isEditable) {

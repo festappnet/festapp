@@ -115,6 +115,15 @@ class EshopColumns {
   static const String HISTORY_MODEL_REFERENCE = "historyModelReference";
 
   // Define columns
+  static TrinaColumn orderSymbolColumn() => TrinaColumn(
+        readOnly: true,
+        enableEditingMode: true,
+        title: OrdersStrings.gridOrderSymbol,
+        field: ORDER_SYMBOL,
+        type: TrinaColumnType.text(),
+        width: 120,
+      );
+
   static Map<String, dynamic> columnBuilders(BuildContext context) => {
         PRODUCT_ID: [
           TrinaColumn(
@@ -287,7 +296,9 @@ class EshopColumns {
                 renderer: (ctx) {
                   return DataGridHelper.buildHtmlEditorButton(
                     context: context,
-                    occasionId: (ctx.row.cells[PRODUCT_MODEL_REFERENCE]?.value as ProductModel?)?.occasion,
+                    occasionId: (ctx.row.cells[PRODUCT_MODEL_REFERENCE]?.value
+                            as ProductModel?)
+                        ?.occasion,
                     field: PRODUCT_DESCRIPTION,
                     title: ctx.row.cells[PRODUCT_TITLE]!.value,
                     rendererContext: ctx,
@@ -519,16 +530,7 @@ class EshopColumns {
                 DataGridHelper.idRenderer(rendererContext),
           ),
         ],
-        ORDER_SYMBOL: [
-          TrinaColumn(
-            readOnly: true,
-            enableEditingMode: true,
-            title: OrdersStrings.gridOrderSymbol,
-            field: ORDER_SYMBOL,
-            type: TrinaColumnType.text(),
-            width: 120,
-          ),
-        ],
+        ORDER_SYMBOL: [orderSymbolColumn()],
         ORDER_PRICE: [
           TrinaColumn(
             readOnly: true,
@@ -580,13 +582,23 @@ class EshopColumns {
           ),
         ],
         ORDER_EMAIL_DELIVERY: [
-          TrinaColumn(title: EmailDeliveryStrings.title, field: ORDER_EMAIL_DELIVERY,
-            type: TrinaColumnType.text(), width: 74, minWidth: 64, readOnly: true,
-            enableEditingMode: false, enableAutoEditing: false,
+          TrinaColumn(
+            title: EmailDeliveryStrings.title,
+            field: ORDER_EMAIL_DELIVERY,
+            type: TrinaColumnType.text(),
+            width: 74,
+            minWidth: 64,
+            readOnly: true,
+            enableEditingMode: false,
+            enableAutoEditing: false,
             renderer: (r) => EmailDeliveryIndicator(
-              summary: r.cell.value is Map ? Map<String,dynamic>.from(r.cell.value as Map) : null,
+              summary: r.cell.value is Map
+                  ? Map<String, dynamic>.from(r.cell.value as Map)
+                  : null,
               orderId: r.row.cells[ORDER_ID]?.value as int?,
-              occasionId: (r.row.cells[ORDER_MODEL_REFERENCE]?.value as OrderModel?)?.occasion,
+              occasionId:
+                  (r.row.cells[ORDER_MODEL_REFERENCE]?.value as OrderModel?)
+                      ?.occasion,
             ),
           ),
         ],

@@ -44,8 +44,13 @@ BEGIN
   PERFORM assert_true(EXISTS(SELECT 1 FROM public.form_fields WHERE id=late_field),'Rejected save retains field');
   INSERT INTO eshop.orders_history("order",data) SELECT id,data FROM eshop.orders WHERE id=order_id;
   UPDATE eshop.orders SET data='{}' WHERE id=order_id;
+  result := public.get_form_for_edit(link);
+  SELECT value INTO field_json FROM jsonb_array_elements(result->'data'->'form_fields') WHERE (value->>'id')::bigint = answered;
+  PERFORM assert_eq(field_json->>'can_delete','true','Historical-only answers do not block editor eligibility');
   result := public.update_form_internal_v1(payload || jsonb_build_object('deleted_field_ids',jsonb_build_array(answered)));
-  PERFORM assert_eq(result->>'message','FORM_DELETE_responses','Historical answers stay protected');
+  PERFORM assert_eq(result->>'code','200','Historical-only answers do not block deletion');
+  PERFORM assert_false(EXISTS(SELECT 1 FROM public.form_fields WHERE id=answered),'Historical-only field is deleted');
+  PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.orders_history WHERE "order"=order_id),'Order history remains intact');
 
   INSERT INTO eshop.product_types(occasion,title,type) VALUES (occ,'Group','other') RETURNING id INTO pt;
   INSERT INTO public.form_fields(form,type,product_type) VALUES (form_id,'product_type',pt) RETURNING id INTO group_field;
@@ -73,8 +78,11 @@ BEGIN
   result := public.update_form_internal_v1(payload || jsonb_build_object('deleted_product_ids',jsonb_build_array(prod)));
   PERFORM assert_eq(result->>'message','FORM_DELETE_orders','Cancelled orders protect products too');
   DELETE FROM eshop.order_product_ticket WHERE product=prod;
+  INSERT INTO eshop.orders_history("order",data) VALUES(order_id,jsonb_build_object('tickets',jsonb_build_array(jsonb_build_object('products',jsonb_build_array(jsonb_build_object('id',prod))))));
+  result := public.get_form_for_edit(link);
+  PERFORM assert_eq(result->'data'->'products'->0->>'can_delete','true','Historical-only product usage does not block editor eligibility');
   result := public.update_form_internal_v1(payload || jsonb_build_object('deleted_product_ids',jsonb_build_array(prod)));
-  PERFORM assert_eq(result->>'code','200','Unused product can be deleted');
+  PERFORM assert_eq(result->>'code','200','Historical-only product usage does not block deletion');
   PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.products WHERE id=prod),'Product really deleted');
 
   INSERT INTO public.form_fields(form,type) VALUES (other_form,'text') RETURNING id INTO unused;
@@ -82,7 +90,7 @@ BEGIN
   PERFORM assert_eq(result->>'message','FORM_DELETE_changed','Cannot delete another form field');
   result := public.update_form_internal_v1(payload);
   PERFORM assert_eq(result->>'code','200','Older/partial payload still works');
-  PERFORM assert_true(EXISTS(SELECT 1 FROM public.form_fields WHERE id=answered),'Omitted fields are never implicit deletions');
+  PERFORM assert_true(EXISTS(SELECT 1 FROM public.form_fields WHERE id=late_field),'Omitted fields are never implicit deletions');
   UPDATE public.occasion_users SET is_editor_order=false WHERE occasion=occ AND "user"=actor;
   result:=public.update_form_internal_v1(payload || jsonb_build_object('title','Unauthorized'));
   PERFORM assert_eq((result->>'code')::int,403,'Revoked editor permission denies save');
