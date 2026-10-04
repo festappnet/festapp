@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 
 class DataGridAction {
   String? name;
-  void Function(SingleDataGridController,
+  FutureOr<void> Function(SingleDataGridController,
       [Future<void> Function()? originalAction])? action;
   bool Function()? isEnabled;
-  DataGridAction({this.action, this.name, this.isEnabled});
+  final bool requiresSelection;
+  DataGridAction(
+      {this.action, this.name, this.isEnabled, this.requiresSelection = false});
 }
 
 class DataGridActionsController {

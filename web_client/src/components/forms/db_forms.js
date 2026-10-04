@@ -54,14 +54,14 @@ export class DbForms {
 
         if (error) {
             console.error("Error fetching blueprint:", error);
-            return null;
+            throw new Error(error.message || 'Blueprint data unavailable');
         }
 
-        if (data && data.code === 200) {
+        if (data && data.code === 200 && data.data) {
             return data.data; // Return the inner data object
         }
         
-        return null;
+        throw new Error(data?.message || 'Blueprint data unavailable');
     }
 
     static async selectSpot(formKey, secret, spotId, selecting) {

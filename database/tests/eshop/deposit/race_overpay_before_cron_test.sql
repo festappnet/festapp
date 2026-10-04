@@ -81,12 +81,12 @@ BEGIN
     -- ==================================================================
     -- Step 1: Queue deposit reminder (state at the moment cron prepared the email)
     -- ==================================================================
-    DELETE FROM public.queue_emails WHERE occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
+    DELETE FROM public.email_messages WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND occasion = v_occasion_id AND code = 'TICKET_ORDER_REMINDER';
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 1: deposit reminder queued');
     RAISE NOTICE 'Step 1 PASSED: Reminder queued (paid=500, amount=1000)';
@@ -95,7 +95,7 @@ BEGIN
     -- Step 2: Customer pays remaining balance — race window
     -- ==================================================================
     -- Force the reminder to be due (simulate cron tick time arriving)
-    UPDATE public.queue_emails
+    UPDATE public.email_messages
     SET target_time = NOW() - interval '1 minute'
     WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
@@ -107,11 +107,11 @@ BEGIN
     -- ==================================================================
     -- Step 3: Reminder cron fires — validation must catch it
     -- ==================================================================
-    SELECT get_due_queue_emails() INTO v_due_result;
+    SELECT jsonb_agg(to_jsonb(m)) INTO v_due_result FROM public.email_messages m WHERE m.target_time<=now() AND public.email_intent_valid(m);
 
     SELECT COUNT(*) INTO v_reminder_count
-    FROM public.queue_emails
-    WHERE code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+    FROM public.email_messages
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
     AND (data->>'order_id')::bigint = v_order_id;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 3: Reminder must be invalidated when paid >= amount');
     RAISE NOTICE 'Step 3 PASSED: Stale reminder removed (validation blocked send)';

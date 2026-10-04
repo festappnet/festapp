@@ -1,4 +1,6 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_strings.dart';
@@ -8,13 +10,13 @@ import 'package:fstapp/components/unit/db_units.dart';
 import 'package:fstapp/components/users/db_users.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/unit/unit_settings_strings.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:fstapp/components/bank_accounts/views/unit_bank_accounts_screen.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/router_service.dart';
@@ -43,6 +45,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   late String? _title;
   late TextEditingController _replyToEmailController;
   String? _selectedTimezone;
+  String _communicationTone = 'formal';
   List<String> _allTimezones = [];
   String _versionInfo = "";
 
@@ -140,6 +143,10 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _replyToEmailController = TextEditingController(
       text: _unit.data?[Tb.units.data_reply_to] as String? ?? '',
     );
+    _communicationTone =
+        _unit.data?[Tb.units.data_communication_tone] == 'informal'
+            ? 'informal'
+            : 'formal';
 
     _allTimezones = TimeHelper.getAvailableTimezoneNames();
     _selectedTimezone = _unit.data?[dataTimezone] as String? ?? tz.local.name;
@@ -174,9 +181,14 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
 
     _unit.data![dataTimezone] = _selectedTimezone;
+    _unit.data![Tb.units.data_communication_tone] = _communicationTone;
 
     try {
       await DbUnits.updateUnit(_unit);
+      widget.unit.data = _unit.data;
+      if (RightsService.currentUnit()?.id == _unit.id) {
+        RightsService.currentUnit()?.data = _unit.data;
+      }
       ToastHelper.Show(context, "${CommonStrings.saved}: ${_unit.title!}");
       widget.onUnitUpdated();
     } catch (e) {
@@ -304,6 +316,32 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                             errorText:
                                 OccasionSettingsStrings.validationEmailInvalid),
                       ]),
+                    ),
+                    const SizedBox(height: 24),
+                    DropdownButtonFormField<String>(
+                      initialValue: _communicationTone,
+                      decoration: InputDecoration(
+                        labelText:
+                            UnitSettingsStrings.labelDefaultCommunicationTone,
+                        border: const OutlineInputBorder(),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'formal',
+                          child: Text(FormStrings.toneFormal),
+                        ),
+                        DropdownMenuItem(
+                          value: 'informal',
+                          child: Text(FormStrings.toneInformal),
+                        ),
+                      ],
+                      onChanged: _canEdit
+                          ? (value) {
+                              if (value != null) {
+                                setState(() => _communicationTone = value);
+                              }
+                            }
+                          : null,
                     ),
                     const SizedBox(height: 24),
                     if (_allTimezones.isNotEmpty)
@@ -454,12 +492,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         title: Text(BankAccountStrings.bankAccountsTitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  UnitBankAccountsScreen(unitId: _unit.id!),
-                            ),
-                          );
+                          context.tabsRouter.navigate(
+                              const UnitBankAccountsNavigationRoute());
                         },
                       ),
                     const SizedBox(height: 48),

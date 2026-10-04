@@ -1,7 +1,9 @@
 import {
-  deliverEmail,
-  EmailTemplateNotFoundError,
-} from "../_shared/emailDelivery.ts";
+  awaitEmailAccepted,
+  emailRpc,
+  prepareAccountEmail,
+} from "../_shared/emailQueueClient.ts";
+import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
 import { translatePlatformLinks } from "../_shared/translatePlatformLinks.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { finishRegistration } from "./registrationFlow.ts";
@@ -79,21 +81,31 @@ Deno.serve(async (req) => {
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Create the user via RPC
-    const createResult = await supabaseAdmin.rpc(
-      "create_user_from_registration",
-      {
-        org: organizationId,
-        email: userEmail,
-        password: code,
-        data: reqData,
-        unit_title: unitTitle,
-      },
-    );
-
     const platforms = orgConfig.PLATFORMS || [];
     const platformLinksHtml = translatePlatformLinks(platforms, defaultLang);
-
+    const snapshot = await prepareAccountEmail({
+      to: userEmail,
+      templateCode: "SIGN_IN_CODE",
+      context: { organization: organizationId },
+      substitutions: {
+        code,
+        email: userEmail,
+        platformLinks: platformLinksHtml,
+        appName,
+      },
+      from: `${appName} | Festapp <${_DEFAULT_EMAIL}>`,
+    });
+    const queued = await emailRpc("enqueue_account_email", {
+      p_operation: "register",
+      p_domain: { password: code, data: reqData, unit_title: unitTitle },
+      p_context: { organization: organizationId },
+      p_recipient: userEmail,
+      ...snapshot,
+      p_dedupe: `register:${userEmail.toLowerCase()}`,
+      p_code: "SIGN_IN_CODE",
+      p_expires: new Date(Date.now() + 3600000).toISOString(),
+    });
+    const createResult = { data: queued.domain, error: null };
     try {
       const result = await finishRegistration({
         creationResult: createResult,
@@ -103,7 +115,7 @@ Deno.serve(async (req) => {
         code,
         platformLinksHtml,
         defaultEmail: _DEFAULT_EMAIL,
-      }, deliverEmail);
+      }, () => awaitEmailAccepted(queued.message_id));
       return new Response(
         JSON.stringify(result.body),
         {

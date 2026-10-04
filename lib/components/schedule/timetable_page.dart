@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -140,8 +141,12 @@ class _TimetablePageState extends State<TimetablePage>
     if (_tabController?.length != days.length) {
       _tabController
           ?.removeListener(reactionOnIndexChanged); // Clean up old listener
+      _tabController?.animation?.removeListener(reactionOnIndexChanged);
+      _tabController?.dispose();
+      _currentIndex =
+          days.isEmpty ? 0 : (_currentIndex ?? 0).clamp(0, days.length - 1);
       _tabController = TabController(
-          vsync: this, length: days.length, initialIndex: _currentIndex ?? 0);
+          vsync: this, length: days.length, initialIndex: _currentIndex!);
     } else {
       _tabController?.index = _currentIndex ?? 0;
     }
@@ -183,7 +188,7 @@ class _TimetablePageState extends State<TimetablePage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final scaffold = Scaffold(
         backgroundColor: ThemeConfig.timetableBackgroundOutside(context),
         appBar: AppBar(
           title: Text(CommonStrings.schedule),
@@ -199,6 +204,7 @@ class _TimetablePageState extends State<TimetablePage>
                 child: TabBar(
                     controller: _tabController,
                     isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     tabs: List<Widget>.generate(
                         _days.length,
                         (i) => Padding(
@@ -218,5 +224,10 @@ class _TimetablePageState extends State<TimetablePage>
                 timetablePlaces: _timetablePlaces,
                 occasionEnd: RightsService.currentOccasion()!.endTime,
               ));
+    if (_tabController == null || _days.isEmpty) return scaffold;
+    return RoutedDayBinding(
+        controller: _tabController,
+        days: _days.map((day) => day.dateTime!).toList(),
+        child: scaffold);
   }
 }

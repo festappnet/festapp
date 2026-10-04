@@ -114,6 +114,12 @@ Deno.serve(async (req) => {
         }
 
         const transactionData = await apiResponse.json();
+        const { error: fetchTimeError } = await supabaseAdmin.rpc("set_last_fetch_time", {
+          p_bank_account_id: bankAccountId,
+        });
+        if (fetchTimeError) {
+          console.error(`Failed to record FIO fetch time for account ${bankAccountId}:`, fetchTimeError);
+        }
         const transactions = transactionData?.accountStatement?.transactionList?.transaction || [];
 
         if (transactions.length > 0) {

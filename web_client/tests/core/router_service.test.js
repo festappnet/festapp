@@ -208,6 +208,26 @@ test('RouterService.Sanitization', async (t) => {
 });
 
 
+test('Google callback stays in its web adapter for app-supported tenants', async () => {
+    const { RouterService } = await import('../../src/services/router_service.js');
+    const { AppConfig } = await import('../../src/app_config.js');
+    const { RightsService } = await import('../../src/services/rights_service.js');
+    const originalWindow = global.window;
+    const originalSupported = AppConfig.isAppSupported;
+    const originalUpdate = RightsService.updateAppData;
+    global.window = { location: { pathname: '/google-auth', href: 'https://live.festapp.net/google-auth' } };
+    AppConfig.isAppSupported = true;
+    RightsService.updateAppData = () => { throw new Error('callback must not route through occasion selection'); };
+    try {
+        assert.strictEqual(await RouterService.handleInitialLoad(), true);
+        assert.strictEqual(window.location.pathname, '/google-auth');
+    } finally {
+        global.window = originalWindow;
+        AppConfig.isAppSupported = originalSupported;
+        RightsService.updateAppData = originalUpdate;
+    }
+});
+
 test('RouterService.handleInitialLoad', async (t) => {
     // Reset window for this block
     global.window = {
@@ -283,6 +303,24 @@ test('RouterService.handleInitialLoad', async (t) => {
         assert.ok(redirectUrl.includes('auth_bridge.html'));
         assert.ok(redirectUrl.includes('redirect=%2Flogin'));
     });
+
+    for (const path of [
+        '/event-a/admin/events/suspicious?day=2026-10-03',
+        '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10',
+        '/unit/5/edit/bank-accounts/9/users?panel=properties',
+    ]) {
+        await t.test(`Flutter handoff preserves the complete nested target ${path}`, async () => {
+            AppConfig.isAppSupported = false;
+            global.window.location.pathname = path.split('?')[0];
+            global.window.location.href = `https://vstupenky.online${path}`;
+            let redirectUrl = '';
+            global.window.location.replace = (url) => { redirectUrl = url; };
+            assert.equal(await RouterService.handleInitialLoad(), true);
+            const bridge = new URL(redirectUrl, 'https://vstupenky.online');
+            const params = new URLSearchParams(bridge.hash.slice(1) || bridge.search);
+            assert.equal(params.get('redirect'), path);
+        });
+    }
 
     await t.test('should redirect unknown path to Home when isAppSupported=false', async () => {
         AppConfig.isAppSupported = false;

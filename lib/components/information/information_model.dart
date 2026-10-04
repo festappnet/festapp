@@ -60,6 +60,7 @@ class InformationModel extends ITrinaRowModel {
 
   Map toJson() => {
         Tb.information.id: id,
+        aggregateVersionColumn: aggregateVersion,
         Tb.information.title: title,
         Tb.information.description: description,
         Tb.information.type: type,

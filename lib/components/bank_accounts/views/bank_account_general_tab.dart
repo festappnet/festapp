@@ -89,13 +89,6 @@ class _BankAccountGeneralTabState extends State<BankAccountGeneralTab> {
                 ),
                 readOnly: widget.isReadOnly,
                 maxLength: 70,
-                validator: (value) {
-                  if (widget.supportedCurrencies.contains('EUR') &&
-                      (value == null || value.trim().isEmpty)) {
-                    return CommonStrings.fieldCannotBeEmpty;
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
               const SizedBox(height: 24),
