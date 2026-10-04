@@ -1,3 +1,4 @@
+-- Resolve order email summaries inside the caller organization, matching get_orders.
 CREATE OR REPLACE FUNCTION public.get_orders_tab_data(
     p_occasion_link TEXT
 )
