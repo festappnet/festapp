@@ -52,6 +52,9 @@ BEGIN
         RAISE EXCEPTION 'Order % has no associated form.', p_order_id;
     END IF;
 
+    -- Coordinate response validation/writes with form saves and field removal.
+    PERFORM 1 FROM public.forms WHERE id = v_order_form_id FOR SHARE;
+
     -- Fetch all field definitions for this form into a JSONB map { "field_id": "field_type" }
     SELECT jsonb_object_agg(ff.id::text, ff.type)
     INTO v_field_definitions

@@ -1,6 +1,6 @@
 # Order email history navigation
 
-Status: ACTIVE on vstupenky.online, version 0.20.85+569. Standard-grid follow-up implemented below, awaiting deployment. User explicitly requested removal of the standalone Email tab and a read-only Email history subtab under Orders. UI deployment is authorized only for `prod/festapptickets` / https://vstupenky.online.
+Status: ACTIVE on vstupenky.online, version 0.20.86+570, including the standard-grid follow-up. User explicitly requested removal of the standalone Email tab and a read-only Email history subtab under Orders. UI deployment is authorized only for `prod/festapptickets` / https://vstupenky.online.
 
 Remove standalone admin/reservations Email routes and navigation items. Add `/reservations/orders/email-history` alongside current Orders and Orders history. Reuse the read-only event/attempt detail, scoped to the current occasion; show order ID, message kind, state and timestamp. Hide organization-wide switching and account email kinds in this subtab.
 
@@ -30,4 +30,15 @@ Email delivery history now uses the same `SingleTableDataGrid`, `SingleDataGridC
 
 The model drains the existing read-only RPC's descending-ID keyset pages (100 records per request) before local grid filtering, retaining occasion/order/user and orders-only scope on every request. Malformed/non-progressing pages fail visibly through the existing exception handler. Row references retain metadata without interpreting formatted display values. Context changes recreate the controller; the shared grid now ignores late initial-load completion after disposal. Organization overview and per-user/per-order dialogs keep their existing scope, with no parallel legacy list implementation.
 
-No SQL, RPC contract, backend deployment, e-mail sending or other tenant rollout is needed. Targeted email/grid/navigation checks: 123 passing tests. Targeted changed email/model/test analyzer: no issues. Full `automation/test_all.sh` passed against the isolated database on port 55434: 1056 Flutter tests (one skip), 240 Deno tests, web/SQL/automation checks and three worker integration tests. 27 remote integration cases were intentionally skipped without external test credentials; no production fixtures or capacity test was used. Deployment evidence will be recorded after completion.
+No SQL, RPC contract, backend deployment, e-mail sending or other tenant rollout is needed. Targeted email/grid/navigation checks: 123 passing tests. Targeted changed email/model/test analyzer: no issues. Full `automation/test_all.sh` passed against the isolated database on port 55434: 1056 Flutter tests (one skip), 240 Deno tests, web/SQL/automation checks and three worker integration tests. 27 remote integration cases were intentionally skipped without external test credentials; no production fixtures or capacity test was used. Production deployment and independent live verification succeeded as recorded below.
+
+
+### Standard-grid production evidence
+
+- Canonical main `5edfe3207c394b0172457abed5aec47fefba60d9` ([PR #277](https://github.com/festappnet/festapp/pull/277)); upstream was fetched before publication and the intervening organization-scoping fix was merged and its SQL regression passed locally. The release also includes the concurrent template-dialog footer change from main.
+- `prod/festapptickets` advanced from `02502792c06d5a31fd235828cef0e27d1d79a410` to `ac3e6623d40c4fce4b01b83e8e0ada6f68a256de`, with recorded base matching canonical main, regenerated tenant manifests and a passing main-owned drift check. Version: `0.20.86+570`. Main and production heads were freshly checked before the push; no other tenant branch was pushed or built.
+- [Deployment 37192837015](https://github.com/festappnet/festapp/actions/runs/37192837015) succeeded, including live release gates. At `2026-10-04T09:45:46.117Z`, an independent fetch confirmed manifest `0.20.86+570`, bundle `main.dart.0.20.86-570.js`, Orders email route/path, the typed grid model and keyset pager, and absence of the standalone Email route. Bundle SHA-256: `4a8dfd2dc3f4a2a406ef955721d5b81e39039822400ef9429182cded8743be67`.
+- Full isolated SQL suite: 107 passing files. The full Flutter/Deno/web/automation results above and targeted grid tests passed. The grid tests verify disabled persistence controls, read-only columns, redacted error details, refresh, organization scoping, 102-row keyset pagination and safe disposal during scope changes.
+- Read-only production identity/ledger checks confirmed organization 3 `vstupenky.online` in `festapp_rehearsal_20260909220601` and the separately deployed `20261004100000` orders organization-scope migration. This UI change required no backend write or sending changes.
+
+The live Orders subtab now uses the shared datagrid, keeps order-only authorization filtering on the server, and retains the delivery/attempt detail dialog. Prepared editor changes from version 0.20.85 remain included.

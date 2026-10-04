@@ -88,6 +88,10 @@ class _ProductsTabState extends State<ProductsTab> {
       fromPlutoJson: ProductModel.fromPlutoJson,
       firstColumnType: DataGridFirstColumn.delete,
       idColumn: TbEshop.products.id,
+      columnHelp: {
+        EshopColumns.PRODUCT_SHORT_TITLE: OrdersStrings.gridShortTitleHelp,
+        EshopColumns.PRODUCT_MAXIMUM: OrdersStrings.gridMaxHelp,
+      },
       actionsExtended: DataGridActionsController(
         areAllActionsEnabled: () => RightsService.canUpdateOrders(),
         isAddActionPossible: () => false,
