@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fstapp/components/html/html_view.dart';
+import '../../fonts/font_family_picker.dart';
 
 import '../form_strings.dart';
 
@@ -19,39 +19,6 @@ class FormDesignSettings extends StatefulWidget {
 }
 
 class _FormDesignSettingsState extends State<FormDesignSettings> {
-  // Predefined popular Google Fonts
-  final List<String> _popularFonts = [
-    'Roboto',
-    'Open Sans',
-    'Lato',
-    'Montserrat',
-    'Raleway',
-    'Oswald',
-    'Poppins',
-    'Inter',
-    'Nunito',
-    'Ubuntu',
-    'Merriweather',
-    'Playfair Display',
-  ];
-
-  late TextEditingController _customFontController;
-
-  @override
-  void initState() {
-    super.initState();
-    _customFontController = TextEditingController(
-        text: !_popularFonts.contains(widget.form.fontFamily)
-            ? widget.form.fontFamily
-            : '');
-  }
-
-  @override
-  void dispose() {
-    _customFontController.dispose();
-    super.dispose();
-  }
-
   bool _showAllPresets = false;
 
   final List<Map<String, dynamic>> _colorPresets = [
@@ -237,31 +204,12 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
     });
   }
 
-  String? _fontError;
-
   TextStyle? _getSafeFont(String? fontFamily) {
     if (fontFamily == null || fontFamily.isEmpty) return null;
     try {
       return GoogleFonts.getFont(fontFamily);
     } catch (e) {
       return null;
-    }
-  }
-
-  void _validateAndSetFont(String val) {
-    if (val.isEmpty) return;
-    try {
-      // Validate by attempting to load
-      GoogleFonts.getFont(val);
-      setState(() {
-        widget.form.fontFamily = val;
-        _fontError = null;
-        widget.onChanged();
-      });
-    } catch (e) {
-      setState(() {
-        _fontError = FormStrings.fontNotFound;
-      });
     }
   }
 
@@ -388,111 +336,15 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           Text(FormStrings.typography,
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          HtmlView(
-            html:
-                '<a href="https://fonts.google.com/">${FormStrings.browseGoogleFonts}</a>',
-            isSelectable: false,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              border: Border.all(color: Colors.grey.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.text_fields),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        FormStrings.currentFont +
-                            (widget.form.fontFamily ?? FormStrings.defaultFont),
-                        style: _getSafeFont(widget.form.fontFamily),
-                      ),
-                    ),
-                    if (widget.form.fontFamily != null)
-                      IconButton(
-                        icon: const Icon(Icons.restore),
-                        tooltip: FormStrings.resetToDefault,
-                        onPressed: () {
-                          setState(() {
-                            widget.form.fontFamily = null;
-                            _customFontController.clear();
-                            _fontError = null;
-                            widget.onChanged();
-                          });
-                        },
-                      ),
-                  ],
-                ),
-                const Divider(),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: _popularFonts.contains(widget.form.fontFamily)
-                      ? widget.form.fontFamily
-                      : null,
-                  decoration: InputDecoration(
-                    labelText: FormStrings.choosePopularFonts,
-                    border: const OutlineInputBorder(),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                        value: null, child: Text(FormStrings.selectFromList)),
-                    ..._popularFonts.map((font) => DropdownMenuItem(
-                          value: font,
-                          child: Text(font, style: GoogleFonts.getFont(font)),
-                        )),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        widget.form.fontFamily = val;
-                        _customFontController.clear();
-                        _fontError = null;
-                        widget.onChanged();
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                Text(FormStrings.or,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.grey)),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _customFontController,
-                  decoration: InputDecoration(
-                    labelText: FormStrings.customFontNameLabel,
-                    helperText: FormStrings.customFontHelper,
-                    helperMaxLines: 3,
-                    errorText: _fontError,
-                    border: const OutlineInputBorder(),
-                    suffixIcon: _customFontController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.check),
-                            onPressed: () =>
-                                _validateAndSetFont(_customFontController.text))
-                        : null,
-                  ),
-                  onChanged: (val) {
-                    if (_fontError != null)
-                      setState(() {
-                        _fontError = null;
-                      });
-                    setState(() {}); // Rebuild to toggle suffix icon
-                  },
-                  onFieldSubmitted: _validateAndSetFont,
-                ),
-              ],
-            ),
-          ),
+          FontFamilyPicker(
+              value: widget.form.fontFamily,
+              families: GoogleFonts.asMap().keys.toList(),
+              selectedStyle: _getSafeFont(widget.form.fontFamily),
+              onSelected: (value) async {
+                if (value != null) GoogleFonts.getFont(value);
+                setState(() => widget.form.fontFamily = value);
+                widget.onChanged();
+              }),
         ],
       ),
     );

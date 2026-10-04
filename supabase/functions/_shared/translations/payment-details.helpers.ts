@@ -18,6 +18,15 @@ export interface PaymentDetailsOptions {
  */
 export type Tone = 'formal' | 'informal';
 
+// Render short text runs so mail clients do not mistake an account for a phone
+// number. Tags add no spaces or invisible characters to the copyable value.
+const renderAccountNumber = (value: string) => {
+  const escaped = value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<span class="festapp-payment-account" style="white-space: nowrap; pointer-events: none; cursor: text;">${
+    escaped.replace(/\d{1,3}/g, '<span style="display: inline-block;">$&</span>')
+  }</span>`;
+};
+
 /**
  * Creates a styled, readable block for payment details.
  * The 'note' parameter is now a standard detail row.
@@ -29,7 +38,7 @@ export const generatePaymentDetails = (options: PaymentDetailsOptions) => {
   const title = lang === 'cs' ? 'Platební údaje:' : 'Payment Details:';
 
   const details = [
-    { label: lang === 'cs' ? "Číslo účtu:" : "Account Number:", value: accountNumber },
+    { label: lang === 'cs' ? "Číslo účtu:" : "Account Number:", value: renderAccountNumber(accountNumber) },
   ];
 
   if (iban) {
@@ -64,6 +73,14 @@ export const generatePaymentDetails = (options: PaymentDetailsOptions) => {
 
   // margin-top is set to 0 as spacing is now handled by the verticalSpacer function.
   return `<div style="margin-top: 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #f9fafb;">
+            <style>
+              .festapp-payment-account a {
+                color: inherit !important;
+                text-decoration: none !important;
+                pointer-events: none !important;
+                cursor: text !important;
+              }
+            </style>
             <p style="margin-top:0; margin-bottom: 8px; font-weight: bold; color: #333;">${title}</p>
             <table style="width: 100%; border-collapse: collapse;">
               <tbody>${rows}</tbody>

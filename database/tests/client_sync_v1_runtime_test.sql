@@ -9,7 +9,8 @@ DECLARE
   v_command uuid := gen_random_uuid();
   v_hash text := repeat('a', 64);
   v_result jsonb;
-  v_task public.queue_emails%ROWTYPE;
+  v_task jsonb;
+  v_order bigint;
   v_rejected boolean := false;
 BEGIN
   PERFORM create_user_for_test('client_sync_runtime', 'client_sync_runtime@test.local');
@@ -47,24 +48,25 @@ BEGIN
   PERFORM assert_eq((SELECT count(*) FROM public.client_mutation_receipts
     WHERE command_id=v_command),1::bigint,'one command produces one receipt');
 
+  INSERT INTO eshop.orders(occasion,state,data,price,currency_code) VALUES(v_occasion,'ordered','{"email":"fixture@example.invalid"}',1,'CZK') RETURNING id INTO v_order;
   PERFORM public.enqueue_ticket_order_confirmation_v1(
-    v_command,v_occasion,jsonb_build_object('order',jsonb_build_object('id',1)),'cs');
+    v_command,v_occasion,jsonb_build_object('order',jsonb_build_object('id',v_order)),'cs');
   PERFORM public.enqueue_ticket_order_confirmation_v1(
-    v_command,v_occasion,jsonb_build_object('order',jsonb_build_object('id',1)),'cs');
-  PERFORM assert_eq((SELECT count(*) FROM public.queue_emails
+    v_command,v_occasion,jsonb_build_object('order',jsonb_build_object('id',v_order)),'cs');
+  PERFORM assert_eq((SELECT count(*) FROM public.email_messages
     WHERE code='TICKET_ORDER_CONFIRMATION' AND data->>'command_id'=v_command::text),
     1::bigint,'confirmation enqueue is idempotent by command id');
 
   PERFORM set_config('request.jwt.claim.role','service_role',true);
-  SELECT * INTO STRICT v_task FROM public.claim_due_queue_emails_v1(1)
-    WHERE data->>'command_id'=v_command::text;
-  PERFORM assert_eq(v_task.attempt_count,1,'first worker claim increments attempts');
-  PERFORM assert_true(v_task.processing_at IS NOT NULL,'worker claim records lease time');
-  PERFORM public.release_queue_email_v1(v_task.id,'runtime retry');
-  SELECT * INTO STRICT v_task FROM public.claim_due_queue_emails_v1(1)
-    WHERE data->>'command_id'=v_command::text;
-  PERFORM assert_eq(v_task.attempt_count,2,'released task can be reclaimed');
-  PERFORM assert_eq(v_task.last_error,NULL::text,'reclaim clears prior error');
+  UPDATE public.email_capacity SET paused=false,quota_at=now(),max_rate=1,daily_quota=100,provider_sent_24h=0,shared_account=false,worker_url=NULL;
+  v_task:=public.claim_email();
+  PERFORM assert_eq((v_task->>'attempt_count')::int,0,'preparation claim is not a provider attempt');
+  PERFORM assert_true(v_task->>'lease_token' IS NOT NULL,'worker claim is fenced');
+  PERFORM public.finish_email_attempt((v_task->>'attempt_id')::uuid,(v_task->>'lease_token')::uuid,'preparation_failed',NULL,'runtime_retry');
+  UPDATE public.email_messages SET target_time=now() WHERE message_id=(v_task->>'message_id')::uuid;
+  v_task:=public.claim_email();
+  PERFORM assert_eq((v_task->>'attempt_count')::int,1,'known preparation failure may be reclaimed');
+
 END $$;
 
 ROLLBACK;

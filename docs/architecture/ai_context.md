@@ -118,3 +118,5 @@ These components have non-obvious architecture worth reading before modifying:
 - **[Activities](../../lib/components/activities/README.md)**: Draft & Publish with version history
 - **[Email Templates](../../lib/components/email_templates/README.md)**: 3-level inheritance
 - **[Bank Accounts](../../lib/components/bank_accounts/README.md)**: Dual-layer auth, eshop schema
+
+- **[Tab deep links](tab_deep_links.md)**: AutoRoute ownership, retained admin tabs, object identities, access boundaries and calendar/panel query state.

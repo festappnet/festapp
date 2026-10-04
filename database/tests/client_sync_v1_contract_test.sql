@@ -75,8 +75,8 @@ BEGIN
     'create_form_client_sync_v1','delete_form_client_sync_v1',
     'duplicate_form_to_occasion_client_sync_v1',
     'delete_product_client_sync_v1','apply_planned_changes_client_sync_v1',
-    'enqueue_ticket_order_confirmation_v1','claim_due_queue_emails_v1',
-    'release_queue_email_v1',
+    'enqueue_ticket_order_confirmation_v1','claim_email',
+    'finish_email_attempt',
     'record_account_deletion_sync_v1',
     'add_user_to_occasion_client_sync_v1',
     'delete_unit_user_client_sync_v1',
@@ -186,10 +186,10 @@ BEGIN
       AND column_name='organization'),
     'cross-occasion service commits support an organization scope');
   PERFORM assert_true(EXISTS (SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='queue_emails'
-      AND column_name='processing_at') AND EXISTS (
+    WHERE table_schema='public' AND table_name='email_messages'
+      AND column_name='lease_token') AND EXISTS (
     SELECT 1 FROM pg_indexes WHERE schemaname='public'
-      AND indexname='queue_emails_ticket_order_command_idx'),
+      AND indexname='email_messages_ticket_order_command_idx'),
     'ticket confirmation effects have a durable idempotent queue identity');
   PERFORM assert_true(EXISTS (
     SELECT 1 FROM information_schema.columns

@@ -19,7 +19,7 @@ BEGIN
         SELECT 1
         FROM public.forms f
         WHERE f.key = form_key
-          AND f.is_open = true
+          AND (f.is_open = true OR public.get_is_editor_order_view_on_occasion(f.occasion))
           AND EXISTS (
               SELECT 1
               FROM eshop.blueprints b
