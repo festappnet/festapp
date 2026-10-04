@@ -81,8 +81,8 @@ class _SongDialogState extends State<SongDialog> {
   @override
   Widget build(BuildContext context) {
     final themeData = widget.isDarkMode
-        ? ThemeConfig.darkTheme(ThemeConfig.baseTheme())
-        : ThemeConfig.baseTheme();
+        ? ThemeConfig.theme(brightness: Brightness.dark)
+        : ThemeConfig.theme();
 
     return Theme(
       data: themeData,

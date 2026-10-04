@@ -64,6 +64,7 @@ class QuotesTab extends StatelessWidget {
               return DataGridHelper.buildHtmlEditorButton(
                 context: context,
                 field: Tb.information.description,
+                unitId: unitId,
                 title: rendererContext.row.cells[Tb.information.title]!.value,
                 rendererContext: rendererContext,
                 loadContent: () async {

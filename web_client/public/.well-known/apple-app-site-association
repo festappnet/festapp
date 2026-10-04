@@ -1,0 +1,30 @@
+{
+  "applinks": {
+    "apps": [
+      "8WKBB6L8LT.festapp.festivalslunovrat"
+    ],
+    "details": [
+      {
+        "appIDs": [
+          "8WKBB6L8LT.festapp.festivalslunovrat"
+        ],
+        "components": [
+          {
+            "/": "/app/google-auth"
+          },
+          {
+            "/": "/delete-account*"
+          },
+          {
+            "/": "/*"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "8WKBB6L8LT.festapp.festivalslunovrat"
+    ]
+  }
+}

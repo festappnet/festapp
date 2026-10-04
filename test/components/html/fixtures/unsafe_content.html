@@ -1,0 +1,7 @@
+<p onclick="steal()">Bezpečný text<script>alert(1)</script></p>
+<img src="javascript:alert(1)" onerror="steal()">
+<a href="java&#x09;script:alert(1)">Závadný odkaz</a>
+<a href="javascript:{{resetLink}}">Závadná proměnná</a>
+<iframe src="https://example.com"></iframe><svg onload="steal()"></svg>
+<span style="background:url(https://example.com/track)">Text</span>
+<custom-safe><b>Zachovaný obsah neznámého elementu</b></custom-safe>

@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import test from 'node:test';
+import test, { beforeEach, afterEach, mock } from 'node:test';
 
 import { AppConfig } from '../../src/app_config.js';
+import { BackendActivationService } from '../../src/services/backend_activation_service.js';
 import { SupabaseService } from '../../src/services/supabase_service.js';
+
+const resolvedBackend = {
+  supabaseUrl: 'https://canonical.fixture.invalid',
+  anonKey: 'fixture-anon', organizationId: 12, isCanonical: true,
+};
+const originalOrganization = AppConfig.organization;
+beforeEach(() => mock.method(BackendActivationService.prototype, 'resolve',
+  async () => resolvedBackend));
+afterEach(() => { mock.restoreAll(); AppConfig.organization = originalOrganization; });
 
 test('unsupported-app header data loads only after Supabase initialization', async () => {
   const mainSource = await readFile(new URL('../../src/main.js', import.meta.url), 'utf8');
@@ -50,7 +60,7 @@ test('backend-origin change refreshes the preserved session before startup', asy
   await SupabaseService.initialize();
 
   assert.deepEqual(refreshInput, { refresh_token: 'preserved-refresh-token' });
-  assert.equal(values.get(SupabaseService.originMarkerKey), AppConfig.supabaseUrl);
+  assert.equal(values.get(SupabaseService.originMarkerKey), resolvedBackend.supabaseUrl);
 });
 
 test('invalid historical refresh token clears only the local session and continues anonymously', async () => {
@@ -83,7 +93,7 @@ test('invalid historical refresh token clears only the local session and continu
 
   assert.deepEqual(signOutOptions, { scope: 'local' });
   assert.equal(values.has(SupabaseService.tokenKey), false);
-  assert.equal(values.get(SupabaseService.originMarkerKey), AppConfig.supabaseUrl);
+  assert.equal(values.get(SupabaseService.originMarkerKey), resolvedBackend.supabaseUrl);
 });
 
 test('failed cutover refresh does not advance the backend-origin marker', async () => {

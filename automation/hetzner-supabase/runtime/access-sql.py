@@ -84,7 +84,7 @@ def main() -> int:
         sql = (
             "BEGIN;\n" + sql + "\n"
             + "INSERT INTO supabase_migrations.schema_migrations(version, statements, name) "
-            + f"VALUES ('{version}', ARRAY[]::text[], '{name}');\nCOMMIT;"
+            + f"VALUES ('{version}', ARRAY[]::text[], '{name}');\nNOTIFY pgrst, 'reload schema';\nCOMMIT;"
         )
 
     result = query(token, sql)

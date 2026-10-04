@@ -117,25 +117,20 @@ if (currentVersionJs !== versionJsContent) {
     console.log(`src/version.js is up to date.`);
 }
 
-// 5. Stamp web/index.html __FESTAPP_BUILD_VERSION__
-// The automatic update prompt (web/festapp_update_prompt.js) compares this
-// baked-in build version against /festapp-version.json (emitted by
-// automation/cloudflare_build.sh) and offers a reload banner when they differ.
-const flutterIndexPath = path.resolve(projectRoot, 'web/index.html');
-if (fs.existsSync(flutterIndexPath)) {
-    let flutterIndex = fs.readFileSync(flutterIndexPath, 'utf8');
+// 5. Stamp both HTML entry points so startup can identify its generation
+// before any external JavaScript is available.
+for (const entryPoint of ['web/index.html', 'web_client/index.html']) {
+    const indexPath = path.resolve(projectRoot, entryPoint);
+    if (!fs.existsSync(indexPath)) continue;
+    const indexHtml = fs.readFileSync(indexPath, 'utf8');
     const buildVersionRegex = /(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/;
-    if (buildVersionRegex.test(flutterIndex)) {
-        const updatedIndex = flutterIndex.replace(buildVersionRegex, `$1"${version}"`);
-        if (updatedIndex !== flutterIndex) {
-            fs.writeFileSync(flutterIndexPath, updatedIndex);
-            console.log(`Updated web/index.html __FESTAPP_BUILD_VERSION__ to ${version}`);
-        } else {
-            console.log(`web/index.html __FESTAPP_BUILD_VERSION__ already at ${version}`);
-        }
-    } else {
-        console.warn('Warning: Could not find window.__FESTAPP_BUILD_VERSION__ in web/index.html');
+    if (!buildVersionRegex.test(indexHtml)) {
+        console.warn(`Warning: Could not find window.__FESTAPP_BUILD_VERSION__ in ${entryPoint}`);
+        continue;
     }
-} else {
-    console.warn(`Warning: web/index.html not found at ${flutterIndexPath}`);
+    const updatedIndex = indexHtml.replace(buildVersionRegex, `$1"${version}"`);
+    if (updatedIndex !== indexHtml) {
+        fs.writeFileSync(indexPath, updatedIndex);
+        console.log(`Updated ${entryPoint} __FESTAPP_BUILD_VERSION__ to ${version}`);
+    }
 }
