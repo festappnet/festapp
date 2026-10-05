@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 
 void main() {
@@ -12,21 +13,33 @@ void main() {
       {'state': 'bounce', 'kind': 'order_tickets'}
     ]
   };
-  for (final state in ['open', 'click', 'delivery', 'accepted', 'pending', 'bounce']) {
-    testWidgets('double check only marks observed engagement: $state',
+  for (final state in [
+    'open',
+    'click',
+    'delivery',
+    'accepted',
+    'pending',
+    'bounce'
+  ]) {
+    testWidgets(
+        'delivery and engagement have distinct check indicators: $state',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
-          home: Scaffold(body: EmailDeliveryIndicator(summary: {'state': state}))));
-      expect(find.byIcon(Icons.done_all),
-          ['open', 'click'].contains(state) ? findsOneWidget : findsNothing);
-      if (['open', 'click'].contains(state)) {
-        expect(find.byIcon(Icons.mail_outline), findsOneWidget);
-        final envelope = tester.getRect(find.byIcon(Icons.mail_outline));
-        final checks = tester.getRect(find.byIcon(Icons.done_all));
-        expect(checks.bottom, greaterThan(envelope.bottom));
-        expect(checks.right, greaterThanOrEqualTo(envelope.right));
-        expect(tester.takeException(), isNull);
+          home: Scaffold(
+              body: EmailDeliveryIndicator(summary: {'state': state}))));
+      final opened = ['open', 'click'].contains(state);
+      final delivered = state == 'delivery';
+      expect(find.byKey(const ValueKey('email-opened-checks')),
+          opened ? findsOneWidget : findsNothing);
+      expect(find.byKey(const ValueKey('email-delivered-check')),
+          delivered ? findsOneWidget : findsNothing);
+      expect(find.byType(SvgPicture),
+          opened || delivered ? findsOneWidget : findsNothing);
+      if (opened || delivered) {
+        expect(find.byType(Icon), findsNothing);
+        expect(tester.getSize(find.byType(SvgPicture)), const Size(24, 24));
       }
+      expect(tester.takeException(), isNull);
     });
   }
   testWidgets(
