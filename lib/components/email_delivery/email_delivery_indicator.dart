@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'email_delivery_strings.dart';
 import 'email_delivery_history.dart';
 
 class EmailDeliveryIndicator extends StatelessWidget {
+  // Lucide Check / Check Check (ISC license, see LICENSE-lucide.txt).
+  static const _singleCheck =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" '
+      'fill="none" stroke="currentColor" stroke-width="2.5" '
+      'stroke-linecap="round" stroke-linejoin="round">'
+      '<path d="M20 6 9 17l-5-5"/></svg>';
+  static const _doubleCheck =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" '
+      'fill="none" stroke="currentColor" stroke-width="2.5" '
+      'stroke-linecap="round" stroke-linejoin="round">'
+      '<path d="M18 6 7 17l-5-5"/>'
+      '<path d="m22 10-7.5 7.5L13 16"/></svg>';
+
   final Map<String, dynamic>? summary;
   final int? orderId;
   final int? occasionId;
@@ -36,18 +50,15 @@ class EmailDeliveryIndicator extends StatelessWidget {
     ].contains(state);
     final waiting =
         ['pending', 'preparing', 'sending', 'blocked'].contains(state);
+    final delivered = state == 'delivery';
     final opened = ['open', 'click'].contains(state);
     final icon = warning
         ? Icons.mark_email_unread_outlined
         : waiting
             ? Icons.schedule_send_outlined
-            : opened
-                ? Icons.mail_outline
-                : state == 'delivery'
-                    ? Icons.mark_email_read
-                    : state == 'accepted'
-                        ? Icons.forward_to_inbox
-                        : Icons.mail_outline;
+            : state == 'accepted'
+                ? Icons.forward_to_inbox
+                : Icons.mail_outline;
     final entries = (summary?['messages'] as List?) ?? [];
     final loadedAt = DateTime.tryParse(summary?['loaded_at']?.toString() ?? '');
     final entriesDescription = entries.isEmpty
@@ -75,20 +86,18 @@ class EmailDeliveryIndicator extends StatelessWidget {
                 child: Badge(
                     isLabelVisible: attention > 0,
                     label: Text('$attention'),
-                    child: opened
-                        ? const SizedBox(
+                    child: opened || delivered
+                        ? SvgPicture.string(
+                            opened ? _doubleCheck : _singleCheck,
+                            key: ValueKey(opened
+                                ? 'email-opened-checks'
+                                : 'email-delivered-check'),
                             width: 24,
-                            height: 28,
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                    top: 0, left: 0,
-                                    child: Icon(Icons.mail_outline, size: 22)),
-                                Positioned(
-                                    right: 0, bottom: 0,
-                                    child: Icon(Icons.done_all, size: 14)),
-                              ],
-                            ),
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                                IconTheme.of(context).color ??
+                                    Theme.of(context).colorScheme.onSurface,
+                                BlendMode.srcIn),
                           )
                         : Icon(icon,
                             color: warning
