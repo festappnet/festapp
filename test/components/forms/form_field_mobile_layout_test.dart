@@ -22,7 +22,7 @@ void main() {
   });
 
   for (final width in [320.0, 390.0, 600.0, 1000.0]) {
-    testWidgets('field delete is visible and tappable at width $width', (
+    testWidgets('field actions stay accessible in one row at width $width', (
       tester,
     ) async {
       tester.view.physicalSize = Size(width, 900);
@@ -53,8 +53,15 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
+      final isCompact = width - 24 < 600;
       final delete = find.widgetWithIcon(IconButton, Icons.delete);
-      final rect = tester.getRect(delete);
+      final menu = find.widgetWithIcon(
+        PopupMenuButton<String>,
+        Icons.more_vert,
+      );
+      expect(delete, isCompact ? findsNothing : findsOneWidget);
+      final action = isCompact ? menu : delete;
+      final rect = tester.getRect(action);
       expect(rect.left, greaterThanOrEqualTo(0));
       expect(rect.right, lessThanOrEqualTo(width));
       final typeMenu = find.byType(PopupMenuButton<String>).first;
@@ -75,11 +82,75 @@ void main() {
       await tester.tap(visibilitySwitch);
       await tester.pump();
       expect(field.isHidden, isTrue);
-      expect(tester.getRect(delete), rect);
-      await tester.tap(delete);
+      expect(tester.getRect(action), rect);
+      await tester.tap(action);
+      if (isCompact) {
+        await tester.pumpAndSettle();
+        final deleteItem = find.byWidgetPredicate(
+          (widget) =>
+              widget is PopupMenuItem<String> && widget.value == 'delete_field',
+        );
+        expect(
+          tester.widget<PopupMenuItem<String>>(deleteItem).enabled,
+          isTrue,
+        );
+        await tester.tap(deleteItem);
+      }
       await tester.pump();
       expect(form.relatedFields, isEmpty);
       expect(form.deletedFieldIds, {4});
     });
   }
+  testWidgets(
+    'mobile delete menu explains why a used field cannot be deleted',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final field = FormFieldModel(
+        id: 4,
+        type: 'text',
+        title: 'Poznámka',
+        deletionAllowed: false,
+        deleteBlockedReason: 'responses',
+      );
+      final form = FormModel(occasionId: 59, relatedFields: [field]);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: FormFieldsGenerator(
+                bundle: FormEditBundle(
+                  form: form,
+                  formFields: [field],
+                  productTypes: [],
+                  products: [],
+                  availableBankAccounts: [],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(
+        find.widgetWithIcon(PopupMenuButton<String>, Icons.more_vert),
+      );
+      await tester.pumpAndSettle();
+      final deleteItem = find.byWidgetPredicate(
+        (widget) =>
+            widget is PopupMenuItem<String> && widget.value == 'delete_field',
+      );
+      expect(tester.widget<PopupMenuItem<String>>(deleteItem).enabled, isFalse);
+      final tooltip = tester.widget<Tooltip>(
+        find.descendant(of: deleteItem, matching: find.byType(Tooltip)),
+      );
+      expect(tooltip.message, isNotEmpty);
+      await tester.tap(deleteItem);
+      await tester.pump();
+      expect(form.relatedFields, [field]);
+      expect(form.deletedFieldIds, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

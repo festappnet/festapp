@@ -6,6 +6,7 @@ import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/html/html_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/html/html_view.dart';
+
 import '../models/form_field_model.dart';
 import '../widgets_view/form_helper.dart';
 import 'birth_date_editor.dart';
@@ -16,6 +17,7 @@ import 'select_one_editor.dart';
 import 'select_many_editor.dart';
 import 'id_document_editor.dart';
 import '../form_strings.dart';
+
 import 'package:fstapp/components/forms/models/holder_models/ticket_holder.dart';
 
 // Define kHiddenOpacity if it's not globally available from form_editor_content.dart
@@ -79,8 +81,9 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
           final form = widget.bundle.form;
           final updatedList = <FormFieldModel>[];
           updatedList.addAll(topLevelFields);
-          updatedList
-              .addAll(form.relatedFields.where((f) => f.isTicketField == true));
+          updatedList.addAll(
+            form.relatedFields.where((f) => f.isTicketField == true),
+          );
           form.relatedFields = updatedList;
 
           for (int i = 0; i < form.relatedFields.length; i++) {
@@ -99,8 +102,12 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     );
   }
 
-  Widget _buildFieldItem(BuildContext context, int index, FormFieldModel field,
-      List<FormFieldModel> displayList) {
+  Widget _buildFieldItem(
+    BuildContext context,
+    int index,
+    FormFieldModel field,
+    List<FormFieldModel> displayList,
+  ) {
     final isSelected = (selectedIndex == index);
     final effectiveOpacity = (field.isHidden ?? false) ? kHiddenOpacity : 1.0;
 
@@ -169,8 +176,11 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         Row(
           children: [
             if (icon != null) ...[
-              Icon(icon,
-                  size: 24, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                icon,
+                size: 24,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 8),
             ],
             Flexible(
@@ -188,10 +198,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         if (!HtmlHelper.isHtmlEmptyOrNull(field.description))
           Column(
             children: [
-              HtmlView(
-                html: field.description!,
-                fontSize: 14,
-              ),
+              HtmlView(html: field.description!, fontSize: 14),
               const SizedBox(height: 16),
             ],
           ),
@@ -201,10 +208,21 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   }
 
   Widget _buildFieldItemSelected(
-      FormFieldModel field, List<FormFieldModel> displayList, int index) {
+    FormFieldModel field,
+    List<FormFieldModel> displayList,
+    int index,
+  ) {
     final isTicket = field.type == FormHelper.fieldTypeTicket;
     final String defaultDescription = CommonStrings.description;
     final form = widget.bundle.form;
+    void deleteField() {
+      if (!field.canDelete) return;
+      _refresh(() {
+        displayList.remove(field);
+        form.removeField(field);
+        if (selectedIndex == index) selectedIndex = null;
+      });
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,21 +237,27 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         if (isTicket)
           Row(
             children: [
-              Icon(FormHelper.fieldTypeIcons[FormHelper.fieldTypeTicket],
-                  size: 24, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                FormHelper.fieldTypeIcons[FormHelper.fieldTypeTicket],
+                size: 24,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 8),
-              Text(OrdersStrings.itemSingular,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary))
-                  .tr(),
+              Text(
+                OrdersStrings.itemSingular,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ).tr(),
             ],
           )
         else ...[
           TextFormField(
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary),
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
             decoration: InputDecoration(
               border: const UnderlineInputBorder(),
               hintText: FormHelper.fieldTypeToLocale(field.type ?? ''),
@@ -271,8 +295,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 width: 150,
                 child: PopupMenuButton<String>(
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey),
                       borderRadius: BorderRadius.circular(8),
@@ -282,23 +308,27 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                         Icon(FormHelper.fieldTypeIcons[field.type]),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(FormHelper.fieldTypeToLocale(field.type!),
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            FormHelper.fieldTypeToLocale(field.type!),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   itemBuilder: (context) => _availableFieldTypes
-                      .map((entry) => PopupMenuItem(
-                            value: entry,
-                            child: Row(
-                              children: [
-                                Icon(FormHelper.fieldTypeIcons[entry]),
-                                const SizedBox(width: 8),
-                                Text(FormHelper.fieldTypeToLocale(entry)),
-                              ],
-                            ),
-                          ))
+                      .map(
+                        (entry) => PopupMenuItem(
+                          value: entry,
+                          child: Row(
+                            children: [
+                              Icon(FormHelper.fieldTypeIcons[entry]),
+                              const SizedBox(width: 8),
+                              Text(FormHelper.fieldTypeToLocale(entry)),
+                            ],
+                          ),
+                        ),
+                      )
                       .toList(),
                   onSelected: (newType) => _refresh(() {
                     if (!((field.type == FormHelper.fieldTypeSelectOne ||
@@ -322,20 +352,27 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(CommonStrings.note,
-                      style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    CommonStrings.note,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                   const SizedBox(width: 4),
-                  TicketEditorWidgets.buildTicketNoteCheckbox(context, form,
-                      () {
-                    _refresh(() {});
-                  }),
+                  TicketEditorWidgets.buildTicketNoteCheckbox(
+                    context,
+                    form,
+                    () {
+                      _refresh(() {});
+                    },
+                  ),
                 ],
               ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(FormStrings.requiredLabel,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  FormStrings.requiredLabel,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 Checkbox(
                   value: FormHelper.isAlwaysRequired(field.type ?? '') ||
                       (field.isRequired ?? false),
@@ -348,8 +385,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(FormStrings.show,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  FormStrings.show,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 Switch(
                   value: !(field.isHidden ?? false),
                   onChanged:
@@ -360,7 +399,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               ],
             ),
           ],
-          actions: Row(
+          buildActions: (isCompact) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Popup Menu (Description & Deposit)
@@ -372,6 +411,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                         field.description = defaultDescription;
                       }
                     });
+                  } else if (value == "delete_field") {
+                    deleteField();
                   } else if (value == "show_deposit_description") {
                     _refresh(() {
                       field.data ??= {};
@@ -386,10 +427,12 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 itemBuilder: (context) {
                   List<PopupMenuEntry<String>> items = [];
                   // Add Description Option
-                  items.add(PopupMenuItem<String>(
-                    value: "add_description",
-                    child: Text(FormStrings.addDescription),
-                  ));
+                  items.add(
+                    PopupMenuItem<String>(
+                      value: "add_description",
+                      child: Text(FormStrings.addDescription),
+                    ),
+                  );
 
                   // Ticket Specific Options
                   if (isTicket) {
@@ -397,33 +440,49 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                         field.data?[TicketHolder.metaShowDepositDescription] ??
                             true;
                     items.add(const PopupMenuDivider());
-                    items.add(CheckedPopupMenuItem<String>(
-                      value: "show_deposit_description",
-                      checked: showDeposit,
-                      child: Text(FormStrings.showDepositDescription),
-                    ));
+                    items.add(
+                      CheckedPopupMenuItem<String>(
+                        value: "show_deposit_description",
+                        checked: showDeposit,
+                        child: Text(FormStrings.showDepositDescription),
+                      ),
+                    );
+                  }
+                  if (isCompact) {
+                    items.add(const PopupMenuDivider());
+                    items.add(
+                      PopupMenuItem<String>(
+                        value: "delete_field",
+                        enabled: field.canDelete,
+                        child: Tooltip(
+                          message: field.canDelete
+                              ? CommonStrings.delete
+                              : FormStrings.deletionReason(
+                                  field.deleteBlockedReason,
+                                ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.delete_outline),
+                              const SizedBox(width: 12),
+                              Text(CommonStrings.delete),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
                   }
                   return items;
                 },
                 icon: const Icon(Icons.more_vert),
               ),
-              IconButton(
-                tooltip: field.canDelete
-                    ? CommonStrings.delete
-                    : FormStrings.deletionReason(field.deleteBlockedReason),
-                icon: const Icon(Icons.delete),
-                onPressed: !field.canDelete
-                    ? null
-                    : () {
-                        _refresh(() {
-                          displayList.remove(field);
-                          widget.bundle.form.removeField(field);
-                          if (selectedIndex == index) {
-                            selectedIndex = null;
-                          }
-                        });
-                      },
-              ),
+              if (!isCompact)
+                IconButton(
+                  tooltip: field.canDelete
+                      ? CommonStrings.delete
+                      : FormStrings.deletionReason(field.deleteBlockedReason),
+                  icon: const Icon(Icons.delete),
+                  onPressed: field.canDelete ? deleteField : null,
+                ),
             ],
           ),
         ),
@@ -432,42 +491,65 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   }
 
   Widget _buildAnswerWidget(
-      BuildContext context, FormFieldModel field, bool isEditable) {
+    BuildContext context,
+    FormFieldModel field,
+    bool isEditable,
+  ) {
     final form = widget.bundle.form;
     switch (field.type) {
       case FormHelper.fieldTypeTicket:
         return isEditable
             ? TicketEditorWidgets.buildTicketEditor(
-                context, form, field, widget.bundle.productTypes, () {
-                _refresh(() {});
-              })
+                context,
+                form,
+                field,
+                widget.bundle.productTypes,
+                () {
+                  _refresh(() {});
+                },
+              )
             : TicketEditorWidgets.buildTicketEditorReadOnly(
-                context, form, field);
+                context,
+                form,
+                field,
+              );
       case FormHelper.fieldTypeSelectOne:
         return isEditable
             ? SelectOneEditor.buildSelectOneEditor(
-                context, field, form.occasionId,
-                onChanged: widget.onChanged)
+                context,
+                field,
+                form.occasionId,
+                onChanged: widget.onChanged,
+              )
             : SelectOneEditor.buildSelectOneReadOnly(context, field);
       case FormHelper.fieldTypeSelectMany:
         return isEditable
             ? SelectManyEditor.buildSelectManyEditor(
-                context, field, form.occasionId,
-                onChanged: widget.onChanged)
+                context,
+                field,
+                form.occasionId,
+                onChanged: widget.onChanged,
+              )
             : SelectManyEditor.buildSelectManyReadOnly(context, field);
       case FormHelper.fieldTypeSex:
         return SexEditor.buildSexFieldReadOnly(context, field);
       case FormHelper.fieldTypeBirthDate:
         return isEditable
             ? BirthDateEditor.buildBirthDateEditor(
-                context, field, form.occasionId,
-                onChanged: widget.onChanged)
+                context,
+                field,
+                form.occasionId,
+                onChanged: widget.onChanged,
+              )
             : BirthDateEditor.buildBirthDateReadOnly(context, field);
       case FormHelper.fieldTypeIdDocument:
         return isEditable
             ? IdDocumentEditor.buildIdDocumentEditor(
-                context, field, form.occasionId,
-                onChanged: widget.onChanged)
+                context,
+                field,
+                form.occasionId,
+                onChanged: widget.onChanged,
+              )
             : IdDocumentEditor.buildIdDocumentReadOnly(context, field);
       default:
         if (isEditable) {
@@ -518,9 +600,9 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
 
 class _FieldControlsBar extends StatefulWidget {
   final List<Widget> controls;
-  final Widget actions;
+  final Widget Function(bool isCompact) buildActions;
 
-  const _FieldControlsBar({required this.controls, required this.actions});
+  const _FieldControlsBar({required this.controls, required this.buildActions});
 
   @override
   State<_FieldControlsBar> createState() => _FieldControlsBarState();
@@ -537,41 +619,43 @@ class _FieldControlsBarState extends State<_FieldControlsBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) => Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: true,
-              thickness: 3,
-              child: SingleChildScrollView(
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        children: [
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) => Scrollbar(
                 controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.only(bottom: 8),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      for (final control in widget.controls)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16),
-                          child: control,
-                        ),
-                    ],
+                thumbVisibility: true,
+                thickness: 3,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        for (final control in widget.controls)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: control,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: widget.actions,
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: widget.buildActions(constraints.maxWidth < 600),
+          ),
+        ],
+      ),
     );
   }
 }
