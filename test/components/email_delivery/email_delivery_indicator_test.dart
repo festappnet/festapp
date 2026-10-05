@@ -19,6 +19,14 @@ void main() {
           home: Scaffold(body: EmailDeliveryIndicator(summary: {'state': state}))));
       expect(find.byIcon(Icons.done_all),
           ['open', 'click'].contains(state) ? findsOneWidget : findsNothing);
+      if (['open', 'click'].contains(state)) {
+        expect(find.byIcon(Icons.mail_outline), findsOneWidget);
+        final envelope = tester.getRect(find.byIcon(Icons.mail_outline));
+        final checks = tester.getRect(find.byIcon(Icons.done_all));
+        expect(checks.bottom, greaterThan(envelope.bottom));
+        expect(checks.right, greaterThanOrEqualTo(envelope.right));
+        expect(tester.takeException(), isNull);
+      }
     });
   }
   testWidgets(
