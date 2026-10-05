@@ -196,15 +196,28 @@ class _BlueprintTabState extends State<BlueprintTab> {
         Flexible(
           child: blueprint == null
               ? const Center(child: CircularProgressIndicator())
-              : VenueSeatViewer<BlueprintObjectModel, Object>(
-                  editorMode: true,
-                  controller: _seatLayoutController,
-                  onSeatPressed: handleSeatTap,
-                  tooltipBuilder: (context, slot) =>
-                      slot.seat?.blueprintTooltip(context) ?? '',
-                  shouldShowTooltipOnTap: (_) =>
-                      currentSelectionMode == BlueprintSelectionMode.none,
-                ),
+              : TooltipTheme(
+                  data: TooltipThemeData(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .inverseSurface
+                          .withValues(alpha: .95),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onInverseSurface,
+                        ),
+                  ),
+                  child: VenueSeatViewer<BlueprintObjectModel, Object>(
+                    editorMode: true,
+                    controller: _seatLayoutController,
+                    onSeatPressed: handleSeatTap,
+                    tooltipBuilder: (context, slot) =>
+                        slot.seat?.blueprintTooltip(context) ?? '',
+                    shouldShowTooltipOnTap: (_) =>
+                        currentSelectionMode == BlueprintSelectionMode.none,
+                  )),
         ),
         const SizedBox(height: 16),
       ],

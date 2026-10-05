@@ -11,6 +11,7 @@ TicketSnapResult snapTicketBox(Rect box, Size area, Iterable<Rect> others,
     {required double zoom,
     double? gridStep,
     Offset? anchor,
+    Offset? resizeDirection,
     bool widthOnly = false,
     double minRatio = 0,
     double maxRatio = double.infinity}) {
@@ -22,8 +23,11 @@ TicketSnapResult snapTicketBox(Rect box, Size area, Iterable<Rect> others,
   }
   final corner = anchor == null
       ? null
-      : Offset(anchor.dx == box.left ? box.right : box.left,
-          anchor.dy == box.top ? box.bottom : box.top);
+      : resizeDirection == null
+          ? Offset(anchor.dx == box.left ? box.right : box.left,
+              anchor.dy == box.top ? box.bottom : box.top)
+          : Offset(box.center.dx + resizeDirection.dx * box.width / 2,
+              box.center.dy + resizeDirection.dy * box.height / 2);
   final ex =
       corner == null ? [box.left, box.center.dx, box.right] : [corner.dx];
   final ey =
@@ -54,11 +58,15 @@ TicketSnapResult snapTicketBox(Rect box, Size area, Iterable<Rect> others,
   if (anchor == null)
     return TicketSnapResult(box.shift(Offset(dx, dy)), gx, gy);
   if (widthOnly) {
-    final ratio = (1 + dx / box.width);
+    final fromLeft = corner!.dx < anchor.dx;
+    final ratio = (1 + dx * (fromLeft ? -1 : 1) / box.width);
     if (gx == null || ratio < minRatio || ratio > maxRatio)
       return TicketSnapResult(box, null, null);
     return TicketSnapResult(
-        Rect.fromLTWH(box.left, box.top, box.width + dx, box.height), gx, null);
+        Rect.fromLTWH(fromLeft ? box.right - box.width * ratio : box.left,
+            box.top, box.width * ratio, box.height),
+        gx,
+        null);
   }
   final rx = gx == null
       ? null
@@ -71,9 +79,15 @@ TicketSnapResult snapTicketBox(Rect box, Size area, Iterable<Rect> others,
   if (!useX && !useY) return TicketSnapResult(box, null, null);
   final horizontal = useX && (!useY || dx.abs() <= dy.abs());
   final ratio = horizontal ? rx : ry!;
-  final next = Rect.fromPoints(anchor, anchor + (corner! - anchor) * ratio);
+  final next = resizeDirection == null
+      ? Rect.fromPoints(anchor, anchor + (corner! - anchor) * ratio)
+      : Rect.fromLTRB(
+          anchor.dx + (box.left - anchor.dx) * ratio,
+          anchor.dy + (box.top - anchor.dy) * ratio,
+          anchor.dx + (box.right - anchor.dx) * ratio,
+          anchor.dy + (box.bottom - anchor.dy) * ratio);
   // Show only lines the aspect-preserving resize actually reaches.
-  final moved = anchor + (corner - anchor) * ratio;
+  final moved = anchor + (corner! - anchor) * ratio;
   return TicketSnapResult(
       next,
       gx != null && (moved.dx - gx).abs() < .001 ? gx : null,

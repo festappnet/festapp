@@ -26,7 +26,7 @@ class TicketLayoutCanvas extends StatefulWidget {
   const TicketLayoutCanvas(
       {super.key,
       this.onDismiss,
-    this.onCanvasElementAttempt,
+      this.onCanvasElementAttempt,
       required this.controller,
       required this.resources,
       required this.data,
@@ -53,7 +53,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   Offset? _last, _marqueeStart, _dragStart;
   String? _pendingToggle;
   Set<String> _selectionBeforeMarquee = {};
-  bool _resize = false, _widthOnly = false, _space = false;
+  TicketResizeHandle? _resizeHandle, _hoverHandle;
+  bool _space = false;
   double get zoom {
     final matrix = widget.transform.value;
     return math.sqrt(
@@ -162,6 +163,62 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       ..scaleByDouble(scale, scale, 1, 1);
   }
 
+  TicketResizeHandle? _handleAt(Rect box, Offset point) {
+    final tolerance = 10 / zoom;
+    // Corners take precedence over sides, including on short text boxes.
+    for (final handle
+        in TicketResizeHandle.values.where((h) => h.x != 0 && h.y != 0)) {
+      if ((point - handle.position(box)).distance <= tolerance) return handle;
+    }
+    final verticalTolerance = math.min(6 / zoom, box.height / 4);
+    final horizontalTolerance = math.min(6 / zoom, box.width / 4);
+    if (point.dx >= box.left && point.dx <= box.right) {
+      if ((point.dy - box.top).abs() <= verticalTolerance) {
+        return TicketResizeHandle.top;
+      }
+      if ((point.dy - box.bottom).abs() <= verticalTolerance) {
+        return TicketResizeHandle.bottom;
+      }
+    }
+    if (point.dy >= box.top && point.dy <= box.bottom) {
+      if ((point.dx - box.left).abs() <= horizontalTolerance) {
+        return TicketResizeHandle.left;
+      }
+      if ((point.dx - box.right).abs() <= horizontalTolerance) {
+        return TicketResizeHandle.right;
+      }
+    }
+    return null;
+  }
+
+  MouseCursor get _cursor {
+    final handle = _resizeHandle ?? _hoverHandle;
+    if (panning) return SystemMouseCursors.grab;
+    if (handle == null) return MouseCursor.defer;
+    if (handle.x == 0) return SystemMouseCursors.resizeUpDown;
+    if (handle.y == 0) return SystemMouseCursors.resizeLeftRight;
+    return handle.x == handle.y
+        ? SystemMouseCursors.resizeUpLeftDownRight
+        : SystemMouseCursors.resizeUpRightDownLeft;
+  }
+
+  void _hover(PointerHoverEvent event) {
+    final selected = widget.controller.document
+        .positionedElements(widget.data)
+        .where((e) => e.id == widget.controller.selected)
+        .firstOrNull;
+    final point = widget.transform.toScene(event.localPosition) -
+        widget.controller.document.area.topLeft;
+    final handle = panning ||
+            widget.editBackground ||
+            widget.editCanvas ||
+            selected == null ||
+            selected.locked
+        ? null
+        : _handleAt(selected.box, point);
+    if (handle != _hoverHandle) setState(() => _hoverHandle = handle);
+  }
+
   void _down(PointerDownEvent event) {
     _pendingToggle = null;
     _focus.requestFocus();
@@ -239,14 +296,9 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         .positionedElements(widget.data)
         .where((e) => e.id == widget.controller.selected)
         .firstOrNull;
-    final handle = 14 / zoom;
-    _resize = selected != null &&
-        !selected.locked &&
-        (point - selected.box.bottomRight).distance < handle;
-    _widthOnly = selected != null &&
-        !selected.locked &&
-        (point - Offset(selected.box.right, selected.box.center.dy)).distance <
-            handle;
+    _resizeHandle = selected == null || selected.locked
+        ? null
+        : _handleAt(selected.box, point);
     final hit = widget.controller.document
         .positionedElements(widget.data)
         .reversed
@@ -256,7 +308,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         HardwareKeyboard.instance.isShiftPressed ||
         HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
-    if (!_resize && !_widthOnly) {
+    if (_resizeHandle == null) {
       if (hit == null) {
         _marqueeStart = point;
         _selectionBeforeMarquee =
@@ -295,8 +347,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         widget.controller.document.area.topLeft;
     if (widget.editCanvas && _last != null && _canvasHandle != null) {
       final beforeOrigin = widget.controller.canvasOrigin;
-      widget.controller.resizeCanvas(
-        event.delta / zoom,
+      widget.controller.resizeCanvas(event.delta / zoom,
           backgroundImage: backgroundSize,
           handle: _canvasHandle!,
           zoom: zoom,
@@ -342,9 +393,9 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     }
     final delta = point - _last!;
     _last = point;
-    if (_resize || _widthOnly) {
+    if (_resizeHandle != null) {
       widget.controller.resize(delta,
-          widthOnly: _widthOnly,
+          handle: _resizeHandle!,
           zoom: zoom,
           snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
           gridStep: widget.grid ? widget.gridStep : null);
@@ -360,6 +411,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     _pointers.remove(e.pointer);
     if (_middlePan == e.pointer) _middlePan = null;
     if (_editing == e.pointer) {
+      _resizeHandle = null;
       if (_pendingToggle != null && e is PointerUpEvent) {
         widget.controller.select(_pendingToggle, additive: true);
       }
@@ -436,37 +488,43 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       child: ClipRect(
           child: ColoredBox(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Listener(
-                  key: _viewport,
-                  onPointerDown: _down,
-                  onPointerMove: _move,
-                  onPointerUp: _up,
-                  onPointerCancel: (e) {
-                    widget.controller.cancelGesture();
-                    _up(e);
-                  },
-                  child: InteractiveViewer(
-                      transformationController: widget.transform,
-                      constrained: false,
-                      boundaryMargin: const EdgeInsets.all(double.infinity),
-                      minScale: widget.editBackground ? .02 : .2,
-                      maxScale: 6,
-                      panEnabled: panning || _editing == null,
-                      scaleEnabled: true,
-                      child: ListenableBuilder(
-                          listenable: widget.transform,
-                          builder: (context, _) => RepaintBoundary(
-                          child: CustomPaint(
-                              size: widget.controller.document.page,
-                              painter: TicketLayoutPainter(widget.controller,
-                                  widget.resources, widget.data,
-                                  zoom: zoom,
-                                  editBackground: widget.editBackground,
-                                  editCanvas: widget.editCanvas,
-                                  cropBackground: widget.cropBackground,
-                                  gridStep: widget.grid
-                                      ? widget.gridStep
-                                      : null)))))))));
+              child: MouseRegion(
+                  cursor: _cursor,
+                  onHover: _hover,
+                  onExit: (_) => setState(() => _hoverHandle = null),
+                  child: Listener(
+                      key: _viewport,
+                      onPointerDown: _down,
+                      onPointerMove: _move,
+                      onPointerUp: _up,
+                      onPointerCancel: (e) {
+                        widget.controller.cancelGesture();
+                        _up(e);
+                      },
+                      child: InteractiveViewer(
+                          transformationController: widget.transform,
+                          constrained: false,
+                          boundaryMargin: const EdgeInsets.all(double.infinity),
+                          minScale: widget.editBackground ? .02 : .2,
+                          maxScale: 6,
+                          panEnabled: panning || _editing == null,
+                          scaleEnabled: true,
+                          child: ListenableBuilder(
+                              listenable: widget.transform,
+                              builder: (context, _) => RepaintBoundary(
+                                  child: CustomPaint(
+                                      size: widget.controller.document.page,
+                                      painter: TicketLayoutPainter(
+                                          widget.controller,
+                                          widget.resources,
+                                          widget.data,
+                                          zoom: zoom,
+                                          editBackground: widget.editBackground,
+                                          editCanvas: widget.editCanvas,
+                                          cropBackground: widget.cropBackground,
+                                          gridStep: widget.grid
+                                              ? widget.gridStep
+                                              : null))))))))));
 }
 
 class TicketLayoutPainter extends CustomPainter {
@@ -793,9 +851,10 @@ class TicketLayoutPainter extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1 / zoom);
     }
-    for (final selected in doc
-        .positionedElements(data)
-        .where((e) => !editCanvas && !editBackground && controller.selectedIds.contains(e.id))) {
+    for (final selected in doc.positionedElements(data).where((e) =>
+        !editCanvas &&
+        !editBackground &&
+        controller.selectedIds.contains(e.id))) {
       canvas.drawRect(
           selected.box,
           Paint()
@@ -804,11 +863,10 @@ class TicketLayoutPainter extends CustomPainter {
             ..strokeWidth = 1.5 / zoom);
       if (!selected.locked && controller.selectedIds.length == 1) {
         final h = 10 / zoom;
-        for (final p in [
-          selected.box.bottomRight,
-          Offset(selected.box.right, selected.box.center.dy)
-        ]) {
-          canvas.drawRect(Rect.fromCenter(center: p, width: h, height: h),
+        for (final handle in TicketResizeHandle.values) {
+          canvas.drawRect(
+              Rect.fromCenter(
+                  center: handle.position(selected.box), width: h, height: h),
               Paint()..color = Colors.blue);
         }
       }

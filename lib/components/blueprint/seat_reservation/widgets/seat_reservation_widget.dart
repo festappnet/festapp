@@ -80,18 +80,37 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
                       ? const Center(child: CircularProgressIndicator())
                       : Padding(
                           padding: const EdgeInsets.fromLTRB(12, 24, 12, 0),
-                          child: VenueSeatPicker<BlueprintObjectModel, Object>(
-                            controller: _controller,
-                            maxSelectedSeats: widget.maxTickets,
-                            onSelectionLimitReached: () => ToastHelper.Show(
-                              context,
-                              BlueprintStrings.toastMaxTicketsReached,
-                            ),
-                            onSelectionRequested: _requestSelection,
-                            onSelectionChanged: _selectionChanged,
-                            tooltipBuilder: (context, slot) =>
-                                slot.seat?.blueprintTooltip(context) ?? '',
-                          ),
+                          child: TooltipTheme(
+                              data: TooltipThemeData(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .inverseSurface
+                                      .withValues(alpha: .95),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onInverseSurface,
+                                    ),
+                              ),
+                              child:
+                                  VenueSeatPicker<BlueprintObjectModel, Object>(
+                                controller: _controller,
+                                maxSelectedSeats: widget.maxTickets,
+                                onSelectionLimitReached: () => ToastHelper.Show(
+                                  context,
+                                  BlueprintStrings.toastMaxTicketsReached,
+                                ),
+                                onSelectionRequested: _requestSelection,
+                                onSelectionChanged: _selectionChanged,
+                                tooltipBuilder: (context, slot) =>
+                                    slot.seat?.blueprintTooltip(context) ?? '',
+                              )),
                         ),
                 ),
                 Padding(
