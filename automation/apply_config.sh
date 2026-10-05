@@ -218,7 +218,26 @@ for asset_path in "$LOGO_ASSET" "$DARK_LOGO_ASSET" "$PROGRAM_LOGO_ASSET"; do
 done
 # The loading wordmark is derived from the configured brand logo, never from
 # the square PWA installation icon.
-cp "$PROJECT_ROOT/$DARK_LOGO_ASSET" "$PROJECT_ROOT/web/loading-logo.svg"
+python3 - "$PROJECT_ROOT/$DARK_LOGO_ASSET" "$PROJECT_ROOT/web/loading-logo.svg" <<'LOADING_LOGO'
+import base64
+import struct
+import sys
+from pathlib import Path
+
+source, target = map(Path, sys.argv[1:])
+data = source.read_bytes()
+if source.suffix.lower() == '.svg':
+    target.write_bytes(data)
+elif data.startswith(b'\x89PNG\r\n\x1a\n'):
+    width, height = struct.unpack('>II', data[16:24])
+    image = base64.b64encode(data).decode('ascii')
+    target.write_text(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">'
+        f'<image width="{width}" height="{height}" href="data:image/png;base64,{image}"/>'
+        '</svg>\n')
+else:
+    raise SystemExit('Error: loading brand logo must be SVG or PNG')
+LOADING_LOGO
 [ -f "$PROJECT_ROOT/web/$WEB_LOADING_LOGO_ASSET" ] || {
     echo "Error: configured web loading asset does not exist: $WEB_LOADING_LOGO_ASSET"; exit 1;
 }
