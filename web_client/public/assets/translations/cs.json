@@ -475,6 +475,7 @@
     "clearSelection": "Zrušit výběr",
     "unavailable": "Nedostupné",
     "inWhatCurrency": "V jaké měně chcete platit?",
+    "productsInBlueprint": "Produkty pro místa jsou v plánku.",
     "noProductTypes": "Žádné typy produktů",
     "productTypes": "Typy produktů",
     "seatSelection": "Výběr místa",
@@ -1688,7 +1689,13 @@
     "tokenVerificationWait": "Čekáme na odpověď Fio. Ověření může trvat několik desítek sekund.",
     "tokenAwaitingActivation": "Token uložen - čeká na aktivaci",
     "tokenSavedNeedsVerification": "Token uložen - připojení vyžaduje pozornost",
-    "errorTitle": "Chyba"
+    "errorTitle": "Chyba",
+    "connection_state": "Stav připojení",
+    "bank_pull": "Bankovní výpis stažen",
+    "receiver_commit": "Pohyb přijat",
+    "not_received": "Zatím nepřijato",
+    "email_identity_notice": "Zprávy bez ověřené bankovní identity čekají na kontrolu správce a automaticky nehradí objednávky.",
+    "connect_email": "Připojit bankovní email"
   },
   "FeatureContract": {
     "title": "Smlouva",

@@ -151,20 +151,29 @@ void main() {
     expect(dialogTheme.colorScheme, editorTheme.colorScheme);
     expect(dialogTheme.useMaterial3, isTrue);
   });
-  testWidgets('inline paper settings preserve content and validate margins', (tester) async {
+  testWidgets('inline paper settings preserve content and validate margins',
+      (tester) async {
     final raw = document().withPaper(true).toJson()..remove('pageMargin');
     final c = TicketLayoutController(TicketTemplate.fromJson(raw));
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SizedBox(width: 340,
-        child: TicketCanvasSettings(controller: c, onEditElement: (_) {}, onPaperChanged: () {})))));
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SizedBox(
+                width: 340,
+                child: TicketCanvasSettings(
+                    controller: c,
+                    onEditElement: (_) {},
+                    onPaperChanged: () {})))));
     await tester.pumpAndSettle();
     expect(c.document.pageMargin, TicketTemplate.defaultPageMargin);
     final elements = c.document.elements;
-    final marginField = find.widgetWithText(TextField, 'TicketLayout.marginMm'.tr());
+    final marginField =
+        find.widgetWithText(TextField, 'TicketLayout.marginMm'.tr());
     for (final value in ['5', '0']) {
       await tester.enterText(marginField, value);
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
-      expect(c.document.pageMargin, closeTo(double.parse(value) * 72 / 25.4, .001));
+      expect(c.document.pageMargin,
+          closeTo(double.parse(value) * 72 / 25.4, .001));
       expect(c.document.elements, elements);
     }
     final valid = c.document;
@@ -183,13 +192,18 @@ void main() {
     c.dispose();
   });
 
-  testWidgets('canvas settings keep the preview visible on phone and desktop', (tester) async {
+  testWidgets('canvas settings keep the preview visible on phone and desktop',
+      (tester) async {
     await tester.runAsync(() async {
       for (final entry in {
         'Futura': 'fonts/Futura PT Book.ttf',
-        'MaterialIcons': 'build/unit_test_assets/fonts/MaterialIcons-Regular.otf',
+        'MaterialIcons':
+            'build/unit_test_assets/fonts/MaterialIcons-Regular.otf',
       }.entries) {
-        await (FontLoader(entry.key)..addFont(Future.value(ByteData.sublistView(File(entry.value).readAsBytesSync())))).load();
+        await (FontLoader(entry.key)
+              ..addFont(Future.value(
+                  ByteData.sublistView(File(entry.value).readAsBytesSync()))))
+            .load();
       }
     });
     tester.view.devicePixelRatio = 1;
@@ -199,9 +213,15 @@ void main() {
       for (final brightness in Brightness.values) {
         tester.view.physicalSize = screen;
         final capture = GlobalKey();
-        await tester.pumpWidget(RepaintBoundary(key: capture, child: MaterialApp(
-            theme: ThemeConfig.theme(brightness: brightness),
-            home: TicketLayoutEditor(occasionId: 1, type: 'named', resources: resources(), service: FakeService()))));
+        await tester.pumpWidget(RepaintBoundary(
+            key: capture,
+            child: MaterialApp(
+                theme: ThemeConfig.theme(brightness: brightness),
+                home: TicketLayoutEditor(
+                    occasionId: 1,
+                    type: 'named',
+                    resources: resources(),
+                    service: FakeService()))));
         await tester.pumpAndSettle();
         if (screen.width < 900) {
           await tester.tap(find.text('TicketLayout.properties'.tr()).last);
@@ -218,10 +238,13 @@ void main() {
         expect(tester.takeException(), isNull);
         final output = Platform.environment['TICKET_SETTINGS_CAPTURE_DIR'];
         if (output != null) {
-          final boundary = capture.currentContext!.findRenderObject() as RenderRepaintBoundary;
+          final boundary = capture.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
           final image = (await tester.runAsync(() => boundary.toImage()))!;
-          final bytes = (await tester.runAsync(() => image.toByteData(format: ui.ImageByteFormat.png)))!;
-          File('$output/${screen.width.toInt()}-${brightness.name}.png').writeAsBytesSync(bytes.buffer.asUint8List());
+          final bytes = (await tester.runAsync(
+              () => image.toByteData(format: ui.ImageByteFormat.png)))!;
+          File('$output/${screen.width.toInt()}-${brightness.name}.png')
+              .writeAsBytesSync(bytes.buffer.asUint8List());
           image.dispose();
         }
         await tester.pumpWidget(const SizedBox());
@@ -1493,7 +1516,8 @@ void main() {
     c.beginGesture();
     c.resizeCanvas(const Offset(0, -35), handle: 1, snap: false);
     c.endGesture();
-    expect(c.document.elements.firstWhere((e) => e.id == footer.id).visible, isFalse);
+    expect(c.document.elements.firstWhere((e) => e.id == footer.id).visible,
+        isFalse);
     c.beginGesture();
     c.resizeCanvas(const Offset(0, 35), handle: 1, snap: false);
     c.endGesture();
@@ -1506,16 +1530,23 @@ void main() {
   test('every canvas handle releases both hard limits without a dead zone', () {
     for (var handle = 0; handle < 8; handle++) {
       for (final direction in [-1.0, 1.0]) {
-        final c = TicketLayoutController(document().withPaper(true, margin: 6.25));
+        final c =
+            TicketLayoutController(document().withPaper(true, margin: 6.25));
         c.beginGesture();
-        c.resizeCanvas(Offset(2000 * direction, 2000 * direction), handle: handle, snap: false);
+        c.resizeCanvas(Offset(2000 * direction, 2000 * direction),
+            handle: handle, snap: false);
         final atLimit = c.document.area.size;
-        c.resizeCanvas(Offset(-20 * direction, -20 * direction), handle: handle, snap: false);
+        c.resizeCanvas(Offset(-20 * direction, -20 * direction),
+            handle: handle, snap: false);
         if (![1, 4].contains(handle)) {
-          expect((c.document.area.width - atLimit.width).abs(), closeTo(20, .002), reason: 'handle $handle, direction $direction');
+          expect(
+              (c.document.area.width - atLimit.width).abs(), closeTo(20, .002),
+              reason: 'handle $handle, direction $direction');
         }
         if (![0, 3].contains(handle)) {
-          expect((c.document.area.height - atLimit.height).abs(), closeTo(20, .002), reason: 'handle $handle, direction $direction');
+          expect((c.document.area.height - atLimit.height).abs(),
+              closeTo(20, .002),
+              reason: 'handle $handle, direction $direction');
         }
         expect(c.document.validate('named'), isEmpty);
         c.dispose();
@@ -1523,7 +1554,9 @@ void main() {
     }
   });
 
-  test('canvas recovery preserves manual hiding, left/top positions and history', () {
+  test(
+      'canvas recovery preserves manual hiding, left/top positions and history',
+      () {
     var original = document().withPaper(true, margin: 6.25);
     final footer = original.elements.firstWhere((e) => e.binding == 'footer');
     original = original.replace(footer.copyWith(visible: false));
@@ -1537,7 +1570,8 @@ void main() {
     expect(c.document.toJson(), smaller.toJson());
     c.beginGesture();
     c.resizeCanvas(const Offset(-9, -100), handle: 5, snap: false);
-    expect(c.document.elements.map((e) => e.toJson()), original.elements.map((e) => e.toJson()));
+    expect(c.document.elements.map((e) => e.toJson()),
+        original.elements.map((e) => e.toJson()));
     c.cancelGesture();
     expect(c.document.toJson(), smaller.toJson());
     // An unrelated color edit must not discard off-canvas recovery data.
@@ -1545,22 +1579,31 @@ void main() {
     c.beginGesture();
     c.resizeCanvas(const Offset(-9, -100), handle: 5, snap: false);
     c.endGesture();
-    expect(c.document.elements.map((e) => e.toJson()), original.elements.map((e) => e.toJson()));
+    expect(c.document.elements.map((e) => e.toJson()),
+        original.elements.map((e) => e.toJson()));
     c.dispose();
   });
 
-  testWidgets('canvas handle scale tracks zoom without another pointer event', (tester) async {
+  testWidgets('canvas handle scale tracks zoom without another pointer event',
+      (tester) async {
     final c = TicketLayoutController(document());
     final transform = TransformationController();
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: TicketLayoutCanvas(
-        controller: c, resources: resources(), data: resources().scenarios['normal']!,
-        transform: transform, editCanvas: true))));
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: TicketLayoutCanvas(
+                controller: c,
+                resources: resources(),
+                data: resources().scenarios['normal']!,
+                transform: transform,
+                editCanvas: true))));
     await tester.pumpAndSettle();
-    final painting = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is TicketLayoutPainter);
+    final painting = find.byWidgetPredicate(
+        (w) => w is CustomPaint && w.painter is TicketLayoutPainter);
     for (final scale in [.5, 3.0, 1.0]) {
       transform.value = Matrix4.identity()..scaleByDouble(scale, scale, 1, 1);
       await tester.pump();
-      final painter = tester.widget<CustomPaint>(painting).painter! as TicketLayoutPainter;
+      final painter =
+          tester.widget<CustomPaint>(painting).painter! as TicketLayoutPainter;
       expect(painter.zoom, closeTo(scale, .0001));
     }
     await tester.pumpWidget(const SizedBox());
@@ -1684,37 +1727,50 @@ void main() {
         .firstWhere((e) => e['binding'] == 'qr')['box'];
     expect(q['width'], q['height']);
   });
-  testWidgets('inline dimensions leave preview visible and jump to a blocker', (tester) async {
+  testWidgets('inline dimensions leave preview visible and jump to a blocker',
+      (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(MaterialApp(home: TicketLayoutEditor(occasionId: 1, type: 'named', resources: resources(), service: FakeService())));
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'named',
+            resources: resources(),
+            service: FakeService())));
     await tester.pumpAndSettle();
     await tester.tap(find.text('TicketLayout.canvasSize'.tr()).first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
-    expect(tester.getRect(find.byType(TicketCanvasSettings)).left,
-        greaterThanOrEqualTo(tester.getRect(find.byType(TicketLayoutCanvas)).right));
-    final view = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
+    expect(
+        tester.getRect(find.byType(TicketCanvasSettings)).left,
+        greaterThanOrEqualTo(
+            tester.getRect(find.byType(TicketLayoutCanvas)).right));
+    final view =
+        tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
     expect(view.wholePage, isTrue);
     final original = view.controller.document;
-    await tester.enterText(find.widgetWithText(TextField, 'TicketLayout.widthMm'.tr()), '71');
+    await tester.enterText(
+        find.widgetWithText(TextField, 'TicketLayout.widthMm'.tr()), '71');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(view.controller.document.area.width, closeTo(71 * 72 / 25.4, .001));
     view.controller.undo();
     await tester.pump();
     expect(view.controller.document.toJson(), original.toJson());
-    await tester.enterText(find.widgetWithText(TextField, 'TicketLayout.widthMm'.tr()), '20');
+    await tester.enterText(
+        find.widgetWithText(TextField, 'TicketLayout.widthMm'.tr()), '20');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
-    final symbol = original.elements.firstWhere((e) => e.binding == 'ticketSymbol');
+    final symbol =
+        original.elements.firstWhere((e) => e.binding == 'ticketSymbol');
     final action = find.widgetWithIcon(OutlinedButton, Icons.open_with).last;
     await tester.ensureVisible(action);
     await tester.tap(action);
     await tester.pumpAndSettle();
-    final active = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
+    final active =
+        tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
     expect(active.editCanvas, isFalse);
     expect(active.controller.selected, symbol.id);
   });
@@ -1846,6 +1902,76 @@ void main() {
     final b = c.selection!.box;
     c.move(const Offset(10, 10));
     expect(c.selection!.box, b);
+    c.dispose();
+  });
+  test(
+      'resize magnets support every corner and side with fixed opposite anchors',
+      () {
+    const box = Rect.fromLTWH(102, 102, 96, 96);
+    for (final handle in TicketResizeHandle.values) {
+      final result = snapTicketBox(box, const Size(500, 500), [],
+          zoom: 1,
+          gridStep: 50,
+          anchor: handle.anchor(box),
+          resizeDirection: Offset(handle.x, handle.y));
+      expect(result.box.width, greaterThan(box.width));
+      expect(result.box.width, closeTo(result.box.height, .001));
+      expect((handle.anchor(result.box) - handle.anchor(box)).distance,
+          lessThan(.001));
+    }
+    final left = snapTicketBox(box, const Size(500, 500), [],
+        zoom: 1,
+        gridStep: 50,
+        anchor: box.centerRight,
+        resizeDirection: const Offset(-1, 0),
+        widthOnly: true);
+    expect(left.box.left, 100);
+    expect(left.box.right, box.right);
+    expect(left.box.height, box.height);
+  });
+  for (final handle in TicketResizeHandle.values) {
+    testWidgets('ticket resize from ${handle.name} keeps opposite anchor',
+        (tester) async {
+      final c = TicketLayoutController(document())..select('qr');
+      final transform = TransformationController();
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: TicketLayoutCanvas(
+        controller: c,
+        resources: resources(),
+        data: resources().scenarios.values.first,
+        transform: transform,
+        snap: false,
+      ))));
+      await tester.pumpAndSettle();
+      final before = c.selection!.box;
+      final origin = tester.getTopLeft(find.byType(InteractiveViewer));
+      final start = origin +
+          MatrixUtils.transformPoint(transform.value,
+              c.document.area.topLeft + handle.position(before));
+      await tester.dragFrom(start, Offset(-handle.x * 12, -handle.y * 12));
+      await tester.pump();
+      final after = c.selection!.box;
+      expect(after.width, lessThan(before.width));
+      expect(after.width, closeTo(after.height, .001));
+      expect((handle.anchor(after) - handle.anchor(before)).distance,
+          lessThan(.01));
+      c.undo();
+      expect(c.selection!.box, before);
+      await tester.pumpWidget(const SizedBox.shrink());
+      c.dispose();
+      transform.dispose();
+    });
+  }
+  test('left text resize preserves font size and right edge', () {
+    final c = TicketLayoutController(document())..select('occasionTitle');
+    final before = c.selection!;
+    c.resize(const Offset(8, 0), handle: TicketResizeHandle.left);
+    expect(c.selection!.box.width, lessThan(before.box.width));
+    expect(c.selection!.box.right, closeTo(before.box.right, .001));
+    expect(c.selection!.fontSize, before.fontSize);
+    c.resize(const Offset(-10000, 0), handle: TicketResizeHandle.left);
+    expect(c.selection!.box.left, greaterThanOrEqualTo(0));
     c.dispose();
   });
   test(
