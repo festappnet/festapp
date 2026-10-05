@@ -175,7 +175,9 @@ class BlueprintObjectModel {
                 ? "\n(${ticket.noteHidden})"
                 : "";
 
-        return "${product?.title} ${title ?? ""}\n${OrdersStrings.itemSingular} ${ticket.ticketSymbol}$ticketNoteString$noteHiddenString\n$productsString$orderString";
+        final productsSection =
+            productsString.isEmpty ? "" : "\n$productsString";
+        return "${product?.title} ${title ?? ""}\n${OrdersStrings.itemSingular} ${ticket.ticketSymbol}$ticketNoteString$noteHiddenString$productsSection$orderString";
       }
     }
 

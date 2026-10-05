@@ -28,12 +28,6 @@ class DbEshop {
   static final _supabase = Supabase.instance.client;
   static EshopCommands get _commands => SupabaseEshopCommands(_supabase);
 
-  /// Fetches transactions based on a form link using a Supabase Function.
-  static Future<FunctionResponse> fetchTransactions(String formLink) async {
-    return await _supabase.functions
-        .invoke("fetch-transactions", body: {"occasionLink": formLink});
-  }
-
   static Future<FunctionResponse> sendTicketOrderUpdateEmail(
       int orderId) async {
     final body = {

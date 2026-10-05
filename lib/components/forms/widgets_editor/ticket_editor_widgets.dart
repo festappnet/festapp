@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'package:fstapp/components/eshop/models/product_type_model.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -20,6 +21,11 @@ class TicketEditorWidgets {
     final maxStr = (maximum != null && maximum != 0) ? maximum.toString() : '∞';
     return '$count / $maxStr';
   }
+
+  static String _emptyProductTypesMessage(FormModel form) =>
+      form.usesSeatSelection
+          ? FormStrings.productsInBlueprint
+          : FormStrings.noProductTypes;
 
   /// Helper to get the `max_tickets` value, defaulting to 1.
   static int _getMaxTickets(FormFieldModel ticketField) {
@@ -51,13 +57,15 @@ class TicketEditorWidgets {
     final productTypeFields = form.relatedFields
         .where((f) =>
             f.isTicketField == true &&
-            f.type == FormHelper.fieldTypeProductType)
+            f.type == FormHelper.fieldTypeProductType &&
+            (f.productType?.type != ProductModel.spotType ||
+                !form.usesSeatSelection))
         .toList();
     if (productTypeFields.isEmpty) {
       children.add(Padding(
         padding: const EdgeInsets.only(top: 8.0),
         child: Text(
-          FormStrings.noProductTypes,
+          _emptyProductTypesMessage(form),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ));
@@ -83,7 +91,23 @@ class TicketEditorWidgets {
       VoidCallback refresh) {
     List<Widget> children = [];
     if (FeatureService.isFeatureEnabled(FeatureConstants.blueprint)) {
-      children.add(buildSpotFieldEditor(context, form, refresh));
+      children.add(buildSpotFieldEditor(context, form, () {
+        if (!form.usesSeatSelection) {
+          for (final productType in allProductTypes
+              .where((type) => type.type == ProductModel.spotType)) {
+            final alreadyAdded = form.relatedFields.any((field) =>
+                field.isTicketField == true &&
+                field.type == FormHelper.fieldTypeProductType &&
+                (identical(field.productType, productType) ||
+                    (productType.id != null &&
+                        field.productType?.id == productType.id)));
+            if (!alreadyAdded) {
+              _addExistingProductType(form, productType);
+            }
+          }
+        }
+        refresh();
+      }));
       children.add(const SizedBox(height: 16));
     }
 
@@ -96,7 +120,9 @@ class TicketEditorWidgets {
     final productTypeFields = form.relatedFields
         .where((f) =>
             f.isTicketField == true &&
-            f.type == FormHelper.fieldTypeProductType)
+            f.type == FormHelper.fieldTypeProductType &&
+            (f.productType?.type != ProductModel.spotType ||
+                !form.usesSeatSelection))
         .toList();
     productTypeFields.sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
     children.add(Text(
@@ -104,6 +130,13 @@ class TicketEditorWidgets {
       style: Theme.of(context).textTheme.titleSmall,
     ));
     children.add(const SizedBox(height: 8));
+    if (productTypeFields.isEmpty) {
+      children.add(Text(
+        _emptyProductTypesMessage(form),
+        style: Theme.of(context).textTheme.bodyMedium,
+      ));
+      children.add(const SizedBox(height: 16));
+    }
     for (var ptField in productTypeFields) {
       children.add(ProductTypeEditorWidgets.buildProductTypeEditor(
           context, form, ptField, refresh));
@@ -125,7 +158,10 @@ class TicketEditorWidgets {
                 .toSet();
 
             final availableProductTypes = allProductTypes
-                .where((pt) => !existingPtIds.contains(pt.id))
+                .where((pt) =>
+                    (pt.type != ProductModel.spotType ||
+                        !form.usesSeatSelection) &&
+                    !existingPtIds.contains(pt.id))
                 .toList();
 
             dynamic result;
@@ -268,7 +304,15 @@ class TicketEditorWidgets {
       type: FormHelper.fieldTypeProductType,
       isTicketField: true,
       productType: productType,
-      order: (form.relatedFields.map((x) => x.order ?? 0).fold(0, max)) + 1,
+      // Apply the first-position default only when adding a seat section.
+      // Existing sections retain their saved/manual order.
+      order: productType.type == ProductModel.spotType
+          ? form.relatedFields
+                  .where((field) => field.isTicketField == true)
+                  .map((field) => field.order ?? 0)
+                  .fold(0, min) -
+              1
+          : (form.relatedFields.map((x) => x.order ?? 0).fold(0, max)) + 1,
     );
     form.relatedFields.add(newProductTypeField);
   }
@@ -361,9 +405,10 @@ class TicketEditorWidgets {
                       type: FormHelper.fieldTypeSpot,
                       isTicketField: true,
                       isHidden: false,
-                      order: (form.relatedFields
-                              .map((x) => x.order ?? 0)
-                              .fold(0, max)) +
+                      order: form.relatedFields
+                              .where((field) => field.isTicketField == true)
+                              .map((field) => field.order ?? 0)
+                              .fold(0, min) -
                           1,
                     );
                     form.relatedFields.add(spotField!);

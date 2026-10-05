@@ -1,7 +1,9 @@
 import 'package:fstapp/components/eshop/views/product_price_waves_dialog.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/models/product_price_wave.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
 import 'package:flutter/services.dart';
+import 'package:fstapp/widgets/time_data_range_picker.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -65,6 +67,46 @@ void main() {
     await EasyLocalization.ensureInitialized();
     tzdata.initializeTimeZones();
   });
+  for (final dirty in [false, true]) {
+    testWidgets('opening price waves closes the small dialog, dirty=$dirty',
+        (tester) async {
+      var opened = false;
+      final p = product([]);
+      await tester.pumpWidget(app(Builder(builder: (context) => TextButton(
+        onPressed: () => showDialog<bool>(
+          context: context,
+          builder: (_) => ProductPriceChangesDialog(
+            product: p,
+            canEdit: true,
+            reload: () async => p,
+            onOpenWaves: () => opened = true,
+          ),
+        ),
+        child: const Text('Open plans'),
+      ))));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open plans'));
+      await tester.pumpAndSettle();
+      if (dirty) {
+        await tester.enterText(find.byType(TextField).first, '550');
+      }
+      await tester.tap(find.text('Cenové vlny'));
+      await tester.pumpAndSettle();
+      if (dirty) {
+        expect(opened, isFalse);
+        await tester.tap(find.widgetWithText(TextButton, CommonStrings.cancel));
+        await tester.pumpAndSettle();
+        expect(find.byType(ProductPriceChangesDialog), findsOneWidget);
+        expect(opened, isFalse);
+        await tester.tap(find.text('Cenové vlny'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, CommonStrings.discardChanges));
+        await tester.pumpAndSettle();
+      }
+      expect(opened, isTrue);
+      expect(find.byType(ProductPriceChangesDialog), findsNothing);
+    });
+  }
   test('DST gap rejected, overlap offers both instants and preserves occasion timezone', () {
     final prague = tz.getLocation('Europe/Prague');
     expect(
@@ -191,8 +233,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), '550');
-    await tester.enterText(find.byType(TextField).at(1), '2090-10-15');
-    await tester.enterText(find.byType(TextField).at(2), '09:00');
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onDateChanged(
+        DateTime(2090, 10, 15));
+    await tester.pump();
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onTimeChanged(
+        const TimeOfDay(hour: 9, minute: 0));
+    await tester.pump();
     await tester.tap(find.widgetWithText(FilledButton, 'Naplánovat změnu'));
     await tester.pump();
     expect(calls, 1);
@@ -230,8 +276,12 @@ void main() {
     expect(find.text('Europe/Amsterdam'), findsNothing);
     expect(find.textContaining('Cena platí pro nové objednávky'), findsNothing);
     await tester.enterText(find.byType(TextField).at(0), '550');
-    await tester.enterText(find.byType(TextField).at(1), '2090-10-15');
-    await tester.enterText(find.byType(TextField).at(2), '09:00');
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onDateChanged(
+        DateTime(2090, 10, 15));
+    await tester.pump();
+    tester.widget<TimeDatePicker>(find.byType(TimeDatePicker)).onTimeChanged(
+        const TimeOfDay(hour: 9, minute: 0));
+    await tester.pump();
     await tester.tap(find.widgetWithText(FilledButton, 'Naplánovat změnu'));
     await tester.pumpAndSettle();
     expect(saved, DateTime(2090, 10, 15, 9).toUtc());

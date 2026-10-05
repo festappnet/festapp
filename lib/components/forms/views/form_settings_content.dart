@@ -369,89 +369,88 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
     final usedAccounts = _getUsedBankAccounts();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (usedAccounts.isEmpty)
-          Text(
-            BankAccountStrings.addInSettings,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontStyle: FontStyle.italic,
-                color: ThemeConfig.grey600(context)),
-          )
-        else ...[
-          Text(
-            BankAccountStrings.manageInUnitSettings,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: ThemeConfig.grey600(context)),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4, // Added runSpacing for better multiline layout
-            children: usedAccounts.map((account) {
-              return SizedBox(
-                width: 300,
-                child: Card(
-                  elevation: 0,
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: ThemeConfig.grey300(context)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          account.title ?? BankAccountStrings.bankAccount,
-                          style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 2),
-                        SelectionArea(
-                          child: Text(
+    return SelectionArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (usedAccounts.isEmpty)
+            Text(
+              BankAccountStrings.addInSettings,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+            )
+          else ...[
+            Text(
+              BankAccountStrings.manageInUnitSettings,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4, // Added runSpacing for better multiline layout
+              children: usedAccounts.map((account) {
+                return SizedBox(
+                  width: 300,
+                  child: Card(
+                    elevation: 0,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: ThemeConfig.grey300(context)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            account.title ?? BankAccountStrings.bankAccount,
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
                             account.accountNumberHumanReadable ??
                                 account.accountNumber ??
                                 '',
                             style: const TextStyle(fontSize: 13),
                           ),
-                        ),
-                        if (account.supportedCurrencies.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: account.supportedCurrencies
-                                .map((c) => Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: ThemeConfig.grey200(context),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(
-                                            color: Colors.grey.shade400),
-                                      ),
-                                      child: Text(c,
-                                          style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600)),
-                                    ))
-                                .toList(),
-                          ),
+                          if (account.supportedCurrencies.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 4,
+                              children: account.supportedCurrencies
+                                  .map((c) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: ThemeConfig.grey200(context),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          border: Border.all(
+                                              color: Colors.grey.shade400),
+                                        ),
+                                        child: Text(c,
+                                            style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600)),
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -648,9 +647,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       }
                                     },
                                   ),
-                                  const SizedBox(height: 24),
-                                  const Divider(),
-                                  const SizedBox(height: 16),
                                   const SizedBox(height: 24),
                                   const Divider(),
                                   const SizedBox(height: 16),

@@ -475,6 +475,7 @@
     "clearSelection": "Clear selection",
     "unavailable": "Unavailable",
     "inWhatCurrency": "In what currency do you want to pay?",
+    "productsInBlueprint": "Seat products are in the seating plan.",
     "noProductTypes": "No Product Types",
     "productTypes": "Product Types",
     "seatSelection": "Seat selection",
@@ -1688,7 +1689,13 @@
     "tokenVerificationWait": "Waiting for Fio to respond. Verification may take several dozen seconds.",
     "tokenAwaitingActivation": "Token saved - awaiting activation",
     "tokenSavedNeedsVerification": "Token saved - connection needs attention",
-    "errorTitle": "Error"
+    "errorTitle": "Error",
+    "connection_state": "Connection status",
+    "bank_pull": "Bank statement downloaded",
+    "receiver_commit": "Movement received",
+    "not_received": "Not received yet",
+    "email_identity_notice": "Messages without verified bank movement identity await operator review and do not automatically pay orders.",
+    "connect_email": "Connect bank email"
   },
   "FeatureContract": {
     "title": "Contract",

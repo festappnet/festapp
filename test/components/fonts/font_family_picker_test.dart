@@ -5,6 +5,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/fonts/font_family_picker.dart';
 
 void main() {
+  testWidgets('font previews keep dark theme text readable in the menu',
+      (tester) async {
+    final theme = ThemeData.dark();
+    await tester.pumpWidget(MaterialApp(
+      theme: theme,
+      home: Scaffold(
+        body: FontFamilyPicker(
+          value: 'Inter',
+          families: const ['Inter', 'Roboto'],
+          selectedStyle: const TextStyle(fontFamily: 'Inter', color: Colors.black),
+          onSelected: (_) async {},
+        ),
+      ),
+    ));
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    final menuText = tester.widget<RichText>(find.descendant(
+      of: find.text('Roboto').last,
+      matching: find.byType(RichText),
+    ));
+    expect(menuText.text.style!.color, theme.colorScheme.onSurface);
+  });
   testWidgets(
       'popular, custom family and reset preserve previous selection on load failure',
       (tester) async {

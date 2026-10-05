@@ -147,8 +147,51 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
     final amounts = [
       for (final series in widget.series) _amounts(series, days),
     ];
-    final maximum =
-        amounts.expand((x) => x).fold(BigInt.one, (a, b) => a > b ? a : b);
+    final peak =
+        amounts.expand((x) => x).fold(BigInt.zero, (a, b) => a > b ? a : b);
+    final money =
+        widget.currency != null || widget.series.any((s) => s.currency != null);
+    // Leave space above the series and keep count-axis ticks integral.
+    final minimum = BigInt.from(money ? 100 : 2);
+    final padded = peak + peak ~/ BigInt.from(5);
+    final maximum = money
+        ? (padded > minimum ? padded : minimum)
+        : ((padded > minimum ? padded : minimum) + BigInt.one) ~/
+            BigInt.two *
+            BigInt.two;
+    if (peak == BigInt.zero) {
+      final colors = Theme.of(context).colorScheme;
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        SizedBox(
+            height: 210,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.show_chart_rounded, size: 32, color: colors.outline),
+                const SizedBox(height: 12),
+                Text(ReportStrings.timelineEmpty,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: colors.onSurfaceVariant)),
+                const SizedBox(height: 8),
+                Text(
+                    '${DateFormat('d. M. yyyy').format(widget.start)} - ${DateFormat('d. M. yyyy').format(widget.end)}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: colors.onSurfaceVariant)),
+              ],
+            )),
+        const Divider(height: 24),
+        Wrap(spacing: 16, runSpacing: 8, children: [
+          for (final series in widget.series)
+            Text(
+                '${series.label}: ${reportChartAmount(BigInt.zero, series.currency ?? widget.currency)}',
+                style: Theme.of(context).textTheme.bodySmall),
+        ]),
+      ]);
+    }
     final lastActivity = days.lastIndexWhere(
       (day) => widget.series.any(
         (s) => (s.amounts[day] ?? BigInt.zero) > BigInt.zero,
@@ -175,7 +218,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
     return LayoutBuilder(builder: (context, constraints) {
       final ticks = _dateTicks(context, widget.start, widget.end,
           math.max(1.0, constraints.maxWidth - axisWidth));
-      final style = Theme.of(context).textTheme.titleSmall;
+      final style = Theme.of(context).textTheme.bodySmall;
       final layoutKey = (
         constraints.maxWidth,
         style,
@@ -268,7 +311,8 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
                               maximum: maximum,
                               colors:
                                   widget.series.map((s) => s.color).toList(),
-                              grid: colors.outlineVariant,
+                              grid:
+                                  colors.outlineVariant.withValues(alpha: .45),
                               selected: selected,
                               bars: !widget.cumulative &&
                                   widget.series.length == 1,
@@ -362,10 +406,6 @@ class _TimelinePainter extends CustomPainter {
         gridPaint,
       );
     }
-    for (final tick in ticks) {
-      final x = size.width * tick;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
     for (var s = 0; s < amounts.length; s++) {
       final values = amounts[s];
       final path = Path();
@@ -403,7 +443,26 @@ class _TimelinePainter extends CustomPainter {
           }
         }
       }
-      if (!bars) canvas.drawPath(path, paint);
+      if (!bars) {
+        if (amounts.length == 1 && values.length > 1) {
+          final area = Path.from(path)
+            ..lineTo(size.width, size.height)
+            ..lineTo(0, size.height)
+            ..close();
+          canvas.drawPath(
+              area,
+              Paint()
+                ..shader = LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    colors[s].withValues(alpha: .12),
+                    colors[s].withValues(alpha: .015)
+                  ],
+                ).createShader(Offset.zero & size));
+        }
+        canvas.drawPath(path, paint);
+      }
     }
     if (selected != null) {
       final count = amounts.first.length;

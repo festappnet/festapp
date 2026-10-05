@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/widgets/time_data_range_picker.dart';
 import '../db_eshop.dart';
 import '../models/product_edit_bundle.dart';
 import '../models/product_model.dart';
@@ -106,7 +107,8 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   Future<void> remove(ProductPriceWave wave) async {
     final confirmed = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(scrollable: true,
+        builder: (_) => AlertDialog(
+                scrollable: true,
                 title: Text(OrdersStrings.cancelWave),
                 content: Text(OrdersStrings.cancelWaveConfirm),
                 actions: [
@@ -350,18 +352,18 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
                         height: 14,
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: current ? colors.primary : colors.surface,
+                            color: current
+                                ? colors.onSurfaceVariant
+                                : colors.surface,
                             border: Border.all(
-                                color: colors.primary, width: 2)))))),
+                                color: colors.outline, width: 2)))))),
         const SizedBox(width: 12),
         Expanded(
             child: Padding(
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Card(
                   margin: EdgeInsets.zero,
-                  color: current
-                      ? colors.primaryContainer
-                      : colors.surfaceContainerLow,
+                  color: colors.surfaceContainerLow,
                   child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -393,7 +395,11 @@ class WaveProductCell extends StatelessWidget {
   final VoidCallback? onOpen;
   final double width;
   const WaveProductCell(
-      {super.key, required this.wave, required this.product, this.onOpen, this.width = 180});
+      {super.key,
+      required this.wave,
+      required this.product,
+      this.onOpen,
+      this.width = 180});
   @override
   Widget build(BuildContext context) {
     final price = wave.prices(product).firstOrNull;
@@ -487,7 +493,8 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
     if (dirty) {
       final discard = await showDialog<bool>(
           context: context,
-          builder: (_) => AlertDialog(scrollable: true,
+          builder: (_) => AlertDialog(
+                  scrollable: true,
                   title: Text(CommonStrings.discardChanges),
                   content: Text(CommonStrings.discardChangesConfirmation),
                   actions: [
@@ -531,7 +538,8 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
       onPopInvokedWithResult: (popped, _) {
         if (!popped) close();
       },
-      child: AlertDialog(scrollable: true,
+      child: AlertDialog(
+          scrollable: true,
           title: Text(widget.product.title ?? ''),
           content: SizedBox(
               width: 360,
@@ -635,59 +643,32 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: !busy,
-      child: AlertDialog(scrollable: true,
+      child: AlertDialog(
+          scrollable: true,
           title: Text(widget.wave == null
               ? OrdersStrings.addWave
               : OrdersStrings.moveWave),
           content: SizedBox(
               width: 360,
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                TextField(
-                    controller: date,
-                    enabled: !busy,
-                    decoration: InputDecoration(
-                        labelText: OrdersStrings.priceDate,
-                        hintText: 'DD.MM.YYYY',
-                        suffixIcon: IconButton(
-                            onPressed: busy
-                                ? null
-                                : () async {
-                                    final selected = await showDatePicker(
-                                        context: context,
-                                        initialDate: (widget.wave?.time
-                                                    .toLocal()
-                                                    .isAfter(DateTime.now()) ??
-                                                false)
-                                            ? widget.wave!.time.toLocal()
-                                            : DateTime.now(),
-                                        firstDate: DateTime.now(),
-                                        lastDate: DateTime(2100));
-                                    if (selected != null && mounted)
-                                      setState(() => date.text =
-                                          DateFormat('dd.MM.yyyy')
-                                              .format(selected));
-                                  },
-                            icon: const Icon(Icons.calendar_month)))),
-                TextField(
-                    controller: time,
-                    enabled: !busy,
-                    decoration: InputDecoration(
-                        labelText: OrdersStrings.priceTime,
-                        hintText: 'HH:mm',
-                        suffixIcon: IconButton(
-                            onPressed: busy
-                                ? null
-                                : () async {
-                                    final selected = await showTimePicker(
-                                        context: context,
-                                        initialTime: TimeOfDay.fromDateTime(
-                                            widget.wave?.time.toLocal() ??
-                                                DateTime.now()));
-                                    if (selected != null && mounted)
-                                      setState(() => time.text =
-                                          '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}');
-                                  },
-                            icon: const Icon(Icons.schedule)))),
+                TimeDatePicker(
+                  date: date.text.isEmpty
+                      ? null
+                      : scheduleWallTime(date.text, '00:00'),
+                  time: time.text.isEmpty
+                      ? null
+                      : TimeOfDay.fromDateTime(
+                          scheduleWallTime('2000-01-01', time.text)!),
+                  dateLabel: OrdersStrings.priceDate,
+                  timeLabel: OrdersStrings.priceTime,
+                  enabled: !busy,
+                  minDate: DateTime.now(),
+                  maxDate: DateTime(2100),
+                  onDateChanged: (picked) => setState(() =>
+                      date.text = DateFormat('dd.MM.yyyy').format(picked)),
+                  onTimeChanged: (picked) => setState(() => time.text =
+                      '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}'),
+                ),
                 if (error != null)
                   Text(error!,
                       style:

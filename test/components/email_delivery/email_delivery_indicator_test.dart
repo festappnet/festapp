@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 
 void main() {
@@ -12,6 +13,35 @@ void main() {
       {'state': 'bounce', 'kind': 'order_tickets'}
     ]
   };
+  for (final state in [
+    'open',
+    'click',
+    'delivery',
+    'accepted',
+    'pending',
+    'bounce'
+  ]) {
+    testWidgets(
+        'delivery and engagement have distinct check indicators: $state',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: EmailDeliveryIndicator(summary: {'state': state}))));
+      final opened = ['open', 'click'].contains(state);
+      final delivered = state == 'delivery';
+      expect(find.byKey(const ValueKey('email-opened-checks')),
+          opened ? findsOneWidget : findsNothing);
+      expect(find.byKey(const ValueKey('email-delivered-check')),
+          delivered ? findsOneWidget : findsNothing);
+      expect(find.byType(SvgPicture),
+          opened || delivered ? findsOneWidget : findsNothing);
+      if (opened || delivered) {
+        expect(find.byType(Icon), findsNothing);
+        expect(tester.getSize(find.byType(SvgPicture)), const Size(24, 24));
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets(
       'email explanation is directly tappable, accessible and does not activate its row',
       (tester) async {

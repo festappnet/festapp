@@ -315,7 +315,10 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.doesNotMatch(bundleInstaller, /docker compose (?:up|restart)/);
   assert.match(databaseFinalizer, /pg_net\.database_name/);
   assert.match(databaseFinalizer, /cron\.schedule_in_database/);
-  assert.match(databaseFinalizer, /timeout_milliseconds:=420000/);
+  assert.match(databaseFinalizer, /festapp_canonical_bank_sync_reconcile/);
+  assert.match(databaseFinalizer, /functions\/v1\/bank-sync-reconcile/);
+  assert.match(databaseFinalizer, /timeout_milliseconds:=360000/);
+  assert.doesNotMatch(databaseFinalizer, /functions\/v1\/fetch-transactions/);
   assert.match(databaseFinalizer, /Integration Test Account/);
   assert.match(databaseFinalizer, /external_sync_sources/);
   assert.match(databaseFinalizer, /canonical Auth email mapping/);

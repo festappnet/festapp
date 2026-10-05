@@ -35,8 +35,6 @@ class OrdersStrings {
   static String get priceSame => 'FeatureOrders.priceSame'.tr();
 
   // --- Orders Tab ---
-  static String get synchronizePayments =>
-      'FeatureOrders.synchronizePayments'.tr(); // "Synchronize Payments"
   static String get processing =>
       'FeatureOrders.processing'.tr(); // "Processing..."
   static String get failedToSaveProduct =>

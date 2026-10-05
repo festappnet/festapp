@@ -385,6 +385,39 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  for (final emptyPayments in [true, false]) {
+    testWidgets('timeline cards have equal heights, empty payments: $emptyPayments',
+        (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final response = reportResponse();
+      if (emptyPayments) {
+        final report = response['report'] as Map<String, dynamic>;
+        final timeline = report['timeline'] as Map<String, dynamic>;
+        timeline['payments'] = [];
+        timeline['orders'] = [{'day': '2026-10-04', 'currency': 'CZK', 'count': 2}];
+        report['money_by_currency'] = [
+          (report['money_by_currency'] as List).first,
+        ];
+      }
+      await tester.pumpWidget(app((_) async => OccasionReport.fromResponse(response)));
+      await tester.pumpAndSettle();
+      final orders = find.widgetWithText(Card, ReportStrings.orderTimeline);
+      final payments = find.widgetWithText(Card, ReportStrings.paymentTimeline);
+      expect(orders, findsOneWidget);
+      expect(payments, findsOneWidget);
+      final orderRect = tester.getRect(orders);
+      final paymentRect = tester.getRect(payments);
+      expect(orderRect.top, paymentRect.top);
+      expect(orderRect.bottom, paymentRect.bottom);
+      expect(orderRect.width, paymentRect.width);
+      expect(orderRect.right, lessThan(paymentRect.left));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final width in [360.0, 390.0]) {
     testWidgets('mobile $width, text 200 percent, long names and amounts',
         (tester) async {
@@ -450,8 +483,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(app((_) async => reportFixture()));
     await tester.pumpAndSettle();
-    expect(find.byType(Table), findsOneWidget);
-    expect(tester.widget<Table>(find.byType(Table)).children.length, 3);
+    final products = find.widgetWithText(Table, ReportStrings.product);
+    expect(products, findsOneWidget);
+    expect(tester.widget<Table>(products).children.length, 3);
     expect(tester.takeException(), isNull);
   });
 
