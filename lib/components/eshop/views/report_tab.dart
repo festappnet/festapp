@@ -466,13 +466,20 @@ class _ReportTabState extends State<ReportTab> {
               children: children,
             );
           }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          return Table(
+            defaultColumnWidth: const FlexColumnWidth(),
+            defaultVerticalAlignment: TableCellVerticalAlignment.intrinsicHeight,
+            columnWidths: {
+              for (var i = 1; i < children.length * 2 - 1; i += 2)
+                i: const FixedColumnWidth(12),
+            },
             children: [
-              for (var i = 0; i < children.length; i++) ...[
-                if (i > 0) const SizedBox(width: 12),
-                Expanded(child: children[i]),
-              ],
+              TableRow(children: [
+                for (var i = 0; i < children.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 12),
+                  children[i],
+                ],
+              ]),
             ],
           );
         },
