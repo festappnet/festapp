@@ -41,7 +41,7 @@ class EmailDeliveryIndicator extends StatelessWidget {
         : waiting
             ? Icons.schedule_send_outlined
             : ['open', 'click'].contains(state)
-                ? Icons.mark_email_read_outlined
+                ? Icons.done_all
                 : state == 'delivery'
                     ? Icons.mark_email_read
                     : state == 'accepted'
