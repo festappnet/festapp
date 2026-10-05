@@ -5,6 +5,24 @@ import 'package:flutter/painting.dart';
 import 'models/ticket_layout.dart';
 import 'ticket_snapping.dart';
 
+enum TicketResizeHandle {
+  topLeft(-1, -1),
+  top(0, -1),
+  topRight(1, -1),
+  right(1, 0),
+  bottomRight(1, 1),
+  bottom(0, 1),
+  bottomLeft(-1, 1),
+  left(-1, 0);
+
+  const TicketResizeHandle(this.x, this.y);
+  final double x, y;
+  Offset position(Rect box) => Offset(
+      box.center.dx + x * box.width / 2, box.center.dy + y * box.height / 2);
+  Offset anchor(Rect box) => Offset(
+      box.center.dx - x * box.width / 2, box.center.dy - y * box.height / 2);
+}
+
 class TicketLayoutController extends ChangeNotifier {
   TicketLayoutController(this.document,
       {this.artworkKey, this.prepareDocument, this.geometryData})
@@ -41,8 +59,10 @@ class TicketLayoutController extends ChangeNotifier {
     if (recovery != null) {
       _canvasRecovery[prepared] = {
         for (final entry in recovery.entries)
-          if (prepared.elements.any((e) => e.id == entry.key &&
-              source.elements.any((old) => old.id == e.id &&
+          if (prepared.elements.any((e) =>
+              e.id == entry.key &&
+              source.elements.any((old) =>
+                  old.id == e.id &&
                   jsonEncode(old.toJson()) == jsonEncode(e.toJson()))))
             entry.key: entry.value,
       };
@@ -110,7 +130,8 @@ class TicketLayoutController extends ChangeNotifier {
       Size? backgroundImage}) {
     final source = _gesture ?? document;
     var base = positionedDocument(source);
-    for (final e in (_canvasRecovery[source] ?? <String, TicketElement>{}).values) {
+    for (final e
+        in (_canvasRecovery[source] ?? <String, TicketElement>{}).values) {
       base = base.replace(e);
     }
     if (_gesture != null) _dragOffset += delta;
@@ -194,12 +215,16 @@ class TicketLayoutController extends ChangeNotifier {
     var bounded = unsnappedPoint;
     for (final e in required) {
       bounded = Offset(
-          !horizontal ? bounded.dx : left
-              ? math.min(bounded.dx, e.box.left)
-              : math.max(bounded.dx, e.box.right),
-          !vertical ? bounded.dy : top
-              ? math.min(bounded.dy, e.box.top)
-              : math.max(bounded.dy, e.box.bottom));
+          !horizontal
+              ? bounded.dx
+              : left
+                  ? math.min(bounded.dx, e.box.left)
+                  : math.max(bounded.dx, e.box.right),
+          !vertical
+              ? bounded.dy
+              : top
+                  ? math.min(bounded.dy, e.box.top)
+                  : math.max(bounded.dy, e.box.bottom));
     }
     if (_gesture != null) {
       _dragOffset = Offset(
@@ -207,17 +232,17 @@ class TicketLayoutController extends ChangeNotifier {
           vertical ? bounded.dy - (top ? 0 : base.area.height) : 0);
     }
     // Binary-exact origin shifts preserve the square QR contract.
-    double originCoordinate(double value, double min) => math.max(
-        (value * 1024).floor() / 1024, (min * 1024).ceil() / 1024);
+    double originCoordinate(double value, double min) =>
+        math.max((value * 1024).floor() / 1024, (min * 1024).ceil() / 1024);
     final origin = Offset(
       left ? originCoordinate(point.dx, base.area.width - maxWidth) : 0,
       top ? originCoordinate(point.dy, base.area.height - maxHeight) : 0,
     );
     if (guideX != null && (point.dx - guideX!).abs() > .001) guideX = null;
     if (guideY != null && (point.dy - guideY!).abs() > .001) guideY = null;
-    final next = base.resizeCanvasArea(Size(
-        left ? base.area.width - origin.dx : point.dx,
-        top ? base.area.height - origin.dy : point.dy),
+    final next = base.resizeCanvasArea(
+      Size(left ? base.area.width - origin.dx : point.dx,
+          top ? base.area.height - origin.dy : point.dy),
       origin: origin,
       backgroundImage: backgroundImage,
     );
@@ -234,7 +259,8 @@ class TicketLayoutController extends ChangeNotifier {
     }
     _canvasRecovery[next] = {
       for (final e in base.elements)
-        if (next.elements.any((n) => n.id == e.id &&
+        if (next.elements.any((n) =>
+            n.id == e.id &&
             (e.visible != n.visible || e.box.shift(-origin) != n.box)))
           e.id: e.copyWith(box: e.box.shift(-origin)),
     };
@@ -346,6 +372,7 @@ class TicketLayoutController extends ChangeNotifier {
 
   void resize(Offset delta,
       {bool widthOnly = false,
+      TicketResizeHandle handle = TicketResizeHandle.bottomRight,
       double zoom = 1,
       bool snap = false,
       double? gridStep}) {
@@ -356,22 +383,44 @@ class TicketLayoutController extends ChangeNotifier {
     if (_gesture != null) _dragOffset += delta;
     final drag = _gesture == null ? delta : _dragOffset;
     final b = e.box, a = document.area;
-    final stretch = widthOnly && e.binding != 'qr' && e.binding != 'logo';
+    final stretch = (widthOnly || handle.y == 0) &&
+        e.binding != 'qr' &&
+        e.binding != 'logo';
+    final anchor = stretch
+        ? Offset(handle.x < 0 ? b.right : b.left, b.center.dy)
+        : handle.anchor(b);
+    final maxWidth = handle.x < 0
+        ? anchor.dx
+        : handle.x > 0
+            ? a.width - anchor.dx
+            : 2 * math.min(anchor.dx, a.width - anchor.dx);
+    final maxHeight = handle.y < 0
+        ? anchor.dy
+        : handle.y > 0
+            ? a.height - anchor.dy
+            : 2 * math.min(anchor.dy, a.height - anchor.dy);
     final min = e.binding == 'qr' ? 60.0 : 12.0;
-    final maximum =
-        math.min((a.width - b.left) / b.width, (a.height - b.top) / b.height);
-    final upper = stretch
-        ? (a.width - b.left) / b.width
-        : math.min(maximum, 72 / e.fontSize);
+    final maximum = math.min(maxWidth / b.width, maxHeight / b.height);
+    final upper =
+        stretch ? maxWidth / b.width : math.min(maximum, 72 / e.fontSize);
     final lower = stretch
         ? math.min(12 / b.width, upper)
         : math.min(upper, math.max(min / b.width, e.minFontSize / e.fontSize));
     var ratio = (stretch
-            ? 1 + drag.dx / b.width
-            : 1 + (drag.dx + drag.dy) / (b.width + b.height))
+            ? 1 + drag.dx * (handle.x < 0 ? -1 : 1) / b.width
+            : 1 +
+                (drag.dx * handle.x + drag.dy * handle.y) /
+                    (b.width * handle.x.abs() + b.height * handle.y.abs()))
         .clamp(lower, upper);
+    final width = b.width * ratio,
+        height = stretch ? b.height : b.height * ratio;
     var next = Rect.fromLTWH(
-        b.left, b.top, b.width * ratio, stretch ? b.height : b.height * ratio);
+        stretch
+            ? (handle.x < 0 ? b.right - width : b.left)
+            : anchor.dx - (1 - handle.x) * width / 2,
+        stretch ? b.top : anchor.dy - (1 - handle.y) * height / 2,
+        width,
+        height);
     guideX = guideY = null;
     if (snap) {
       final result = snapTicketBox(
@@ -382,7 +431,8 @@ class TicketLayoutController extends ChangeNotifier {
               .map((e) => e.box),
           zoom: zoom,
           gridStep: gridStep,
-          anchor: b.topLeft,
+          anchor: anchor,
+          resizeDirection: Offset(handle.x, stretch ? 0 : handle.y),
           widthOnly: stretch,
           minRatio: lower / ratio,
           maxRatio: upper / ratio);

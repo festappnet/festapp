@@ -378,15 +378,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
               BankAccountStrings.addInSettings,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontStyle: FontStyle.italic,
-                  color: ThemeConfig.grey600(context)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
             )
           else ...[
             Text(
               BankAccountStrings.manageInUnitSettings,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: ThemeConfig.grey600(context)),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -649,9 +647,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       }
                                     },
                                   ),
-                                  const SizedBox(height: 24),
-                                  const Divider(),
-                                  const SizedBox(height: 16),
                                   const SizedBox(height: 24),
                                   const Divider(),
                                   const SizedBox(height: 16),
