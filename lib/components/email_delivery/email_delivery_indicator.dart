@@ -36,12 +36,13 @@ class EmailDeliveryIndicator extends StatelessWidget {
     ].contains(state);
     final waiting =
         ['pending', 'preparing', 'sending', 'blocked'].contains(state);
+    final opened = ['open', 'click'].contains(state);
     final icon = warning
         ? Icons.mark_email_unread_outlined
         : waiting
             ? Icons.schedule_send_outlined
-            : ['open', 'click'].contains(state)
-                ? Icons.done_all
+            : opened
+                ? Icons.mail_outline
                 : state == 'delivery'
                     ? Icons.mark_email_read
                     : state == 'accepted'
@@ -74,10 +75,25 @@ class EmailDeliveryIndicator extends StatelessWidget {
                 child: Badge(
                     isLabelVisible: attention > 0,
                     label: Text('$attention'),
-                    child: Icon(icon,
-                        color: warning
-                            ? Theme.of(context).colorScheme.error
-                            : null))),
+                    child: opened
+                        ? const SizedBox(
+                            width: 24,
+                            height: 28,
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                    top: 0, left: 0,
+                                    child: Icon(Icons.mail_outline, size: 22)),
+                                Positioned(
+                                    right: 0, bottom: 0,
+                                    child: Icon(Icons.done_all, size: 14)),
+                              ],
+                            ),
+                          )
+                        : Icon(icon,
+                            color: warning
+                                ? Theme.of(context).colorScheme.error
+                                : null))),
           )),
     );
   }
