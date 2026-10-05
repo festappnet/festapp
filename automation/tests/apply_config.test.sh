@@ -178,6 +178,33 @@ bash "$TMP_ROOT/automation/apply_config.sh" > "$TMP_ROOT/apply-loading-logo.log"
 assert_contains "$TMP_ROOT/web/index.html" '<img class="initial-logo" src="loading-logo.svg"'
 [ -f "$TMP_ROOT/web/android-chrome-192x192.png" ] || { echo "PWA icon was removed"; exit 1; }
 
+# A PNG brand must become a valid SVG image, not PNG bytes with an SVG MIME type.
+python3 - "$TMP_ROOT" <<'PNG_LOADING_LOGO'
+import base64
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+(root / 'assets/icons/loading.dark.png').write_bytes(base64.b64decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jfoUAAAAASUVORK5CYII='))
+config = root / 'automation/project.conf'
+config.write_text(config.read_text().replace(
+    'DARK_LOGO_ASSET=assets/icons/fstapplogo.dark.svg',
+    'DARK_LOGO_ASSET=assets/icons/loading.dark.png'))
+PNG_LOADING_LOGO
+bash "$TMP_ROOT/automation/apply_config.sh" > "$TMP_ROOT/apply-png-loading-logo.log" 2>&1
+python3 - "$TMP_ROOT" <<'VERIFY_PNG_LOADING_LOGO'
+import base64
+from pathlib import Path
+import sys
+import xml.etree.ElementTree as ET
+root = Path(sys.argv[1])
+svg = ET.parse(root / 'web/loading-logo.svg').getroot()
+assert svg.attrib['viewBox'] == '0 0 1 1'
+image = svg.find('{http://www.w3.org/2000/svg}image')
+assert base64.b64decode(image.attrib['href'].split(',', 1)[1]) == (
+    root / 'assets/icons/loading.dark.png').read_bytes()
+VERIFY_PNG_LOADING_LOGO
+
 assert_missing "$TMP_ROOT/web/index.html" 'CSM Ostrava 2026'
 
 echo
