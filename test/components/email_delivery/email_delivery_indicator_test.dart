@@ -12,6 +12,15 @@ void main() {
       {'state': 'bounce', 'kind': 'order_tickets'}
     ]
   };
+  for (final state in ['open', 'click', 'delivery', 'accepted', 'pending', 'bounce']) {
+    testWidgets('double check only marks observed engagement: $state',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(body: EmailDeliveryIndicator(summary: {'state': state}))));
+      expect(find.byIcon(Icons.done_all),
+          ['open', 'click'].contains(state) ? findsOneWidget : findsNothing);
+    });
+  }
   testWidgets(
       'email explanation is directly tappable, accessible and does not activate its row',
       (tester) async {
