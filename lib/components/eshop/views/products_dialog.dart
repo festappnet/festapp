@@ -8,7 +8,7 @@ import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/eshop/views/search_products_screen.dart';
-import 'package:fstapp/components/eshop/views/product_changes_preview.dart';
+import 'order_update_email_dialog.dart';
 import 'package:fstapp/components/eshop/views/product_info_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -21,7 +21,7 @@ class ProductsDialog extends StatefulWidget {
   const ProductsDialog({super.key, required this.ticketId});
 
   @override
-  _ProductsDialogState createState() => _ProductsDialogState();
+  State<ProductsDialog> createState() => _ProductsDialogState();
 }
 
 class _ProductsDialogState extends State<ProductsDialog> {
@@ -148,99 +148,12 @@ class _ProductsDialogState extends State<ProductsDialog> {
       currentTicketProducts: _current,
     );
 
-    final added = helperResult.added;
-    final removed = helperResult.removed;
-    final changed = helperResult.changed;
-    final referenceTotal = helperResult.referenceTotal;
-    final currentTotal = helperResult.currentTotal;
-
-    final totalPaid = payment.paid ?? 0;
-    final orderPrice = order.price ?? 0;
-    // Note: The balance calculation logic in the dialog display remains local to what the user sees as "order price"
-    // However, for the email preview, we should probably rely on the helper's currentTotal if we want to show the specific difference.
-    // The original code used: final balance = orderPrice - totalPaid;
-    // But 'orderPrice' from _bundle.order might be stale if we just changed products locally and haven't saved to DB yet?
-    // Actually, _bundle.order is the DB state. _current contains the local mutations.
-    // The 'orderPrice' in the bundle is the price BEFORE the current unsaved edits.
-    // If we want to show the PREDICTED balance, we should use currentTotal.
-    // Stick to original logic for balance for now
-    // as the specific user request was about the *list of products* not showing correctly.
-    final balance = orderPrice - totalPaid;
-
-    final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: Text(OrdersStrings.sendUpdateTitle),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(OrdersStrings.sendUpdateContent(
-                          order.data?["email"] ?? "N/A")),
-                      const Divider(height: 24),
-
-                      Text(OrdersStrings.emailContentIntro,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic)),
-                      const SizedBox(height: 12),
-                      ProductChangesPreview(
-                        added: added,
-                        removed: removed,
-                        changed: changed,
-                        referenceTotal: referenceTotal,
-                        currentTotal: currentTotal,
-                      ),
-                      // Only show the note if there are changes from other tickets
-                      if (helperResult.hasChangesFromOtherTickets)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.info_outline,
-                                  size: 16, color: Colors.orange.shade800),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  OrdersStrings.globalChangesNote,
-                                  style: TextStyle(
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.orange.shade900,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ProductChangesPreview.buildConfirmationListItem(
-                          context, Icons.credit_card,
-                          OrdersStrings.sendUpdateItemStatus),
-                      if (balance < 0)
-                        ProductChangesPreview.buildConfirmationListItem(
-                            context, Icons.undo_outlined,
-                            OrdersStrings.sendUpdateItemRefund),
-                      ProductChangesPreview.buildConfirmationListItem(
-                          context, Icons.receipt_long_outlined,
-                          OrdersStrings.sendUpdateItemSummary),
-                      if (balance > 0)
-                        ProductChangesPreview.buildConfirmationListItem(
-                            context, Icons.qr_code_2, OrdersStrings.sendUpdateItemQr),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: Text(CommonStrings.storno)),
-                  ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: Text(OrdersStrings.sendEmailButton)),
-                ],
-              );
-            }) ??
-        false;
+    final confirmed = await showOrderUpdateEmailDialog(
+      context,
+      email: order.data?["email"] ?? "N/A",
+      changes: helperResult,
+      balance: (order.price ?? 0) - (payment.paid ?? 0),
+    );
 
     if (confirmed && mounted) {
       setState(() => _loading = true);

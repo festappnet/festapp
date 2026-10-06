@@ -1,0 +1,82 @@
+BEGIN;
+UPDATE public.email_capacity SET paused=true,worker_url=NULL;
+DO $$
+DECLARE org bigint; u bigint; occ bigint; actor uuid; a bigint; b bigint; f bigint;
+ n bigint; tn bigint; t1 bigint; t2 bigint; t3 bigint; tf bigint; result jsonb; replay jsonb; command uuid:=gen_random_uuid();
+BEGIN
+ PERFORM create_user_for_test('ticket-cancel-mail','ticket-cancel-mail@example.invalid');
+ actor:=get_user_id('ticket-cancel-mail');
+ INSERT INTO public.organizations(title) VALUES('Ticket cancellation') RETURNING id INTO org;
+ UPDATE public.user_info SET organization=org WHERE id=actor;
+ INSERT INTO public.units(title,organization) VALUES('Ticket cancellation',org) RETURNING id INTO u;
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(u,actor,true);
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
+ VALUES('Cancellation',org,u,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO occ;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor_order) VALUES(occ,actor,true);
+ INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'paid',20,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO a;
+ INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'ordered',10,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO b;
+ INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'paid',0,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO f;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'paid','cancel-a1') RETURNING id INTO t1;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'paid','cancel-a2') RETURNING id INTO t2;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'ordered','cancel-b') RETURNING id INTO t3;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'paid','cancel-free') RETURNING id INTO tf;
+ INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(a,t1),(a,t2),(b,t3),(f,tf);
+ UPDATE eshop.orders SET data=data||jsonb_build_object('tickets',jsonb_build_array(
+  jsonb_build_object('id',t1,'products',jsonb_build_array(jsonb_build_object('price',10))),
+  jsonb_build_object('id',t2,'products',jsonb_build_array(jsonb_build_object('price',10))))) WHERE id=a;
+ UPDATE eshop.orders SET data=data||jsonb_build_object('tickets',jsonb_build_array(jsonb_build_object('id',t3,'products',jsonb_build_array(jsonb_build_object('price',10))))) WHERE id=b;
+ UPDATE eshop.orders SET data=data||jsonb_build_object('tickets',jsonb_build_array(jsonb_build_object('id',tf,'products','[]'::jsonb))) WHERE id=f;
+ INSERT INTO eshop.orders_history("order",state,price,data,currency_code) SELECT id,state,price,data,currency_code FROM eshop.orders WHERE id IN(a,b,f);
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ UPDATE public.unit_users SET is_manager=false WHERE unit=u AND "user"=actor;
+ UPDATE public.occasion_users SET is_editor_order=false WHERE occasion=occ AND "user"=actor;
+ BEGIN
+  PERFORM public.storno_tickets_client_sync_v1(ARRAY[t1],command);
+  RAISE EXCEPTION 'Permission check missing';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id IN(a,b,f)),0::bigint,'Denied cancellation creates no email');
+ UPDATE public.unit_users SET is_manager=true WHERE unit=u AND "user"=actor;
+ UPDATE public.occasion_users SET is_editor_order=true WHERE occasion=occ AND "user"=actor;
+ UPDATE public.occasions SET is_order_synchronization_enabled=true WHERE id=occ;
+ PERFORM public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',a),org,occ,u,now(),'already-sent');
+ UPDATE public.email_messages SET workflow_state='accepted' WHERE order_id=a;
+ PERFORM public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',a),org,occ,u,now(),'not-yet-sent');
+ result:=public.storno_tickets_client_sync_v1(ARRAY[t1],command);
+ PERFORM assert_eq((result#>>'{data,updatedOrders,0,id}')::bigint,a,'Partial cancellation offers update for surviving order');
+ PERFORM assert_eq(result#>'{data,cancelledOrderIds}','[]'::jsonb,'Partial cancellation does not cancel order');
+ PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=a),'paid','Paid order retains state');
+ PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=a),10::numeric,'Only cancelled ticket price removed');
+ PERFORM assert_eq((SELECT state FROM eshop.orders_history WHERE "order"=a ORDER BY id DESC LIMIT 1),'paid','History preserves actual state');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=a AND message_kind='order_update'),0::bigint,'Partial email requires operator confirmation');
+ PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=t2),'paid','Surviving ticket keeps its valid state');
+ PERFORM assert_eq((SELECT ticket_symbol FROM eshop.tickets WHERE id=t2),'cancel-a2','Surviving ticket keeps its original QR symbol');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=a AND workflow_state='accepted'),1::bigint,'Already sent PDF email is untouched');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=a AND workflow_state='cancelled'),1::bigint,'Only pending old PDF email is cancelled');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=a AND message_kind='order_tickets' AND workflow_state='pending' AND source_version=1),1::bigint,'Existing paid-ticket delivery regenerates only the surviving ticket snapshot');
+ replay:=public.storno_tickets_client_sync_v1(ARRAY[t1],command);
+ PERFORM assert_eq(replay,result,'Transport replay returns the same email outcome');
+ result:=public.storno_tickets_client_sync_v1(ARRAY[t1],gen_random_uuid());
+ PERFORM assert_eq(result#>'{data,updatedOrders}','[]'::jsonb,'Already cancelled ticket does not offer another update');
+ BEGIN
+  PERFORM public.storno_tickets_client_sync_v1(ARRAY[t2,t3],gen_random_uuid());
+  RAISE EXCEPTION 'rollback-proof';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'rollback-proof' THEN RAISE; END IF; END;
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id IN(a,b) AND message_kind='order_storno'),0::bigint,'Order cancellation and email roll back together');
+ result:=public.storno_tickets_client_sync_v1(ARRAY[t2,t3,t3],gen_random_uuid());
+ PERFORM assert_eq(jsonb_array_length(result#>'{data,cancelledOrderIds}'),2,'Bulk cancellation reports both final orders once');
+ PERFORM assert_eq(result#>'{data,updatedOrders}','[]'::jsonb,'Cancelled orders never offer update email');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id IN(a,b) AND message_kind='order_storno'),2::bigint,'One automatic cancellation email per order');
+ PERFORM public.storno_tickets_client_sync_v1(ARRAY[t2,t3],gen_random_uuid());
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id IN(a,b) AND message_kind='order_storno'),2::bigint,'Repeated cancellations do not create duplicates');
+ PERFORM public.storno_tickets_client_sync_v1(ARRAY[tf],gen_random_uuid());
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=f AND message_kind='order_storno'),1::bigint,'Free order also gets cancellation email');
+ PERFORM assert_eq((public.get_latest_order_history(f)->>'price')::numeric,0::numeric,'Free cancellation renderer has valid zero-price history');
+ INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'ordered',7,'CZK','{}') RETURNING id INTO n;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'ordered','cancel-no-email') RETURNING id INTO tn;
+ INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(n,tn);
+ PERFORM public.storno_tickets_client_sync_v1(ARRAY[tn],gen_random_uuid());
+ PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=n),'storno','Order without recipient still cancels');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=n),0::bigint,'No email intent without a recipient');
+END $$;
+ROLLBACK;
