@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
@@ -236,12 +238,11 @@ class ProductTypeEditorWidgets {
     DefaultValueHelper.remove(field, productId.toString());
   }
 
-  /// Leading Radio (single) or Checkbox (multi) per product. Toggles default state.
+  /// Read-only indicator of the stored default product selection.
   static Widget _buildDefaultSelector({
     required FormFieldModel ptField,
     required ProductModel product,
     required bool isSelectMany,
-    required VoidCallback onChanged,
   }) {
     final key = product.id?.toString();
     if (key == null) {
@@ -252,19 +253,13 @@ class ProductTypeEditorWidgets {
       final selected = DefaultValueHelper.readList(ptField).contains(key);
       return Checkbox(
         value: selected,
-        onChanged: (val) {
-          DefaultValueHelper.toggleInList(ptField, key, val == true);
-          onChanged();
-        },
+        onChanged: null,
       );
     }
     return Radio<String>(
       value: key,
       groupValue: DefaultValueHelper.readString(ptField),
-      onChanged: (val) {
-        DefaultValueHelper.write(ptField, val);
-        onChanged();
-      },
+      onChanged: null,
     );
   }
 }
@@ -320,6 +315,7 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
     final defaultDescription = CommonStrings.description;
     final groupIsRequired = ptField.isRequired ?? false;
     final groupIsHidden = ptField.isHidden ?? false;
+    final hasDeposit = FeatureService.isFeatureEnabled(FeatureConstants.deposit);
     final canSelectMany = ptField.data?[FormHelper.metaSelectionType] ==
         FormHelper.metaSelectionTypeMany;
 
@@ -432,27 +428,19 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                   occasionId: form.occasionId!,
                 ),
               const SizedBox(height: 8),
-              // Hint about marking default-selected product(s)
-              Text(
-                canSelectMany
-                    ? FormStrings.defaultSelectionHintMulti
-                    : FormStrings.defaultSelectionHintSingle,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
               // List of Product Rows with leading default selector
               for (int i = 0; i < group.products!.length; i++)
                 Container(
                   key: ObjectKey(group.products![i]),
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
+                  padding: hasDeposit ? const EdgeInsets.all(12) : const EdgeInsets.symmetric(vertical: 6),
+                  decoration: hasDeposit ? BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     border: Border.all(
                       color: Theme.of(context).colorScheme.outlineVariant,
                     ),
                     borderRadius: BorderRadius.circular(12),
-                  ),
+                  ) : null,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -460,7 +448,6 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                         ptField: ptField,
                         product: group.products![i],
                         isSelectMany: canSelectMany,
-                        onChanged: refresh,
                       ),
                       Expanded(
                         child: TicketProductEditorRow(

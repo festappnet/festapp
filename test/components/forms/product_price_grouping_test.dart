@@ -9,6 +9,12 @@ import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/deposit_feature.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/forms/widgets_editor/ticket_product_editor_row.dart';
+import 'package:fstapp/components/forms/widgets_editor/product_type_editor.dart';
+import 'package:fstapp/components/forms/widgets_editor/default_value_helper.dart';
+import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
+import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/eshop/models/product_type_model.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -17,12 +23,42 @@ void main() {
   setUpAll(() => Localization.load(const Locale('cs'), translations: Translations(
       jsonDecode(File('assets/translations/cs.json').readAsStringSync()) as Map<String,dynamic>)));
   tearDown(() => RightsService.occasionLinkModelNotifier.value = null);
-  void occasion({bool tickets = false, String mode = 'virtual'}) {
+  void occasion({bool tickets = false, String mode = 'virtual', bool deposit = true}) {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(occasion: OccasionModel(
       isOpen: true, isHidden: false, isPromoted: false,
       features: [TicketFeature(code: 'ticket', isEnabled: tickets),
-        DepositFeature(code: 'deposit', isEnabled: true, mode: mode)],
+        DepositFeature(code: 'deposit', isEnabled: deposit, mode: mode)],
     ));
+  }
+  for (final many in [false, true]) {
+    testWidgets('stored default is disabled and simple product stays compact: many=$many', (tester) async {
+      occasion(deposit: false);
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final product = ProductModel(id: 10, title: 'Režijní náklady akce', price: 100, currencyCode: 'CZK');
+      final field = FormFieldModel(id: 3, productType: ProductTypeModel(title: 'Poplatek', products: [product]),
+          data: {FormHelper.metaSelectionType: many ? FormHelper.metaSelectionTypeMany : 'single'});
+      DefaultValueHelper.write(field, many ? ['10'] : '10');
+      var changes = 0;
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child:
+        ProductTypeEditor(form: FormModel(occasionId: 1, relatedFields: [field]), ptField: field, refresh: () => changes++)))));
+      final selector = many
+          ? find.byWidgetPredicate((w) => w is Checkbox && w.onChanged == null && w.value == true)
+          : find.byType(Radio<String>);
+      expect(selector, findsOneWidget);
+      if (!many) expect(tester.widget<Radio<String>>(selector).onChanged, isNull);
+      await tester.tap(selector);
+      await tester.pump();
+      expect(changes, 0);
+      expect(many ? DefaultValueHelper.readList(field).single : DefaultValueHelper.readString(field), '10');
+      expect(tester.widget<Container>(find.byKey(ObjectKey(product))).decoration, isNull);
+      Finder input(String label) => find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == label);
+      final name = find.descendant(of: find.byType(TicketProductEditorRow), matching: input('Název'));
+      expect(tester.getRect(name).top, tester.getRect(input('Cena')).top);
+      expect(tester.takeException(), isNull);
+    });
   }
   test('valid filter follows ticket/application terminology', () {
     occasion();
