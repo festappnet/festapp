@@ -448,6 +448,13 @@ class OrdersStrings {
           .tr(); // "No changes detected to be sent."
   static String get addedProductsTitle =>
       'ProductsDialog.addedProductsTitle'.tr(); // "Added Products:"
+  static String get cancelledTicketsTitle => 'ProductsDialog.cancelledTicketsTitle'.tr();
+  static String get removedTicketsTitle => 'ProductsDialog.removedTicketsTitle'.tr();
+  static String get addedTicketsTitle => 'ProductsDialog.addedTicketsTitle'.tr();
+  static String changeTicketLabel(String symbol) => 'ProductsDialog.changeTicketLabel'.tr(namedArgs: {'symbol': symbol});
+  static String productChangesForTicket(String symbol) => 'ProductsDialog.productChangesForTicket'.tr(namedArgs: {'symbol': symbol});
+  static String get ticketWithoutSymbol => 'ProductsDialog.ticketWithoutSymbol'.tr();
+  static String get orderChangesOverview => 'ProductsDialog.orderChangesOverview'.tr();
   static String get removedProductsTitle =>
       'ProductsDialog.removedProductsTitle'.tr(); // "Removed Products:"
   static String get cancelledItemsTitle =>

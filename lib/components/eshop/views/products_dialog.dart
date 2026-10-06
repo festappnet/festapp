@@ -13,7 +13,6 @@ import 'package:fstapp/components/eshop/views/product_info_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 import '../orders_strings.dart';
-import '../logic/order_calc_helper.dart';
 import 'edit_price_dialog.dart';
 
 class ProductsDialog extends StatefulWidget {
@@ -136,23 +135,24 @@ class _ProductsDialogState extends State<ProductsDialog> {
     }
   }
 
+  bool get _hasUnsavedChanges => !const ListEquality<(int?, double?)>().equals(
+      _orig.map((p) => (p.id, p.price)).toList(),
+      _current.map((p) => (p.id, p.price)).toList());
+
   Future<void> _showSendUpdateConfirmDialog() async {
+    if (_hasUnsavedChanges) return;
+    await _fetch();
+    if (!mounted) return;
     final order = _bundle?.order;
     final payment = _bundle?.paymentInfo;
-    if (order == null || payment == null) return;
-
-    final helperResult = OrderCalcHelper.calculateGlobalOrderChanges(
-      referenceOrder: _bundle?.referenceOrder,
-      currentOrder: _bundle?.order,
-      currentTicketId: widget.ticketId,
-      currentTicketProducts: _current,
-    );
+    if (order == null) return;
 
     final confirmed = await showOrderUpdateEmailDialog(
       context,
       email: order.data?["email"] ?? "N/A",
-      changes: helperResult,
-      balance: (order.price ?? 0) - (payment.paid ?? 0),
+      changes: _bundle!.changes,
+      ticketId: widget.ticketId,
+      balance: (order.price ?? 0) - (payment?.paid ?? 0),
     );
 
     if (confirmed && mounted) {
@@ -221,7 +221,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                         paymentInfo: _bundle!.paymentInfo,
                         ticket: _bundle!.ticket,
                         orderHistory: _bundle!.orderHistory,
-                        onSendUpdate: _showSendUpdateConfirmDialog,
+                        onSendUpdate: _hasUnsavedChanges ? null : _showSendUpdateConfirmDialog,
                       ),
                       const Divider(height: 32),
                     ],
@@ -350,7 +350,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
           child: Text(CommonStrings.storno),
         ),
         ElevatedButton(
-          onPressed: _current.equals(_orig) ? null : _save,
+          onPressed: _hasUnsavedChanges ? _save : null,
           child: Text(CommonStrings.save),
         ),
       ],
@@ -395,24 +395,5 @@ class _ProductsDialogState extends State<ProductsDialog> {
         ),
       ],
     );
-  }
-}
-
-extension on List<ProductModel> {
-  bool equals(List<ProductModel> other) {
-    if (length != other.length) return false;
-
-    final thisMap = {for (var p in this) p.id: p.price};
-    final otherMap = {for (var p in other) p.id: p.price};
-
-    if (thisMap.keys.length != otherMap.keys.length) return false;
-    if (!thisMap.keys.every((key) => otherMap.containsKey(key))) return false;
-
-    for (final id in thisMap.keys) {
-      if (thisMap[id] != otherMap[id]) {
-        return false;
-      }
-    }
-    return true;
   }
 }

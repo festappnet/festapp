@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import '../logic/order_calc_helper.dart';
+import '../models/order_change_summary.dart';
 import '../orders_strings.dart';
 import 'product_changes_preview.dart';
 
@@ -8,7 +8,8 @@ import 'product_changes_preview.dart';
 Future<bool> showOrderUpdateEmailDialog(
   BuildContext context, {
   required String email,
-  required OrderCalcHelper changes,
+  required OrderChangeSummary changes,
+  required int ticketId,
   required double balance,
 }) async {
   return await showDialog<bool>(
@@ -29,15 +30,9 @@ Future<bool> showOrderUpdateEmailDialog(
                             fontWeight: FontWeight.bold,
                             fontStyle: FontStyle.italic)),
                     const SizedBox(height: 12),
-                    ProductChangesPreview(
-                      added: changes.added,
-                      removed: changes.removed,
-                      changed: changes.changed,
-                      referenceTotal: changes.referenceTotal,
-                      currentTotal: changes.currentTotal,
-                    ),
+                    ProductChangesPreview(changes: changes),
                     // Only show the note if there are changes from other tickets
-                    if (changes.hasChangesFromOtherTickets)
+                    if (changes.hasChangesOutside(ticketId))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Row(
