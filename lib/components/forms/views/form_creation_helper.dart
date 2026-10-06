@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
-import 'package:fstapp/components/html/html_view.dart';
+import 'form_public_link.dart';
 import '../form_strings.dart';
 import '../models/form_model.dart';
 import 'create_or_copy_dialog.dart';
@@ -46,14 +45,7 @@ class FormCreationHelper {
     }
   }
 
-  static String _generateFormHtml(String? link) {
-    if (link == null || link.isEmpty) return "";
-    final fullUrl = "${AppConfig.webLink}/form/$link";
-    return '''
-       <p>${FormStrings.formAvailableAt}:<br>
-       <a href="$fullUrl">$fullUrl</a></p>
-     ''';
-  }
+
 
   static Future<void> showCreateFormDialog(
     BuildContext context, {
@@ -67,7 +59,7 @@ class FormCreationHelper {
 
     final titleController = TextEditingController(text: title);
     final linkController = TextEditingController(text: link);
-    final htmlNotifier = ValueNotifier<String>(_generateFormHtml(link));
+    final linkNotifier = ValueNotifier<String>(link);
 
     bool isLinkManuallyChanged = false;
     String? linkError;
@@ -92,7 +84,7 @@ class FormCreationHelper {
 
       link = "$firstWord$currentYear";
       linkController.text = link;
-      htmlNotifier.value = _generateFormHtml(link);
+      linkNotifier.value = link;
     }
 
     titleController.addListener(() {
@@ -145,24 +137,20 @@ class FormCreationHelper {
                           setState(() {
                             isLinkManuallyChanged = true;
                             link = value;
-                            htmlNotifier.value = _generateFormHtml(value);
+                            linkNotifier.value = value;
                             validateLink(value);
                           });
                         },
                       ),
                       const SizedBox(height: 16),
                       ValueListenableBuilder<String>(
-                        valueListenable: htmlNotifier,
-                        builder: (context, htmlContent, child) {
-                          if (htmlContent.isEmpty)
+                        valueListenable: linkNotifier,
+                        builder: (context, formLink, child) {
+                          if (formLink.isEmpty)
                             return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: HtmlView(
-                              isSelectable: true,
-                              fontSize: 12,
-                              html: htmlContent,
-                            ),
+                            child: FormPublicLink(link: formLink),
                           );
                         },
                       ),
