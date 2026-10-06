@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.get_products_for_ticket(
 )
 RETURNS jsonb
 LANGUAGE plpgsql
+STABLE
 SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -13,7 +14,7 @@ DECLARE
   v_latest_sent_at timestamptz;
   v_is_newer_available boolean := FALSE;
   v_order_id bigint;
-  latest_history_data jsonb;
+  v_changes jsonb;
   reference_history_data jsonb;
 BEGIN
   -- Find the order containing the ticket and LEFT JOIN its associated payment_info.
@@ -57,48 +58,10 @@ BEGIN
   FROM   jsonb_array_elements(v_order_json->'data'->'tickets') AS t
   WHERE  (t->>'id')::bigint = ticket_id;
 
-  -- Get the data of the latest history entry
-  SELECT data INTO latest_history_data
-  FROM eshop.orders_history
-  WHERE "order" = v_order_id
-  ORDER BY created_at DESC LIMIT 1;
-
-  -- Get the data and timestamp of the latest SENT history entry
-  SELECT
-    jsonb_build_object(
-        'data', oh.data,
-        'state', oh.state,
-        'price', oh.price,
-        'currency_code', oh.currency_code
-    ),
-    oh.created_at
-  INTO reference_history_data, v_latest_sent_at
-  FROM eshop.orders_history AS oh
-  WHERE oh.order = v_order_id AND (oh.data->>'is_sent_to_customer')::boolean IS TRUE
-  ORDER BY oh.created_at DESC LIMIT 1;
-
-  -- If no sent record was found, get the oldest record as the reference
-  IF NOT FOUND THEN
-      SELECT jsonb_build_object(
-        'data', oh.data,
-        'state', oh.state,
-        'price', oh.price,
-        'currency_code', oh.currency_code
-      )
-      INTO reference_history_data
-      FROM eshop.orders_history AS oh
-      WHERE oh.order = v_order_id
-      ORDER BY oh.created_at ASC LIMIT 1;
-  END IF;
-
-  -- Compare product IDs and prices between the latest and reference history entries
-  IF latest_history_data IS NOT NULL AND reference_history_data IS NOT NULL THEN
-      v_is_newer_available :=
-          -- Use the new function to compare product sets including prices.
-          -- This will return true if either the products or their prices have changed.
-          extract_history_products_with_price(latest_history_data) <> extract_history_products_with_price(reference_history_data->'data');
-  END IF;
-
+  v_changes := public.get_order_change_summary_v1(v_order_id);
+  reference_history_data := v_changes->'referenceOrder';
+  v_latest_sent_at := (v_changes->>'latestSentAt')::timestamptz;
+  v_is_newer_available := (v_changes->>'hasChanges')::boolean;
 
   -- Build the simplified and comprehensive JSONB response object.
   RETURN jsonb_build_object(
@@ -111,7 +74,8 @@ BEGIN
           'latest_sent_at', v_latest_sent_at,
           'is_newer_version_available', v_is_newer_available
       ),
-      'reference_order_data', reference_history_data
+      'reference_order_data', reference_history_data,
+      'order_changes', v_changes
     )
   );
 EXCEPTION WHEN OTHERS THEN

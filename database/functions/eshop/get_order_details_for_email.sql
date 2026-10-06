@@ -1,9 +1,10 @@
 CREATE OR REPLACE FUNCTION public.get_order_details_for_email(p_order_id bigint)
 RETURNS jsonb
+STABLE
 SET search_path = public, extensions AS $$
 DECLARE
     result_data jsonb;
-    reference_history_data jsonb;
+    v_changes jsonb;
     form_fields_data jsonb;
     form_data jsonb;
     form_key uuid;
@@ -47,36 +48,12 @@ BEGIN
     result_data := result_data || jsonb_build_object('reply_to', v_reply_to_email);
 
 
-    -- Find the latest order_history ID for the given order
-    SELECT oh.id
-    INTO latest_history_id
-    FROM eshop.orders_history AS oh
-    WHERE oh.order = p_order_id
-    ORDER BY oh.created_at DESC
-    LIMIT 1;
-
-    IF latest_history_id IS NOT NULL THEN
-        result_data := result_data || jsonb_build_object('latest_history_id', latest_history_id);
-    END IF;
-
-    -- Get the data of the latest SENT history entry
-    SELECT data INTO reference_history_data
-    FROM eshop.orders_history
-    WHERE "order" = p_order_id AND (data->>'is_sent_to_customer')::boolean IS TRUE
-    ORDER BY created_at DESC LIMIT 1;
-
-    -- If no sent record was found, get the oldest record as the reference
-    IF NOT FOUND THEN
-        SELECT data INTO reference_history_data
-        FROM eshop.orders_history
-        WHERE "order" = p_order_id
-        ORDER BY created_at ASC LIMIT 1;
-    END IF;
-
-    -- Add the reference data to the result
-    IF reference_history_data IS NOT NULL THEN
-        result_data := result_data || jsonb_build_object('reference_history', reference_history_data);
-    END IF;
+    v_changes := public.get_order_change_summary_v1(p_order_id);
+    latest_history_id := (v_changes->>'latestHistoryId')::bigint;
+    result_data := result_data || jsonb_build_object(
+      'latest_history_id', latest_history_id,
+      'reference_history', v_changes#>'{referenceOrder,data}',
+      'order_changes', v_changes);
 
     -- Extract the form's unique key from the order's data
     form_key := (result_data->'order'->'data'->>'form')::uuid;
