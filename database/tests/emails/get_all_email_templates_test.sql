@@ -2,6 +2,7 @@ DO $$
 DECLARE
   v_org bigint;
   v_result jsonb;
+  v_template jsonb;
 BEGIN
   INSERT INTO public.organizations(title, data)
   VALUES ('Email template contract org', '{"IS_APP_SUPPORTED":true}'::jsonb)
@@ -20,14 +21,16 @@ BEGIN
   v_result := public.get_all_email_templates(
     jsonb_build_object('organization', v_org)
   );
+  SELECT value INTO v_template FROM jsonb_array_elements(v_result)
+  WHERE value->>'code' = 'ACCOUNT_DELETION_CONFIRM';
 
   PERFORM assert_eq(
-    v_result->0->>'code',
+    v_template->>'code',
     'ACCOUNT_DELETION_CONFIRM',
     'system template is returned by code'
   );
   PERFORM assert_eq(
-    v_result->0->>'title',
+    v_template->>'title',
     'Account deletion confirmation',
     'template title survives the RPC contract'
   );

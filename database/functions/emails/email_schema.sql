@@ -1,4 +1,14 @@
 -- Cutover only under maintenance: old senders must be stopped first.
+-- Invoker producers use extensions.digest under the runtime role, not postgres.
+GRANT USAGE ON SCHEMA extensions TO service_role;
+DO $$
+BEGIN
+  IF NOT has_schema_privilege('service_role', 'extensions', 'USAGE') THEN
+    RAISE EXCEPTION 'email_extensions_grant_failed: apply schema privileges as the verified extensions owner';
+  END IF;
+END;
+$$;
+
 ALTER TABLE public.queue_emails RENAME TO email_messages;
 ALTER SEQUENCE public.queue_emails_id_seq RENAME TO email_messages_id_seq;
 REVOKE ALL ON SEQUENCE public.email_messages_id_seq FROM PUBLIC,anon,authenticated;
