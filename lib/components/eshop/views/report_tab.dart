@@ -682,6 +682,17 @@ class _ReportTabState extends State<ReportTab> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
+                        if (r != null)
+                          Semantics(
+                            toggled: _onlyValid,
+                            child: TextButton.icon(
+                              key: const ValueKey('reportValidityFilter'),
+                              onPressed: () => setState(() => _onlyValid = !_onlyValid),
+                              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                              icon: Icon(_onlyValid ? Icons.check_box_outlined : Icons.check_box_outline_blank, size: 18),
+                              label: Text(_onlyValid ? ReportStrings.onlyValid : ReportStrings.includingCancelled),
+                            ),
+                          ),
                         TextButton.icon(
                           onPressed: _loading
                               ? null
@@ -740,16 +751,6 @@ class _ReportTabState extends State<ReportTab> {
                   const SizedBox(height: 24),
                   if (_loading) const LinearProgressIndicator(),
                   if (_error) Text(ReportStrings.error),
-                  if (r != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _filterGroup([
-                        _filter(ReportStrings.onlyValid, _onlyValid,
-                            () => setState(() => _onlyValid = true)),
-                        _filter(ReportStrings.includingCancelled, !_onlyValid,
-                            () => setState(() => _onlyValid = false)),
-                      ]),
-                    ),
                   if (r != null && _text) SelectableText(formatReportText(r)),
                   if (r != null && !_text) ...[
                     LayoutBuilder(
