@@ -84,10 +84,12 @@ void main() {
     var calls = 0;
     await tester.pumpWidget(app((_) async { calls++; return report; }));
     await tester.pumpAndSettle();
-    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Pouze platné')).selected, isTrue);
-    await tester.tap(find.text('Včetně stornovaných'));
+    expect(find.descendant(of: find.byKey(const ValueKey('reportValidityFilter')), matching: find.byIcon(Icons.check_box_outlined)), findsOneWidget);
+    expect(find.text('Pouze platné'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('reportValidityFilter')));
     await tester.pumpAndSettle();
-    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Včetně stornovaných')).selected, isTrue);
+    expect(find.text('Včetně stornovaných'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const ValueKey('reportValidityFilter')), matching: find.byIcon(Icons.check_box_outline_blank)), findsOneWidget);
     expect(calls, 1);
     expect(tester.takeException(), isNull);
   });

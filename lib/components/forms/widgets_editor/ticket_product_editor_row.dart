@@ -192,7 +192,6 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     final hasDeposit = FeatureService.isFeatureEnabled(
       FeatureConstants.deposit,
     );
@@ -284,12 +283,8 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       Widget currency, {
       bool signed = false,
       String? error,
-    }) => Container(
-      padding: hasDeposit ? const EdgeInsets.all(12) : EdgeInsets.zero,
-      decoration: BoxDecoration(
-        color: hasDeposit ? colors.surfaceContainerHighest.withValues(alpha: .4) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    }) => Padding(
+      padding: EdgeInsets.zero,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -302,12 +297,14 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
               ),
               decoration: InputDecoration(
                 labelText: label,
+                isDense: true,
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 border: const UnderlineInputBorder(),
                 errorText: error,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           currency,
         ],
       ),
@@ -340,6 +337,17 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
           final compact =
               constraints.maxWidth < 480 ||
               MediaQuery.textScalerOf(context).scale(1) > 1.4;
+          if (hasDeposit && constraints.maxWidth >= 720 && !compact) {
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: title),
+              const SizedBox(width: 12),
+              SizedBox(width: 152, child: price),
+              const SizedBox(width: 12),
+              SizedBox(width: 152, child: extra!),
+              const SizedBox(width: 12),
+              actions,
+            ]);
+          }
           if (!hasDeposit && !compact) {
             return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: title),
@@ -365,10 +373,10 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
                     actions,
                   ],
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               if (compact || extra == null) ...[
                 price,
-                if (extra != null) ...[const SizedBox(height: 12), extra],
+                if (extra != null) ...[const SizedBox(height: 8), extra],
               ] else
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
