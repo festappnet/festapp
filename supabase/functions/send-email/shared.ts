@@ -34,6 +34,7 @@ export async function getBaseOrderData(
     bank_account,
     latest_history_id,
     reference_history,
+    order_changes,
     form_data,
     reply_to,
   } = orderDetailsResponse.data;
@@ -67,6 +68,7 @@ export async function getBaseOrderData(
     bank_account,
     latest_history_id,
     reference_history,
+    order_changes,
     form_data,
     reply_to,
   };

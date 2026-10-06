@@ -28,12 +28,27 @@ void main() {
         return {
           'status': 'applied',
           'code': 200,
-          'data': <String, dynamic>{},
+          'data': {
+            'cancelledOrderIds': [5],
+            'updatedOrders': [{'id': 6, 'email': 'owner@example.test'}],
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
     );
-    await commands.cancel([1, 2]);
+    final result = await commands.cancel([1, 2]);
+    expect(result.cancelledOrderIds, [5]);
+    expect(result.updatedOrders, [(id: 6, email: 'owner@example.test')]);
     expect(functionName, 'storno_tickets_client_sync_v1');
+  });
+  test('rejected cancellation never returns orders to email', () async {
+    final commands = SupabaseTicketCommands.withTransport(
+      ClientCommandTransport((name, params) async => {
+        'status': 'rejected', 'code': 403,
+        'data': {'updatedOrders': [{'id': 6, 'email': 'owner@example.test'}]},
+        'sync': {'replacements': <Object>[]},
+      }, maxAttempts: 1),
+    );
+    await expectLater(commands.cancel([1]), throwsStateError);
   });
 }

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "cancelledTickets": [
+    {
+      "id": 1,
+      "ticket_symbol": "FIRST",
+      "products": [
+        {
+          "id": 7,
+          "title": "Místo",
+          "price": 100,
+          "currency_code": "CZK"
+        }
+      ]
+    }
+  ],
+  "removedTickets": [],
+  "addedTickets": [],
+  "productChanges": [
+    {
+      "id": 2,
+      "ticket_symbol": "SURVIVOR",
+      "added": [],
+      "removed": [],
+      "changed": [
+        {
+          "from": {
+            "id": 7,
+            "title": "Místo",
+            "price": 100,
+            "currency_code": "CZK"
+          },
+          "to": {
+            "id": 7,
+            "title": "Místo",
+            "price": 120,
+            "currency_code": "CZK"
+          }
+        }
+      ]
+    }
+  ],
+  "referenceTotal": 200,
+  "currentTotal": 120,
+  "currencyCode": "CZK",
+  "hasChanges": true
+}

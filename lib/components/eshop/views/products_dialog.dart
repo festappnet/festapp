@@ -8,12 +8,11 @@ import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/eshop/views/search_products_screen.dart';
-import 'package:fstapp/components/eshop/views/product_changes_preview.dart';
+import 'order_update_email_dialog.dart';
 import 'package:fstapp/components/eshop/views/product_info_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 import '../orders_strings.dart';
-import '../logic/order_calc_helper.dart';
 import 'edit_price_dialog.dart';
 
 class ProductsDialog extends StatefulWidget {
@@ -21,7 +20,7 @@ class ProductsDialog extends StatefulWidget {
   const ProductsDialog({super.key, required this.ticketId});
 
   @override
-  _ProductsDialogState createState() => _ProductsDialogState();
+  State<ProductsDialog> createState() => _ProductsDialogState();
 }
 
 class _ProductsDialogState extends State<ProductsDialog> {
@@ -136,111 +135,25 @@ class _ProductsDialogState extends State<ProductsDialog> {
     }
   }
 
+  bool get _hasUnsavedChanges => !const ListEquality<(int?, double?)>().equals(
+      _orig.map((p) => (p.id, p.price)).toList(),
+      _current.map((p) => (p.id, p.price)).toList());
+
   Future<void> _showSendUpdateConfirmDialog() async {
+    if (_hasUnsavedChanges) return;
+    await _fetch();
+    if (!mounted) return;
     final order = _bundle?.order;
     final payment = _bundle?.paymentInfo;
-    if (order == null || payment == null) return;
+    if (order == null) return;
 
-    final helperResult = OrderCalcHelper.calculateGlobalOrderChanges(
-      referenceOrder: _bundle?.referenceOrder,
-      currentOrder: _bundle?.order,
-      currentTicketId: widget.ticketId,
-      currentTicketProducts: _current,
+    final confirmed = await showOrderUpdateEmailDialog(
+      context,
+      email: order.data?["email"] ?? "N/A",
+      changes: _bundle!.changes,
+      ticketId: widget.ticketId,
+      balance: (order.price ?? 0) - (payment?.paid ?? 0),
     );
-
-    final added = helperResult.added;
-    final removed = helperResult.removed;
-    final changed = helperResult.changed;
-    final referenceTotal = helperResult.referenceTotal;
-    final currentTotal = helperResult.currentTotal;
-
-    final totalPaid = payment.paid ?? 0;
-    final orderPrice = order.price ?? 0;
-    // Note: The balance calculation logic in the dialog display remains local to what the user sees as "order price"
-    // However, for the email preview, we should probably rely on the helper's currentTotal if we want to show the specific difference.
-    // The original code used: final balance = orderPrice - totalPaid;
-    // But 'orderPrice' from _bundle.order might be stale if we just changed products locally and haven't saved to DB yet?
-    // Actually, _bundle.order is the DB state. _current contains the local mutations.
-    // The 'orderPrice' in the bundle is the price BEFORE the current unsaved edits.
-    // If we want to show the PREDICTED balance, we should use currentTotal.
-    // Stick to original logic for balance for now
-    // as the specific user request was about the *list of products* not showing correctly.
-    final balance = orderPrice - totalPaid;
-
-    final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: Text(OrdersStrings.sendUpdateTitle),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(OrdersStrings.sendUpdateContent(
-                          order.data?["email"] ?? "N/A")),
-                      const Divider(height: 24),
-
-                      Text(OrdersStrings.emailContentIntro,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic)),
-                      const SizedBox(height: 12),
-                      ProductChangesPreview(
-                        added: added,
-                        removed: removed,
-                        changed: changed,
-                        referenceTotal: referenceTotal,
-                        currentTotal: currentTotal,
-                      ),
-                      // Only show the note if there are changes from other tickets
-                      if (helperResult.hasChangesFromOtherTickets)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.info_outline,
-                                  size: 16, color: Colors.orange.shade800),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  OrdersStrings.globalChangesNote,
-                                  style: TextStyle(
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.orange.shade900,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ProductChangesPreview.buildConfirmationListItem(
-                          context, Icons.credit_card,
-                          OrdersStrings.sendUpdateItemStatus),
-                      if (balance < 0)
-                        ProductChangesPreview.buildConfirmationListItem(
-                            context, Icons.undo_outlined,
-                            OrdersStrings.sendUpdateItemRefund),
-                      ProductChangesPreview.buildConfirmationListItem(
-                          context, Icons.receipt_long_outlined,
-                          OrdersStrings.sendUpdateItemSummary),
-                      if (balance > 0)
-                        ProductChangesPreview.buildConfirmationListItem(
-                            context, Icons.qr_code_2, OrdersStrings.sendUpdateItemQr),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: Text(CommonStrings.storno)),
-                  ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: Text(OrdersStrings.sendEmailButton)),
-                ],
-              );
-            }) ??
-        false;
 
     if (confirmed && mounted) {
       setState(() => _loading = true);
@@ -308,7 +221,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                         paymentInfo: _bundle!.paymentInfo,
                         ticket: _bundle!.ticket,
                         orderHistory: _bundle!.orderHistory,
-                        onSendUpdate: _showSendUpdateConfirmDialog,
+                        onSendUpdate: _hasUnsavedChanges ? null : _showSendUpdateConfirmDialog,
                       ),
                       const Divider(height: 32),
                     ],
@@ -437,7 +350,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
           child: Text(CommonStrings.storno),
         ),
         ElevatedButton(
-          onPressed: _current.equals(_orig) ? null : _save,
+          onPressed: _hasUnsavedChanges ? _save : null,
           child: Text(CommonStrings.save),
         ),
       ],
@@ -482,24 +395,5 @@ class _ProductsDialogState extends State<ProductsDialog> {
         ),
       ],
     );
-  }
-}
-
-extension on List<ProductModel> {
-  bool equals(List<ProductModel> other) {
-    if (length != other.length) return false;
-
-    final thisMap = {for (var p in this) p.id: p.price};
-    final otherMap = {for (var p in other) p.id: p.price};
-
-    if (thisMap.keys.length != otherMap.keys.length) return false;
-    if (!thisMap.keys.every((key) => otherMap.containsKey(key))) return false;
-
-    for (final id in thisMap.keys) {
-      if (thisMap[id] != otherMap[id]) {
-        return false;
-      }
-    }
-    return true;
   }
 }

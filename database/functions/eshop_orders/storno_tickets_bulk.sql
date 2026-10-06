@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.storno_tickets_bulk(p_ticket_ids BIGINT[])
+CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[])
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -26,12 +26,16 @@ BEGIN
         JOIN eshop.order_product_ticket opt ON t.id = opt.ticket
         JOIN eshop.orders o ON opt."order" = o.id
         WHERE t.id = ANY(p_ticket_ids)
+        ORDER BY o.id
     LOOP
         -- 2. SECURITY CHECK
         -- Verify that the current user has editor permissions on the occasion associated with the order.
         IF NOT public.get_is_editor_order_on_occasion(v_occasion_id) THEN
             RAISE EXCEPTION 'Permission denied to storno tickets for order % on occasion %', v_order_id, v_occasion_id;
         END IF;
+
+        -- Serialize cancellations on the same order before counting survivors.
+        PERFORM 1 FROM eshop.orders WHERE id = v_order_id FOR UPDATE;
 
         -- 3. Get all active tickets currently in this order
         SELECT ARRAY_AGG(t.id)
@@ -47,6 +51,11 @@ BEGIN
         FROM UNNEST(v_tickets_in_order) AS id
         WHERE id = ANY(p_ticket_ids);
 
+        -- A replay or a selection containing only cancelled tickets has no effect.
+        IF coalesce(cardinality(v_tickets_to_cancel_in_order), 0) = 0 THEN
+            CONTINUE;
+        END IF;
+
         -- 5. Calculate how many would remain
         v_remaining_count := array_length(v_tickets_in_order, 1) - array_length(v_tickets_to_cancel_in_order, 1);
 
@@ -56,6 +65,18 @@ BEGIN
         IF v_remaining_count <= 0 THEN
             -- Helper function to cancel the entire order
             PERFORM update_order_and_tickets_to_storno_ws_internal_v1(v_order_id);
+            -- Commit cancellation and its durable email intent together. Replays
+            -- cannot reach this branch once the active tickets are cancelled.
+            IF EXISTS (SELECT 1 FROM eshop.orders WHERE id=v_order_id
+                AND position('@' in data->>'email')>0 AND length(data->>'email')<=320) THEN
+            PERFORM public.enqueue_order_email('TICKET_ORDER_STORNO',
+                jsonb_build_object('order_id', v_order_id),
+                (SELECT organization FROM public.occasions WHERE id=v_occasion_id),
+                v_occasion_id,
+                (SELECT unit FROM public.occasions WHERE id=v_occasion_id),
+                now(), 'last-ticket-cancelled:' || v_order_id);
+            END IF;
+
 
         -- -----------------------------------------------------
         -- SCENARIO B: Partial Cancellation (Modify Order)
@@ -89,13 +110,29 @@ BEGIN
                 END IF;
             END LOOP;
 
+            -- Fence unsent snapshots of the previous ticket set, and keep the
+            -- payment amount aligned with the new order total.
+            PERFORM public.cancel_order_email_intents(v_order_id);
+            UPDATE eshop.payment_info SET amount=GREATEST(0, COALESCE(v_current_price,0)-v_removed_price)
+            WHERE id=(SELECT payment_info FROM eshop.orders WHERE id=v_order_id);
+
             -- 4. Update Order (Data & Price)
             UPDATE eshop.orders
             SET
                 data = v_original_data || JSONB_BUILD_OBJECT('tickets', v_updated_tickets_json),
                 price = GREATEST(0, COALESCE(v_current_price, 0) - v_removed_price),
+                email_payment_version = email_payment_version + 1,
                 updated_at = NOW()
             WHERE id = v_order_id;
+
+            -- Refresh only this order's existing reminder schedule for its new amount.
+            PERFORM public.set_payment_deadline(pi.id,pi.deadline)
+            FROM eshop.payment_info pi JOIN eshop.orders o ON o.payment_info=pi.id
+            WHERE o.id=v_order_id AND o.state='ordered' AND pi.deadline IS NOT NULL;
+
+            -- Existing delivery policy prepares the surviving tickets if their
+            -- paid order has not finished sending yet; sent orders stay untouched.
+            PERFORM public.enqueue_paid_order_tickets(v_order_id);
 
             -- 5. Insert ONE history record for this modification
             INSERT INTO eshop.orders_history (
@@ -108,7 +145,7 @@ BEGIN
             VALUES (
                 v_order_id,
                 v_original_data || JSONB_BUILD_OBJECT('tickets', v_updated_tickets_json),
-                'ordered',
+                (SELECT state FROM eshop.orders WHERE id=v_order_id),
                 GREATEST(0, COALESCE(v_current_price, 0) - v_removed_price),
                 NOW()
             );
@@ -116,3 +153,5 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[]) FROM PUBLIC, anon, authenticated;
