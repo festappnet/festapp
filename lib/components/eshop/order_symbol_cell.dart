@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -15,11 +16,21 @@ class OrderSymbolCell extends StatefulWidget {
 
 class _OrderSymbolCellState extends State<OrderSymbolCell> {
   bool _copied = false;
+  Timer? _feedbackTimer;
 
   @override
   void didUpdateWidget(covariant OrderSymbolCell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.symbol != widget.symbol) _copied = false;
+    if (oldWidget.symbol != widget.symbol) {
+      _feedbackTimer?.cancel();
+      _copied = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _feedbackTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -33,17 +44,25 @@ class _OrderSymbolCellState extends State<OrderSymbolCell> {
       SizedBox(width: 30, height: 30, child: IconButton(
         tooltip: _copied ? CommonStrings.copiedToClipboard : OrdersStrings.copy,
         padding: const EdgeInsets.all(6),
-        iconSize: 18,
+        iconSize: 16,
         style: IconButton.styleFrom(
-          foregroundColor: _copied ? colors.onPrimary : colors.onSurface,
-          backgroundColor: _copied ? colors.primary : colors.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          foregroundColor: _copied
+              ? (Theme.of(context).brightness == Brightness.dark
+                  ? Colors.greenAccent.shade400 : Colors.green.shade700)
+              : colors.onSurfaceVariant,
+          backgroundColor: Colors.transparent,
         ),
         icon: Icon(_copied ? Icons.check : Icons.copy),
         onPressed: () async {
           final symbol = widget.symbol;
           await Clipboard.setData(ClipboardData(text: symbol));
-          if (mounted && widget.symbol == symbol) setState(() => _copied = true);
+          if (mounted && widget.symbol == symbol) {
+            _feedbackTimer?.cancel();
+            setState(() => _copied = true);
+            _feedbackTimer = Timer(const Duration(seconds: 2), () {
+              if (mounted) setState(() => _copied = false);
+            });
+          }
         },
       )),
     ]);
