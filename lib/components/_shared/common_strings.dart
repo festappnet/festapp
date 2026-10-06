@@ -100,6 +100,8 @@ class CommonStrings {
       'Common.advancedSettings'.tr(); // "Advanced Settings"
   static String get contentChanged =>
       'Common.contentChanged'.tr(); // "Content has been changed."
+  static String get copy => 'Common.copy'.tr();
+  static String get copied => 'Common.copied'.tr();
   static String get copiedToClipboard =>
       'Common.copiedToClipboard'.tr(); // "Copied to clipboard"
   static String get confirmRemoval =>

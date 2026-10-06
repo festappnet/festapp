@@ -6,7 +6,6 @@ import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -19,7 +18,7 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/html/html_view.dart';
+import 'form_public_link.dart';
 
 import '../form_strings.dart';
 
@@ -68,7 +67,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   final TextEditingController _deadlineDaysController = TextEditingController();
   final TextEditingController _startingNumberController =
       TextEditingController();
-  final ValueNotifier<String> _htmlNotifier = ValueNotifier<String>("");
+  final ValueNotifier<String> _linkNotifier = ValueNotifier<String>("");
 
   bool _isReminderEnabled = false;
   late FormFeature _formFeature;
@@ -116,25 +115,18 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   @override
   void dispose() {
     _titleController.dispose();
-    _linkController.removeListener(_updateHtml);
+    _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
     _deadlineDaysController.dispose();
     _startingNumberController.dispose();
-    _htmlNotifier.dispose();
+    _linkNotifier.dispose();
     super.dispose();
   }
 
-  String _generateFormHtml(String? link) {
-    if (link == null || link.isEmpty) return "";
-    final fullUrl = "${AppConfig.webLink}/form/$link";
-    return '''
-       <p>${FormStrings.formAvailableAt}:<br>
-       <a href="$fullUrl">$fullUrl</a></p>
-     ''';
-  }
 
-  void _updateHtml() {
-    _htmlNotifier.value = _generateFormHtml(_linkController.text);
+
+  void _updateLinkPreview() {
+    _linkNotifier.value = _linkController.text;
   }
 
   Future<void> _loadData() async {
@@ -150,9 +142,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _form = bundle.form;
       _titleController.text = _form!.title ?? '';
       _linkController.text = _form!.link ?? '';
-      _htmlNotifier.value = _generateFormHtml(_linkController.text);
-      _linkController.removeListener(_updateHtml);
-      _linkController.addListener(_updateHtml);
+      _linkNotifier.value = _linkController.text;
+      _linkController.removeListener(_updateLinkPreview);
+      _linkController.addListener(_updateLinkPreview);
       _isReminderEnabled =
           _form!.data?[FormModel.metaIsReminderEnabled] as bool? ?? false;
 
@@ -526,18 +518,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ),
                                   const SizedBox(height: 16),
                                   ValueListenableBuilder<String>(
-                                    valueListenable: _htmlNotifier,
-                                    builder: (context, htmlContent, child) {
-                                      if (htmlContent.isEmpty)
+                                    valueListenable: _linkNotifier,
+                                    builder: (context, formLink, child) {
+                                      if (formLink.isEmpty)
                                         return const SizedBox.shrink();
                                       return Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12.0),
-                                        child: HtmlView(
-                                          isSelectable: true,
-                                          fontSize: 12,
-                                          html: htmlContent,
-                                        ),
+                                        child: FormPublicLink(link: formLink),
                                       );
                                     },
                                   ),

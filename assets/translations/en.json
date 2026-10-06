@@ -1485,6 +1485,8 @@
     "content": "Content",
     "contentChanged": "Content has been changed.",
     "continueAction": "Continue",
+    "copy": "Copy",
+    "copied": "Copied",
     "copiedToClipboard": "Copied to clipboard",
     "create": "Create",
     "currency": "Currency",
