@@ -10,15 +10,13 @@ DECLARE
   ticket_ids BIGINT[];
   order_oc BIGINT;
   unit_id BIGINT;
-  is_manager BOOLEAN;
   ou_record RECORD;
 BEGIN
   -- Retrieve the order's occasion and payment_info.
   SELECT occasion, payment_info
     INTO order_oc, payment_info_id
     FROM eshop.orders
-   WHERE id = order_id
-   FOR UPDATE;
+   WHERE id = order_id;
 
   IF order_oc IS NULL THEN
     RAISE EXCEPTION 'Order not found.';
@@ -32,19 +30,41 @@ BEGIN
 
   PERFORM public.check_is_manager_on_unit(unit_id);
 
-  -- Fence unsent mail immediately; retain in-flight/accepted/unknown evidence.
-  WITH cancelled AS (
-    UPDATE public.email_messages m
-       SET workflow_state = 'cancelled', last_error = 'order_deleted',
-           lease_token = NULL, lease_until = NULL
-     WHERE m.order_id = delete_order_221.order_id
-       AND m.workflow_state IN ('pending', 'retry_wait', 'blocked', 'preparing')
-     RETURNING m.message_id
-  )
-  UPDATE public.email_attempts a
-     SET state = 'cancelled', finished_at = now(), error_code = 'order_deleted'
-   WHERE a.message_id IN (SELECT message_id FROM cancelled)
-     AND a.state = 'preparing';
+  -- After authorization, match the worker lock order (capacity, order,
+  -- attempts, message). Recheck the order after locking against concurrent edits.
+  PERFORM 1 FROM public.email_capacity FOR UPDATE;
+  SELECT o.payment_info INTO payment_info_id
+    FROM eshop.orders o
+   WHERE o.id = delete_order_221.order_id AND o.occasion = order_oc
+   FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Order not found or occasion changed.';
+  END IF;
+
+  -- Remove every queued/reminder/provider record for this order. log_emails
+  -- and address suppressions are independent audit/safety records and remain.
+  DELETE FROM public.email_delivery_events e
+   WHERE e.message_id IN (SELECT m.message_id FROM public.email_messages m
+                           WHERE m.order_id = delete_order_221.order_id)
+      OR e.attempt_id IN (SELECT a.attempt_id FROM public.email_attempts a
+                          JOIN public.email_messages m USING (message_id)
+                         WHERE m.order_id = delete_order_221.order_id)
+      OR e.provider_message_id IN (
+           SELECT m.provider_message_id FROM public.email_messages m
+            WHERE m.order_id = delete_order_221.order_id
+           UNION
+           SELECT a.provider_message_id FROM public.email_attempts a
+           JOIN public.email_messages m USING (message_id)
+            WHERE m.order_id = delete_order_221.order_id);
+
+  DELETE FROM public.email_confirmation_receipts r
+   WHERE r.message_id IN (SELECT m.message_id FROM public.email_messages m
+                          WHERE m.order_id = delete_order_221.order_id);
+  DELETE FROM public.email_attempts a
+   WHERE a.message_id IN (SELECT m.message_id FROM public.email_messages m
+                          WHERE m.order_id = delete_order_221.order_id);
+  DELETE FROM public.email_messages m
+   WHERE m.order_id = delete_order_221.order_id;
 
   -- Collect all order_product_ticket IDs for the order.
   SELECT ARRAY(SELECT id FROM eshop.order_product_ticket WHERE "order" = order_id)
@@ -94,6 +114,9 @@ BEGIN
 
   -- Delete order history rows.
   DELETE FROM eshop.orders_history WHERE "order" = order_id;
+
+  -- Order-specific bank requests must not keep the order alive through their FK.
+  DELETE FROM eshop.bank_account_requests WHERE "order" = order_id;
 
   -- If a payment_info row exists, first free it from the order reference, then delete it.
   IF payment_info_id IS NOT NULL THEN
