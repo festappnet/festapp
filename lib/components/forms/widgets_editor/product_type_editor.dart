@@ -442,32 +442,46 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
               const SizedBox(height: 8),
               // List of Product Rows with leading default selector
               for (int i = 0; i < group.products!.length; i++)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ProductTypeEditorWidgets._buildDefaultSelector(
-                      ptField: ptField,
-                      product: group.products![i],
-                      isSelectMany: canSelectMany,
-                      onChanged: refresh,
+                Container(
+                  key: ObjectKey(group.products![i]),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
                     ),
-                    Expanded(
-                      child: TicketProductEditorRow(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ProductTypeEditorWidgets._buildDefaultSelector(
+                        ptField: ptField,
                         product: group.products![i],
+                        isSelectMany: canSelectMany,
                         onChanged: refresh,
-                        onDelete: () {
-                          final removed = group.products!.removeAt(i);
-                          if (removed.id != null) {
-                            form.deletedProductIds.add(removed.id!);
-                          }
-                          ProductTypeEditorWidgets._removeProductFromDefault(
-                              ptField, removed.id);
-                          refresh();
-                        },
-                        availableCurrencies: form.getSupportedCurrencies(),
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: TicketProductEditorRow(
+                          product: group.products![i],
+                          onChanged: refresh,
+                          onDelete: () {
+                            final removed = group.products!.removeAt(i);
+                            if (removed.id != null) {
+                              form.deletedProductIds.add(removed.id!);
+                            }
+                            ProductTypeEditorWidgets._removeProductFromDefault(
+                              ptField,
+                              removed.id,
+                            );
+                            refresh();
+                          },
+                          availableCurrencies: form.getSupportedCurrencies(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               // Add Product Button
               Align(

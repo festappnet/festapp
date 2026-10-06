@@ -192,163 +192,186 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveOpacity = (widget.product.isHidden ?? false) ? 0.5 : 1.0;
-    return Opacity(
-      opacity: effectiveOpacity,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final colors = Theme.of(context).colorScheme;
+    final hasDeposit = FeatureService.isFeatureEnabled(
+      FeatureConstants.deposit,
+    );
+    final title = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _titleController,
+          decoration: InputDecoration(
+            labelText: CommonStrings.title,
+            border: const UnderlineInputBorder(),
+            suffixIcon:
+                !HtmlHelper.isHtmlEmptyOrNull(widget.product.description)
+                ? DescriptionTooltip(
+                    description: widget.product.description!,
+                    child: const Icon(Icons.description, size: 20),
+                  )
+                : null,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Left column: Title field with product quantity directly below.
-            Expanded(
-              flex: 7,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      labelText: CommonStrings.title,
-                      border: const UnderlineInputBorder(),
-                      suffixIcon: (!HtmlHelper.isHtmlEmptyOrNull(
-                              widget.product.description))
-                          ? DescriptionTooltip(
-                              description: widget.product.description!,
-                              child: const Icon(Icons.description, size: 20),
-                            )
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.stacked_bar_chart, size: 16),
-                      const SizedBox(width: 4),
-                      SelectableText(
-                        TicketEditorWidgets.formatOrderedCount(
-                            widget.product.orderedCount,
-                            widget.product.maximum),
-                      ),
-                    ],
-                  ),
-                ],
+            const Icon(Icons.stacked_bar_chart, size: 16),
+            const SizedBox(width: 4),
+            SelectableText(
+              TicketEditorWidgets.formatOrderedCount(
+                widget.product.orderedCount,
+                widget.product.maximum,
               ),
-            ),
-            const SizedBox(width: 8),
-            // Middle column: Price field and currency selection below it.
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _priceController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: CommonStrings.price,
-                      border: const UnderlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.monetization_on, size: 16),
-                      const SizedBox(width: 4),
-                      buildCurrencySelectBox(),
-                    ],
-                  ),
-                  if (FeatureService.isFeatureEnabled(
-                      FeatureConstants.deposit)) ...[
-                    const SizedBox(height: 8),
-                    if (_isVirtualMode) ...[
-                      // Virtual mode: visual-only "doplatek" amount (negative = sleva)
-                      // with its OWN currency (can differ from product price currency).
-                      TextField(
-                        controller: _metaSurchargeController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true, signed: true),
-                        decoration: InputDecoration(
-                          labelText: OrdersStrings.gridSurcharge,
-                          border: const UnderlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.monetization_on, size: 16),
-                          const SizedBox(width: 4),
-                          buildSurchargeCurrencyField(),
-                        ],
-                      ),
-                    ] else
-                      // Real mode: payment-linked deposit (positive only, shares product currency).
-                      TextField(
-                        controller: _depositController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        decoration: InputDecoration(
-                          labelText: OrdersStrings.gridDeposit,
-                          border: const UnderlineInputBorder(),
-                          isDense: true,
-                          errorText: _depositError,
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Right column: Visibility switch.
-            Column(
-              children: [
-                Text(FormStrings.show,
-                    style: Theme.of(context).textTheme.bodySmall),
-                Switch(
-                  value: !(widget.product.isHidden ?? false),
-                  onChanged: (val) {
-                    _refresh(() {
-                      widget.product.isHidden = !val;
-                    });
-                  },
-                ),
-              ],
-            ),
-            // Additional settings popup.
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'additional_settings') {
-                  final htmlCoordinator = HtmlEditingScope.maybeOf(context);
-                  showDialog(
-                    context: context,
-                    builder: (context) => ProductDetailEditorDialog(
-                        product: widget.product, coordinator: htmlCoordinator),
-                  ).then((_) {
-                    _refresh(() {}); // Refresh when dialog is closed.
-                  });
-                }
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                PopupMenuItem<String>(
-                  value: 'additional_settings',
-                  child: Text(FormStrings.additionalSettings),
-                ),
-              ],
-              icon: const Icon(Icons.more_vert),
-            ),
-            IconButton(
-              tooltip: widget.product.canDelete
-                  ? CommonStrings.delete
-                  : FormStrings.deletionReason(
-                      widget.product.deleteBlockedReason),
-              icon: const Icon(Icons.delete),
-              onPressed: widget.product.canDelete ? widget.onDelete : null,
             ),
           ],
         ),
+      ],
+    );
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Column(
+          children: [
+            Text(
+              FormStrings.show,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Switch(
+              value: !(widget.product.isHidden ?? false),
+              onChanged: (value) {
+                _refresh(() => widget.product.isHidden = !value);
+              },
+            ),
+          ],
+        ),
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'additional_settings') {
+              final coordinator = HtmlEditingScope.maybeOf(context);
+              showDialog(
+                context: context,
+                builder: (context) => ProductDetailEditorDialog(
+                  product: widget.product,
+                  coordinator: coordinator,
+                ),
+              ).then((_) {
+                if (mounted) _refresh(() {});
+              });
+            }
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'additional_settings',
+              child: Text(FormStrings.additionalSettings),
+            ),
+          ],
+          icon: const Icon(Icons.more_vert),
+        ),
+        IconButton(
+          tooltip: widget.product.canDelete
+              ? CommonStrings.delete
+              : FormStrings.deletionReason(widget.product.deleteBlockedReason),
+          icon: const Icon(Icons.delete),
+          onPressed: widget.product.canDelete ? widget.onDelete : null,
+        ),
+      ],
+    );
+    Widget amountField(
+      TextEditingController controller,
+      String label,
+      Widget currency, {
+      bool signed = false,
+      String? error,
+    }) => Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withValues(alpha: .4),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.numberWithOptions(
+                decimal: true,
+                signed: signed,
+              ),
+              decoration: InputDecoration(
+                labelText: label,
+                border: const UnderlineInputBorder(),
+                errorText: error,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          currency,
+        ],
+      ),
+    );
+    final price = amountField(
+      _priceController,
+      CommonStrings.price,
+      buildCurrencySelectBox(),
+    );
+    final extra = !hasDeposit
+        ? null
+        : _isVirtualMode
+        ? amountField(
+            _metaSurchargeController,
+            OrdersStrings.gridSurcharge,
+            buildSurchargeCurrencyField(),
+            signed: true,
+          )
+        : amountField(
+            _depositController,
+            OrdersStrings.gridDeposit,
+            Text(selectedCurrency),
+            error: _depositError,
+          );
+
+    return Opacity(
+      opacity: (widget.product.isHidden ?? false) ? .5 : 1,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact =
+              constraints.maxWidth < 480 ||
+              MediaQuery.textScalerOf(context).scale(1) > 1.4;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (compact) ...[
+                title,
+                const SizedBox(height: 8),
+                Align(alignment: Alignment.centerRight, child: actions),
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: title),
+                    const SizedBox(width: 16),
+                    actions,
+                  ],
+                ),
+              const SizedBox(height: 16),
+              if (compact || extra == null) ...[
+                price,
+                if (extra != null) ...[const SizedBox(height: 12), extra],
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: price),
+                    const SizedBox(width: 16),
+                    Expanded(child: extra),
+                  ],
+                ),
+            ],
+          );
+        },
       ),
     );
   }
