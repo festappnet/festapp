@@ -135,7 +135,7 @@ BEGIN
     -- Fetch orders, conditionally filtering by form link
     IF v_form_id IS NOT NULL THEN
         SELECT jsonb_agg(jsonb_build_object(
-            'id', o.id, 'order_symbol', o.order_symbol, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
@@ -149,7 +149,7 @@ BEGIN
         WHERE o.occasion = v_occasion_id AND o.form = v_form_id;
     ELSE
         SELECT jsonb_agg(jsonb_build_object(
-            'id', o.id, 'order_symbol', o.order_symbol, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
@@ -196,7 +196,7 @@ BEGIN
         )
         SELECT jsonb_agg(jsonb_build_object(
             'id', oh.id, 'created_at', oh.created_at, 'created_by', oh.created_by, 'data', oh.data,
-            'order', oh."order", 'order_symbol', (SELECT o.order_symbol FROM eshop.orders o WHERE o.id=oh."order"), 'state', oh.state, 'price', oh.price, 'currency_code', oh.currency_code
+            'order', oh."order", 'order_symbol', (SELECT o.order_symbol FROM eshop.orders o WHERE o.id=oh."order"), 'order_sequence', (SELECT o.order_sequence FROM eshop.orders o WHERE o.id=oh."order"), 'state', oh.state, 'price', oh.price, 'currency_code', oh.currency_code
         ))
         INTO ordersHistoryData
         FROM eshop.orders_history oh

@@ -6,7 +6,7 @@ BEGIN
  INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO u;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time,is_order_synchronization_enabled)
  VALUES('Occasion',org,u,gen_random_uuid()::text,now(),now()+interval '1 day',true) RETURNING id INTO occ;
- INSERT INTO eshop.orders(order_symbol, occasion,state,data,price,currency_code) VALUES(public.generate_order_symbol(), occ,'paid','{"email":"tickets@example.invalid"}',100,'CZK') RETURNING id INTO oid;
+ INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,state,data,price,currency_code) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,'paid','{"email":"tickets@example.invalid"}',100,'CZK') RETURNING id INTO oid;
  PERFORM public.enqueue_paid_order_tickets(oid);
  SELECT to_jsonb(m) INTO a FROM public.email_messages m WHERE order_id=oid AND message_kind='order_tickets';
  b:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',oid,'manual',true,'requested_by','fixture-editor'),org,occ,u,now(),'manual-one');

@@ -336,7 +336,7 @@ class DbOrders {
     final json = response["data"];
 
     // Parse all parts from the new API response
-    final order = OrderModel.fromJson(json['order']);
+    final order = OrderModel.fromCanonicalJson(json['order']);
     final history = (json['history'] as List)
         .map((h) => OrderHistoryModel.fromJson(h))
         .toList();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -112,6 +113,71 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   final DataGridActionsController? actionsExtended;
   final List<DataGridAction>? headerChildren;
   final ExportOptions? exportOptions;
+  final bool Function(TrinaRow)? additionalRowPredicate;
+  final Widget Function(BuildContext, SingleDataGridController<T>)?
+      headerFilterBuilder;
+  bool additionalFilterEnabled = false;
+  int additionalFilterCount = 0;
+  StreamSubscription<TrinaGridEvent>? _filterSubscription;
+  bool _applyingFilter = false;
+
+  Iterable<TrinaRow> get visibleCheckedRows =>
+      stateManager.refRows.filterOrOriginalList
+          .where((row) => row.checked == true);
+
+  void attachRowFilter() {
+    detachRowFilter();
+    if (additionalRowPredicate == null) return;
+    stateManager.setFilterOnlyEvent(true);
+    _filterSubscription = stateManager.eventManager!.listener((event) {
+      if (event is TrinaGridSetColumnFilterEvent) {
+        stateManager.setFilterRows(event.filterRows);
+        applyRowFilter();
+      }
+    });
+  }
+
+  void detachRowFilter() {
+    _filterSubscription?.cancel();
+    _filterSubscription = null;
+  }
+
+  void toggleAdditionalFilter(bool enabled) {
+    additionalFilterEnabled = enabled;
+    applyRowFilter(recount: false);
+  }
+
+  // Call only for data/native-filter changes, never hover/selection notifications.
+  void applyRowFilter({bool recount = true}) {
+    final predicate = additionalRowPredicate;
+    if (predicate == null || !isGridLoaded || _applyingFilter) return;
+    _applyingFilter = true;
+    try {
+      final native = FilterHelper.convertRowsToFilter(
+        stateManager.filterRows,
+        stateManager.refColumns.where((c) => c.enableFilterMenuItem).toList(),
+      );
+      if (recount) {
+        additionalFilterCount = stateManager.refRows.originalList
+            .where((row) => (native?.call(row) ?? true) && predicate(row))
+            .length;
+      }
+      stateManager.refRows.setFilter(
+        (row) =>
+            (native?.call(row) ?? true) &&
+            (!additionalFilterEnabled || predicate(row)),
+      );
+      final visible = stateManager.refRows.filterOrOriginalList.toSet();
+      for (final row in stateManager.refRows.originalList) {
+        if (row.checked == true && !visible.contains(row)) {
+          row.setChecked(false);
+        }
+      }
+      stateManager.notifyListeners();
+    } finally {
+      _applyingFilter = false;
+    }
+  }
 
   /// Localized plain-text explanations, keyed by column field.
   final Map<String, String> columnHelp;
@@ -131,6 +197,8 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     this.getNewObject,
     this.copyObject,
     this.exportOptions,
+    this.additionalRowPredicate,
+    this.headerFilterBuilder,
     Map<String, String> columnHelp = const {},
   }) : columnHelp = Map.unmodifiable(columnHelp);
 
@@ -180,11 +248,18 @@ class SingleDataGridController<T extends ITrinaRowModel> {
 
   /// Applies [rows] to the grid and inserts the first column if needed.
   void applyDataToGrid() async {
+    final sorted = additionalRowPredicate == null ? null : stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
     htmlSave.clearBindings();
     stateManager.removeAllRows();
     stateManager.appendRows(rows);
+    if (sorted != null) {
+      if (sorted.sort.isAscending) { stateManager.sortAscending(sorted); }
+      else { stateManager.sortDescending(sorted); }
+    }
 
-    if (stateManager.hasFilter) {
+    if (additionalRowPredicate != null) {
+      applyRowFilter();
+    } else if (stateManager.hasFilter) {
       stateManager.setFilterWithFilterRows(stateManager.filterRows);
     }
 
@@ -225,6 +300,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
                     deletedRows.add(row);
                   }
                   row.setState(TrinaRowState.updated);
+                  applyRowFilter();
                   rendererContext.stateManager.notifyListeners();
                 },
                 icon: const Icon(Icons.delete_forever),
@@ -261,6 +337,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
                   rendererContext.stateManager
                       .insertRows(currentIndex + 1, [newRow]);
                   newRows.add(newRow);
+                  applyRowFilter();
                   rendererContext.stateManager.notifyListeners();
                 },
                 icon: const Icon(Icons.add),

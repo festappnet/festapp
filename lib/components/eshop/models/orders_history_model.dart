@@ -42,6 +42,7 @@ class OrderHistoryModel extends ITrinaRowModel {
   Map<String, dynamic>? data;
   int? orderId;
   String? orderSymbol;
+  int? orderSequence;
   String? currencyCode;
   String? createdById;
   UserInfoModel? createdBy;
@@ -61,6 +62,7 @@ class OrderHistoryModel extends ITrinaRowModel {
     this.data,
     this.orderId,
     this.orderSymbol,
+    this.orderSequence,
     this.currencyCode,
     this.createdById,
     this.createdBy,
@@ -90,6 +92,7 @@ class OrderHistoryModel extends ITrinaRowModel {
       data: historyData,
       orderId: json[TbEshop.orders_history.order],
       orderSymbol: json[TbEshop.orders.order_symbol] as String?,
+      orderSequence: (json[TbEshop.orders.order_sequence] as num?)?.toInt(),
       currencyCode: json[TbEshop.orders_history.currency_code],
       dataTickets: parsedDataTickets,
     );
@@ -121,6 +124,7 @@ class OrderHistoryModel extends ITrinaRowModel {
       data: order.data,
       orderId: order.id,
       orderSymbol: order.orderSymbol,
+      orderSequence: order.orderSequence,
       currencyCode: order.currencyCode,
       createdById: null,
       createdBy: null,
@@ -553,6 +557,9 @@ class OrderHistoryModel extends ITrinaRowModel {
     return TrinaRow(
       cells: {
         EshopColumns.HISTORY_ID: TrinaCell(value: id ?? 0),
+        EshopColumns.ORDER_SEQUENCE: TrinaCell(
+          value: orderSequence ?? orderModel?.orderSequence,
+        ),
         EshopColumns.HISTORY_ORDER_SYMBOL:
             TrinaCell(value: orderSymbol ?? orderModel?.orderSymbol ?? ""),
         EshopColumns.ORDER_DATA:

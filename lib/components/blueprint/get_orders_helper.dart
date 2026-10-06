@@ -62,7 +62,7 @@ class GetOrdersHelper {
   static List<OrderModel>? parseOrders(Map<String, dynamic> json) {
     return json[TbEshop.orders.table] != null
         ? List<OrderModel>.from(
-            json[TbEshop.orders.table].map((o) => OrderModel.fromJson(o)))
+            json[TbEshop.orders.table].map((o) => OrderModel.fromCanonicalJson(o)))
         : null;
   }
 

@@ -1,4 +1,4 @@
-import 'package:auto_route/auto_route.dart';
+import '../orders_strings.dart';import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -104,6 +104,7 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
         EshopColumns.HISTORY_ID,
         EshopColumns.HISTORY_CHANGED_AT,
         EshopColumns.HISTORY_CHANGED_BY,
+        EshopColumns.ORDER_SEQUENCE,
         EshopColumns.HISTORY_ORDER_SYMBOL,
         EshopColumns.ORDER_DATA,
         EshopColumns.ORDER_EMAIL,

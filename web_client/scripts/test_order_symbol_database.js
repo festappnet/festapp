@@ -22,9 +22,9 @@ try {
   await db.query('CREATE TEMP SEQUENCE symbol_attempt');
   await db.query('GRANT USAGE, SELECT ON SEQUENCE pg_temp.symbol_attempt TO postgres');
   await db.query("CREATE OR REPLACE FUNCTION public.generate_order_symbol() RETURNS text LANGUAGE sql VOLATILE SET search_path=public,extensions AS $$ SELECT CASE WHEN nextval('pg_temp.symbol_attempt')=1 THEN '7G4K9M2R6A' ELSE pg_temp.real_order_symbol() END $$");
-  const stable = await one("INSERT INTO eshop.orders(order_symbol,state,data,price) VALUES('7G4K9M2R6A','paid','{}',100) RETURNING id");
-  const legacy = (await db.query(`INSERT INTO eshop.orders(state,data,price,created_at,updated_at)
-    SELECT state, data, price, '2020-01-01'::timestamptz, '2020-01-02'::timestamptz
+  const stable = await one("INSERT INTO eshop.orders(order_sequence,order_symbol,state,data,price) VALUES(1,'7G4K9M2R6A','paid','{}',100) RETURNING id");
+  const legacy = (await db.query(`INSERT INTO eshop.orders(order_sequence,state,data,price,created_at,updated_at)
+    SELECT 1, state, data, price, '2020-01-01'::timestamptz, '2020-01-02'::timestamptz
     FROM (VALUES ('ordered','{}'::jsonb,10),('paid','{"tickets":[]}'::jsonb,100),('sent',null,0),('storno','{"old":true}'::jsonb,0),('ordered','{}'::jsonb,0)) x(state,data,price)
     RETURNING id,to_jsonb(orders)-'order_symbol' AS original`)).rows;
   const first = legacy.slice(0, 2).map(r => r.id);
@@ -97,7 +97,7 @@ try {
   assert.deepEqual(await one('SELECT (SELECT count(*) FROM eshop.orders)::int o,(SELECT count(*) FROM eshop.tickets)::int t,(SELECT count(*) FROM eshop.payment_info)::int p,(SELECT count(*) FROM public.email_messages)::int e'), before);
   // A different unique constraint must fail immediately, without ten retries.
   await db.query(saved);
-  const ddl = await one("SELECT format('CREATE UNIQUE INDEX fixture_other_unique ON eshop.orders(form) WHERE id <> %s', $1::bigint) ddl", [next.order.id]);
+  const ddl = await one("SELECT format('CREATE UNIQUE INDEX fixture_other_unique ON eshop.orders(form) WHERE occasion = %s AND id <> %s', $1::bigint, $2::bigint) ddl", [occasion, next.order.id]);
   await db.query(ddl.ddl);
   await db.query('ALTER SEQUENCE pg_temp.symbol_attempt RESTART');
   await db.query("CREATE OR REPLACE FUNCTION public.generate_order_symbol() RETURNS text LANGUAGE sql VOLATILE SET search_path=public,extensions AS $$ SELECT CASE WHEN nextval('pg_temp.symbol_attempt')>0 THEN pg_temp.real_order_symbol() END $$");
@@ -111,9 +111,9 @@ try {
   const symbol = (await one('SELECT public.generate_order_symbol() s')).s;
   const replacement = (await one('SELECT public.generate_order_symbol() s')).s;
   await a.query('BEGIN'); await b.query('BEGIN');
-  const idA = (await a.query('INSERT INTO eshop.orders(order_symbol) VALUES($1) RETURNING id', [symbol])).rows[0].id;
+  const idA = (await a.query('INSERT INTO eshop.orders(order_sequence,order_symbol) VALUES(1,$1) RETURNING id', [symbol])).rows[0].id;
   const pidB = (await b.query('SELECT pg_backend_pid() pid')).rows[0].pid;
-  const pending = b.query('INSERT INTO eshop.orders(order_symbol) VALUES($1) ON CONFLICT ON CONSTRAINT orders_order_symbol_key DO NOTHING RETURNING id', [symbol]);
+  const pending = b.query('INSERT INTO eshop.orders(order_sequence,order_symbol) VALUES(1,$1) ON CONFLICT ON CONSTRAINT orders_order_symbol_key DO NOTHING RETURNING id', [symbol]);
   let blocked = false;
   for (let i = 0; i < 200; i++) {
     blocked = (await one("SELECT wait_event_type='Lock' blocked FROM pg_stat_activity WHERE pid=$1", [pidB])).blocked;
@@ -123,7 +123,7 @@ try {
   assert.equal(blocked, true, 'second transaction actually blocked on first');
   await a.query('COMMIT');
   assert.equal((await pending).rowCount, 0, 'conflict target retries after committed concurrent collision');
-  const idB = (await b.query('INSERT INTO eshop.orders(order_symbol) VALUES($1) RETURNING id', [replacement])).rows[0].id;
+  const idB = (await b.query('INSERT INTO eshop.orders(order_sequence,order_symbol) VALUES(1,$1) RETURNING id', [replacement])).rows[0].id;
   await b.query('COMMIT');
   await db.query('DELETE FROM eshop.orders WHERE id=ANY($1::bigint[])', [[idA, idB]]);
   console.log('PASS: backfill/rerun, immutable snapshots, real writer collision/retry, exhaustion/rollback, replay/spoofing and two contending transactions');

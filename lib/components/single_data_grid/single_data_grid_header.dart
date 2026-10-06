@@ -128,7 +128,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
             builder: (context, _) => ElevatedButton(
               onPressed: a.action == null ||
                       (a.requiresSelection &&
-                          !widget.stateManager.refRows.originalList
+                          !widget.stateManager.refRows.filterOrOriginalList
                               .any((row) => row.checked == true)) ||
                       (a.isEnabled != null && !a.isEnabled!())
                   ? null
@@ -138,6 +138,16 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
           ),
         );
       }
+    }
+
+    if (controller.headerFilterBuilder != null) {
+      leftActions.add(
+        AnimatedBuilder(
+          animation: widget.stateManager,
+          builder: (context, _) =>
+              controller.headerFilterBuilder!(context, controller),
+        ),
+      );
     }
 
     // Build right-side actions: the export button if enabled.
@@ -171,7 +181,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
               animation: widget.stateManager,
               builder: (context, child) {
                 final displayedRowCount = widget.stateManager.rows.length;
-                if (displayedRowCount > 0) {
+                if (displayedRowCount > 0 || controller.additionalRowPredicate != null) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(
@@ -218,6 +228,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     for (var value in newRowsGenerated) {
       controller.newRows.add(value);
     }
+    controller.applyRowFilter();
     controller.stateManager.notifyListeners();
   }
 

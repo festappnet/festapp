@@ -24,8 +24,8 @@ BEGIN
     VALUES (200.00, 'CZK', 88887777, 0, v_ba_id)
     RETURNING id INTO v_pi_id;
 
-    INSERT INTO eshop.orders (order_symbol, payment_info, price, currency_code, state, occasion)
-    VALUES (public.generate_order_symbol(), v_pi_id, 200.00, 'CZK', 'ordered', 1)
+    INSERT INTO eshop.orders (order_sequence, order_symbol, payment_info, price, currency_code, state, occasion)
+    VALUES (public.next_order_sequence(1), public.generate_order_symbol(), v_pi_id, 200.00, 'CZK', 'ordered', 1)
     RETURNING id INTO v_order_id;
 
     RAISE NOTICE 'Order ID: %, Payment Info ID: %', v_order_id, v_pi_id;

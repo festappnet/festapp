@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -93,6 +94,7 @@ class _OrdersContentState extends State<OrdersContent> {
     // Start with the base list of columns
     List<String> columnIdentifiers = [
       EshopColumns.ORDER_ID,
+      EshopColumns.ORDER_SEQUENCE,
       EshopColumns.ORDER_SYMBOL,
       EshopColumns.ORDER_DATA,
       EshopColumns.ORDER_EMAIL,
@@ -129,6 +131,8 @@ class _OrdersContentState extends State<OrdersContent> {
 
     final newController = SingleDataGridController<OrderModel>(
       context: context,
+      additionalRowPredicate: OrderGridFilters.orderIsNonCancelled,
+      headerFilterBuilder: OrderGridFilters.checkbox,
       loadData: () async {
         if (firstLoadOrders != null) {
           final orders = firstLoadOrders;
@@ -221,6 +225,7 @@ class _OrdersContentState extends State<OrdersContent> {
           "${OrdersStrings.cancelOrdersConfirmationText} (${selected.length})");
 
       if (confirm && mounted) {
+        selected = _getChecked(singleDataGrid);
         var futures = selected.map((s) {
           return () async {
             await DbOrders.stornoOrder(s.id!);
@@ -260,7 +265,8 @@ class _OrdersContentState extends State<OrdersContent> {
           "${OrdersStrings.changeStateToPaidConfirmation} (${stateChange.length})");
 
       if (confirm) {
-        var futures = stateChange.map((s) {
+        final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
+        var futures = stateChange.where((o) => visibleIds.contains(o.id)).map((s) {
           return () async {
             await DbOrders.updateOrderAndTicketsToPaid(s.id!);
           };
@@ -279,7 +285,8 @@ class _OrdersContentState extends State<OrdersContent> {
         "${OrdersStrings.sendActionConfirmationText} (${selected.length})");
 
     if (confirm) {
-      var futures = selectedFull.map((s) {
+      final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
+      var futures = selectedFull.where((o) => visibleIds.contains(o.id)).map((s) {
         return () async {
           await sendTicketsToEmail(s);
         };
@@ -301,8 +308,7 @@ class _OrdersContentState extends State<OrdersContent> {
 
   List<OrderModel> _getChecked(SingleDataGridController singleDataGrid) {
     return List<OrderModel>.from(
-      singleDataGrid.stateManager.refRows.originalList
-          .where((row) => row.checked == true)
+      singleDataGrid.visibleCheckedRows
           .map((row) => OrderModel.fromPlutoJson(row.toJson())),
     );
   }
