@@ -51,3 +51,13 @@ SHA-256 manifest changed implementation sources/migrations/test fixtures: [order
 ## Následné upřesnění mini copy ikony
 
 Uživatel dodal screenshoty Supabase: textové tlačítko nahrazeno samotnou 18 px copy ikonou. Clipboard success ji přepne na zelenou fajfku, popover zůstane otevřený; tooltip potvrdí zkopírování. Při opětovném otevření opět copy ikona. Po této lokální UI úpravě proběhl jeden focused batch `fvm flutter test test/components/eshop/order_grid_filters_test.dart`: 5 pass, včetně přesného clipboard payloadu, zachování popoveru a resetu při reopen. Log `/tmp/order-sequence-icon-copy-test.log`. Předchozí full gate a browser evidence platí pro předchozí podobu copy nabídky; full gate nebyl po této malé UI změně opakován. `git diff --check` prošel. Bez publikace nebo nasazení.
+
+## Autorizované nasazení - readiness 2026-10-06
+
+Uživatel následně autorizoval nasazení. Scope pouze `prod/festapptickets` / `vstupenky.online`. Main posunul commit `2455327c96fb1b24cc61059ede63ca06eb3f532c` (oprava mazání email records); feature branch byla rebased na tento commit. Overlap v order_delete_email_cleanup_test zachovává nové upstream assertions a přidává pouze explicitní sequence fixture hodnoty. Source manifest byl aktualizován po rebase.
+
+Na novém základu proběhl finální celý `automation/test_all.sh`, exit 0, ve znovu vytvořeném vlastním disposable Supabase projektu: JS 222 pass, SQL 129 pass, Flutter 1141 pass + 1 skip, Deno 271 pass, automation pass. Image-worker 27 skipped a PyYAML structural fallback zůstávají explicitními omezeními. Log `/tmp/order-sequence-release-full-gate.log`. Tentokrát gate zahrnuje i finální mini copy ikonu.
+
+Read-only produkční preflight přes festapp-backend-access: hostname a current_database odpovídají target assertions; tenant activation je festapptickets/generation 1/canonical, config organization 3 a DB organization 3 existuje. Celkem 3287 orders, 0 NULL occasion, 78 occasions. Migration ledger již obsahuje email deletion 20261006170000; sequence expand/contract 20261006140000/20261006141000 zatím neobsahuje. Do produkce nebylo zapisováno a nebyly použity produkční test fixtures.
+
+Publikace je přes PR: GitHub main protection vyžaduje 1 approving review a repository agent rules požadují PR při required reviews. Auto-merge není v repository povolené. Produkční migrace musí použít přesný ověřený merged main source, chráněnou vzdálenou zálohu a atomický ledger zápis; release overlay musí obsahovat nový merged main SHA a projít main-owned drift checkerem. Tyto kroky čekají na schválení PR. Uživatelovu autorizaci nasazení není nutné vyžadovat znovu po splnění tohoto gate.
