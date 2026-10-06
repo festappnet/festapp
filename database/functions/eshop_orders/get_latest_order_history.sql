@@ -9,8 +9,9 @@ BEGIN
   SELECT to_jsonb(o)
     INTO result
   FROM eshop.orders_history o
-  WHERE o."order" = order_id AND o.price <> 0
-  ORDER BY o.created_at DESC
+  WHERE o."order" = order_id AND (o.price <> 0 OR o.state IS DISTINCT FROM 'storno')
+  -- Free orders also need cancellation emails; prefer the existing nonzero history.
+  ORDER BY (o.price <> 0) DESC NULLS LAST, o.created_at DESC, o.id DESC
   LIMIT 1;
 
   RETURN result;
