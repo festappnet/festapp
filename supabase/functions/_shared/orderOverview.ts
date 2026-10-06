@@ -12,7 +12,6 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     const tr = {
         cs: {
             overviewTitle: "Přehled objednávky",
-            orderSymbol: "Symbol objednávky",
             name: "Jméno",
             email: "E-mail",
             phone: "Telefon",
@@ -24,7 +23,6 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         },
         en: {
             overviewTitle: "Order Overview",
-            orderSymbol: "Order symbol",
             name: "Name",
             email: "E-mail",
             phone: "Phone",
@@ -37,7 +35,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     }[lang];
 
     // --- 1. Personal Info ---
-    let personalInfoHtml = orderSymbol ? `<div style="margin-bottom:4px;">${tr.orderSymbol}: <strong>${orderSymbol}</strong></div>` : '';
+    let personalInfoHtml = '';
     const fullName = [name, surname].filter(Boolean).join(' ');
 
     if (fullName) {
@@ -153,7 +151,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     // --- 4. Final Assembly ---
     return `
         <div style="margin: 20px auto; padding: 24px; font-family: sans-serif; color: #333; background-color: #f9fafb; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <p style="font-size: 20px; font-weight: bold; margin: 0 0 16px 0; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">${tr.overviewTitle}</p>
+            <p style="font-size: 20px; font-weight: bold; margin: 0 0 16px 0; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">${tr.overviewTitle}${orderSymbol ? ` ${orderSymbol}` : ''}</p>
             ${personalInfoHtml}
             ${ticketsDetails}
             ${totalSection}
