@@ -285,9 +285,9 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       bool signed = false,
       String? error,
     }) => Container(
-      padding: const EdgeInsets.all(12),
+      padding: hasDeposit ? const EdgeInsets.all(12) : EdgeInsets.zero,
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest.withValues(alpha: .4),
+        color: hasDeposit ? colors.surfaceContainerHighest.withValues(alpha: .4) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -340,6 +340,15 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
           final compact =
               constraints.maxWidth < 480 ||
               MediaQuery.textScalerOf(context).scale(1) > 1.4;
+          if (!hasDeposit && !compact) {
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: title),
+              const SizedBox(width: 16),
+              SizedBox(width: 160, child: price),
+              const SizedBox(width: 16),
+              actions,
+            ]);
+          }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
