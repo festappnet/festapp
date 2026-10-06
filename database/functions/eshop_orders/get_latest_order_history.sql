@@ -6,7 +6,7 @@ AS $$
 DECLARE
   result jsonb;
 BEGIN
-  SELECT to_jsonb(o) || jsonb_build_object('order_symbol', (SELECT ord.order_symbol FROM eshop.orders ord WHERE ord.id=o."order"))
+  SELECT to_jsonb(o) || jsonb_build_object('order_symbol', (SELECT ord.order_symbol FROM eshop.orders ord WHERE ord.id=o."order"), 'order_sequence', (SELECT ord.order_sequence FROM eshop.orders ord WHERE ord.id=o."order"))
     INTO result
   FROM eshop.orders_history o
   WHERE o."order" = order_id AND (o.price <> 0 OR o.state IS DISTINCT FROM 'storno')

@@ -54,8 +54,8 @@ VALUES (888, '00000000-0000-0000-0000-000000000002', true, true, true);
 INSERT INTO eshop.payment_info (id, variable_symbol, amount, currency_code, bank_account, created_at, paid)
 VALUES (3000, 999999999, 500.0, 'CZK', 2000, now(), 300.0);
 
-INSERT INTO eshop.orders (order_symbol, id, occasion, payment_info, state, price, currency_code, created_at)
-VALUES (public.generate_order_symbol(), 6000, 888, 3000, 'created', 500.0, 'CZK', now());
+INSERT INTO eshop.orders (order_sequence, order_symbol, id, occasion, payment_info, state, price, currency_code, created_at)
+VALUES (public.next_order_sequence(888), public.generate_order_symbol(), 6000, 888, 3000, 'created', 500.0, 'CZK', now());
 
 -- Canonical aggregates are derived from linked source rows. This existing
 -- 200 CZK movement is the baseline that remains after each tested removal.

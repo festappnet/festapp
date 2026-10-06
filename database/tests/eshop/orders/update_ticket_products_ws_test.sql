@@ -49,8 +49,8 @@ BEGIN
     INSERT INTO eshop.payment_info (variable_symbol, amount, currency_code, bank_account, created_at, paid)
     VALUES (777777, 0.0, 'CZK', 7000, now(), 0.0) RETURNING id INTO v_payment_info_id;
 
-    INSERT INTO eshop.orders (order_symbol, occasion, payment_info, state, price, currency_code, created_at)
-    VALUES (public.generate_order_symbol(), 777, v_payment_info_id, 'created', 0.0, 'CZK', now()) RETURNING id INTO v_order_id;
+    INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, payment_info, state, price, currency_code, created_at)
+    VALUES (public.next_order_sequence(777), public.generate_order_symbol(), 777, v_payment_info_id, 'created', 0.0, 'CZK', now()) RETURNING id INTO v_order_id;
 
     -- Create a Ticket (No order_id in table, linked via order_product_ticket? Or maybe schema in test was wrong?
     -- Checked function: uses "SELECT form FROM eshop.orders WHERE id = (SELECT order FROM eshop.order_product_ticket WHERE ticket = v_ticket_id LIMIT 1)"

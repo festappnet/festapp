@@ -26,12 +26,12 @@ BEGIN
   INSERT INTO eshop.payment_info(paid,returned,currency_code) VALUES(30,5,'EUR') RETURNING id INTO p2;
   INSERT INTO eshop.payment_info(paid,returned,currency_code,deposit_amount) VALUES(25,0,'CZK',25) RETURNING id INTO p3;
   INSERT INTO eshop.payment_info(paid,returned,currency_code) VALUES(40,10,'CZK') RETURNING id INTO p4;
-  INSERT INTO eshop.orders(order_symbol, occasion,price,state,payment_info) VALUES(public.generate_order_symbol(), occ,0,'storno',p4);
-  INSERT INTO eshop.orders(order_symbol, occasion,price,state,payment_info) VALUES(public.generate_order_symbol(), occ,100,'paid',p1) RETURNING id INTO o1;
-  INSERT INTO eshop.orders(order_symbol, occasion,price,state,payment_info) VALUES(public.generate_order_symbol(), occ,0,'storno',p1) RETURNING id INTO o2;
-  INSERT INTO eshop.orders(order_symbol, occasion,price,state,payment_info,currency_code) VALUES(public.generate_order_symbol(), occ,30,'sent',p2,'EUR') RETURNING id INTO o3;
-  INSERT INTO eshop.orders(order_symbol, occasion,price,state,payment_info) VALUES(public.generate_order_symbol(), occ,100,'paid',p3) RETURNING id INTO o4;
-  INSERT INTO eshop.orders(order_symbol, occasion,price,state) VALUES(public.generate_order_symbol(), occ,NULL,'future'),(public.generate_order_symbol(), occ,0,NULL);
+  INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state,payment_info) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,0,'storno',p4);
+  INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state,payment_info) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,100,'paid',p1) RETURNING id INTO o1;
+  INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state,payment_info) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,0,'storno',p1) RETURNING id INTO o2;
+  INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state,payment_info,currency_code) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,30,'sent',p2,'EUR') RETURNING id INTO o3;
+  INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state,payment_info) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,100,'paid',p3) RETURNING id INTO o4;
+  INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,NULL,'future'),(public.next_order_sequence(occ), public.generate_order_symbol(), occ,0,NULL);
   INSERT INTO eshop.transactions(date,amount,currency,bank_account_id,payment_info,transaction_type)
     VALUES(now(),40,'CZK',bank,p1,'manual'),(now(),-20,'CZK',bank,p1,'manual');
   INSERT INTO eshop.products(title,occasion) VALUES('Same title',occ) RETURNING id INTO product1;

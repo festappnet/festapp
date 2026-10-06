@@ -130,8 +130,8 @@ BEGIN
     INSERT INTO public.forms (occasion, key, title, link)
     VALUES (v_occasion, v_form_key, 'Editor form', 'oue-form');
 
-    INSERT INTO eshop.orders (order_symbol, occasion, data, created_at, state)
-    VALUES (public.generate_order_symbol(),
+    INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, data, created_at, state)
+    VALUES (public.next_order_sequence(v_occasion), public.generate_order_symbol(),
         v_occasion,
         jsonb_build_object('form', v_form_key::text),
         timestamptz '2026-08-02 10:00:00+00',

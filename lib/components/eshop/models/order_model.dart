@@ -23,6 +23,7 @@ class OrderModel extends ITrinaRowModel {
   @override
   int? id;
   String? orderSymbol;
+  int? orderSequence;
   DateTime? createdAt;
   DateTime? updatedAt;
   double? price;
@@ -139,6 +140,7 @@ class OrderModel extends ITrinaRowModel {
   OrderModel({
     this.id,
     this.orderSymbol,
+    this.orderSequence,
     this.createdAt,
     this.updatedAt,
     this.price,
@@ -172,6 +174,7 @@ class OrderModel extends ITrinaRowModel {
     return OrderModel(
       id: json[TbEshop.orders.id],
       orderSymbol: json[TbEshop.orders.order_symbol] as String?,
+      orderSequence: (json[TbEshop.orders.order_sequence] as num?)?.toInt(),
       createdAt: json[TbEshop.orders.created_at] != null
           ? DateTime.parse(json[TbEshop.orders.created_at])
           : null,
@@ -199,6 +202,16 @@ class OrderModel extends ITrinaRowModel {
     );
   }
 
+  static OrderModel fromCanonicalJson(Map<String, dynamic> json) {
+    final sequence = json[TbEshop.orders.order_sequence];
+    if (sequence is! num || sequence <= 0) {
+      throw StateError(
+        'Canonical order response requires positive order_sequence',
+      );
+    }
+    return OrderModel.fromJson(json);
+  }
+
   static OrderModel fromPlutoJson(Map<String, dynamic> json) {
     return OrderModel(
         id: json[EshopColumns.ORDER_ID] == -1
@@ -224,6 +237,7 @@ class OrderModel extends ITrinaRowModel {
   TrinaRow toTrinaRow(BuildContext context) {
     return TrinaRow(cells: {
       EshopColumns.ORDER_ID: TrinaCell(value: id ?? 0),
+      EshopColumns.ORDER_SEQUENCE: TrinaCell(value: orderSequence),
       EshopColumns.ORDER_SYMBOL: TrinaCell(value: orderSymbol ?? ""),
       EshopColumns.ORDER_PRICE: TrinaCell(
           value: price != null

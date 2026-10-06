@@ -37,8 +37,8 @@ BEGIN;
         RETURNING id INTO v_occasion_id;
 
         -- Create dummy Order
-        INSERT INTO eshop.orders (order_symbol, occasion, created_at, updated_at)
-        VALUES (public.generate_order_symbol(), v_occasion_id, now(), now())
+        INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, created_at, updated_at)
+        VALUES (public.next_order_sequence(v_occasion_id), public.generate_order_symbol(), v_occasion_id, now(), now())
         RETURNING id INTO v_order_id;
 
         -- Insert External Service

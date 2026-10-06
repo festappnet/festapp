@@ -1,3 +1,4 @@
+import 'order_symbol_cell.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -91,6 +92,7 @@ class EshopColumns {
       "paymentInfoDepositDeadline";
   static const String PAYMENT_INFO_REMINDER_SENT = "isReminderSent";
 
+  static const String ORDER_SEQUENCE = "orderSequence";
   static const String ORDER_SYMBOL = "orderSymbol";
   static const String ORDER_DATA = "orderData";
   static const String ORDER_EMAIL = "orderEmail";
@@ -116,13 +118,60 @@ class EshopColumns {
   static const String HISTORY_MODEL_REFERENCE = "historyModelReference";
 
   // Define columns
-  static TrinaColumn orderSymbolColumn() => TrinaColumn(
+  // These narrow identity columns use a tooltip rather than the shared
+  // interactive help button, whose accessible controls require 160 px.
+  static Widget _compactOrderHeader(TrinaColumnTitleRendererContext r, String help) =>
+      Builder(builder: (context) => Tooltip(
+        message: '${r.column.title}\n$help',
+        child: Container(
+          height: r.height,
+          padding: r.column.titlePadding ?? r.stateManager.style.defaultColumnTitlePadding,
+          child: Row(children: [
+            Expanded(child: Text(r.column.title,
+                style: r.stateManager.style.columnTextStyle,
+                maxLines: 1, overflow: TextOverflow.ellipsis)),
+            if (r.isFiltered) SizedBox(width: 24, child: IconButton(
+              padding: EdgeInsets.zero, iconSize: 18,
+              icon: const Icon(Icons.filter_alt_outlined),
+              onPressed: () => r.stateManager.showFilterPopup(context, calledColumn: r.column),
+            )),
+            if (r.showContextIcon) SizedBox(width: 24, child: r.contextMenuIcon),
+          ]),
+        ),
+      ));
+
+  static TrinaColumn orderSequenceColumn() => TrinaColumn(
+    readOnly: true,
+    enableEditingMode: false,
+    title: OrdersStrings.gridOrderSequence,
+    field: ORDER_SEQUENCE,
+    type: TrinaColumnType.number(format: "#", defaultValue: null),
+    width: 90,
+    titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSequenceHelp),
+  );
+
+  static double _orderSymbolWidth(BuildContext context) {
+    final painter = TextPainter(
+      text: TextSpan(text: '9W9W9W9W9W', style: DefaultTextStyle.of(context).style
+          .merge(TrinaGridStyleConfig.defaultLightCellTextStyle)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final width = (painter.width + 22).ceilToDouble().clamp(120.0, double.infinity);
+    painter.dispose();
+    return width;
+  }
+
+  static TrinaColumn orderSymbolColumn({BuildContext? context}) => TrinaColumn(
         readOnly: true,
         enableEditingMode: true,
         title: OrdersStrings.gridOrderSymbol,
         field: ORDER_SYMBOL,
+        renderer: (r) => OrderSymbolCell(symbol: r.cell.value?.toString() ?? '',
+            style: r.stateManager.style.cellTextStyle),
+        titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
         type: TrinaColumnType.text(),
-        width: 160,
+        width: context == null ? 120 : _orderSymbolWidth(context),
       );
 
   static Map<String, dynamic> columnBuilders(BuildContext context) => {
@@ -531,7 +580,8 @@ class EshopColumns {
                 DataGridHelper.idRenderer(rendererContext),
           ),
         ],
-        ORDER_SYMBOL: [orderSymbolColumn()],
+        ORDER_SEQUENCE: [orderSequenceColumn()],
+        ORDER_SYMBOL: [orderSymbolColumn(context: context)],
         ORDER_PRICE: [
           TrinaColumn(
             readOnly: true,
@@ -1187,6 +1237,8 @@ class EshopColumns {
           TrinaColumn(
             title: OrdersStrings.gridOrderSymbol,
             field: HISTORY_ORDER_SYMBOL,
+            renderer: (r) => OrderSymbolCell(symbol: r.cell.value?.toString() ?? '',
+                style: r.stateManager.style.cellTextStyle),
             type: TrinaColumnType.text(),
             readOnly: true,
             width: 160,

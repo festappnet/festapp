@@ -316,6 +316,11 @@ class OrdersStrings {
   static String get gridHiddenNote =>
       'OrderGridColumns.hiddenNote'.tr(); // "Hidden note"
   static String get gridSpot => 'OrderGridColumns.spot'.tr(); // "Spot"
+  static String get gridOrderSequence => "OrderGridColumns.orderSequence".tr();
+  static String get gridOrderSequenceHelp =>
+      "OrderGridColumns.orderSequenceHelp".tr();
+  static String get onlyNonCancelled =>
+      "OrderGridColumns.onlyNonCancelled".tr();
   static String get gridOrderSymbol =>
       'OrderGridColumns.orderSymbol'.tr(); // "Order Symbol"
   static String get gridCustomer =>
