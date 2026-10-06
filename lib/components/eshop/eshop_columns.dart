@@ -125,9 +125,6 @@ class EshopColumns {
         message: '${r.column.title}\n$help',
         child: Container(
           height: r.height,
-          decoration: BoxDecoration(color: r.column.backgroundColor,
-              border: BorderDirectional(end: r.stateManager.style.enableColumnBorderVertical
-                  ? BorderSide(color: r.stateManager.style.borderColor) : BorderSide.none)),
           padding: r.column.titlePadding ?? r.stateManager.style.defaultColumnTitlePadding,
           child: Row(children: [
             Expanded(child: Text(r.column.title,
@@ -149,7 +146,7 @@ class EshopColumns {
     title: OrdersStrings.gridOrderSequence,
     field: ORDER_SEQUENCE,
     type: TrinaColumnType.number(format: "#", defaultValue: null),
-    width: 76,
+    width: 90,
     titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSequenceHelp),
   );
 
@@ -160,7 +157,7 @@ class EshopColumns {
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     )..layout();
-    final width = (painter.width + 46).ceilToDouble().clamp(144.0, double.infinity);
+    final width = (painter.width + 22).ceilToDouble().clamp(120.0, double.infinity);
     painter.dispose();
     return width;
   }
@@ -174,7 +171,7 @@ class EshopColumns {
             style: r.stateManager.style.cellTextStyle),
         titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
         type: TrinaColumnType.text(),
-        width: context == null ? 144 : _orderSymbolWidth(context),
+        width: context == null ? 120 : _orderSymbolWidth(context),
       );
 
   static Map<String, dynamic> columnBuilders(BuildContext context) => {
@@ -1244,7 +1241,7 @@ class EshopColumns {
                 style: r.stateManager.style.cellTextStyle),
             type: TrinaColumnType.text(),
             readOnly: true,
-            width: _orderSymbolWidth(context),
+            width: 160,
           ),
         ],
         HISTORY_CHANGED_AT: [

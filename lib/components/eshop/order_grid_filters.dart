@@ -21,18 +21,25 @@ class OrderGridFilters {
           OrderModel.stornoState &&
       orderIsNonCancelled(row);
 
-  static Widget filterButton<T extends ITrinaRowModel>(
+  static Widget checkbox<T extends ITrinaRowModel>(
     BuildContext context,
-    SingleDataGridController<T> controller, {
-    String? label,
-  }) => Semantics(
-    toggled: controller.additionalFilterEnabled,
-    child: ElevatedButton.icon(
-      key: const ValueKey("onlyNonCancelled"),
-      onPressed: () => controller.toggleAdditionalFilter(!controller.additionalFilterEnabled),
-      icon: Icon(controller.additionalFilterEnabled
-          ? Icons.check_box_outlined : Icons.check_box_outline_blank, size: 18),
-      label: Text('${label ?? OrdersStrings.validOrders} (${controller.additionalFilterCount})'),
-    ),
+    SingleDataGridController<T> controller,
+  ) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Checkbox(
+          key: const ValueKey("onlyNonCancelled"),
+        value: controller.additionalFilterEnabled,
+        onChanged: (value) => controller.toggleAdditionalFilter(value ?? false),
+      ),
+      GestureDetector(
+        onTap: () => controller.toggleAdditionalFilter(
+          !controller.additionalFilterEnabled,
+        ),
+        child: Text(
+          '${OrdersStrings.onlyNonCancelled} (${controller.additionalFilterCount})',
+        ),
+      ),
+    ],
   );
 }
