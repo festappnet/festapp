@@ -787,7 +787,10 @@
     "changeTicketLabel": "Vstupenka {symbol}",
     "productChangesForTicket": "Změny produktů na vstupence {symbol}",
     "ticketWithoutSymbol": "bez označení",
-    "orderChangesOverview": "Přehled změn v objednávce"
+    "orderChangesOverview": "Přehled změn v objednávce",
+    "cancelledTicketStatus": "Storno",
+    "removedTicketStatus": "Odebraná",
+    "addedTicketStatus": "Přidaná"
   },
   "EmailTemplates": {
     "subs": {

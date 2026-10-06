@@ -54,9 +54,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Preview'));
     await tester.pumpAndSettle();
-    expect(find.text('Stornované vstupenky:'), findsOneWidget);
+    expect(find.text('(Storno)'), findsOneWidget);
     expect(find.text('Vstupenka FIRST'), findsOneWidget);
-    expect(find.text('Změny produktů na vstupence SURVIVOR'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('Vstupenka FIRST')).style?.decoration,
+        TextDecoration.lineThrough);
+    expect(find.text('Vstupenka SURVIVOR'), findsOneWidget);
+    expect(
+        tester.widget<Text>(find.text('Vstupenka SURVIVOR')).style?.decoration,
+        isNull);
+    expect(find.textContaining('Změny produktů na vstupence'), findsNothing);
     expect(find.text('Odebrané položky:'), findsNothing);
     expect(find.textContaining('+ Vstupenka'), findsNothing);
     expect(find.byIcon(Icons.undo_outlined), findsOneWidget);
@@ -105,8 +111,12 @@ void main() {
     ];
     await pumpPreview(tester, data);
     expect(find.text('Stornované vstupenky:'), findsNothing);
-    expect(find.text('Odebrané položky:'), findsOneWidget);
-    expect(find.text('Změny produktů na vstupence SURVIVOR'), findsOneWidget);
+    expect(find.textContaining('- Místo'), findsOneWidget);
+    expect(find.text('Vstupenka SURVIVOR'), findsOneWidget);
+    expect(
+        tester.widget<Text>(find.text('Vstupenka SURVIVOR')).style?.decoration,
+        isNull);
+    expect(find.textContaining('Změny produktů na vstupence'), findsNothing);
     expect(tester.takeException(), isNull);
   });
   testWidgets(
@@ -126,9 +136,28 @@ void main() {
     data['currentTotal'] = 0;
     await pumpPreview(tester, data);
     expect(find.text('Vstupenka FIRST'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('Vstupenka FIRST')).style?.decoration,
+        TextDecoration.lineThrough);
     expect(find.text('Vstupenka THIRD'), findsOneWidget);
     expect(find.text('Odebrané položky:'), findsNothing);
     expect(find.text('Změna celkové ceny'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+      'ticket blocks retain original price transitions on a narrow screen',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final data = fixture();
+    data['productChanges'][0]['changed'][0]['to']['title'] = 'Nové místo';
+    await pumpPreview(tester, data);
+    expect(find.byIcon(Icons.list_alt_outlined), findsOneWidget);
+    expect(find.text('• Nové místo:'), findsNWidgets(2));
+    expect(find.byIcon(Icons.arrow_forward), findsNWidgets(3));
+    expect(find.text('Stornované vstupenky:'), findsNothing);
+    expect(find.text('Změna ceny položek:'), findsNothing);
     expect(tester.takeException(), isNull);
   });
   test(
