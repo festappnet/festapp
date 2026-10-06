@@ -787,7 +787,10 @@
     "changeTicketLabel": "Ticket {symbol}",
     "productChangesForTicket": "Product changes on ticket {symbol}",
     "ticketWithoutSymbol": "without a symbol",
-    "orderChangesOverview": "Order changes overview"
+    "orderChangesOverview": "Order changes overview",
+    "cancelledTicketStatus": "Cancelled",
+    "removedTicketStatus": "Removed",
+    "addedTicketStatus": "Added"
   },
   "EmailTemplates": {
     "subs": {
