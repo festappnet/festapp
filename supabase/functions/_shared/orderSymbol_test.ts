@@ -19,7 +19,9 @@ Deno.test("old pending/replay reads identity once without replacing snapshot", a
 for (const lang of ["cs", "en"] as const) {
   Deno.test(`overview ${lang} trusts explicit persisted identity, preserves style and prices`, () => {
     const html = generateFullOrder({ order_symbol: "spoofed", email: "a@example.invalid" }, [], [], lang, "7G4K9M2R6A");
-    assertStringIncludes(html, "7G4K9M2R6A");
+    assertStringIncludes(html, `${lang === "cs" ? "Přehled objednávky" : "Order Overview"} 7G4K9M2R6A</p>`);
+    assertEquals(html.split("7G4K9M2R6A").length, 2);
+    assertEquals(html.includes(lang === "cs" ? "Symbol objednávky:" : "Order symbol:"), false);
     assertEquals(html.includes("spoofed"), false);
     assertStringIncludes(html, "background-color: #f9fafb");
     assertEquals(generateFullOrder({}, [], [], lang).includes("Order #"), false);
