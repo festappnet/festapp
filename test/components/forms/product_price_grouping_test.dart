@@ -83,6 +83,7 @@ void main() {
         expect(surcharge, findsOneWidget);
         if (width > 480) {
           expect(tester.getRect(price).top, tester.getRect(surcharge).top);
+          expect(tester.getSize(find.byType(TicketProductEditorRow)).height, lessThan(100));
           expect(tester.getRect(price).right, lessThan(tester.getRect(surcharge).left));
         } else {
           expect(tester.getRect(surcharge).top, greaterThan(tester.getRect(price).bottom));

@@ -432,8 +432,8 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
               for (int i = 0; i < group.products!.length; i++)
                 Container(
                   key: ObjectKey(group.products![i]),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: hasDeposit ? const EdgeInsets.all(12) : const EdgeInsets.symmetric(vertical: 6),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: hasDeposit ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8) : const EdgeInsets.symmetric(vertical: 6),
                   decoration: hasDeposit ? BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     border: Border.all(
