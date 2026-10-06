@@ -726,7 +726,7 @@
     "totalPrice": "Celková cena",
     "noProductChanges": "Žádné změny v produktech.",
     "expiredOrderTooltip": "Expirovaná objednávka",
-    "toBasicString": "Historie č. {id} pro objednávku č. {orderId}"
+    "toBasicString": "Historie č. {id} pro objednávku {orderSymbol}"
   },
   "ProductsDialog": {
     "productsUpdateSuccess": "Produkty úspěšně změněny.",

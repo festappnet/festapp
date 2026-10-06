@@ -20,39 +20,39 @@ BEGIN
     -- Note: We use ad-hoc inserts to avoid dependency on specific RPCs which might change
     INSERT INTO public.organizations (title) VALUES ('Test Org Delete Form') RETURNING id INTO v_org_id;
     INSERT INTO public.units (title, organization) VALUES ('Test Unit Delete Form', v_org_id) RETURNING id INTO v_unit_id;
-    
-    INSERT INTO public.occasions (title, link, unit, start_time, end_time) 
-    VALUES ('Test Occasion Delete Form', 'occ-del-form-' || floor(random()*100000)::text, v_unit_id, now(), now() + interval '1 day') 
+
+    INSERT INTO public.occasions (title, link, unit, start_time, end_time)
+    VALUES ('Test Occasion Delete Form', 'occ-del-form-' || floor(random()*100000)::text, v_unit_id, now(), now() + interval '1 day')
     RETURNING id INTO v_occasion_id;
 
     -- Assign user as editor on occasion (CRITICAL for permission checks)
     -- We set ALL editor flags to ensure permissions pass regardless of which specific check is used
-    INSERT INTO public.occasion_users (occasion, "user", is_editor, is_manager, is_editor_order_view) 
-    VALUES (v_occasion_id, v_user_id, true, true, true) 
+    INSERT INTO public.occasion_users (occasion, "user", is_editor, is_manager, is_editor_order_view)
+    VALUES (v_occasion_id, v_user_id, true, true, true)
     ON CONFLICT (occasion, "user") DO UPDATE SET is_editor = true, is_manager = true, is_editor_order_view = true;
 
     -- 2. Create Form
-    INSERT INTO public.forms (title, link, occasion, key) 
-    VALUES ('Test Form Delete', v_form_link, v_occasion_id, gen_random_uuid()) 
+    INSERT INTO public.forms (title, link, occasion, key)
+    VALUES ('Test Form Delete', v_form_link, v_occasion_id, gen_random_uuid())
     RETURNING id INTO v_form_id;
 
     -- 3. Check can_delete = true (initially)
     v_full_json := get_form_for_edit(v_form_link);
     v_form_data := v_full_json->'data'->'form';
-    
+
     IF (v_form_data->>'can_delete')::boolean IS DISTINCT FROM TRUE THEN
         RAISE EXCEPTION 'Form should be deletable initially. Data: %', v_form_data->>'can_delete';
     END IF;
 
     -- 4. Create Order (Response)
-    INSERT INTO eshop.orders (form, data, created_at, updated_at, price, state)
-    VALUES (v_form_id, jsonb_build_object('form', (SELECT key FROM public.forms WHERE id = v_form_id)), now(), now(), 0, 'created')
+    INSERT INTO eshop.orders (order_symbol, form, data, created_at, updated_at, price, state)
+    VALUES (public.generate_order_symbol(), v_form_id, jsonb_build_object('form', (SELECT key FROM public.forms WHERE id = v_form_id)), now(), now(), 0, 'created')
     RETURNING id INTO v_order_id;
-    
+
     -- 5. Check can_delete = false (after order)
     v_full_json := get_form_for_edit(v_form_link);
     v_form_data := v_full_json->'data'->'form';
-    
+
     IF (v_form_data->>'can_delete')::boolean IS TRUE THEN
         RAISE EXCEPTION 'Form should NOT be deletable with orders';
     END IF;
@@ -71,7 +71,7 @@ BEGIN
     -- 8. Check can_delete = true (after cleanup)
     v_full_json := get_form_for_edit(v_form_link);
     v_form_data := v_full_json->'data'->'form';
-    
+
     IF (v_form_data->>'can_delete')::boolean IS NOT TRUE THEN
         RAISE EXCEPTION 'Form should be deletable after order removal';
     END IF;

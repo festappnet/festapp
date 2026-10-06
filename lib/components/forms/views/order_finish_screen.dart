@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
@@ -256,6 +257,13 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
                 ),
             textAlign: TextAlign.center,
           ),
+          if (_isSuccess &&
+              _orderData?['ticketOrder']?['order']?['order_symbol'] is String)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: SelectableText(
+                  '${OrdersStrings.gridOrderSymbol}: ${_orderData!['ticketOrder']['order']['order_symbol']}'),
+            ),
           if (_isSuccess) _buildPaymentQr(),
           const SizedBox(height: 24),
           OutlinedButton(

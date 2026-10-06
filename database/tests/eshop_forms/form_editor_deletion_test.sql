@@ -22,7 +22,7 @@ BEGIN
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Answered') RETURNING id INTO answered;
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Unused') RETURNING id INTO unused;
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Late answer') RETURNING id INTO late_field;
-  INSERT INTO eshop.orders(occasion,form,state,data) VALUES (occ,form_id,'storno',
+  INSERT INTO eshop.orders(order_symbol, occasion,form,state,data) VALUES (public.generate_order_symbol(), occ,form_id,'storno',
     jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(answered::text,'yes')))) RETURNING id INTO order_id;
   payload := jsonb_build_object('id',form_id,'occasion',occ,'link',link,'title','Changed');
 

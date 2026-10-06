@@ -6,12 +6,12 @@ INSERT INTO units (id, organization, title) VALUES (998, 998, 'Test Unit Refacto
 INSERT INTO occasions (id, unit, title, link, start_time, end_time) VALUES (124, 998, 'Test Occasion Refactor', 'refactor-link', now(), now() + interval '1 day');
 
 -- Create Order 1 (Created state)
-INSERT INTO eshop.orders (id, occasion, state, price, currency_code, created_at)
-VALUES (6001, 124, 'created', 100.0, 'CZK', now());
+INSERT INTO eshop.orders (order_symbol, id, occasion, state, price, currency_code, created_at)
+VALUES (public.generate_order_symbol(), 6001, 124, 'created', 100.0, 'CZK', now());
 
 -- Create Order 2 (Ordered state)
-INSERT INTO eshop.orders (id, occasion, state, price, currency_code, created_at)
-VALUES (6002, 124, 'ordered', 100.0, 'CZK', now());
+INSERT INTO eshop.orders (order_symbol, id, occasion, state, price, currency_code, created_at)
+VALUES (public.generate_order_symbol(), 6002, 124, 'ordered', 100.0, 'CZK', now());
 
 -- Create Tickets for Order 2
 INSERT INTO eshop.tickets (id, state, created_at, occasion) VALUES (7001, 'ordered', now(), 124);

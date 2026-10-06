@@ -118,11 +118,13 @@ export async function getTicketOrderPaidTemplate(
 
   const subs = {
     occasionTitle: occasion.title,
+      orderSymbol: order.order_symbol,
     fullOrder: generateFullOrder(
       order.data,
       order.data.tickets,
       occasion.features,
       lang,
+        order.order_symbol,
     ),
     balanceReasoning: balanceReasoning,
     amount: formatCurrency(amountPaid, currency),

@@ -13,9 +13,9 @@ BEGIN
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Cancellation',org,u,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO occ;
  INSERT INTO public.occasion_users(occasion,"user",is_editor_order) VALUES(occ,actor,true);
- INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'paid',20,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO a;
- INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'ordered',10,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO b;
- INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'paid',0,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO f;
+ INSERT INTO eshop.orders(order_symbol, occasion,state,price,currency_code,data) VALUES(public.generate_order_symbol(), occ,'paid',20,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO a;
+ INSERT INTO eshop.orders(order_symbol, occasion,state,price,currency_code,data) VALUES(public.generate_order_symbol(), occ,'ordered',10,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO b;
+ INSERT INTO eshop.orders(order_symbol, occasion,state,price,currency_code,data) VALUES(public.generate_order_symbol(), occ,'paid',0,'CZK','{"email":"owner@example.invalid"}') RETURNING id INTO f;
  INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'paid','cancel-a1') RETURNING id INTO t1;
  INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'paid','cancel-a2') RETURNING id INTO t2;
  INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'ordered','cancel-b') RETURNING id INTO t3;
@@ -72,7 +72,7 @@ BEGIN
  PERFORM public.storno_tickets_client_sync_v1(ARRAY[tf],gen_random_uuid());
  PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=f AND message_kind='order_storno'),1::bigint,'Free order also gets cancellation email');
  PERFORM assert_eq((public.get_latest_order_history(f)->>'price')::numeric,0::numeric,'Free cancellation renderer has valid zero-price history');
- INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'ordered',7,'CZK','{}') RETURNING id INTO n;
+ INSERT INTO eshop.orders(order_symbol, occasion,state,price,currency_code,data) VALUES(public.generate_order_symbol(), occ,'ordered',7,'CZK','{}') RETURNING id INTO n;
  INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'ordered','cancel-no-email') RETURNING id INTO tn;
  INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(n,tn);
  PERFORM public.storno_tickets_client_sync_v1(ARRAY[tn],gen_random_uuid());

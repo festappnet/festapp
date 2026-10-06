@@ -122,7 +122,7 @@ class EshopColumns {
         title: OrdersStrings.gridOrderSymbol,
         field: ORDER_SYMBOL,
         type: TrinaColumnType.text(),
-        width: 120,
+        width: 160,
       );
 
   static Map<String, dynamic> columnBuilders(BuildContext context) => {
@@ -685,8 +685,7 @@ class EshopColumns {
                       final orderId =
                           rendererContext.row.cells[ORDER_ID]!.value as int;
                       final orderSymbol =
-                          rendererContext.row.cells[ORDER_SYMBOL]?.value ??
-                              orderId.toString();
+                          rendererContext.row.cells[ORDER_SYMBOL]?.value ?? "";
 
                       final customerName = rendererContext
                               .row.cells[ORDER_DATA]?.value
@@ -731,7 +730,11 @@ class EshopColumns {
                     onPressed: () async {
                       var id = rendererContext.row.cells[ORDER_ID]!.value;
                       var unitId = data["unitId"] as int?;
-                      await _showOrderTransactions(context, id, unitId: unitId);
+                      await _showOrderTransactions(context, id,
+                          unitId: unitId,
+                          orderSymbol: rendererContext
+                              .row.cells[ORDER_SYMBOL]?.value
+                              ?.toString());
                       var transactionsAfterFunction = data[ORDER_TRANSACTIONS];
                       if (transactionsAfterFunction is Future<void>
                           Function()?) {
@@ -1186,7 +1189,7 @@ class EshopColumns {
             field: HISTORY_ORDER_SYMBOL,
             type: TrinaColumnType.text(),
             readOnly: true,
-            width: 120,
+            width: 160,
           ),
         ],
         HISTORY_CHANGED_AT: [
@@ -1341,12 +1344,13 @@ class EshopColumns {
 
   /// Shows the order transactions in a dialog.
   static Future<void> _showOrderTransactions(BuildContext context, int orderId,
-      {int? unitId}) async {
+      {int? unitId, String? orderSymbol}) async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return TransactionsDialog(
           orderId: orderId,
+          orderSymbol: orderSymbol,
           unitId: unitId,
         );
       },

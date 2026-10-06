@@ -123,8 +123,8 @@ BEGIN
         ),
         '{}'::jsonb
     );
-    INSERT INTO eshop.orders(occasion, state, data)
-    VALUES (
+    INSERT INTO eshop.orders(order_symbol, occasion, state, data)
+    VALUES (public.generate_order_symbol(),
         v_occasion, 'paid',
         jsonb_build_object(
             'email', 'new-delivery@test.local', 'name', 'Second',
@@ -182,16 +182,16 @@ BEGIN
         true
     ) RETURNING id INTO v_occasion;
 
-    INSERT INTO eshop.orders(occasion, state, data)
-    VALUES (
+    INSERT INTO eshop.orders(order_symbol, occasion, state, data)
+    VALUES (public.generate_order_symbol(),
         v_occasion, 'paid',
         jsonb_build_object(
             'email', 'family@test.local', 'name', 'Klára',
             'surname', 'Vomelová'
         )
     ) RETURNING id INTO v_order_1;
-    INSERT INTO eshop.orders(occasion, state, data)
-    VALUES (
+    INSERT INTO eshop.orders(order_symbol, occasion, state, data)
+    VALUES (public.generate_order_symbol(),
         v_occasion, 'paid',
         jsonb_build_object(
             'email', 'family@test.local', 'name', 'Marie',

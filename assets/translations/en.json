@@ -726,7 +726,7 @@
     "totalPrice": "Total price",
     "noProductChanges": "No changes in products.",
     "expiredOrderTooltip": "Expired order",
-    "toBasicString": "History No. {id} for Order No. {orderId}"
+    "toBasicString": "History No. {id} for Order {orderSymbol}"
   },
   "ProductsDialog": {
     "productsUpdateSuccess": "Products updated successfully.",

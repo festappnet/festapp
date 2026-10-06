@@ -7,6 +7,8 @@ AS $$
 DECLARE
     result JSONB;
     order_id BIGINT;
+    assigned_order_symbol TEXT;
+    allocation_attempt INTEGER;
     ticket_data JSONB;
     spot_data RECORD;
     spot_id BIGINT;
@@ -60,6 +62,11 @@ BEGIN
         -- Validate input_data and extract form key and email
         IF input_data IS NULL OR input_data->'form' IS NULL THEN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1001, 'message', 'Missing form key in input data')::TEXT;
+        END IF;
+
+        IF input_data ? 'order_symbol' OR input_data ? 'orderSymbol'
+            OR COALESCE(input_data->'data', '{}'::jsonb) ?| ARRAY['order_symbol','orderSymbol'] THEN
+            RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1001, 'message', 'Order symbol is server assigned')::TEXT;
         END IF;
 
         form_key := (input_data->>'form')::UUID;
@@ -142,9 +149,18 @@ BEGIN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1002, 'message', 'Missing email in input data')::TEXT;
         END IF;
 
-        INSERT INTO eshop.orders (created_at, updated_at, occasion, form)
-        VALUES (now, now, occasion_id, form_id)
-        RETURNING id INTO order_id;
+        FOR allocation_attempt IN 1..10 LOOP
+            INSERT INTO eshop.orders (created_at, updated_at, occasion, form, order_symbol)
+            VALUES (now, now, occasion_id, form_id, public.generate_order_symbol())
+            ON CONFLICT ON CONSTRAINT orders_order_symbol_key DO NOTHING
+            RETURNING id, order_symbol INTO order_id, assigned_order_symbol;
+            EXIT WHEN order_id IS NOT NULL;
+            RAISE LOG 'order_symbol_collision attempt=%', allocation_attempt;
+        END LOOP;
+        IF order_id IS NULL THEN
+            RAISE LOG 'order_symbol_allocation_exhausted';
+            RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1013, 'message', 'Order symbol allocation exhausted')::TEXT;
+        END IF;
 
         -- Process each ticket
         FOR ticket_data IN SELECT * FROM JSONB_ARRAY_ELEMENTS(input_data->'ticket') LOOP
@@ -538,6 +554,7 @@ BEGIN
             'code', 200,
             'order', JSONB_BUILD_OBJECT(
                 'id', order_id,
+                'order_symbol', assigned_order_symbol,
                 'data', order_data,
                 'form', JSONB_BUILD_OBJECT(
                     'id', form_id,
