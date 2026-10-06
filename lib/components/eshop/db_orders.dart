@@ -168,6 +168,9 @@ class DbOrders {
     GetOrdersHelper.parseProductTypes(json);
     final tickets = GetOrdersHelper.parseTickets(json);
     final orders = GetOrdersHelper.parseOrders(json)!;
+    if (orders.any((order) => order.orderSymbol == null)) {
+      throw const FormatException('Missing order symbol in orders response');
+    }
     final payments = GetOrdersHelper.parsePaymentInfo(json);
     final forms = GetOrdersHelper.parseForms(json);
     final orderProductTickets = GetOrdersHelper.parseOrderProductTickets(json);
@@ -201,7 +204,8 @@ class DbOrders {
     // Main loop to assemble the final OrderModel objects
     for (var order in orders) {
       final delivery = (json['email_delivery'] as Map?)?[order.id.toString()];
-      order.emailDelivery = delivery is Map ? Map<String,dynamic>.from(delivery) : null;
+      order.emailDelivery =
+          delivery is Map ? Map<String, dynamic>.from(delivery) : null;
       final orderOpts = orderToOpt[order.id] ?? [];
       final ticketIds = orderOpts.map((opt) => opt.ticketId).toSet();
       final relatedTickets = ticketIds
@@ -374,9 +378,8 @@ class DbOrders {
 
   static Future<Uint8List?> downloadContractPdf(int orderId) async {
     try {
-      final response = await _supabase.functions.invoke(
-          "generate-order-agreement",
-          body: {"orderId": orderId});
+      final response = await _supabase.functions
+          .invoke("generate-order-agreement", body: {"orderId": orderId});
 
       final String? base64Str = response.data['file'];
 

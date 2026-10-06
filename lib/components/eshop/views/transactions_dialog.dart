@@ -17,11 +17,13 @@ import 'add_cash_payment_dialog.dart';
 
 class TransactionsDialog extends StatefulWidget {
   final int orderId;
+  final String? orderSymbol;
   final int? unitId;
 
   const TransactionsDialog({
     super.key,
     required this.orderId,
+    this.orderSymbol,
     this.unitId,
   });
 
@@ -152,7 +154,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
         children: [
           Expanded(
             child: Text(
-              OrdersStrings.transactionsForOrder(widget.orderId.toString()),
+              OrdersStrings.transactionsForOrder(widget.orderSymbol ?? ""),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
@@ -307,184 +309,191 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
                         width: StylesConfig.formMaxWidth,
                         child: SelectionArea(
                           child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _transactions.length,
-                          itemBuilder: (context, index) {
-                            final transaction = _transactions[index];
-                            final counterAccountName =
-                                transaction.counterAccountName ??
-                                    transaction.performedBy ??
-                                    transaction.counterAccount ??
-                                    OrdersStrings.notAvailable;
+                            shrinkWrap: true,
+                            itemCount: _transactions.length,
+                            itemBuilder: (context, index) {
+                              final transaction = _transactions[index];
+                              final counterAccountName =
+                                  transaction.counterAccountName ??
+                                      transaction.performedBy ??
+                                      transaction.counterAccount ??
+                                      OrdersStrings.notAvailable;
 
-                            return Card(
-                              margin: EdgeInsets.symmetric(vertical: 5),
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    Utilities.formatPrice(
-                                                      context,
-                                                      transaction.amount!,
-                                                      currencyCode: transaction
-                                                              .currency ??
-                                                          "N/A",
-                                                      decimalDigits: 2,
-                                                    ),
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                  if (transaction
-                                                          .transactionType ==
-                                                      'manual')
-                                                    Row(
-                                                      children: [
-                                                        Icon(Icons.payments,
-                                                            size: 18,
-                                                            color: Colors
-                                                                .grey[700]),
-                                                        SizedBox(width: 8),
-                                                        Text(
-                                                          OrdersStrings
-                                                              .transactionTypeCash,
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontSize: 15,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  else if (counterAccountName
-                                                      .isNotEmpty)
+                              return Card(
+                                margin: EdgeInsets.symmetric(vertical: 5),
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
                                                     Text(
-                                                      counterAccountName,
+                                                      Utilities.formatPrice(
+                                                        context,
+                                                        transaction.amount!,
+                                                        currencyCode:
+                                                            transaction
+                                                                    .currency ??
+                                                                "N/A",
+                                                        decimalDigits: 2,
+                                                      ),
                                                       style: TextStyle(
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        color:
-                                                            ThemeConfig.grey600(
-                                                                context),
-                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
                                                       ),
                                                     ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 6),
-                                            ],
+                                                    if (transaction
+                                                            .transactionType ==
+                                                        'manual')
+                                                      Row(
+                                                        children: [
+                                                          Icon(Icons.payments,
+                                                              size: 18,
+                                                              color: Colors
+                                                                  .grey[700]),
+                                                          SizedBox(width: 8),
+                                                          Text(
+                                                            OrdersStrings
+                                                                .transactionTypeCash,
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 15,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      )
+                                                    else if (counterAccountName
+                                                        .isNotEmpty)
+                                                      Text(
+                                                        counterAccountName,
+                                                        style: TextStyle(
+                                                          fontStyle:
+                                                              FontStyle.italic,
+                                                          color: ThemeConfig
+                                                              .grey600(context),
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 6),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        if (_isBankAdmin())
-                                          IconButton(
-                                            icon: Icon(Icons.delete),
-                                            tooltip: OrdersStrings
-                                                .removeTransactionTooltip,
-                                            onPressed: () =>
-                                                _removeTransaction(transaction),
-                                          ),
-                                      ],
-                                    ),
-                                    _buildInfoRow(
-                                      title: OrdersStrings.date,
-                                      value: transaction.date != null
-                                          ? DateFormat.yMMMd(
-                                                  context.locale.languageCode)
-                                              .format(transaction.date!)
-                                          : OrdersStrings.notAvailable,
-                                    ),
-                                    SizedBox(height: 5),
-                                    _buildInfoRow(
-                                      title: OrdersStrings.amount,
-                                      value: transaction.amount != null
-                                          ? Utilities.formatPrice(
-                                              context,
-                                              transaction.amount!,
-                                              currencyCode:
-                                                  transaction.currency ?? "N/A",
-                                              decimalDigits: 2,
-                                            )
-                                          : OrdersStrings.notAvailable,
-                                    ),
-                                    SizedBox(height: 5),
-                                    if (transaction.transactionType !=
-                                        'manual') ...[
+                                          if (_isBankAdmin())
+                                            IconButton(
+                                              icon: Icon(Icons.delete),
+                                              tooltip: OrdersStrings
+                                                  .removeTransactionTooltip,
+                                              onPressed: () =>
+                                                  _removeTransaction(
+                                                      transaction),
+                                            ),
+                                        ],
+                                      ),
                                       _buildInfoRow(
-                                        title: BankAccountStrings.bankAccount,
-                                        value: transaction.formattedBankAccount.isNotEmpty
-                                            ? transaction.formattedBankAccount
+                                        title: OrdersStrings.date,
+                                        value: transaction.date != null
+                                            ? DateFormat.yMMMd(
+                                                    context.locale.languageCode)
+                                                .format(transaction.date!)
                                             : OrdersStrings.notAvailable,
                                       ),
                                       SizedBox(height: 5),
-                                    ],
-                                    if (transaction.transactionType !=
-                                            'manual' &&
-                                        transaction.vs != null &&
-                                        transaction.vs!.isNotEmpty)
                                       _buildInfoRow(
-                                        title: OrdersStrings.variableSymbol,
-                                        value: transaction.vs!,
+                                        title: OrdersStrings.amount,
+                                        value: transaction.amount != null
+                                            ? Utilities.formatPrice(
+                                                context,
+                                                transaction.amount!,
+                                                currencyCode:
+                                                    transaction.currency ??
+                                                        "N/A",
+                                                decimalDigits: 2,
+                                              )
+                                            : OrdersStrings.notAvailable,
                                       ),
-                                    if (transaction.transactionType !=
-                                            'manual' &&
-                                        transaction.vs != null &&
-                                        transaction.vs!.isNotEmpty)
                                       SizedBox(height: 5),
-                                    if (transaction.transactionType ==
-                                            'manual' &&
-                                        transaction.comment != null &&
-                                        transaction.comment!.isNotEmpty)
-                                      _buildInfoRow(
-                                        title: CommonStrings.note,
-                                        value: transaction.comment!,
-                                      ),
-                                    if (transaction.messageForRecipient !=
-                                            null &&
-                                        transaction
-                                            .messageForRecipient!.isNotEmpty)
-                                      _buildInfoRow(
-                                        title:
-                                            OrdersStrings.messageForRecipient,
-                                        value: transaction.messageForRecipient!,
-                                      ),
-                                    if (transaction.transactionType ==
-                                            'manual' &&
-                                        transaction.createdByName != null)
-                                      _buildInfoRow(
-                                        title: OrdersStrings.acceptedBy,
-                                        value: transaction.createdByName!,
-                                      ),
-                                  ],
+                                      if (transaction.transactionType !=
+                                          'manual') ...[
+                                        _buildInfoRow(
+                                          title: BankAccountStrings.bankAccount,
+                                          value: transaction
+                                                  .formattedBankAccount
+                                                  .isNotEmpty
+                                              ? transaction.formattedBankAccount
+                                              : OrdersStrings.notAvailable,
+                                        ),
+                                        SizedBox(height: 5),
+                                      ],
+                                      if (transaction.transactionType !=
+                                              'manual' &&
+                                          transaction.vs != null &&
+                                          transaction.vs!.isNotEmpty)
+                                        _buildInfoRow(
+                                          title: OrdersStrings.variableSymbol,
+                                          value: transaction.vs!,
+                                        ),
+                                      if (transaction.transactionType !=
+                                              'manual' &&
+                                          transaction.vs != null &&
+                                          transaction.vs!.isNotEmpty)
+                                        SizedBox(height: 5),
+                                      if (transaction.transactionType ==
+                                              'manual' &&
+                                          transaction.comment != null &&
+                                          transaction.comment!.isNotEmpty)
+                                        _buildInfoRow(
+                                          title: CommonStrings.note,
+                                          value: transaction.comment!,
+                                        ),
+                                      if (transaction.messageForRecipient !=
+                                              null &&
+                                          transaction
+                                              .messageForRecipient!.isNotEmpty)
+                                        _buildInfoRow(
+                                          title:
+                                              OrdersStrings.messageForRecipient,
+                                          value:
+                                              transaction.messageForRecipient!,
+                                        ),
+                                      if (transaction.transactionType ==
+                                              'manual' &&
+                                          transaction.createdByName != null)
+                                        _buildInfoRow(
+                                          title: OrdersStrings.acceptedBy,
+                                          value: transaction.createdByName!,
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   ),
                 SizedBox(height: 8),
                 Wrap(

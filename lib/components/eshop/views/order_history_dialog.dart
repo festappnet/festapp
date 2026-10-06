@@ -24,6 +24,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
   bool _isLoading = true;
   List<OrderHistoryModel> _processedHistory = [];
   String _customerName = "";
+  String _orderSymbol = "";
 
   double? _optimalTagWidth;
 
@@ -96,6 +97,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
         setState(() {
           _processedHistory = allHistoryItems;
           _customerName = order.toCustomerData();
+          _orderSymbol = order.orderSymbol ?? "";
           _isLoading = false;
         });
       }
@@ -110,7 +112,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: SelectableText(
-          "${OrdersStrings.gridHistory} #${widget.orderId} - $_customerName"),
+          "${OrdersStrings.gridHistory} $_orderSymbol - $_customerName"),
       content: SizedBox(
         width: 600,
         child: _isLoading

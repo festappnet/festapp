@@ -127,11 +127,13 @@ export async function getTicketOrderReminderTemplate(
 
     const subs = {
       occasionTitle: occasion.title,
+      orderSymbol: order.order_symbol,
       fullOrder: generateFullOrder(
         order.data,
         order.data.tickets,
         occasion.features,
         lang,
+        order.order_symbol,
       ),
       balanceReasoning: balanceReasoning,
       amount: formatCurrency(remainingAmount, currency),
@@ -239,11 +241,13 @@ export async function getTicketOrderReminderTemplate(
 
     const subs = {
       occasionTitle: occasion.title,
+      orderSymbol: order.order_symbol,
       fullOrder: generateFullOrder(
         order.data,
         order.data.tickets,
         occasion.features,
         lang,
+        order.order_symbol,
       ),
       balanceReasoning: balanceReasoning,
       amount: amount,

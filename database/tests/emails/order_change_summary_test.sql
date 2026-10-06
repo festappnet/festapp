@@ -13,8 +13,8 @@ BEGIN
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Changes',org,u,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO occ;
  INSERT INTO public.occasion_users(occasion,"user",is_editor_order,is_editor_order_view) VALUES(occ,actor,true,true);
- INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'paid',20,'CZK','{}') RETURNING id INTO o;
- INSERT INTO eshop.orders(occasion,state,price,currency_code,data) VALUES(occ,'paid',0,'CZK','{}') RETURNING id INTO foreign_order;
+ INSERT INTO eshop.orders(order_symbol, occasion,state,price,currency_code,data) VALUES(public.generate_order_symbol(), occ,'paid',20,'CZK','{}') RETURNING id INTO o;
+ INSERT INTO eshop.orders(order_symbol, occasion,state,price,currency_code,data) VALUES(public.generate_order_symbol(), occ,'paid',0,'CZK','{}') RETURNING id INTO foreign_order;
  INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'paid','FIRST') RETURNING id INTO t1;
  INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'paid','SURVIVOR') RETURNING id INTO t2;
  INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(occ,'storno','FOREIGN-PRIVATE') RETURNING id INTO foreign_ticket;

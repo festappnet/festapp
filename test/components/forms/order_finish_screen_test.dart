@@ -21,6 +21,7 @@ void main() {
                     'delivery_receipt': 'opaque',
                     'ticketOrder': {
                       'order': {
+                        'order_symbol': '7G4K9M2R6A',
                         'data': {'email': 'fixture@example.invalid'}
                       }
                     }
@@ -35,6 +36,7 @@ void main() {
               email: 'fixture@example.invalid',
               state: 'queued')),
           findsOneWidget);
+      expect(find.textContaining('7G4K9M2R6A'), findsOneWidget);
       if (fail) {
         status.completeError(Exception('endpoint unavailable'));
       } else {

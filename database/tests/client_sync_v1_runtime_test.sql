@@ -48,7 +48,7 @@ BEGIN
   PERFORM assert_eq((SELECT count(*) FROM public.client_mutation_receipts
     WHERE command_id=v_command),1::bigint,'one command produces one receipt');
 
-  INSERT INTO eshop.orders(occasion,state,data,price,currency_code) VALUES(v_occasion,'ordered','{"email":"fixture@example.invalid"}',1,'CZK') RETURNING id INTO v_order;
+  INSERT INTO eshop.orders(order_symbol, occasion,state,data,price,currency_code) VALUES(public.generate_order_symbol(), v_occasion,'ordered','{"email":"fixture@example.invalid"}',1,'CZK') RETURNING id INTO v_order;
   PERFORM public.enqueue_ticket_order_confirmation_v1(
     v_command,v_occasion,jsonb_build_object('order',jsonb_build_object('id',v_order)),'cs');
   PERFORM public.enqueue_ticket_order_confirmation_v1(

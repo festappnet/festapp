@@ -21,11 +21,11 @@ BEGIN
   RETURNING id INTO v_occ;
   INSERT INTO eshop.payment_info(id, amount, paid, currency_code)
   VALUES (900000000000 + v_occ, 100, 0, 'CZK') RETURNING id INTO v_payment;
-  INSERT INTO eshop.orders(occasion, state, data, price, currency_code)
-  VALUES (v_occ, 'storno', '{"email":"storno@example.invalid"}', 0, 'CZK')
+  INSERT INTO eshop.orders(order_symbol, occasion, state, data, price, currency_code)
+  VALUES (public.generate_order_symbol(), v_occ, 'storno', '{"email":"storno@example.invalid"}', 0, 'CZK')
   RETURNING id INTO v_order;
-  INSERT INTO eshop.orders(occasion, state, data, price, currency_code, payment_info)
-  VALUES (v_occ, 'ordered', '{"email":"update@example.invalid"}', 100, 'CZK', v_payment)
+  INSERT INTO eshop.orders(order_symbol, occasion, state, data, price, currency_code, payment_info)
+  VALUES (public.generate_order_symbol(), v_occ, 'ordered', '{"email":"update@example.invalid"}', 100, 'CZK', v_payment)
   RETURNING id INTO v_update_order;
   PERFORM set_config('festapp.storno_fixture', jsonb_build_object(
     'organization', v_org, 'unit', v_unit, 'occasion', v_occ, 'order', v_order, 'update_order', v_update_order
