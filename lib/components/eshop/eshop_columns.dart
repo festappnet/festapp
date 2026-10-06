@@ -149,7 +149,7 @@ class EshopColumns {
     title: OrdersStrings.gridOrderSequence,
     field: ORDER_SEQUENCE,
     type: TrinaColumnType.number(format: "#", defaultValue: null),
-    width: 90,
+    width: 76,
     titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSequenceHelp),
   );
 
@@ -160,7 +160,7 @@ class EshopColumns {
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     )..layout();
-    final width = (painter.width + 56).ceilToDouble().clamp(154.0, double.infinity);
+    final width = (painter.width + 46).ceilToDouble().clamp(144.0, double.infinity);
     painter.dispose();
     return width;
   }
@@ -174,7 +174,7 @@ class EshopColumns {
             style: r.stateManager.style.cellTextStyle),
         titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
         type: TrinaColumnType.text(),
-        width: context == null ? 154 : _orderSymbolWidth(context),
+        width: context == null ? 144 : _orderSymbolWidth(context),
       );
 
   static Map<String, dynamic> columnBuilders(BuildContext context) => {
