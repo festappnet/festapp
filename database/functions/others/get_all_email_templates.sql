@@ -81,7 +81,8 @@ BEGIN
       AND (
         is_app_supported IS TRUE
         OR
-        et.code NOT IN ('SIGN_IN_CODE', 'RESET_PASSWORD')
+        et.code NOT IN ('SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
+                        'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE')
       )
     ORDER BY et.code,
              CASE
