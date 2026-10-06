@@ -5,6 +5,8 @@ import 'models/order_model.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ReportStrings {
+  static String get onlyValid => 'OccasionReport.onlyValid'.tr();
+  static String get includingCancelled => 'OccasionReport.includingCancelled'.tr();
   static bool get hasTickets =>
       FeatureService.isFeatureEnabled(FeatureConstants.ticket);
   static String state(String? state) =>

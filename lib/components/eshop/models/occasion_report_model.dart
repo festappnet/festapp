@@ -88,6 +88,19 @@ class ReportProduct {
 }
 
 class OccasionReport {
+  final Map<String, dynamic> _source;
+
+  OccasionReport onlyValid() {
+    final valid = Map<String, dynamic>.from(_source['valid'] as Map);
+    return OccasionReport._({
+      ..._source,
+      'orders': valid['orders'],
+      'tickets': valid['tickets'],
+      if (_source['timeline'] != null)
+        'timeline': {...Map<String, dynamic>.from(_source['timeline'] as Map), 'orders': valid['order_days']},
+    }, text);
+  }
+
   final String text, occasionId, title;
   final DateTime generatedAt;
   final ReportCounts orders, tickets;
@@ -100,7 +113,8 @@ class OccasionReport {
   final bool hasTimeline;
 
   OccasionReport._(Map<String, dynamic> r, this.text)
-      : hasTimeline = r['timeline'] != null,
+      : _source = r,
+        hasTimeline = r['timeline'] != null,
         orderDays = [
           for (final d in r['timeline']?['orders'] ?? [])
             ReportOrderDay(Map<String, dynamic>.from(d)),
@@ -146,7 +160,9 @@ class OccasionReport {
       if (r['schema_version'] != 1) {
         throw const FormatException('Unsupported report');
       }
-      return OccasionReport._(r, response['data'] as String);
+      final report = OccasionReport._(r, response['data'] as String);
+      report.onlyValid(); // Validate the filtered snapshot before exposing it to the UI.
+      return report;
     } catch (_) {
       throw const ReportUnavailable(null);
     }

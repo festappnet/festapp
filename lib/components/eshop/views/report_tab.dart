@@ -44,6 +44,8 @@ class ReportTab extends StatefulWidget {
 
 class _ReportTabState extends State<ReportTab> {
   bool _tabActive = true;
+  bool _onlyValid = true;
+  OccasionReport? get _visibleReport => _onlyValid ? _report?.onlyValid() : _report;
   OccasionReport? _report;
   StreamSubscription<AuthState>? _authSubscription;
   String? _key, _link;
@@ -98,6 +100,7 @@ class _ReportTabState extends State<ReportTab> {
         '${Supabase.instance.client.auth.currentUser?.id}/${RightsService.currentUser()?.id}/${RightsService.currentOccasion()?.organization}/${RightsService.isEditorOrderView()}';
     final key = '$identity/$link';
     if (key == _key) return;
+    _onlyValid = true;
     _key = key;
     _link = link;
     _generation++;
@@ -151,7 +154,7 @@ class _ReportTabState extends State<ReportTab> {
   }
 
   Future<void> _export() async {
-    final report = _report;
+    final report = _visibleReport;
     if (report == null || _exporting) return;
     setState(() => _exporting = true);
     try {
@@ -639,7 +642,7 @@ class _ReportTabState extends State<ReportTab> {
 
   @override
   Widget build(BuildContext context) {
-    final r = _report;
+    final r = _visibleReport;
     return Scaffold(
       body: SafeArea(
         child: Align(
@@ -737,6 +740,16 @@ class _ReportTabState extends State<ReportTab> {
                   const SizedBox(height: 24),
                   if (_loading) const LinearProgressIndicator(),
                   if (_error) Text(ReportStrings.error),
+                  if (r != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _filterGroup([
+                        _filter(ReportStrings.onlyValid, _onlyValid,
+                            () => setState(() => _onlyValid = true)),
+                        _filter(ReportStrings.includingCancelled, !_onlyValid,
+                            () => setState(() => _onlyValid = false)),
+                      ]),
+                    ),
                   if (r != null && _text) SelectableText(formatReportText(r)),
                   if (r != null && !_text) ...[
                     LayoutBuilder(
