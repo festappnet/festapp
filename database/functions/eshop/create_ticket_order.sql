@@ -8,6 +8,7 @@ DECLARE
     result JSONB;
     order_id BIGINT;
     assigned_order_symbol TEXT;
+    assigned_order_sequence BIGINT;
     allocation_attempt INTEGER;
     ticket_data JSONB;
     spot_data RECORD;
@@ -64,8 +65,8 @@ BEGIN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1001, 'message', 'Missing form key in input data')::TEXT;
         END IF;
 
-        IF input_data ? 'order_symbol' OR input_data ? 'orderSymbol'
-            OR COALESCE(input_data->'data', '{}'::jsonb) ?| ARRAY['order_symbol','orderSymbol'] THEN
+        IF input_data ?| ARRAY['order_symbol','orderSymbol','order_sequence','orderSequence']
+            OR COALESCE(input_data->'data', '{}'::jsonb) ?| ARRAY['order_symbol','orderSymbol','order_sequence','orderSequence'] THEN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1001, 'message', 'Order symbol is server assigned')::TEXT;
         END IF;
 
@@ -149,9 +150,10 @@ BEGIN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1002, 'message', 'Missing email in input data')::TEXT;
         END IF;
 
+        assigned_order_sequence := public.next_order_sequence(occasion_id);
         FOR allocation_attempt IN 1..10 LOOP
-            INSERT INTO eshop.orders (created_at, updated_at, occasion, form, order_symbol)
-            VALUES (now, now, occasion_id, form_id, public.generate_order_symbol())
+            INSERT INTO eshop.orders (created_at, updated_at, occasion, form, order_symbol, order_sequence)
+            VALUES (now, now, occasion_id, form_id, public.generate_order_symbol(), assigned_order_sequence)
             ON CONFLICT ON CONSTRAINT orders_order_symbol_key DO NOTHING
             RETURNING id, order_symbol INTO order_id, assigned_order_symbol;
             EXIT WHEN order_id IS NOT NULL;

@@ -12,9 +12,9 @@ BEGIN
  INSERT INTO public.organizations(title) VALUES('Order symbol B') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Unit B',org) RETURNING id INTO u;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('B',org,u,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO occ2;
- INSERT INTO eshop.orders(order_symbol,occasion,state,data,price) VALUES('7G4K9M2R6A',occ,'ordered','{"note":"unchanged"}',0) RETURNING id INTO oid;
+ INSERT INTO eshop.orders(order_sequence, order_symbol,occasion,state,data,price) VALUES(public.next_order_sequence(occ), '7G4K9M2R6A',occ,'ordered','{"note":"unchanged"}',0) RETURNING id INTO oid;
  BEGIN
-  INSERT INTO eshop.orders(order_symbol,occasion) VALUES('7G4K9M2R6A',occ2);
+  INSERT INTO eshop.orders(order_sequence, order_symbol,occasion) VALUES(public.next_order_sequence(occ2), '7G4K9M2R6A',occ2);
   RAISE EXCEPTION 'duplicate accepted';
  EXCEPTION WHEN unique_violation THEN
   GET STACKED DIAGNOSTICS c=CONSTRAINT_NAME;
@@ -22,7 +22,7 @@ BEGIN
  END;
  FOREACH s IN ARRAY ARRAY['7G4K9M2R6A ', '7G-4K-9M-2R-6A','0G4K9M2R6A','7O4K9M2R6A','7g4k9m2r6a'] LOOP
   BEGIN
-   INSERT INTO eshop.orders(order_symbol,occasion) VALUES(s,occ);
+   INSERT INTO eshop.orders(order_sequence, order_symbol,occasion) VALUES(public.next_order_sequence(occ), s,occ);
    RAISE EXCEPTION 'invalid symbol accepted';
   EXCEPTION WHEN check_violation THEN NULL; END;
  END LOOP;
@@ -38,7 +38,7 @@ BEGIN
   RAISE EXCEPTION 'direct symbol mutation allowed';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
-  INSERT INTO eshop.orders(order_symbol,occasion) VALUES('8A8C8E8F8G',occ) ON CONFLICT(order_symbol) DO UPDATE SET order_symbol=excluded.order_symbol;
+  INSERT INTO eshop.orders(order_sequence, order_symbol,occasion) VALUES(public.next_order_sequence(occ), '8A8C8E8F8G',occ) ON CONFLICT(order_symbol) DO UPDATE SET order_symbol=excluded.order_symbol;
   RAISE EXCEPTION 'direct upsert allowed';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  RESET ROLE;

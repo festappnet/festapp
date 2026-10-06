@@ -274,7 +274,7 @@ BEGIN
         v_dummy_ticket_id bigint;
         v_dummy_opt_id bigint;
     BEGIN
-        INSERT INTO eshop.orders (order_symbol, occasion, form) VALUES (public.generate_order_symbol(), v_occasion_id, v_form_id) RETURNING id INTO v_dummy_order_id;
+        INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, form) VALUES (public.next_order_sequence(v_occasion_id), public.generate_order_symbol(), v_occasion_id, v_form_id) RETURNING id INTO v_dummy_order_id;
         INSERT INTO eshop.tickets (occasion, state) VALUES (v_occasion_id, 'ordered') RETURNING id INTO v_dummy_ticket_id;
         INSERT INTO eshop.order_product_ticket ("order", product, ticket) VALUES (v_dummy_order_id, v_product_id, v_dummy_ticket_id) RETURNING id INTO v_dummy_opt_id;
 

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -60,6 +61,7 @@ class _TicketsTabState extends State<TicketsTab> {
 
     final List<String> columnIdentifiers = [
       EshopColumns.TICKET_ID,
+      EshopColumns.ORDER_SEQUENCE,
       EshopColumns.ORDER_SYMBOL,
       EshopColumns.ORDER_DATA,
       EshopColumns.TICKET_SYMBOL,
@@ -83,6 +85,10 @@ class _TicketsTabState extends State<TicketsTab> {
 
     final newController = SingleDataGridController<TicketModel>(
       context: context,
+      additionalFilterEnabled: true,
+      additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
+      headerFilterBuilder: (context, controller) => OrderGridFilters.filterButton(
+          context, controller, label: OrdersStrings.validTickets),
       loadData: () => DbTickets.getAllTickets(occasionLink!),
       fromPlutoJson: TicketModel.fromPlutoJson,
       firstColumnType: DataGridFirstColumn.check,
@@ -179,7 +185,7 @@ class _TicketsTabState extends State<TicketsTab> {
         futures: [
           () async {
             outcome = await DbTickets.stornoTickets(
-              selectedTickets.map((ticket) => ticket.id!).toList(),
+              _getCheckedTickets(singleDataGrid).map((ticket) => ticket.id!).toList(),
             );
           },
         ],
@@ -236,8 +242,7 @@ class _TicketsTabState extends State<TicketsTab> {
     SingleDataGridController singleDataGrid,
   ) {
     return List<TicketModel>.from(
-      singleDataGrid.stateManager.refRows.originalList
-          .where((row) => row.checked == true)
+      singleDataGrid.visibleCheckedRows
           .map((row) => TicketModel.fromPlutoJson(row.toJson())),
     );
   }

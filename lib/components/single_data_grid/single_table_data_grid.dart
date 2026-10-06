@@ -93,6 +93,7 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   void dispose() {
     widget.controller.reloadGeneration.removeListener(_explicitReloaded);
     widget.controller.isGridLoaded = false;
+    widget.controller.detachRowFilter();
     widget.controller.disposeHtml();
     super.dispose();
   }
@@ -165,13 +166,15 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
                 }
               }
             }
-            widget.controller.stateManager.notifyListeners();
+            widget.controller.applyRowFilter();
+              widget.controller.stateManager.notifyListeners();
           },
           onLoaded: (TrinaGridOnLoadedEvent event) {
             widget.controller.stateManager = event.stateManager;
             widget.controller.isGridLoaded = true;
             event.stateManager.setSelectingMode(TrinaGridSelectingMode.cell);
             event.stateManager.setShowColumnFilter(true);
+            widget.controller.attachRowFilter();
             widget.controller.applyDataToGrid();
             isDataGridLoading = false;
             setState(() {});

@@ -70,6 +70,7 @@ class OrdersTb {
   String get data => "data";
   String get occasion => "occasion";
   String get order_symbol => "order_symbol";
+  String get order_sequence => "order_sequence";
   String get payment_info => "payment_info";
   String get currency_code => "currency_code";
   String get data_form => "form";

@@ -37,11 +37,11 @@ BEGIN
   VALUES ('Own orders occasion', v_link, now(), now() + interval '1 day',
     v_own_org, v_own_unit) RETURNING id INTO v_own_occasion;
 
-  INSERT INTO eshop.orders (order_symbol, occasion, state, data, price, currency_code)
-  VALUES (public.generate_order_symbol(), v_foreign_occasion, 'ordered', '{}', 100, 'CZK')
+  INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, state, data, price, currency_code)
+  VALUES (public.next_order_sequence(v_foreign_occasion), public.generate_order_symbol(), v_foreign_occasion, 'ordered', '{}', 100, 'CZK')
   RETURNING id INTO v_foreign_order;
-  INSERT INTO eshop.orders (order_symbol, occasion, state, data, price, currency_code)
-  VALUES (public.generate_order_symbol(), v_own_occasion, 'ordered', '{}', 100, 'CZK')
+  INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, state, data, price, currency_code)
+  VALUES (public.next_order_sequence(v_own_occasion), public.generate_order_symbol(), v_own_occasion, 'ordered', '{}', 100, 'CZK')
   RETURNING id INTO v_own_order;
   INSERT INTO public.occasion_users
     (occasion, "user", is_editor_order_view, is_editor_view)
@@ -58,6 +58,7 @@ BEGIN
   PERFORM assert_eq((v_result->'orders'->0->>'id')::bigint, v_own_order,
     'orders belong to the authorized occasion');
   PERFORM assert_true(v_result#>>'{orders,0,order_symbol}' ~ '^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$', 'authorized list carries order symbol');
+  PERFORM assert_eq((v_result#>>'{orders,0,order_sequence}')::bigint,1::bigint,'authorized list carries persisted per-occasion sequence');
   PERFORM assert_eq(v_result->'email_delivery', '{}'::jsonb,
     'email summaries resolve the same authorized occasion without ambiguity');
 

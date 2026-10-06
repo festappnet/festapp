@@ -313,6 +313,9 @@ create table if not exists public.forms (
 -----------------------------------------------
 
 create table if not exists eshop.orders (
+  order_sequence BIGINT NOT NULL,
+  CONSTRAINT orders_order_sequence_key UNIQUE (occasion, order_sequence),
+  CONSTRAINT orders_order_sequence_positive_check CHECK (order_sequence > 0),
   order_symbol TEXT NOT NULL,
   CONSTRAINT orders_order_symbol_key UNIQUE (order_symbol),
   CONSTRAINT orders_order_symbol_format_check CHECK (order_symbol ~ '^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$'),

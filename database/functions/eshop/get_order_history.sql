@@ -24,7 +24,7 @@ BEGIN
     END IF;
 
     -- Fetch history items for the order, ordered by creation date
-    SELECT jsonb_agg(to_jsonb(h) || jsonb_build_object('order_symbol', v_order_data->>'order_symbol') ORDER BY h.created_at)
+    SELECT jsonb_agg(to_jsonb(h) || jsonb_build_object('order_symbol', v_order_data->>'order_symbol', 'order_sequence', v_order_data->'order_sequence') ORDER BY h.created_at)
     INTO v_history_data
     FROM eshop.orders_history h
     WHERE h. "order" = order_id;

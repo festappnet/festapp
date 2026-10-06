@@ -48,8 +48,8 @@ BEGIN
     VALUES (1000000 + floor(random() * 1000000)::bigint, 200.0, 'CZK', v_bank_id, 0.0)
     RETURNING id INTO v_pi_id;
 
-    INSERT INTO eshop.orders (order_symbol, occasion, payment_info, state, price, currency_code)
-    VALUES (public.generate_order_symbol(), v_occasion_id, v_pi_id, 'ordered', 200.0, 'CZK')
+    INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, payment_info, state, price, currency_code)
+    VALUES (public.next_order_sequence(v_occasion_id), public.generate_order_symbol(), v_occasion_id, v_pi_id, 'ordered', 200.0, 'CZK')
     RETURNING id INTO v_order_id;
 
     -- Pay full
@@ -74,8 +74,8 @@ BEGIN
     VALUES (2000000 + floor(random() * 1000000)::bigint, 200.0, 'CZK', v_bank_id, 0.0)
     RETURNING id INTO v_pi_id;
 
-    INSERT INTO eshop.orders (order_symbol, occasion, payment_info, state, price, currency_code)
-    VALUES (public.generate_order_symbol(), v_occasion_id, v_pi_id, 'ordered', 200.0, 'CZK')
+    INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, payment_info, state, price, currency_code)
+    VALUES (public.next_order_sequence(v_occasion_id), public.generate_order_symbol(), v_occasion_id, v_pi_id, 'ordered', 200.0, 'CZK')
     RETURNING id INTO v_order_id;
 
     -- Pay full

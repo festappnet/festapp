@@ -92,6 +92,10 @@ class TicketModel extends ITrinaRowModel {
           value: Utilities.removeTabsAndNewLines(note ?? "")),
       EshopColumns.TICKET_NOTE_HIDDEN: TrinaCell(
           value: Utilities.removeTabsAndNewLines(noteHidden ?? "")),
+      EshopColumns.ORDER_SEQUENCE: TrinaCell(
+        value: relatedOrder?.orderSequence,
+      ),
+      EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: relatedOrder),
       EshopColumns.ORDER_SYMBOL: TrinaCell(
           value: relatedOrder != null ? relatedOrder!.toBasicString() : ""),
       EshopColumns.ORDER_DATA: TrinaCell(

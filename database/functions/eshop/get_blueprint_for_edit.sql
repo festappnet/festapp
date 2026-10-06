@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_blueprint_for_edit(
+CREATE OR REPLACE FUNCTION public.get_blueprint_for_edit(
     occasion_link TEXT
 )
 RETURNS JSONB
@@ -127,6 +127,8 @@ BEGIN
     -- Fetch relevant orders associated with the order_product_ticket in spots
     SELECT jsonb_agg(jsonb_build_object(
         'id', o.id,
+        'order_symbol', o.order_symbol,
+        'order_sequence', o.order_sequence,
         'created_at', o.created_at,
         'updated_at', o.updated_at,
         'price', o.price,

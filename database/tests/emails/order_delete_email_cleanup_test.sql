@@ -9,8 +9,8 @@ BEGIN
  INSERT INTO public.units(title,organization) VALUES('Delete email unit',org) RETURNING id INTO u;
  INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(u,actor,true);
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Delete email occasion',org,u,'delete-email-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO occ;
- INSERT INTO eshop.orders(order_symbol, occasion,state,data,price,currency_code) VALUES(public.generate_order_symbol(), occ,'ordered','{}',100,'CZK') RETURNING id INTO ord;
- INSERT INTO eshop.orders(order_symbol, occasion,state,data,price,currency_code) VALUES(public.generate_order_symbol(), occ,'ordered','{}',100,'CZK') RETURNING id INTO other_ord;
+ INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,state,data,price,currency_code) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,'ordered','{}',100,'CZK') RETURNING id INTO ord;
+ INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,state,data,price,currency_code) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,'ordered','{}',100,'CZK') RETURNING id INTO other_ord;
  ctx:=jsonb_build_object('organization',org,'unit',u,'occasion',occ);
  FOR n IN 1..array_length(states,1) LOOP
   msg:=public.enqueue_email('order_reminder',ctx,'cleanup@example.invalid','{}','delete-'||n,p_not_before:=now()+interval '1 day',p_order:=ord);
