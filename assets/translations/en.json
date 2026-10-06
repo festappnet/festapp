@@ -2383,6 +2383,8 @@
     "finishCanvasFirst": "To move elements, click Done first."
   },
   "OccasionReport": {
+    "onlyValid": "Valid only",
+    "includingCancelled": "Including cancelled",
     "transaction_currency_mismatch": "Transactions with a currency different from their order are excluded from the chart",
     "ratesUnavailable": "CNB rates are unavailable or a currency is missing. Select an individual currency to display payments.",
     "compareCurrencies": "All currencies in CZK",

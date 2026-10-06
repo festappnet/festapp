@@ -2384,6 +2384,8 @@
     "finishCanvasFirst": "Pro přesunutí prvků nejprve klikněte na Hotovo."
   },
   "OccasionReport": {
+    "onlyValid": "Pouze platné",
+    "includingCancelled": "Včetně stornovaných",
     "transaction_currency_mismatch": "Transakce s jinou měnou než objednávka nejsou v grafu zahrnuty",
     "ratesUnavailable": "Kurzy ČNB nejsou dostupné nebo některá měna chybí. Pro zobrazení plateb vyberte jednotlivou měnu.",
     "compareCurrencies": "Všechny měny v CZK",

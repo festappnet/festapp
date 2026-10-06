@@ -6,6 +6,11 @@ Map<String, dynamic> reportResponse({String id = '1', bool empty = false}) => {
           'Report $id\nPříliš dlouhý název akce a produktu pro úzký telefon\nČistý příjem: 12345678901234567890.12 CZK',
       'report': {
         'schema_version': 1,
+        'valid': {
+          'orders': {'total': empty ? 0 : 3, 'by_state': empty ? [] : [{'state': 'paid', 'count': 2}, {'state': 'unknown', 'count': 1}]},
+          'tickets': {'total': empty ? 0 : 2, 'by_state': empty ? [] : [{'state': 'paid', 'count': 2}]},
+          'order_days': empty ? [] : [{'day': '2026-10-01', 'currency': 'CZK', 'count': 2}, {'day': '2026-10-03', 'currency': 'EUR', 'count': 1}],
+        },
         'occasion': {
           'id': id,
           'title': 'Testovací akce $id s dlouhým názvem pro mobilní obrazovku'

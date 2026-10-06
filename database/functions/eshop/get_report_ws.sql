@@ -49,6 +49,17 @@ BEGIN
   ), ticket_scope AS (
     SELECT t.* FROM eshop.tickets t JOIN scope s ON s.id=t.occasion
     WHERE EXISTS (SELECT 1 FROM eshop.order_product_ticket i WHERE i.ticket=t.id)
+  ), valid_orders AS MATERIALIZED (
+    SELECT * FROM orders_scope WHERE state IS DISTINCT FROM 'storno'
+  ), valid_tickets AS MATERIALIZED (
+    SELECT t.* FROM ticket_scope t
+    WHERE t.state IS DISTINCT FROM 'storno' AND EXISTS (
+      SELECT 1 FROM eshop.order_product_ticket i JOIN valid_orders o ON o.id=i."order"
+      WHERE i.ticket=t.id
+    )
+  ), valid_order_days AS (
+    SELECT (created_at AT TIME ZONE 'Europe/Prague')::date AS day,currency_code::text AS currency,count(*) AS count
+    FROM valid_orders GROUP BY 1,2
   ), order_states AS (
     SELECT coalesce(state,'unknown') AS state,count(*) AS count FROM orders_scope GROUP BY 1
   ), ticket_states AS (
@@ -74,6 +85,11 @@ BEGIN
     'spots',(SELECT to_jsonb(spots) FROM spots),
     'orders',jsonb_build_object('total',(SELECT count(*) FROM orders_scope),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM order_states x),'[]'::jsonb)),
     'tickets',jsonb_build_object('total',(SELECT count(*) FROM ticket_scope),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM ticket_states x),'[]'::jsonb)),
+    'valid',jsonb_build_object(
+      'orders',jsonb_build_object('total',(SELECT count(*) FROM valid_orders),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM (SELECT coalesce(state,'unknown') AS state,count(*) AS count FROM valid_orders GROUP BY 1) x),'[]'::jsonb)),
+      'tickets',jsonb_build_object('total',(SELECT count(*) FROM valid_tickets),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM (SELECT coalesce(state,'unknown') AS state,count(*) AS count FROM valid_tickets GROUP BY 1) x),'[]'::jsonb)),
+      'order_days',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM valid_order_days d),'[]'::jsonb)
+    ),
     'money_by_currency',coalesce((SELECT jsonb_agg(jsonb_build_object(
       'currency',currency,'current_order_value',value::text,'received',received::text,'returned',returned::text,
       'net_received',(received-returned)::text,'manual_received',manual::text,'other_received',(received-manual)::text,
