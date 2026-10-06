@@ -30,7 +30,7 @@ void main() {
   });
 
   testWidgets(
-    'real checkbox composes native filters, retains drafts, clears hidden selection, exports same rows and refreshes',
+    'real filter button composes native filters, retains drafts, clears hidden selection, exports same rows and refreshes',
     (tester) async {
       tester.view.physicalSize = const Size(1400, 900);
       tester.view.devicePixelRatio = 1;
@@ -81,7 +81,7 @@ void main() {
                 firstColumnType: DataGridFirstColumn.check,
                 idColumn: EshopColumns.ORDER_ID,
                 additionalRowPredicate: OrderGridFilters.orderIsNonCancelled,
-                headerFilterBuilder: OrderGridFilters.checkbox,
+                headerFilterBuilder: OrderGridFilters.filterButton,
                 actionsExtended: DataGridActionsController(
                   isAddActionPossible: () => false,
                 ),
@@ -121,7 +121,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(grid.additionalFilterCount, 3);
       expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SEQUENCE).width, 90);
-      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).width, 120);
+      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).width, 154);
       expect(grid.stateManager.rows.length, 4);
       final active = grid.rows[0], cancelled = grid.rows[1];
       active.cells[EshopColumns.ORDER_NOTE_HIDDEN]!.value = 'draft';
@@ -204,34 +204,32 @@ void main() {
     },
   );
 
-  testWidgets('clicking a symbol opens its copy action and copies the complete value', (tester) async {
+  testWidgets('inline copy stays visible and gives themed feedback in light and dark mode', (tester) async {
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
       if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
       return null;
     });
-    addTearDown(() {
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null);
-    });
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox(width: 120, height: 40,
-      child: OrderSymbolCell(symbol: '9W9W9W9W9W')))));
-    await tester.tap(find.text('9W9W9W9W9W'));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.copy), findsOneWidget);
-    expect(find.text('9W9W9W9W9W'), findsNWidgets(2));
-    await tester.tap(find.byIcon(Icons.copy));
-    await tester.pumpAndSettle();
-    expect(copied, '9W9W9W9W9W');
-    expect(find.byIcon(Icons.copy), findsNothing);
-    expect(find.byIcon(Icons.check), findsOneWidget);
-    expect(find.text('9W9W9W9W9W'), findsNWidgets(2));
-    // Feedback stays in the open popover; reopening starts with the copy icon.
-    await tester.tapAt(const Offset(700, 500));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('9W9W9W9W9W'));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.copy), findsOneWidget);
-    expect(find.byIcon(Icons.check), findsNothing);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      final theme = ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, brightness: brightness));
+      await tester.pumpWidget(MaterialApp(theme: theme, home: Scaffold(body: SizedBox(width: 180, height: 40,
+          child: OrderSymbolCell(key: ValueKey(brightness), symbol: '9W9W9W9W9W')))));
+      expect(find.byIcon(Icons.copy), findsOneWidget);
+      expect(find.text('9W9W9W9W9W'), findsOneWidget);
+      expect(find.byType(PopupMenuButton<void>), findsNothing);
+      await tester.tap(find.byIcon(Icons.copy));
+      await tester.pumpAndSettle();
+      expect(copied, '9W9W9W9W9W');
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      final style = tester.widget<IconButton>(find.byType(IconButton)).style!;
+      expect(style.foregroundColor!.resolve({}), theme.colorScheme.onPrimary);
+      expect(style.backgroundColor!.resolve({}), theme.colorScheme.primary);
+      await tester.pumpWidget(MaterialApp(theme: theme, home: Scaffold(body: SizedBox(width: 180, height: 40,
+          child: OrderSymbolCell(key: ValueKey(brightness), symbol: '1A2B3C4D5E')))));
+      expect(find.byIcon(Icons.copy), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets(
@@ -266,7 +264,7 @@ void main() {
                 firstColumnType: DataGridFirstColumn.check,
                 idColumn: EshopColumns.TICKET_ID,
                 additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
-                headerFilterBuilder: OrderGridFilters.checkbox,
+                headerFilterBuilder: OrderGridFilters.filterButton,
                 columns: [
                   TrinaColumn(
                     title: 'Id',
@@ -324,7 +322,7 @@ void main() {
             final style = DefaultTextStyle.of(context).style.merge(TrinaGridStyleConfig.defaultLightCellTextStyle);
             final text = TextPainter(text: TextSpan(text: '9W9W9W9W9W', style: style),
               textDirection: TextDirection.ltr, textScaler: MediaQuery.textScalerOf(context))..layout();
-            expect(text.width + 20, lessThanOrEqualTo(EshopColumns.orderSymbolColumn(context: context).width));
+            expect(text.width + 54, lessThanOrEqualTo(EshopColumns.orderSymbolColumn(context: context).width));
             text.dispose();
             return const SizedBox();
           }))));
