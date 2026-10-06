@@ -71,6 +71,27 @@ Widget app(
     );
 
 void main() {
+  testWidgets('valid report is the default and toggles without reloading', (tester) async {
+    final response = reportResponse();
+    response['report']['valid']['orders'] = {'total': 1, 'by_state': [{'state': 'paid', 'count': 1}]};
+    response['report']['valid']['tickets'] = {'total': 0, 'by_state': []};
+    response['report']['valid']['order_days'] = [{'day': '2026-10-01', 'currency': 'CZK', 'count': 1}];
+    final report = OccasionReport.fromResponse(response);
+    expect(report.onlyValid().orders.total, 1);
+    expect(report.onlyValid().tickets.total, 0);
+    expect(report.onlyValid().orderDays.single.count, 1);
+    expect(report.onlyValid().money.first.amounts, report.money.first.amounts);
+    var calls = 0;
+    await tester.pumpWidget(app((_) async { calls++; return report; }));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Pouze platné')).selected, isTrue);
+    await tester.tap(find.text('Včetně stornovaných'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Včetně stornovaných')).selected, isTrue);
+    expect(calls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   test('report period ends with occasion but preserves later activity', () {
     final today = DateTime.utc(2026, 10, 3);
     final end = DateTime.utc(2026, 2, 20);
@@ -398,6 +419,7 @@ void main() {
         final timeline = report['timeline'] as Map<String, dynamic>;
         timeline['payments'] = [];
         timeline['orders'] = [{'day': '2026-10-04', 'currency': 'CZK', 'count': 2}];
+        report['valid']['order_days'] = timeline['orders'];
         report['money_by_currency'] = [
           (report['money_by_currency'] as List).first,
         ];

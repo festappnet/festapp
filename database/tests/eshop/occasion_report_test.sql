@@ -43,6 +43,15 @@ BEGIN
   r:=public.get_report_ws('report-metrics');
   RESET ROLE;
   PERFORM assert_eq((r->>'code')::int,200,'metrics succeeds');
+  PERFORM assert_eq((r->'report'->'valid'->'orders'->>'total')::int,5,'valid orders exclude storno, retain unknown/future');
+  PERFORM assert_eq((r->'report'->'valid'->'tickets'->>'total')::int,1,'valid ticket deduplicated');
+  PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'valid'->'order_days') x),5,'valid history matches count');
+  UPDATE eshop.tickets SET state='storno' WHERE id=ticket_id;
+  PERFORM assert_eq((public.get_report_ws('report-metrics')->'report'->'valid'->'tickets'->>'total')::int,0,'partially cancelled ticket excluded');
+  UPDATE eshop.tickets SET state='paid' WHERE id=ticket_id;
+  UPDATE eshop.orders SET state='storno' WHERE id=o1;
+  PERFORM assert_eq((public.get_report_ws('report-metrics')->'report'->'valid'->'tickets'->>'total')::int,0,'ticket under cancelled parent excluded');
+  UPDATE eshop.orders SET state='paid' WHERE id=o1;
   m:=r->'report'->'money_by_currency'->0;
   PERFORM assert_eq(m->>'currency','CZK','deterministic currencies');
   PERFORM assert_eq((m->>'current_order_value')::numeric,200::numeric,'current prices include storno zero');

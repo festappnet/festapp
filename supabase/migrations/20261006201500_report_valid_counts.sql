@@ -1,3 +1,4 @@
+-- Add a valid-only view of counts and order history; retain the complete payment ledger.
 CREATE OR REPLACE FUNCTION public.get_report_ws(occasion_link text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, extensions AS $$
