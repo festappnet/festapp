@@ -1,3 +1,4 @@
+-- Delete order-owned email records atomically; retain log_emails.
 CREATE OR REPLACE FUNCTION public.delete_order_221(order_id BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
