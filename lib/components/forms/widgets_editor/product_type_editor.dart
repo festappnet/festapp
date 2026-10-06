@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/features/feature_service.dart';
-import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
@@ -315,7 +313,6 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
     final defaultDescription = CommonStrings.description;
     final groupIsRequired = ptField.isRequired ?? false;
     final groupIsHidden = ptField.isHidden ?? false;
-    final hasDeposit = FeatureService.isFeatureEnabled(FeatureConstants.deposit);
     final canSelectMany = ptField.data?[FormHelper.metaSelectionType] ==
         FormHelper.metaSelectionTypeMany;
 
@@ -433,14 +430,7 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                 Container(
                   key: ObjectKey(group.products![i]),
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: hasDeposit ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8) : const EdgeInsets.symmetric(vertical: 6),
-                  decoration: hasDeposit ? BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ) : null,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
