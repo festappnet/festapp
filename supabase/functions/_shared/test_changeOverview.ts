@@ -28,3 +28,21 @@ Deno.test('unchanged summary renders nothing and missing version fails closed',(
   assertEquals(generateChangeOverview({...fixture,hasChanges:false}),'');
   assertThrows(()=>generateChangeOverview({...fixture,version:2}));
 });
+Deno.test('product removal on a surviving ticket is never rendered as cancellation',()=>{
+  const value=structuredClone(fixture);
+  const product=value.cancelledTickets[0].products![0];
+  value.cancelledTickets=[];
+  value.productChanges=[{id:2,ticket_symbol:'SURVIVOR',added:[],removed:[product],changed:[]}];
+  const html=generateChangeOverview(value);
+  assertEquals(html.includes('Stornované vstupenky'),false);
+  assertStringIncludes(html,'Odebrané položky');
+  assertStringIncludes(html,'SURVIVOR');
+});
+Deno.test('multiple cancellations and mixed product additions/removals keep separate context',()=>{
+  const value=structuredClone(fixture);
+  value.cancelledTickets.push({id:3,ticket_symbol:'THIRD',products:[]});
+  value.productChanges[0].added=[{id:8,title:'New item',price:5}];
+  value.productChanges[0].removed=[{id:9,title:'Old item',price:2}];
+  const html=generateChangeOverview(value);
+  for(const label of ['Vstupenka FIRST','Vstupenka THIRD','Změny produktů na vstupence SURVIVOR','+ New item','- Old item']) assertStringIncludes(html,label);
+});

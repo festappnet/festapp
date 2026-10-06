@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/models/order_change_summary.dart';
 import 'package:fstapp/components/eshop/views/order_update_email_dialog.dart';
+import 'package:fstapp/components/eshop/views/product_changes_preview.dart';
 
 class _Translations extends AssetLoader {
   @override
@@ -62,5 +63,80 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Poslat e-mail'));
     await tester.pumpAndSettle();
     expect(confirmed, isTrue);
+  });
+  Future<void> pumpPreview(
+      WidgetTester tester, Map<String, dynamic> data) async {
+    await EasyLocalization.ensureInitialized();
+    await tester.pumpWidget(EasyLocalization(
+        supportedLocales: const [Locale('cs')],
+        path: 'unused',
+        startLocale: const Locale('cs'),
+        assetLoader: _Translations(),
+        child: Builder(
+            builder: (context) => MaterialApp(
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                home: Scaffold(
+                    body: SingleChildScrollView(
+                        child: ProductChangesPreview(
+                            changes: OrderChangeSummary.fromJson(data))))))));
+    await tester.pumpAndSettle();
+  }
+
+  Map<String, dynamic> fixture() => jsonDecode(
+      File('test/fixtures/order_changes/cancellation_and_product_edit.json')
+          .readAsStringSync());
+
+  testWidgets(
+      'product removal keeps survivor context and no cancellation label',
+      (tester) async {
+    final data = fixture();
+    final product = data['cancelledTickets'][0]['products'][0];
+    data['cancelledTickets'] = [];
+    data['productChanges'] = [
+      {
+        'id': 2,
+        'ticket_symbol': 'SURVIVOR',
+        'added': [],
+        'removed': [product],
+        'changed': []
+      }
+    ];
+    await pumpPreview(tester, data);
+    expect(find.text('Stornované vstupenky:'), findsNothing);
+    expect(find.text('Odebrané položky:'), findsOneWidget);
+    expect(find.text('Změny produktů na vstupence SURVIVOR'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+      'multiple free cancellations render on a narrow screen without product removals',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final data = fixture();
+    data['cancelledTickets'] = [
+      {'id': 1, 'ticket_symbol': 'FIRST', 'products': []},
+      {'id': 3, 'ticket_symbol': 'THIRD', 'products': []},
+    ];
+    data['productChanges'] = [];
+    data['referenceTotal'] = 0;
+    data['currentTotal'] = 0;
+    await pumpPreview(tester, data);
+    expect(find.text('Vstupenka FIRST'), findsOneWidget);
+    expect(find.text('Vstupenka THIRD'), findsOneWidget);
+    expect(find.text('Odebrané položky:'), findsNothing);
+    expect(find.text('Změna celkové ceny'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  test(
+      'canonical change context identifies other tickets without comparing products again',
+      () {
+    final changes = OrderChangeSummary.fromJson(fixture());
+    expect(changes.hasChangesOutside(2), isTrue);
+    final data = fixture()..['cancelledTickets'] = [];
+    expect(OrderChangeSummary.fromJson(data).hasChangesOutside(2), isFalse);
   });
 }
