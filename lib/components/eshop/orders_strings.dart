@@ -320,7 +320,9 @@ class OrdersStrings {
   static String get gridOrderSequenceHelp =>
       "OrderGridColumns.orderSequenceHelp".tr();
   static String get validOrders => "OrderGridColumns.validOrders".tr();
-  static String get validTickets => "OrderGridColumns.validTickets".tr();
+  static String get validTickets => FeatureService.isFeatureEnabled(FeatureConstants.ticket)
+      ? "OrderGridColumns.validTickets".tr()
+      : "OrderGridColumns.validApplications".tr();
   static String get gridOrderSymbol =>
       'OrderGridColumns.orderSymbol'.tr(); // "Order Symbol"
   static String get gridCustomer =>

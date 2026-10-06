@@ -398,6 +398,7 @@
     "orderSequence": "Pořadí objednávky",
     "orderSequenceHelp": "Pevné pořadí objednávky v této události.",
     "validOrders": "Platné objednávky",
+    "validApplications": "Platné přihlášky",
     "validTickets": "Platné vstupenky",
     "orderSymbol": "Symbol objednávky",
     "customer": "Zákazník",
