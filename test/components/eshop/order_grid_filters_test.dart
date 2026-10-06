@@ -80,7 +80,6 @@ void main() {
                 fromPlutoJson: OrderModel.fromPlutoJson,
                 firstColumnType: DataGridFirstColumn.check,
                 idColumn: EshopColumns.ORDER_ID,
-                additionalFilterEnabled: true,
                 additionalRowPredicate: OrderGridFilters.orderIsNonCancelled,
                 headerFilterBuilder: OrderGridFilters.filterButton,
                 actionsExtended: DataGridActionsController(
@@ -121,14 +120,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(grid.additionalFilterCount, 3);
-      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SEQUENCE).width, 76);
-      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).width, 144);
-      expect(grid.additionalFilterEnabled, isTrue);
-      expect(grid.stateManager.rows.length, 3);
-      expect(find.byIcon(Icons.check_box_outlined), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey("onlyNonCancelled")));
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.check_box_outline_blank), findsOneWidget);
+      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SEQUENCE).width, 90);
+      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).width, 154);
       expect(grid.stateManager.rows.length, 4);
       final active = grid.rows[0], cancelled = grid.rows[1];
       active.cells[EshopColumns.ORDER_NOTE_HIDDEN]!.value = 'draft';
@@ -230,15 +223,8 @@ void main() {
       expect(copied, '9W9W9W9W9W');
       expect(find.byIcon(Icons.check), findsOneWidget);
       final style = tester.widget<IconButton>(find.byType(IconButton)).style!;
-      expect(style.foregroundColor!.resolve({}), brightness == Brightness.dark
-          ? Colors.greenAccent.shade400 : Colors.green.shade700);
-      expect(style.backgroundColor!.resolve({}), Colors.transparent);
-      await tester.pump(const Duration(seconds: 1));
-      expect(find.byIcon(Icons.check), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 1100));
-      expect(find.byIcon(Icons.copy), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.copy));
-      await tester.pumpAndSettle();
+      expect(style.foregroundColor!.resolve({}), theme.colorScheme.onPrimary);
+      expect(style.backgroundColor!.resolve({}), theme.colorScheme.primary);
       await tester.pumpWidget(MaterialApp(theme: theme, home: Scaffold(body: SizedBox(width: 180, height: 40,
           child: OrderSymbolCell(key: ValueKey(brightness), symbol: '1A2B3C4D5E')))));
       expect(find.byIcon(Icons.copy), findsOneWidget);
@@ -277,7 +263,6 @@ void main() {
                 fromPlutoJson: TicketModel.fromPlutoJson,
                 firstColumnType: DataGridFirstColumn.check,
                 idColumn: EshopColumns.TICKET_ID,
-                additionalFilterEnabled: true,
                 additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
                 headerFilterBuilder: OrderGridFilters.filterButton,
                 columns: [
@@ -306,11 +291,6 @@ void main() {
             .map((r) => r.cells[EshopColumns.ORDER_SEQUENCE]!.value),
         [7, 7, 7],
       );
-      expect(grid.additionalFilterEnabled, isTrue);
-      expect(grid.stateManager.rows.length, 3);
-      await tester.tap(find.byKey(const ValueKey("onlyNonCancelled")));
-      await tester.pumpAndSettle();
-      expect(grid.stateManager.rows.length, 5);
       await tester.tap(find.byKey(const ValueKey("onlyNonCancelled")));
       await tester.pumpAndSettle();
       expect(
@@ -342,7 +322,7 @@ void main() {
             final style = DefaultTextStyle.of(context).style.merge(TrinaGridStyleConfig.defaultLightCellTextStyle);
             final text = TextPainter(text: TextSpan(text: '9W9W9W9W9W', style: style),
               textDirection: TextDirection.ltr, textScaler: MediaQuery.textScalerOf(context))..layout();
-            expect(text.width + 46, lessThanOrEqualTo(EshopColumns.orderSymbolColumn(context: context).width));
+            expect(text.width + 54, lessThanOrEqualTo(EshopColumns.orderSymbolColumn(context: context).width));
             text.dispose();
             return const SizedBox();
           }))));

@@ -116,7 +116,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   final bool Function(TrinaRow)? additionalRowPredicate;
   final Widget Function(BuildContext, SingleDataGridController<T>)?
       headerFilterBuilder;
-  bool additionalFilterEnabled;
+  bool additionalFilterEnabled = false;
   int additionalFilterCount = 0;
   StreamSubscription<TrinaGridEvent>? _filterSubscription;
   bool _applyingFilter = false;
@@ -198,7 +198,6 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     this.copyObject,
     this.exportOptions,
     this.additionalRowPredicate,
-    this.additionalFilterEnabled = false,
     this.headerFilterBuilder,
     Map<String, String> columnHelp = const {},
   }) : columnHelp = Map.unmodifiable(columnHelp);

@@ -85,7 +85,6 @@ class _TicketsTabState extends State<TicketsTab> {
 
     final newController = SingleDataGridController<TicketModel>(
       context: context,
-      additionalFilterEnabled: true,
       additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
       headerFilterBuilder: (context, controller) => OrderGridFilters.filterButton(
           context, controller, label: OrdersStrings.validTickets),

@@ -131,7 +131,6 @@ class _OrdersContentState extends State<OrdersContent> {
 
     final newController = SingleDataGridController<OrderModel>(
       context: context,
-      additionalFilterEnabled: true,
       additionalRowPredicate: OrderGridFilters.orderIsNonCancelled,
       headerFilterBuilder: OrderGridFilters.filterButton,
       loadData: () async {

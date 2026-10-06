@@ -25,14 +25,12 @@ class OrderGridFilters {
     BuildContext context,
     SingleDataGridController<T> controller, {
     String? label,
-  }) => Semantics(
-    toggled: controller.additionalFilterEnabled,
-    child: ElevatedButton.icon(
-      key: const ValueKey("onlyNonCancelled"),
-      onPressed: () => controller.toggleAdditionalFilter(!controller.additionalFilterEnabled),
-      icon: Icon(controller.additionalFilterEnabled
-          ? Icons.check_box_outlined : Icons.check_box_outline_blank, size: 18),
-      label: Text('${label ?? OrdersStrings.validOrders} (${controller.additionalFilterCount})'),
-    ),
+  }) => FilterChip(
+    key: const ValueKey("onlyNonCancelled"),
+    selected: controller.additionalFilterEnabled,
+    avatar: const Icon(Icons.filter_alt_outlined, size: 18),
+    label: Text('${label ?? OrdersStrings.validOrders} (${controller.additionalFilterCount})'),
+    onSelected: controller.toggleAdditionalFilter,
+    visualDensity: VisualDensity.compact,
   );
 }
