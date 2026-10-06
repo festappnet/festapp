@@ -780,7 +780,14 @@
     "emailHelpText": "Enter the customer's email address to send the new order confirmation and payment details.",
     "noDetailsFound": "No details found",
     "customerExample": "customer@example.com",
-    "globalChangesNote": "Email includes changes from all tickets in this order."
+    "globalChangesNote": "Email includes changes from all tickets in this order.",
+    "cancelledTicketsTitle": "Cancelled tickets:",
+    "removedTicketsTitle": "Removed tickets:",
+    "addedTicketsTitle": "Added tickets:",
+    "changeTicketLabel": "Ticket {symbol}",
+    "productChangesForTicket": "Product changes on ticket {symbol}",
+    "ticketWithoutSymbol": "without a symbol",
+    "orderChangesOverview": "Order changes overview"
   },
   "EmailTemplates": {
     "subs": {

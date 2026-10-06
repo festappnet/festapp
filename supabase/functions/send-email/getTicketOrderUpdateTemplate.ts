@@ -35,7 +35,7 @@ export async function getTicketOrderUpdateTemplate(
     payment_info,
     bank_account,
     latest_history_id,
-    reference_history,
+    order_changes,
     form_data,
     reply_to,
   } = await getBaseOrderData(orderId, requestSecret, authorizationHeader);
@@ -118,8 +118,7 @@ export async function getTicketOrderUpdateTemplate(
 
   // 5. Generate Change Overview
   const changeOverviewHtml = generateChangeOverview(
-    order.data,
-    reference_history,
+    order_changes,
     lang,
   );
 

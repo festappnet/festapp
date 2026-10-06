@@ -780,7 +780,14 @@
     "emailHelpText": "Zadejte e-mailovou adresu zákazníka pro zaslání potvrzení nové objednávky a platebních údajů.",
     "noDetailsFound": "Podrobnosti nenalezeny",
     "customerExample": "zakaznik@priklad.cz",
-    "globalChangesNote": "E-mail zahrnuje změny ze všech vstupenek v této objednávce."
+    "globalChangesNote": "E-mail zahrnuje změny ze všech vstupenek v této objednávce.",
+    "cancelledTicketsTitle": "Stornované vstupenky:",
+    "removedTicketsTitle": "Odebrané vstupenky:",
+    "addedTicketsTitle": "Přidané vstupenky:",
+    "changeTicketLabel": "Vstupenka {symbol}",
+    "productChangesForTicket": "Změny produktů na vstupence {symbol}",
+    "ticketWithoutSymbol": "bez označení",
+    "orderChangesOverview": "Přehled změn v objednávce"
   },
   "EmailTemplates": {
     "subs": {

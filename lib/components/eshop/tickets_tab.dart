@@ -19,7 +19,6 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/platform_helper.dart'; // Import PlatformHelper
 
 import 'db_orders.dart';
-import 'logic/order_calc_helper.dart';
 import 'views/order_update_email_dialog.dart';
 import 'eshop_columns.dart';
 import 'orders_strings.dart';
@@ -211,12 +210,8 @@ class _TicketsTabState extends State<TicketsTab> {
         final send = await showOrderUpdateEmailDialog(
           context,
           email: order.email,
-          changes: OrderCalcHelper.calculateGlobalOrderChanges(
-            referenceOrder: bundle.referenceOrder,
-            currentOrder: bundle.order,
-            currentTicketId: bundle.ticket.id!,
-            currentTicketProducts: bundle.ticket.relatedProducts ?? [],
-          ),
+          changes: bundle.changes,
+          ticketId: bundle.ticket.id!,
           balance: (bundle.order.price ?? 0) - (bundle.paymentInfo?.paid ?? 0),
         );
         if (!send || !mounted) continue;

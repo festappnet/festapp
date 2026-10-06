@@ -1,4 +1,5 @@
 import 'models/product_price_wave.dart';
+import 'models/order_change_summary.dart';
 import 'models/report_exchange_rates.dart';
 import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:collection/collection.dart';
@@ -476,6 +477,7 @@ class TicketDetailsBundle {
   final PaymentInfoModel? paymentInfo;
   final OrderHistoryInfo orderHistory;
   final OrderModel? referenceOrder;
+  final OrderChangeSummary changes;
 
   TicketDetailsBundle({
     required this.ticket,
@@ -483,10 +485,12 @@ class TicketDetailsBundle {
     this.paymentInfo,
     required this.orderHistory,
     this.referenceOrder,
+    required this.changes,
   });
 
   factory TicketDetailsBundle.fromJson(Map<String, dynamic> json) {
     var bundle = TicketDetailsBundle(
+      changes: OrderChangeSummary.fromJson(Map<String, dynamic>.from(json['order_changes'])),
       ticket: TicketModel.fromJson(json['ticket']),
       order: OrderModel.fromJson(json['order']),
       paymentInfo: json['payment_info'] != null
