@@ -46,26 +46,13 @@ class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
 
-  static Future<void> stornoTicket(int ticketId) async {
-    await stornoTickets([ticketId]);
-  }
+  static Future<TicketCancellationOutcome> stornoTicket(int ticketId) =>
+      stornoTickets([ticketId]);
 
-  /// Bulk cancels specific tickets.
-  /// Uses 'storno_tickets_bulk' to ensure efficient processing and single history entries per order.
-  static Future<void> stornoTickets(List<int> ticketIds) async {
-    if (ticketIds.isEmpty) return;
-
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.cancel(ticketIds);
-      return;
-    }
-
-    await _supabase.rpc(
-      'storno_tickets_bulk',
-      params: {
-        'p_ticket_ids': ticketIds,
-      },
-    );
+  /// One canonical mutation for the complete selection, including email outcomes.
+  static Future<TicketCancellationOutcome> stornoTickets(List<int> ticketIds) async {
+    if (ticketIds.isEmpty) return const TicketCancellationOutcome();
+    return _commands.cancel(ticketIds);
   }
 
   static Future<List<TicketModel>> getAllTickets(String occasionLink) async {

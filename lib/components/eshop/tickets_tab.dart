@@ -10,11 +10,17 @@ import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_tickets.dart';
+import 'package:fstapp/components/eshop/db_eshop.dart';
+import 'package:fstapp/components/eshop/ticket_commands.dart';
 import 'package:fstapp/services/dialog_helper.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/eshop/ticket_code_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/platform_helper.dart'; // Import PlatformHelper
 
+import 'db_orders.dart';
+import 'logic/order_calc_helper.dart';
+import 'views/order_update_email_dialog.dart';
 import 'eshop_columns.dart';
 import 'orders_strings.dart';
 
@@ -22,7 +28,7 @@ class TicketsTab extends StatefulWidget {
   const TicketsTab({super.key});
 
   @override
-  _TicketsTabState createState() => _TicketsTabState();
+  State<TicketsTab> createState() => _TicketsTabState();
 }
 
 class _TicketsTabState extends State<TicketsTab> {
@@ -33,8 +39,9 @@ class _TicketsTabState extends State<TicketsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink = context.routeData.inheritedPathParams
-        .getString(AppRouter.linkFormatted);
+    final newOccasionLink = context.routeData.inheritedPathParams.getString(
+      AppRouter.linkFormatted,
+    );
     // Initialize only once when the link is available
     if (occasionLink == null) {
       occasionLink = newOccasionLink;
@@ -165,32 +172,74 @@ class _TicketsTabState extends State<TicketsTab> {
     );
 
     if (confirm && mounted) {
-      var stornoFutures = selectedTickets.map((ticket) {
-        return () async {
-          await DbTickets.stornoTicket(ticket.id!);
-          if (mounted) {
-            ToastHelper.Show(
-              context,
-              OrdersStrings.stornoCompleted(
-                item: ticket.ticketSymbol ?? ticket.id.toString(),
-              ),
-            );
-          }
-        };
-      }).toList();
-
-      await DialogHelper.showProgressDialogAsync(
+      TicketCancellationOutcome? outcome;
+      final success = await DialogHelper.showProgressDialogAsync(
         context,
         OrdersStrings.processing,
-        stornoFutures.length,
-        futures: stornoFutures,
+        1,
+        futures: [
+          () async {
+            outcome = await DbTickets.stornoTickets(
+              selectedTickets.map((ticket) => ticket.id!).toList(),
+            );
+          },
+        ],
       );
       refreshData();
+      if (!success || !mounted || outcome == null) return;
+
+      // Full cancellations enqueue their email in the database transaction.
+      // Ask once per surviving order, even when several of its tickets were selected.
+      for (final order in outcome!.updatedOrders) {
+        if (!mounted) return;
+        if (order.email.trim().isEmpty) continue;
+        // Resolve a surviving ticket through existing order/detail RPCs so the
+        // preview uses the same sent-history baseline as product editing.
+        final bundle = await ExceptionHandler.guard<TicketDetailsBundle?>(
+          context,
+          defaultErrorMessage: OrdersStrings.sendEmailFailed,
+          futureFunction: () async {
+            final history = await DbOrders.getOrderHistory(order.id);
+            final tickets = history.order.data?['tickets'] as List? ?? [];
+            if (tickets.isEmpty) return null;
+            return DbEshop.getProductsForTicket(
+              (tickets.first as Map<String, dynamic>)['id'] as int,
+            );
+          },
+        );
+        if (bundle == null || !mounted) continue;
+        final send = await showOrderUpdateEmailDialog(
+          context,
+          email: order.email,
+          changes: OrderCalcHelper.calculateGlobalOrderChanges(
+            referenceOrder: bundle.referenceOrder,
+            currentOrder: bundle.order,
+            currentTicketId: bundle.ticket.id!,
+            currentTicketProducts: bundle.ticket.relatedProducts ?? [],
+          ),
+          balance: (bundle.order.price ?? 0) - (bundle.paymentInfo?.paid ?? 0),
+        );
+        if (!send || !mounted) continue;
+        final sent = await DialogHelper.showProgressDialogAsync(
+          context,
+          OrdersStrings.processing,
+          1,
+          futures: [
+            () async {
+              await DbEshop.sendTicketOrderUpdateEmail(order.id);
+            },
+          ],
+        );
+        if (mounted && sent) {
+          ToastHelper.Show(context, OrdersStrings.sendEmailSuccess);
+        }
+      }
     }
   }
 
   List<TicketModel> _getCheckedTickets(
-      SingleDataGridController singleDataGrid) {
+    SingleDataGridController singleDataGrid,
+  ) {
     return List<TicketModel>.from(
       singleDataGrid.stateManager.refRows.originalList
           .where((row) => row.checked == true)

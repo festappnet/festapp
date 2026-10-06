@@ -33,11 +33,23 @@ Approved Festapp allocation: 2 emails/second and 10,000 emails/day, as requested
 3. Atomically install the reviewed canonical function bundle/router and email environment overlay. The worker uses a service-only expiring machine proof, not a public JWT bypass. Install the signed GoTrue hook with SMTP disabled. Keep the queue paused throughout. Install the canonical recovery cron and bank synchronization configuration; confirm no old queue/ticket cron remains.
 4. Set `email_capacity.account_id`, `region`, `shared_account`, `allocated_rate`, `allocated_daily` and `worker_url` from verified facts. For a shared account both allocations are mandatory. Quota freshness lasts 15 minutes; quota refresh validates actual AWS identity, sender and event destinations. The rate has a 20% reserve and the daily limit has a 10% reserve; in-flight/unknown reservations remain counted. Concurrency defaults to two preparations and two sends. Capacity deferral does not consume retries.
 5. Within the approved production rollout, run designated single-message live canaries, including approved SES simulator cases, and observe durable acceptance, signed delivery/bounce feedback and idempotent domain post-actions. Exercise a stopped worker/lost wake, feedback outage and replay, and an accepted-send database failure. This is a functional gate, not a capacity test. Record actual commit-to-claim/preparation/acceptance latency; no real SES latency has been measured locally.
-6. Unpause only after live gates pass. Watch `get_email_delivery_health()` and the scoped admin history/overview. Verify expiry, stale quota/circuit, feedback lag, unknown messages and post-action failures. Never restore SMTP as a fallback.
+6. Apply the scoped follow-up `20261006090000_email_permissions_and_templates.sql`; never replay the original cutover on an already migrated database. Apply `20261006100000_email_extensions_schema_owner.sql` as the verified `extensions` schema owner (`supabase_admin` on the canonical runtime). The ordinary `postgres` operator does not own this schema and its GRANT only produces a warning; the follow-up fails if the grant did not take effect. Run `automation/email-delivery/check-readiness.sql` through the identity-verified SQL connection with `ON_ERROR_STOP=1`. It must pass before unpausing or releasing producers. It reads metadata only and does not send emails. Unpause only after live gates pass. Watch `get_email_delivery_health()` and the scoped admin history/overview. Verify expiry, stale quota/circuit, feedback lag, unknown messages and post-action failures. Never restore SMTP as a fallback.
 
 ## Incidents and feedback replay
 
 The service-only health RPC reports queue age/states, preparation timing, provider feedback lag/unmatched events, quota freshness, worker heartbeat, circuits and post-action backlog. Tenant UI exposes scoped redacted attempts/events and prioritizes trouble over later successful messages. Admin history filters state/kind/date/order/user/occasion and can switch to organization scope; scope permissions are enforced by SQL.
+
+Producer readiness also reports `producer_access_ok`, `missing_account_templates`,
+and alerts `producer_permissions_missing` / `account_templates_missing`. These
+cover failures before a queue row exists. The schema grant belongs to the shared
+runtime role; anon/authenticated gain no new privileges. Account defaults reuse
+the verified CSM template content with dynamic branding and the recipient
+organization's wrapper. Existing template overrides retain precedence.
+
+SQL producer contract tests switch to the actual `service_role`. The isolated
+rehearsal starts with its production schema-access denial, applies the follow-up,
+and runs the read-only readiness gate. Admin-only fixture tests cannot replace
+these checks. Acceptance remains distinct from provider-confirmed delivery.
 
 A successful provider send followed by a database failure stays fenced. Sending-lease expiry becomes `unknown`. Do not automatically retry it. Use provider message ID, trusted signed events or an explicit provider investigation to reconcile with `reconcile_unknown_email(message_uuid, decision, evidence, provider_id)`. Decisions are `accepted`, `cancelled` or `known_not_accepted`; `known_not_accepted` requires evidence that the provider did not accept it. Save evidence without secrets. A confirmation with a known fatal failure requires an audited operator decision about cancellation before successors can proceed.
 

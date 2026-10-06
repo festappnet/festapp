@@ -1,3 +1,36 @@
+BEGIN;
+
+CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_storno_ws_internal_v1(order_id bigint)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    occasion_id bigint;
+BEGIN
+    -- Retrieve the occasion associated with the order
+    SELECT occasion INTO occasion_id FROM eshop.orders WHERE id = order_id;
+
+    -- Check if the order exists and has an associated occasion
+    IF occasion_id IS NULL THEN
+        RAISE EXCEPTION 'Order not found or no associated occasion.';
+    END IF;
+
+    -- Verify if the user is an editor on the occasion
+    IF (SELECT get_is_editor_order_on_occasion(occasion_id)) <> TRUE THEN
+        RAISE EXCEPTION 'User is not editor.';
+    END IF;
+
+    -- Use the same parent lock order as ticket cancellation.
+    PERFORM 1 FROM eshop.orders WHERE id=order_id FOR UPDATE;
+
+    -- Call the original function to update the order and tickets
+    PERFORM update_order_and_tickets_to_storno_221(order_id);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.update_order_and_tickets_to_storno_ws_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[])
 RETURNS VOID
 LANGUAGE plpgsql
@@ -155,3 +188,73 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[]) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.storno_tickets_client_sync_v1(
+  p_tickets bigint[],p_command_id uuid
+) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
+  v_before_users uuid[]; v_changed_orders bigint[]; v_cancelled jsonb; v_updated jsonb;
+BEGIN
+  SELECT min(t.occasion) INTO v_occasion FROM eshop.tickets t
+    WHERE t.id=ANY(p_tickets);
+  IF v_actor IS NULL OR v_occasion IS NULL OR cardinality(p_tickets)=0
+    OR (SELECT count(*) FROM eshop.tickets t
+      WHERE t.id=ANY(p_tickets) AND t.occasion=v_occasion)
+      <>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_tickets) id))
+    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
+    'tickets',p_tickets)::text,'UTF8'),'sha256'),'hex');
+  v_begin:=public.begin_client_mutation_v1(p_command_id,
+    'inventory.tickets.cancel',v_occasion,v_actor,v_hash);
+  IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+  SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
+    FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
+  -- Lock in the same order as the bulk mutation, then capture only actual changes.
+  PERFORM o.id FROM eshop.orders o WHERE o.id IN (
+    SELECT opt."order" FROM eshop.order_product_ticket opt
+    JOIN eshop.tickets t ON t.id=opt.ticket
+    WHERE t.id=ANY(p_tickets)) ORDER BY o.id FOR UPDATE;
+  SELECT array_agg(DISTINCT opt."order") INTO v_changed_orders
+    FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id=opt.ticket
+    WHERE t.id=ANY(p_tickets) AND t.state IS DISTINCT FROM 'storno';
+  PERFORM public.storno_tickets_bulk_internal_v1(p_tickets);
+  SELECT coalesce(jsonb_agg(o.id ORDER BY o.id) FILTER(WHERE o.state='storno'),'[]'::jsonb),
+    coalesce(jsonb_agg(jsonb_build_object('id',o.id,'email',o.data->>'email') ORDER BY o.id)
+      FILTER(WHERE o.state IS DISTINCT FROM 'storno'),'[]'::jsonb)
+    INTO v_cancelled,v_updated FROM eshop.orders o WHERE o.id=ANY(v_changed_orders);
+  RETURN public.complete_profile_inventory_membership_mutation_v1(
+    p_command_id,v_occasion,'inventory.tickets.cancel',
+    jsonb_build_array(jsonb_build_object('entityType','ticket','entityId',NULL,
+      'operation','update','safeLabel','Ticket cancellation',
+      'changedFields',jsonb_build_array('state','membership','allocations'))),
+    v_before_users,jsonb_build_object('ticketIds',to_jsonb(p_tickets),
+      'cancelledOrderIds',v_cancelled,'updatedOrders',v_updated));
+END; $$;
+REVOKE ALL ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
+  FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
+  TO authenticated;
+
+CREATE OR REPLACE FUNCTION get_latest_order_history(order_id bigint)
+RETURNS jsonb
+LANGUAGE plpgsql
+SET search_path = public, extensions
+AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  SELECT to_jsonb(o)
+    INTO result
+  FROM eshop.orders_history o
+  WHERE o."order" = order_id AND (o.price <> 0 OR o.state IS DISTINCT FROM 'storno')
+  -- Free orders also need cancellation emails; prefer the existing nonzero history.
+  ORDER BY (o.price <> 0) DESC NULLS LAST, o.created_at DESC, o.id DESC
+  LIMIT 1;
+
+  RETURN result;
+END;
+$$;
+
+NOTIFY pgrst, 'reload schema';
+COMMIT;

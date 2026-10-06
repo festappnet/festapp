@@ -26,7 +26,7 @@ Deno.test("application links require explicit tenant activation, never a hardcod
   }
 });
 
-Deno.test("application links delivery exposes only appLinks and delegates post-actions to SQL", async () => {
+Deno.test("application links delivery supplies template links and brand and delegates post-actions to SQL", async () => {
   const calls: string[] = [];
   let emailInput: Record<string, unknown> | undefined;
 
@@ -41,7 +41,7 @@ Deno.test("application links delivery exposes only appLinks and delegates post-a
   assertEquals(calls, ["deliver"]);
   assertEquals(emailInput?.templateCode, "APP_LINKS");
   assertEquals(emailInput?.recipientUser, input.userId);
-  assertEquals(emailInput?.substitutions, { appLinks: input.appLinks });
+  assertEquals(emailInput?.substitutions, { appLinks: input.appLinks, appName: input.appName });
 });
 
 Deno.test("failed or pending canonical application links delivery cannot claim success", async () => {
