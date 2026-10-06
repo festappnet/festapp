@@ -398,6 +398,7 @@
     "orderSequence": "Order sequence",
     "orderSequenceHelp": "Fixed order sequence within this occasion.",
     "validOrders": "Valid orders",
+    "validApplications": "Valid applications",
     "validTickets": "Valid tickets",
     "orderSymbol": "Order Symbol",
     "customer": "Customer",
