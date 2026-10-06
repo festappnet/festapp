@@ -44,4 +44,3 @@ REVOKE ALL ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
   FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
   TO authenticated;
-
