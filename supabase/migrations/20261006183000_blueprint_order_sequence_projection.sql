@@ -1,3 +1,5 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
 CREATE OR REPLACE FUNCTION public.get_blueprint_for_edit(
     occasion_link TEXT
 )
@@ -202,3 +204,5 @@ BEGIN
     );
 END;
 $$;
+NOTIFY pgrst, 'reload schema';
+COMMIT;

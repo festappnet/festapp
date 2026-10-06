@@ -86,7 +86,8 @@ class _TicketsTabState extends State<TicketsTab> {
     final newController = SingleDataGridController<TicketModel>(
       context: context,
       additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
-      headerFilterBuilder: OrderGridFilters.checkbox,
+      headerFilterBuilder: (context, controller) => OrderGridFilters.filterButton(
+          context, controller, label: OrdersStrings.validTickets),
       loadData: () => DbTickets.getAllTickets(occasionLink!),
       fromPlutoJson: TicketModel.fromPlutoJson,
       firstColumnType: DataGridFirstColumn.check,

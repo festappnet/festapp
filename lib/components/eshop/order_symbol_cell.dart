@@ -3,59 +3,49 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'orders_strings.dart';
 
-/// Readonly symbol with an explicit copy action, shared by the order grids.
-class OrderSymbolCell extends StatelessWidget {
+/// Readonly symbol and compact inline copy action, shared by order grids.
+class OrderSymbolCell extends StatefulWidget {
   final String symbol;
   final TextStyle? style;
   const OrderSymbolCell({super.key, required this.symbol, this.style});
 
   @override
-  Widget build(BuildContext context) {
-    if (symbol.isEmpty) return const SizedBox.shrink();
-    return PopupMenuButton<void>(
-      tooltip: symbol,
-      padding: EdgeInsets.zero,
-      position: PopupMenuPosition.under,
-      itemBuilder: (_) => [
-        PopupMenuItem<void>(
-          enabled: false,
-          child: _SymbolCopyAction(symbol: symbol),
-        ),
-      ],
-      child: Align(alignment: AlignmentDirectional.centerStart,
-          child: Text(symbol, style: style, maxLines: 1)),
-    );
-  }
+  State<OrderSymbolCell> createState() => _OrderSymbolCellState();
 }
 
-class _SymbolCopyAction extends StatefulWidget {
-  final String symbol;
-  const _SymbolCopyAction({required this.symbol});
-
-  @override
-  State<_SymbolCopyAction> createState() => _SymbolCopyActionState();
-}
-
-class _SymbolCopyActionState extends State<_SymbolCopyAction> {
+class _OrderSymbolCellState extends State<OrderSymbolCell> {
   bool _copied = false;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text(widget.symbol, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-      const SizedBox(width: 8),
-      IconButton(
+  void didUpdateWidget(covariant OrderSymbolCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.symbol != widget.symbol) _copied = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.symbol.isEmpty) return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+    return Row(children: [
+      Expanded(child: Tooltip(message: widget.symbol,
+          child: Text(widget.symbol, style: widget.style, maxLines: 1))),
+      const SizedBox(width: 4),
+      SizedBox(width: 30, height: 30, child: IconButton(
         tooltip: _copied ? CommonStrings.copiedToClipboard : OrdersStrings.copy,
+        padding: const EdgeInsets.all(6),
         iconSize: 18,
-        visualDensity: VisualDensity.compact,
-        icon: Icon(_copied ? Icons.check : Icons.copy,
-            color: _copied ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant),
+        style: IconButton.styleFrom(
+          foregroundColor: _copied ? colors.onPrimary : colors.onSurface,
+          backgroundColor: _copied ? colors.primary : colors.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        ),
+        icon: Icon(_copied ? Icons.check : Icons.copy),
         onPressed: () async {
-          await Clipboard.setData(ClipboardData(text: widget.symbol));
-          if (mounted) setState(() => _copied = true);
+          final symbol = widget.symbol;
+          await Clipboard.setData(ClipboardData(text: symbol));
+          if (mounted && widget.symbol == symbol) setState(() => _copied = true);
         },
-      ),
-    ],
-  );
+      )),
+    ]);
+  }
 }
