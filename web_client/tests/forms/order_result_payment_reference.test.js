@@ -17,3 +17,15 @@ test('order result renders RF reference as text, not HTML', () => {
   assert.equal(host.querySelectorAll('script').length, 0);
   assert.equal(host.querySelectorAll('.result-payment-value')[1]?.textContent, dangerous);
 });
+
+test('confirmation exposes a continuous symbol and never labels the internal ID', () => {
+  const dom = new JSDOM('<div id="host"></div>', { url: 'http://localhost/' });
+  global.document = dom.window.document;
+  const host = document.querySelector('#host');
+  OrderResult.render(host, true, { ticketOrder: { order: { id: 6500, order_symbol: '7G4K9M2R6A' } } }, { communicationTone: 'formal', visibleFields: [] }, () => {});
+  assert.ok(host.querySelector('.result-order-symbol').textContent.endsWith('7G4K9M2R6A'));
+  assert.equal(host.textContent.includes('6500'), false);
+  OrderResult.render(host, true, { ticketOrder: { order: { id: 6500 } } }, { communicationTone: 'formal', visibleFields: [] }, () => {});
+  assert.equal(host.querySelector('.result-order-symbol').textContent, '');
+  dom.window.close();
+});

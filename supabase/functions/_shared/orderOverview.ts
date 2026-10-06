@@ -6,12 +6,13 @@ import {
   MetaSurchargeAmount,
 } from "./metaSurcharge.ts";
 
-export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs'): string {
+export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string): string {
     const { name, surname, email, phone, note } = orderData;
 
     const tr = {
         cs: {
             overviewTitle: "Přehled objednávky",
+            orderSymbol: "Symbol objednávky",
             name: "Jméno",
             email: "E-mail",
             phone: "Telefon",
@@ -23,6 +24,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         },
         en: {
             overviewTitle: "Order Overview",
+            orderSymbol: "Order symbol",
             name: "Name",
             email: "E-mail",
             phone: "Phone",
@@ -35,7 +37,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     }[lang];
 
     // --- 1. Personal Info ---
-    let personalInfoHtml = '';
+    let personalInfoHtml = orderSymbol ? `<div style="margin-bottom:4px;">${tr.orderSymbol}: <strong>${orderSymbol}</strong></div>` : '';
     const fullName = [name, surname].filter(Boolean).join(' ');
 
     if (fullName) {
@@ -156,4 +158,19 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             ${ticketsDetails}
             ${totalSection}
         </div>`;
+}
+/** Metadata-only read adapter for retained confirmation/replay snapshots.
+ * No query for current snapshots, no mutation of payload/hash or business data.
+ */
+export async function withOrderIdentity(
+    order: any,
+    read: (params: { p_order: number; p_occasion: number; p_organization: number }) => Promise<string | null>,
+    scope = order.occasion,
+): Promise<any> {
+    if (typeof order.order_symbol === "string" && /^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$/.test(order.order_symbol)) return order;
+    if (order.order_symbol != null) throw new Error("invalid_order_symbol");
+    if (!order.id || !scope?.id || !scope?.organization) throw new Error("order_identity_scope_missing");
+    const symbol = await read({ p_order: order.id, p_occasion: scope.id, p_organization: scope.organization });
+    if (!symbol || !/^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$/.test(symbol)) throw new Error("order_identity_unavailable");
+    return { ...order, order_symbol: symbol };
 }

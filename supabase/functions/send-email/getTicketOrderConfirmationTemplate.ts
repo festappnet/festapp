@@ -1,3 +1,4 @@
+import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
@@ -48,7 +49,7 @@ async function addExternalAttachment(
   );
   attachments.push({
     filename: result.filename ??
-      `contract-${paymentReferenceValue(ticketOrder.order.payment_info)}.pdf`,
+      `contract-${ticketOrder.order.order_symbol}.pdf`,
     content: bytes,
     contentType: "application/pdf",
     encoding: "binary",
@@ -66,7 +67,11 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     ? requestedLanguage as keyof typeof translations
     : "cs";
   const tr = translations[lang];
-  const order = ticketOrder.order;
+  const order = await withOrderIdentity(ticketOrder.order, async (params) => {
+    const { data, error } = await supabaseAdmin.rpc("read_order_identity", params);
+    if (error) throw error;
+    return data;
+  }, { id: task.occasion, organization: task.organization });
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
   const attachments: Attachment[] = [];
@@ -111,7 +116,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     externalServices?.find((service: any) =>
       service.type === "SUPABASE_FUNCTION"
     ),
-    ticketOrder,
+    { ...ticketOrder, order },
     attachments,
   );
 
@@ -160,6 +165,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   return {
     subs: {
       occasionTitle: occasion.title,
+      orderSymbol: order.order_symbol,
       balanceReasoning,
       price: paymentInfo.amount,
       currencyCode: paymentInfo.currency_code,
@@ -173,6 +179,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
         order.data.tickets,
         occasion.features,
         lang,
+        order.order_symbol,
       ),
     },
     sender: occasion.title,

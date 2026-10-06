@@ -48,7 +48,7 @@ BEGIN
  PERFORM assert_eq((SELECT attempt_count FROM public.email_messages WHERE message_id=(msg->>'message_id')::uuid),0,'capacity is not a failed attempt');
  PERFORM assert_eq((SELECT prepared->>'sealed' FROM public.email_messages WHERE message_id=(msg->>'message_id')::uuid),'immutable','deferral keeps prepared snapshot');
  -- Tenant and order summaries: later success cannot hide failed tickets.
- INSERT INTO eshop.orders(occasion,state,data,price,currency_code) VALUES(occ,'paid','{"email":"order@example.invalid"}',100,'CZK') RETURNING id INTO v_order_id;
+ INSERT INTO eshop.orders(order_symbol, occasion,state,data,price,currency_code) VALUES(public.generate_order_symbol(), occ,'paid','{"email":"order@example.invalid"}',100,'CZK') RETURNING id INTO v_order_id;
  msg:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',v_order_id),org,occ,unit_id);
  UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now(),bounced_at=now() WHERE message_id=(msg->>'message_id')::uuid;
  PERFORM public.enqueue_order_email('TICKET_ORDER_UPDATE',jsonb_build_object('order_id',v_order_id),org,occ,unit_id);

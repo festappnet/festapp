@@ -25,6 +25,7 @@ export async function getTicketOrderStornoTemplate(reqData: any, authorizationHe
   // Prepare substitutions with price and currency code
   const subs: Record<string, string> = {
     occasionTitle: occasion.title,
+      orderSymbol: order.order_symbol,
     amount: formatCurrency(price, currency_code),
   };
 

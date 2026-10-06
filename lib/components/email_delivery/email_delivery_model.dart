@@ -13,6 +13,7 @@ class EmailDeliveryModel implements ITrinaRowModel {
   final int id;
   final String messageId;
   final int? orderId;
+  final String? orderSymbol;
   final DateTime? createdAt;
   final String kind;
   final String state;
@@ -21,6 +22,7 @@ class EmailDeliveryModel implements ITrinaRowModel {
       : id = (json['id'] as num).toInt(),
         messageId = json['message_id'] as String,
         orderId = (json['order_id'] as num?)?.toInt(),
+        orderSymbol = json['order_symbol'] as String?,
         createdAt = json['created_at'] == null
             ? null
             : DateTime.parse(json['created_at'] as String),
@@ -64,7 +66,7 @@ class EmailDeliveryModel implements ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) => TrinaRow(cells: {
         'id': TrinaCell(value: id),
-        EshopColumns.ORDER_SYMBOL: TrinaCell(value: orderId ?? ''),
+        EshopColumns.ORDER_SYMBOL: TrinaCell(value: orderSymbol ?? ''),
         'created_at': TrinaCell(
             value: createdAt == null
                 ? ''

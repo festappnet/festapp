@@ -41,6 +41,7 @@ class OrderHistoryModel extends ITrinaRowModel {
   String? state;
   Map<String, dynamic>? data;
   int? orderId;
+  String? orderSymbol;
   String? currencyCode;
   String? createdById;
   UserInfoModel? createdBy;
@@ -59,6 +60,7 @@ class OrderHistoryModel extends ITrinaRowModel {
     this.state,
     this.data,
     this.orderId,
+    this.orderSymbol,
     this.currencyCode,
     this.createdById,
     this.createdBy,
@@ -87,6 +89,7 @@ class OrderHistoryModel extends ITrinaRowModel {
       state: json[TbEshop.orders_history.state],
       data: historyData,
       orderId: json[TbEshop.orders_history.order],
+      orderSymbol: json[TbEshop.orders.order_symbol] as String?,
       currencyCode: json[TbEshop.orders_history.currency_code],
       dataTickets: parsedDataTickets,
     );
@@ -117,6 +120,7 @@ class OrderHistoryModel extends ITrinaRowModel {
       state: order.state,
       data: order.data,
       orderId: order.id,
+      orderSymbol: order.orderSymbol,
       currencyCode: order.currencyCode,
       createdById: null,
       createdBy: null,
@@ -549,7 +553,8 @@ class OrderHistoryModel extends ITrinaRowModel {
     return TrinaRow(
       cells: {
         EshopColumns.HISTORY_ID: TrinaCell(value: id ?? 0),
-        EshopColumns.HISTORY_ORDER_SYMBOL: TrinaCell(value: orderId ?? 0),
+        EshopColumns.HISTORY_ORDER_SYMBOL:
+            TrinaCell(value: orderSymbol ?? orderModel?.orderSymbol ?? ""),
         EshopColumns.ORDER_DATA:
             TrinaCell(value: orderModel?.toCustomerData() ?? ""),
         EshopColumns.ORDER_EMAIL: TrinaCell(
@@ -582,5 +587,6 @@ class OrderHistoryModel extends ITrinaRowModel {
       throw UnimplementedError();
 
   @override
-  String toBasicString() => OrdersStrings.toBasicString(id ?? 0, orderId ?? 0);
+  String toBasicString() => OrdersStrings.toBasicString(
+      id ?? 0, orderSymbol ?? orderModel?.orderSymbol ?? "");
 }

@@ -15,6 +15,7 @@ Map<String, dynamic> message(int id) => {
       'id': id,
       'message_id': 'message-$id',
       'order_id': 6500,
+      'order_symbol': '7G4K9M2R6A',
       'message_kind': 'order_tickets',
       'state': 'unknown',
     };
@@ -92,7 +93,8 @@ void main() {
     expect(
         c.columns.singleWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).type,
         isA<TrinaColumnTypeText>());
-    expect(find.text('6500'), findsOneWidget);
+    expect(find.text('7G4K9M2R6A'), findsOneWidget);
+    expect(find.text('6500'), findsNothing);
     expect(find.text('6,500'), findsNothing);
     expect(find.byType(OrderStateDisplay), findsOneWidget);
     expect(c.firstColumnType, DataGridFirstColumn.none);

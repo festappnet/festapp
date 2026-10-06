@@ -64,7 +64,7 @@ export async function renderQueuedEmail(
           occasion: row.occasion,
           unit: row.unit,
         },
-        substitutions: { occasionTitle: occasion.title },
+        substitutions: { occasionTitle: occasion.title, orderSymbol: order.order_symbol },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
         attachments,

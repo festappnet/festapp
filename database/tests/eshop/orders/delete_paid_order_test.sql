@@ -16,8 +16,8 @@ BEGIN
     VALUES ('Delete test','delete-' || actor::text,'FIO',ARRAY['CZK']) RETURNING id INTO bank;
   INSERT INTO eshop.payment_info(variable_symbol,amount,paid,currency_code,bank_account)
     VALUES (4288,100,100,'CZK',bank) RETURNING id INTO pi;
-  INSERT INTO eshop.orders(occasion,payment_info,state,price,currency_code)
-    VALUES (oc,pi,'paid',100,'CZK') RETURNING id INTO ord;
+  INSERT INTO eshop.orders(order_symbol, occasion,payment_info,state,price,currency_code)
+    VALUES (public.generate_order_symbol(), oc,pi,'paid',100,'CZK') RETURNING id INTO ord;
   INSERT INTO eshop.transactions(bank_account_id,payment_info,amount,currency,vs,date)
     VALUES (bank,pi,100,'CZK','4288',now()) RETURNING id INTO tx;
   -- A caller without unit-manager rights must not detach or delete anything.

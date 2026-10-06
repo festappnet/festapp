@@ -3,7 +3,7 @@ BEGIN;
     -- Import assertions
     -- \i scripts/tests/helpers/assertions.sql
     -- Assertions are loaded by the test runner
-    
+
     -- Test 1: generate_request_secret
     DO $$
     DECLARE
@@ -11,9 +11,9 @@ BEGIN;
         v_count int;
     BEGIN
         v_secret := public.generate_request_secret(300);
-        
+
         PERFORM assert_not_null(v_secret, 'Generated secret should not be null');
-        
+
         SELECT count(*) INTO v_count FROM public.request_secrets WHERE secret = v_secret;
         PERFORM assert_eq(v_count, 1, 'Secret should be present in request_secrets table');
     END $$;
@@ -32,13 +32,13 @@ BEGIN;
         -- Setup
         INSERT INTO public.organizations (title) VALUES ('RPC Test Org') RETURNING id INTO v_org_id;
         INSERT INTO public.units (organization, title) VALUES (v_org_id, 'RPC Test Unit') RETURNING id INTO v_unit_id;
-        INSERT INTO public.occasions (organization, unit, title, link, start_time, end_time) 
-        VALUES (v_org_id, v_unit_id, 'RPC Test Occasion', 'rpc-test-' || gen_random_uuid(), now(), now() + interval '1 day') 
+        INSERT INTO public.occasions (organization, unit, title, link, start_time, end_time)
+        VALUES (v_org_id, v_unit_id, 'RPC Test Occasion', 'rpc-test-' || gen_random_uuid(), now(), now() + interval '1 day')
         RETURNING id INTO v_occasion_id;
-        
+
         -- Create dummy Order
-        INSERT INTO eshop.orders (occasion, created_at, updated_at) 
-        VALUES (v_occasion_id, now(), now()) 
+        INSERT INTO eshop.orders (order_symbol, occasion, created_at, updated_at)
+        VALUES (public.generate_order_symbol(), v_occasion_id, now(), now())
         RETURNING id INTO v_order_id;
 
         -- Insert External Service
@@ -59,5 +59,5 @@ BEGIN;
     EXCEPTION WHEN OTHERS THEN
         -- Verify cleaner rollback or helpful error
         RAISE NOTICE 'Test failed with %', SQLERRM;
-        RAISE; 
+        RAISE;
     END $$;

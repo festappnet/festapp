@@ -12,8 +12,8 @@ BEGIN
     provider,mode,state,pairing_code,manifest_sha256) VALUES('ticket-test','festapp','44',v_bank,'331234/2010','FIO','api','shadow','0123456789',repeat('a',64)) RETURNING id INTO v_conn;
   PERFORM public.activate_bank_sync_connection(v_conn,repeat('a',64));
   INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code) VALUES(v_bank,123456,10.07,'CZK') RETURNING id INTO v_payment;
-  INSERT INTO eshop.orders(occasion,state,data,price,currency_code,payment_info)
-    VALUES(v_occ,'ordered','{"email":"tickets@example.invalid"}',10.07,'CZK',v_payment) RETURNING id INTO v_order;
+  INSERT INTO eshop.orders(order_symbol, occasion,state,data,price,currency_code,payment_info)
+    VALUES(public.generate_order_symbol(), v_occ,'ordered','{"email":"tickets@example.invalid"}',10.07,'CZK',v_payment) RETURNING id INTO v_order;
   INSERT INTO eshop.tickets(occasion,state) VALUES(v_occ,'ordered') RETURNING id INTO v_ticket;
   INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(v_order,v_ticket);
   -- All network intentions remain inside this rolled-back test transaction.
@@ -63,8 +63,8 @@ BEGIN
   PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=v_ticket),'sent','only canonical provider acceptance projects sent tickets');
 
   INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code) VALUES(v_bank,223456,10.07,'CZK') RETURNING id INTO v_failed_payment;
-  INSERT INTO eshop.orders(occasion,state,data,price,currency_code,payment_info)
-    VALUES(v_occ,'ordered','{"email":"failure@example.invalid"}',10.07,'CZK',v_failed_payment) RETURNING id INTO v_failed_order;
+  INSERT INTO eshop.orders(order_symbol, occasion,state,data,price,currency_code,payment_info)
+    VALUES(public.generate_order_symbol(), v_occ,'ordered','{"email":"failure@example.invalid"}',10.07,'CZK',v_failed_payment) RETURNING id INTO v_failed_order;
   EXECUTE format('ALTER TABLE public.email_messages ADD CONSTRAINT banksync_intent_failure_fixture CHECK (order_id IS DISTINCT FROM %s) NOT VALID',v_failed_order);
   v_event:=jsonb_set(jsonb_set(jsonb_set(jsonb_set(v_event,'{delivery_id}','"01K00000000000000000000054"'),'{data,transaction_id}','"331003"'),'{data,raw_vs}','"223456"'),'{data,amount_cents}','1007');
   BEGIN

@@ -48,12 +48,12 @@ BEGIN
             now(), now() + interval '1 day')
     RETURNING id INTO v_occasion_id;
 
-    SELECT create_form(v_occasion_id, 'error-test-' || floor(random()*100000)::text, 'Error Test Form') 
+    SELECT create_form(v_occasion_id, 'error-test-' || floor(random()*100000)::text, 'Error Test Form')
     INTO v_form_json;
-    
+
     v_form_id := (v_form_json->>'id')::bigint;
     v_form_key := (v_form_json->>'key')::uuid;
-    
+
     -- Open the form by default
     UPDATE public.forms SET is_open = true WHERE id = v_form_id;
 
@@ -110,31 +110,31 @@ BEGIN
     -- 1021: Form is closed (manually)
     ---------------------------------------------------------------------------
     UPDATE public.forms SET is_open = false WHERE id = v_form_id;
-    
+
     v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email);
     v_result := create_ticket_order(v_input_data);
     PERFORM assert_eq((v_result->>'code')::int, 1021, 'Error 1021 mismatch (Form closed)');
-    
+
     UPDATE public.forms SET is_open = true WHERE id = v_form_id; -- Restore
 
     ---------------------------------------------------------------------------
     -- 1019: Form not yet open (Schedule)
     ---------------------------------------------------------------------------
-    UPDATE public.forms 
+    UPDATE public.forms
     SET data = jsonb_build_object('schedule', jsonb_build_object('start_time', NOW() + interval '1 hour'))
     WHERE id = v_form_id;
-    
+
     v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email);
     v_result := create_ticket_order(v_input_data);
     PERFORM assert_eq((v_result->>'code')::int, 1019, 'Error 1019 mismatch (Future start time)');
-    
+
     -- Reset schedule
     UPDATE public.forms SET data = '{}'::jsonb WHERE id = v_form_id;
 
     ---------------------------------------------------------------------------
     -- 1020: Form is closed (Schedule end time passed)
     ---------------------------------------------------------------------------
-    UPDATE public.forms 
+    UPDATE public.forms
     SET data = jsonb_build_object('schedule', jsonb_build_object('end_time', NOW() - interval '1 hour'))
     WHERE id = v_form_id;
 
@@ -152,7 +152,7 @@ BEGIN
         'form', v_form_key,
         'email', v_user_email,
         'ticket', jsonb_build_array(
-            jsonb_build_object('spot', -9999) 
+            jsonb_build_object('spot', -9999)
         )
     );
     v_result := create_ticket_order(v_input_data);
@@ -180,7 +180,7 @@ BEGIN
         'form', v_form_key,
         'email', v_user_email,
         'ticket', jsonb_build_array(
-            jsonb_build_object() 
+            jsonb_build_object()
         )
     );
     v_result := create_ticket_order(v_input_data);
@@ -248,12 +248,12 @@ BEGIN
         )
     );
     v_result := create_ticket_order(v_input_data);
-    
+
     -- Check for 1014 OR 1018
     IF (v_result->>'code')::int NOT IN (1014, 1018) THEN
         PERFORM assert_fail('Expected error 1014 or 1018 for JPY currency, got: ' || (v_result->>'code'));
     END IF;
-    
+
     UPDATE eshop.products SET currency_code = 'CZK' WHERE id = v_hidden_product_id;
 
     ---------------------------------------------------------------------------
@@ -267,17 +267,17 @@ BEGIN
             jsonb_build_object('spot', v_spot_id)
         )
     );
-    
+
     -- Manually simulate an existing reservation
     DECLARE
         v_dummy_order_id bigint;
         v_dummy_ticket_id bigint;
         v_dummy_opt_id bigint;
     BEGIN
-        INSERT INTO eshop.orders (occasion, form) VALUES (v_occasion_id, v_form_id) RETURNING id INTO v_dummy_order_id;
+        INSERT INTO eshop.orders (order_symbol, occasion, form) VALUES (public.generate_order_symbol(), v_occasion_id, v_form_id) RETURNING id INTO v_dummy_order_id;
         INSERT INTO eshop.tickets (occasion, state) VALUES (v_occasion_id, 'ordered') RETURNING id INTO v_dummy_ticket_id;
         INSERT INTO eshop.order_product_ticket ("order", product, ticket) VALUES (v_dummy_order_id, v_product_id, v_dummy_ticket_id) RETURNING id INTO v_dummy_opt_id;
-        
+
         UPDATE eshop.spots SET order_product_ticket = v_dummy_opt_id WHERE id = v_spot_id;
     END;
 
