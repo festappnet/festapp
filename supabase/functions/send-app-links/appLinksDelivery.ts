@@ -37,7 +37,7 @@ export async function deliverAppLinks(
       occasion: input.occasionId,
       unit: input.unitId,
     },
-    substitutions: { appLinks: input.appLinks },
+    substitutions: { appLinks: input.appLinks, appName: input.appName },
     from: `${input.appName} | Festapp <${input.fromEmail}>`,
   });
   // Acceptance and the app_links_sent projection are owned by canonical SQL.
