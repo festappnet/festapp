@@ -46,3 +46,13 @@ Deno.test('multiple cancellations and mixed product additions/removals keep sepa
   const html=generateChangeOverview(value);
   for(const label of ['Vstupenka FIRST','Vstupenka THIRD','Změny produktů na vstupence SURVIVOR','+ New item','- Old item']) assertStringIncludes(html,label);
 });
+
+Deno.test('email overview preserves accessible colors and distinct change cards',()=>{
+  const value=structuredClone(fixture);
+  value.productChanges[0].added=[{id:8,title:'Added product',price:5}];
+  value.productChanges[0].removed=[{id:9,title:'Removed product',price:2}];
+  const html=generateChangeOverview(value);
+  for(const style of ['color:#991b1b','background-color:#fef2f2','color:#166534','background-color:#fffbeb','color:#b45309','border-top:1px solid #e2e8f0']) assertStringIncludes(html,style);
+  for(const label of ['Stornované vstupenky','+ Added product','- Removed product']) assertStringIncludes(html,label);
+  assertStringIncludes(generateChangeOverview({...fixture,productChanges:[],addedTickets:[{id:3,ticket_symbol:'NEW',products:[]}]}),'background-color:#f0fdf4');
+});
