@@ -448,6 +448,9 @@ class OrdersStrings {
           .tr(); // "No changes detected to be sent."
   static String get addedProductsTitle =>
       'ProductsDialog.addedProductsTitle'.tr(); // "Added Products:"
+  static String get cancelledTicketStatus => 'ProductsDialog.cancelledTicketStatus'.tr();
+  static String get removedTicketStatus => 'ProductsDialog.removedTicketStatus'.tr();
+  static String get addedTicketStatus => 'ProductsDialog.addedTicketStatus'.tr();
   static String get cancelledTicketsTitle => 'ProductsDialog.cancelledTicketsTitle'.tr();
   static String get removedTicketsTitle => 'ProductsDialog.removedTicketsTitle'.tr();
   static String get addedTicketsTitle => 'ProductsDialog.addedTicketsTitle'.tr();
