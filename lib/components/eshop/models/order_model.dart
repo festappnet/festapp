@@ -22,6 +22,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 class OrderModel extends ITrinaRowModel {
   @override
   int? id;
+  String? orderSymbol;
   DateTime? createdAt;
   DateTime? updatedAt;
   double? price;
@@ -137,6 +138,7 @@ class OrderModel extends ITrinaRowModel {
 
   OrderModel({
     this.id,
+    this.orderSymbol,
     this.createdAt,
     this.updatedAt,
     this.price,
@@ -169,6 +171,7 @@ class OrderModel extends ITrinaRowModel {
 
     return OrderModel(
       id: json[TbEshop.orders.id],
+      orderSymbol: json[TbEshop.orders.order_symbol] as String?,
       createdAt: json[TbEshop.orders.created_at] != null
           ? DateTime.parse(json[TbEshop.orders.created_at])
           : null,
@@ -221,7 +224,7 @@ class OrderModel extends ITrinaRowModel {
   TrinaRow toTrinaRow(BuildContext context) {
     return TrinaRow(cells: {
       EshopColumns.ORDER_ID: TrinaCell(value: id ?? 0),
-      EshopColumns.ORDER_SYMBOL: TrinaCell(value: id ?? 0),
+      EshopColumns.ORDER_SYMBOL: TrinaCell(value: orderSymbol ?? ""),
       EshopColumns.ORDER_PRICE: TrinaCell(
           value: price != null
               ? Utilities.formatPrice(context, price!,
@@ -254,8 +257,10 @@ class OrderModel extends ITrinaRowModel {
       ),
       EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE: TrinaCell(
         value: paymentInfoModel?.depositDeadline != null
-            ? DateFormat('yyyy-MM-dd').format(paymentInfoModel!.depositDeadline!)
-            : (paymentInfoModel?.depositAmount != null && paymentInfoModel!.depositAmount! > 0
+            ? DateFormat('yyyy-MM-dd')
+                .format(paymentInfoModel!.depositDeadline!)
+            : (paymentInfoModel?.depositAmount != null &&
+                    paymentInfoModel!.depositAmount! > 0
                 ? OrdersStrings.gridDepositOnSiteLabel
                 : ""),
       ),
@@ -294,7 +299,7 @@ class OrderModel extends ITrinaRowModel {
   }
 
   @override
-  String toBasicString() => "Order #$id";
+  String toBasicString() => orderSymbol ?? "";
 
   String toCustomerData() {
     final name = data?['name'] as String?;

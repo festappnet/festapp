@@ -125,12 +125,14 @@ export async function getTicketOrderUpdateTemplate(
   // 6. Prepare final data for the email client
   const subs = {
     occasionTitle: occasion.title,
+      orderSymbol: order.order_symbol,
     changeOverview: changeOverviewHtml,
     fullOrder: generateFullOrder(
       order.data,
       order.data.tickets,
       occasion.features,
       lang,
+        order.order_symbol,
     ),
     balanceReasoning: balanceReasoning,
   };

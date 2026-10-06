@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
@@ -139,6 +140,12 @@ class EmailTemplateModel {
     defaultValue: 'CZ4520100000002502719268',
   );
 
+  static EmailTemplateSub orderSymbolSub = EmailTemplateSub(
+    code: 'orderSymbol',
+    description: OrdersStrings.gridOrderSymbol,
+    defaultValue: '7G4K9M2R6A',
+  );
+
   static EmailTemplateSub variableSymbolSub = EmailTemplateSub(
     code: 'variableSymbol',
     description: EmailTemplatesStrings.subVariableSymbol,
@@ -217,6 +224,7 @@ class EmailTemplateModel {
     ],
     'ACCOUNT_DELETION_COMPLETE': [appNameSub],
     'TICKET_ORDER_CONFIRMATION': [
+      orderSymbolSub,
       occasionTitleSub,
       amountSub,
       accountNumberSub,
@@ -227,18 +235,21 @@ class EmailTemplateModel {
       fullOrderSub,
     ],
     'TICKET_ORDER_UPDATE': [
+      orderSymbolSub,
       occasionTitleSub,
       fullOrderSub,
       changeOverviewSub,
       balanceReasoningSub,
     ],
     'TICKET_ORDER_PAYMENT_DONE': [
+      orderSymbolSub,
       occasionTitleSub,
       fullOrderSub,
       balanceReasoningSub,
       amountSub,
     ],
     'TICKET_ORDER_REMINDER': [
+      orderSymbolSub,
       occasionTitleSub,
       balanceReasoningSub,
       fullOrderSub,
@@ -248,6 +259,7 @@ class EmailTemplateModel {
       remainingTimeSub,
     ],
     'TICKET_ORDER_STORNO': [
+      orderSymbolSub,
       occasionTitleSub,
       amountSub,
     ],

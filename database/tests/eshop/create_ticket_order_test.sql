@@ -18,10 +18,10 @@ DECLARE
     v_user_id uuid;
 BEGIN
     -- 1. Setup Full Environment (Self-Contained)
-    
+
     -- Create User Context (Required for some checks, though usually anonymous is fine for orders)
     SELECT id INTO v_user_id FROM auth.users LIMIT 1;
-    -- If no user, mock one? create_ticket_order usually works anonymously. 
+    -- If no user, mock one? create_ticket_order usually works anonymously.
     -- set_config('request.jwt.claim.sub', ...); -- Not strictly needed for anonymous order.
 
     -- Create Org & Unit
@@ -30,7 +30,7 @@ BEGIN
 
     -- Create Bank Account (CZK)
     INSERT INTO eshop.secrets (secret) VALUES ('test_secret_eshop') RETURNING id INTO v_secret_id;
-    INSERT INTO eshop.bank_accounts (title, supported_currencies, secret, type) 
+    INSERT INTO eshop.bank_accounts (title, supported_currencies, secret, type)
     VALUES ('Test Bank CZK', ARRAY['CZK'], v_secret_id, 'FIO') RETURNING id INTO v_acc_id;
 
     -- Link Bank Account to Unit
@@ -42,8 +42,8 @@ BEGIN
     RETURNING id INTO v_occasion_id;
 
     -- Create Form (Open)
-    INSERT INTO public.forms (title, occasion, is_open) 
-    VALUES ('Test Form Eshop', v_occasion_id, true) 
+    INSERT INTO public.forms (title, occasion, is_open)
+    VALUES ('Test Form Eshop', v_occasion_id, true)
     RETURNING id, key INTO v_form_id, v_form_key;
 
     -- Create Product Type (Spot)
@@ -83,11 +83,16 @@ BEGIN
     PERFORM assert_eq((v_result->>'code')::int, 200, 'Order creation should succeed (200). Got: ' || COALESCE(v_result->>'code', 'NULL') || ' Msg: ' || COALESCE(v_result->>'message', ''));
 
     PERFORM assert_not_null(v_result->'order'->>'id', 'Order ID must be returned');
+    PERFORM assert_true(v_result#>>'{order,order_symbol}' ~ '^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$', 'Canonical order symbol returned');
+    PERFORM assert_eq(v_result#>>'{order,order_symbol}',
+        (SELECT order_symbol FROM eshop.orders WHERE id=(v_result#>>'{order,id}')::bigint), 'Response uses persisted symbol');
+    PERFORM assert_eq(public.get_order_details_for_email((v_result#>>'{order,id}')::bigint)#>>'{data,order,order_symbol}',
+        v_result#>>'{order,order_symbol}', 'Email row JSON contains identity');
 
     -- Verify Status 'ordered'
     PERFORM assert_eq(
-        (SELECT state FROM eshop.orders WHERE id = (v_result->'order'->>'id')::bigint)::text, 
-        'ordered', 
+        (SELECT state FROM eshop.orders WHERE id = (v_result->'order'->>'id')::bigint)::text,
+        'ordered',
         'Order state should be ordered'
     );
 END;

@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_orders(
+CREATE OR REPLACE FUNCTION public.get_orders(
     p_occasion_link TEXT,
     p_form_link TEXT DEFAULT NULL,
     p_options JSONB DEFAULT NULL
@@ -38,12 +38,14 @@ BEGIN
         SELECT id
         INTO v_occasion_id
         FROM public.occasions
-        WHERE link = p_occasion_link;
+        WHERE link = p_occasion_link
+          AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
     ELSE
         SELECT occasion, id
         INTO v_occasion_id, v_form_id
         FROM public.forms
-        WHERE link = p_form_link;
+        WHERE link = p_form_link
+          AND occasion IN (SELECT o.id FROM public.occasions o WHERE o.organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid()));
     END IF;
 
     -- 3. Check if a valid occasion was found.
@@ -133,7 +135,7 @@ BEGIN
     -- Fetch orders, conditionally filtering by form link
     IF v_form_id IS NOT NULL THEN
         SELECT jsonb_agg(jsonb_build_object(
-            'id', o.id, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'id', o.id, 'order_symbol', o.order_symbol, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
@@ -147,7 +149,7 @@ BEGIN
         WHERE o.occasion = v_occasion_id AND o.form = v_form_id;
     ELSE
         SELECT jsonb_agg(jsonb_build_object(
-            'id', o.id, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'id', o.id, 'order_symbol', o.order_symbol, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
@@ -194,7 +196,7 @@ BEGIN
         )
         SELECT jsonb_agg(jsonb_build_object(
             'id', oh.id, 'created_at', oh.created_at, 'created_by', oh.created_by, 'data', oh.data,
-            'order', oh."order", 'state', oh.state, 'price', oh.price, 'currency_code', oh.currency_code
+            'order', oh."order", 'order_symbol', (SELECT o.order_symbol FROM eshop.orders o WHERE o.id=oh."order"), 'state', oh.state, 'price', oh.price, 'currency_code', oh.currency_code
         ))
         INTO ordersHistoryData
         FROM eshop.orders_history oh

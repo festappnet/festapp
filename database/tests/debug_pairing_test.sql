@@ -24,10 +24,10 @@ BEGIN
     VALUES (200.00, 'CZK', 88887777, 0, v_ba_id)
     RETURNING id INTO v_pi_id;
 
-    INSERT INTO eshop.orders (payment_info, price, currency_code, state, occasion)
-    VALUES (v_pi_id, 200.00, 'CZK', 'ordered', 1)
+    INSERT INTO eshop.orders (order_symbol, payment_info, price, currency_code, state, occasion)
+    VALUES (public.generate_order_symbol(), v_pi_id, 200.00, 'CZK', 'ordered', 1)
     RETURNING id INTO v_order_id;
-    
+
     RAISE NOTICE 'Order ID: %, Payment Info ID: %', v_order_id, v_pi_id;
 
     -- 3. Prepare Transaction JSON matching Deno test
@@ -38,10 +38,10 @@ BEGIN
             'column0', jsonb_build_object('value', '2026-01-25'),
             'column1', jsonb_build_object('value', 200.00),
             'column2', jsonb_build_object('value', 'Test Account'),
-            'column5', jsonb_build_object('value', '88887777'), 
+            'column5', jsonb_build_object('value', '88887777'),
             'column14', jsonb_build_object('value', 'CZK'),
-            'column22', jsonb_build_object('value', 12345678), 
-            'column25', jsonb_build_object('value', 'Debug FIO') 
+            'column22', jsonb_build_object('value', 12345678),
+            'column25', jsonb_build_object('value', 'Debug FIO')
         )
     );
 

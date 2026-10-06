@@ -1,3 +1,4 @@
+import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { presentPayment } from "../_shared/paymentPresentation.ts";
 import { resolveTicketOrderCommandIdentity } from "./commandIdentity.ts";
@@ -117,6 +118,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    ticketOrder.order = await withOrderIdentity(ticketOrder.order, async (params) => {
+      const { data, error } = await supabaseAdmin.rpc("read_order_identity", params);
+      if (error) throw error;
+      return data;
+    });
     const order = ticketOrder.order;
     if (Number(order?.payment_info?.amount) > 0) {
       const { data: services, error: servicesError } = await supabaseAdmin.rpc(

@@ -138,9 +138,6 @@ class FormResponseModel extends ITrinaRowModel {
 
   factory FormResponseModel.fromOrder(
       OrderModel order, List<FormFieldModel> allFields) {
-    // Extract the order symbol. Adjust this based on how orderSymbol is defined in OrderModel.
-    order.id?.toString();
-
     var fieldsData = order.data?[FormHelper.metaFields];
 
     Map<String, dynamic>? extractedFields;
@@ -173,6 +170,6 @@ class FormResponseModel extends ITrinaRowModel {
 
   @override
   String toBasicString() {
-    return order?.toBasicString() ?? id.toString();
+    return order?.toBasicString() ?? "";
   }
 }

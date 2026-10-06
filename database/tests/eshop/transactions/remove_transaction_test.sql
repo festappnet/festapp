@@ -10,18 +10,18 @@ DO $$
 BEGIN
     INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-000000000002', 'remover@example.com');
     INSERT INTO public.user_info (id, email_readonly) VALUES ('00000000-0000-0000-0000-000000000002', 'remover@example.com');
-    
+
     -- Mock Session
     PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
 END $$;
 
 -- Setup Bank Accounts
 -- 1. FIO Account (The primary account for the payment info)
-INSERT INTO eshop.bank_accounts (id, title, account_number, type, supported_currencies) 
+INSERT INTO eshop.bank_accounts (id, title, account_number, type, supported_currencies)
 VALUES (2000, 'FIO Account', '2222/2010', 'FIO', ARRAY['CZK']);
 
 -- 2. CASH Account (For manual transactions)
-INSERT INTO eshop.bank_accounts (id, title, account_number, type, supported_currencies) 
+INSERT INTO eshop.bank_accounts (id, title, account_number, type, supported_currencies)
 VALUES (2001, 'Cash Desk', 'CASH', 'cash', ARRAY['CZK']);
 
 
@@ -41,12 +41,12 @@ INSERT INTO eshop.bank_account_users (bank_account, "user", is_admin)
 VALUES (2001, '00000000-0000-0000-0000-000000000002', true);
 
 -- Setup Occasion (needed for check_is_editor_order_on_occasion)
-INSERT INTO occasions (id, unit, title, link, start_time, end_time) 
+INSERT INTO occasions (id, unit, title, link, start_time, end_time)
 VALUES (888, 888, 'RemoveTest Occasion', 'remove-test', now(), now() + interval '1 day');
 
 -- Grant Editor Access to User for Unit/Occasion (Check via unit_users is_manager or similar)
 INSERT INTO public.unit_users (unit, "user", is_manager) VALUES (888, '00000000-0000-0000-0000-000000000002', true);
-INSERT INTO public.occasion_users (occasion, "user", is_manager, is_editor, is_editor_order) 
+INSERT INTO public.occasion_users (occasion, "user", is_manager, is_editor, is_editor_order)
 VALUES (888, '00000000-0000-0000-0000-000000000002', true, true, true);
 
 
@@ -54,8 +54,8 @@ VALUES (888, '00000000-0000-0000-0000-000000000002', true, true, true);
 INSERT INTO eshop.payment_info (id, variable_symbol, amount, currency_code, bank_account, created_at, paid)
 VALUES (3000, 999999999, 500.0, 'CZK', 2000, now(), 300.0);
 
-INSERT INTO eshop.orders (id, occasion, payment_info, state, price, currency_code, created_at)
-VALUES (6000, 888, 3000, 'created', 500.0, 'CZK', now());
+INSERT INTO eshop.orders (order_symbol, id, occasion, payment_info, state, price, currency_code, created_at)
+VALUES (public.generate_order_symbol(), 6000, 888, 3000, 'created', 500.0, 'CZK', now());
 
 -- Canonical aggregates are derived from linked source rows. This existing
 -- 200 CZK movement is the baseline that remains after each tested removal.
@@ -81,7 +81,7 @@ BEGIN
 
     -- Pre-Verify: Paid is 300 (set in insert above)
     -- We want to remove this 100.
-    
+
     -- Call Delete RPC
     PERFORM public.delete_manual_transaction_ws(v_trans_id, 3000);
 
@@ -93,7 +93,7 @@ BEGIN
 
     -- Verify 2: Payment Info Paid should decrease by 100 (300 -> 200)
     SELECT paid INTO v_paid FROM eshop.payment_info WHERE id = 3000;
-    
+
     IF v_paid != 200.0 THEN
         RAISE EXCEPTION 'Payment Info Paid amount wrong after delete. Expected 200.0, got %', v_paid;
     END IF;
@@ -130,7 +130,7 @@ BEGIN
 
     -- Verify 2: Payment Info Paid should decrease by 100 (300 -> 200)
     SELECT paid INTO v_paid FROM eshop.payment_info WHERE id = 3000;
-    
+
     IF v_paid != 200.0 THEN
         RAISE EXCEPTION 'Payment Info Paid amount wrong after unlink. Expected 200.0, got %', v_paid;
     END IF;

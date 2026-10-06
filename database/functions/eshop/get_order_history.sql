@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_order_history(order_id bigint)
+CREATE OR REPLACE FUNCTION public.get_order_history(order_id bigint)
 RETURNS jsonb SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -24,7 +24,7 @@ BEGIN
     END IF;
 
     -- Fetch history items for the order, ordered by creation date
-    SELECT jsonb_agg(h.* ORDER BY h.created_at)
+    SELECT jsonb_agg(to_jsonb(h) || jsonb_build_object('order_symbol', v_order_data->>'order_symbol') ORDER BY h.created_at)
     INTO v_history_data
     FROM eshop.orders_history h
     WHERE h. "order" = order_id;

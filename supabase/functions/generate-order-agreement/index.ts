@@ -120,6 +120,8 @@ async function generateAgreement(data: any, config: AgreementConfig): Promise<Ui
   const mainTitleBaselineY = y;
   page.drawText("SMLOUVA O ZÁJEZDU", { x: margin, y: mainTitleBaselineY, font: boldFont, size: mainTitleFontSize, color: colorPrimaryBlue });
 
+  if (!/^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$/.test(data.orderSymbol ?? '')) throw new Error('Order symbol unavailable');
+  page.drawText(`Symbol objednávky: ${data.orderSymbol}`, { x: margin, y: 20, font, size: 9, color: colorLabelText });
   const contractNoText = data.contractNumber || '';
   const contractNoLabelText = "č. smlouvy:";
   const contractNoFieldWidth = 120;
@@ -670,6 +672,7 @@ Deno.serve(async (req: Request) => {
     };
 
     const dataForPdf = {
+        orderSymbol: rpcOrder.order_symbol,
         contractNumber: payment_info?.variable_symbol?.toString() || '',
         organizer: agreementConfig.organizer,
         tourInfo: tourInfoData,
@@ -683,8 +686,8 @@ Deno.serve(async (req: Request) => {
     const pdfBytes = await generateAgreement(dataForPdf, agreementConfig);
     const base64Pdf = Buffer.from(pdfBytes).toString('base64');
     
-    // Use contract number or order ID for filename
-    const filenameCode = payment_info?.variable_symbol?.toString() || orderId.toString();
+    if (!rpcOrder?.order_symbol) throw new Error('Order symbol unavailable');
+    const filenameCode = rpcOrder.order_symbol;
 
     return new Response(
       JSON.stringify({ file: base64Pdf, filename: `contract_${filenameCode}.pdf` }),

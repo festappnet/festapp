@@ -1,4 +1,5 @@
 import { observeOrderDelivery } from './order_delivery_status.js';
+import { OrdersStrings } from '../eshop/orders_strings.js';
 import { PublicOrderStrings } from './public_order_strings.js';
 import QRCode from 'qrcode';
 
@@ -42,6 +43,7 @@ export class OrderResult {
                 </div>
                 <h2 class="result-title ${colorClass}"></h2>
                 <p class="result-subtitle"></p>
+                <p class="result-order-symbol"></p>
                 <div class="result-payment-details"></div>
                 
                 <div class="result-actions">
@@ -151,6 +153,10 @@ export class OrderResult {
 
         container.querySelector('.result-title').textContent = title;
         container.querySelector('.result-subtitle').textContent = subtitle;
+        const orderSymbol = success ? resultData?.ticketOrder?.order?.order_symbol : null;
+        if (typeof orderSymbol === 'string') {
+            container.querySelector('.result-order-symbol').textContent = `${OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;
+        }
 
         const paymentQr = success ? resultData?.payment_qr : null;
         const paymentHost = container.querySelector('.result-payment-details');

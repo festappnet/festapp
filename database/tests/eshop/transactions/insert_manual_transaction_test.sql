@@ -38,8 +38,8 @@ BEGIN
     VALUES (v_unit_id, 'Test Occasion IMT', 'test-link-imt-' || floor(random()*1000000)::text, now(), now() + interval '1 day')
     RETURNING id INTO v_occasion_id;
 
-    INSERT INTO eshop.orders (occasion, payment_info, state, price, currency_code)
-    VALUES (v_occasion_id, v_pi_id, 'created', 200.0, 'CZK')
+    INSERT INTO eshop.orders (order_symbol, occasion, payment_info, state, price, currency_code)
+    VALUES (public.generate_order_symbol(), v_occasion_id, v_pi_id, 'created', 200.0, 'CZK')
     RETURNING id INTO v_order_id;
 
     -- 3. Call the RPC (Pay 200 CZK CASH manually — full payment)
