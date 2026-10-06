@@ -40,10 +40,10 @@ class _OrderSymbolCellState extends State<OrderSymbolCell> {
     return Row(children: [
       Expanded(child: Tooltip(message: widget.symbol,
           child: Text(widget.symbol, style: widget.style, maxLines: 1))),
-      const SizedBox(width: 4),
-      SizedBox(width: 30, height: 30, child: IconButton(
+      const SizedBox(width: 2),
+      SizedBox(width: 24, height: 30, child: IconButton(
         tooltip: _copied ? CommonStrings.copiedToClipboard : OrdersStrings.copy,
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         iconSize: 16,
         style: IconButton.styleFrom(
           foregroundColor: _copied

@@ -121,8 +121,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(grid.additionalFilterCount, 3);
-      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SEQUENCE).width, 90);
-      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).width, 154);
+      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SEQUENCE).width, 76);
+      expect(grid.columns.firstWhere((c) => c.field == EshopColumns.ORDER_SYMBOL).width, 144);
       expect(grid.additionalFilterEnabled, isTrue);
       expect(grid.stateManager.rows.length, 3);
       expect(find.byIcon(Icons.check_box_outlined), findsOneWidget);
@@ -342,7 +342,7 @@ void main() {
             final style = DefaultTextStyle.of(context).style.merge(TrinaGridStyleConfig.defaultLightCellTextStyle);
             final text = TextPainter(text: TextSpan(text: '9W9W9W9W9W', style: style),
               textDirection: TextDirection.ltr, textScaler: MediaQuery.textScalerOf(context))..layout();
-            expect(text.width + 54, lessThanOrEqualTo(EshopColumns.orderSymbolColumn(context: context).width));
+            expect(text.width + 46, lessThanOrEqualTo(EshopColumns.orderSymbolColumn(context: context).width));
             text.dispose();
             return const SizedBox();
           }))));
