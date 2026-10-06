@@ -1,3 +1,4 @@
+-- Extend the existing organization app-support filter for editor template listings.
 CREATE OR REPLACE FUNCTION public.get_all_email_templates(p_context jsonb)
 RETURNS jsonb
 SECURITY DEFINER
