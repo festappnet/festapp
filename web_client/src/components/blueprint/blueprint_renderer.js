@@ -10,6 +10,7 @@ import { TooltipProvider } from './tooltip_provider.js';
 import { BlueprintDataPreparer } from './blueprint_data_preparer.js';
 import { TransformController } from './transform_controller.js';
 import { GestureController } from './gesture_controller.js';
+import { BlueprintStrings } from './blueprint_strings.js';
 
 export class BlueprintRenderer {
     constructor(container) {
@@ -53,6 +54,7 @@ export class BlueprintRenderer {
              this.transformContainer.style.height = this.contentHeight + 'px';
         }
 
+        this.createZoomControls();
         this.renderBackground();
         this.renderSeats();
         this.fitToScreen();
@@ -83,6 +85,8 @@ export class BlueprintRenderer {
         } 
         
         this.container.appendChild(this.transformContainer);
+
+        this.createZoomControls();
 
         // Build Tooltip
         this.createTooltip();
@@ -160,6 +164,46 @@ export class BlueprintRenderer {
         });
     }
 
+    createZoomControls() {
+        const controls = document.createElement('div');
+        controls.className = 'blueprint-zoom-controls';
+        controls.setAttribute('role', 'group');
+        controls.setAttribute('aria-label', BlueprintStrings.zoomControls);
+        // Keep controls outside the transformed map and its gesture handling.
+        for (const event of ['mousedown', 'touchstart', 'pointerdown', 'click', 'wheel']) {
+            controls.addEventListener(event, e => e.stopPropagation());
+        }
+        const button = (label, text, action) => {
+            const element = document.createElement('button');
+            element.type = 'button';
+            element.className = 'btn';
+            element.textContent = text;
+            element.title = label;
+            element.setAttribute('aria-label', label);
+            element.addEventListener('click', action);
+            controls.appendChild(element);
+            return element;
+        };
+        this.zoomOutButton = button(BlueprintStrings.zoomOut, '−', () => this.zoomBy(1 / 1.25));
+        this.zoomInButton = button(BlueprintStrings.zoomIn, '+', () => this.zoomBy(1.25));
+        const reset = button(BlueprintStrings.fitToScreen, BlueprintStrings.fitToScreen, () => this.fitToScreen());
+        reset.classList.add('blueprint-zoom-reset');
+        this.container.appendChild(controls);
+    }
+
+    zoomBy(factor) {
+        this.cancelAnimation();
+        this.hideTooltip();
+        this.updateControllerDims();
+        const rect = this.container.getBoundingClientRect();
+        this.handleZoom(factor, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+
+    cancelAnimation() {
+        if (this._animationFrame) cancelAnimationFrame(this._animationFrame);
+        this._animationFrame = null;
+    }
+
     updateControllerDims() {
         if (!this.container) return;
         this.controller.updateDimensions(
@@ -174,12 +218,14 @@ export class BlueprintRenderer {
         if (!this.contentWidth || !this.contentHeight) return;
         if (this.container.clientWidth === 0 || this.container.clientHeight === 0) return;
 
+        this.cancelAnimation();
         this.updateControllerDims();
         this.controller.fitToScreen();
         this.updateTransform();
     }
 
     attachEvents() {
+        if (this.gestureController) this.gestureController.destroy();
         this.gestureController = new GestureController(this.container, {
             onPan: (dx, dy, x, y) => this.handlePan(dx, dy, x, y),
             onZoom: (factor, x, y) => this.handleZoom(factor, x, y),
@@ -229,6 +275,11 @@ export class BlueprintRenderer {
         if (!this.transformContainer) return;
         const { x, y, scale } = this.controller.state;
         this.transformContainer.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+        if (this.zoomInButton && this.zoomOutButton) {
+            const relativeScale = scale / this.controller.getFitScale();
+            this.zoomOutButton.disabled = relativeScale <= 1.001;
+            this.zoomInButton.disabled = relativeScale >= (BlueprintConfig.maxScale || 5) - 0.001;
+        }
     }
 
     snapBack() {
@@ -284,6 +335,7 @@ export class BlueprintRenderer {
     }
 
     destroy() {
+        this.cancelAnimation();
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
             this.resizeObserver = null;

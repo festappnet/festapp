@@ -1041,6 +1041,10 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "zoomControls": "Přiblížení plánku",
+    "zoomIn": "Přiblížit",
+    "zoomOut": "Oddálit",
+    "fitToScreen": "Celý plánek",
     "maxTicketsReached": "Bylo dosaženo maximálního počtu vstupenek.",
     "changeTitle": "Změnit název",
     "legendInstruction": "Kliknutím na možnost v legendě přidáte místa.",
