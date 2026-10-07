@@ -8,6 +8,9 @@ import 'package:fstapp/router_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+// Supabase's storage fixture uses its shared_preferences dependency.
+// ignore: depend_on_referenced_packages
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
@@ -17,6 +20,7 @@ void main() {
       Directory.systemTemp.createTempSync('festapp-rights-context-');
   final contexts = <Map<String, dynamic>>[];
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
             const MethodChannel('plugins.flutter.io/path_provider'),
