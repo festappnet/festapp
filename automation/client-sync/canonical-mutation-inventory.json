@@ -25,7 +25,8 @@
         "delete_occasion_internal_v1",
         "create_reception_user_v1",
         "import_users_from_tickets_client_sync_v1",
-        "cancel_reception_registration_v1"
+        "cancel_reception_registration_v1",
+        "delete_order_client_sync_v1"
       ],
       "legacy": [],
       "testFactory": "user_group_factory"
@@ -51,7 +52,8 @@
         "create_reception_user_v1",
         "game_guess_client_sync_v1",
         "import_users_from_tickets_client_sync_v1",
-        "cancel_reception_registration_v1"
+        "cancel_reception_registration_v1",
+        "delete_order_client_sync_v1"
       ],
       "legacy": [],
       "testFactory": "user_group_membership_factory"
@@ -75,7 +77,8 @@
         "record_account_deletion_sync_v1",
         "delete_occasion_internal_v1",
         "import_users_from_tickets_client_sync_v1",
-        "cancel_reception_registration_v1"
+        "cancel_reception_registration_v1",
+        "delete_order_client_sync_v1"
       ],
       "legacy": [],
       "testFactory": "activity_factory"
@@ -100,7 +103,8 @@
         "record_account_deletion_sync_v1",
         "delete_occasion_internal_v1",
         "import_users_from_tickets_client_sync_v1",
-        "cancel_reception_registration_v1"
+        "cancel_reception_registration_v1",
+        "delete_order_client_sync_v1"
       ],
       "legacy": [],
       "testFactory": "activity_assignment_factory"
@@ -120,7 +124,8 @@
         "record_account_deletion_sync_v1",
         "delete_occasion_internal_v1",
         "import_users_from_tickets_client_sync_v1",
-        "cancel_reception_registration_v1"
+        "cancel_reception_registration_v1",
+        "delete_order_client_sync_v1"
       ],
       "legacy": [],
       "testFactory": "activity_assignment_factory"
@@ -140,7 +145,8 @@
         "record_account_deletion_sync_v1",
         "delete_occasion_internal_v1",
         "import_users_from_tickets_client_sync_v1",
-        "cancel_reception_registration_v1"
+        "cancel_reception_registration_v1",
+        "delete_order_client_sync_v1"
       ],
       "legacy": [],
       "testFactory": "activity_assignment_factory"
@@ -542,6 +548,27 @@
       "removalGate": null,
       "contractTest": "database/tests/client_sync/canonical_mutation_write_release_test.sql",
       "signature": "delete_place_client_sync_v1(bigint,bigint,uuid,bigint)"
+    },
+    {
+      "name": "delete_order_internal_v1",
+      "source": "database/functions/eshop_orders/delete_order.sql",
+      "signature": "delete_order_internal_v1(bigint)",
+      "introducedMigration": "20261007170000_canonical_order_membership_teardown.sql",
+      "contractTest": "database/tests/canonical_order_membership_teardown_test.sql"
+    },
+    {
+      "name": "delete_order_client_sync_v1",
+      "source": "database/functions/eshop_orders/delete_order.sql",
+      "signature": "delete_order_client_sync_v1(bigint,uuid)",
+      "introducedMigration": "20261007170000_canonical_order_membership_teardown.sql",
+      "contractTest": "database/tests/canonical_order_membership_teardown_test.sql"
+    },
+    {
+      "name": "delete_order_221",
+      "source": "database/functions/eshop_orders/delete_order.sql",
+      "signature": "delete_order_221(bigint)",
+      "introducedMigration": "20261007170000_canonical_order_membership_teardown.sql",
+      "contractTest": "database/tests/canonical_order_membership_teardown_test.sql"
     }
   ],
   "historyOnly": [
@@ -633,7 +660,8 @@
     "20261007110000_canonical_group_mutations.sql",
     "20261007120000_canonical_activity_mutations.sql",
     "20261007150000_canonical_mutation_observation.sql",
-    "20261007160000_canonical_mutation_write_release.sql"
+    "20261007160000_canonical_mutation_write_release.sql",
+    "20261007170000_canonical_order_membership_teardown.sql"
   ],
   "registrySource": "database/operations/canonical_mutation_contraction.sql",
   "retirementState": "contraction prepared; exact signatures removed only under validated G3/G4"

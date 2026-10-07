@@ -34,18 +34,11 @@
     "import_users_from_tickets(bigint)",
     "cancel_reception_registration_v1(bigint,uuid) - existing registration status identity; no receipt protocol"
   ],
-  "sqlSha256": "e5476553dbb2d42bbec29f193931e2254229df106f2c4e7c4707fda353208cb2",
+  "sqlSha256": "0d18d7e8262a2ca72cc049c696b808444c4a7be475df6dc5d046d573aee9126c",
   "sourceFile": "database/operations/canonical_mutation_contraction.sql",
-  "sourceFileSha256": "f50c37667a619eca12d687b4fa3788cbd218981e1cc5dbe8995e36b6abfb3fdf",
-  "preparedFromMain": "a3a0fff7224d59ddfb2833400e934284071da950",
+  "sourceFileSha256": "f5ff03ea903c0c402c766adfa4bcd025a202f0479e840a41481155ac310d0f24",
+  "preparedFromMain": "da56a92bf942d27e22f628a88d38e73dda5484b1",
   "productionApplied": false,
   "G3Satisfied": false,
-  "G4Approved": false,
-  "validation": {
-    "nodePassed": 28,
-    "nodeSkipped": 0,
-    "sqlSuitesPassed": 8,
-    "sqlSuitesFailed": 0,
-    "currentSqlOwners": 53
-  }
+  "G4Approved": false
 }

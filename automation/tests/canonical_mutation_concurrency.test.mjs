@@ -174,3 +174,37 @@ test('leader authorization is rechecked after waiting for a group edit',async()=
   await a.query('DELETE FROM public.user_info WHERE id=$1',[leader]);await a.query('DELETE FROM auth.users WHERE id=$1',[leader]);
  }
 }));
+
+test('order membership teardown serializes against stale group and activity editors',async()=>withActivityEditors(async(a,b,[o],actor,aPid,bPid)=>{
+ const scope=(await a.query('SELECT organization,unit FROM public.occasions WHERE id=$1',[o])).rows[0];
+ const prior=(await a.query('SELECT is_manager FROM public.unit_users WHERE unit=$1 AND "user"=$2',[scope.unit,actor])).rows;
+ const email=`order-member-${randomUUID()}@test.local`;
+ const member=(await a.query("SELECT public.create_user_in_organization_with_data_pure($1,$2,$2,'test-only-password','{\"name\":\"Ticket\",\"surname\":\"Member\",\"sex\":\"male\"}'::jsonb) id",[scope.organization,email])).rows[0].id;
+ let group,order;
+ try{
+  if(prior.length)await a.query('UPDATE public.unit_users SET is_manager=true WHERE unit=$1 AND "user"=$2',[scope.unit,actor]);
+  else await a.query('INSERT INTO public.unit_users(unit,"user",is_manager) VALUES($1,$2,true)',[scope.unit,actor]);
+  await a.query('UPDATE public.occasion_users SET is_manager=true WHERE occasion=$1 AND "user"=$2',[o,actor]);
+  order=(await a.query("INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code) VALUES(public.next_order_sequence($1),public.generate_order_symbol(),$1,'ordered','{}',100,'CZK') RETURNING id",[o])).rows[0].id;
+  const ticket=(await a.query("INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES($1,'ordered',$2) RETURNING id",[o,randomUUID()])).rows[0].id;
+  await a.query('INSERT INTO eshop.order_product_ticket("order",ticket) VALUES($1,$2)',[order,ticket]);
+  await a.query('INSERT INTO public.occasion_users(occasion,"user",ticket,is_approved) VALUES($1,$2,$3,true)',[o,member,ticket]);
+  const dto={title:'Order member group',participants:[{user_id:member}]};
+  group=(await a.query('SELECT public.save_user_group_client_sync_v1($1,$2,NULL,$3::jsonb) result',[o,randomUUID(),JSON.stringify(dto)])).rows[0].result.data.group.id;
+  const activity=randomUUID();await a.query('INSERT INTO public.activities(id,occasion,title,is_hidden,"order") VALUES($1,$2,\'Order task\',false,0)',[activity,o]);
+  await a.query('INSERT INTO public.activity_assignments(id,activity_id,"user",start_time,end_time) VALUES($1,$2,$3,now(),now()+interval \'1 hour\')',[randomUUID(),activity,member]);
+  await a.query('BEGIN');await a.query('SELECT public.delete_order_client_sync_v1($1,$2)',[order,randomUUID()]);
+  const stale=b.query('SELECT public.save_user_group_client_sync_v1($1,$2,1,$3::jsonb) result',[o,randomUUID(),JSON.stringify({...dto,id:group,participants:[],title:'Stale title'})]);
+  await blockedBy(a,bPid,aPid);await a.query('COMMIT');
+  assert.equal((await stale).rows[0].result.status,'conflict');
+  assert.equal((await publish(b,o,0,[])).rows[0].result.status,'conflict');
+  assert.equal((await a.query('SELECT count(*)::int n FROM public.occasion_users WHERE occasion=$1 AND "user"=$2',[o,member])).rows[0].n,0);
+ }finally{
+  await a.query('ROLLBACK');await b.query('ROLLBACK');
+  if(group){await a.query('DELETE FROM public.user_groups WHERE "group"=$1',[group]);await a.query('DELETE FROM public.user_group_info WHERE id=$1',[group]);}
+  await a.query('DELETE FROM public.occasion_users WHERE occasion=$1 AND "user"=$2',[o,member]);
+  await a.query('DELETE FROM public.user_info WHERE id=$1',[member]);await a.query('DELETE FROM auth.users WHERE id=$1',[member]);
+  if(prior.length)await a.query('UPDATE public.unit_users SET is_manager=$3 WHERE unit=$1 AND "user"=$2',[scope.unit,actor,prior[0].is_manager]);
+  else await a.query('DELETE FROM public.unit_users WHERE unit=$1 AND "user"=$2',[scope.unit,actor]);
+ }
+}));
