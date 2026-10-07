@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "action": "repair-log-emission-for-approved-observation",
+  "baseMain": "4436f5a65d2f311af6dafe3581d0831cdc9fe270",
+  "reason": "self-hosted command-line log_min_messages=fatal suppresses LOG from hook and pgAudit",
+  "sqlFile": "database/operations/canonical_mutation_observation.sql",
+  "sqlSha256": "602f2ac2a2aa019659cde3af3fd6e091599d7e780ba1b72033340c927fbd3d72",
+  "changes": "database-specific log_min_messages=log for existing authenticator/postgres audit roles",
+  "validation": "5 passed, including actual disposable retained LOG emission and FATAL suppression",
+  "validationLogSha256": "a797d9ca60da3edba7b143aa482f80a050d317b055d1e32ec8f3391041bade9a",
+  "productionApplied": false,
+  "G3Satisfied": false,
+  "contractOrAclChange": false
+}
