@@ -1,0 +1,368 @@
+{
+    "policies": [
+        {
+            "cmd": "DELETE",
+            "qual": "get_is_editor_on_occasion(occasion)",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "places",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable delete for editors",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "DELETE",
+            "qual": "get_is_editor_on_occasion(occasion)",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_group_info",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable delete for editors",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "DELETE",
+            "qual": "get_is_editor_on_occasion(( SELECT user_group_info.occasion\n   FROM user_group_info\n  WHERE (user_group_info.id = user_groups.\"group\")))",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_groups",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable delete for editors",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "INSERT",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "places",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable insert for editors",
+            "schemaname": "public",
+            "with_check": "get_is_editor_on_occasion(occasion)"
+        },
+        {
+            "cmd": "INSERT",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_group_info",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable insert for editors",
+            "schemaname": "public",
+            "with_check": "get_is_editor_on_occasion(occasion)"
+        },
+        {
+            "cmd": "INSERT",
+            "qual": null,
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_groups",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable insert for editors",
+            "schemaname": "public",
+            "with_check": "get_is_editor_on_occasion(( SELECT user_group_info.occasion\n   FROM user_group_info\n  WHERE (user_group_info.id = user_groups.\"group\")))"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "places",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable read for all",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "UPDATE",
+            "qual": "get_is_editor_on_occasion(occasion)",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "places",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable update for editors",
+            "schemaname": "public",
+            "with_check": "get_is_editor_on_occasion(occasion)"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "get_is_editor_view_on_occasion(occasion)",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "places",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable select for editors",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "get_is_editor_view_on_occasion(occasion)",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_group_info",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable select for editors",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "get_is_editor_view_on_occasion(( SELECT user_group_info.occasion\n   FROM user_group_info\n  WHERE (user_group_info.id = user_groups.\"group\")))",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_groups",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable select for editors",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_group_info",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable select to all auth",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_groups",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable select to all auth",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "UPDATE",
+            "qual": "get_is_editor_on_occasion(occasion)",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_group_info",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable update for editors",
+            "schemaname": "public",
+            "with_check": "get_is_editor_on_occasion(occasion)"
+        },
+        {
+            "cmd": "UPDATE",
+            "qual": "get_is_editor_on_occasion(( SELECT user_group_info.occasion\n   FROM user_group_info\n  WHERE (user_group_info.id = user_groups.\"group\")))",
+            "roles": [
+                "authenticated"
+            ],
+            "tablename": "user_groups",
+            "permissive": "PERMISSIVE",
+            "policyname": "Enable update for editors",
+            "schemaname": "public",
+            "with_check": "get_is_editor_on_occasion(( SELECT user_group_info.occasion\n   FROM user_group_info\n  WHERE (user_group_info.id = user_groups.\"group\")))"
+        }
+    ],
+    "roleMemberships": [
+        {
+            "role": "pg_read_all_data",
+            "member": "supabase_read_only_user"
+        },
+        {
+            "role": "pg_read_all_data",
+            "member": "postgres"
+        },
+        {
+            "role": "pg_monitor",
+            "member": "postgres"
+        },
+        {
+            "role": "pg_read_all_settings",
+            "member": "pg_monitor"
+        },
+        {
+            "role": "pg_read_all_stats",
+            "member": "pg_monitor"
+        },
+        {
+            "role": "pg_stat_scan_tables",
+            "member": "pg_monitor"
+        },
+        {
+            "role": "pg_signal_backend",
+            "member": "postgres"
+        },
+        {
+            "role": "authenticated",
+            "member": "supabase_realtime_admin"
+        },
+        {
+            "role": "authenticated",
+            "member": "authenticator"
+        },
+        {
+            "role": "authenticated",
+            "member": "postgres"
+        },
+        {
+            "role": "anon",
+            "member": "supabase_realtime_admin"
+        },
+        {
+            "role": "anon",
+            "member": "authenticator"
+        },
+        {
+            "role": "anon",
+            "member": "postgres"
+        },
+        {
+            "role": "service_role",
+            "member": "supabase_realtime_admin"
+        },
+        {
+            "role": "service_role",
+            "member": "authenticator"
+        },
+        {
+            "role": "service_role",
+            "member": "postgres"
+        },
+        {
+            "role": "authenticator",
+            "member": "supabase_storage_admin"
+        },
+        {
+            "role": "supabase_functions_admin",
+            "member": "postgres"
+        }
+    ],
+    "effectivePrivileges": [
+        {
+            "role": "authenticated",
+            "relation": "activities",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "anon",
+            "relation": "activities",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "authenticated",
+            "relation": "activity_assignments",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "anon",
+            "relation": "activity_assignments",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "authenticated",
+            "relation": "activity_history",
+            "delete_table": true,
+            "insert_table": true,
+            "update_table": true,
+            "insert_column": true,
+            "update_column": true
+        },
+        {
+            "role": "anon",
+            "relation": "activity_history",
+            "delete_table": true,
+            "insert_table": true,
+            "update_table": true,
+            "insert_column": true,
+            "update_column": true
+        },
+        {
+            "role": "authenticated",
+            "relation": "places",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "anon",
+            "relation": "places",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "authenticated",
+            "relation": "user_group_info",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "anon",
+            "relation": "user_group_info",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "authenticated",
+            "relation": "user_groups",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        },
+        {
+            "role": "anon",
+            "relation": "user_groups",
+            "delete_table": false,
+            "insert_table": false,
+            "update_table": false,
+            "insert_column": false,
+            "update_column": false
+        }
+    ]
+}

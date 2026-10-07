@@ -20,6 +20,13 @@ void main() {
           'status': 'applied',
           'code': 200,
           'data': {'version': 4, 'place': null},
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },
@@ -49,6 +56,13 @@ void main() {
           'data': {
             'version': 4,
             'place': {...params['p_place'], 'id': 522},
+          },
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -125,6 +139,13 @@ void main() {
             'version': 4,
             'place': {...params['p_place'], 'id': 12},
           },
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },
@@ -161,6 +182,13 @@ void main() {
             'version': 2,
             if (isPath) 'path': {...params['p_path'], 'id': 5},
             if (!isPath) 'placeType': {...params['p_place_type'], 'id': 6},
+          },
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -212,6 +240,13 @@ void main() {
               'unit': 2,
               'organization': 1,
             },
+          },
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };

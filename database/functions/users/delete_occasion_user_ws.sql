@@ -13,7 +13,7 @@ BEGIN
         WHERE ou.occasion=occasion_id AND ou."user"=usr_to_delete) THEN
         RAISE invalid_parameter_value USING MESSAGE='target is not an occasion member';
     END IF;
-    PERFORM public.delete_occasion_user(usr_to_delete,occasion_id);
+    PERFORM public.remove_occasion_user_domain_internal_v1(occasion_id,usr_to_delete);
 END;
 $$;
 

@@ -1,5 +1,3 @@
-DROP FUNCTION IF EXISTS public.import_user_group_assignments(bigint, jsonb);
-
 CREATE OR REPLACE FUNCTION public.import_user_group_assignments_internal_v1(
     p_occasion_id bigint,
     p_assignments jsonb
@@ -106,3 +104,5 @@ CREATE OR REPLACE FUNCTION public.import_user_group_assignments(
   SELECT public.import_user_group_assignments_internal_v1(
     p_occasion_id,p_assignments);
 $$;
+
+REVOKE ALL ON FUNCTION public.import_user_group_assignments_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated;

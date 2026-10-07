@@ -16,8 +16,13 @@ node automation/release/configure_client_sync_publisher_schedule.mjs --status
 node automation/release/client_sync_cutover.mjs
 ```
 
-The target project comes only from `SUPABASE_URL` in
-`automation/project.conf`; the configured occasion link must exist there.
+For mutation preflight and `client_sync_cutover.mjs`, the live target comes only
+from canonical backend activation configuration. Compiled `SUPABASE_URL` is not
+live authority. Select tenant, canonical organization and `FORCE_OCCASION_LINK`;
+the protected SSH SQL boundary verifies live `WEB_LINK/backend-activation.json`,
+generation, profile hash and the SQL organization/occasion before execution.
+Other publisher/health tools have separate target rules; do not use them as
+mutation G2 evidence without checking their authority.
 Health fails on registry/revision lag, dirty work older than two ticks, claims
 older than their lease, live p95 above 25 seconds, structural p95 above 45
 seconds, projection drift, stuck receipts, invalid current hashes or a pending
@@ -79,3 +84,54 @@ retention apply false, or roll back only the serving Worker code. Guarded
 disable removes discovery. Never regress an R2 pointer; correct data with a
 higher revision. Deploys, migrations, DNS/secrets, scheduler activation, 5k
 tests, first deletion and first compaction each need separate authority.
+
+## Canonical groups and activities (local implementation, production pending)
+
+Current ownership and exact legacy signatures are in
+`automation/client-sync/canonical-mutation-inventory.json`. Additive migrations
+20261007110000/20261007120000 correct domain handlers without revoking issued
+writers. Registry migration 20261007130000 is cold-baseline additive metadata:
+it refuses an already active shared registry before changing rows. Production
+G2 found 41/41 ready rows and eleven enabled occasions; applying that metadata
+unconditionally would disable their read sync. Defer it to a coordinated registry
+transition. These migrations never activate global readiness or a capability.
+
+Generate a bounded proposal without network access:
+
+```bash
+node automation/release/client_sync_cutover.mjs --mutation-dry-run
+node automation/release/client_sync_cutover.mjs --mutation-dry-run --include-shared-places
+```
+
+The first proposal explicitly leaves shared `places` unresolved. The complete
+proposal is also saved under `database/operations/canonical_mutation_contraction.sql`;
+it is gated operation source, never an unconditional expansion migration.
+G2 must inventory effective ACL, function hashes/migration history, all enabled
+occasions and operational writers. G3 must cover every consumer of this shared
+DB, including map writers before places revocation. Archive dated platform/build,
+bootstrap/write routes, enforced write access and hashed evidence artifacts.
+Observation covers token lifetime and the maximum offline writer window with no
+uncovered intervals. Restrict affected editor writes during the final mixed
+client transition; distribute the selected tenant client before contraction and
+open canonical editing only after old write access is denied.
+
+`--mutation-apply --include-shared-places --evidence=<artifact> --authority=<artifact>`
+requires separate G4 authority matching the exact proposal SHA-256. This command
+has not been authorized or run. It revokes effective table and column DML through
+PUBLIC/inherited client roles, drops exact writer overloads without CASCADE and
+checks absence. Read permissions and service access remain subject to their
+existing contracts. Other overloads fail closed for re-inventory.
+
+Full registry activation is separate: `--apply --full-registry-activation`
+requires dated evidence for `full-registry-global-activation` covering all current
+registry tables, and its own G4 authority. A group/activity artifact or the old
+`--legacy-writer-gate-confirmed` boolean cannot authorize it. Rollouts of additional
+tenants remain separately authorized even when shared ACL evidence covers them.
+
+The mutation executor uses the existing `festapp-backend-agent` SSH identity and
+project-owned proxy, validates hostname and active runtime database against
+protected non-secret assertions, and checks `current_database()` before the
+occasion guard. Read queries use `BEGIN READ ONLY` and return JSON rows before
+rollback. Studio at `supabase.festapp.net` is not the live API origin; the canonical
+client origin is `api.festapp.net`. Source tenant profiles may omit the derived
+profile hash, as `apply_config.sh` generates it; an explicit pin must match.

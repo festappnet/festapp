@@ -29,43 +29,46 @@ class ActivityHistoryInfo {
 
 class DbActivities {
   static final _supabase = Supabase.instance.client;
-  static ActivityCommands get _commands => SupabaseActivityCommands(_supabase);
+  static final ActivityCommands _commands = SupabaseActivityCommands(_supabase);
 
-  static Future<EditDataBundle?> getForEdit(int occasionId) async {
-    final resp = await _supabase.rpc(
-      'get_activities_for_edit',
-      params: {'p_occasion': occasionId},
-    );
-
-    if (resp == null) {
-
-      return null;
+  static Future<ActivityEditorSession> getEditorSession(int occasionId) async {
+    final raw = await _supabase.rpc('get_activity_editor_session_v1',
+        params: {'p_occasion': occasionId});
+    if (raw is! Map || raw['code'] != 200) {
+      throw StateError('Activity editor unavailable');
     }
-
-    final Map<String, dynamic>? responseMap = resp as Map<String, dynamic>?;
-    if (responseMap == null ||
-        responseMap['code'] != 200 ||
-        responseMap['data'] == null) {
-
-      return null;
-    }
-
-    final data = responseMap['data'] as Map<String, dynamic>;
-
+    final data = (raw['editBundle'] as Map).cast<String, dynamic>();
     final bundle = EditDataBundle(
-      users: ActivityDataHelper.parseUsers(data),
-      events: ActivityDataHelper.parseEvents(data),
-      places: ActivityDataHelper.parsePlaces(data),
-      activities: ActivityDataHelper.parseActivities(data),
-      assignmentPlaceLinks: ActivityDataHelper.parseAssignmentPlaceLinks(data),
-      assignmentEventLinks: ActivityDataHelper.parseAssignmentEventLinks(data),
-      activityAssignments: ActivityDataHelper.parseActivityAssignments(data),
-      aggregateVersion: (data['aggregate_version'] as num?)?.toInt() ?? 0,
-    );
-
+        users: ActivityDataHelper.parseUsers(data),
+        events: ActivityDataHelper.parseEvents(data),
+        places: ActivityDataHelper.parsePlaces(data),
+        activities: ActivityDataHelper.parseActivities(data),
+        assignmentPlaceLinks:
+            ActivityDataHelper.parseAssignmentPlaceLinks(data),
+        assignmentEventLinks:
+            ActivityDataHelper.parseAssignmentEventLinks(data),
+        activityAssignments: ActivityDataHelper.parseActivityAssignments(data),
+        aggregateVersion: (raw['liveVersion'] as num).toInt(),
+        parentHistoryId: (raw['latestPublishId'] as num?)?.toInt(),
+        id: (raw['draftId'] as num?)?.toInt());
     ActivityDataHelper.linkAssignmentsToActivities(bundle);
-    return bundle;
+    final draft = raw['draftData'] is Map
+        ? EditDataBundle.fromJson(
+            (raw['draftData'] as Map).cast<String, dynamic>())
+        : null;
+    if (draft != null) {
+      draft.id = bundle.id;
+      draft.parentHistoryId = (raw['draftParentHistoryId'] as num?)?.toInt();
+      draft.aggregateVersion = bundle.aggregateVersion;
+    }
+    return ActivityEditorSession(
+        bundle,
+        AutosaveInfo(
+            autosavedBundle: draft, latestPublishId: bundle.parentHistoryId));
   }
+
+  static Future<EditDataBundle?> getForEdit(int occasionId) async =>
+      (await getEditorSession(occasionId)).bundle;
 
   static List<Map<String, dynamic>> _buildUpdatePayload(EditDataBundle bundle) {
     List<Map<String, dynamic>> activitiesPayload = [];
@@ -112,130 +115,59 @@ class DbActivities {
 
   static Future<Map<String, dynamic>?> autosaveActivities(
       int occasionId, EditDataBundle bundle) async {
-    final historyPayload = bundle.toJsonEditor();
-    if ((historyPayload['activities'] as List?)?.isEmpty ?? true) return null;
-
-    try {
-      final response = await _supabase.rpc(
-        'save_activity_history',
-        params: {
-          'p_occasion_id': occasionId,
-          'p_activities_data': historyPayload,
-          'p_history_type': 'AUTOSAVE',
-          'p_parent_history_id': bundle.parentHistoryId,
-        },
-      );
-      return response as Map<String, dynamic>?;
-    } catch (e) {
-
-      return {'code': 500, 'message': 'An unexpected error occurred.'};
-    }
-  }
-
-  static Future<void> saveActivitiesForEdit(
-      BuildContext context, int occasionId, EditDataBundle bundle) async {
-    final historyPayload = bundle.toJsonEditor();
-    final updatePayload = _buildUpdatePayload(bundle);
-
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.publish(
+    final result = await _commands.saveDraft(
         occasionId: occasionId,
         expectedVersion: bundle.aggregateVersion,
-        activities: updatePayload,
-        history: historyPayload,
-        parentHistoryId: bundle.parentHistoryId,
-      );
-      if (result.status == 'conflict') {
-        throw StateError('Activities were changed by another editor');
+        history: bundle.toJsonEditor(),
+        parentHistoryId: bundle.parentHistoryId);
+    if (result.status == 'applied' || result.status == 'unchanged')
+      bundle.id = result.draftId;
+    return {
+      'code': result.status == 'conflict'
+          ? 409
+          : result.status == 'rejected'
+              ? 400
+              : 200,
+      'data': {
+        'version': result.version,
+        'draft_id': result.draftId,
+        'latest_publish_id': result.latestPublishId
       }
-      if (result.status == 'rejected') {
-        throw StateError('Activities publish was rejected');
-      }
+    };
+  }
+
+  static Future<PublishActivitiesResult> saveActivitiesForEdit(
+      BuildContext context, int occasionId, EditDataBundle bundle) async {
+    final token = ClientSyncRuntime.mutationContextToken;
+    final actor = _supabase.auth.currentUser?.id;
+    final result = await _commands.publish(
+        occasionId: occasionId,
+        expectedVersion: bundle.aggregateVersion,
+        activities: _buildUpdatePayload(bundle),
+        history: bundle.toJsonEditor(),
+        parentHistoryId: bundle.parentHistoryId);
+    if (result.status == 'conflict') {
+      throw StateError('Activities were changed by another editor');
+    }
+    if (result.status == 'rejected') {
+      throw StateError('Activities publish was rejected');
+    }
+    if (ClientSyncRuntime.isCurrentMutationContext(token) &&
+        _supabase.auth.currentUser?.id == actor &&
+        result.version >= bundle.aggregateVersion) {
       bundle.aggregateVersion = result.version;
-      bundle.parentHistoryId = result.historyId ?? bundle.parentHistoryId;
-      if (context.mounted) {
-        ToastHelper.Show(context, ActivitiesComponentStrings.publishedSuccessfully,
-            severity: ToastSeverity.Ok);
-      }
-      return;
-    }
-
-    try {
-      final historyResponse =
-          await _supabase.rpc('save_activity_history', params: {
-        'p_occasion_id': occasionId,
-        'p_activities_data': historyPayload,
-        'p_history_type': 'PUBLISH',
-        'p_parent_history_id': bundle.parentHistoryId,
-        'p_note': 'Published via application',
-      });
-      if (historyResponse is Map<String, dynamic> &&
-          historyResponse['code'] != 200) {
-        ToastHelper.Show(
-            context, "Could not save version history. Publish aborted.",
-            severity: ToastSeverity.NotOk);
-        throw Exception(
-            "Failed to save history: ${historyResponse['message']}");
-      }
-    } catch (e) {
-
-      rethrow;
-    }
-
-    final response = await _supabase.rpc(
-      'update_activities',
-      params: {
-        'p_occasion_id': occasionId,
-        'p_activities_data': updatePayload,
-      },
-    );
-
-    if (response is Map<String, dynamic> && response['code'] != null) {
-      if (response['code'] == 200) {
+      bundle.parentHistoryId = result.historyId;
+      bundle.id = null;
+      if (context.mounted)
         ToastHelper.Show(
             context, ActivitiesComponentStrings.publishedSuccessfully,
             severity: ToastSeverity.Ok);
-      } else {
-        final errorMessage =
-            response["message"] as String? ?? "Failed to publish activities.";
-        ToastHelper.Show(context, errorMessage, severity: ToastSeverity.NotOk);
-        throw Exception("Failed to publish activities: ${response['message']}");
-      }
-    } else {
-      ToastHelper.Show(context, "Unexpected server response.",
-          severity: ToastSeverity.NotOk);
-      throw Exception(
-          "Failed to publish activities: Unexpected server response format.");
     }
+    return result;
   }
 
-  static Future<AutosaveInfo> getAutosaveAndPublishInfo(int occasionId) async {
-    final resp = await _supabase.rpc(
-      'get_latest_autosave', // This now calls the combined SQL function
-      params: {'p_occasion_id': occasionId},
-    );
-
-    final responseMap = resp as Map<String, dynamic>?;
-    if (responseMap == null ||
-        responseMap['code'] != 200 ||
-        responseMap['data'] == null) {
-      return AutosaveInfo(); // Return empty object on failure
-    }
-
-    final data = responseMap['data'] as Map<String, dynamic>;
-    final latestPublishId = data['latest_publish_id'] as int?;
-    final autosaveData = data['autosave'] as Map<String, dynamic>?;
-
-    EditDataBundle? bundle;
-    if (autosaveData != null) {
-      final bundleJson =
-          autosaveData['activities_data'] as Map<String, dynamic>;
-      bundle = EditDataBundle.fromJson(bundleJson);
-    }
-
-    return AutosaveInfo(
-        autosavedBundle: bundle, latestPublishId: latestPublishId);
-  }
+  static Future<AutosaveInfo> getAutosaveAndPublishInfo(int occasionId) async =>
+      (await getEditorSession(occasionId)).autosave;
 
   static Future<List<ActivityHistoryInfo>> listActivityHistory(
       int occasionId) async {
@@ -248,7 +180,6 @@ class DbActivities {
     if (responseMap == null ||
         responseMap['code'] != 200 ||
         responseMap['data'] == null) {
-
       return [];
     }
 
@@ -279,18 +210,20 @@ class DbActivities {
     return bundle;
   }
 
-  static Future<void> deleteAutosave(int occasionId) async {
-    try {
-      await _supabase.rpc(
-        'delete_autosave_history',
-        params: {'p_occasion_id': occasionId},
-      );
-    } catch (e) {
-      // It's okay to fail silently here, as the main publish operation succeeded.
-      // We just log the error for debugging.
-      // Could not delete autosave history
+  static Future<void> deleteAutosave(int occasionId,
+      {required int? expectedDraftId}) async {
+    final result = await _commands.discardDraft(
+        occasionId: occasionId, expectedDraftId: expectedDraftId);
+    if (result.status == 'conflict' || result.status == 'rejected') {
+      throw StateError('Draft changed in another editor');
     }
   }
+}
+
+class ActivityEditorSession {
+  const ActivityEditorSession(this.bundle, this.autosave);
+  final EditDataBundle bundle;
+  final AutosaveInfo autosave;
 }
 
 class AutosaveInfo {

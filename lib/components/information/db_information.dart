@@ -235,17 +235,8 @@ class DbInformation {
 
   static Future<bool> makeGameGuess(
       BuildContext context, int checkPointId, String guess) async {
-    final int resultCode;
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.guess(checkPointId, guess);
-      resultCode = result.domainCode;
-    } else {
-      final result = await _supabase.rpc("game_guess", params: {
-        "check_point_id": checkPointId,
-        "guess": guess,
-      });
-      resultCode = (result['code'] as num).toInt();
-    }
+    final result = await _commands.guess(checkPointId, guess);
+    final resultCode = result.domainCode;
 
     switch (resultCode) {
       case 200: // Correct answer

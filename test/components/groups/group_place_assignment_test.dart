@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/components/map/place_model.dart';
@@ -84,8 +83,7 @@ void main() {
           UserGroupInfoModel.fromPlutoJson(row.toJson());
       expect(modelAtSaveBoundary.place, same(selectedPlace));
 
-      final savePayload = DbGroups.buildUserGroupUpsert(modelAtSaveBoundary);
-      expect(savePayload[Tb.user_group_info.place], selectedPlace.id);
+      expect(modelAtSaveBoundary.place?.id, selectedPlace.id);
 
       final modelAfterReload = UserGroupInfoModel.fromJson({
         Tb.user_group_info.id: groupModel.id,

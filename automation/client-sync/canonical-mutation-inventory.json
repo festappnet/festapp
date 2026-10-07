@@ -1,0 +1,683 @@
+{
+  "schemaVersion": 1,
+  "scope": "canonical-group-activities",
+  "registry": [
+    {
+      "component": "private_profile",
+      "relation": "public.user_group_info",
+      "scopeResolver": "user_group_info.occasion/members",
+      "trackedColumns": [
+        "title",
+        "description",
+        "type",
+        "place",
+        "data"
+      ],
+      "writers": [
+        "save_user_group_client_sync_v1",
+        "delete_user_group_client_sync_v1",
+        "replace_group_assignments_client_sync_v1",
+        "import_profiles_client_sync_v1",
+        "game_guess_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "delete_owned_companion_internal_v1",
+        "record_account_deletion_sync_v1",
+        "delete_occasion_internal_v1",
+        "create_reception_user_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "cancel_reception_registration_v1"
+      ],
+      "legacy": [
+        "import_user_group_assignments",
+        "import_occasion_users_from_csv",
+        "delete_occasion_user",
+        "delete_occasion_user_ws",
+        "game_guess",
+        "process_occasion_auto_import/service ticket import"
+      ],
+      "testFactory": "user_group_factory"
+    },
+    {
+      "component": "private_profile",
+      "relation": "public.user_groups",
+      "scopeResolver": "group -> occasion/members",
+      "trackedColumns": [
+        "user",
+        "group",
+        "is_admin"
+      ],
+      "writers": [
+        "save_user_group_client_sync_v1",
+        "delete_user_group_client_sync_v1",
+        "replace_group_assignments_client_sync_v1",
+        "import_profiles_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "delete_owned_companion_internal_v1",
+        "record_account_deletion_sync_v1",
+        "delete_occasion_internal_v1",
+        "create_reception_user_v1",
+        "game_guess_client_sync_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "cancel_reception_registration_v1"
+      ],
+      "legacy": [
+        "import_user_group_assignments",
+        "import_occasion_users_from_csv",
+        "delete_occasion_user",
+        "delete_occasion_user_ws",
+        "game_guess",
+        "process_occasion_auto_import/service ticket import"
+      ],
+      "testFactory": "user_group_membership_factory"
+    },
+    {
+      "component": "private_activity",
+      "relation": "public.activities",
+      "scopeResolver": "activities.occasion",
+      "trackedColumns": [
+        "title",
+        "description",
+        "data",
+        "type",
+        "is_hidden",
+        "order"
+      ],
+      "writers": [
+        "publish_activities_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "delete_owned_companion_internal_v1",
+        "record_account_deletion_sync_v1",
+        "delete_occasion_internal_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "cancel_reception_registration_v1"
+      ],
+      "legacy": [
+        "update_activities",
+        "shift_occasion_schedule_backward",
+        "process_occasion_auto_import/service ticket import"
+      ],
+      "testFactory": "activity_factory"
+    },
+    {
+      "component": "private_activity",
+      "relation": "public.activity_assignments",
+      "scopeResolver": "activity -> activities.occasion",
+      "trackedColumns": [
+        "activity_id",
+        "user",
+        "start_time",
+        "end_time",
+        "title",
+        "description",
+        "data"
+      ],
+      "writers": [
+        "publish_activities_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "delete_owned_companion_internal_v1",
+        "record_account_deletion_sync_v1",
+        "delete_occasion_internal_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "cancel_reception_registration_v1"
+      ],
+      "legacy": [
+        "update_activities",
+        "shift_occasion_schedule_backward",
+        "process_occasion_auto_import/service ticket import"
+      ],
+      "testFactory": "activity_assignment_factory"
+    },
+    {
+      "component": "private_activity",
+      "relation": "public.activity_assignment_places",
+      "scopeResolver": "assignment -> activity -> occasion",
+      "trackedColumns": [
+        "assignment_id",
+        "place_id"
+      ],
+      "writers": [
+        "publish_activities_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "delete_owned_companion_internal_v1",
+        "record_account_deletion_sync_v1",
+        "delete_occasion_internal_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "cancel_reception_registration_v1"
+      ],
+      "legacy": [
+        "update_activities",
+        "shift_occasion_schedule_backward",
+        "process_occasion_auto_import/service ticket import"
+      ],
+      "testFactory": "activity_assignment_factory"
+    },
+    {
+      "component": "private_activity",
+      "relation": "public.activity_assignment_events",
+      "scopeResolver": "assignment -> activity -> occasion",
+      "trackedColumns": [
+        "assignment_id",
+        "event_id"
+      ],
+      "writers": [
+        "publish_activities_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "delete_owned_companion_internal_v1",
+        "record_account_deletion_sync_v1",
+        "delete_occasion_internal_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "cancel_reception_registration_v1"
+      ],
+      "legacy": [
+        "update_activities",
+        "shift_occasion_schedule_backward",
+        "process_occasion_auto_import/service ticket import"
+      ],
+      "testFactory": "activity_assignment_factory"
+    },
+    {
+      "component": "private_profile",
+      "relation": "public.places",
+      "scopeResolver": "places -> owning/referencing groups -> members/companion owners",
+      "trackedColumns": [
+        "title",
+        "description",
+        "coordinates",
+        "icon",
+        "is_hidden",
+        "type"
+      ],
+      "writers": [
+        "save_user_group_client_sync_v1",
+        "delete_user_group_client_sync_v1",
+        "save_place_client_sync_v1",
+        "move_place_client_sync_v1",
+        "delete_place_client_sync_v1"
+      ],
+      "legacy": [
+        "save_place_location",
+        "shared map direct DML"
+      ],
+      "testFactory": "canonical_group_factory"
+    }
+  ],
+  "functions": [
+    {
+      "name": "record_account_deletion_sync_v1",
+      "source": "database/functions/groups/account_deletion_group_lock.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "record_account_deletion_sync_v1(uuid,bigint)"
+    },
+    {
+      "name": "advance_group_profile_heads_internal_v1",
+      "source": "database/functions/groups/adjacent_group_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "advance_group_profile_heads_internal_v1(bigint,uuid[])"
+    },
+    {
+      "name": "import_profiles_client_sync_v1",
+      "source": "database/functions/groups/adjacent_group_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "import_profiles_client_sync_v1(bigint,uuid,jsonb,jsonb)"
+    },
+    {
+      "name": "delete_occasion_user_client_sync_v1",
+      "source": "database/functions/groups/adjacent_group_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "delete_occasion_user_client_sync_v1(bigint,uuid,uuid,bigint)"
+    },
+    {
+      "name": "delete_owned_companion_internal_v1",
+      "source": "database/functions/groups/adjacent_group_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "delete_owned_companion_internal_v1(bigint,uuid,uuid)"
+    },
+    {
+      "name": "game_guess_client_sync_v1",
+      "source": "database/functions/groups/adjacent_group_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "game_guess_client_sync_v1(bigint,text,uuid)"
+    },
+    {
+      "name": "delete_user_group_client_sync_v1",
+      "source": "database/functions/groups/delete_user_group_client_sync_v1.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint)"
+    },
+    {
+      "name": "lock_group_occasion_internal_v1",
+      "source": "database/functions/groups/group_domain_helpers.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "lock_group_occasion_internal_v1(bigint)"
+    },
+    {
+      "name": "group_profile_impacts_internal_v1",
+      "source": "database/functions/groups/group_domain_helpers.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "group_profile_impacts_internal_v1(bigint,uuid[])"
+    },
+    {
+      "name": "assert_group_place_owner_internal_v1",
+      "source": "database/functions/groups/group_domain_helpers.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "assert_group_place_owner_internal_v1(bigint,bigint,bigint,boolean)"
+    },
+    {
+      "name": "get_user_group_command_data_v1",
+      "source": "database/functions/groups/group_editor_read.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "get_user_group_command_data_v1(bigint)"
+    },
+    {
+      "name": "get_user_group_editor_bundle_v1",
+      "source": "database/functions/groups/group_editor_read.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "get_user_group_editor_bundle_v1(bigint,bigint)"
+    },
+    {
+      "name": "get_user_group_info_with_users",
+      "source": "database/functions/groups/group_member_read.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "get_user_group_info_with_users(bigint)"
+    },
+    {
+      "name": "move_place_client_sync_v1",
+      "source": "database/functions/groups/group_place_move.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision)"
+    },
+    {
+      "name": "get_private_profile_payload_v1",
+      "source": "database/functions/groups/group_profile_read.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "get_private_profile_payload_v1(bigint,uuid)"
+    },
+    {
+      "name": "mutate_map_entity_internal_v1",
+      "source": "database/functions/groups/map_group_ownership.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "mutate_map_entity_internal_v1(text,text,bigint,uuid,bigint,bigint,jsonb)"
+    },
+    {
+      "name": "remove_occasion_user_domain_internal_v1",
+      "source": "database/functions/groups/remove_occasion_user_domain.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "remove_occasion_user_domain_internal_v1(bigint,uuid)"
+    },
+    {
+      "name": "replace_group_assignments_client_sync_v1",
+      "source": "database/functions/groups/replace_group_assignments_client_sync_v1.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "replace_group_assignments_client_sync_v1(bigint,uuid,jsonb)"
+    },
+    {
+      "name": "save_user_group_client_sync_v1",
+      "source": "database/functions/groups/save_user_group_client_sync_v1.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb)"
+    },
+    {
+      "name": "activity_time_internal_v1",
+      "source": "database/functions/activities/canonical_activity_graph.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "activity_time_internal_v1(text,bigint,boolean)"
+    },
+    {
+      "name": "normalize_activity_graph_internal_v1",
+      "source": "database/functions/activities/canonical_activity_graph.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "normalize_activity_graph_internal_v1(bigint,jsonb,boolean,boolean)"
+    },
+    {
+      "name": "activity_history_graph_internal_v1",
+      "source": "database/functions/activities/canonical_activity_graph.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "activity_history_graph_internal_v1(bigint,jsonb,boolean)"
+    },
+    {
+      "name": "activity_graph_history_internal_v1",
+      "source": "database/functions/activities/canonical_activity_graph.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "activity_graph_history_internal_v1(jsonb)"
+    },
+    {
+      "name": "current_activity_graph_internal_v1",
+      "source": "database/functions/activities/canonical_activity_graph.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "current_activity_graph_internal_v1(bigint)"
+    },
+    {
+      "name": "replace_activities_graph_internal_v1",
+      "source": "database/functions/activities/canonical_activity_graph.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "replace_activities_graph_internal_v1(bigint,jsonb)"
+    },
+    {
+      "name": "update_activities",
+      "source": "database/functions/activities/canonical_activity_graph.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "update_activities(bigint,jsonb)"
+    },
+    {
+      "name": "write_activity_history_internal_v1",
+      "source": "database/functions/activities/canonical_activity_history.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "write_activity_history_internal_v1(bigint,uuid,jsonb,text,bigint,text)"
+    },
+    {
+      "name": "clear_activity_draft_internal_v1",
+      "source": "database/functions/activities/canonical_activity_history.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "clear_activity_draft_internal_v1(bigint,uuid,bigint,boolean)"
+    },
+    {
+      "name": "save_activity_history",
+      "source": "database/functions/activities/canonical_activity_history.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "save_activity_history(bigint,jsonb,text,bigint,text)"
+    },
+    {
+      "name": "delete_autosave_history",
+      "source": "database/functions/activities/canonical_activity_history.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "delete_autosave_history(bigint)"
+    },
+    {
+      "name": "lock_activity_aggregate_internal_v1",
+      "source": "database/functions/activities/canonical_activity_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "lock_activity_aggregate_internal_v1(bigint)"
+    },
+    {
+      "name": "lock_activity_editor_internal_v1",
+      "source": "database/functions/activities/canonical_activity_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "lock_activity_editor_internal_v1(bigint)"
+    },
+    {
+      "name": "retain_activity_history_internal_v1",
+      "source": "database/functions/activities/canonical_activity_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "retain_activity_history_internal_v1(bigint)"
+    },
+    {
+      "name": "save_activity_draft_client_sync_v1",
+      "source": "database/functions/activities/canonical_activity_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint)"
+    },
+    {
+      "name": "discard_activity_draft_client_sync_v1",
+      "source": "database/functions/activities/canonical_activity_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "discard_activity_draft_client_sync_v1(bigint,uuid,bigint)"
+    },
+    {
+      "name": "publish_activities_client_sync_v1",
+      "source": "database/functions/activities/canonical_activity_lifecycle.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint)"
+    },
+    {
+      "name": "remove_user_activity_internal_v1",
+      "source": "database/functions/activities/canonical_activity_lifecycle_neighbors.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "remove_user_activity_internal_v1(bigint,uuid[])"
+    },
+    {
+      "name": "get_activity_editor_session_v1",
+      "source": "database/functions/activities/canonical_activity_reads.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "get_activity_editor_session_v1(bigint)"
+    },
+    {
+      "name": "get_latest_autosave",
+      "source": "database/functions/activities/canonical_activity_reads.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "get_latest_autosave(bigint)"
+    },
+    {
+      "name": "get_activity_history_version",
+      "source": "database/functions/activities/canonical_activity_reads.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "get_activity_history_version(bigint)"
+    },
+    {
+      "name": "list_activity_history",
+      "source": "database/functions/activities/canonical_activity_reads.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "list_activity_history(bigint)"
+    },
+    {
+      "name": "get_activities_for_edit",
+      "source": "database/functions/activities/get_activities_for_edit.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
+      "signature": "get_activities_for_edit(bigint)"
+    },
+    {
+      "name": "import_occasion_users_from_csv_apply_v1",
+      "source": "database/functions/users/import_occasion_users_from_csv.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb)"
+    },
+    {
+      "name": "import_occasion_users_from_csv_internal_v1",
+      "source": "database/functions/users/import_occasion_users_from_csv.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb)"
+    },
+    {
+      "name": "import_occasion_users_from_csv",
+      "source": "database/functions/users/import_occasion_users_from_csv.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "import_occasion_users_from_csv(bigint,jsonb,jsonb)"
+    },
+    {
+      "name": "import_user_group_assignments_internal_v1",
+      "source": "database/functions/users/import_user_group_assignments.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "import_user_group_assignments_internal_v1(bigint,jsonb)"
+    },
+    {
+      "name": "import_user_group_assignments",
+      "source": "database/functions/users/import_user_group_assignments.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "import_user_group_assignments(bigint,jsonb)"
+    },
+    {
+      "name": "delete_occasion_user",
+      "source": "database/functions/users/delete_occasion_user.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "delete_occasion_user(uuid,bigint)"
+    },
+    {
+      "name": "delete_occasion_user_ws",
+      "source": "database/functions/users/delete_occasion_user_ws.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "delete_occasion_user_ws(uuid,bigint)"
+    },
+    {
+      "name": "import_users_from_tickets",
+      "source": "database/functions/users/import_users_from_tickets.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "import_users_from_tickets(bigint)"
+    },
+    {
+      "name": "import_users_from_tickets_client_sync_v1",
+      "source": "database/functions/users/import_users_from_tickets_client_sync_v1.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "import_users_from_tickets_client_sync_v1(bigint,uuid)"
+    },
+    {
+      "name": "complete_profile_inventory_membership_mutation_v1",
+      "source": "database/functions/users/complete_profile_inventory_membership_mutation_v1.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "complete_profile_inventory_membership_mutation_v1(uuid,bigint,text,jsonb,uuid[],jsonb,text)"
+    },
+    {
+      "name": "save_place_location",
+      "source": "database/functions/places/save_place_location.sql",
+      "removalGate": "G3",
+      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
+      "signature": "save_place_location(bigint,double precision,double precision)"
+    },
+    {
+      "name": "create_reception_user_v1",
+      "source": "database/functions/users/reception_qr_login.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "create_reception_user_v1(bigint,uuid,jsonb,bigint,text,boolean)"
+    },
+    {
+      "name": "cancel_reception_registration_v1",
+      "source": "database/functions/users/reception_qr_login.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "signature": "cancel_reception_registration_v1(bigint,uuid)"
+    },
+    {
+      "name": "profile_group_import_state_internal_v1",
+      "source": "database/functions/groups/profile_group_import_state.sql",
+      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
+      "removalGate": null,
+      "signature": "profile_group_import_state_internal_v1(bigint)"
+    }
+  ],
+  "historyOnly": [
+    "save_activity_draft_client_sync_v1",
+    "discard_activity_draft_client_sync_v1"
+  ],
+  "legacyFunctions": [
+    {
+      "signature": "update_activities(bigint,jsonb)",
+      "gate": "G3/G4",
+      "owner": "activities graph"
+    },
+    {
+      "signature": "save_activity_history(bigint,jsonb,text,bigint,text)",
+      "gate": "G3/G4",
+      "owner": "activities history"
+    },
+    {
+      "signature": "delete_autosave_history(bigint)",
+      "gate": "G3/G4",
+      "owner": "activities draft"
+    },
+    {
+      "signature": "import_user_group_assignments(bigint,jsonb)",
+      "gate": "G3/G4",
+      "owner": "group import"
+    },
+    {
+      "signature": "import_occasion_users_from_csv(bigint,jsonb,jsonb)",
+      "gate": "G3/G4",
+      "owner": "profile import"
+    },
+    {
+      "signature": "delete_occasion_user_ws(uuid,bigint)",
+      "gate": "G3/G4",
+      "owner": "profile deletion"
+    },
+    {
+      "signature": "delete_occasion_user(uuid,bigint)",
+      "gate": "G3/G4",
+      "owner": "profile deletion"
+    },
+    {
+      "signature": "game_guess(bigint,text)",
+      "gate": "G3/G4",
+      "owner": "game membership"
+    },
+    {
+      "signature": "save_place_location(bigint,double precision,double precision)",
+      "gate": "G3/G4",
+      "owner": "map/group move"
+    }
+  ],
+  "tables": [
+    "public.user_group_info",
+    "public.user_groups",
+    "public.activities",
+    "public.activity_assignments",
+    "public.activity_assignment_places",
+    "public.activity_assignment_events",
+    "public.activity_history"
+  ],
+  "sharedTables": [
+    "public.places"
+  ],
+  "externalBoundaries": [
+    "shift_occasion_schedule_backward(bigint,integer)",
+    "delete_occasion_internal_v1(bigint)",
+    "automation/image-migration/rewrite-urls.js",
+    "process_occasion_auto_import(bigint)",
+    "import_users_from_tickets(bigint)",
+    "cancel_reception_registration_v1(bigint,uuid) - existing registration status identity; no receipt protocol"
+  ],
+  "readOverloadsRetained": [
+    "update_activities(bigint)"
+  ],
+  "forbiddenRpcNames": [
+    "update_activities",
+    "save_activity_history",
+    "delete_autosave_history",
+    "import_user_group_assignments",
+    "save_place_location",
+    "import_occasion_users_from_csv",
+    "delete_occasion_user_ws",
+    "delete_occasion_user",
+    "game_guess"
+  ]
+}

@@ -65,14 +65,9 @@ class DbUsers {
   static Future<OccasionEditorData> getOccasionEditorDataBundle() async {
     final occasionId = RightsService.currentOccasionId()!;
     final results = await Future.wait<dynamic>([
-      _supabase.rpc(
-          ClientSyncRuntime.isV1Selected
-              ? 'get_occasion_users_editor_bundle_v1'
-              : 'get_occasion_users_for_edit',
-          params: {
-            ClientSyncRuntime.isV1Selected ? 'p_occasion' : 'p_occasion_id':
-                occasionId,
-          }),
+      _supabase.rpc('get_occasion_users_editor_bundle_v1', params: {
+        'p_occasion': occasionId,
+      }),
       _supabase.rpc('get_occasion_sign_in_email_statuses',
           params: {'p_occasion': occasionId}),
     ]);
@@ -485,30 +480,11 @@ class DbUsers {
 
   static Future<void> importOccasionUsersFromCsv(
       List<Map<String, dynamic>> rows, List<String> deleteUserIds) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _profileCommands.importProfiles(
-        RightsService.currentOccasionId()!,
-        rows,
-        deleteUserIds,
-      );
-      if (result.status == ProfileCommandStatus.rejected) {
-        throw StateError('CSV import was rejected');
-      }
-      if (result.status == ProfileCommandStatus.conflict) {
-        throw StateError('CSV import conflicted with another change');
-      }
-      return;
-    }
-    final response = await _supabase.rpc(
-      'import_occasion_users_from_csv',
-      params: {
-        'p_occasion_id': RightsService.currentOccasionId()!,
-        'p_rows': rows,
-        'p_delete_user_ids': deleteUserIds,
-      },
-    );
-    if (response['code'] != 200) {
-      throw Exception(response['message'] ?? 'CSV import failed');
+    final result = await _profileCommands.importProfiles(
+        RightsService.currentOccasionId()!, rows, deleteUserIds);
+    if (result.status == ProfileCommandStatus.rejected ||
+        result.status == ProfileCommandStatus.conflict) {
+      throw StateError('CSV import rejected or conflicted');
     }
   }
 
@@ -522,20 +498,11 @@ class DbUsers {
   }
 
   static Future<void> deleteOccasionUser(OccasionUserModel profile) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _profileCommands.delete(profile);
-      if (result.status == ProfileCommandStatus.conflict) {
-        throw StateError('Profile was changed by another editor');
-      }
-      if (result.status == ProfileCommandStatus.rejected) {
-        throw StateError('Profile delete was rejected');
-      }
-      return;
+    final result = await _profileCommands.delete(profile);
+    if (result.status == ProfileCommandStatus.conflict ||
+        result.status == ProfileCommandStatus.rejected) {
+      throw StateError('Profile delete rejected or conflicted');
     }
-    await _supabase.rpc("delete_occasion_user_ws", params: {
-      "usr_to_delete": profile.user,
-      "occasion_id": profile.occasion,
-    });
   }
 
   static Future<String?> getUserByEmail(String email) async {

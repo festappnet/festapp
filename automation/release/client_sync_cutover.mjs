@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 
 import path from 'node:path';
+import fs from 'node:fs';
 import process from 'node:process';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import {
-  managementQuery,
-  parseKeyValueFile,
-} from '../lib/supabase_management.mjs';
+
+
+import {parseKeyValueFile} from '../lib/supabase_management.mjs';
+import {loadCanonicalTarget, canonicalQuery} from '../lib/canonical_sql_target.mjs';
+
+import {mutationContractionManifest, validateMutationEvidence, validateMutationAuthority, verifyEvidenceArtifacts} from '../client-sync/canonical_mutation_contraction.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, '../..');
@@ -19,34 +22,7 @@ function sqlLiteral(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-export function loadTarget(root = projectRoot) {
-  const config = parseKeyValueFile(path.join(root, 'automation/project.conf'));
-  const localEnvironment = parseKeyValueFile(path.join(root, '.env.local'));
-  const supabaseUrl = config.get('SUPABASE_URL');
-  const projectRef = supabaseUrl?.match(
-    /^https:\/\/([a-z0-9]+)\.supabase\.co$/,
-  )?.[1];
-  const organization = Number(config.get('ORGANIZATION_ID'));
-  const occasionLink = config.get('FORCE_OCCASION_LINK');
-  const syncHeadOrigin = config.get('SYNC_HEAD_ORIGIN');
-  const accessToken =
-    process.env.SUPABASE_ACCESS_TOKEN ||
-    localEnvironment.get('SUPABASE_ACCESS_TOKEN');
-
-  if (!projectRef) throw new Error('SUPABASE_URL is missing or invalid');
-  if (!Number.isSafeInteger(organization) || organization <= 0) {
-    throw new Error('ORGANIZATION_ID must be a positive integer');
-  }
-  if (!occasionLink || !/^[a-z0-9][a-z0-9-]*$/.test(occasionLink)) {
-    throw new Error('FORCE_OCCASION_LINK is missing or invalid');
-  }
-  if (!accessToken) throw new Error('SUPABASE_ACCESS_TOKEN is required');
-  if (!syncHeadOrigin || !/^https:\/\//.test(syncHeadOrigin)) {
-    throw new Error('SYNC_HEAD_ORIGIN is missing or invalid');
-  }
-
-  return { projectRef, organization, occasionLink, syncHeadOrigin, accessToken };
-}
+export function loadTarget(root = projectRoot) { return loadCanonicalTarget(root); }
 
 export function buildPreparePublicationSql({ organization, occasionLink }) {
   return `
@@ -115,20 +91,12 @@ SELECT jsonb_build_object(
       SELECT max(registry_version) FROM public.client_sync_component_sources
     )
   ),
+  'sourceTableNames', (SELECT jsonb_agg(DISTINCT source_relation::text) FROM public.client_sync_component_sources WHERE registry_version=(SELECT max(registry_version) FROM public.client_sync_component_sources)),
   'ordinaryDmlTables', (
-    SELECT count(DISTINCT (g.table_schema,g.table_name))
-    FROM information_schema.role_table_grants g
-    WHERE g.grantee IN ('anon','authenticated')
-      AND g.privilege_type IN ('INSERT','UPDATE','DELETE')
-      AND (quote_ident(g.table_schema)||'.'||quote_ident(g.table_name))::regclass
-        IN (
-          SELECT DISTINCT source_relation
-          FROM public.client_sync_component_sources
-          WHERE registry_version=(
-            SELECT max(registry_version)
-            FROM public.client_sync_component_sources
-          )
-      )
+    SELECT count(DISTINCT s.source_relation) FROM public.client_sync_component_sources s
+    WHERE s.registry_version=(SELECT max(registry_version) FROM public.client_sync_component_sources)
+      AND EXISTS(SELECT 1 FROM unnest(ARRAY['anon','authenticated']) role_name
+        WHERE has_table_privilege(role_name,s.source_relation,'INSERT,UPDATE,DELETE,TRUNCATE') OR has_any_column_privilege(role_name,s.source_relation,'INSERT,UPDATE'))
   ),
   'otherEnabledOccasions', (
     SELECT count(*) FROM public.occasions o
@@ -163,7 +131,7 @@ export function buildActivateSql({ organization, occasionLink }) {
 DO $client_sync_cutover$
 DECLARE
   v_registry_version integer;
-  v_relation regclass;
+  v_relation regclass; v_role text; v_columns text;
   v_occasion_id bigint;
   v_config jsonb;
 BEGIN
@@ -218,24 +186,17 @@ BEGIN
     FROM public.client_sync_component_sources
     WHERE registry_version=v_registry_version
   LOOP
-    EXECUTE format(
-      'REVOKE INSERT, UPDATE, DELETE ON TABLE %s FROM anon, authenticated',
-      v_relation
-    );
+    SELECT string_agg(quote_ident(attname),',') INTO v_columns FROM pg_attribute WHERE attrelid=v_relation AND attnum>0 AND NOT attisdropped;
+    EXECUTE format('REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE %s FROM PUBLIC',v_relation);
+    EXECUTE format('REVOKE INSERT(%s),UPDATE(%s) ON TABLE %s FROM PUBLIC',v_columns,v_columns,v_relation);
+    FOR v_role IN SELECT DISTINCT r.rolname FROM pg_roles r WHERE r.rolname IN('anon','authenticated') OR pg_has_role('anon',r.oid,'MEMBER') OR pg_has_role('authenticated',r.oid,'MEMBER') LOOP
+      IF v_role IN('postgres','service_role','authenticator') THEN RAISE EXCEPTION 'ordinary role inherits privileged lane'; END IF;
+      EXECUTE format('REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE %s FROM %I',v_relation,v_role);
+      EXECUTE format('REVOKE INSERT(%s),UPDATE(%s) ON TABLE %s FROM %I',v_columns,v_columns,v_relation,v_role);
+    END LOOP;
   END LOOP;
-
-  IF EXISTS (
-    SELECT 1 FROM information_schema.role_table_grants g
-    WHERE g.grantee IN ('anon','authenticated')
-      AND g.privilege_type IN ('INSERT','UPDATE','DELETE')
-      AND (quote_ident(g.table_schema)||'.'||quote_ident(g.table_name))::regclass
-        IN (
-          SELECT DISTINCT source_relation
-          FROM public.client_sync_component_sources
-          WHERE registry_version=v_registry_version
-        )
-  ) THEN
-    RAISE EXCEPTION 'ordinary direct DML grants remain after revocation';
+  IF EXISTS(SELECT 1 FROM public.client_sync_component_sources s CROSS JOIN unnest(ARRAY['anon','authenticated']) role_name WHERE s.registry_version=v_registry_version AND (has_table_privilege(role_name,s.source_relation,'INSERT,UPDATE,DELETE,TRUNCATE') OR has_any_column_privilege(role_name,s.source_relation,'INSERT,UPDATE'))) THEN
+    RAISE EXCEPTION 'ordinary effective DML grants remain after revocation';
   END IF;
 
   UPDATE public.client_sync_component_sources
@@ -297,9 +258,9 @@ export function activationMissingConfirmations(args, occasionLink) {
   ) {
     missing.push('--audit-gate-confirmed or --audit-risk-accepted');
   }
-  if (!args.includes('--legacy-writer-gate-confirmed')) {
-    missing.push('--legacy-writer-gate-confirmed');
-  }
+  if (!args.includes('--full-registry-activation')) missing.push('--full-registry-activation');
+  if (!args.some(arg=>arg.startsWith('--evidence='))) missing.push('--evidence=<dated-artifact>');
+  if (!args.some(arg=>arg.startsWith('--authority='))) missing.push('--authority=<G4-artifact>');
   if (!args.includes(`--confirm=${occasionLink}`)) {
     missing.push(`--confirm=${occasionLink}`);
   }
@@ -372,6 +333,21 @@ function parseMode(args) {
 }
 
 export async function main(args = process.argv.slice(2)) {
+  const option = key => args.find(arg=>arg.startsWith(`${key}=`))?.slice(key.length+1);
+  const manifest = mutationContractionManifest({includeSharedPlaces:args.includes('--include-shared-places')});
+  if(args.includes('--mutation-dry-run')) { console.log(JSON.stringify(manifest,null,2)); return; }
+  if(args.includes('--mutation-apply')) {
+    const target=loadTarget();
+    const evidenceFile=option('--evidence'),authorityFile=option('--authority');
+    if(!evidenceFile || !authorityFile)throw new Error('dated G2/G3 evidence and separate G4 authority required');
+    const evidence=JSON.parse(fs.readFileSync(evidenceFile,'utf8'));
+    validateMutationEvidence(evidence,target,manifest);
+    verifyEvidenceArtifacts(evidence,path.dirname(path.resolve(evidenceFile)));
+    validateMutationAuthority(JSON.parse(fs.readFileSync(authorityFile,'utf8')),target,manifest);
+    await canonicalQuery({target,query:manifest.sql,operation:'write'});
+    console.log(JSON.stringify({scope:manifest.scope,sqlSha256:manifest.sqlSha256,tenantId:target.tenantId}));
+    return;
+  }
   const mode = parseMode(args);
   const target = loadTarget();
   const queryTarget = {
@@ -380,7 +356,7 @@ export async function main(args = process.argv.slice(2)) {
   };
 
   const preflight = async () => {
-    const rows = await managementQuery({ ...target, query: buildPreflightSql(queryTarget) });
+    const rows = await canonicalQuery({ target, query: buildPreflightSql(queryTarget) });
     const result = rows[0]?.result;
     if (!result?.occasion) throw new Error('target occasion was not found');
     if (result.otherEnabledOccasions !== 0) throw new Error('another occasion already has client_sync_v1 enabled');
@@ -396,13 +372,23 @@ export async function main(args = process.argv.slice(2)) {
     if (missing.length > 0) {
       throw new Error(`activation refused; missing ${missing.join(', ')}`);
     }
+    const publisherConfig=parseKeyValueFile(path.join(projectRoot,'workers/sync-publisher/.env'));
+    if((process.env.SUPABASE_URL || publisherConfig.get('SUPABASE_URL'))!==target.canonicalOrigin)throw new Error('publisher canonical origin must be verified before full registry activation');
     const current = await preflight();
+    const fullManifest={scope:'full-registry-global-activation',completeAclBoundary:true,sqlSha256:createHash('sha256').update(buildActivateSql(queryTarget)).digest('hex')};
+    const evidence=JSON.parse(fs.readFileSync(option('--evidence'),'utf8'));
+    validateMutationEvidence(evidence,target,fullManifest);
+    verifyEvidenceArtifacts(evidence,path.dirname(path.resolve(option('--evidence'))));
+    if(!Array.isArray(evidence.coveredTables) || evidence.coveredTables.sort().join(',')!==current.sourceTableNames?.sort().join(','))throw new Error('full registry shared table coverage required');
+    const authority=JSON.parse(fs.readFileSync(option('--authority'),'utf8'));
+    if(authority.action!=='full-registry-global-activation')throw new Error('separate full registry G4 authority required');
+    validateMutationAuthority({...authority,action:'shared-mutation-contraction'},target,fullManifest);
     await executeEnableLifecycle({
       preflight: async () => current,
-      preparePublication: () => managementQuery({ ...target, query: buildPreparePublicationSql(queryTarget) }),
+      preparePublication: () => canonicalQuery({ target, query: buildPreparePublicationSql(queryTarget), operation:'write' }),
       publishInitialHead: runPublisherOnce,
       verifyPublishedHead: () => verifyHeadStatus(target.syncHeadOrigin, target.organization, current.occasion.id, 200),
-      setEnabledFlag: () => managementQuery({ ...target, query: buildActivateSql(queryTarget) }),
+      setEnabledFlag: () => canonicalQuery({ target, query: buildActivateSql(queryTarget), operation:'write' }),
     });
   } else if (mode === '--disable') {
     if (!args.includes(`--confirm=${target.occasionLink}`)) {
@@ -413,17 +399,17 @@ export async function main(args = process.argv.slice(2)) {
       preflight: async () => current,
       deletePublicHead: () => deleteExactPublicHead(target.organization, current.occasion.id),
       verifyNotPublished: () => verifyHeadStatus(target.syncHeadOrigin, target.organization, current.occasion.id, 404),
-      setDisabledFlag: () => managementQuery({ ...target, query: buildDisableSql(queryTarget) }),
+      setDisabledFlag: () => canonicalQuery({ target, query: buildDisableSql(queryTarget), operation:'write' }),
     });
   }
 
-  const rows = await managementQuery({
-    ...target,
+  const rows = await canonicalQuery({
+    target,
     query: buildPreflightSql(queryTarget),
   });
   const result = rows[0]?.result;
   if (!result?.occasion) throw new Error('target occasion was not found');
-  console.log(JSON.stringify({ mode, projectRef: target.projectRef, ...result }));
+  console.log(JSON.stringify({ mode, tenantId: target.tenantId, ...result }));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
