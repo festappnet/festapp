@@ -173,20 +173,27 @@ export class BlueprintRenderer {
         for (const event of ['mousedown', 'touchstart', 'pointerdown', 'click', 'wheel']) {
             controls.addEventListener(event, e => e.stopPropagation());
         }
-        const button = (label, text, action) => {
+        const button = (label, path, action) => {
             const element = document.createElement('button');
             element.type = 'button';
-            element.className = 'btn';
-            element.textContent = text;
+            element.className = 'blueprint-zoom-button';
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('focusable', 'false');
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            icon.setAttribute('d', path);
+            svg.appendChild(icon);
+            element.appendChild(svg);
             element.title = label;
             element.setAttribute('aria-label', label);
             element.addEventListener('click', action);
             controls.appendChild(element);
             return element;
         };
-        this.zoomOutButton = button(BlueprintStrings.zoomOut, '−', () => this.zoomBy(1 / 1.25));
-        this.zoomInButton = button(BlueprintStrings.zoomIn, '+', () => this.zoomBy(1.25));
-        const reset = button(BlueprintStrings.fitToScreen, BlueprintStrings.fitToScreen, () => this.fitToScreen());
+        this.zoomOutButton = button(BlueprintStrings.zoomOut, 'M5 12h14', () => this.zoomBy(1 / 1.25));
+        this.zoomInButton = button(BlueprintStrings.zoomIn, 'M5 12h14M12 5v14', () => this.zoomBy(1.25));
+        const reset = button(BlueprintStrings.fitToScreen, 'M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5', () => this.fitToScreen());
         reset.classList.add('blueprint-zoom-reset');
         this.container.appendChild(controls);
     }
