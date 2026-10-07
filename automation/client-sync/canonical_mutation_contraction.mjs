@@ -16,6 +16,12 @@ DO $ready_registry$ BEGIN
  OR EXISTS(SELECT 1 FROM public.client_sync_component_sources WHERE NOT cutover_ready OR registry_version<>1) THEN
   RAISE EXCEPTION 'already-ready registry version 1 required for bounded contraction'; END IF;
 END $ready_registry$;
+DO $legacy_dependencies$ BEGIN
+ IF EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+ WHERE n.nspname='public' AND p.oid::regprocedure::text<>ALL(ARRAY[${mutationInventory.legacyFunctions.map(x=>q(x.signature)).join(',')}])
+ AND p.prosrc ~ ${q('\\m('+names.join('|')+')\\s*\\(')}) THEN
+  RAISE EXCEPTION 'current SQL caller still uses retired writer: migrate dependency first'; END IF;
+END $legacy_dependencies$;
 ${signatures.map(s=>`DROP FUNCTION IF EXISTS ${s};`).join('\n')}
 DO $mutation_acl$
 DECLARE relation regclass; role_name text; column_names text; client_role text;

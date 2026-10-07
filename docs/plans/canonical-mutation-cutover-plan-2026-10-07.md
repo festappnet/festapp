@@ -354,3 +354,14 @@ Two disposable tests prove active rejection with unchanged rows and inactive
 additive installation. User subsequently authorized publication and CSM Ostrava
 deployment; main requires one approving PR review. No contraction authority or
 G3 observation evidence is inferred.
+
+## G0/G2 update: 2026-10-07 order consumers
+
+Live current function bodies disproved closure of `delete_occasion_user_ws`: both
+order deletion entrypoints still called it. The scoped correction is documented
+in [canonical-mutation-order-consumers-2026-10-07.md](canonical-mutation-order-consumers-2026-10-07.md).
+Apply additive migration 20261007170000 before final contraction. The final
+operation now rejects surviving legacy SQL callers before DROP. Registry writer
+metadata includes the canonical order command; active readiness is preserved.
+The surviving source contract grows from 53 to 56 owners. No extra tenant/mobile
+release or global activation is authorized by this finding.
