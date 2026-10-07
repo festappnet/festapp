@@ -137,10 +137,10 @@ class ThemeConfig {
       backgroundColor(context);
 
   static Color surfaceColor(BuildContext context) => grey200(context);
-  static Color seed1 = const Color(0xFF253759);
-  static Color seed2 = const Color(0xFF80BDF2);
-  static Color seed3 = const Color(0xFF4465A6);
-  static Color seed4 = const Color(0xFF0D0D0D);
+  static Color seed1 = const Color(0xFF4785cb);
+  static Color seed2 = const Color(0xFFfab417);
+  static Color seed3 = const Color(0xFF3ea134);
+  static Color seed4 = const Color(0xFFdc2732);
 
   static Color attentionColor(BuildContext context) => const Color(0xFF8B0000);
 
