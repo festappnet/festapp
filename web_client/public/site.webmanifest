@@ -1,7 +1,7 @@
 {
-  "name": "Festapp",
-  "short_name": "Festapp",
-  "description": "Platforma pro správu akcí, programu a vstupenek.",
+  "name": "Jubileum mládeže 2025",
+  "short_name": "Jubileum 2025",
+  "description": "Program a informace Jubilea mládeže 2025.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -17,7 +17,7 @@
     }
   ],
   "id": "/",
-  "start_url": "/",
+  "start_url": "/jm2025/event",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
