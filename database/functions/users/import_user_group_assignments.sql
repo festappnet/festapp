@@ -97,12 +97,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.import_user_group_assignments(
-    p_occasion_id bigint,
-    p_assignments jsonb
-) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.import_user_group_assignments_internal_v1(
-    p_occasion_id,p_assignments);
-$$;
+
 
 REVOKE ALL ON FUNCTION public.import_user_group_assignments_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated;
