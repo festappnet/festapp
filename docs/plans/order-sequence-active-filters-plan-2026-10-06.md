@@ -1,6 +1,6 @@
 # Pevné pořadí objednávky a filtry nestornovaných položek
 
-Datum: 2026-10-06. Stav: vlny A-D dokončené a ověřené lokálně; produkční nasazení pending. Evidence: [implementace a residual ledger](evidence/order-sequence-active-filters-implementation-2026-10-06.md).
+Datum: 2026-10-06. Stav: vlny A-D dokončené; po následném výslovném schválení uživatele backend migrace a web nasazené pro prod/festapptickets, verze 0.20.124+608. Evidence: [implementace a residual ledger](evidence/order-sequence-active-filters-implementation-2026-10-06.md).
 Výchozí shared revize: `0a5274c5ab8105607ac4a05ce83efd940e188f00`; nasazený `prod/festapptickets`: `cbd69bb725477da5403e0f87aecf72e407803b85`, verze `0.20.123+607`.
 Ověřování implementace: **standard** - změna SQL kontraktu, souběhu a sdíleného gridu. Při plánování se nespouštějí testy/buildy.
 

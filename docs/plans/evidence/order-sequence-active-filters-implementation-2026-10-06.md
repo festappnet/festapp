@@ -1,6 +1,6 @@
 # Pořadí objednávek a aktivní filtry - implementační evidence
 
-Datum: 2026-10-06. Vlny A-D dokončené lokálně. Checkout `festapp-order-symbol-main-20261006`, branch `main`, základ `0a5274c5ab8105607ac4a05ce83efd940e188f00`; počáteční fetch origin/main odpovídal tomuto základu. Bez commitu, push, produkční migrace nebo deploye. Nesouvisející existující evidence globálního symbolu zůstala zachována.
+Datum: 2026-10-06. Vlny A-D dokončené; po následném schválení uživatele backend i web nasazené pro festapptickets. Níže je zachována historie lokálního ověření a následného rolloutu. Checkout `festapp-order-symbol-main-20261006`, branch `main`, základ `0a5274c5ab8105607ac4a05ce83efd940e188f00`; počáteční fetch origin/main odpovídal tomuto základu. Bez commitu, push, produkční migrace nebo deploye. Nesouvisející existující evidence globálního symbolu zůstala zachována.
 
 ## Hotové chování
 
@@ -37,9 +37,9 @@ Lokální logy: `/tmp/order-sequence-complete-full-gate.log`, `/tmp/order-sequen
 
 | Artefakt / krok | Lokální stav | Produkční stav |
 | --- | --- | --- |
-| Expand 20261006140000 + private backfill_order_sequences | Instalováno a otestováno v disposable DB; API execute revoked. | Pending, neaplikováno. |
-| automation/order-sequence/residual-function.sql + residual.sql | Owner-only batch; NULL append při souběžném canonical writeru prokázán. Existující pořadí se nemění. | Pouze po doběhu před-expand writer transactions, pokud zůstane NULL; owner access. |
-| Contract 20261006141000 | NULL guard/positive/NOT NULL ověřeno; helper DROP; absence + API denial prokázané. | Pending po kontrole NULL=0. |
+| Expand 20261006140000 + private backfill_order_sequences | Instalováno a otestováno v disposable DB; API execute revoked. | Aplikováno 2026-10-06, atomicky s ledger zápisem. |
+| automation/order-sequence/residual-function.sql + residual.sql | Owner-only batch; NULL append při souběžném canonical writeru prokázán. Existující pořadí se nemění. | 0 pre-expand transactions a 0 NULL; residual batch nebyl potřeba. |
+| Contract 20261006141000 | NULL guard/positive/NOT NULL ověřeno; helper DROP; absence + API denial prokázané. | Aplikováno po NULL=0; helper odstraněn, absence ověřena. |
 | Operational scripts | Zachovány jako repeatable rollout artefakty, nejsou runtime RPC. | Neinstalovat residual helper znovu po contract. |
 
 ## Pending rollout
@@ -61,3 +61,23 @@ Na novém základu proběhl finální celý `automation/test_all.sh`, exit 0, ve
 Read-only produkční preflight přes festapp-backend-access: hostname a current_database odpovídají target assertions; tenant activation je festapptickets/generation 1/canonical, config organization 3 a DB organization 3 existuje. Celkem 3287 orders, 0 NULL occasion, 78 occasions. Migration ledger již obsahuje email deletion 20261006170000; sequence expand/contract 20261006140000/20261006141000 zatím neobsahuje. Do produkce nebylo zapisováno a nebyly použity produkční test fixtures.
 
 Publikace je přes PR: GitHub main protection vyžaduje 1 approving review a repository agent rules požadují PR při required reviews. Auto-merge není v repository povolené. Produkční migrace musí použít přesný ověřený merged main source, chráněnou vzdálenou zálohu a atomický ledger zápis; release overlay musí obsahovat nový merged main SHA a projít main-owned drift checkerem. Tyto kroky čekají na schválení PR. Uživatelovu autorizaci nasazení není nutné vyžadovat znovu po splnění tohoto gate.
+
+## Produkční rollout po výslovném schválení uživatele
+
+Uživatel výslovně schválil sloučení a nasazení navzdory předchozímu GitHub review gate. PR #323 byl admin merge sloučen 2026-10-06T16:10:11Z; authoritative main `1e3b46ed7319773356314f623d0a24b1abb4fc03`. Nejedná se o zaznamenané GitHub approving review.
+
+Pouze tenant `festapptickets`: release commit `cad7340dff5630cb5108b78433ad426a14c6e22b`, verze `0.20.124+608`, prod/festapptickets forward od `cbd69bb725477da5403e0f87aecf72e407803b85`. Overlay je fresh canonical main + explicitní povolené tenant source paths a regenerované leaves; metadata baseMainSha je merged main. Main-owned drift checker prošel. Před push origin/main stále odpovídal ověřenému main a origin/prod/festapptickets původnímu tenant tipu. Jiná tenant větev nebyla měněná ani sestavovaná.
+
+Backend: expand 20261006140000 a contract 20261006141000 aplikované na ověřený canonical runtime DB, každá s ledger insert a PostgREST notify ve stejné transakci. 5s lock_timeout. Chráněná serverová evidence `/var/lib/festapp-rehearsal-evidence/order-sequence-20261006T161331Z`, directory 0700: schema a orders/history/payment data backup, source transaction files/digests, id/occasion/sequence mapping a výsledky. Zákaznická data zůstávají pouze v této chráněné vzdálené evidenci.
+
+Expand navíc porovnal ostatní order fields před/po pod stejným table lockem; případná změna by rollbackovala migration i ledger. Před contract: 0 zbývajících pre-expand transactions, 0 NULL sequences, residual batch nebyl potřeba. Po contract: 3287 orders = 3287 non-null = 3287 unique (occasion, sequence), 0 nekladných hodnot; UNIQUE/CHECK validated, NOT NULL true; residual helper absent; anon/authenticated/service_role nemají allocator EXECUTE. Source SHA-256 uložený v produkčním ledgeru odpovídá přesnému merged main source: expand `74dcbccad175cc518a744b1cf23ecc1d6b1e3aade45837bfb55e3e7ed7f54418`, contract `33c685ab444a1c3e539dd766b47f159ef86aedb002b74c44dc309d233ffb89b2`. Canonical writer/history/get_orders(text,text,jsonb) projekce obsahují order_sequence. Historický overload get_orders(text) není canonical runtime consumer a nebyl touto změnou upraven.
+
+Web release je explicitně spuštěný schváleným Deploy workflow #37494156077 pro přesný tenant release SHA. Lokální direct build správně skončil na chybějícím private FESTAPP_RELEASE_MANIFEST; nebyla vytvořena náhradní evidence. GitHub workflow používá stávající tenant release manifest secret. Stav webového vydání bude doplněn po výsledku workflow a veřejném smoke.
+
+### Finální stav webového vydání
+
+[Deploy workflow 37494156077](https://github.com/festappnet/festapp/actions/runs/37494156077) dokončen s conclusion **success** pro commit `cad7340dff5630cb5108b78433ad426a14c6e22b`. Tenant-drift, legal-contract, detect a cloudflare jobs success; neaktivní podmíněný job `skipped` očekávaně skipped. Deployment URL `https://ba231dd4.vstupenkyonline.pages.dev`. Produkční probe 2026-10-06T16:21:50Z: `verify_web_deployment: ok (0.20.124+608, 3 consecutive probes)`.
+
+Dodatečný veřejný Node HTTP smoke na `https://vstupenky.online`: version manifest `0.20.124+608`, festapptickets canonical generation 1 activation, admin shell HTTP 200 na canonical cloudflare-pages workeru a vazba na manifest-selected immutable main bundle. PASS; `/tmp/order-sequence-public-smoke.json`. První dodatečný Python urllib probe dostal HTTP 403; nebyl započten jako pass. Node fetch, používaný také canonical verifierem, prošel. Produkční přihlášení ani zákaznické mutace/fixtures nebyly prováděny.
+
+Rollout je dokončen: produkční backend obě migrace a retired residual helper, main merged, pouze prod/festapptickets publikováno a web live. Neproběhl Android/iOS store release ani build jiné tenant varianty. Log workflow `/tmp/order-sequence-release-actual-workflow.log`. Chráněné backupy zůstávají na backendu; lokální testovací backend/browser/server jsou vypnuté.
