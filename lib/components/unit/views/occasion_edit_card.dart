@@ -137,7 +137,9 @@ class OccasionEditCard extends StatelessWidget {
                                   value: (occasion.stats!.total -
                                           occasion.stats!.storno)
                                       .toString(),
-                                  tooltip: FormStrings.responses),
+                                  tooltip: hasTickets
+                                      ? OrdersStrings.tickets
+                                      : OrdersStrings.applications),
                               _buildStat(context,
                                   icon: Icons.check_circle_outline,
                                   value: (occasion.stats!.paidOrSent +

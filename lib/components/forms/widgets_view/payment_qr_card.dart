@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import 'package:fstapp/services/toast_helper.dart';
+import 'package:fstapp/services/utilities_all.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// "Scan to pay" card shown on the public order confirmation when the form has
@@ -15,6 +16,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 class PaymentQrCard extends StatelessWidget {
   final String payload;
   final String format;
+  final String? occasionTitle;
+  final String? orderSymbol;
 
   /// Human-readable account number (shown as "Bank account").
   final String? bankAccount;
@@ -30,6 +33,8 @@ class PaymentQrCard extends StatelessWidget {
     super.key,
     required this.payload,
     required this.format,
+    this.occasionTitle,
+    this.orderSymbol,
     this.bankAccount,
     this.iban,
     this.paymentReference,
@@ -114,8 +119,18 @@ class PaymentQrCard extends StatelessWidget {
       );
       final picData = await painter.toImageData(512);
       if (picData == null) return;
+      String filenamePart(String? value) => Utilities.removeDiacritics(value ?? '')
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+          .replaceAll(RegExp(r'^-+|-+$'), '');
+      final filename = [
+        filenamePart(occasionTitle),
+        'objednavka',
+        filenamePart(orderSymbol ?? paymentReference),
+        'qr',
+      ].where((part) => part.isNotEmpty).join('-');
       await FileSaver.instance.saveFile(
-        name: 'payment_qr',
+        name: filename,
         bytes: picData.buffer.asUint8List(),
         fileExtension: 'png',
         mimeType: MimeType.png,

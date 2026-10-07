@@ -100,6 +100,7 @@ export class PublicOrderStrings {
     static get downloadQr() { return LocalizationService.tr(`${PublicOrderStrings._prefix}.downloadQr`); }
     static get iban() { return LocalizationService.tr(`${PublicOrderStrings._prefix}.iban`); }
     static get copy() { return LocalizationService.tr(`${PublicOrderStrings._prefix}.copy`); }
+    static get copied() { return LocalizationService.tr(`${PublicOrderStrings._prefix}.copied`); }
     static get showPaymentOptions() { return LocalizationService.tr(`${PublicOrderStrings._prefix}.showPaymentOptions`); }
     static get hidePaymentOptions() { return LocalizationService.tr(`${PublicOrderStrings._prefix}.hidePaymentOptions`); }
 }
