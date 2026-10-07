@@ -77,3 +77,23 @@ Uživatel následně výslovně povolil pokračování a dotažení nasazení. S
 - Full Flutter aplikace v headless isolated browseru: skutečné login UI, occasion, current orders, history tab přes jeho skutečný handler; na obou odpovídajících URL se zobrazil stejný symbol. Current orders zobrazují původní VS `123456`. Physical reload current prošel. Fixture se doplnila o payment_info, protože existující current grid vyžaduje jeho model. Žádná produktová změna kvůli fixture.
 - Externí OneSignal hranice je stub/abort dle E2E runbooku; Google OAuth, externí worker uploady a odeslání e-mailu nejsou součástí této ověřené změny. Původních 27 worker integračních skipů tím nevydáváme za pass.
 - Live read-only preflight: hostname/runtime DB/current_database/org3 souhlasí, 3287 orders / 6979584 bytes, bez aplikačních triggerů a kolizí migračních verzí. Vybraný fail-closed lock budget je 5s; skutečné časy aplikace budou zaznamenány při release.
+
+### Produkční backend - provedeno
+
+- Shared implementation commit `0a5274c5ab8105607ac4a05ce83efd940e188f00` je na authoritative main. Push využil existující administrátorskou výjimku main protection; remote oznámil běžný požadavek PR. Tenant production branch není chráněna. Další změny main mají projít běžným PR postupem.
+- Pouze `prod/festapptickets`: tenant release commit `cbd69bb725477da5403e0f87aecf72e407803b85`, verze `0.20.123+607`, recorded base main výše. Deterministic overlay drift PASS. Ostatní production větve se neměnily.
+- Chráněná vzdálená evidence: `/var/lib/festapp-rehearsal-evidence/order-symbol-20261006T144200Z`, mode 0700, schema backup a objednávky/historie/šablony backup, SHA256, canonical migration source/transaction digests, dávkové ID-symbol mapy, fingerprints před/po. Žádná zákaznická data nejsou v git.
+- Expand 150 ms, contract 110 ms, global defaults 127 ms (wall time psql/docker, nikoliv přesná doba zámku). Vše s 5s lock_timeout a atomickým migration ledger zápisem.
+- **3287 orders = 3287 non-null symbols = 3287 unique symbols; 0 invalid formats.** Oba constraints validated, NOT NULL nastavený, backfill setter odstraněný. Všechny tři verze potvrzené v migration ledgeru.
+- Fingerprints celé objednávky kromě nového symbolu před/po jsou byte-identické; timestamps, states, prices, payment references a data zůstaly stejné. Fingerprints scoped/custom templates jsou také identické.
+- Symbol UPDATE práva anon/authenticated/service_role: false/false/false.
+- Reviewed clean synchronized main Function bundle nasazený canonical installerem, previous tree zachovaný, runtime restartovaný. Evidence `/var/lib/festapp-rehearsal-evidence/production-function-bundle-20261006T144350Z/result.json`. File digests `_shared/orderOverview.ts` a `send-ticket-order/index.ts` uvnitř běžícího containeru souhlasí s authoritative main.
+- Live CORS OPTIONS 200. Invalid-payload smoke send-ticket-order 400, send-email 400, unauthorized process-email-queue 401; bez tvorby objednávky nebo enqueue/send. Agreement endpoint odmítl prázdný payload existující chybou `Order ID is missing from the request` (500 dle předchozího error kontraktu); jeho imports/handler běží. Tento smoke není generování PDF.
+- Lokální direct build odmítl chybějící private `FESTAPP_RELEASE_MANIFEST`; žádný manifest nebyl vyroben ani gate obejit. Dispatch zavedeného Deploy workflow pro jediný tenant používá schválený private secret. [Release workflow](https://github.com/festappnet/festapp/actions/runs/37481411159).
+- Vlastní headless browser, Flutter process a Supabase projekt jsou ukončené; dočasné lokální soubory s klíči smazané.
+
+Uživatel následně převzal ruční závěrečný live smoke po nasazení. Agent proto nespouští další kontrolu živého webu či produkční browser E2E; čeká pouze na výsledek již běžícího release workflow. Automatické kroky existujícího workflow tím nejsou změněné.
+
+### Release dokončen
+
+Deploy workflow `37481411159` dokončen s conclusion **success**, včetně canonical build/upload a vestavěných release kroků. `prod/festapptickets` / `vstupenky.online`, verze `0.20.123+607`, commit `cbd69bb725477da5403e0f87aecf72e407803b85`. Ruční závěrečnou kontrolu převzal uživatel, žádné další live UI testy agent neprovedl. Backend, tři ledgerované migrace a globální backfill jsou dokončené. Tento navazující provozní záznam zůstává lokálním doplněním evidence k již publikovanému implementation commitu; produktový kód nemá nepublikované změny.

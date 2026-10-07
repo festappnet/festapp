@@ -6,3 +6,11 @@
 - Five targeted regression tests passed in `test/components/eshop/order_grid_filters_test.dart`, covering both themes, clipboard feedback/reset and grid filtering behavior.
 - Actual application-theme screenshots inspected for light/dark copy/success states. Temporary screenshot harness removed; its painting-debug teardown assertion does not affect product tests or captured rendering.
 - No backend or database change. Deployment scope: main and prod/festapptickets only.
+
+## Deployment
+
+- Main: `06087bc51a027f8088a1003877f55e8046748a40` (PR #325).
+- Tenant: `05b283e9c590aea476b3e72940cf4a84f5bb4e31`, version `0.20.126+610`.
+- Main-owned tenant drift check passed.
+- Deploy workflow succeeded, including coherent public release verification: https://github.com/festappnet/festapp/actions/runs/37500332626
+- Reusable release skill validated, installed and published independently in miakh/development-tools at `fec983b`; unrelated local changes were preserved.
