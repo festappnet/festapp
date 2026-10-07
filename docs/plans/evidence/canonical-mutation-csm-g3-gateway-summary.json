@@ -1,0 +1,43 @@
+{
+  "capturedAt": "2026-10-07T12:02:40.228Z",
+  "source": "retained festapp-caddy docker JSON logs",
+  "fromEpoch": 1791053340.1516552,
+  "toEpoch": 1791374559.0268383,
+  "totalRequests": 29773,
+  "scopedWrites": [
+    {
+      "method": "POST",
+      "path": "/rest/v1/rpc/delete_occasion_user_ws",
+      "status": "204",
+      "count": 1
+    }
+  ],
+  "headerNames": [
+    "Accept",
+    "Accept-Encoding",
+    "Accept-Language",
+    "Apikey",
+    "Authorization",
+    "Cdn-Loop",
+    "Cf-Connecting-Ip",
+    "Cf-Ipcountry",
+    "Cf-Ray",
+    "Cf-Visitor",
+    "Content-Length",
+    "Content-Profile",
+    "Content-Type",
+    "Origin",
+    "Priority",
+    "Referer",
+    "Sec-Ch-Ua",
+    "Sec-Ch-Ua-Mobile",
+    "Sec-Ch-Ua-Platform",
+    "Sec-Fetch-Dest",
+    "Sec-Fetch-Mode",
+    "Sec-Fetch-Site",
+    "User-Agent",
+    "X-Client-Info",
+    "X-Forwarded-For",
+    "X-Forwarded-Proto"
+  ]
+}
