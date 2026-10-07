@@ -8,6 +8,9 @@ class ClientCommandIdentity {
   static const _storageKey = 'client_command_client_id';
   static const _legacyFeedbackKey = 'event_feedback_client_id';
 
+  static String fingerprint(Object? value) =>
+      sha256.convert(utf8.encode(jsonEncode(_canonicalize(value)))).toString();
+
   static String newCommandId() => const Uuid().v4();
 
   static Future<String> claimIntent(

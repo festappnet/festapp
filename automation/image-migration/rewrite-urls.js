@@ -19,6 +19,7 @@ import { config } from 'dotenv';
 import { createPool, closePool } from './lib/db.js';
 import { rewriteUrl, containsSupabaseUrl, SUPABASE_PATTERN } from './lib/url-rewriter.js';
 import { rewriteHtml } from './lib/html-rewriter.js';
+import { assertLegacyUrlRewriteAllowed } from './lib/canonical-write-boundary.js';
 
 config();
 
@@ -349,6 +350,7 @@ async function main() {
   const pool = createPool(databaseUrl);
 
   try {
+    await assertLegacyUrlRewriteAllowed(pool, { dryRun });
     // Plain text link columns
     console.log('--- Plain text columns ---');
     await rewriteImagesLink(pool);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,6 @@ import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/app_logger.dart';
-import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 
@@ -43,12 +43,16 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave,
+      child: AbsorbPointer(
+          absorbing: _isPublishing, child: _buildHtmlParent(context)));
 
   EditDataBundle? _bundle;
   DateTime? _timelineStart, _timelineEnd;
   late final ActivityHistoryHelper _historyHelper;
   Timer? _autosaveDebounce;
+  int _editorGeneration = 0;
+  bool _autosaveQueued = false;
   bool _isPublishing = false;
   double _scale = ActivityConstants.kInitialScale;
   double _panOffset = ActivityConstants.kInitialPanOffset;
@@ -131,6 +135,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
   @override
   void dispose() {
+    _editorGeneration++;
     _htmlSave.dispose();
     _hideAssignmentDetailOverlay();
     _autosaveDebounce?.cancel();
@@ -170,7 +175,8 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   }
 
   void _recordStateChange() {
-    if (_bundle == null) return;
+    if (_bundle == null || _isPublishing) return;
+    _editorGeneration++;
 
     _bundle!.activities?.forEach((activity) {
       activity.assignments = _activityAssignments[activity]
@@ -187,6 +193,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     if (_historyHelper.canUndo) {
       final stateToRestore = _historyHelper.undo();
       if (stateToRestore != null) {
+        stateToRestore.retainSessionFrom(_bundle!);
         _processBundle(stateToRestore, preservePanAndScale: true);
         _triggerAutosaveDebounce();
       }
@@ -197,6 +204,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     if (_historyHelper.canRedo) {
       final stateToRestore = _historyHelper.redo();
       if (stateToRestore != null) {
+        stateToRestore.retainSessionFrom(_bundle!);
         _processBundle(stateToRestore, preservePanAndScale: true);
         _triggerAutosaveDebounce(); // Trigger autosave, but don't record history
       }
@@ -207,28 +215,50 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
   Future<EditDataBundle> _prepareActivityHtml() async {
     final bundle = _bundle!;
-    final snapshot = EditDataBundle(id: bundle.id, parentHistoryId: bundle.parentHistoryId,
-      aggregateVersion: bundle.aggregateVersion, events: bundle.events, places: bundle.places,
-      users: bundle.users, assignmentPlaceLinks: bundle.assignmentPlaceLinks,
-      assignmentEventLinks: bundle.assignmentEventLinks, activityAssignments: bundle.activityAssignments,
-      activities: bundle.activities?.map((activity) => ActivityModel.fromJson(activity.toJson())).toList());
+    final snapshot = EditDataBundle(
+        id: bundle.id,
+        parentHistoryId: bundle.parentHistoryId,
+        aggregateVersion: bundle.aggregateVersion,
+        events: bundle.events,
+        places: bundle.places,
+        users: bundle.users,
+        assignmentPlaceLinks: bundle.assignmentPlaceLinks,
+        assignmentEventLinks: bundle.assignmentEventLinks,
+        activityAssignments: bundle.activityAssignments,
+        activities: bundle.activities
+            ?.map((activity) => ActivityModel.fromJson(activity.toJson()))
+            .toList());
     for (final activity in snapshot.activities ?? <ActivityModel>[]) {
-      activity.description = await _htmlSave.prepare(activity.description ?? '', HtmlMediaOwner.occasion(widget.occasionId));
+      activity.description = await _htmlSave.prepare(activity.description ?? '',
+          HtmlMediaOwner.occasion(widget.occasionId));
     }
     return snapshot;
   }
 
   Future<void>? _autosaving;
   Future<void> _autosave() {
-    if (_autosaving != null) return _autosaving!;
-    if (_isPublishing || _htmlSave.media.hasUnknownUploads) return Future.value();
+    if (_autosaving != null) {
+      _autosaveQueued = true;
+      return _autosaving!;
+    }
+    if (_isPublishing || _htmlSave.media.hasUnknownUploads) {
+      return Future.value();
+    }
     final operation = _performAutosave();
     _autosaving = operation;
-    return operation.whenComplete(() => _autosaving = null);
+    return operation.whenComplete(() {
+      _autosaving = null;
+      if (_autosaveQueued && mounted && !_isPublishing) {
+        _autosaveQueued = false;
+        _triggerAutosaveDebounce();
+      }
+    });
   }
 
   Future<void> _performAutosave() async {
     if (!mounted || _bundle == null || _isShowingConflictDialog) return;
+    final generation = _editorGeneration;
+    final actor = RightsService.currentUser()?.id;
 
     setState(() {
       _justAutosaved = false;
@@ -236,12 +266,23 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
     bool didSaveSuccessfully = false;
     try {
+      final snapshot = await _prepareActivityHtml();
+      if (!mounted ||
+          generation != _editorGeneration ||
+          actor != RightsService.currentUser()?.id) {
+        _autosaveQueued = true;
+        return;
+      }
       final response =
-          await DbActivities.autosaveActivities(widget.occasionId, await _prepareActivityHtml());
+          await DbActivities.autosaveActivities(widget.occasionId, snapshot);
+      if (!mounted ||
+          generation != _editorGeneration ||
+          actor != RightsService.currentUser()?.id) {
+        return;
+      }
 
       if (response != null && response['code'] == 409) {
         final conflictData = response['data'] as Map<String, dynamic>?;
-        final latestPublishId = conflictData?['latest_publish_id'] as int?;
         final publishedAtStr = conflictData?['published_at'] as String?;
 
         String conflictMessage =
@@ -263,18 +304,24 @@ class _ActivitiesContentState extends State<ActivitiesContent>
             await _loadData(forcePublished: true);
             return;
           } else if (choice == 'continue') {
+            final currentSession =
+                await DbActivities.getEditorSession(widget.occasionId);
+            if (!mounted ||
+                generation != _editorGeneration ||
+                actor != RightsService.currentUser()?.id) {
+              return;
+            }
             setState(() {
-              _bundle!.parentHistoryId = latestPublishId;
+              _bundle!.retainSessionFrom(currentSession.bundle);
             });
-            _autosave();
+            _autosaveQueued = true;
             return;
           }
         }
       } else if (response != null && response['code'] == 200) {
+        _bundle!.id = (response['data']['draft_id'] as num?)?.toInt();
         didSaveSuccessfully = true;
-      } else {
-
-      }
+      } else {}
     } catch (e) {
       // Autosave failed
     }
@@ -385,6 +432,8 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
   void _processBundle(EditDataBundle bundle,
       {bool preservePanAndScale = false}) {
+    if (!mounted) return;
+    _editorGeneration++;
     // Create a new, complete bundle for the new state.
     // If the incoming bundle from history is missing static data (users, places, events),
     // this merge operation populates it from the current state's master lists (_bundle).
@@ -403,6 +452,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       // Copy the metadata
       id: bundle.id,
       parentHistoryId: bundle.parentHistoryId,
+      aggregateVersion: bundle.aggregateVersion,
     );
 
     // The new bundle is now logically complete, but object references might be
@@ -450,19 +500,17 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
     // Step 1: Always fetch the complete data bundle first. This provides the master lists
     // of all users, places, and events for the entire session.
-    final baseBundle = await DbActivities.getForEdit(widget.occasionId);
-    if (baseBundle == null) {
-      if (mounted) {
-        // Handle the critical failure to load essential data
-        ToastHelper.Show(context, ActivitiesComponentStrings.toastFailedToLoad,
-            severity: ToastSeverity.NotOk);
-      }
+    final generation = ++_editorGeneration;
+    final actor = RightsService.currentUser()?.id;
+    final session = await DbActivities.getEditorSession(widget.occasionId);
+    if (!mounted ||
+        generation != _editorGeneration ||
+        actor != RightsService.currentUser()?.id) {
       return;
     }
-
+    final baseBundle = session.bundle;
     // Step 2: Now, check for autosaves and the latest published version ID.
-    final autosaveInfo =
-        await DbActivities.getAutosaveAndPublishInfo(widget.occasionId);
+    final autosaveInfo = session.autosave;
     final latestPublishId = autosaveInfo.latestPublishId;
     // If forcePublished is true, we ignore the returned autosave bundle.
     final autosavedBundle =
@@ -480,8 +528,15 @@ class _ActivitiesContentState extends State<ActivitiesContent>
         final choice = await _showConflictDialog(
             ActivitiesComponentStrings.staleAutosaveConflictMessage);
 
+        if (!mounted ||
+            generation != _editorGeneration ||
+            actor != RightsService.currentUser()?.id) {
+          return;
+        }
         if (choice == 'reload') {
-          await DbActivities.deleteAutosave(widget.occasionId);
+          await DbActivities.deleteAutosave(widget.occasionId,
+              expectedDraftId: autosavedBundle.id);
+          baseBundle.id = null;
           // Use the fresh baseBundle we already fetched.
           dataToLoad = baseBundle;
         } else if (choice == 'continue') {
@@ -520,6 +575,11 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       loadedFromAutosave = false;
     }
 
+    if (!mounted ||
+        generation != _editorGeneration ||
+        actor != RightsService.currentUser()?.id) {
+      return;
+    }
     setState(() {
       _isAutosaveLoaded = loadedFromAutosave;
       _justAutosaved = loadedFromAutosave;
@@ -537,8 +597,11 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       });
     }
 
+    final loadedGeneration = _editorGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+      if (mounted &&
+          loadedGeneration == _editorGeneration &&
+          actor == RightsService.currentUser()?.id) {
         if (initialPanOffset == null) {
           _performInitialTimelineScroll();
         }
@@ -956,12 +1019,6 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   }
 
   Future<void> _showHistoryDialog() async {
-    // Fetch the latest publish ID *before* showing the dialog,
-    // so we have it ready for the restore operation.
-    final autosaveInfo =
-        await DbActivities.getAutosaveAndPublishInfo(widget.occasionId);
-    final latestPublishId = autosaveInfo.latestPublishId;
-
     final historyItems =
         await DbActivities.listActivityHistory(widget.occasionId);
     if (!mounted) return;
@@ -1027,13 +1084,29 @@ class _ActivitiesContentState extends State<ActivitiesContent>
                     child: Text(ActivitiesComponentStrings.buttonRestore),
                     onPressed: () async {
                       Navigator.of(ctx).pop(); // Close dialog
+                      final generation = _editorGeneration;
+                      final actor = RightsService.currentUser()?.id;
                       final bundleToRestore =
                           await DbActivities.getActivityHistoryVersion(
                               widget.occasionId, item.id);
 
+                      if (!mounted ||
+                          generation != _editorGeneration ||
+                          actor != RightsService.currentUser()?.id) {
+                        return;
+                      }
+                      final currentSession =
+                          await DbActivities.getEditorSession(
+                              widget.occasionId);
+                      if (!mounted ||
+                          generation != _editorGeneration ||
+                          actor != RightsService.currentUser()?.id) {
+                        return;
+                      }
                       if (bundleToRestore != null) {
                         // Re-base the restored version on the CURRENT latest publish ID.
-                        bundleToRestore.parentHistoryId = latestPublishId;
+                        bundleToRestore
+                            .retainSessionFrom(currentSession.bundle);
 
                         _processBundle(bundleToRestore,
                             preservePanAndScale: true);
@@ -1384,7 +1457,12 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   }
 
   void _showActivityDescriptionEditor(ActivityModel activity) {
-    RichHtmlEditorDialog.show(context, initialHtml: activity.description, loadHtml: () async => activity.description, owner: HtmlMediaOwner.occasion(widget.occasionId), coordinator: _htmlSave).then((value) {
+    RichHtmlEditorDialog.show(context,
+            initialHtml: activity.description,
+            loadHtml: () async => activity.description,
+            owner: HtmlMediaOwner.occasion(widget.occasionId),
+            coordinator: _htmlSave)
+        .then((value) {
       if (value != null && value != activity.description) {
         setState(() {
           activity.description = value;
@@ -1393,7 +1471,6 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       }
     });
   }
-
 
   Widget _buildHtmlParent(BuildContext context) {
     if (_bundle == null || _timelineStart == null || _timelineEnd == null) {
@@ -1648,13 +1725,28 @@ class _ActivitiesContentState extends State<ActivitiesContent>
                             minimumSize: Size(60, 30)),
                         onPressed: canPublish
                             ? () async {
+                                if (_isPublishing) return;
+                                setState(() => _isPublishing = true);
                                 // Cancel any pending autosave operation to prevent race conditions.
                                 _autosaveDebounce?.cancel();
 
-                                if (!await confirmHtmlUploadRetry(context, _htmlSave.media, html: _bundle?.activities?.map((activity) => activity.description ?? '').join() ?? '') || !mounted) return;
+                                if (!await confirmHtmlUploadRetry(
+                                        context, _htmlSave.media,
+                                        html: _bundle?.activities
+                                                ?.map((activity) =>
+                                                    activity.description ?? '')
+                                                .join() ??
+                                            '') ||
+                                    !mounted) {
+                                  if (mounted)
+                                    setState(() => _isPublishing = false);
+                                  return;
+                                }
                                 setState(() => _isPublishing = true);
                                 await _autosaving;
-                                if (!mounted) return;
+                                if (!mounted) {
+                                  return;
+                                }
                                 _bundle!.activities ??= [];
                                 for (var activityInBundle
                                     in _bundle!.activities!) {
@@ -1673,11 +1765,28 @@ class _ActivitiesContentState extends State<ActivitiesContent>
                                   }
                                 }
                                 try {
-                                  await DbActivities.saveActivitiesForEdit(
-                                      context, widget.occasionId, await _prepareActivityHtml());
+                                  final generation = _editorGeneration;
+                                  final actor = RightsService.currentUser()?.id;
+                                  final snapshot = await _prepareActivityHtml();
+                                  if (!mounted ||
+                                      generation != _editorGeneration ||
+                                      actor !=
+                                          RightsService.currentUser()?.id) {
+                                    return;
+                                  }
+                                  final result =
+                                      await DbActivities.saveActivitiesForEdit(
+                                          context, widget.occasionId, snapshot);
+                                  if (!mounted ||
+                                      generation != _editorGeneration ||
+                                      actor !=
+                                          RightsService.currentUser()?.id) {
+                                    return;
+                                  }
+                                  _bundle!.aggregateVersion = result.version;
+                                  _bundle!.parentHistoryId = result.historyId;
+                                  _bundle!.id = null;
                                   _htmlSave.markSaved();
-                                  await DbActivities.deleteAutosave(
-                                      widget.occasionId);
                                   _isAutosaveLoaded = false;
                                   await _loadData(
                                       initialPanOffset: _panOffset,

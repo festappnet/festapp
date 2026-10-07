@@ -171,7 +171,8 @@ class _EventPageState extends State<EventPage> {
   }
 
   @override
-  Widget build(BuildContext context) => HtmlEditingScope(coordinator: _htmlSave, child: _buildHtmlParent(context));
+  Widget build(BuildContext context) => HtmlEditingScope(
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   Widget _buildHtmlParent(BuildContext context) {
     if (_event == null) {
@@ -325,11 +326,14 @@ class _EventPageState extends State<EventPage> {
                               child: CounselingPicker(day: _event!.startTime),
                             ),
                           Visibility(
-                            visible:
-                                _event != null && (_event?.description != null || (RightsService.isGroupAdmin() && (_event!.isGroupEvent ?? false))),
+                            visible: _event != null &&
+                                (_event?.description != null ||
+                                    (RightsService.isGroupAdmin() &&
+                                        (_event!.isGroupEvent ?? false))),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
-                              child: _buildGroupDescription(onPinchStart, onPinchEnd),
+                              child: _buildGroupDescription(
+                                  onPinchStart, onPinchEnd),
                             ),
                           ),
                           _buildSpeakersSection(
@@ -1061,26 +1065,44 @@ class _EventPageState extends State<EventPage> {
 
   /// Editor / participant actions as light tonal chips with icons in a
   /// left-aligned Wrap (matches production's redesigned action row).
-  Widget _buildGroupDescription(VoidCallback onPinchStart, VoidCallback onPinchEnd) {
+  Widget _buildGroupDescription(
+      VoidCallback onPinchStart, VoidCallback onPinchEnd) {
     final group = _groupInfoModel;
     final version = group?.aggregateVersion ?? 0;
     final eventId = _event?.id;
-    final canEdit = RightsService.isGroupAdmin() && (_event?.isGroupEvent ?? false) && group != null;
-    return EditableHtmlField(key: ValueKey('group-event-html-$eventId'), html: _event?.description,
-      enabled: canEdit,
-      owner: RightsService.isEditor() || RightsService.isOrderEditor()
-        ? HtmlMediaOwner.occasion(_event?.occasionId) : const HtmlMediaOwner.none(),
-      twoFingersOn: onPinchStart, twoFingersOff: onPinchEnd,
-      onChanged: (_) {}, onSave: (html) async {
-        if (group == null) throw StateError('Group description owner missing');
-        final snapshot = UserGroupInfoModel(id: group.id, title: group.title,
-          description: html, type: group.type, data: group.data,
-          place: group.place, placeId: group.placeId, participants: group.participants,
-          persistedPlaceId: group.persistedPlaceId, persistedPlaceWasPrivate: group.persistedPlaceWasPrivate,
-          aggregateVersion: version);
-        await DbGroups.updateUserGroupInfo(snapshot);
-        if (eventId != null && mounted) await loadData(eventId);
-      });
+    final canEdit = RightsService.isGroupAdmin() &&
+        (_event?.isGroupEvent ?? false) &&
+        group != null;
+    return EditableHtmlField(
+        key: ValueKey('group-event-html-$eventId'),
+        html: _event?.description,
+        enabled: canEdit,
+        owner: RightsService.isEditor() || RightsService.isOrderEditor()
+            ? HtmlMediaOwner.occasion(_event?.occasionId)
+            : const HtmlMediaOwner.none(),
+        twoFingersOn: onPinchStart,
+        twoFingersOff: onPinchEnd,
+        onChanged: (_) {},
+        onSave: (html) async {
+          if (group == null) {
+            throw StateError('Group description owner missing');
+          }
+          final snapshot = UserGroupInfoModel(
+              id: group.id,
+              title: group.title,
+              description: html,
+              type: group.type,
+              data: group.data,
+              place: group.place,
+              placeId: group.placeId,
+              participants: group.participants,
+              persistedPlaceId: group.persistedPlaceId,
+              persistedPlaceWasPrivate: group.persistedPlaceWasPrivate,
+              aggregateVersion: version,
+              isAdmin: group.isAdmin);
+          await DbGroups.updateUserGroupInfo(snapshot);
+          if (eventId != null && mounted) await loadData(eventId);
+        });
   }
 
   Widget _buildActionButtons(BuildContext context, bool isEventCancelled) {
@@ -1498,8 +1520,11 @@ class _EventPageState extends State<EventPage> {
     var event = await DbEvents.getEvent(eventId);
 
     if ((event.isGroupEvent ?? false) && (event.isMyGroupEvent ?? false)) {
-      var group = await DbGroups.getUserGroupInfo(
-          RightsService.currentUserGroup()!.id!);
+      var group = RightsService.isGroupAdmin() || RightsService.isEditor()
+          ? await DbGroups.getUserGroupForEdit(
+              RightsService.currentUserGroup()!.id!)
+          : await DbGroups.getUserGroupInfo(
+              RightsService.currentUserGroup()!.id!);
       if (group == null) {
         if (mounted) RouterService.goBack(context);
         return;

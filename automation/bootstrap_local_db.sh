@@ -3,9 +3,11 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-readonly LOCAL_WORKDIR="$SCRIPT_DIR/local_db"
-readonly LOCAL_PROJECT_ID="festapp-db-tests-pg15"
-readonly DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable"
+readonly LOCAL_WORKDIR="${FESTAPP_LOCAL_DB_WORKDIR:-$SCRIPT_DIR/local_db}"
+readonly LOCAL_PROJECT_ID="${FESTAPP_LOCAL_DB_PROJECT_ID:-festapp-db-tests-pg15}"
+readonly LOCAL_DB_PORT="${FESTAPP_LOCAL_DB_PORT:-55432}"
+[[ "$LOCAL_DB_PORT" =~ ^[0-9]+$ ]] || { echo "Invalid local DB port" >&2; exit 1; }
+readonly DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:$LOCAL_DB_PORT/postgres?sslmode=disable"
 readonly BASELINE_VERSION="20260805230000"
 readonly BASELINE_FILE="$PROJECT_ROOT/supabase/baseline/${BASELINE_VERSION}_production_schema.sql"
 readonly MIGRATIONS_DIR="$PROJECT_ROOT/supabase/migrations"
@@ -36,7 +38,7 @@ if [[ -n "$duplicate_versions" ]]; then
   exit 1
 fi
 
-echo "Rebuilding isolated Festapp test database on 127.0.0.1:55432..."
+echo "Rebuilding isolated Festapp test database on 127.0.0.1:$LOCAL_DB_PORT..."
 supabase stop --project-id "$LOCAL_PROJECT_ID" --no-backup >/dev/null 2>&1 || true
 supabase db start --workdir "$LOCAL_WORKDIR" >/dev/null
 
@@ -87,6 +89,13 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
 # forward migrations are executed here.
 supabase migration up --db-url "$DATABASE_URL" --include-all >/dev/null
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_ROOT/supabase/seed.sql" >/dev/null
+
+# Persist the disposable identity for guarded mutation/concurrency test runners.
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -v disposable_project="$LOCAL_PROJECT_ID" <<'SQL' >/dev/null
+CREATE SCHEMA IF NOT EXISTS festapp_test_support;
+CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY CHECK(singleton),project text NOT NULL);
+INSERT INTO festapp_test_support.disposable_environment(singleton,project) VALUES(true,:'disposable_project') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project;
+SQL
 
 echo "Local Festapp database is ready."
 echo "DATABASE_URL=$DATABASE_URL"

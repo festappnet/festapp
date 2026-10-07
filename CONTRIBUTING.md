@@ -53,13 +53,15 @@ If a test fails saying "function does not exist":
 
 Do not use a remote database as a substitute for the isolated test database.
 Version every SQL change in the repository and deploy it through the approved
-release workflow. Until the self-hosted cutover is complete, schema, function,
-and data-contract changes must remain semantically identical on the self-hosted
-target and cloud sources `default` and `a`.
+release workflow. Production runs on the canonical self-hosted server; former
+cloud sources are frozen retention/reconciliation targets, not migration targets.
 
-Resolve the live target from `SUPABASE_URL` in `automation/project.conf`, then
-verify `FORCE_OCCASION_LINK` in that same database. Never select a target from
-the project ref in `.env.local`. Deploy Deno functions from their checked-in
+Resolve the live target from canonical backend activation in
+`automation/project.conf` and the live `backend-activation.json`, then verify
+organization, generation and `FORCE_OCCASION_LINK` in that same database as
+required by `docs/architecture/ai_context.md`. Never select a live target from
+compiled `SUPABASE_URL` or the project ref in `.env.local`.
+Deploy Deno functions from their checked-in
 `supabase/functions/<name>/` source and follow
 [docs/backend/edge_functions.md](docs/backend/edge_functions.md).
 

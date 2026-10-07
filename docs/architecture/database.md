@@ -248,3 +248,25 @@ Dart or `supabase.rpc(...)` in JS):
 | `get_ticket_details_for_generating` | Edge Functions | Ticket PDF data |
 | `get_occasion_seo_data` | Cloudflare Pages Worker | SEO metadata |
 | `get_available_occasions` | Cloudflare Pages Worker | Sitemap data |
+
+## Canonical group/activity mutation ownership
+
+Group save/delete and complete membership import use the existing typed RPCs
+under `database/functions/groups/`. A group owns its hidden private place;
+ordinary map save cannot create or convert it. Move owns place coordinates and
+advances the owning group clock. Shared place changes invalidate member and
+companion-owner profiles through the explicit private_profile/places source.
+Leader editing uses a narrow version-bearing read, not the admin group list.
+
+Activity graph DML lives only in `canonical_activity_graph.sql`; draft/history
+persistence in `canonical_activity_history.sql`; atomic draft/publish/discard and
+retention in `canonical_activity_lifecycle.sql`. Session read is one MVCC snapshot.
+Profile deletion/import, game/reception and account privacy deletion share the
+occasion lock prefix before affected domain rows; account deletion still owns
+its existing anonymization/receipt lifecycle.
+
+Build-time inventory: `automation/client-sync/canonical-mutation-inventory.json`.
+History-only writes have explicit contracts rather than synthetic public sync
+components. Prepared contraction is under `database/operations`, outside the
+migration chain. Released legacy facades and shared DML grants remain pending
+G2-G4; see `docs/runbooks/client-sync-v1.md`. No production closure is asserted.

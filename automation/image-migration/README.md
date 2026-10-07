@@ -173,3 +173,5 @@ to its exact public R2 bucket, so the direct-delivery cutover needs no DB rewrit
 
 Current split-plane production checkpoints are tracked in
 `docs/plans/image-delivery-cost-cutover-evidence-2026-08-23.md`.
+
+The historical bulk URL rewrite refuses writes once the canonical mutation release marker exists. Use `--dry-run` for read-only inspection; canonical writes require typed commands or a separately approved data repair.

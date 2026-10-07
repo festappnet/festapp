@@ -307,8 +307,10 @@ class ActivityAssignmentModel {
       Tb.activity_assignments.id: id,
       Tb.activity_assignments.activity_id: activityId,
       Tb.activity_assignments.user: userInfo,
-      Tb.activity_assignments.start_time: startTime?.toIso8601String(),
-      Tb.activity_assignments.end_time: endTime?.toIso8601String(),
+      Tb.activity_assignments.start_time:
+          startTime?.toUtcFromOccasionTime().toIso8601String(),
+      Tb.activity_assignments.end_time:
+          endTime?.toUtcFromOccasionTime().toIso8601String(),
       Tb.activity_assignments.title: title,
       Tb.activity_assignments.description: description,
       Tb.activity_assignments.data: data,
@@ -325,8 +327,10 @@ class ActivityAssignmentModel {
       Tb.activity_assignments.id: id,
       Tb.activity_assignments.activity_id: activityId,
       Tb.activity_assignments.user: userInfo,
-      Tb.activity_assignments.start_time: startTime?.toIso8601String(),
-      Tb.activity_assignments.end_time: endTime?.toIso8601String(),
+      Tb.activity_assignments.start_time:
+          startTime?.toUtcFromOccasionTime().toIso8601String(),
+      Tb.activity_assignments.end_time:
+          endTime?.toUtcFromOccasionTime().toIso8601String(),
       Tb.activity_assignments.title: title,
       Tb.activity_assignments.description: description,
       Tb.activity_assignments.data: data,
@@ -370,6 +374,12 @@ class EditDataBundle {
     this.parentHistoryId,
     this.aggregateVersion = 0,
   });
+
+  void retainSessionFrom(EditDataBundle current) {
+    aggregateVersion = current.aggregateVersion;
+    parentHistoryId = current.parentHistoryId;
+    id = current.id;
+  }
 
   factory EditDataBundle.fromJson(Map<String, dynamic> j) {
     return EditDataBundle(
@@ -468,13 +478,19 @@ class EditDataBundle {
         .toList();
 
     return {
-      // Metadata
+      // Canonical history times use the same UTC instants as the live graph.
+      'schemaVersion': 1,
+      'timeBasis': 'UTC',
       'id': id,
       'parent_history_id': parentHistoryId,
 
       Tb.activities.table: activities?.map((a) => a.toJson()).toList(),
-      Tb.activity_assignments.table:
-          allAssignments.map((a) => a.toJson()).toList(),
+      Tb.activity_assignments.table: [
+        for (final activity in activities ?? <ActivityModel>[])
+          for (final assignment
+              in activity.assignments ?? <ActivityAssignmentModel>[])
+            {...assignment.toJson(), 'activity_id': activity.id}
+      ],
       'assignmentPlaceLinks': placeLinks.map((l) => l.toJson()).toList(),
       'assignmentEventLinks': eventLinks.map((l) => l.toJson()).toList(),
     };

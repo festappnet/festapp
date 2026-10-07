@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "status": "PENDING - template is not evidence or authority",
+  "scope": "canonical-group-activities",
+  "tenantId": null,
+  "organization": null,
+  "occasionLink": null,
+  "generation": 1,
+  "capturedAt": null,
+  "sqlSha256": "136cae6ca89197d5e7651fea693457bd6d987eac589db6fcefac3c51fc5fabe6",
+  "g2": {
+    "activationVerified": false,
+    "appliedMigrationHashesVerified": false,
+    "effectiveAclInventoried": false,
+    "functionHashesVerified": false,
+    "enabledOccasionsInventoried": false,
+    "externalBoundariesClosed": false,
+    "artifactReference": null
+  },
+  "usage": {
+    "from": null,
+    "to": null,
+    "tokenLifetimeHours": null,
+    "maximumOfflineWriterHours": null,
+    "uncoveredIntervals": null,
+    "legacyWrites": null,
+    "rolesCovered": [],
+    "postgrestSqlCoverage": false,
+    "serviceIntegrationCoverage": false,
+    "artifactReference": null
+  },
+  "expectedConsumers": [],
+  "sharedConsumers": [],
+  "mixedClientWindow": {
+    "editorWritesRestricted": false,
+    "evidenceReference": null
+  },
+  "artifacts": [],
+  "separateG4Authority": {
+    "approved": false,
+    "reference": null,
+    "tenantId": null,
+    "organization": null,
+    "occasionLink": null,
+    "action": "shared-mutation-contraction",
+    "sqlSha256": "136cae6ca89197d5e7651fea693457bd6d987eac589db6fcefac3c51fc5fabe6"
+  }
+}

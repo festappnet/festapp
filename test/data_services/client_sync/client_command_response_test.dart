@@ -7,7 +7,13 @@ void main() {
       'status': 'conflict',
       'code': 409,
       'data': {'version': 3},
-      'mutation': {'commandId': 'ignored-by-parser'},
+      'mutation': {
+        'commandId': '00000000-0000-4000-8000-000000000001',
+        'receiptId': '00000000-0000-4000-8000-000000000001',
+        'commitId': null,
+        'replayed': false,
+        'occurredAt': '2026-10-07T10:00:00Z'
+      },
       'sync': {
         'replacements': [
           {'component': 'map_catalog', 'revision': 8, 'payload': {}}

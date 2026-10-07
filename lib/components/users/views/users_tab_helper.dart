@@ -63,10 +63,13 @@ class UsersTabHelper {
     var chosenGroup = await DialogHelper.showAddToGroupDialogAsync(
         context, await DbGroups.getAllUserGroupInfo());
     if (chosenGroup != null) {
-      chosenGroup.participants!.addAll(users.map(
-          (u) => GroupParticipantModel(userInfo: UserInfoModel(id: u.id))));
-      await DbGroups.updateUserGroupParticipants(
-          chosenGroup, chosenGroup.participants!);
+      final existingIds =
+          chosenGroup.participants!.map((p) => p.userInfo!.id).toSet();
+      chosenGroup.participants!.addAll(users
+          .where((u) => !existingIds.contains(u.id))
+          .map(
+              (u) => GroupParticipantModel(userInfo: UserInfoModel(id: u.id))));
+      await DbGroups.updateUserGroupInfo(chosenGroup);
       ToastHelper.Show(
           context, CommonStrings.updatedItem(item: chosenGroup.title));
     }

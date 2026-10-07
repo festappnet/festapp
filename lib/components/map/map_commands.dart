@@ -4,6 +4,7 @@ import 'package:fstapp/components/map/place_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:fstapp/data_services/client_sync/client_command_response.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 
 enum MapCommandStatus { applied, unchanged, rejected, conflict }
 
@@ -39,11 +40,13 @@ abstract interface class MapCommands {
 /// Statically binds map editing intents to their canonical v1 RPCs.
 class SupabaseMapCommands implements MapCommands {
   SupabaseMapCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client),
+        _actorId = (() => client.auth.currentUser?.id);
 
-  SupabaseMapCommands.withTransport(this._transport);
+  SupabaseMapCommands.withTransport(this._transport) : _actorId = (() => null);
 
   final ClientCommandTransport _transport;
+  final String? Function() _actorId;
 
   @override
   Future<MapCommandResult<PlaceModel>> savePlace(
@@ -83,14 +86,18 @@ class SupabaseMapCommands implements MapCommands {
       int occasionId, PlaceModel place, double lat, double lng) async {
     final id = place.id;
     if (id == null) throw ArgumentError('Moving a place requires its ID');
-    final raw = await _transport.invoke('move_place_client_sync_v1', {
+    final context = ClientSyncRuntime.mutationContextToken;
+    final actor = _actorId();
+    final raw = await _transport.invokeIntent(
+        '$actor:$occasionId:map.move', 'move_place_client_sync_v1', {
       'p_occasion': occasionId,
       'p_place_id': id,
       'p_expected_version': place.aggregateVersion,
       'p_lat': lat,
       'p_lng': lng,
     });
-    return _decode(raw, 'place', PlaceModel.fromJson);
+    return _decode(raw, 'place', PlaceModel.fromJson,
+        expectedContextToken: context, activate: actor == _actorId());
   }
 
   @override
@@ -164,13 +171,14 @@ class SupabaseMapCommands implements MapCommands {
     return _decode(raw, 'path', PathGroupsModel.fromJson);
   }
 
-  Future<MapCommandResult<T>> _decode<T>(
-    Object? raw,
-    String entityKey,
-    T Function(Map<String, dynamic>) decodeEntity,
-  ) async {
+  Future<MapCommandResult<T>> _decode<T>(Object? raw, String entityKey,
+      T Function(Map<String, dynamic>) decodeEntity,
+      {String? expectedContextToken, bool activate = true}) async {
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    if (activate) {
+      await response.applyConfirmedReplacements(
+          expectedContextToken: expectedContextToken);
+    }
     final data = response.data;
     final version = (data['version'] as num?)?.toInt() ?? 0;
     final entityJson = data[entityKey];

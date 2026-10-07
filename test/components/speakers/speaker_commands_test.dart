@@ -27,6 +27,13 @@ void main() {
               'topics': [3, 4],
             },
           },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },
@@ -61,6 +68,13 @@ void main() {
             'status': 'applied',
             'code': 200,
             'data': {'version': 2, 'topic': null},
+            'mutation': {
+              'commandId': '00000000-0000-4000-8000-000000000001',
+              'receiptId': '00000000-0000-4000-8000-000000000001',
+              'commitId': null,
+              'replayed': false,
+              'occurredAt': '2026-10-07T10:00:00Z'
+            },
             'sync': {'replacements': <Object>[]},
           };
         }
@@ -71,6 +85,13 @@ void main() {
             'version': 10,
             'eventId': 12,
             'speakerIds': [2, 9],
+          },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -108,6 +129,13 @@ void main() {
                   'event_ids': [21, 22],
                 }
               : {'deleted': 2},
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },
@@ -142,6 +170,13 @@ void main() {
           'status': 'applied',
           'code': 200,
           'data': {'eventId': 21, 'deleted': true},
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },

@@ -28,7 +28,9 @@ class DbPlaces {
   }
 
   static Future<List<PlaceModel>> getAllPlaces() async {
-    if (ClientSyncRuntime.isV1Selected) return getAllPlacesForEditor();
+    if (RightsService.isEditor() || RightsService.isEditorView()) {
+      return getAllPlacesForEditor();
+    }
     var data = await _supabase
         .from(Tb.places.table)
         .select()
@@ -114,12 +116,6 @@ class DbPlaces {
     }
   }
 
-  /// Compatibility boundary for the not-yet-cut-over legacy group writer.
-  /// Remove together with the direct-DML branch in the group service.
-  static Future<void> deleteLegacyPrivateGroupPlace(PlaceModel place) async {
-    await _supabase.from(Tb.places.table).delete().eq(Tb.places.id, place.id!);
-  }
-
   static Future<PlaceModel> updatePlace(PlaceModel placeModel) async {
     return updatePlaceWithCommands(
       commands: _commands,
@@ -143,34 +139,10 @@ class DbPlaces {
     return result.entity!;
   }
 
-  /// Compatibility boundary for the not-yet-cut-over legacy group writer.
-  static Future<PlaceModel> updateLegacyPrivateGroupPlace(
-      PlaceModel place) async {
-    var upsertObj = place.toJson();
-    dynamic data;
-    if (place.id != null) {
-      data = await _supabase
-          .from(Tb.places.table)
-          .update(upsertObj)
-          .eq(Tb.places.id, place.id!)
-          .select()
-          .single();
-    } else {
-      upsertObj.remove(Tb.places.id);
-      upsertObj[Tb.places.occasion] = RightsService.currentOccasionId()!;
-      data = await _supabase
-          .from(Tb.places.table)
-          .insert(upsertObj)
-          .select()
-          .single();
-    }
-    return PlaceModel.fromJson(data);
-  }
-
   static Future<void> saveLocation(
       MapPlaceModel place, double lat, double lng) async {
     // Fast UX guard mirroring the RPC's permission check (editor OR group admin
-    // of this place). The RPC save_place_location is the source of truth — a
+    // of this place). The canonical move command is the source of truth — a
     // group admin who isn't an editor cannot move a place via a direct RLS
     // UPDATE (it silently touches 0 rows), so the write must go through it.
     if (!(RightsService.isEditor() ||
@@ -178,29 +150,19 @@ class DbPlaces {
             RightsService.currentUserGroup()!.place!.id == place.id))) {
       throw Exception("You cannot change this place.");
     }
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.movePlace(
-          RightsService.currentOccasionId()!,
-          PlaceModel(id: place.id, aggregateVersion: place.aggregateVersion),
-          lat,
-          lng);
-      if (result.status == MapCommandStatus.conflict) {
-        throw StateError('Place was changed by another editor');
-      }
-      if (result.status == MapCommandStatus.rejected || result.entity == null) {
-        throw StateError('Place move was rejected');
-      }
+    final result = await _commands.movePlace(
+        RightsService.currentOccasionId()!,
+        PlaceModel(id: place.id, aggregateVersion: place.aggregateVersion),
+        lat,
+        lng);
+    if (result.status == MapCommandStatus.conflict) {
+      throw StateError('Place was changed by another editor');
+    }
+    if (result.status == MapCommandStatus.rejected || result.entity == null) {
+      throw StateError('Place move was rejected');
+    }
+    if (result.version >= place.aggregateVersion)
       place.aggregateVersion = result.version;
-      return;
-    }
-    final res = await _supabase.rpc('save_place_location', params: {
-      'p_place_id': place.id,
-      'p_lat': lat,
-      'p_lng': lng,
-    });
-    if (res is Map && res['code'] != null && res['code'] != 200) {
-      throw Exception(res['message'] ?? 'Failed to move place');
-    }
   }
 
   /// Fetch all path-groups, including their `List<List<int>>` `path_data`.

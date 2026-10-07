@@ -219,6 +219,22 @@ class ClientSyncRuntime {
     await _service?.reconnect();
   }
 
+  static Future<int?> commandComponentRevision(
+      ClientSyncComponent component) async {
+    final context = _context;
+    if (!_v1Selected || context == null) return null;
+    final type = component.isPrivate
+        ? SyncFreshnessClass.privateIdentity
+        : component == ClientSyncComponent.livePublic
+            ? SyncFreshnessClass.live
+            : SyncFreshnessClass.catalog;
+    final scope =
+        component.isPrivate ? context.privateScope : context.publicScope;
+    if (scope == null) return null;
+    final generation = await _store.activeGeneration(scope, type);
+    return _context == context ? generation?.revisions[component] : null;
+  }
+
   static Future<Map<String, dynamic>?> readPublic(
       ClientSyncComponent component) async {
     final context = _context;
@@ -471,6 +487,10 @@ class ClientSyncRuntime {
       );
     }
   }
+
+  static void notifyCommandProjectionChanged(
+          {bool searchIndexChanged = false}) =>
+      _notifyProjectionChanged(searchIndexChanged: searchIndexChanged);
 
   static void _notifyProjectionChanged({bool searchIndexChanged = false}) {
     final current = state.value;

@@ -17,6 +17,13 @@ void main() {
           'data': {
             'saved': [4, 9, 21],
           },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -40,6 +47,13 @@ void main() {
           'code': 200,
           'data': {
             'saved': [9, 21],
+          },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {
             'replacements': [

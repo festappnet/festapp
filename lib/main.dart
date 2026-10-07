@@ -22,6 +22,7 @@ import 'package:fstapp/data_services/client_sync/client_sync_endpoint_service.da
 import 'package:fstapp/components/occasion/occasion_home_page.dart';
 import 'package:fstapp/services/connectivity_service.dart';
 import 'package:fstapp/services/health_tracking_http_client.dart';
+import 'package:fstapp/services/platform_helper.dart';
 import 'package:fstapp/services/notification_helper.dart';
 import 'package:fstapp/services/installation_cutover_service.dart';
 import 'package:fstapp/startup/startup_failure_policy.dart';
@@ -240,9 +241,11 @@ Future<void> initializeEverything() async {
 
   var supabaseInitialized = false;
   try {
+    final requestHeaders = await PlatformHelper.getBackendRequestHeaders();
     await Supabase.initialize(
       url: resolvedBackend.supabaseUrl,
       publishableKey: resolvedBackend.anonKey,
+      headers: requestHeaders,
       authOptions: FlutterAuthClientOptions(
         localStorage: AuthSessionStorage(
           persistSessionKey: AppConfig.supabaseAuthStorageKey,

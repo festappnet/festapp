@@ -1,0 +1,68 @@
+DO $$
+DECLARE o bigint; actor uuid; other uuid; activity uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); graph jsonb; history jsonb; r jsonb; replay jsonb; c uuid:=gen_random_uuid(); hid bigint; did bigint; rejected boolean;
+BEGIN
+ PERFORM create_user_for_test('canonical_activity_editor','canonical_activity_editor@test.local');
+ PERFORM create_user_for_test('canonical_activity_other','canonical_activity_other@test.local');
+ actor:=get_user_id('canonical_activity_editor');other:=get_user_id('canonical_activity_other');
+ INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time,is_open,data) SELECT organization,id,'Canonical activities',gen_random_uuid()::text,now(),now()+interval '1 day',true,'{"timezone":"Europe/Prague"}' FROM public.units LIMIT 1 RETURNING id INTO o;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_view,is_approved) VALUES(o,actor,true,true,true),(o,other,true,true,true);
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ PERFORM set_config('TimeZone','Pacific/Honolulu',true);
+ graph:=jsonb_build_array(jsonb_build_object('id',activity,'title','Work','is_hidden',false,'order',1,'assignments',jsonb_build_array(jsonb_build_object('id',assignment,'user',actor,'start_time','2026-10-25T01:30:00Z','end_time','2026-10-25T02:30:00Z','linked_place_ids','[]'::jsonb,'linked_event_ids','[]'::jsonb))));
+ graph:=public.normalize_activity_graph_internal_v1(o,graph,true);history:=public.activity_graph_history_internal_v1(graph);
+ r:=public.save_activity_draft_client_sync_v1(o,c,0,history,NULL); replay:=r;did:=(r#>>'{data,draftId}')::bigint;
+ PERFORM assert_eq(r->>'status','applied','draft is saved');
+ PERFORM assert_eq((SELECT count(*) FROM public.activities WHERE occasion=o),0::bigint,'draft history only');
+ PERFORM assert_eq((r#>>'{data,version}')::int,0,'draft does not advance live clock');
+ PERFORM assert_eq(public.save_activity_draft_client_sync_v1(o,c,0,history,NULL),replay,'draft exact replay');
+ PERFORM assert_eq(public.save_activity_draft_client_sync_v1(o,gen_random_uuid(),0,history,NULL)->>'status','unchanged','draft no-op');
+ PERFORM set_config('request.jwt.claim.sub',other::text,true);
+ PERFORM assert_eq(public.get_activity_history_version(did)->>'code','403','other editor cannot read draft');
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ r:=public.publish_activities_client_sync_v1(o,gen_random_uuid(),0,graph,history,NULL);hid:=(r#>>'{data,historyId}')::bigint;
+ PERFORM assert_eq(r->>'status','applied','publish persists coherent graph and history');
+ PERFORM assert_eq((SELECT count(*) FROM public.activity_history WHERE occasion_id=o AND history_type='AUTOSAVE'),0::bigint,'publish owns draft cleanup');
+ PERFORM assert_eq((SELECT start_time FROM public.activity_assignments WHERE id=assignment),'2026-10-25T01:30:00Z'::timestamptz,'UTC/DST instant independent of session zone');
+ r:=public.get_activity_editor_session_v1(o);
+ PERFORM assert_eq((r->>'liveVersion')::int,1,'session live clock');
+ PERFORM assert_eq((r->>'latestPublishId')::bigint,hid,'session history head');
+ PERFORM assert_eq(public.publish_activities_client_sync_v1(o,gen_random_uuid(),1,graph,history,hid)->>'status','unchanged','live graph and history no-op');
+ PERFORM assert_eq(public.publish_activities_client_sync_v1(o,gen_random_uuid(),0,graph,history,NULL)->>'status','conflict','stale live base');
+ r:=public.publish_activities_client_sync_v1(o,gen_random_uuid(),1,graph,jsonb_set(history,'{activities,0,title}','"Mismatch"'),hid);
+ PERFORM assert_eq(r->>'status','rejected','two graph representations must agree');
+ rejected:=false;
+ BEGIN PERFORM public.publish_activities_client_sync_v1(o,gen_random_uuid(),1,graph||graph,history,hid); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ PERFORM assert_true(rejected,'duplicate graph IDs reject entire command');
+ r:=public.save_activity_draft_client_sync_v1(o,gen_random_uuid(),1,public.activity_graph_history_internal_v1('[]'),hid);did:=(r#>>'{data,draftId}')::bigint;
+ PERFORM assert_eq(r->>'status','applied','empty draft is valid');
+ PERFORM assert_eq(public.discard_activity_draft_client_sync_v1(o,gen_random_uuid(),NULL)->>'status','conflict','null discard expects no draft');
+ PERFORM assert_eq(public.discard_activity_draft_client_sync_v1(o,gen_random_uuid(),did)->>'status','applied','exact draft discarded');
+ -- Inject failure after graph replacement and before history persistence.
+ ALTER TABLE public.activity_history ADD CONSTRAINT canonical_publish_failure CHECK(note IS DISTINCT FROM 'Published via application') NOT VALID;
+ c:=gen_random_uuid();rejected:=false;
+ BEGIN PERFORM public.publish_activities_client_sync_v1(o,c,1,'[]',public.activity_graph_history_internal_v1('[]'),hid); EXCEPTION WHEN check_violation THEN rejected:=true; END;
+ PERFORM assert_true(rejected,'history failure observed');
+ PERFORM assert_eq((SELECT count(*) FROM public.activity_assignments WHERE id=assignment),1::bigint,'graph rollback after history failure');
+ PERFORM assert_eq((SELECT count(*) FROM public.client_mutation_receipts WHERE command_id=c),0::bigint,'receipt rollback with graph');
+ ALTER TABLE public.activity_history DROP CONSTRAINT canonical_publish_failure;
+ r:=public.publish_activities_client_sync_v1(o,gen_random_uuid(),1,'[]',public.activity_graph_history_internal_v1('[]'),hid);
+ PERFORM assert_eq(r->>'status','applied','empty publish deletes live graph');
+ PERFORM assert_eq((SELECT count(*) FROM public.activities WHERE occasion=o),0::bigint,'empty graph persisted');
+ UPDATE public.activity_history SET created_at=now()-interval '31 days' WHERE id=hid;
+ PERFORM public.retain_activity_history_internal_v1(o);
+ PERFORM assert_eq((SELECT count(*) FROM public.activity_history WHERE id=hid),1::bigint,'published ancestor remains protected');
+ PERFORM assert_true(NOT has_function_privilege('authenticated','public.replace_activities_graph_internal_v1(bigint,jsonb)','EXECUTE'),'graph helper ungranted');
+ PERFORM assert_true(NOT has_function_privilege('anon','public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint)','EXECUTE'),'draft anonymous execute denied');
+END $$;
+
+DO $$ DECLARE o bigint; denied boolean; history jsonb; graph jsonb; x uuid:=gen_random_uuid(); a uuid:=gen_random_uuid(); BEGIN
+ SELECT id INTO o FROM public.occasions ORDER BY id LIMIT 1;
+ PERFORM assert_eq(public.activity_time_internal_v1('2026-10-25T02:30:00',o,false),'2026-10-25T01:30:00.000000Z','legacy ambiguous DST wall time follows occasion timezone');
+ PERFORM assert_eq(public.activity_time_internal_v1('2026-03-29T02:30:00',o,false),'2026-03-29T01:30:00.000000Z','legacy DST gap normalization matches Dart');
+ history:=jsonb_build_object('activities',jsonb_build_array(jsonb_build_object('id',a,'title','Task','is_hidden',false,'order',1)), 'activity_assignments','[]'::jsonb,'assignmentPlaceLinks',jsonb_build_array(jsonb_build_object('assignment_id',x,'place_id',1)));
+ denied:=false;BEGIN PERFORM public.activity_history_graph_internal_v1(o,history);EXCEPTION WHEN invalid_parameter_value THEN denied:=true;END;
+ PERFORM assert_true(denied,'orphan history link rejected rather than skipped');
+ history:=jsonb_build_object('activities',jsonb_build_array(jsonb_build_object('id',a,'title','Task','is_hidden',false,'order',1,'activity_assignments',jsonb_build_array(jsonb_build_object('id',x)))),'activity_assignments','[]'::jsonb);
+ denied:=false;BEGIN PERFORM public.activity_history_graph_internal_v1(o,history);EXCEPTION WHEN invalid_parameter_value THEN denied:=true;END;
+ PERFORM assert_true(denied,'inconsistent nested legacy graph rejected');
+END $$;

@@ -23,6 +23,13 @@ void main() {
               'views': 0,
             },
           },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },
@@ -67,6 +74,13 @@ void main() {
               'created_at': '2026-08-03T10:00:00Z'
             }
           },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1));
@@ -103,6 +117,13 @@ void main() {
             'created_at': '2026-08-03T10:00:00Z'
           }
         },
+        'mutation': {
+          'commandId': '00000000-0000-4000-8000-000000000001',
+          'receiptId': '00000000-0000-4000-8000-000000000001',
+          'commitId': null,
+          'replayed': false,
+          'occurredAt': '2026-10-07T10:00:00Z'
+        },
         'sync': {'replacements': <Object>[]}
       };
     }, maxAttempts: 1));
@@ -137,6 +158,13 @@ void main() {
               'views': 0,
             },
             'notificationQueued': true,
+          },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };

@@ -2,6 +2,7 @@ import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_response.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 
 enum ProfileCommandStatus { applied, unchanged, rejected, conflict }
 
@@ -32,11 +33,14 @@ abstract interface class ProfileCommands {
 
 class SupabaseProfileCommands implements ProfileCommands {
   SupabaseProfileCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client),
+        _actorId = (() => client.auth.currentUser?.id);
 
-  SupabaseProfileCommands.withTransport(this._transport);
+  SupabaseProfileCommands.withTransport(this._transport)
+      : _actorId = (() => null);
 
   final ClientCommandTransport _transport;
+  final String? Function() _actorId;
 
   @override
   Future<void> ensureMembership(int occasionId, String userId) async {
@@ -115,9 +119,17 @@ class SupabaseProfileCommands implements ProfileCommands {
 
   Future<ProfileCommandResult> _invoke(
       String name, Map<String, dynamic> parameters) async {
-    final response =
-        ClientCommandResponse.from(await _transport.invoke(name, parameters));
-    await response.applyReplacements();
+    final actor = _actorId();
+    final token = ClientSyncRuntime.mutationContextToken;
+    final scoped = name == 'import_profiles_client_sync_v1' ||
+        name == 'delete_occasion_user_client_sync_v1';
+    final response = ClientCommandResponse.from(await (scoped
+        ? _transport.invokeIntent(
+            '$actor:${parameters['p_occasion']}:$name', name, parameters)
+        : _transport.invoke(name, parameters)));
+    if (actor == _actorId()) {
+      await response.applyConfirmedReplacements(expectedContextToken: token);
+    }
     return ProfileCommandResult(
       status: ProfileCommandStatus.values.byName(response.status),
       version: (response.data['version'] as num?)?.toInt() ?? 0,

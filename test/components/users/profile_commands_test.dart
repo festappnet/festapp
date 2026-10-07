@@ -16,6 +16,13 @@ void main() {
             'status': 'applied',
             'code': 200,
             'data': {'version': 6, 'profile': <String, dynamic>{}},
+            'mutation': {
+              'commandId': params['p_command_id'],
+              'receiptId': params['p_command_id'],
+              'commitId': null,
+              'replayed': false,
+              'occurredAt': '2026-10-07T10:00:00Z'
+            },
             'sync': {'replacements': <Object>[]},
           };
         },
@@ -51,6 +58,13 @@ void main() {
               'version': 1,
               'userId': '00000000-0000-0000-0000-000000000002',
             },
+            'mutation': {
+              'commandId': params['p_command_id'],
+              'receiptId': params['p_command_id'],
+              'commitId': null,
+              'replayed': false,
+              'occurredAt': '2026-10-07T10:00:00Z'
+            },
             'sync': {'replacements': <Object>[]},
           };
         },
@@ -78,6 +92,13 @@ void main() {
             'status': 'applied',
             'code': 200,
             'data': {'version': 8, 'profile': null},
+            'mutation': {
+              'commandId': params['p_command_id'],
+              'receiptId': params['p_command_id'],
+              'commitId': null,
+              'replayed': false,
+              'occurredAt': '2026-10-07T10:00:00Z'
+            },
             'sync': {'replacements': <Object>[]},
           };
         },
@@ -104,6 +125,13 @@ void main() {
             'status': 'applied',
             'code': 200,
             'data': {'created': 1, 'updated': 0, 'deleted': 0},
+            'mutation': {
+              'commandId': params['p_command_id'],
+              'receiptId': params['p_command_id'],
+              'commitId': null,
+              'replayed': false,
+              'occurredAt': '2026-10-07T10:00:00Z'
+            },
             'sync': {'replacements': <Object>[]},
           };
         },
@@ -134,6 +162,13 @@ void main() {
             'code': 200,
             'data': {'inserted': <Object>[]},
           },
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -153,6 +188,13 @@ void main() {
           'status': 'applied',
           'code': 200,
           'data': {'userId': '00000000-0000-0000-0000-000000000001'},
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),

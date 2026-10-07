@@ -23,6 +23,13 @@ void main() {
               'aggregate_version': 3,
             },
           },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -50,6 +57,13 @@ void main() {
           'status': 'applied',
           'code': 200,
           'data': {'userId': '00000000-0000-0000-0000-000000000001'},
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),

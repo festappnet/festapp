@@ -1,0 +1,2980 @@
+{
+  "capturedAt": "2026-10-07T11:16:58.107Z",
+  "scope": "canonical-group-activities",
+  "target": {
+    "tenantId": "csmostrava2026",
+    "organization": 12,
+    "occasionLink": "csmostrava2026",
+    "generation": 1,
+    "canonicalOrigin": "https://api.festapp.net",
+    "profileSha256": "026308e2c10ea6e8e8b74bae5b54d4f831be7aa84235ce32dba74e7607965ccd"
+  },
+  "configurationRef": "f4a58fccf06d039e93f0ddd27398a72615c2ca46",
+  "readOnly": true,
+  "inventory": [
+    {
+      "result": {
+        "acl": [
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=rDxt/postgres",
+              "authenticated=rDxt/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "activities"
+          },
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=rDxt/postgres",
+              "authenticated=rDxt/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "activity_assignment_events"
+          },
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=rDxt/postgres",
+              "authenticated=rDxt/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "activity_assignment_places"
+          },
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=rDxt/postgres",
+              "authenticated=rDxt/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "activity_assignments"
+          },
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=arwdDxtm/postgres",
+              "authenticated=arwdDxtm/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "activity_history"
+          },
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=rDxt/postgres",
+              "authenticated=rDxt/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "places"
+          },
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=rDxt/postgres",
+              "authenticated=rDxt/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "user_group_info"
+          },
+          {
+            "acl": [
+              "postgres=arwdDxtm/postgres",
+              "anon=rDxt/postgres",
+              "authenticated=rDxt/postgres",
+              "service_role=arwdDxtm/postgres"
+            ],
+            "columns": [],
+            "relation": "user_groups"
+          }
+        ],
+        "database": "festapp_rehearsal_20260909220601",
+        "registry": [
+          {
+            "component": "private_profile",
+            "disposition": "migrate",
+            "test_factory": "companion_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "create_companion_in_organization occasion facade"
+            ],
+            "scope_resolver": "owner and companion occasion membership",
+            "source_relation": "user_companions",
+            "tracked_columns": [
+              "occasion",
+              "user",
+              "companion",
+              "origin",
+              "created_by"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "create_companion_client_sync_v1",
+              "delete_owned_companion_client_sync_v1",
+              "assign_existing_companion_client_sync_v1",
+              "unassign_existing_companion_client_sync_v1"
+            ]
+          },
+          {
+            "component": "live_public",
+            "disposition": "migrate",
+            "test_factory": "event_user_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "sign_user_to_event",
+              "sign_user_out_of_event"
+            ],
+            "scope_resolver": "event -> events.occasion",
+            "source_relation": "event_users",
+            "tracked_columns": [
+              "event",
+              "user"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "set_event_attendance_client_sync_v1",
+              "delete_occasion_user_client_sync_v1",
+              "import_profiles_client_sync_v1",
+              "delete_owned_companion_client_sync_v1"
+            ]
+          },
+          {
+            "component": "live_public",
+            "disposition": "migrate",
+            "test_factory": "saved_event_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "synchronize_my_schedule"
+            ],
+            "scope_resolver": "event -> events.occasion",
+            "source_relation": "event_users_saved",
+            "tracked_columns": [
+              "event",
+              "user"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "set_saved_program_client_sync_v1",
+              "delete_occasion_user_client_sync_v1",
+              "import_profiles_client_sync_v1",
+              "delete_owned_companion_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_profile",
+            "disposition": "migrate",
+            "test_factory": "user_info_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_user",
+              "imports"
+            ],
+            "scope_resolver": "organization/user",
+            "source_relation": "user_info",
+            "tracked_columns": [
+              "name",
+              "surname",
+              "sex",
+              "phone",
+              "birth_date",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_profile_client_sync_v1",
+              "create_occasion_user_client_sync_v1",
+              "import_profiles_client_sync_v1",
+              "create_companion_client_sync_v1",
+              "delete_owned_companion_client_sync_v1"
+            ]
+          },
+          {
+            "component": "occasion_config",
+            "disposition": "migrate",
+            "test_factory": "occasion_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "occasion/service/game/external-sync facades"
+            ],
+            "scope_resolver": "occasion.id",
+            "source_relation": "occasions",
+            "tracked_columns": [
+              "data",
+              "features",
+              "is_hidden",
+              "is_open",
+              "start_time",
+              "end_time",
+              "title",
+              "services"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "create_occasion_client_sync_v1",
+              "save_occasion_client_sync_v1",
+              "create_service_item_client_sync_v1",
+              "update_service_item_client_sync_v1",
+              "delete_service_item_client_sync_v1",
+              "game_update_settings_client_sync_v1",
+              "sync_source_via_http_client_sync_v1"
+            ]
+          },
+          {
+            "component": "occasion_config",
+            "disposition": "migrate",
+            "test_factory": "occasion_image_factory",
+            "cutover_ready": true,
+            "legacy_writers": [],
+            "scope_resolver": "images.occasion",
+            "source_relation": "images",
+            "tracked_columns": [
+              "id",
+              "link",
+              "occasion"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "add_image_record",
+              "remove_image_records"
+            ]
+          },
+          {
+            "component": "unit_catalog",
+            "disposition": "migrate",
+            "test_factory": "unit_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_unit"
+            ],
+            "scope_resolver": "unit fan-out to visible occasion scopes",
+            "source_relation": "units",
+            "tracked_columns": [
+              "title",
+              "data",
+              "features"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_unit_client_sync_v1"
+            ]
+          },
+          {
+            "component": "unit_catalog",
+            "disposition": "migrate",
+            "test_factory": "unit_occasion_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_occasion_203",
+              "duplicate_occasion",
+              "delete_occasion",
+              "sync_source_via_http"
+            ],
+            "scope_resolver": "occasion.unit fan-out to visible occasion scopes",
+            "source_relation": "occasions",
+            "tracked_columns": [
+              "unit",
+              "title",
+              "link",
+              "start_time",
+              "end_time",
+              "description",
+              "is_open",
+              "is_promoted",
+              "is_hidden"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "create_occasion_client_sync_v1",
+              "save_occasion_client_sync_v1",
+              "duplicate_occasion_client_sync_v1",
+              "delete_occasion_client_sync_v1",
+              "sync_source_via_http_client_sync_v1"
+            ]
+          },
+          {
+            "component": "program_catalog",
+            "disposition": "migrate",
+            "test_factory": "event_relation_factory",
+            "cutover_ready": true,
+            "legacy_writers": [],
+            "scope_resolver": "event_parent -> events.occasion",
+            "source_relation": "event_groups",
+            "tracked_columns": [
+              "event_parent",
+              "event_child"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_event_client_sync_v1"
+            ]
+          },
+          {
+            "component": "program_catalog",
+            "disposition": "migrate",
+            "test_factory": "event_relation_factory",
+            "cutover_ready": true,
+            "legacy_writers": [],
+            "scope_resolver": "event -> events.occasion",
+            "source_relation": "event_roles",
+            "tracked_columns": [
+              "event",
+              "role"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_event_client_sync_v1"
+            ]
+          },
+          {
+            "component": "map_catalog",
+            "disposition": "migrate",
+            "test_factory": "place_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbPlaces direct DML",
+              "save_place_location"
+            ],
+            "scope_resolver": "places.occasion",
+            "source_relation": "places",
+            "tracked_columns": [
+              "title",
+              "description",
+              "type",
+              "coordinates",
+              "is_hidden",
+              "order",
+              "icon"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_place_client_sync_v1",
+              "delete_place_client_sync_v1",
+              "save_user_group_client_sync_v1",
+              "delete_user_group_client_sync_v1"
+            ]
+          },
+          {
+            "component": "map_catalog",
+            "disposition": "migrate",
+            "test_factory": "place_type_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbPlaceTypes direct DML"
+            ],
+            "scope_resolver": "place_types.occasion",
+            "source_relation": "place_types",
+            "tracked_columns": [
+              "code",
+              "title",
+              "icon",
+              "order",
+              "is_hidden",
+              "is_default"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_place_type_client_sync_v1",
+              "delete_place_type_client_sync_v1"
+            ]
+          },
+          {
+            "component": "map_catalog",
+            "disposition": "migrate",
+            "test_factory": "path_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbPlaces direct DML"
+            ],
+            "scope_resolver": "path_groups.occasion",
+            "source_relation": "path_groups",
+            "tracked_columns": [
+              "title",
+              "path_data",
+              "data",
+              "icon",
+              "is_hidden",
+              "order"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_path_client_sync_v1",
+              "delete_path_client_sync_v1"
+            ]
+          },
+          {
+            "component": "map_catalog",
+            "disposition": "migrate",
+            "test_factory": "icon_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "icon admin direct DML"
+            ],
+            "scope_resolver": "reverse icon dependency",
+            "source_relation": "icons",
+            "tracked_columns": [
+              "link",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_icon_client_sync_v1",
+              "delete_icon_client_sync_v1"
+            ]
+          },
+          {
+            "component": "content_catalog",
+            "disposition": "migrate",
+            "test_factory": "information_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbInformation direct DML"
+            ],
+            "scope_resolver": "information.occasion",
+            "source_relation": "information",
+            "tracked_columns": [
+              "title",
+              "description",
+              "is_hidden",
+              "order",
+              "type",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_information_client_sync_v1",
+              "delete_information_client_sync_v1"
+            ]
+          },
+          {
+            "component": "content_catalog",
+            "disposition": "migrate",
+            "test_factory": "news_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbNews direct DML"
+            ],
+            "scope_resolver": "news.occasion",
+            "source_relation": "news",
+            "tracked_columns": [
+              "message",
+              "updated_at"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_news_client_sync_v1",
+              "delete_news_client_sync_v1",
+              "publish_news_client_sync_v1"
+            ]
+          },
+          {
+            "component": "content_catalog",
+            "disposition": "migrate",
+            "test_factory": "speaker_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_speaker",
+              "delete_speaker"
+            ],
+            "scope_resolver": "speakers.occasion",
+            "source_relation": "speakers",
+            "tracked_columns": [
+              "title",
+              "subtitle",
+              "description",
+              "image",
+              "order",
+              "is_hidden",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_speaker_client_sync_v1",
+              "delete_speaker_client_sync_v1"
+            ]
+          },
+          {
+            "component": "content_catalog",
+            "disposition": "migrate",
+            "test_factory": "speaker_topic_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_speaker_topic",
+              "delete_speaker_topic"
+            ],
+            "scope_resolver": "speaker_topics.occasion",
+            "source_relation": "speaker_topics",
+            "tracked_columns": [
+              "title",
+              "order",
+              "is_hidden"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_speaker_topic_client_sync_v1",
+              "delete_speaker_topic_client_sync_v1"
+            ]
+          },
+          {
+            "component": "content_catalog",
+            "disposition": "migrate",
+            "test_factory": "speaker_topic_link_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_speaker"
+            ],
+            "scope_resolver": "speaker -> speakers.occasion",
+            "source_relation": "speaker_topic_links",
+            "tracked_columns": [
+              "speaker",
+              "topic"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_speaker_client_sync_v1"
+            ]
+          },
+          {
+            "component": "live_public",
+            "disposition": "migrate",
+            "test_factory": "cleaning_report_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "cleaning RPCs"
+            ],
+            "scope_resolver": "cleaning_reports.occasion",
+            "source_relation": "cleaning_reports",
+            "tracked_columns": [
+              "place",
+              "problem_type",
+              "resolved_at"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "report_cleaning_issue_client_sync_v1",
+              "resolve_cleaning_place_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_profile",
+            "disposition": "migrate",
+            "test_factory": "user_group_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbGroups direct DML",
+              "group imports",
+              "game_guess"
+            ],
+            "scope_resolver": "user_group_info.occasion/members",
+            "source_relation": "user_group_info",
+            "tracked_columns": [
+              "title",
+              "description",
+              "type",
+              "place",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_user_group_client_sync_v1",
+              "delete_user_group_client_sync_v1",
+              "replace_group_assignments_client_sync_v1",
+              "import_profiles_client_sync_v1",
+              "game_guess_client_sync_v1"
+            ]
+          },
+          {
+            "component": "content_catalog",
+            "disposition": "migrate",
+            "test_factory": "event_speaker_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "set_event_speakers"
+            ],
+            "scope_resolver": "event -> events.occasion",
+            "source_relation": "event_speakers",
+            "tracked_columns": [
+              "event",
+              "speaker"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_event_speakers_client_sync_v1",
+              "create_counseling_slots_client_sync_v1",
+              "delete_empty_counseling_slots_client_sync_v1",
+              "delete_counseling_slot_client_sync_v1"
+            ]
+          },
+          {
+            "component": "program_catalog",
+            "disposition": "migrate",
+            "test_factory": "event_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbEvents direct DML",
+              "delete_event"
+            ],
+            "scope_resolver": "events.occasion",
+            "source_relation": "events",
+            "tracked_columns": [
+              "title",
+              "start_time",
+              "end_time",
+              "max_participants",
+              "description",
+              "place",
+              "is_hidden",
+              "type",
+              "data",
+              "order"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_event_client_sync_v1",
+              "delete_event_client_sync_v1",
+              "create_counseling_slots_client_sync_v1",
+              "delete_empty_counseling_slots_client_sync_v1",
+              "delete_counseling_slot_client_sync_v1"
+            ]
+          },
+          {
+            "component": "program_catalog",
+            "disposition": "migrate",
+            "test_factory": "event_speaker_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "set_event_speakers"
+            ],
+            "scope_resolver": "event -> events.occasion",
+            "source_relation": "event_speakers",
+            "tracked_columns": [
+              "event",
+              "speaker"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_event_speakers_client_sync_v1",
+              "create_counseling_slots_client_sync_v1",
+              "delete_empty_counseling_slots_client_sync_v1",
+              "delete_counseling_slot_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_profile",
+            "disposition": "migrate",
+            "test_factory": "user_group_membership_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "DbGroups direct DML",
+              "group imports"
+            ],
+            "scope_resolver": "group -> occasion/members",
+            "source_relation": "user_groups",
+            "tracked_columns": [
+              "user",
+              "group",
+              "is_admin"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_user_group_client_sync_v1",
+              "delete_user_group_client_sync_v1",
+              "replace_group_assignments_client_sync_v1",
+              "import_profiles_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_news",
+            "disposition": "migrate",
+            "test_factory": "user_news_factory",
+            "cutover_ready": true,
+            "legacy_writers": [],
+            "scope_resolver": "user_news.occasion/user",
+            "source_relation": "user_news",
+            "tracked_columns": [
+              "news",
+              "user"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "mark_news_read_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_activity",
+            "disposition": "migrate",
+            "test_factory": "activity_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_activities"
+            ],
+            "scope_resolver": "activities.occasion",
+            "source_relation": "activities",
+            "tracked_columns": [
+              "title",
+              "description",
+              "data",
+              "type",
+              "is_hidden",
+              "order"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "publish_activities_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_activity",
+            "disposition": "migrate",
+            "test_factory": "activity_assignment_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_activities"
+            ],
+            "scope_resolver": "activity -> activities.occasion",
+            "source_relation": "activity_assignments",
+            "tracked_columns": [
+              "activity_id",
+              "user",
+              "start_time",
+              "end_time",
+              "title",
+              "description",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "publish_activities_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_activity",
+            "disposition": "migrate",
+            "test_factory": "activity_assignment_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_activities"
+            ],
+            "scope_resolver": "assignment -> activity -> occasion",
+            "source_relation": "activity_assignment_places",
+            "tracked_columns": [
+              "assignment_id",
+              "place_id"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "publish_activities_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_activity",
+            "disposition": "migrate",
+            "test_factory": "activity_assignment_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_activities"
+            ],
+            "scope_resolver": "assignment -> activity -> occasion",
+            "source_relation": "activity_assignment_events",
+            "tracked_columns": [
+              "assignment_id",
+              "event_id"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "publish_activities_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "inventory_pool_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_inventory_pool_bundle",
+              "delete_inventory_pool"
+            ],
+            "scope_resolver": "inventory_pools.occasion",
+            "source_relation": "inventory_pools",
+            "tracked_columns": [
+              "title",
+              "sellable_capacity",
+              "description",
+              "type",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_inventory_pool_client_sync_v1",
+              "delete_inventory_pool_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "inventory_pool_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_inventory_pool_bundle"
+            ],
+            "scope_resolver": "context -> pool -> occasion",
+            "source_relation": "inventory_contexts",
+            "tracked_columns": [
+              "inventory_pool",
+              "block_date",
+              "title",
+              "order",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_inventory_pool_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "resource_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_resource",
+              "delete_resource"
+            ],
+            "scope_resolver": "resources.occasion",
+            "source_relation": "resources",
+            "tracked_columns": [
+              "inventory_pool",
+              "title",
+              "capacity",
+              "booking_rules",
+              "place",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_resource_client_sync_v1",
+              "delete_resource_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "resource_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "update_resource",
+              "delete_resource"
+            ],
+            "scope_resolver": "resource -> occasion",
+            "source_relation": "resource_slots",
+            "tracked_columns": [
+              "resource",
+              "title",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_resource_client_sync_v1",
+              "delete_resource_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "spot_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "select_spot ephemeral reservation columns only",
+              "commerce facades"
+            ],
+            "scope_resolver": "spots.occasion/order owner",
+            "source_relation": "eshop.spots",
+            "tracked_columns": [
+              "inventory_context",
+              "resource",
+              "resource_slot",
+              "order_product_ticket",
+              "state"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "update_spot_assignments_client_sync_v1",
+              "swap_spot_tickets_client_sync_v1",
+              "update_ticket_products_client_sync_v1",
+              "confirm_blueprint_order_change_client_sync_v1",
+              "replace_blueprint_order_client_sync_v1",
+              "create_ticket_order_client_sync_v1",
+              "update_blueprint_client_sync_v1",
+              "delete_order_client_sync_v1",
+              "storno_tickets_client_sync_v1",
+              "storno_order_client_sync_v1",
+              "save_inventory_pool_client_sync_v1",
+              "save_resource_client_sync_v1",
+              "update_product_inventory_contexts_client_sync_v1",
+              "delete_occasion_client_sync_v1",
+              "duplicate_occasion_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "product_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "occasion, product and form facades"
+            ],
+            "scope_resolver": "products.occasion",
+            "source_relation": "eshop.products",
+            "tracked_columns": [
+              "title",
+              "description",
+              "data",
+              "product_type",
+              "is_hidden",
+              "order"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "create_occasion_client_sync_v1",
+              "save_occasion_client_sync_v1",
+              "update_product_client_sync_v1",
+              "delete_product_client_sync_v1",
+              "update_form_client_sync_v1",
+              "create_form_client_sync_v1",
+              "duplicate_form_to_occasion_client_sync_v1",
+              "apply_planned_changes_client_sync_v1",
+              "delete_occasion_client_sync_v1",
+              "duplicate_occasion_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "product_context_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "product facades"
+            ],
+            "scope_resolver": "context -> pool -> occasion",
+            "source_relation": "eshop.product_inventory_contexts",
+            "tracked_columns": [
+              "product",
+              "inventory_context",
+              "quantity"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "update_product_inventory_contexts_client_sync_v1",
+              "update_product_client_sync_v1",
+              "delete_product_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_inventory",
+            "disposition": "migrate",
+            "test_factory": "ticket_product_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "commerce facades"
+            ],
+            "scope_resolver": "ticket -> occasion user",
+            "source_relation": "eshop.order_product_ticket",
+            "tracked_columns": [
+              "ticket",
+              "product"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "update_ticket_products_client_sync_v1",
+              "create_ticket_order_client_sync_v1",
+              "replace_blueprint_order_client_sync_v1",
+              "swap_spot_tickets_client_sync_v1",
+              "delete_order_client_sync_v1",
+              "storno_tickets_client_sync_v1",
+              "storno_order_client_sync_v1",
+              "delete_occasion_client_sync_v1"
+            ]
+          },
+          {
+            "component": "live_public",
+            "disposition": "migrate",
+            "test_factory": "user_news_factory",
+            "cutover_ready": true,
+            "legacy_writers": [],
+            "scope_resolver": "user_news.occasion",
+            "source_relation": "user_news",
+            "tracked_columns": [
+              "news_id",
+              "user",
+              "occasion"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "mark_news_read_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_feedback",
+            "disposition": "migrate",
+            "test_factory": "event_feedback_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "submit_event_feedback",
+              "delete_event_feedback"
+            ],
+            "scope_resolver": "event_feedback.occasion/user or anonymous client",
+            "source_relation": "event_feedback",
+            "tracked_columns": [
+              "event",
+              "user",
+              "client_id",
+              "rating",
+              "note",
+              "data"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "submit_event_feedback_client_sync_v1",
+              "delete_event_feedback_client_sync_v1",
+              "delete_event_feedback_for_edit_client_sync_v1"
+            ]
+          },
+          {
+            "component": "private_profile",
+            "disposition": "migrate",
+            "test_factory": "occasion_user_factory",
+            "cutover_ready": true,
+            "legacy_writers": [
+              "add_user_to_occasion facade",
+              "delete_unit_user facade",
+              "delete_user companion-only facade",
+              "commerce facades"
+            ],
+            "scope_resolver": "occasion_users.occasion/user",
+            "source_relation": "occasion_users",
+            "tracked_columns": [
+              "data",
+              "is_approved",
+              "is_approver",
+              "is_cleaning_blocked",
+              "is_editor",
+              "is_editor_order",
+              "is_editor_order_view",
+              "is_editor_view",
+              "is_manager",
+              "is_receptionist",
+              "role",
+              "services",
+              "ticket"
+            ],
+            "registry_version": 1,
+            "canonical_writers": [
+              "save_profile_client_sync_v1",
+              "create_occasion_user_client_sync_v1",
+              "delete_occasion_user_client_sync_v1",
+              "import_profiles_client_sync_v1",
+              "import_users_from_tickets_client_sync_v1",
+              "set_cleaning_notifications_muted_client_sync_v1",
+              "set_cleaning_reporter_blocked_client_sync_v1",
+              "create_companion_client_sync_v1",
+              "delete_owned_companion_client_sync_v1",
+              "delete_service_item_client_sync_v1",
+              "add_user_to_occasion_client_sync_v1",
+              "delete_unit_user_client_sync_v1",
+              "create_ticket_order_client_sync_v1",
+              "delete_order_client_sync_v1",
+              "storno_tickets_client_sync_v1",
+              "storno_order_client_sync_v1",
+              "record_account_deletion_sync_v1",
+              "delete_occasion_client_sync_v1",
+              "save_occasion_user_for_edit"
+            ]
+          }
+        ],
+        "functions": [
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "51551fede89ca2b267c009181c0ebbbf384ff62ea130673bc9d55fced60cefd0",
+            "signature": "cancel_reception_registration_v1(bigint,uuid)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "5254e58f5effe6c114494cf57d333c553cc51a8dc5789a0e8c8b4bf268f70b49",
+            "signature": "complete_profile_inventory_membership_mutation_v1(uuid,bigint,text,jsonb,uuid[],jsonb,text)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "1798be4a4f2ea8c24d6a0721a3e51b3c772eef17ab3859de76c5d9111e4f8340",
+            "signature": "create_reception_user_v1(bigint,uuid,jsonb,bigint,text,boolean)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "fa9e6bd6f4761af37063f654255ce69958d5c13b8d2145cb200215933dca235c",
+            "signature": "delete_autosave_history(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "107448094897206073ae22990ef8bc887d5cea5aab7896b3fd0808a277dce9aa",
+            "signature": "delete_occasion_user_client_sync_v1(bigint,uuid,uuid,bigint)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "41c68499ea1cb58a7d3cf0338ea2a002145d57ddb03c777c6d1e2bd98eee9320",
+            "signature": "delete_occasion_user_ws(uuid,bigint)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "cceb13e7c6388f1aa78a79f0827a9303b4ea95936f2fe7703bc5795968cb36a1",
+            "signature": "delete_occasion_user(uuid,bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "9abad6707e2d88a90bd9e2b8e8e2137ea30d1addef40b605f5680f4fe7fb25c2",
+            "signature": "delete_owned_companion_internal_v1(bigint,uuid,uuid)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "1f463dadfef1feb55d0fcf03691f164091ff22476edf70569b403078670b5e31",
+            "signature": "delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "efdd8757e8b425e765996be78f35fa21f3e7b3846c700f9fb74300ffb531e2e6",
+            "signature": "game_guess_client_sync_v1(bigint,text,uuid)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "039f55d8eb1845bf8a681e9d50f6bc36d1f2c9be20208e7cd3edc6b4904fe418",
+            "signature": "game_guess(bigint,text)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "61dfd2ca9510813b3d51c7fc816a27589caf099f11350dacb3ea968cbb556863",
+            "signature": "get_activities_for_edit(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "5c5358aa845dd44f78f7f4b83d6c61ce099a83d35af02447856b288204cbf797",
+            "signature": "get_activity_history_version(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "1ecd1cd8c4cb31d21dc982a5b3673d4832c3b586cd82e1f20001d6dc19c8c81f",
+            "signature": "get_latest_autosave(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "89c22d5063d2902f8b3954a187bed9e3d17ada5c401a22218536673b02fde3ff",
+            "signature": "get_private_profile_payload_v1(bigint,uuid)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "b56e654590e29b32482c2a3f8b20499603511a680d52d6a49e17b1fc73d55f78",
+            "signature": "get_user_group_command_data_v1(bigint)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "6c1dde3b2caa609460ba191fdda26dcdea4d2b7949a0af18d0c7ec7a06f87016",
+            "signature": "get_user_group_info_with_users(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "81dff4e605e51943244b9f985939fd3f52d913bcb5c99811852c7938f94cacd8",
+            "signature": "import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "1847f3a8b40b8070ca462905540e2bfa14cce60dc66e2543df5972c6df4b8522",
+            "signature": "import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "3a038e957c18b9ef43991de770d816b46280d1fcb3a30da6fba8e1fcba123ec4",
+            "signature": "import_occasion_users_from_csv(bigint,jsonb,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "af3eeff41495f366440e79f5a222441a31ab0b04b5439ba343d2925d19e0b82e",
+            "signature": "import_profiles_client_sync_v1(bigint,uuid,jsonb,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "46ef4ced0625be7482d2e0e75e50c2520978513ac33758b85496d5fdc049267d",
+            "signature": "import_user_group_assignments_internal_v1(bigint,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "f8d53dd56b902e49b08f74ca0b52cf95e5868f28bcd0c65aabeceef9c1f22527",
+            "signature": "import_user_group_assignments(bigint,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "6b497c06d245fd960b3b82156a304aced904252f04e514de8bc147dee3a36ba9",
+            "signature": "import_users_from_tickets_client_sync_v1(bigint,uuid)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "8f6ede12279b59c9d35ef6151fcb521959a6e55907cf0111ff2cec48b415d7ff",
+            "signature": "import_users_from_tickets(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "9e0947f9b71b0f5cde4dc08990c487235f37f537f4cc1c09d03bf9fdda759b92",
+            "signature": "list_activity_history(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "2afb3f362f8bf9be361dc86cab477a0cbf84e9f796f5cdb46d5fdbc47e67645a",
+            "signature": "move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "0a0e00152b3d5413b6f28680046cba2f74b6b50b98eee74b565fc61684d9a811",
+            "signature": "mutate_map_entity_internal_v1(text,text,bigint,uuid,bigint,bigint,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "3d9ad758b1a1b295b5632b6be0d905f19485e7ca132e1869658a7e9a768db657",
+            "signature": "publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "dbd506aec60c02a86a94b2157753fcd4aafd8854e556126d2c2b34a27df6c8d9",
+            "signature": "record_account_deletion_sync_v1(uuid,bigint)",
+            "anonExecute": false,
+            "authenticatedExecute": false
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "e084a85c9dbbba2106f901583e9e5088c05340af70d50f57b93379f38ccfc161",
+            "signature": "replace_group_assignments_client_sync_v1(bigint,uuid,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "70f503de82a72408171e592bcf11bf4cec764be01d0fbfaf6d8ce2e08ad4da53",
+            "signature": "save_activity_history(bigint,jsonb,text,bigint,text)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "e9fbb060a06a354e99f9ba47ce53827d5e6d707882fc6b8fce8fed8046859ac3",
+            "signature": "save_place_location(bigint,double precision,double precision)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "postgres=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "ff5947d77d7f336b04e2313cb5eb629cfd819e7c41217a90a4cb0f4712e5d260",
+            "signature": "save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb)",
+            "anonExecute": false,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "eabb4ffbfeeda6cc6d851467b46cc57dcee3fb47f948cc1a5da20e2f70e51b58",
+            "signature": "update_activities(bigint,jsonb)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          },
+          {
+            "acl": [
+              "=X/postgres",
+              "postgres=X/postgres",
+              "anon=X/postgres",
+              "authenticated=X/postgres",
+              "service_role=X/postgres"
+            ],
+            "sha256": "577877fea87694148cd7a2f3f2551180c72dab22447742c2da165cbb85818797",
+            "signature": "update_activities(bigint)",
+            "anonExecute": true,
+            "authenticatedExecute": true
+          }
+        ],
+        "migrations": [
+          {
+            "name": "ticket_scan_feature",
+            "version": "20260107200000"
+          },
+          {
+            "name": "update_get_occasion_by_scan_code",
+            "version": "20260107200500"
+          },
+          {
+            "name": "fix_duplicate_tickets",
+            "version": "20260109220000"
+          },
+          {
+            "name": "add_bank_accounts_management",
+            "version": "20260113165000"
+          },
+          {
+            "name": "add_bank_account_currencies",
+            "version": "20260114000000"
+          },
+          {
+            "name": "add_last_fetch_time",
+            "version": "20260115120000"
+          },
+          {
+            "name": "add_updated_at_to_bank_accounts",
+            "version": "20260115140000"
+          },
+          {
+            "name": "automating_updated_at_trigger",
+            "version": "20260115143000"
+          },
+          {
+            "name": "fix_create_ticket_order_priority",
+            "version": "20260116120000"
+          },
+          {
+            "name": "native_sync_setup",
+            "version": "20260116135900"
+          },
+          {
+            "name": "remove_sync_duplicates",
+            "version": "20260116180000"
+          },
+          {
+            "name": "update_occasions_for_remote_id",
+            "version": "20260116190000"
+          },
+          {
+            "name": "refactor_token_expiry",
+            "version": "20260117000000"
+          },
+          {
+            "name": "update_create_ticket_order_data",
+            "version": "20260118194000"
+          },
+          {
+            "name": "fix_link_bank_account_signature",
+            "version": "20260119114500"
+          },
+          {
+            "name": "consolidated_fixes",
+            "version": "20260119160000"
+          },
+          {
+            "name": "get_my_admin_organization_id",
+            "version": "20260120000000"
+          },
+          {
+            "name": "consolidated_form_and_unit",
+            "version": "20260121205720"
+          },
+          {
+            "name": "manual_transactions_consolidated",
+            "version": "20260122160000"
+          },
+          {
+            "name": "fix_ambiguous_manual_transaction",
+            "version": "20260122170000"
+          },
+          {
+            "name": "security_mitigation_v1",
+            "version": "20260123213000"
+          },
+          {
+            "name": "consolidated_payment_fixes",
+            "version": "20260125180000"
+          },
+          {
+            "name": "consolidated_fixes",
+            "version": "20260125190000"
+          },
+          {
+            "name": "final_db_fixes",
+            "version": "20260126120000"
+          },
+          {
+            "name": "rename_transactions_log",
+            "version": "20260209125500"
+          },
+          {
+            "name": "document_eshop_rls_model",
+            "version": "20260216120000"
+          },
+          {
+            "name": "add_deposit_columns_to_payment_info",
+            "version": "20260216222700"
+          },
+          {
+            "name": "fix_all_security_lints",
+            "version": "20260218120000"
+          },
+          {
+            "name": "sync_via_http",
+            "version": "20260222120000"
+          },
+          {
+            "name": "fix_create_service_item_null_services",
+            "version": "20260709120000"
+          },
+          {
+            "name": "speakers_counseling",
+            "version": "20260709130000"
+          },
+          {
+            "name": "speakers_searchable",
+            "version": "20260710120000"
+          },
+          {
+            "name": "counseling_feature_split",
+            "version": "20260710140000"
+          },
+          {
+            "name": "counseling_topics_overview",
+            "version": "20260710160000"
+          },
+          {
+            "name": "drop_speaker_topic_code",
+            "version": "20260710160001"
+          },
+          {
+            "name": "search_snippet_plaintext",
+            "version": "20260710170000"
+          },
+          {
+            "name": "counseling_day_window",
+            "version": "20260710180000"
+          },
+          {
+            "name": "users_and_services_single_rpc",
+            "version": "20260801120000"
+          },
+          {
+            "name": "protect_shared_group_places",
+            "version": "20260801160000"
+          },
+          {
+            "name": "atomic_csv_user_import",
+            "version": "20260802150000"
+          },
+          {
+            "name": "remove_unsafe_occasion_user_merge_trigger",
+            "version": "20260802154500"
+          },
+          {
+            "name": "optimize_occasion_users_for_edit",
+            "version": "20260802223000"
+          },
+          {
+            "name": "streamline_occasion_users_editor_json",
+            "version": "20260802230500"
+          },
+          {
+            "name": "client_sync_v1_expansion",
+            "version": "20260802234000"
+          },
+          {
+            "name": "canonical_profile_overlay_for_occasion_users",
+            "version": "20260802234500"
+          },
+          {
+            "name": "canonical_user_profile_cutover",
+            "version": "20260802235930"
+          },
+          {
+            "name": "csm_account_deletion",
+            "version": "20260803120000"
+          },
+          {
+            "name": "fix_get_app_config_v219_search_path",
+            "version": "20260803130000"
+          },
+          {
+            "name": "filter_public_publisher_claims",
+            "version": "20260803133000"
+          },
+          {
+            "name": "unique_publisher_claims",
+            "version": "20260803134500"
+          },
+          {
+            "name": "scoped_publisher_claims",
+            "version": "20260803140000"
+          },
+          {
+            "name": "enable_privileged_dml_audit",
+            "version": "20260803143000"
+          },
+          {
+            "name": "fix_saved_program_aliases",
+            "version": "20260803150000"
+          },
+          {
+            "name": "restore_audit_permission_search_paths",
+            "version": "20260803151500"
+          },
+          {
+            "name": "restore_event_relations_and_news_views",
+            "version": "20260803153000"
+          },
+          {
+            "name": "expand_client_commit_page_limit",
+            "version": "20260803154500"
+          },
+          {
+            "name": "restore_event_datagrid_versions",
+            "version": "20260803160000"
+          },
+          {
+            "name": "fix_event_command_reference_aliases",
+            "version": "20260803161500"
+          },
+          {
+            "name": "harden_client_commit_audit",
+            "version": "20260803163000"
+          },
+          {
+            "name": "fix_speaker_topic_reference_aliases",
+            "version": "20260803164500"
+          },
+          {
+            "name": "gate_news_push_on_publication",
+            "version": "20260804120000"
+          },
+          {
+            "name": "fix_event_speaker_reference_aliases",
+            "version": "20260805120000"
+          },
+          {
+            "name": "harden_saved_program_mutations",
+            "version": "20260805143000"
+          },
+          {
+            "name": "companion_capabilities_admin_assignment",
+            "version": "20260805180000"
+          },
+          {
+            "name": "fix_occasion_save_search_path",
+            "version": "20260805220000"
+          },
+          {
+            "name": "add_companion_accommodation_to_private_profile",
+            "version": "20260805230000"
+          },
+          {
+            "name": "user_email_delivery",
+            "version": "20260805233000"
+          },
+          {
+            "name": "restore_internal_function_search_paths",
+            "version": "20260805235000"
+          },
+          {
+            "name": "eur_payment_pairing_foundation",
+            "version": "20260806001000"
+          },
+          {
+            "name": "activate_eur_creditor_references",
+            "version": "20260806002000"
+          },
+          {
+            "name": "client_sync_production_hardening",
+            "version": "20260806100000"
+          },
+          {
+            "name": "csm_app_links_email",
+            "version": "20260806110000"
+          },
+          {
+            "name": "harden_app_links_delivery",
+            "version": "20260806111000"
+          },
+          {
+            "name": "reception_qr_login",
+            "version": "20260806120000"
+          },
+          {
+            "name": "reception_qr_revoke_contract",
+            "version": "20260806121000"
+          },
+          {
+            "name": "email_template_titles_contract",
+            "version": "20260806130000"
+          },
+          {
+            "name": "allow_editors_to_assign_companions",
+            "version": "20260806140000"
+          },
+          {
+            "name": "canonical_companion_editor_permission",
+            "version": "20260806141000"
+          },
+          {
+            "name": "manage_occasion_users_permission",
+            "version": "20260806142000"
+          },
+          {
+            "name": "account_deletion_completion_email",
+            "version": "20260806194000"
+          },
+          {
+            "name": "add_private_client_activity_overview",
+            "version": "20260807120000"
+          },
+          {
+            "name": "fix_client_activity_daily_contract",
+            "version": "20260807121000"
+          },
+          {
+            "name": "allow_admin_feedback_deletion",
+            "version": "20260807150000"
+          },
+          {
+            "name": "add_occasion_media_to_client_sync",
+            "version": "20260807153000"
+          },
+          {
+            "name": "harden_csv_import_validation",
+            "version": "20260807160000"
+          },
+          {
+            "name": "canonical_invitation_delivery_status",
+            "version": "20260808100000"
+          },
+          {
+            "name": "admin_reception_participant_qr",
+            "version": "20260808120000"
+          },
+          {
+            "name": "fix_cleaning_resolve_audit_operation",
+            "version": "20260808130000"
+          },
+          {
+            "name": "restore_enabled_client_sync_readiness",
+            "version": "20260808140000"
+          },
+          {
+            "name": "close_occasion_media_legacy_dml",
+            "version": "20260808141000"
+          },
+          {
+            "name": "allow_occasion_managers_reception_participants",
+            "version": "20260808210000"
+          },
+          {
+            "name": "cascade_cleaning_reports_on_place_delete",
+            "version": "20260809090000"
+          },
+          {
+            "name": "allow_unit_editor_occasion_save",
+            "version": "20260813160000"
+          },
+          {
+            "name": "allow_unit_editor_occasion_domain_save",
+            "version": "20260813163000"
+          },
+          {
+            "name": "use_internal_public_materializer_in_mutations",
+            "version": "20260813170000"
+          },
+          {
+            "name": "align_public_materializer_editor_roles",
+            "version": "20260813171500"
+          },
+          {
+            "name": "guard_single_counseling_slot_deletion",
+            "version": "20260814103000"
+          },
+          {
+            "name": "reconcile_reception_manual_login_code",
+            "version": "20260823120000"
+          },
+          {
+            "name": "harden_canonical_function_boundaries",
+            "version": "20260823130000"
+          },
+          {
+            "name": "authorize_image_deletion",
+            "version": "20260823190000"
+          },
+          {
+            "name": "harden_client_sync_rpc_search_paths",
+            "version": "20260827120000"
+          },
+          {
+            "name": "harden_password_reset_delivery",
+            "version": "20260828090000"
+          },
+          {
+            "name": "move_onesignal_credentials_server_side",
+            "version": "20260828110000"
+          },
+          {
+            "name": "harden_organization_admin_update_signature",
+            "version": "20260828113000"
+          },
+          {
+            "name": "restore_used_ticket_to_unused",
+            "version": "20260828120000"
+          },
+          {
+            "name": "repair_legacy_companion_reader",
+            "version": "20260829110000"
+          },
+          {
+            "name": "reconcile_invitation_delivery_status",
+            "version": "20260831220000"
+          },
+          {
+            "name": "authenticate_notification_webhook",
+            "version": "20260902190000"
+          },
+          {
+            "name": "authorize_scan_password_reset",
+            "version": "20260906120000"
+          },
+          {
+            "name": "restore_anonymous_scan_password_reset",
+            "version": "20260906130000"
+          },
+          {
+            "name": "reject_null_scan_password_reset_code",
+            "version": "20260906140000"
+          },
+          {
+            "name": "scope_admin_occasion_links_to_user_organization",
+            "version": "20260910080000"
+          },
+          {
+            "name": "scope_remaining_admin_occasion_reads",
+            "version": "20260910160000"
+          },
+          {
+            "name": "transfer_hvezdamorska_admin_identity",
+            "version": "20260910163000"
+          },
+          {
+            "name": "scope_get_occasion_for_edit_to_user_organization",
+            "version": "20260911010000"
+          },
+          {
+            "name": "scope_inventory_pool_occasion_link_to_user_organization",
+            "version": "20260911020000"
+          },
+          {
+            "name": "scope_report_occasion_link_to_user_organization",
+            "version": "20260911030000"
+          },
+          {
+            "name": "scope_email_template_occasion_link_to_user_organization",
+            "version": "20260911040000"
+          },
+          {
+            "name": "scope_admin_password_reset_to_membership",
+            "version": "20260923120000"
+          },
+          {
+            "name": "inherit_form_communication_tone",
+            "version": "20260924090000"
+          },
+          {
+            "name": "fallback_eur_payee_to_organization",
+            "version": "20260924120000"
+          },
+          {
+            "name": "fallback_eur_payee_in_order_emails",
+            "version": "20260924130000"
+          },
+          {
+            "name": "gate_fakturoid_order_completion",
+            "version": "20260924140000"
+          },
+          {
+            "name": "restore_inherited_form_tone",
+            "version": "20260925120000"
+          },
+          {
+            "name": "grant_occasion_copy_creator_editor",
+            "version": "20260925150000"
+          },
+          {
+            "name": "grant_occasion_copy_creator_management",
+            "version": "20260925163000"
+          },
+          {
+            "name": "restore_slunovrat_unit_management",
+            "version": "20260930140000"
+          },
+          {
+            "name": "ticket_layout_editor",
+            "version": "20261001120000"
+          },
+          {
+            "name": "google_auth_broker",
+            "version": "20261001150000"
+          },
+          {
+            "name": "allow_authorized_closed_form_blueprint_preview",
+            "version": "20261001180000"
+          },
+          {
+            "name": "ticket_sized_pdf_pages",
+            "version": "20261002001000"
+          },
+          {
+            "name": "occasion_default_form_link",
+            "version": "20261002010000"
+          },
+          {
+            "name": "ticket_template_paper_format",
+            "version": "20261002024000"
+          },
+          {
+            "name": "ticket_text_emphasis",
+            "version": "20261002073000"
+          },
+          {
+            "name": "ticket_qr_custom_colors",
+            "version": "20261002083000"
+          },
+          {
+            "name": "ticket_canonical_appearance",
+            "version": "20261002113000"
+          },
+          {
+            "name": "organization_google_login_setting",
+            "version": "20261002170000"
+          },
+          {
+            "name": "fio_fetch_status",
+            "version": "20261002180000"
+          },
+          {
+            "name": "ticket_preview_product_rpc",
+            "version": "20261002181000"
+          },
+          {
+            "name": "ticket_background_transform",
+            "version": "20261003120000"
+          },
+          {
+            "name": "ticket_fonts",
+            "version": "20261003130000"
+          },
+          {
+            "name": "fix_paid_order_deletion",
+            "version": "20261003140000"
+          },
+          {
+            "name": "ticket_font_upgrade_save",
+            "version": "20261003150000"
+          },
+          {
+            "name": "ticket_pdf_margins",
+            "version": "20261003154500"
+          },
+          {
+            "name": "ticket_background_crop",
+            "version": "20261003163000"
+          },
+          {
+            "name": "ticket_canvas_color",
+            "version": "20261003170000"
+          },
+          {
+            "name": "ticket_canvas_opacity",
+            "version": "20261003180000"
+          },
+          {
+            "name": "occasion_report_snapshot",
+            "version": "20261003190100"
+          },
+          {
+            "name": "canonical_email_delivery",
+            "version": "20261003200000"
+          },
+          {
+            "name": "occasion_report_daily_timeline",
+            "version": "20261003210000"
+          },
+          {
+            "name": "email_capacity_runtime_guards",
+            "version": "20261004020000"
+          },
+          {
+            "name": "email_idle_quota_refresh",
+            "version": "20261004021000"
+          },
+          {
+            "name": "order_email_history_scope",
+            "version": "20261004090000"
+          },
+          {
+            "name": "scope_orders_tab_email_delivery",
+            "version": "20261004100000"
+          },
+          {
+            "name": "cancel_deleted_order_email_intents",
+            "version": "20261004103000"
+          },
+          {
+            "name": "form_editor_safe_deletion",
+            "version": "20261004120000"
+          },
+          {
+            "name": "form_editor_read_usage_performance",
+            "version": "20261004133000"
+          },
+          {
+            "name": "product_price_scheduling",
+            "version": "20261004150000"
+          },
+          {
+            "name": "product_price_waves",
+            "version": "20261004180000"
+          },
+          {
+            "name": "bank_sync_canonical_ingress",
+            "version": "20261004193000"
+          },
+          {
+            "name": "bank_account_management_admin_reference",
+            "version": "20261004194000"
+          },
+          {
+            "name": "bank_sync_error_status",
+            "version": "20261004200000"
+          },
+          {
+            "name": "bank_sync_account_details",
+            "version": "20261004201000"
+          },
+          {
+            "name": "bank_sync_fetchable_aliases",
+            "version": "20261004202000"
+          },
+          {
+            "name": "bank_sync_full_cutover_prepare",
+            "version": "20261004203000"
+          },
+          {
+            "name": "retire_legacy_bank_ingress",
+            "version": "20261004204000"
+          },
+          {
+            "name": "bank_sync_historical_bank_dates",
+            "version": "20261004205000"
+          },
+          {
+            "name": "email_permissions_and_templates",
+            "version": "20261006090000"
+          },
+          {
+            "name": "email_extensions_schema_owner",
+            "version": "20261006100000"
+          },
+          {
+            "name": "ticket_cancellation_email_outcomes",
+            "version": "20261006110000"
+          },
+          {
+            "name": "order_ticket_change_summary",
+            "version": "20261006120000"
+          },
+          {
+            "name": "order_symbol_expand",
+            "version": "20261006130000"
+          },
+          {
+            "name": "order_symbol_contract",
+            "version": "20261006131000"
+          },
+          {
+            "name": "order_symbol_email_defaults",
+            "version": "20261006132000"
+          },
+          {
+            "name": "order_sequence_expand",
+            "version": "20261006140000"
+          },
+          {
+            "name": "order_sequence_contract",
+            "version": "20261006141000"
+          },
+          {
+            "name": "delete_order_email_records",
+            "version": "20261006170000"
+          },
+          {
+            "name": "blueprint_order_sequence_projection",
+            "version": "20261006183000"
+          },
+          {
+            "name": "report_valid_counts",
+            "version": "20261006201500"
+          },
+          {
+            "name": "ticketing_email_template_visibility",
+            "version": "20261006204500"
+          }
+        ],
+        "effectiveDml": [
+          {
+            "role": "anon",
+            "relation": "user_group_info",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "anon",
+            "relation": "user_groups",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "anon",
+            "relation": "activities",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "anon",
+            "relation": "activity_assignments",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "anon",
+            "relation": "activity_assignment_places",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "anon",
+            "relation": "activity_assignment_events",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "anon",
+            "relation": "activity_history",
+            "tableDelete": true,
+            "tableInsert": true,
+            "tableUpdate": true,
+            "columnInsert": true,
+            "columnUpdate": true,
+            "tableTruncate": true
+          },
+          {
+            "role": "anon",
+            "relation": "places",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "user_group_info",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "user_groups",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "activities",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "activity_assignments",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "activity_assignment_places",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "activity_assignment_events",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "activity_history",
+            "tableDelete": true,
+            "tableInsert": true,
+            "tableUpdate": true,
+            "columnInsert": true,
+            "columnUpdate": true,
+            "tableTruncate": true
+          },
+          {
+            "role": "authenticated",
+            "relation": "places",
+            "tableDelete": false,
+            "tableInsert": false,
+            "tableUpdate": false,
+            "columnInsert": false,
+            "columnUpdate": false,
+            "tableTruncate": true
+          }
+        ],
+        "roleMemberships": [
+          {
+            "oid": "10226",
+            "member": "3373",
+            "roleid": "3374",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "10227",
+            "member": "3373",
+            "roleid": "3375",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "10228",
+            "member": "3373",
+            "roleid": "3377",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "16391",
+            "member": "16390",
+            "roleid": "6181",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "16393",
+            "member": "16392",
+            "roleid": "6181",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "16447",
+            "member": "16446",
+            "roleid": "16443",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": false
+          },
+          {
+            "oid": "16448",
+            "member": "16446",
+            "roleid": "16444",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": false
+          },
+          {
+            "oid": "16449",
+            "member": "16446",
+            "roleid": "16445",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": false
+          },
+          {
+            "oid": "16585",
+            "member": "16384",
+            "roleid": "16584",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "16708",
+            "member": "16506",
+            "roleid": "16446",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": false
+          },
+          {
+            "oid": "16698",
+            "member": "16384",
+            "roleid": "16443",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16699",
+            "member": "16384",
+            "roleid": "16444",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16700",
+            "member": "16384",
+            "roleid": "16445",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16726",
+            "member": "16384",
+            "roleid": "16446",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16704",
+            "member": "16384",
+            "roleid": "3373",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16722",
+            "member": "16384",
+            "roleid": "6181",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16723",
+            "member": "16384",
+            "roleid": "4200",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16727",
+            "member": "16390",
+            "roleid": "3373",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "16728",
+            "member": "16392",
+            "roleid": "3373",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "16725",
+            "member": "16384",
+            "roleid": "6304",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": true,
+            "inherit_option": true
+          },
+          {
+            "oid": "16730",
+            "member": "16384",
+            "roleid": "16729",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "16731",
+            "member": "16390",
+            "roleid": "16729",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "17528",
+            "member": "16384",
+            "roleid": "17526",
+            "grantor": "10",
+            "set_option": true,
+            "admin_option": false,
+            "inherit_option": true
+          },
+          {
+            "oid": "56584",
+            "member": "16384",
+            "roleid": "56583",
+            "grantor": "10",
+            "set_option": false,
+            "admin_option": true,
+            "inherit_option": false
+          },
+          {
+            "oid": "159210",
+            "member": "16384",
+            "roleid": "159209",
+            "grantor": "10",
+            "set_option": false,
+            "admin_option": true,
+            "inherit_option": false
+          },
+          {
+            "oid": "179045",
+            "member": "16384",
+            "roleid": "179044",
+            "grantor": "10",
+            "set_option": false,
+            "admin_option": true,
+            "inherit_option": false
+          }
+        ],
+        "enabledOccasions": [
+          {
+            "id": 1072524,
+            "link": "biscup2025",
+            "organization": 5
+          },
+          {
+            "id": 877055,
+            "link": "r48vetrkovice2026",
+            "organization": 3
+          },
+          {
+            "id": 1072529,
+            "link": "posezeni2026",
+            "organization": 11
+          },
+          {
+            "id": 1072505,
+            "link": "csa2024",
+            "organization": 4
+          },
+          {
+            "id": 1072553,
+            "link": "reholni2026",
+            "organization": 7
+          },
+          {
+            "id": 1072551,
+            "link": "csmostrava2026",
+            "organization": 12
+          },
+          {
+            "id": 1072526,
+            "link": "fotofest2025",
+            "organization": 6
+          },
+          {
+            "id": 1072558,
+            "link": "2025-copy-98cf835a",
+            "organization": 19
+          },
+          {
+            "id": 1072521,
+            "link": "jm2025",
+            "organization": 9
+          },
+          {
+            "id": 1072509,
+            "link": "av2025",
+            "organization": 8
+          },
+          {
+            "id": 59,
+            "link": "festapp2025",
+            "organization": 1
+          }
+        ],
+        "internalFacadeCallers": [
+          {
+            "sha256": "f4702dc6e656fbb3afb2fc8905b579ea8182213ca2d243083a0a931bdcbda5fa",
+            "signature": "delete_occasion_user_ws(uuid,bigint)"
+          },
+          {
+            "sha256": "7d3cd044d13d1b602bda1f87bc357ce485891c475c04717bf8efd5e6081448d5",
+            "signature": "import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb)"
+          },
+          {
+            "sha256": "ea3863d70cbdfa1b2cb9535cb6b426f084533ffb8be5d57a5fe3d17aec2b02d8",
+            "signature": "import_users_from_tickets(bigint)"
+          },
+          {
+            "sha256": "62dd5be4246eaf034eaede6000db5923cff9e978626ad06e563f4840e14b2e9f",
+            "signature": "publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint)"
+          },
+          {
+            "sha256": "f03248f571991c85b8575a5fca7656c29ded25390e35d156817f41a3c0165b35",
+            "signature": "cancel_reception_registration_v1(bigint,uuid)"
+          }
+        ]
+      }
+    }
+  ],
+  "externalInventory": [
+    {
+      "result": {
+        "cronAvailable": false,
+        "placeForeignKeys": [
+          {
+            "name": "activity_assignment_places_place_fkey",
+            "relation": "activity_assignment_places",
+            "definition": "FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE CASCADE"
+          },
+          {
+            "name": "activity_place_place_fkey",
+            "relation": "activity_places",
+            "definition": "FOREIGN KEY (place_id) REFERENCES places(id)"
+          },
+          {
+            "name": "cleaning_public_state_place_fkey",
+            "relation": "cleaning_public_state",
+            "definition": "FOREIGN KEY (place) REFERENCES places(id) ON DELETE CASCADE"
+          },
+          {
+            "name": "events_place_fkey",
+            "relation": "events",
+            "definition": "FOREIGN KEY (place) REFERENCES places(id)"
+          },
+          {
+            "name": "resources_place_fkey",
+            "relation": "resources",
+            "definition": "FOREIGN KEY (place) REFERENCES places(id)"
+          },
+          {
+            "name": "user_group_info_place_fkey",
+            "relation": "user_group_info",
+            "definition": "FOREIGN KEY (place) REFERENCES places(id)"
+          },
+          {
+            "name": "cleaning_reports_place_fkey",
+            "relation": "cleaning_reports",
+            "definition": "FOREIGN KEY (place) REFERENCES places(id) ON DELETE CASCADE"
+          }
+        ],
+        "writerCandidates": [
+          {
+            "signature": "cleanup_account_deletion_domain(uuid)",
+            "anonExecute": false,
+            "definitionSha256": "c93d768893d8cb718e50958242f9a29c4ab83177623149840b42d35f2f499fc4",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "create_counseling_slots_internal_v1(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer)",
+            "anonExecute": false,
+            "definitionSha256": "88f6b618e87a6697d05425ab2922e82811947bd5c039cc99a0cf2da50e91243f",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "create_reception_user_v1(bigint,uuid,jsonb,bigint,text,boolean)",
+            "anonExecute": true,
+            "definitionSha256": "1798be4a4f2ea8c24d6a0721a3e51b3c772eef17ab3859de76c5d9111e4f8340",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "delete_autosave_history(bigint)",
+            "anonExecute": true,
+            "definitionSha256": "fa9e6bd6f4761af37063f654255ce69958d5c13b8d2145cb200215933dca235c",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "delete_icon_client_sync_v1(bigint,bigint,uuid)",
+            "anonExecute": false,
+            "definitionSha256": "0e474d0a721f68286412d5880db485aa95fd4d98e82c4ab08d1b76643d0b2121",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "delete_icon(bigint)",
+            "anonExecute": true,
+            "definitionSha256": "fdd2b5c24290b0eb10237ed49805414db12866385c00337d3debddcc1118609d",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "delete_occasion_internal_v1(bigint)",
+            "anonExecute": false,
+            "definitionSha256": "62155677a7ebbb70944280cb601f2a85d56a238a3ad864c58a7e7a5ebb4c553c",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "delete_occasion_user_companion_internal_v1(bigint,uuid,uuid,bigint)",
+            "anonExecute": false,
+            "definitionSha256": "c5090b096d2a89efba22b95ff4241a3260a42b75c2abcfbfaa65c2c7368ed141",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "delete_occasion_user(uuid,bigint)",
+            "anonExecute": true,
+            "definitionSha256": "cceb13e7c6388f1aa78a79f0827a9303b4ea95936f2fe7703bc5795968cb36a1",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "delete_owned_companion_internal_v1(bigint,uuid,uuid)",
+            "anonExecute": false,
+            "definitionSha256": "9abad6707e2d88a90bd9e2b8e8e2137ea30d1addef40b605f5680f4fe7fb25c2",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint)",
+            "anonExecute": false,
+            "definitionSha256": "1f463dadfef1feb55d0fcf03691f164091ff22476edf70569b403078670b5e31",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "duplicate_occasion_internal_v1(bigint)",
+            "anonExecute": false,
+            "definitionSha256": "e5e8b8abd5586ba3dfeef650b66e8941674f729b3593958ada07c2257d18c2e4",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "finish_client_mutation_v1(uuid,jsonb,uuid)",
+            "anonExecute": false,
+            "definitionSha256": "21b4ded33e26c861d35556225401e016e76266ebcb93cf32320ecd8d5c3bed00",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "game_guess_client_sync_v1(bigint,text,uuid)",
+            "anonExecute": false,
+            "definitionSha256": "efdd8757e8b425e765996be78f35fa21f3e7b3846c700f9fb74300ffb531e2e6",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "game_guess_internal_v1(bigint,text)",
+            "anonExecute": false,
+            "definitionSha256": "28c967098a2b441f6347c209b3dbacf3a6bd9436a06125fdc8d0139026ad6065",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb)",
+            "anonExecute": false,
+            "definitionSha256": "81dff4e605e51943244b9f985939fd3f52d913bcb5c99811852c7938f94cacd8",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb)",
+            "anonExecute": false,
+            "definitionSha256": "15a80d632f7dd5055e230f3489729ba1a381068afb9dc57be9425d8918593f16",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "import_user_group_assignments_internal_v1(bigint,jsonb)",
+            "anonExecute": false,
+            "definitionSha256": "46ef4ced0625be7482d2e0e75e50c2520978513ac33758b85496d5fdc049267d",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision)",
+            "anonExecute": false,
+            "definitionSha256": "2afb3f362f8bf9be361dc86cab477a0cbf84e9f796f5cdb46d5fdbc47e67645a",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "mutate_map_entity_internal_v1(text,text,bigint,uuid,bigint,bigint,jsonb)",
+            "anonExecute": false,
+            "definitionSha256": "0a0e00152b3d5413b6f28680046cba2f74b6b50b98eee74b565fc61684d9a811",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint)",
+            "anonExecute": false,
+            "definitionSha256": "3d9ad758b1a1b295b5632b6be0d905f19485e7ca132e1869658a7e9a768db657",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "record_account_deletion_sync_v1(uuid,bigint)",
+            "anonExecute": false,
+            "definitionSha256": "dbd506aec60c02a86a94b2157753fcd4aafd8854e556126d2c2b34a27df6c8d9",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "refresh_cleaning_public_state_v1(bigint)",
+            "anonExecute": false,
+            "definitionSha256": "176b307eb97daf8eec526b06a3185bc61cc281014a665633283b5a1a2cacf6ed",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "replace_group_assignments_companion_internal_v1(bigint,uuid,jsonb)",
+            "anonExecute": false,
+            "definitionSha256": "f5f6407e17638d9bab7a0ab372595ea520082fb6a9d7dd6ceb7bbb30696f6a47",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "report_cleaning_issue_client_sync_v1(bigint,text,text,uuid)",
+            "anonExecute": false,
+            "definitionSha256": "1da525355438a2c918aafb4662446399d0285bea15b13c38c2ccaddff22e56c7",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "report_cleaning_issue(bigint,text,text)",
+            "anonExecute": true,
+            "definitionSha256": "a24c2765019cd6536ce7f47f35f0781a8bcb92b25d0d4e70c8dab2be16a03aa4",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "resolve_cleaning_place_client_sync_v1(bigint,uuid)",
+            "anonExecute": false,
+            "definitionSha256": "0f4aab5ff427ac61ce71aacad2fad1f4dbbed0f7c2dd1db630f5a6b946f4034c",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "resolve_cleaning_place_internal_v1(bigint)",
+            "anonExecute": false,
+            "definitionSha256": "0944b9193b53fb07c1ffec74ab257a523c5103d3b444a4623a71305c8dca90a1",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "save_activity_history(bigint,jsonb,text,bigint,text)",
+            "anonExecute": true,
+            "definitionSha256": "70f503de82a72408171e592bcf11bf4cec764be01d0fbfaf6d8ce2e08ad4da53",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "save_event_domain_command_internal_v1(bigint,uuid,bigint,jsonb)",
+            "anonExecute": false,
+            "definitionSha256": "34646fa6f323d79dafe603618e36778445ca3204e0faa77fbd0a9f3eddc89a18",
+            "authenticatedExecute": false
+          },
+          {
+            "signature": "save_place_location(bigint,double precision,double precision)",
+            "anonExecute": true,
+            "definitionSha256": "e9fbb060a06a354e99f9ba47ce53827d5e6d707882fc6b8fce8fed8046859ac3",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb)",
+            "anonExecute": false,
+            "definitionSha256": "ff5947d77d7f336b04e2313cb5eb629cfd819e7c41217a90a4cb0f4712e5d260",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "setup_triggers(text)",
+            "anonExecute": true,
+            "definitionSha256": "c312e330c29f0bcd76e0ae56e708829a3c7baff24cc924a766af32eeaca0b8e7",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "shift_occasion_schedule_backward(bigint,integer)",
+            "anonExecute": true,
+            "definitionSha256": "2aa9531cb2ddce3212617e565edc51052ee4f786cb16ae6cfa8b0eedd4db3f22",
+            "authenticatedExecute": true
+          },
+          {
+            "signature": "update_activities(bigint,jsonb)",
+            "anonExecute": true,
+            "definitionSha256": "eabb4ffbfeeda6cc6d851467b46cc57dcee3fb47f948cc1a5da20e2f70e51b58",
+            "authenticatedExecute": true
+          }
+        ],
+        "customPlaceOwnership": {
+          "multiplyOwnedPlaceCount": 19
+        }
+      }
+    }
+  ],
+  "status": "Read-only inventory captured; G2 drift review and G3 consumer/usage closure pending"
+}

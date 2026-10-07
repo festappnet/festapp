@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
@@ -88,7 +89,7 @@ class UserGroupInfoModel extends ITrinaRowModel {
           : json[participantsColumn] != null
               ? Set<GroupParticipantModel>.from(json[participantsColumn]
                   .map((p) => GroupParticipantModel.fromJson(p)))
-              : {},
+              : null,
       isAdmin: json[isAdminColumn],
       aggregateVersion: TrinaRowVersion.read(json),
     );
@@ -160,6 +161,52 @@ class UserGroupInfoModel extends ITrinaRowModel {
       parts.add(members.map((p) => p.userInfo!.toFullNameString()).join(', '));
     }
     return parts.join(' | ');
+  }
+
+  /// Adopt a confirmed write's identity without replacing newer editor fields.
+  void acceptSavedIdentity(
+      UserGroupInfoModel saved, PlaceModel? submittedPlace) {
+    id = saved.id;
+    aggregateVersion = saved.aggregateVersion;
+    persistedPlaceId = saved.placeId ?? saved.place?.id;
+    persistedPlaceWasPrivate = saved.place?.isPrivateGroupLocation ?? false;
+    if (identical(place, submittedPlace) &&
+        submittedPlace?.isPrivateGroupLocation == true &&
+        saved.place?.isPrivateGroupLocation == true &&
+        (submittedPlace!.id == null || submittedPlace.id == saved.place!.id)) {
+      submittedPlace.id = saved.place!.id;
+      submittedPlace.aggregateVersion = saved.place!.aggregateVersion;
+    }
+    placeId = place?.id;
+  }
+
+  String editorIntentFingerprint() {
+    final fields = toJson()
+      ..remove('id')
+      ..remove(aggregateVersionColumn);
+    if (place != null) fields.remove('place');
+    final placeFields = fields[PlaceModel.placeObjectColumn];
+    if (placeFields is Map) {
+      placeFields.remove('id');
+      placeFields.remove(PlaceModel.aggregateVersionColumn);
+    }
+    return ClientCommandIdentity.fingerprint(fields);
+  }
+
+  void acceptSaved(UserGroupInfoModel saved) {
+    id = saved.id;
+    title = saved.title;
+    description = saved.description;
+    type = saved.type;
+    data = saved.data;
+    place = saved.place;
+    placeId = saved.placeId ?? saved.place?.id;
+    participants = saved.participants;
+    isAdmin = saved.isAdmin;
+    aggregateVersion = saved.aggregateVersion;
+    persistedPlaceId = placeId;
+    persistedPlaceWasPrivate = place?.isPrivateGroupLocation ?? false;
+    shouldSavePlace = false;
   }
 
   void setPlaceForEditing(PlaceModel? value, {bool savePlace = false}) {

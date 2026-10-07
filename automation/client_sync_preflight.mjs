@@ -4,10 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import {
-  managementQuery,
-  parseKeyValueFile,
-} from './lib/supabase_management.mjs';
+
+
+import {loadCanonicalTarget, canonicalQuery} from './lib/canonical_sql_target.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, '..');
@@ -47,7 +46,7 @@ const requiredSources = [
   'database/tables/event_feedback.sql',
   'database/tests/event_feedback_gate_test.sql',
   'database/tests/event_feedback_contract_test.sql',
-  'database/recovery/README.md',
+  'database/operations/README.md',
   'docs/architecture/database.md',
   'docs/plans/offline-sync-revision-cache-plan-2026-08-02.md',
   'docs/plans/offline-sync-revision-cache-EXECUTION-PROMPT-2026-08-02.md',
@@ -252,30 +251,12 @@ function runLocalChecks() {
 }
 
 async function runRemoteChecks() {
-  const projectConfig = parseKeyValueFile(
-    path.join(projectRoot, 'automation/project.conf'),
-  );
-  const localEnvironment = parseKeyValueFile(
-    path.join(projectRoot, '.env.local'),
-  );
-  const supabaseUrl = projectConfig.get('SUPABASE_URL');
-  const projectRef = supabaseUrl?.match(/^https:\/\/([^.]+)\.supabase\.co$/)?.[1];
-  const accessToken =
-    process.env.SUPABASE_ACCESS_TOKEN ||
-    localEnvironment.get('SUPABASE_ACCESS_TOKEN');
-
-  if (!projectRef) {
-    throw new Error('SUPABASE_URL in automation/project.conf is invalid');
-  }
-  if (!accessToken) {
-    throw new Error('SUPABASE_ACCESS_TOKEN is required for --remote');
-  }
+  const target = loadCanonicalTarget(projectRoot);
 
   const functionNames = [...feedbackFunctions.keys()];
   const quotedNames = functionNames.map((name) => `'${name}'`).join(',');
-  const definitions = await managementQuery({
-    projectRef,
-    accessToken,
+  const definitions = await canonicalQuery({
+    target,
     query: `
       SELECT
         p.proname,
@@ -353,9 +334,8 @@ async function runRemoteChecks() {
     functionDrift.push({ functionName, reason: 'unexpected_overload' });
   }
 
-  const tableRows = await managementQuery({
-    projectRef,
-    accessToken,
+  const tableRows = await canonicalQuery({
+    target,
     query: `
       SELECT jsonb_build_object(
         'columns', (
@@ -509,9 +489,8 @@ async function runRemoteChecks() {
     tableDrift.push('grants');
   }
 
-  const auditRows = await managementQuery({
-    projectRef,
-    accessToken,
+  const auditRows = await canonicalQuery({
+    target,
     query: `
       SELECT
         current_setting('log_statement', true) AS log_statement,
@@ -532,9 +511,11 @@ async function runRemoteChecks() {
     typeof audit?.pgaudit_log === 'string' &&
     audit.pgaudit_log !== 'none';
 
+  const mutationRows = await canonicalQuery({target, query: fs.readFileSync(path.join(projectRoot,'database/operations/canonical_mutation_inventory.sql'),'utf8')});
   return {
+    mutationInventory: mutationRows[0]?.result ?? null,
     ok: functionDrift.length === 0 && tableDrift.length === 0,
-    projectRef,
+    tenantId: target.tenantId,
     feedbackFunctionsFound: remoteByName.size,
     functionDrift,
     tableDrift,
