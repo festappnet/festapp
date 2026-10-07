@@ -498,6 +498,13 @@ export class TicketFieldBuilder {
                      existingBtn.type = 'button';
                      existingBtn.className = 'btn btn-primary btn-blueprint-select w-100 d-block';
                      existingBtn.textContent = FormStrings.seatSelection || "Select Seats";
+                     const seatIcon = document.createElement('i');
+                     seatIcon.className = 'material-icons';
+                     seatIcon.setAttribute('aria-hidden', 'true');
+                     seatIcon.textContent = 'event_seat';
+                     seatIcon.style.verticalAlign = 'middle';
+                     seatIcon.style.marginInlineEnd = '8px';
+                     existingBtn.prepend(seatIcon);
                      container.appendChild(existingBtn);
                 }
 

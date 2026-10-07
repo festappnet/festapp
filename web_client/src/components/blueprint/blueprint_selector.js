@@ -48,6 +48,7 @@ export class BlueprintSelector {
         // --- Back/Continue Button ---
         const confirmBtn = document.createElement('button');
         confirmBtn.className = 'btn btn-primary btn-submit blueprint-btn-confirm'; 
+        confirmBtn.type = 'button';
         confirmBtn.textContent = FormStrings.buttonContinue; 
         
         // --- Content Area ---

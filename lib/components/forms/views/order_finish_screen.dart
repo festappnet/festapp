@@ -12,6 +12,7 @@ class FinishOrderScreen extends StatefulWidget {
   final VoidCallback? onOrderConfirmed;
   final String? tone;
   final bool hasTickets;
+  final String? occasionTitle;
   final Future<String?> Function(String)? deliveryStatusReader;
 
   const FinishOrderScreen({
@@ -21,6 +22,7 @@ class FinishOrderScreen extends StatefulWidget {
     this.onOrderConfirmed,
     this.tone,
     this.hasTickets = true,
+    this.occasionTitle,
     this.deliveryStatusReader,
   });
 
@@ -311,6 +313,9 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
         child: PaymentQrCard(
           payload: payload,
           format: pq['format']?.toString() ?? '',
+          occasionTitle: widget.occasionTitle,
+          orderSymbol: (data['ticketOrder'] as Map?)?['order']?['order_symbol']
+              ?.toString(),
           bankAccount: pq['account_number_human_readable']?.toString(),
           iban: pq['account_number']?.toString(),
           paymentReference: pq['reference']?.toString(),
