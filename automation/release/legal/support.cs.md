@@ -1,7 +1,7 @@
-# Podpora – Festapp
+# Podpora – BISCUP
 
 Technické potíže popište na `info@festapp.net`. Uveďte platformu, model zařízení, verzi systému, verzi aplikace a stručný postup, po kterém problém nastal. Neposílejte heslo, přihlašovací kód, celý QR kód vstupenky ani jednorázový odkaz ke smazání účtu.
 
-Dotazy k programu, objednávce, platbě, vstupence nebo pravidlům konkrétní akce vyřizuje její pořadatel; kontakt je uveden u akce nebo objednávky.
+Dotazy k programu, registraci, ubytování, objednávce, platbě, vstupence nebo pravidlům BISCUPu vyřizuje Ostravsko-opavská diecéze na `dcm@doo.cz`.
 
-Zásady ochrany osobních údajů jsou na <https://vstupenky.online/privacy/>, volby a smazání účtu na <https://vstupenky.online/privacy/choices/> a podmínky používání na <https://vstupenky.online/terms/>.
+Zásady ochrany osobních údajů jsou na <https://biscup.festapp.net/privacy/>, volby a smazání účtu na <https://biscup.festapp.net/privacy/choices/> a podmínky používání na <https://biscup.festapp.net/terms/>.
