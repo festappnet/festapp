@@ -246,8 +246,6 @@ body.blueprint-active #floating-price-widget {
     background: transparent;
     color: inherit;
     cursor: pointer;
-    outline: none;
-    -webkit-tap-highlight-color: transparent;
     transition: background-color .15s;
 }
 
@@ -261,18 +259,16 @@ body.blueprint-active #floating-price-widget {
     stroke-linejoin: round;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .blueprint-zoom-button:hover:not(:disabled) {
-        background: var(--background-color, #ebf1f6);
-        background: color-mix(in srgb, currentColor 12%, transparent);
-    }
+.blueprint-zoom-button:hover:not(:disabled) {
+    background: var(--background-color, #ebf1f6);
+    background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .blueprint-zoom-button:active:not(:disabled) {
     background: color-mix(in srgb, currentColor 20%, transparent);
 }
 
-.blueprint-zoom-button:focus-visible:not(:disabled) {
+.blueprint-zoom-button:focus-visible {
     outline: 3px solid var(--primary-color, #2563eb);
     outline-offset: -3px;
 }
