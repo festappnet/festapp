@@ -24,6 +24,9 @@ BEGIN
   -- Supabase postgres can configure log/log_statement/log_relation, but does
   -- not have SET privilege on log_parameter. Preserve the verified off value.
   EXECUTE format('ALTER ROLE %I IN DATABASE %I SET pgaudit.log_relation TO %L',setting,current_database(),'on');
+  -- The self-hosted image starts with log_min_messages=fatal. LOG is above
+  -- ERROR for server filtering: retain audit/LOG without enabling SQL errors.
+  EXECUTE format('ALTER ROLE %I IN DATABASE %I SET log_min_messages TO %L',setting,current_database(),'log');
  END LOOP;
 END $observation$;
 NOTIFY pgrst, 'reload config';

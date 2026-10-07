@@ -49,6 +49,11 @@ This additive change supplies measurement before a supported observation window:
    the same identity/organization/occasion checks. Confirm effective settings in
    a new authenticator connection; an existing PostgREST pool may retain its login
    settings. Reloading config alone does not prove pgAudit is active.
+   The self-hosted command-line default `log_min_messages=fatal` suppresses
+   both pgAudit and the request hook even when their settings are enabled.
+   The operation sets the database-specific authenticator/postgres threshold to
+   `log`. Confirm actual retained request/audit records; settings alone are not
+   proof of emission. No database restart or new role privilege is needed.
 4. Use the existing encrypted hourly runtime-log archive (70-minute overlap,
    30-day retention). Aggregate inside the protected host/archive pipeline; do
    not export raw gateway/Postgres logs. Record actual archive interval coverage,

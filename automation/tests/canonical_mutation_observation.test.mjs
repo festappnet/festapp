@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
+import {randomUUID} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
 import {MutationObservationSummary} from '../client-sync/summarize_mutation_observation.mjs';
 const requestId='12345678-1234-1234-1234-123456789abc';
 const actor='87654321-4321-4321-4321-cba987654321';
@@ -53,6 +55,7 @@ test('observation activates redacted logging without changing registry or effect
   const settings=(await client.query("SELECT c FROM pg_db_role_setting s CROSS JOIN LATERAL unnest(s.setconfig) c WHERE s.setrole='authenticator'::regrole AND s.setdatabase=(SELECT oid FROM pg_database WHERE datname=current_database())")).rows.map(r=>r.c);
   assert.ok(settings.includes('pgrst.db_pre_request=public.log_canonical_mutation_request_v1'));
   assert.ok(settings.includes('pgaudit.log_statement=off'));
+  assert.ok(settings.includes('log_min_messages=log'));
   assert.equal((await client.query("SELECT current_setting('pgaudit.log_parameter') value")).rows[0].value,'off');
   assert.deepEqual(await snapshot(),before);
  } finally {await client.query('ROLLBACK');await client.end();}
@@ -67,4 +70,18 @@ test('observation fails closed instead of replacing an existing request hook',{s
   const rows=(await client.query("SELECT c FROM pg_db_role_setting s CROSS JOIN LATERAL unnest(s.setconfig) c WHERE s.setrole='authenticator'::regrole AND s.setdatabase=(SELECT oid FROM pg_database WHERE datname=current_database()) AND c LIKE 'pgrst.db_pre_request=%'")).rows;
   assert.equal(rows[0].c,'pgrst.db_pre_request=public.existing_security_hook');
  } finally {await client.query('ROLLBACK');await client.end();}
+});
+test('fatal threshold suppresses LOG while the configured LOG threshold emits it',{skip:!process.env.DATABASE_URL},async()=>{
+ const guard=await disposable();await guard.query('ROLLBACK');await guard.end();
+ const container='supabase_db_festapp-canonical-mutation-pg15';
+ const since=new Date().toISOString(),nonce=randomUUID().replaceAll('-','');
+ const hidden=`FESTAPP_EMISSION_hidden_${nonce}`,visible=`FESTAPP_EMISSION_visible_${nonce}`;
+ const sql=`BEGIN; SET LOCAL log_min_messages='fatal'; DO $$BEGIN RAISE LOG '${hidden}'; END$$; SET LOCAL log_min_messages='log'; DO $$BEGIN RAISE LOG '${visible}'; END$$; ROLLBACK;`;
+ const query=spawnSync('docker',['exec','-i','-e','PGPASSWORD',container,'psql','-w','-X','-q','-U','supabase_admin','-d','postgres','-v','ON_ERROR_STOP=1'],{input:sql,encoding:'utf8',env:{...process.env,PGPASSWORD:'postgres'}});
+ assert.equal(query.status,0,'disposable threshold probe must complete');
+ const logs=spawnSync('docker',['logs','--since',since,container],{encoding:'utf8',maxBuffer:2*1024*1024});
+ assert.equal(logs.status,0,'disposable retained logs must be available');
+ const raw=logs.stdout+logs.stderr;
+ assert.ok(!new RegExp(`LOG:\\s+${hidden}`).test(raw),'FATAL suppresses the request/audit log level');
+ assert.ok(new RegExp(`LOG:\\s+${visible}`).test(raw),'LOG reaches the retained Docker/archive stream');
 });
