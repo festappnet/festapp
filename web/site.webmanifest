@@ -1,9 +1,9 @@
 {
-  "name": "Festapp",
-  "short_name": "Festapp",
-  "description": "Platforma pro správu akcí, programu a vstupenek.",
+  "name": "CSM Ostrava",
+  "short_name": "CSM 2026",
+  "description": "Oficiální průvodce Celostátním setkáním mládeže Ostrava 2026.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/csmostrava2026/event",
   "scope": "/",
   "orientation": "portrait-primary",
   "icons": [
