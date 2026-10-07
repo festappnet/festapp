@@ -1,7 +1,7 @@
-# Podpora – Festapp
+# Podpora – Absolventský Velehrad
 
-Technické potíže popište na `info@festapp.net`. Uveďte platformu, model zařízení, verzi systému, verzi aplikace a stručný postup, po kterém problém nastal. Neposílejte heslo, přihlašovací kód, celý QR kód vstupenky ani jednorázový odkaz ke smazání účtu.
+Technické potíže s mobilní nebo webovou aplikací popište na `info@festapp.net`. Uveďte platformu (iOS, Android nebo web), model zařízení, verzi systému, verzi aplikace a stručný postup, po kterém problém nastal. Neposílejte heslo, přihlašovací kód ani jednorázový odkaz ke smazání účtu.
 
-Dotazy k programu, objednávce, platbě, vstupence nebo pravidlům konkrétní akce vyřizuje její pořadatel; kontakt je uveden u akce nebo objednávky.
+Dotazy k akci, registraci nebo programu vyřizuje Absolventské křesťanské hnutí, z. s. na `info@absolventskyvelehrad.cz` nebo +420 605 871 039. Další informace jsou na <https://absolventskyvelehrad.cz/>.
 
-Zásady ochrany osobních údajů jsou na <https://vstupenky.online/privacy/>, volby a smazání účtu na <https://vstupenky.online/privacy/choices/> a podmínky používání na <https://vstupenky.online/terms/>.
+Zásady ochrany osobních údajů jsou na <https://app.absolventskyvelehrad.cz/privacy/>, volby a smazání účtu na <https://app.absolventskyvelehrad.cz/privacy/choices/> a podmínky používání aplikace na <https://app.absolventskyvelehrad.cz/terms/>.
