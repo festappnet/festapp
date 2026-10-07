@@ -1,3 +1,9 @@
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_strings.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -26,6 +32,49 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   List<OccasionModel> _allOccasions = [];
   List<OccasionModel> _filteredOccasions = [];
   bool _isLoading = true;
+  List<OccasionSetupDraft> _drafts = [];
+  String? _draftError;
+  bool get _canEditDrafts =>
+      AppConfig.occasionSetupEnabled &&
+      (widget.unit.unitUser?.isEditor == true ||
+          widget.unit.unitUser?.isManager == true ||
+          (RightsService.currentUnit()?.id == widget.unit.id &&
+              (RightsService.isUnitEditor() || RightsService.isUnitManager())));
+
+  List<OccasionSetupDraft> get _filteredDrafts {
+    final query =
+        Utilities.removeDiacritics(_searchController.text.toLowerCase());
+    return _drafts
+        .where((d) => Utilities.removeDiacritics(
+                (d.title.isEmpty ? OccasionSetupStrings.untitled : d.title)
+                    .toLowerCase())
+            .contains(query))
+        .toList();
+  }
+
+  Future<void> _loadDrafts() async {
+    if (!_canEditDrafts) return;
+    final unitId = widget.unit.id!;
+    try {
+      final drafts =
+          await OccasionSetupDrafts(Supabase.instance.client).list(unitId);
+      if (mounted && widget.unit.id == unitId && _canEditDrafts) {
+        setState(() {
+          _drafts = drafts;
+          _draftError = null;
+        });
+      }
+    } catch (_) {
+      if (mounted && widget.unit.id == unitId && _canEditDrafts) {
+        setState(() => _draftError = OccasionSetupStrings.saveFailed);
+      }
+    }
+  }
+
+  Future<void> _resumeDraft(OccasionSetupDraft draft) async {
+    await OccasionSetupPage.open(context, draft);
+    if (mounted) await _loadDrafts();
+  }
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -35,6 +84,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   void initState() {
     super.initState();
     _initializeOccasions();
+    _loadDrafts();
     _searchController.addListener(_filterOccasions);
     _searchFocusNode.addListener(_onSearchFocusChange);
   }
@@ -42,6 +92,12 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   @override
   void didUpdateWidget(covariant OccasionsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.unit.id != oldWidget.unit.id ||
+        widget.unit.unitUser != oldWidget.unit.unitUser) {
+      _drafts = [];
+      _draftError = null;
+      _loadDrafts();
+    }
     if (widget.initialOccasions != oldWidget.initialOccasions) {
       _initializeOccasions();
     }
@@ -115,6 +171,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     if (newOccasion != null && mounted) {
       await _loadOccasions();
     }
+    if (mounted) await _loadDrafts();
   }
 
   Future<void> _handleView(OccasionModel occasion) async {
@@ -128,6 +185,13 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
+    if (AppConfig.occasionSetupEnabled) {
+      await OccasionCreationHelper.createNewOccasion(
+          context, widget.unit, _allOccasions,
+          source: occasion);
+      if (mounted) await _loadDrafts();
+      return;
+    }
     final conf = await DialogHelper.showConfirmationDialog(
         context, UnitStrings.createCopy, UnitStrings.createCopyConfirm);
     if (conf == true && mounted) {
@@ -181,15 +245,42 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
-                onRefresh: _loadOccasions,
+                onRefresh: () async {
+                  await _loadOccasions();
+                  await _loadDrafts();
+                },
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
+                    if (_canEditDrafts && _draftError != null)
+                      SliverToBoxAdapter(
+                          child: TextButton(
+                              onPressed: _loadDrafts,
+                              child: Text(
+                                  '${_draftError!} - ${OccasionSetupStrings.retry}'))),
+                    if (_canEditDrafts && _drafts.isNotEmpty) ...[
+                      _buildSectionHeader(context, OccasionSetupStrings.drafts),
+                      SliverToBoxAdapter(
+                          child: Column(children: [
+                        for (final draft in _filteredDrafts)
+                          ListTile(
+                              leading: const Icon(Icons.edit_note),
+                              title: Text(draft.title.isEmpty
+                                  ? OccasionSetupStrings.untitled
+                                  : draft.title),
+                              subtitle: Text(
+                                  '${OccasionSetupStrings.drafts} · ${draft.progress} %'),
+                              trailing: TextButton(
+                                  onPressed: () => _resumeDraft(draft),
+                                  child: Text(OccasionSetupStrings.resume)),
+                              onTap: () => _resumeDraft(draft)),
+                      ])),
+                    ],
                     if (_filteredOccasions.isEmpty &&
+                        _filteredDrafts.isEmpty &&
                         _searchController.text.isNotEmpty)
                       SliverFillRemaining(
-                          child: Center(
-                              child: Text(UnitStrings.noEventsFound)))
+                          child: Center(child: Text(UnitStrings.noEventsFound)))
                     else ...[
                       if (presentEvents.isNotEmpty) ...[
                         _buildSectionHeader(

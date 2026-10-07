@@ -2442,5 +2442,22 @@
     "count": "Count",
     "applicationTimeline": "Application activity over time",
     "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time."
+  },
+  "OccasionSetup": {
+    "drafts": "Drafts",
+    "untitled": "New event",
+    "resume": "Continue",
+    "basics": "Basics",
+    "review": "Summary",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "saveFailed": "Could not save or load the draft.",
+    "conflict": "Another editor changed this draft. Your unsaved changes remain here.",
+    "retry": "Retry",
+    "reload": "Load newer draft",
+    "reloadConfirm": "Load the saved version and discard your unsaved changes?",
+    "leave": "Save and return to list",
+    "incomplete": "This draft stays private. Features, forms and seating plans will be added in the next steps.",
+    "deleteConfirm": "Delete this draft?"
   }
 }

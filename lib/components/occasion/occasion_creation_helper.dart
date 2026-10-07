@@ -1,3 +1,7 @@
+import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -14,7 +18,30 @@ import 'package:fstapp/widgets/time_data_range_picker.dart';
 
 class OccasionCreationHelper {
   static Future<OccasionModel?> createNewOccasion(BuildContext context,
-      UnitModel unit, List<OccasionModel> existingOccasions) async {
+      UnitModel unit, List<OccasionModel> existingOccasions,
+      {OccasionModel? source}) async {
+    if (AppConfig.occasionSetupEnabled) {
+      final store = OccasionSetupDrafts(Supabase.instance.client);
+      final draft =
+          await ExceptionHandler.guard(context, futureFunction: () async {
+        final created =
+            await store.create(unit.id!, OccasionSetupDrafts.newId());
+        return source == null
+            ? created
+            : await store.save(
+                created,
+                {
+                  ...created.data,
+                  'sourceId': source.id,
+                  'sourceSelectionPending': true
+                },
+                0);
+      });
+      if (draft != null && context.mounted) {
+        await OccasionSetupPage.open(context, draft);
+      }
+      return null;
+    }
     final formKey = GlobalKey<FormState>();
     String? title = AdministrationStrings.myFestival;
     String? link = "myfestival${DateTime.now().add(Duration(days: 33)).year}";
