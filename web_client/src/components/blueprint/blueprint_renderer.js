@@ -187,12 +187,17 @@ export class BlueprintRenderer {
             element.appendChild(svg);
             element.title = label;
             element.setAttribute('aria-label', label);
-            element.addEventListener('click', action);
+            element.addEventListener('click', event => {
+                action();
+                // Pointer activation should not leave a focus ring after release.
+                // Keyboard clicks have detail 0 and retain their visible focus.
+                if (event.detail > 0) element.blur();
+            });
             controls.appendChild(element);
             return element;
         };
-        this.zoomOutButton = button(BlueprintStrings.zoomOut, 'M5 12h14', () => this.zoomBy(1 / 1.25));
         this.zoomInButton = button(BlueprintStrings.zoomIn, 'M5 12h14M12 5v14', () => this.zoomBy(1.25));
+        this.zoomOutButton = button(BlueprintStrings.zoomOut, 'M5 12h14', () => this.zoomBy(1 / 1.25));
         const reset = button(BlueprintStrings.fitToScreen, 'M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5', () => this.fitToScreen());
         reset.classList.add('blueprint-zoom-reset');
         this.container.appendChild(controls);
