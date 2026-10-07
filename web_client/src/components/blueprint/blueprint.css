@@ -215,3 +215,74 @@ body.blueprint-active #floating-price-widget {
     left: auto !important;
     margin: 0 !important;
 }
+
+/* Fixed, touch-friendly controls, independent of the map transform. */
+.blueprint-zoom-controls {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border: 1px solid var(--input-border, #d1d5db);
+    border-radius: 18px;
+    background: var(--card-bg, var(--background-color, #fff));
+    color: var(--text-color, #222);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .09), inset 0 1px 0 rgba(255, 255, 255, .45);
+    touch-action: manipulation;
+}
+
+.blueprint-zoom-controls button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-family-base, inherit);
+    font-size: calc(26px * var(--font-scale, 1));
+    cursor: pointer;
+}
+
+.blueprint-zoom-controls button:hover:not(:disabled) {
+    background: var(--card-bg, #eef2f6);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.blueprint-zoom-controls button:focus-visible {
+    outline: 3px solid var(--primary-color, #2563eb);
+    outline-offset: -3px;
+}
+
+.blueprint-zoom-controls button:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.blueprint-zoom-controls .blueprint-zoom-reset {
+    margin-left: 4px;
+    border-left: 1px solid var(--input-border, #d1d5db);
+    border-radius: 0 8px 8px 0;
+    font-size: calc(16px * var(--font-scale, 1));
+    font-weight: 600;
+}
+
+/* Keep an opaque fallback when backdrop filtering is unavailable. */
+@supports ((backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px))) {
+    .blueprint-zoom-controls {
+        background: color-mix(in srgb, var(--card-bg, var(--background-color, #fff)) 82%, transparent);
+        border-color: color-mix(in srgb, var(--input-border, #d1d5db) 55%, transparent);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        backdrop-filter: blur(16px) saturate(140%);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .blueprint-zoom-controls {
+        background: var(--card-bg, var(--background-color, #fff));
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}

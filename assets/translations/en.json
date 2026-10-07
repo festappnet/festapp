@@ -1042,6 +1042,10 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "zoomControls": "Map zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitToScreen": "Fit map",
     "maxTicketsReached": "Maximum number of tickets reached",
     "changeTitle": "Change title",
     "legendInstruction": "Click an option in the legend to add seats.",
