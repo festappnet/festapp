@@ -2,41 +2,41 @@ import { APP_VERSION } from './version.js';
 
 export class AppConfig {
     static version = APP_VERSION;
-    static appName = 'Festapp';
-    static appTitleShort = 'Festapp';
-    static supabaseUrl = 'https://kjdpmixlnhntmxjedpxh.supabase.co';
-    static anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqZHBtaXhsbmhudG14amVkcHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDE5NDI5NzEsImV4cCI6MjAxNzUxODk3MX0.06nTXCL-i1GxLckfEyCNlVVwt62QTzKUezqmsYSR_MI';
-    static backendActivationTenantId = '';
-    static backendActivationManifestUrl = '';
-    static backendActivationCanonicalManifestSha256 = '';
-    static backendActivationCanonicalSupabaseUrl = '';
-    static backendActivationCanonicalAnonKey = '';
-    static backendActivationCanonicalOrganizationId = 0;
-    static backendActivationCanonicalProfileSha256 = '';
-    static organization = 1;
+    static appName = 'Absolventský Velehrad';
+    static appTitleShort = 'AV';
+    static supabaseUrl = 'https://lwfpdjxsdmkfyrzqbrlk.supabase.co';
+    static anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZnBkanhzZG1rZnlyenFicmxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTEyMjgwNDksImV4cCI6MjAyNjgwNDA0OX0.440P3yf8ZqNjOHEQTn9uJhkKyObhD_7PZ2NwaE9e4J0';
+    static backendActivationTenantId = 'absolventskyvelehrad';
+    static backendActivationManifestUrl = 'https://app.absolventskyvelehrad.cz/backend-activation.json';
+    static backendActivationCanonicalManifestSha256 = '252053d6fabfc16eae96e0938e2a2cee1d87b5fe597cb3a44ec21709f166e03e';
+    static backendActivationCanonicalSupabaseUrl = 'https://api.festapp.net';
+    static backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
+    static backendActivationCanonicalOrganizationId = 8;
+    static backendActivationCanonicalProfileSha256 = 'a6a2ef9d9a467ab58619b6a3cc3e1c128addfe3067b61284139bb33e28ce9841';
+    static organization = 5;
     static forceOccasionLink = null;
     static isAllUnit = false;
     static isAppSupported = true;
     static flutterAppUrl = '';
-    static webLink = "https://vstupenky.online";
-    static privacyUrl = "https://vstupenky.online/privacy/";
-    static privacyChoicesUrl = "https://vstupenky.online/privacy/choices/";
-    static termsUrl = "https://vstupenky.online/terms/";
-    static supportUrl = "https://vstupenky.online/support/";
-    static deleteAccountUrl = "https://vstupenky.online/delete-account/";
+    static webLink = "https://app.absolventskyvelehrad.cz";
+    static privacyUrl = "https://app.absolventskyvelehrad.cz/privacy/";
+    static privacyChoicesUrl = "https://app.absolventskyvelehrad.cz/privacy/choices/";
+    static termsUrl = "https://app.absolventskyvelehrad.cz/terms/";
+    static supportUrl = "https://app.absolventskyvelehrad.cz/support/";
+    static deleteAccountUrl = "https://app.absolventskyvelehrad.cz/delete-account/";
     static imageApiUrl = 'https://image-api.festapp.net';
-    static imageProjectId = 'default';
+    static imageProjectId = 'a';
     static compatibleUrls = [AppConfig.webLink];
 
     
     // Localization
-    static supportedLanguages = ['cs', 'en'];
+    static supportedLanguages = ['cs'];
     static defaultLanguage = 'cs';
 
     // Local Storage Keys
     static Keys = {
         theme: 'theme',
         locale: 'locale',
-        auth: 'sb-kjdpmixlnhntmxjedpxh-auth-token'
+        auth: 'sb-lwfpdjxsdmkfyrzqbrlk-auth-token'
     };
 }
