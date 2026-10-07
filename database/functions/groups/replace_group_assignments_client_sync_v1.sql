@@ -9,6 +9,7 @@ DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_unit bigint;
   v_group_ids bigint[]; v_impacted_users uuid[]; v_private_impacts jsonb;
   v_actor_replacements jsonb:='[]'::jsonb;
 BEGIN
+ PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
   SELECT o.unit INTO v_unit FROM public.occasions o WHERE o.id=p_occasion;
   IF v_actor IS NULL OR NOT (public.get_is_editor_on_occasion(p_occasion)
     OR public.get_is_manager_on_occasion(p_occasion)

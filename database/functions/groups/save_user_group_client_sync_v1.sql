@@ -14,6 +14,7 @@ DECLARE
   v_current_place jsonb; v_requested_place jsonb; v_place_changed boolean:=false;
   v_actor_replacements jsonb:='[]'::jsonb;
 BEGIN
+ PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
   v_id:=(p_group->>'id')::bigint;
   IF v_actor IS NULL OR NOT (public.get_is_editor_on_occasion(p_occasion)
     OR (v_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.user_groups ug

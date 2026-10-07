@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "state": "prepared-and-verified",
+  "sharedEnabledOccasions": 11,
+  "legacySignatures": [
+    "update_activities(bigint,jsonb)",
+    "save_activity_history(bigint,jsonb,text,bigint,text)",
+    "delete_autosave_history(bigint)",
+    "import_user_group_assignments(bigint,jsonb)",
+    "import_occasion_users_from_csv(bigint,jsonb,jsonb)",
+    "delete_occasion_user_ws(uuid,bigint)",
+    "delete_occasion_user(uuid,bigint)",
+    "game_guess(bigint,text)",
+    "save_place_location(bigint,double precision,double precision)"
+  ],
+  "pausedCanonicalSignatures": [
+    "save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb)",
+    "delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint)",
+    "replace_group_assignments_client_sync_v1(bigint,uuid,jsonb)",
+    "save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint)",
+    "discard_activity_draft_client_sync_v1(bigint,uuid,bigint)",
+    "publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint)",
+    "move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision)",
+    "save_place_client_sync_v1(bigint,uuid,bigint,jsonb)",
+    "delete_place_client_sync_v1(bigint,bigint,uuid,bigint)"
+  ],
+  "tables": [
+    "user_group_info",
+    "user_groups",
+    "activities",
+    "activity_assignments",
+    "activity_assignment_places",
+    "activity_assignment_events",
+    "activity_history",
+    "places"
+  ],
+  "changes": [
+    "revoke ordinary-role EXECUTE on exact signatures",
+    "revoke ordinary-role and PUBLIC/inherited table/column INSERT UPDATE DELETE TRUNCATE"
+  ],
+  "preserved": [
+    "all function definitions",
+    "read RPC update_activities(bigint)",
+    "SELECT and service-lane existing explicit ACL",
+    "registry readiness and capability",
+    "account-deletion canonical lifecycle"
+  ],
+  "G3Satisfied": false,
+  "productionApplied": false,
+  "baseMain": "7ac35f7823d5131a63776122ec66b2df0392dc23",
+  "sqlFile": "database/operations/canonical_mutation_editor_pause.sql",
+  "sqlSha256": "3a00abf3e1f32869f496c664d68ddc2c24126cdd49a5b62ca838ac11959814e3",
+  "validation": {
+    "sqlSuitesPassed": 8,
+    "nodeTestsPassed": 26,
+    "skipped": 0,
+    "additionalPauseReopenTestPassed": 1,
+    "scope": "release guard, canonical group/activity contracts, source parity, CSV callers, internal grants, production hardening, bounded contraction validation, five real two-connection concurrency cases, inherited-role/direct-DML denial and unsafe reopening rejection",
+    "logs": {
+      "canonical-write-release-db-standard.log": "e7fc78b93007c9678587ebb9c196c05fc58bd949434239c268439b8e1b01dfe8",
+      "canonical-write-release-node-standard.log": "41d5e76cbaefdb6f567d49b15b053748f5105966514ac43000c9b88977a3d310",
+      "canonical-editor-pause-final.log": "e159ebd2897f5cdc1f288348496de5913bcaeb50316fca4b1def350248bfcb2b"
+    }
+  },
+  "enabledOccasionLinks": [
+    "biscup2025",
+    "r48vetrkovice2026",
+    "posezeni2026",
+    "csa2024",
+    "reholni2026",
+    "csmostrava2026",
+    "fotofest2025",
+    "2025-copy-98cf835a",
+    "jm2025",
+    "av2025",
+    "festapp2025"
+  ],
+  "sharedPauseAuthority": "User replied \"ano do it\" to the proposal to restrict affected writes across all eleven enabled occasions; then \"continue\"",
+  "minimumWriteBuild": 620,
+  "canonicalWriteOrganizations": [
+    12
+  ],
+  "operatorPolicy": "Only the current identified canonical CSM client may reopen affected editor commands. No further tenant releases are authorized.",
+  "schemaMigration": "supabase/migrations/20261007160000_canonical_mutation_write_release.sql",
+  "schemaMigrationSha256": "2a20607f75fe458373c5182f4da95a9f1b973f90d961a4007d0c616d7d6f61b0",
+  "reopenSqlFile": "database/operations/canonical_mutation_editor_reopen.sql",
+  "reopenSqlSha256": "41be1b64d62f08e211bfc62c7fb07242d57728f08d97e5f4848c96877d92d988",
+  "observationWindowDeclared": false
+}

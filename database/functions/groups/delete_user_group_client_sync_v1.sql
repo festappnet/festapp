@@ -8,6 +8,7 @@ DECLARE v_actor uuid:=auth.uid(); v_version bigint; v_begin jsonb; v_hash text;
   v_entity jsonb; v_users uuid[]; v_place bigint; v_private_place boolean;
   v_private_impacts jsonb; v_actor_replacements jsonb:='[]'::jsonb;
 BEGIN
+ PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
   IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,

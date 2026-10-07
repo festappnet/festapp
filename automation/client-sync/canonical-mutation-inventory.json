@@ -609,6 +609,28 @@
       "contractTest": "database/tests/canonical_mutation_observation_test.sql",
       "signature": "log_canonical_mutation_scope_internal_v1(bigint)",
       "introducedMigration": "20261007150000_canonical_mutation_observation.sql"
+    },
+    {
+      "name": "assert_canonical_mutation_write_release_internal_v1",
+      "source": "database/functions/client_sync/canonical_mutation_write_release.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/client_sync/canonical_mutation_write_release_test.sql",
+      "signature": "assert_canonical_mutation_write_release_internal_v1(bigint)",
+      "introducedMigration": "20261007160000_canonical_mutation_write_release.sql"
+    },
+    {
+      "name": "save_place_client_sync_v1",
+      "source": "database/functions/groups/canonical_place_write_release.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/client_sync/canonical_mutation_write_release_test.sql",
+      "signature": "save_place_client_sync_v1(bigint,uuid,bigint,jsonb)"
+    },
+    {
+      "name": "delete_place_client_sync_v1",
+      "source": "database/functions/groups/canonical_place_write_release.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/client_sync/canonical_mutation_write_release_test.sql",
+      "signature": "delete_place_client_sync_v1(bigint,bigint,uuid,bigint)"
     }
   ],
   "historyOnly": [
@@ -699,6 +721,7 @@
   "forwardMigrations": [
     "20261007110000_canonical_group_mutations.sql",
     "20261007120000_canonical_activity_mutations.sql",
-    "20261007150000_canonical_mutation_observation.sql"
+    "20261007150000_canonical_mutation_observation.sql",
+    "20261007160000_canonical_mutation_write_release.sql"
   ]
 }
