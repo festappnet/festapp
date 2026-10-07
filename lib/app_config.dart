@@ -16,14 +16,14 @@ class AppConfig {
     defaultValue: anonKey,
   );
   static const String supabaseAuthStorageKey = 'sb-kjdpmixlnhntmxjedpxh-auth-token';
-  static const String backendActivationTenantId = '';
-  static const String backendActivationManifestUrl = '';
-  static const String backendActivationCanonicalManifestSha256 = '';
-  static const String backendActivationCanonicalSupabaseUrl = '';
-  static const String backendActivationCanonicalAnonKey = '';
-  static const int backendActivationCanonicalOrganizationId = 0;
-  static const String backendActivationCanonicalProfileSha256 = '';
-  static const String clientSyncTenantId = 'default';
+  static const String backendActivationTenantId = 'festapp';
+  static const String backendActivationManifestUrl = 'https://live.festapp.net/backend-activation.json';
+  static const String backendActivationCanonicalManifestSha256 = '15298165a25a6739f6a53b516552be2ac0faff6362edfb5b9893e5f4a80dd4aa';
+  static const String backendActivationCanonicalSupabaseUrl = 'https://api.festapp.net';
+  static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
+  static const int backendActivationCanonicalOrganizationId = 1;
+  static const String backendActivationCanonicalProfileSha256 = '56c1b82dbff2aa967268c98d95acddd3d156004d6339c19f9b85b0ae49490e4f';
+  static const String clientSyncTenantId = 'festapp';
   static const String appName = 'Festapp';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
@@ -31,9 +31,9 @@ class AppConfig {
   static const bool isOwnProgramSupported = true;
   static const bool isNotificationsSupported = true;
   static const bool isWebNotificationsSupported = true;
-  static const String oneSignalAppId = '';
+  static const String oneSignalAppId = '73f77f22-961a-4ded-9647-e33a7ac14f90';
   static const String oneSignalWebAppId = '73f77f22-961a-4ded-9647-e33a7ac14f90';
-  static const String pushAppGeneration = '';
+  static const String pushAppGeneration = 'festapp_cutover_v1';
   static const String effectivePushAppGeneration = String.fromEnvironment(
     'FESTAPP_PUSH_APP_GENERATION',
     defaultValue: pushAppGeneration,
@@ -53,14 +53,14 @@ class AppConfig {
   static const bool isContractFeatureEnabled = false;
   static const bool showBankSupportRole = false;
 
-  static const String webLink = "https://vstupenky.online";
-  static const String privacyUrl = "https://vstupenky.online/privacy/";
-  static const String privacyChoicesUrl = "https://vstupenky.online/privacy/choices/";
-  static const String termsUrl = "https://vstupenky.online/terms/";
-  static const String supportUrl = "https://vstupenky.online/support/";
-  static const String deleteAccountUrl = "https://vstupenky.online/delete-account/";
-  static const String syncHeadOrigin = "";
-  static const String syncAssetOrigin = "";
+  static const String webLink = "https://live.festapp.net";
+  static const String privacyUrl = "https://live.festapp.net/privacy/";
+  static const String privacyChoicesUrl = "https://live.festapp.net/privacy/choices/";
+  static const String termsUrl = "https://live.festapp.net/terms/";
+  static const String supportUrl = "https://live.festapp.net/support/";
+  static const String deleteAccountUrl = "https://live.festapp.net/delete-account/";
+  static const String syncHeadOrigin = "https://sync.festapp.net";
+  static const String syncAssetOrigin = "https://assets.festapp.net";
   static const String imageApiUrl = 'https://image-api.festapp.net';
   static const String imageProjectId = 'default';
   static bool isProLicense = true;
