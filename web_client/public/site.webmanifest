@@ -1,7 +1,7 @@
 {
-  "name": "Festapp",
-  "short_name": "Festapp",
-  "description": "Platforma pro správu akcí, programu a vstupenek.",
+  "name": "CSA 2024",
+  "short_name": "CSA 2024",
+  "description": "Program Celostátního setkání animátorů 2024.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -17,7 +17,7 @@
     }
   ],
   "id": "/",
-  "start_url": "/",
+  "start_url": "/csa2024/event",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
