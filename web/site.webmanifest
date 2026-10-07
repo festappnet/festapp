@@ -1,7 +1,7 @@
 {
-  "name": "Festapp",
-  "short_name": "Festapp",
-  "description": "Platforma pro správu akcí, programu a vstupenek.",
+  "name": "Hvězda Mořská",
+  "short_name": "Hvězda Mořská",
+  "description": "Mobile app for festivals, conferences or events.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
