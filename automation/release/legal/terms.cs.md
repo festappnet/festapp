@@ -1,8 +1,8 @@
-# Podmínky používání – Festapp
+# Podmínky používání – Slunovrat
 
 Účinnost: 25. srpna 2026. Verze: 1.0.
 
-Platformu Festapp a Vstupenky.online technicky provozuje Michael Bujnovský. Kontakt je `info@festapp.net`.
+Aplikaci Slunovrat technicky provozuje Michael Bujnovský. Kontakt je `info@festapp.net`.
 
 Aplikace poskytuje informace o akcích a podle konkrétní akce může umožnit účet, registraci, objednávku nebo vstupenku. Smluvní podmínky konkrétní akce, vstupenky nebo jiné služby určuje její pořadatel a jsou uvedeny u nabídky nebo objednávky. Tyto podmínky aplikace je nenahrazují.
 
@@ -12,4 +12,4 @@ Přihlašovací údaje a vstupenky jsou osobní. Aplikaci není dovoleno použí
 
 Informace o akci se mohou měnit a offline data nemusí do dalšího připojení obsahovat poslední změny. Tím nejsou dotčena práva spotřebitele ani odpovědnost, kterou nelze podle práva vyloučit.
 
-Zpracování osobních údajů popisují zásady na <https://vstupenky.online/privacy/> a technická pomoc je na <https://vstupenky.online/support/>.
+Zpracování osobních údajů popisují zásady na <https://app.festivalslunovrat.cz/privacy/> a technická pomoc je na <https://app.festivalslunovrat.cz/support/>.
