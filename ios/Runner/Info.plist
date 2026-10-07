@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Festapp</string>
+	<string>Hvězda Mořská</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -19,7 +19,7 @@
 		<string>cs</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>Festapp</string>
+	<string>festapp.hvezdamorska</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -60,7 +60,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Přístup k fotkám je potřeba pouze při výběru profilového obrázku.</string>
 	<key>OneSignal_app_groups_key</key>
-	<string>group.festapp.festapp.onesignal</string>
+	<string>group.festapp.hvezdamorska.onesignal</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
