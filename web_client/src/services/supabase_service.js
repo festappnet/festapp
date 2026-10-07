@@ -1,7 +1,6 @@
 import { AppConfig } from '../app_config.js';
 import { createClient } from '@supabase/supabase-js';
 import { BackendActivationService } from './backend_activation_service.js';
-import { APP_VERSION } from '../version.js';
 
 export class SupabaseService {
     static _client = null;
@@ -11,9 +10,6 @@ export class SupabaseService {
     static originMarkerKey = 'festapp-supabase-auth-origin';
     static clientOptions = Object.freeze({
         auth: Object.freeze({ storageKey: AppConfig.Keys.auth }),
-        global: Object.freeze({ headers: Object.freeze({
-            'X-Client-Info': `festapp/${APP_VERSION}/js`,
-        }) }),
     });
 
     static async getEmailConfirmationStatus(capability) {
