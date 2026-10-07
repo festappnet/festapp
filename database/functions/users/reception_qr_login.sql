@@ -25,8 +25,12 @@ BEGIN
       WITH ORDINALITY x(item,ordinality) LEFT JOIN public.places p ON p.occasion=p_occasion AND p.id=CASE WHEN x.item->>'reference' ~ '^[0-9]+$' THEN (x.item->>'reference')::bigint END),'[]'::jsonb));
 END $$;
 
-CREATE OR REPLACE FUNCTION public.create_reception_user_v1(p_occasion bigint,p_command_id uuid,p_profile jsonb,p_group_id bigint DEFAULT NULL,p_accommodation_code text DEFAULT NULL,p_confirm_same_name boolean DEFAULT false)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+CREATE OR REPLACE FUNCTION public.create_reception_user_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb, p_group_id bigint DEFAULT NULL::bigint, p_accommodation_code text DEFAULT NULL::text, p_confirm_same_name boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_org bigint; v_user uuid; v_hash text; v_existing public.reception_registrations%rowtype;
   v_name text:=btrim(p_profile->>'name'); v_surname text:=btrim(p_profile->>'surname'); v_email text:=lower(btrim(p_profile->>'email'));
   v_sex text:=p_profile->>'sex'; v_matches jsonb; v_services jsonb:='{}'::jsonb; v_catalog jsonb;
@@ -44,6 +48,8 @@ BEGIN
     SELECT ui.email_readonly INTO v_email FROM public.user_info ui WHERE ui.id=v_existing."user";
     RETURN jsonb_build_object('code',200,'userId',v_existing."user",'email',v_email,'replayed',true);
   END IF;
+  PERFORM public.lock_group_occasion_internal_v1(p_occasion);
+  IF NOT public.get_can_use_reception(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='reception unavailable'; END IF;
   SELECT o.organization,COALESCE(o.services,'{}'::jsonb) INTO v_org,v_catalog FROM public.occasions o WHERE o.id=p_occasion FOR SHARE;
   PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('reception-email:'||v_org::text||':'||v_email,0));
   SELECT ui.id INTO v_user
@@ -74,11 +80,21 @@ BEGIN
   v_user:=public.create_user_in_organization_with_data_pure(v_org,v_email,v_email,encode(gen_random_bytes(32),'hex'),p_profile-'email');
   IF p_accommodation_code IS NOT NULL THEN v_services:=jsonb_build_object('accommodation',jsonb_build_object(p_accommodation_code,'paid')); END IF;
   INSERT INTO public.occasion_users(occasion,"user",data,services) VALUES(p_occasion,v_user,p_profile,v_services);
-  IF p_group_id IS NOT NULL THEN INSERT INTO public.user_groups("user","group",is_admin) VALUES(v_user,p_group_id,false); END IF;
+  IF p_group_id IS NOT NULL THEN
+    INSERT INTO public.user_groups("user","group",is_admin) VALUES(v_user,p_group_id,false);
+    UPDATE public.client_aggregate_versions SET version=version+1,updated_at=clock_timestamp() WHERE aggregate_type='user_group' AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=p_group_id::text;
+    PERFORM public.advance_group_profile_heads_internal_v1(p_occasion,ARRAY(SELECT "user" FROM public.user_groups WHERE "group"=p_group_id));
+  END IF;
   INSERT INTO public.reception_registrations(occasion,"user",created_by,command_id,request_hash) VALUES(p_occasion,v_user,v_actor,p_command_id,v_hash);
   RETURN jsonb_build_object('code',200,'userId',v_user,'email',v_email,'replayed',false);
 EXCEPTION WHEN unique_violation THEN RETURN jsonb_build_object('code',409,'message','email_or_command_conflict');
-END $$;
+END $function$
+;
+
+-- Superseded ungranted wrapper implementations, now folded into receipt owners.
+DROP FUNCTION IF EXISTS public.replace_group_assignments_companion_internal_v1(bigint,uuid,jsonb);
+DROP FUNCTION IF EXISTS public.import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb);
+DROP FUNCTION IF EXISTS public.delete_occasion_user_companion_internal_v1(bigint,uuid,uuid,bigint);
 
 CREATE OR REPLACE FUNCTION public.issue_reception_login_qr_v1(p_occasion bigint,p_user uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -189,15 +205,19 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.cancel_reception_registration_v1(p_occasion bigint,p_user uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_r public.reception_registrations%rowtype; v_actor uuid:=auth.uid();
+DECLARE v_r public.reception_registrations%rowtype; v_actor uuid:=auth.uid(); v_impacts jsonb;
 BEGIN
+  PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
   SELECT * INTO v_r FROM public.reception_registrations WHERE occasion=p_occasion AND "user"=p_user FOR UPDATE;
   IF NOT FOUND THEN RETURN jsonb_build_object('code',404,'message','registration_unavailable'); END IF;
   IF NOT public.get_can_use_reception(p_occasion) OR NOT (public.get_is_manager_on_occasion(p_occasion) OR public.get_is_admin_on_occasion(p_occasion) OR (v_r.created_by=v_actor AND (v_r.status='cancelled' OR v_r.created_at>now()-interval '30 minutes'))) THEN
     RETURN jsonb_build_object('code',403,'message','registration_unavailable'); END IF;
   IF v_r.status='cancelled' THEN RETURN jsonb_build_object('code',200,'status',CASE WHEN v_r.auth_revoked_at IS NULL THEN 'domain_blocked_auth_revocation_pending' ELSE 'cancelled' END,'targetUser',p_user); END IF;
   UPDATE public.reception_registrations SET status='cancelled',cancelled_by=v_actor,cancelled_at=now() WHERE occasion=p_occasion AND "user"=p_user;
-  PERFORM public.delete_occasion_user(p_user,p_occasion);
+  v_impacts:=public.remove_occasion_user_domain_internal_v1(p_occasion,p_user);
+  INSERT INTO public.client_sync_private_scopes(component,occasion,user_id,source_revision)
+  SELECT x->>'component',p_occasion,(x->>'userId')::uuid,1 FROM jsonb_array_elements(v_impacts) x ORDER BY x->>'component',x->>'userId'
+  ON CONFLICT(component,occasion,user_id) DO UPDATE SET source_revision=public.client_sync_private_scopes.source_revision+1,updated_at=clock_timestamp();
   RETURN jsonb_build_object('code',200,'status','domain_blocked_auth_revocation_pending','targetUser',p_user);
 END $$;
 

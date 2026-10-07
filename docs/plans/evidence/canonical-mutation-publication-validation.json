@@ -1,0 +1,49 @@
+{
+  "capturedAt": "2026-10-07T11:31:32.435Z",
+  "verification": "standard with mandatory repository pre-commit gates",
+  "baseAfterFetch": "e8033f1f0",
+  "disposableProject": "festapp-canonical-mutation-pg15",
+  "noProductionTests": true,
+  "artifacts": [
+    {
+      "log": "/tmp/canonical-release-full-tests.log",
+      "result": "Full repository command: web 213 passed/9 skipped, 136 SQL suites passed, 271 Deno tests passed, automation passed; Flutter failure and missing worker dependency repaired in subsequent owning runs",
+      "sha256": "4e8742367988c04204aae3f9138afb9d1a98a6f869e5fab631bc1284f6f58807"
+    },
+    {
+      "log": "/tmp/canonical-release-flutter-all-fixed.log",
+      "result": "1169 passed, 1 skipped",
+      "sha256": "a6f6fc255dba830388ffe9a49ccd14bef9bc1f7f38b7bdd282c81021e8acc4a5"
+    },
+    {
+      "log": "/tmp/canonical-release-worker-tests.log",
+      "result": "21 passed, 27 skipped (remote integration forbidden on disposable DB)",
+      "sha256": "da833a9071dfeafbf5c0ff16024988a3ab6bac0aeb45c09834ffee52a4c13154"
+    },
+    {
+      "log": "/tmp/canonical-registry-transition-tests.log",
+      "result": "2 passed: active shared rejection and cold additive",
+      "sha256": "f7900f9d9bf35fbb48df63d55ac857b4b4ab365016b17b163d0984c36b3c7eab"
+    },
+    {
+      "log": "/tmp/canonical-release-node-final.log",
+      "result": "21 passed plus registry metadata assertions",
+      "sha256": "5b9dd2b921cb498fd81c100d112b6b9ddad128f78ffeb0b0aa009177cce23333"
+    },
+    {
+      "log": "/tmp/canonical-response-release-fix.log",
+      "result": "11 passed including inline save regression",
+      "sha256": "08cc7fba8708b54d7e819172a83b520af74a2dba3d39bdbba555f3352dd5839c"
+    },
+    {
+      "log": "/tmp/canonical-prepublication-analyze.log",
+      "result": "No issues found",
+      "sha256": "602b2828ec63e4b32cc5006c504afc44f453aa9311ec99fe371248abdff2c45e"
+    },
+    {
+      "log": "/tmp/canonical-release-db-bootstrap.log",
+      "result": "Clean baseline and complete forward chain; new active guard separately executed by owning test",
+      "sha256": "2f90fc9130cb73e67c487e25fe07da62b650860fff9d19d6353eb4a12b06d197"
+    }
+  ]
+}

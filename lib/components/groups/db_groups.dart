@@ -1,10 +1,7 @@
 import 'package:collection/collection.dart';
-import 'package:fstapp/components/groups/group_participant_model.dart';
 import 'package:fstapp/components/groups/group_commands.dart';
 import 'package:fstapp/components/information/information_model.dart';
-import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
-import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/components/map/place_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
@@ -20,22 +17,15 @@ class DbGroups {
   static const editorPlacesKey = 'places';
 
   static Future<List<UserGroupInfoModel>> getGroupsWithPlaces() async {
-    var data = await _supabase
-        .from(Tb.user_group_info.table)
-        .select("${Tb.user_group_info.title}, ${Tb.places.table}(*)");
-    return List<UserGroupInfoModel>.from(
-        data.map((x) => UserGroupInfoModel.fromJson(x)));
+    return (await getUserGroupsEditorData()).groups;
   }
 
   static Future<UserGroupsEditorData> getUserGroupsEditorData(
       [String? type]) async {
     final response = await _supabase.rpc(
-      ClientSyncRuntime.isV1Selected
-          ? 'get_user_groups_editor_bundle_v1'
-          : 'get_all_user_groups',
+      'get_user_groups_editor_bundle_v1',
       params: {
-        ClientSyncRuntime.isV1Selected ? 'p_occasion' : 'p_occasion_id':
-            RightsService.currentOccasionId()!,
+        'p_occasion': RightsService.currentOccasionId()!,
         'p_type': type,
       },
     );
@@ -90,102 +80,48 @@ class DbGroups {
     return UserGroupInfoModel.fromJson(response);
   }
 
-  /// Canonical payload for persisting the editable group fields.
-  ///
-  /// A custom place must be saved before this is called so its generated ID
-  /// can cross the persistence boundary just like an existing catalog place.
-  static Map<String, dynamic> buildUserGroupUpsert(
-    UserGroupInfoModel model,
-  ) {
-    return {
-      Tb.user_group_info.title: model.title,
-      if (model.type != null) Tb.user_group_info.type: model.type,
-      if (model.description != null)
-        Tb.user_group_info.description: model.description,
-      Tb.user_group_info.place: model.place?.id,
-    };
+  static Future<UserGroupInfoModel> getUserGroupForEdit(int id) async {
+    final raw = await _supabase.rpc('get_user_group_editor_bundle_v1', params: {
+      'p_occasion': RightsService.currentOccasionId()!,
+      'p_group_id': id,
+    });
+    if (raw is! Map) throw StateError('Group editor unavailable');
+    return UserGroupInfoModel.fromJson(raw.cast<String, dynamic>());
   }
 
   static Future<void> updateUserGroupInfo(UserGroupInfoModel model) async {
-    if (!(RightsService.isEditor() || (model.isAdmin ?? false))) {
-      throw Exception("Must be leader or admin to change the group.");
-    }
-
-    if (ClientSyncRuntime.isV1Selected) {
-      final result =
-          await _commands.save(RightsService.currentOccasionId()!, model);
-      if (result.status == GroupCommandStatus.conflict) {
-        throw StateError('Group was changed by another editor');
-      }
-      if (result.status == GroupCommandStatus.rejected ||
-          result.group == null) {
-        throw StateError('Group save was rejected');
-      }
-      model
-        ..aggregateVersion = result.version
-        ..persistedPlaceId = result.group!.place?.id
-        ..persistedPlaceWasPrivate =
-            result.group!.place?.isPrivateGroupLocation ?? false
-        ..shouldSavePlace = false;
-      return;
-    }
-
-    final previousPrivatePlaceId =
-        model.persistedPlaceWasPrivate ? model.persistedPlaceId : null;
-    if (model.place != null) {
-      if (model.place!.id == null || model.shouldSavePlace) {
-        model.place =
-            await DbPlaces.updateLegacyPrivateGroupPlace(model.place!);
-      }
-    }
-    final upsertObj = buildUserGroupUpsert(model);
-    dynamic eventData;
-    if (model.id != null) {
-      eventData = await _supabase
-          .from(Tb.user_group_info.table)
-          .update(upsertObj)
-          .eq(Tb.user_group_info.id, model.id!)
-          .select()
-          .single();
-    } else {
-      upsertObj.addAll(
-          {Tb.user_group_info.occasion: RightsService.currentOccasionId()!});
-      eventData = await _supabase
-          .from(Tb.user_group_info.table)
-          .insert(upsertObj)
-          .select()
-          .single();
-    }
-
-    var updated = UserGroupInfoModel.fromJson(eventData);
-    await updateUserGroupParticipants(updated, model.participants!);
-
-    final assignedPlaceId = model.place?.id;
-    if (previousPrivatePlaceId != null &&
-        previousPrivatePlaceId != assignedPlaceId) {
-      await DbPlaces.deleteLegacyPrivateGroupPlace(
-        PlaceModel(id: previousPrivatePlaceId),
-      );
-    }
-    model.persistedPlaceId = assignedPlaceId;
-    model.persistedPlaceWasPrivate =
-        model.place?.isPrivateGroupLocation ?? false;
-    model.shouldSavePlace = false;
+    await saveWithCommands(
+        _commands, RightsService.currentOccasionId()!, model);
   }
 
-  static Future<void> updateUserGroupParticipants(
-      UserGroupInfoModel group, Set<GroupParticipantModel> participants) async {
-    await _supabase
-        .from(Tb.user_groups.table)
-        .delete()
-        .eq(Tb.user_groups.group, group.id!);
-
-    for (var p in participants) {
-      await _supabase.from(Tb.user_groups.table).insert({
-        Tb.user_groups.group: group.id,
-        Tb.user_groups.user: p.userInfo!.id,
-        Tb.user_groups.is_admin: p.isAdmin ?? false
-      });
+  static Future<void> saveWithCommands(
+      GroupCommands commands, int occasionId, UserGroupInfoModel model) async {
+    final context = ClientSyncRuntime.mutationContextToken;
+    final actor = RightsService.currentUser()?.id;
+    final snapshot = model.editorIntentFingerprint();
+    final submittedId = model.id;
+    final submittedPlace = model.place;
+    final result = await commands.save(occasionId, model);
+    if (result.status == GroupCommandStatus.conflict) {
+      throw StateError('Group was changed by another editor');
+    }
+    if (result.status == GroupCommandStatus.rejected || result.group == null) {
+      throw StateError('Group save was rejected');
+    }
+    if (ClientSyncRuntime.isCurrentMutationContext(context) &&
+        RightsService.currentUser()?.id == actor &&
+        (RightsService.currentOccasionId() == null ||
+            RightsService.currentOccasionId() == occasionId) &&
+        (model.id == submittedId ||
+            (submittedId == null && model.id == result.group!.id)) &&
+        result.version >= model.aggregateVersion) {
+      final saved = result.group!;
+      if (identical(model.place, submittedPlace) &&
+          model.editorIntentFingerprint() == snapshot) {
+        model.acceptSaved(saved);
+      } else {
+        model.acceptSavedIdentity(saved, submittedPlace);
+      }
     }
   }
 
@@ -197,54 +133,22 @@ class DbGroups {
       throw Exception("Must be editor to import groups.");
     }
 
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.replaceAssignments(
-        RightsService.currentOccasionId()!,
-        groupTitleByUserId,
-      );
-      if (result.status == GroupCommandStatus.rejected) {
-        throw StateError('Group assignment import was rejected');
-      }
-      if (result.status == GroupCommandStatus.conflict) {
-        throw StateError('Group assignment import conflicted');
-      }
-      return;
+    final result = await _commands.replaceAssignments(
+        RightsService.currentOccasionId()!, groupTitleByUserId);
+    if (result.status == GroupCommandStatus.rejected ||
+        result.status == GroupCommandStatus.conflict) {
+      throw StateError('Group assignment import was rejected or conflicted');
     }
-
-    await _supabase.rpc('import_user_group_assignments', params: {
-      'p_occasion_id': RightsService.currentOccasionId()!,
-      'p_assignments': groupTitleByUserId.entries
-          .map((entry) => {
-                'user_id': entry.key,
-                'group_title': entry.value,
-              })
-          .toList(),
-    });
   }
 
   static Future<void> deleteUserGroupInfo(UserGroupInfoModel model) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result =
-          await _commands.delete(RightsService.currentOccasionId()!, model);
-      if (result.status == GroupCommandStatus.conflict) {
-        throw StateError('Group was changed by another editor');
-      }
-      if (result.status == GroupCommandStatus.rejected) {
-        throw StateError('Group delete was rejected');
-      }
-      return;
+    final result =
+        await _commands.delete(RightsService.currentOccasionId()!, model);
+    if (result.status == GroupCommandStatus.conflict) {
+      throw StateError('Group was changed by another editor');
     }
-    await _supabase
-        .from(Tb.user_groups.table)
-        .delete()
-        .eq(Tb.user_groups.group, model.id!);
-    await _supabase
-        .from(Tb.user_group_info.table)
-        .delete()
-        .eq(Tb.user_group_info.id, model.id!);
-
-    if (model.place?.isPrivateGroupLocation ?? false) {
-      await DbPlaces.deleteLegacyPrivateGroupPlace(model.place!);
+    if (result.status == GroupCommandStatus.rejected) {
+      throw StateError('Group delete was rejected');
     }
   }
 

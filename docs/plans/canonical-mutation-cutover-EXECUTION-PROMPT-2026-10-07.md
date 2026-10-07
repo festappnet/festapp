@@ -1,0 +1,17 @@
+# Implementuj canonical mutation cutover skupin a aktivit
+
+Plán a tento prompt jsou zatím necommitnuté soubory ve worktree `/Users/miakh/source/festapp-canonical-mutation-plan` na větvi `plan/canonical-mutation-cutover-20261007`. Nejprve je přečti tam. Implementaci dělej v izolované větvi z čerstvého `main` repozitáře `/Users/miakh/source/festapp`; přenes do ní oba plánovací soubory, pokud v main ještě nejsou. Nesmí se ztratit při vytvoření checkoutu. Rozpracovaný wizard `feat/occasion-setup-wizard-20261007` nezačleňuj ani neměň. Přečti `AGENTS.md`, `CLAUDE.md`, `docs/architecture/ai_context.md`, `docs/architecture/mutations.md` a celý autoritativní plán:
+
+`docs/plans/canonical-mutation-cutover-plan-2026-10-07.md`
+
+Verification: **standard**. Výsledek: všechny podporované group/member/private-place a activities draft/publish/discard zápisy používají explicitní typed doménové commands s atomic persistence, stabilní identity, replay authorization, aggregate concurrency a bezpečnou aktivací odpovědi. První samostatný slice je group včetně addToGroup, leader-only description edit, group-owned map save/move a profile dependencies. Potom activities s konzistentním session read, UTC/legacy time normalization a globálně bezpečným UUID upsertem. Následují registry/gates. Dodržuj pořadí vln, konkrétní rozhodnutí, removal ledger a exit conditions.
+
+Nezaváděj dispatcher, obecné CRUD, druhý mutation kernel, nové runtime fallbacky ani persistentní application triggers. Neupravuj historické aplikované migrace. Read sync capability není výběr write lane. Neponechávej placeholder nebo druhou DML implementaci; dočasné vydané public facades jsou přípustné pouze na přesně pojmenovaném G3 boundary, ne jako náhrada atomic legacy publish.
+
+Před změnami aktualizuj G0 proti aktuálnímu main/schema; pokud důkazy vyvrátí premisu plánu, oprav plán a dotčenou vlnu. Nemigruj automaticky celý schedule/map modul. Zachovej leader oprávnění bez zpřístupnění admin seznamu; stale edit nesmí získat čerstvou verzi automaticky těsně před write. Přesun interního CSV calleru proveď před dropem group facade. Nezaveď globální zákaz legitimních same-revision private patches. Zachovej account-deletion privacy lifecycle a prověř dotčené locks/versions. Shared grants a registry readiness nejsou tenant-local.
+
+DB testy spouštěj jen s explicitně ověřeným disposable lokálním targetem: runner načítá `.env.local` a globálně resetuje sekvence. Targeted validaci z plánu neobcházej; concurrency ověř dvouconnection testem. Případné browser QA jen isolated headless proti disposable tenantovi.
+
+Implementační zadání samo neopravňuje k production query/migration/revocation/deploy, force-upgrade, commit/push nebo rolloutům dalších tenantů. Připrav konkrétní migration/dry-run/evidence artifacts lokálně; G2-G4 vyžadují vybraný tenant, provozní důkazy a samostatnou authority. Nepoužívej cloud `SUPABASE_URL` jako live target. Bez G3 nemaž potřebné veřejné kontrakty ani předčasně nezužuj vydané accepted DTO. Production write release nesmí souběžně provozovat canonical editory a staré neversionované bypassy; postupuj podle mixed-client gate v plánu. Finální cutover nehlaš jako hotový bez effective ACL důkazu.
+
+Handoff stručně uvede canonical owners, migrované callers, odstraněné artefakty, výsledky cílených testů a přesné remaining facades/grants/provozní gates. Lokální dokončení odliš od skutečně ověřené produkční contraction.

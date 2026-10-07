@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "status": "Publication and CSM additive deployment authorized by user; PR review and production write-release gates remain required",
+  "tenantId": "csmostrava2026",
+  "organization": 12,
+  "occasionLink": "csmostrava2026",
+  "productionBranch": "prod/csmostrava2026",
+  "readOnlyInventorySha256": "c93cd7c4831c239aa144813125a6f243e5dad2afc0b8aa15fd4d176285370608",
+  "additiveMigrations": [
+    {
+      "file": "supabase/migrations/20261007110000_canonical_group_mutations.sql",
+      "sha256": "14da65e0691859cee1140d73d1d839d6df1775bda461ccbc1cfc9c95c1a027d4",
+      "applied": false,
+      "deploymentDisposition": "prepared - deploy after canonical main merge"
+    },
+    {
+      "file": "supabase/migrations/20261007120000_canonical_activity_mutations.sql",
+      "sha256": "bc2927667667f72e82e63f2b4ef4f75f45b9d4b1572e6673a288348448829638",
+      "applied": false,
+      "deploymentDisposition": "prepared - deploy after canonical main merge"
+    },
+    {
+      "file": "supabase/migrations/20261007130000_canonical_mutation_registry.sql",
+      "sha256": "7cacc82d095e892ef58514b9b0e1c071eded04914d126a7fa206772343bd684a",
+      "applied": false,
+      "deploymentDisposition": "deferred - active shared registry guard"
+    }
+  ],
+  "contraction": {
+    "sqlSha256": "136cae6ca89197d5e7651fea693457bd6d987eac589db6fcefac3c51fc5fabe6",
+    "functions": [
+      "update_activities(bigint,jsonb)",
+      "save_activity_history(bigint,jsonb,text,bigint,text)",
+      "delete_autosave_history(bigint)",
+      "import_user_group_assignments(bigint,jsonb)",
+      "import_occasion_users_from_csv(bigint,jsonb,jsonb)",
+      "delete_occasion_user_ws(uuid,bigint)",
+      "delete_occasion_user(uuid,bigint)",
+      "game_guess(bigint,text)",
+      "save_place_location(bigint,double precision,double precision)"
+    ],
+    "tables": [
+      "public.user_group_info",
+      "public.user_groups",
+      "public.activities",
+      "public.activity_assignments",
+      "public.activity_assignment_places",
+      "public.activity_assignment_events",
+      "public.activity_history",
+      "public.places"
+    ],
+    "productionApplied": false
+  },
+  "gateStatus": {
+    "G1": "passed locally",
+    "G2": "activation, runtime, schema, ACL and writer inventory captured; deployed correction/source parity review pending",
+    "G3": "blocked - no shared-consumer observation/force-upgrade evidence",
+    "G4": "User authorized publication/CSM deployment; exact shared contraction remains separately gated by G3/G4."
+  },
+  "observations": {
+    "deployedMigrationCount": 180,
+    "latestMigration": "20261006204500",
+    "issuedLegacyWriters": [
+      "update_activities(bigint,jsonb)",
+      "save_activity_history(bigint,jsonb,text,bigint,text)",
+      "delete_autosave_history(bigint)",
+      "import_user_group_assignments(bigint,jsonb)",
+      "import_occasion_users_from_csv(bigint,jsonb,jsonb)",
+      "delete_occasion_user_ws(uuid,bigint)",
+      "delete_occasion_user(uuid,bigint)",
+      "game_guess(bigint,text)",
+      "save_place_location(bigint,double precision,double precision)"
+    ],
+    "effectiveDirectDml": [
+      {
+        "role": "anon",
+        "relation": "user_group_info",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "anon",
+        "relation": "user_groups",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "anon",
+        "relation": "activities",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "anon",
+        "relation": "activity_assignments",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "anon",
+        "relation": "activity_assignment_places",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "anon",
+        "relation": "activity_assignment_events",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "anon",
+        "relation": "activity_history",
+        "tableDelete": true,
+        "tableInsert": true,
+        "tableUpdate": true,
+        "columnInsert": true,
+        "columnUpdate": true,
+        "tableTruncate": true
+      },
+      {
+        "role": "anon",
+        "relation": "places",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "user_group_info",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "user_groups",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "activities",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "activity_assignments",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "activity_assignment_places",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "activity_assignment_events",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "activity_history",
+        "tableDelete": true,
+        "tableInsert": true,
+        "tableUpdate": true,
+        "columnInsert": true,
+        "columnUpdate": true,
+        "tableTruncate": true
+      },
+      {
+        "role": "authenticated",
+        "relation": "places",
+        "tableDelete": false,
+        "tableInsert": false,
+        "tableUpdate": false,
+        "columnInsert": false,
+        "columnUpdate": false,
+        "tableTruncate": true
+      }
+    ],
+    "enabledSharedOccasionCount": 11,
+    "externalCandidateCount": 35,
+    "cronCatalogAvailable": false,
+    "readyRows": 41,
+    "registryTransitionWouldDisableSharedReads": true
+  },
+  "nextAction": "Complete required main PR review/merge; apply only two domain correction migrations, preserve active shared registry, and close mixed-client gate before opening canonical editor writes.",
+  "userAuthority": {
+    "capturedAt": "2026-10-07T11:30:33.981Z",
+    "reference": "User confirmation: Ano, potvrzuji, pokračuji dál a dál.",
+    "scope": [
+      "publish shared changes through required main PR",
+      "prepare and deploy CSM Ostrava only subject to release gates",
+      "apply compatible canonical domain corrections"
+    ],
+    "excluded": [
+      "rollout other tenants",
+      "shared mutation contraction before G3 evidence",
+      "global registry/readiness transition"
+    ]
+  }
+}

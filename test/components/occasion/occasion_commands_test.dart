@@ -28,6 +28,13 @@ void main() {
               'aggregate_version': 5,
             },
           },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -59,7 +66,8 @@ void main() {
     Map<String, dynamic>? config;
     final commands = SupabaseOccasionCommands.withTransport(
         ClientCommandTransport((name, params) async {
-      config = jsonDecode(jsonEncode(params['p_config'])) as Map<String, dynamic>;
+      config =
+          jsonDecode(jsonEncode(params['p_config'])) as Map<String, dynamic>;
       return {
         'status': 'applied',
         'code': 200,
@@ -72,6 +80,13 @@ void main() {
             'features': config!['features'],
             'aggregate_version': 2
           }
+        },
+        'mutation': {
+          'commandId': '00000000-0000-4000-8000-000000000001',
+          'receiptId': '00000000-0000-4000-8000-000000000001',
+          'commitId': null,
+          'replayed': false,
+          'occurredAt': '2026-10-07T10:00:00Z'
         },
         'sync': {'replacements': <Object>[]}
       };
@@ -101,6 +116,13 @@ void main() {
           'data': name.startsWith('duplicate')
               ? {'occasionId': 12}
               : <String, dynamic>{},
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -132,6 +154,13 @@ void main() {
               'aggregate_version': 1,
             },
           },
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -155,6 +184,13 @@ void main() {
           'status': 'applied',
           'code': 200,
           'data': {'message': 'deleted'},
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -173,6 +209,13 @@ void main() {
           'status': 'applied',
           'code': 200,
           'data': <String, dynamic>{},
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),

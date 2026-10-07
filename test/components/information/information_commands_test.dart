@@ -29,6 +29,13 @@ void main() {
               },
             },
           },
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },
@@ -62,6 +69,13 @@ void main() {
           'status': 'applied',
           'code': 200,
           'data': {'domainCode': 200, 'correct': true, 'version': 3},
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-07T10:00:00Z'
+          },
           'sync': {'replacements': <Object>[]},
         };
       },

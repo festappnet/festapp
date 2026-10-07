@@ -1,13 +1,9 @@
-CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv_internal_v1(
-    p_occasion_id bigint,
-    p_rows jsonb,
-    p_delete_user_ids jsonb DEFAULT '[]'::jsonb
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv_apply_v1(p_occasion_id bigint, p_rows jsonb, p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
     v_unit_id bigint;
     v_organization_id bigint;
@@ -51,62 +47,6 @@ BEGIN
     IF jsonb_array_length(p_rows) > 10000
        OR jsonb_array_length(p_delete_user_ids) > 10000 THEN
         RAISE EXCEPTION 'IMPORT_PAYLOAD_TOO_LARGE';
-    END IF;
-
-    IF EXISTS (
-        SELECT 1 FROM jsonb_array_elements(p_rows) item
-         WHERE jsonb_typeof(item) <> 'object'
-            OR jsonb_typeof(item->'data') <> 'object'
-    ) THEN
-        RAISE EXCEPTION 'INVALID_IMPORT_ROW';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM jsonb_array_elements(p_rows) item
-         WHERE NULLIF(btrim(item->'data'->>'email'), '') IS NULL
-    ) THEN
-        RAISE EXCEPTION 'EMAIL_REQUIRED';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM jsonb_array_elements(p_rows) item
-         WHERE length(btrim(item->'data'->>'email')) > 254
-            OR lower(btrim(item->'data'->>'email'))
-               !~ '^[^[:space:]@]+@[^[:space:]@]+$'
-            OR (
-                item ? 'email_delivery'
-                AND (
-                    NULLIF(btrim(item->>'email_delivery'), '') IS NULL
-                    OR length(btrim(item->>'email_delivery')) > 254
-                    OR lower(btrim(item->>'email_delivery'))
-                       !~ '^[^[:space:]@]+@[^[:space:]@]+$'
-                )
-            )
-    ) THEN
-        RAISE EXCEPTION 'INVALID_EMAIL';
-    END IF;
-    IF EXISTS (
-        SELECT 1
-          FROM jsonb_array_elements(p_rows) item
-         GROUP BY lower(btrim(item->'data'->>'email'))
-        HAVING count(*) > 1
-    ) THEN
-        RAISE EXCEPTION 'DUPLICATE_ACCOUNT_EMAIL';
-    END IF;
-    IF EXISTS (
-        SELECT 1
-          FROM jsonb_array_elements(p_rows) item
-         WHERE NULLIF(item->>'user_id', '') IS NOT NULL
-         GROUP BY item->>'user_id'
-        HAVING count(*) > 1
-    ) THEN
-        RAISE EXCEPTION 'DUPLICATE_USER_ID';
-    END IF;
-    IF EXISTS (
-        SELECT 1
-          FROM jsonb_array_elements(p_rows) item
-          JOIN jsonb_array_elements_text(p_delete_user_ids) deleted(id)
-            ON deleted.id = item->>'user_id'
-    ) THEN
-        RAISE EXCEPTION 'CONFLICTING_IMPORT_OPERATION';
     END IF;
 
     -- Serialize all CSV imports for one occasion. The group RPC uses the same
@@ -331,7 +271,7 @@ BEGIN
     END LOOP;
 
     IF jsonb_array_length(v_group_assignments) > 0 THEN
-        PERFORM public.import_user_group_assignments(
+        PERFORM public.import_user_group_assignments_internal_v1(
             p_occasion_id,
             v_group_assignments
         );
@@ -345,13 +285,25 @@ BEGIN
         'groups', jsonb_array_length(v_group_assignments)
     );
 END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv(
-    p_occasion_id bigint,
-    p_rows jsonb,
-    p_delete_user_ids jsonb DEFAULT '[]'::jsonb
-) RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.import_occasion_users_from_csv_internal_v1(
-    p_occasion_id,p_rows,p_delete_user_ids);
+$function$
+;
+CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv_internal_v1(p_occasion_id bigint, p_rows jsonb, p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+BEGIN
+    PERFORM public.validate_occasion_user_csv_import_v1(
+        p_occasion_id, p_rows, p_delete_user_ids);
+    RETURN public.import_occasion_users_from_csv_apply_v1(
+        p_occasion_id, p_rows, p_delete_user_ids);
+END;
+$function$
+;
+REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb),public.import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
+-- Released G3 compatibility facade; current callers use import_profiles_client_sync_v1.
+CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv(p_occasion_id bigint,p_rows jsonb,p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
+SELECT public.import_occasion_users_from_csv_internal_v1(p_occasion_id,p_rows,p_delete_user_ids);
 $$;

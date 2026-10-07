@@ -5,6 +5,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+import {checkCanonicalInventory} from './client-sync/check_canonical_inventory.mjs';
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const migrationPath = path.join(
   root,
@@ -54,6 +56,13 @@ const declaredFunctions = new Set(
     (match) => match[1],
   ),
 );
+const inventoryPath = path.join(root,'automation/client-sync/canonical-mutation-inventory.json');
+const current = JSON.parse(fs.readFileSync(inventoryPath,'utf8'));
+for (const entry of current.registry) {
+  const existing = rows.find(row => row.component===entry.component && row.relation===entry.relation);
+  if(existing) existing.writers=entry.writers;
+  else rows.push({component:entry.component,relation:entry.relation,writers:entry.writers,disposition:'migrate'});
+}
 const missingWriters = [...new Set(rows.flatMap((row) => row.writers))]
   .filter((writer) => !declaredFunctions.has(writer))
   .sort();
@@ -93,7 +102,9 @@ const requestHandlerExternalEffects = [
   'generateQrCode',
 ].filter((name) => ticketOrderHandler.includes(name));
 
+const canonical = checkCanonicalInventory(root,dartFiles);
 const failures = {
+  canonicalInventory: canonical.errors,
   missingWriters,
   genericWriters: [...new Set(genericWriters)].sort(),
   misplacedCommandStrings: misplacedCommandStrings.sort(),
@@ -116,5 +127,5 @@ if (failed) {
 
 const boundaries = rows.filter((row) => row.disposition === 'boundary');
 console.log(
-  `client sync registry: ${rows.length} sources, ${boundaries.length} explicit boundaries, checks OK`,
+  `client sync registry: ${rows.length} sources, ${current.legacyFunctions.length} gated legacy contracts, local checks OK`,
 );

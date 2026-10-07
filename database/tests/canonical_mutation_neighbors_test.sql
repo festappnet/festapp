@@ -1,0 +1,43 @@
+DO $$
+DECLARE actor uuid; member uuid; o bigint; g bigint; result jsonb; group_version bigint; activity_version bigint; revision bigint; command uuid; response jsonb; rows jsonb;
+BEGIN
+ PERFORM create_user_for_test('canonical_neighbors_editor','canonical_neighbors_editor@test.local');
+ PERFORM create_user_for_test('canonical_neighbors_member','canonical_neighbors_member@test.local');
+ actor:=get_user_id('canonical_neighbors_editor');member:=get_user_id('canonical_neighbors_member');
+ INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time,is_open) SELECT organization,id,'Neighbor tests',gen_random_uuid()::text,now(),now()+interval '1 day',true FROM public.units LIMIT 1 RETURNING id INTO o;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_view,is_manager,is_approved) VALUES(o,actor,true,true,true,true),(o,member,false,false,false,true);
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ result:=public.save_user_group_client_sync_v1(o,gen_random_uuid(),NULL,jsonb_build_object('title','Neighbor','participants',jsonb_build_array(jsonb_build_object('user_id',member))));g:=(result#>>'{data,group,id}')::bigint;
+ PERFORM public.lock_activity_aggregate_internal_v1(o);
+ INSERT INTO public.activities(id,title,occasion,is_hidden,"order") VALUES(gen_random_uuid(),'Deletion task',o,false,0);
+ INSERT INTO public.activity_assignments(id,activity_id,"user",start_time,end_time) SELECT gen_random_uuid(),id,member,now(),now()+interval '1 hour' FROM public.activities WHERE occasion=o;
+ SELECT version INTO group_version FROM public.client_aggregate_versions WHERE aggregate_type='user_group' AND aggregate_id=g::text AND scope_id=o;
+ result:=public.delete_occasion_user_client_sync_v1(o,gen_random_uuid()::text::uuid,gen_random_uuid(),0);
+ -- Unknown member is an unchanged outcome, no unrelated DML.
+ PERFORM assert_eq(result->>'status','unchanged','unknown member deletion no-op');
+ result:=public.delete_occasion_user_client_sync_v1(o,member,gen_random_uuid(),0);
+ PERFORM assert_eq(result->>'status','applied','canonical neighboring deletion');
+ PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.activity_assignments a JOIN public.activities t ON t.id=a.activity_id WHERE t.occasion=o),'membership deletion removes scoped assignments');
+ PERFORM assert_eq((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='user_group' AND aggregate_id=g::text AND scope_id=o),group_version+1,'membership deletion advances group clock');
+ PERFORM assert_eq((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='activities' AND scope_id=o),1::bigint,'membership deletion advances activity clock');
+ PERFORM assert_true(NOT has_function_privilege('authenticated','public.remove_occasion_user_domain_internal_v1(bigint,uuid)','EXECUTE'),'teardown helper is ungranted');
+ PERFORM assert_true(position('delete_occasion_user(' in pg_get_functiondef('public.cancel_reception_registration_v1(bigint,uuid)'::regprocedure))=0,'reception cancellation has no retired facade dependency');
+ PERFORM assert_true(position('delete_occasion_user(' in pg_get_functiondef('public.import_users_from_tickets(bigint)'::regprocedure))=0,'ticket import has no retired facade dependency');
+ INSERT INTO public.occasion_users(occasion,"user",is_approved) VALUES(o,member,true);
+ UPDATE public.user_info SET email_readonly='canonical_neighbors_member@test.local',organization=(SELECT organization FROM public.occasions WHERE id=o) WHERE id=member;
+ INSERT INTO public.user_companions("user",companion,occasion,origin,created_by) VALUES(actor,member,o,'admin_assigned',actor);
+ rows:=jsonb_build_array(jsonb_build_object('user_id',member,'data',jsonb_build_object('email','canonical_neighbors_member@test.local','name','Updated companion','surname','Member')));
+ result:=public.import_profiles_client_sync_v1(o,gen_random_uuid(),rows,'[]');
+ PERFORM assert_eq(result->>'status','applied','profile import updates companion');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.client_sync_private_scopes WHERE occasion=o AND user_id=actor AND component='private_profile'),'companion owner receives profile head within import receipt');
+ SELECT source_revision INTO revision FROM public.client_sync_private_scopes WHERE occasion=o AND user_id=actor AND component='private_profile';
+ result:=public.import_profiles_client_sync_v1(o,gen_random_uuid(),rows,'[]');
+ PERFORM assert_eq(result->>'status','unchanged','identical profile import has no domain change');
+ PERFORM assert_eq((SELECT source_revision FROM public.client_sync_private_scopes WHERE occasion=o AND user_id=actor AND component='private_profile'),revision,'no-op import does not advance companion head');
+ command:=gen_random_uuid();
+ result:=public.import_profiles_client_sync_v1(o,command,'[]',jsonb_build_array(member));response:=result;
+ PERFORM assert_eq(result->>'status','applied','import deletion applies');
+ PERFORM assert_eq((SELECT source_revision FROM public.client_sync_private_scopes WHERE occasion=o AND user_id=actor AND component='private_profile'),revision+1,'companion owner impact survives membership cascade');
+ PERFORM assert_eq(public.import_profiles_client_sync_v1(o,command,'[]',jsonb_build_array(member)),response,'import replay exact');
+ PERFORM assert_eq((SELECT source_revision FROM public.client_sync_private_scopes WHERE occasion=o AND user_id=actor AND component='private_profile'),revision+1,'import replay cannot invalidate companion twice');
+END $$;

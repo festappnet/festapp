@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "verification": "standard",
+  "base": "eb1d94ac41b085218b8ed618814b9e0727525e62",
+  "worktree": "/Users/miakh/source/festapp-canonical-mutation-cutover",
+  "branch": "feat/canonical-mutation-cutover-20261007",
+  "disposableProject": "festapp-canonical-mutation-pg15",
+  "endpoint": "127.0.0.1:55452",
+  "productionQueries": 0,
+  "productionWrites": 0,
+  "publication": false,
+  "uniqueTargetedFlutterTests": 129,
+  "targetedSqlSuites": 15,
+  "nodeTests": 25,
+  "currentSqlOwners": 56,
+  "registryAndLocalPreflight": true,
+  "remainingAnalysisWarnings": [
+    "existing EventPage.id must_be_immutable",
+    "existing EventPage callback unnecessary_set_literal"
+  ],
+  "results": [
+    {
+      "result": "124 original affected Flutter tests passed",
+      "logSha256": "2beab8dc6c635f73c3c0aa2dd945df284289c3fcd6985baace923004aa2c3dd7",
+      "localLog": "/tmp/canonical-flutter-final.log"
+    },
+    {
+      "result": "17 group tests passed, including 5 new creation/reconciliation cases",
+      "logSha256": "1646e95b0d9991f88e5cd77e7020e3b2984d35c45fff445bd46f48a8e33aca18",
+      "localLog": "/tmp/canonical-group-last-test.log"
+    },
+    {
+      "result": "50 sync tests passed after notification repair",
+      "logSha256": "0be53dc2c528649a08ef9cc7f265fc38a5b1b697af1316fc30d70dafeee8377d",
+      "localLog": "/tmp/canonical-notification-tests.log"
+    },
+    {
+      "result": "15 targeted SQL suites passed",
+      "logSha256": "0f887e1711456d5b1894de313459c0e751b42b35f26007a7c9f9e8adbf30edfd",
+      "localLog": "/tmp/canonical-guarded-sql-final.log"
+    },
+    {
+      "result": "account deletion and 56-owner source parity passed after lock order adjustment",
+      "logSha256": "9581d7773d42adf463f98eca7d2d8d98c30e56f957592b40e73d0e4ccff2e5fa",
+      "localLog": "/tmp/canonical-account-final.log"
+    },
+    {
+      "result": "5 real two-connection tests passed",
+      "logSha256": "43ec9a4129f365bb1909134bce44a6533fcf53dcb220c161408605c3fad94b4a",
+      "localLog": "/tmp/canonical-concurrency-last.log"
+    },
+    {
+      "result": "20 checker/activation/evidence tests passed",
+      "logSha256": "ff501b2109b3a623dc73f10815bb84eea6228828262bc2f38dabb4708ae56f3f",
+      "localLog": "/tmp/canonical-node-verification.log"
+    },
+    {
+      "result": "clean baseline plus full forward migration chain passed",
+      "logSha256": "2f90fc9130cb73e67c487e25fe07da62b650860fff9d19d6353eb4a12b06d197",
+      "localLog": "/tmp/canonical-verified-chain.log"
+    }
+  ],
+  "followup": {
+    "canonicalTargetTests": 21,
+    "newTargetRegressionTests": 4,
+    "log": "/tmp/canonical-target-final-tests.log",
+    "logSha256": "92cc816b3b51bb2ebdfc5c54b48cd55e29591bac14b1c3868b63c3d7f618c6c9",
+    "productionReadOnlyInventory": "docs/plans/evidence/canonical-mutation-csm-g2-inventory.json",
+    "noProductionWrites": true
+  }
+}

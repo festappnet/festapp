@@ -2,6 +2,7 @@ import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:fstapp/data_services/client_sync/client_command_response.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 
 enum InformationCommandStatus { applied, unchanged, rejected, conflict }
 
@@ -39,21 +40,29 @@ abstract interface class InformationCommands {
 
 class SupabaseInformationCommands implements InformationCommands {
   SupabaseInformationCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client),
+        _actorId = (() => client.auth.currentUser?.id);
 
-  SupabaseInformationCommands.withTransport(this._transport);
+  SupabaseInformationCommands.withTransport(this._transport)
+      : _actorId = (() => null);
 
   final ClientCommandTransport _transport;
+  final String? Function() _actorId;
 
   @override
   Future<GameGuessCommandResult> guess(int checkpointId, String guess) async {
+    final actor = _actorId();
+    final token = ClientSyncRuntime.mutationContextToken;
     final response = ClientCommandResponse.from(
-      await _transport.invoke('game_guess_client_sync_v1', {
+      await _transport.invokeIntent(
+          '$actor:$checkpointId:game.guess', 'game_guess_client_sync_v1', {
         'p_checkpoint': checkpointId,
         'p_guess': guess,
       }),
     );
-    await response.applyReplacements();
+    if (actor == _actorId()) {
+      await response.applyConfirmedReplacements(expectedContextToken: token);
+    }
     return GameGuessCommandResult(
       status: InformationCommandStatus.values.byName(response.status),
       domainCode: (response.data['domainCode'] as num?)?.toInt() ?? 500,

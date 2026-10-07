@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
+import 'package:fstapp/components/map/place_model.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_response.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 
 enum GroupCommandStatus { applied, unchanged, rejected, conflict }
 
@@ -28,11 +32,16 @@ abstract interface class GroupCommands {
 
 class SupabaseGroupCommands implements GroupCommands {
   SupabaseGroupCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client),
+        _actorId = (() => client.auth.currentUser?.id);
 
-  SupabaseGroupCommands.withTransport(this._transport);
+  SupabaseGroupCommands.withTransport(this._transport,
+      {String? Function()? actorId})
+      : _actorId = actorId ?? (() => null);
 
   final ClientCommandTransport _transport;
+  final String? Function() _actorId;
+  final _creations = Expando<_GroupCreationIntent>();
 
   @override
   Future<GroupCommandResult> replaceAssignments(
@@ -52,9 +61,12 @@ class SupabaseGroupCommands implements GroupCommands {
   @override
   Future<GroupCommandResult> save(
       int occasionId, UserGroupInfoModel group) async {
+    if (group.participants == null) {
+      throw StateError('Complete group membership must be loaded before save');
+    }
     final privatePlace =
         group.place?.isPrivateGroupLocation == true ? group.place : null;
-    final response = await _invoke('save_user_group_client_sync_v1', {
+    final requested = <String, dynamic>{
       'p_occasion': occasionId,
       'p_expected_version': group.id == null ? null : group.aggregateVersion,
       'p_group': {
@@ -83,7 +95,62 @@ class SupabaseGroupCommands implements GroupCommands {
             },
         ],
       },
-    });
+    };
+    final actor = _actorId();
+    final context = ClientSyncRuntime.mutationContextToken;
+    var creation = _creations[group];
+    if (creation != null &&
+        (creation.actor != actor || creation.context != context)) {
+      throw StateError('Reload the group editor after identity change');
+    }
+    if (group.id == null) {
+      creation ??= _GroupCreationIntent(
+          jsonDecode(jsonEncode(requested)) as Map<String, dynamic>,
+          privatePlace,
+          actor,
+          context);
+      _creations[group] = creation;
+    }
+    ClientCommandResponse response;
+    try {
+      response = await _invoke(
+          'save_user_group_client_sync_v1', creation?.parameters ?? requested,
+          intentKey: creation?.key);
+    } on PostgrestException catch (error) {
+      // A first PostgreSQL error proves rollback. After an ambiguous attempt,
+      // an authorization error cannot disprove that the earlier create committed.
+      if (RegExp(r'^[A-Z0-9]{5}$').hasMatch(error.code ?? '') &&
+          creation?.ambiguous != true) {
+        _creations[group] = null;
+      } else {
+        creation?.ambiguous = true;
+      }
+      rethrow;
+    } catch (_) {
+      creation?.ambiguous = true;
+      rethrow;
+    }
+    if (creation != null) {
+      _creations[group] = null;
+      final confirmed = _decode(response);
+      if (confirmed.group != null &&
+          (confirmed.status == GroupCommandStatus.applied ||
+              confirmed.status == GroupCommandStatus.unchanged) &&
+          actor == _actorId() &&
+          ClientSyncRuntime.isCurrentMutationContext(context) &&
+          ClientCommandIdentity.fingerprint(creation.parameters) !=
+              ClientCommandIdentity.fingerprint(requested)) {
+        group.acceptSavedIdentity(confirmed.group!, creation.place);
+        requested['p_expected_version'] = confirmed.version;
+        final dto = requested['p_group'] as Map;
+        dto['id'] = confirmed.group!.id;
+        if (identical(privatePlace, creation.place) &&
+            dto['privatePlace'] is Map) {
+          (dto['privatePlace'] as Map)['id'] = confirmed.group!.place?.id;
+        }
+        response = await _invoke('save_user_group_client_sync_v1', requested);
+      }
+    }
     return _decode(response);
   }
 
@@ -100,10 +167,17 @@ class SupabaseGroupCommands implements GroupCommands {
   }
 
   Future<ClientCommandResponse> _invoke(
-      String name, Map<String, dynamic> parameters) async {
-    final response =
-        ClientCommandResponse.from(await _transport.invoke(name, parameters));
-    await response.applyReplacements();
+      String name, Map<String, dynamic> parameters,
+      {String? intentKey}) async {
+    final context = ClientSyncRuntime.mutationContextToken;
+    final actor = _actorId();
+    final response = ClientCommandResponse.from(await _transport.invokeIntent(
+        '$actor:${parameters['p_occasion']}:$name:${intentKey ?? ''}',
+        name,
+        parameters));
+    if (_actorId() == actor) {
+      await response.applyConfirmedReplacements(expectedContextToken: context);
+    }
     return response;
   }
 
@@ -121,4 +195,14 @@ class SupabaseGroupCommands implements GroupCommands {
           : null,
     );
   }
+}
+
+class _GroupCreationIntent {
+  _GroupCreationIntent(this.parameters, this.place, this.actor, this.context);
+  bool ambiguous = false;
+  final String key = ClientCommandIdentity.newCommandId();
+  final Map<String, dynamic> parameters;
+  final PlaceModel? place;
+  final String? actor;
+  final String context;
 }
