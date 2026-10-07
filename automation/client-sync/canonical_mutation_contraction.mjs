@@ -11,6 +11,11 @@ export function buildMutationContractionSql({includeSharedPlaces=false}={}) {
 DO $mutation_overloads$ BEGIN
  IF EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname=ANY(ARRAY[${names.map(q).join(',')}]) AND p.oid::regprocedure::text<>ALL(ARRAY[${mutationInventory.legacyFunctions.map(x=>q(x.signature)).join(',')},'update_activities(bigint)'])) THEN RAISE EXCEPTION 'unexpected legacy overload: re-inventory before contraction'; END IF;
 END $mutation_overloads$;
+DO $ready_registry$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.client_sync_component_sources)
+ OR EXISTS(SELECT 1 FROM public.client_sync_component_sources WHERE NOT cutover_ready OR registry_version<>1) THEN
+  RAISE EXCEPTION 'already-ready registry version 1 required for bounded contraction'; END IF;
+END $ready_registry$;
 ${signatures.map(s=>`DROP FUNCTION IF EXISTS ${s};`).join('\n')}
 DO $mutation_acl$
 DECLARE relation regclass; role_name text; column_names text; client_role text;
@@ -29,8 +34,19 @@ BEGIN
   END LOOP;
  END LOOP;
 END $mutation_acl$;
--- Remove only the retired writer labels; readiness and capability stay unchanged.
-UPDATE public.client_sync_component_sources SET legacy_writers=ARRAY(SELECT x FROM unnest(legacy_writers) x WHERE x<>ALL(ARRAY[${names.map(q).join(',')}]::text[])) WHERE (component,source_relation) IN (${mutationInventory.registry.map(x=>`(${q(x.component)},${q(x.relation)}::regclass)`).join(',')});
+-- Coordinated transition of this already-ready shared registry only.
+-- Preserve every out-of-scope row and the existing readiness of matched rows.
+CREATE TEMP TABLE canonical_mutation_registry_outside_before ON COMMIT DROP AS
+ SELECT * FROM public.client_sync_component_sources WHERE (component,source_relation) NOT IN (${mutationInventory.registry.map(x=>`(${q(x.component)},${q(x.relation)}::regclass)`).join(',')});
+INSERT INTO public.client_sync_component_sources(registry_version,component,source_relation,scope_resolver,tracked_columns,canonical_writers,legacy_writers,disposition,test_factory,cutover_ready) VALUES
+${mutationInventory.registry.map(x=>`(1,${q(x.component)},${q(x.relation)}::regclass,${q(x.scopeResolver)},ARRAY[${x.trackedColumns.map(q).join(',')}]::text[],ARRAY[${x.writers.map(q).join(',')}]::text[],ARRAY[]::text[],'migrate',${q(x.testFactory)},true)`).join(',\n')}
+ON CONFLICT(registry_version,component,source_relation) DO UPDATE SET scope_resolver=EXCLUDED.scope_resolver,tracked_columns=EXCLUDED.tracked_columns,canonical_writers=EXCLUDED.canonical_writers,legacy_writers=EXCLUDED.legacy_writers,test_factory=EXCLUDED.test_factory;
+DO $registry_preserved$ BEGIN
+ IF EXISTS((SELECT * FROM pg_temp.canonical_mutation_registry_outside_before EXCEPT SELECT * FROM public.client_sync_component_sources)
+ UNION ALL (SELECT * FROM public.client_sync_component_sources WHERE (component,source_relation) NOT IN (${mutationInventory.registry.map(x=>`(${q(x.component)},${q(x.relation)}::regclass)`).join(',')}) EXCEPT SELECT * FROM pg_temp.canonical_mutation_registry_outside_before))
+ OR EXISTS(SELECT 1 FROM public.client_sync_component_sources WHERE NOT cutover_ready) THEN
+  RAISE EXCEPTION 'unrelated registry or readiness changed'; END IF;
+END $registry_preserved$;
 DO $mutation_absence$ BEGIN
  IF EXISTS(SELECT 1 FROM unnest(ARRAY[${signatures.map(q).join(',')}]) signature WHERE to_regprocedure(signature) IS NOT NULL) THEN RAISE EXCEPTION 'legacy writer survived'; END IF;
 END $mutation_absence$;`;

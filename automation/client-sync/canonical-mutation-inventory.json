@@ -27,14 +27,7 @@
         "import_users_from_tickets_client_sync_v1",
         "cancel_reception_registration_v1"
       ],
-      "legacy": [
-        "import_user_group_assignments",
-        "import_occasion_users_from_csv",
-        "delete_occasion_user",
-        "delete_occasion_user_ws",
-        "game_guess",
-        "process_occasion_auto_import/service ticket import"
-      ],
+      "legacy": [],
       "testFactory": "user_group_factory"
     },
     {
@@ -60,14 +53,7 @@
         "import_users_from_tickets_client_sync_v1",
         "cancel_reception_registration_v1"
       ],
-      "legacy": [
-        "import_user_group_assignments",
-        "import_occasion_users_from_csv",
-        "delete_occasion_user",
-        "delete_occasion_user_ws",
-        "game_guess",
-        "process_occasion_auto_import/service ticket import"
-      ],
+      "legacy": [],
       "testFactory": "user_group_membership_factory"
     },
     {
@@ -91,11 +77,7 @@
         "import_users_from_tickets_client_sync_v1",
         "cancel_reception_registration_v1"
       ],
-      "legacy": [
-        "update_activities",
-        "shift_occasion_schedule_backward",
-        "process_occasion_auto_import/service ticket import"
-      ],
+      "legacy": [],
       "testFactory": "activity_factory"
     },
     {
@@ -120,11 +102,7 @@
         "import_users_from_tickets_client_sync_v1",
         "cancel_reception_registration_v1"
       ],
-      "legacy": [
-        "update_activities",
-        "shift_occasion_schedule_backward",
-        "process_occasion_auto_import/service ticket import"
-      ],
+      "legacy": [],
       "testFactory": "activity_assignment_factory"
     },
     {
@@ -144,11 +122,7 @@
         "import_users_from_tickets_client_sync_v1",
         "cancel_reception_registration_v1"
       ],
-      "legacy": [
-        "update_activities",
-        "shift_occasion_schedule_backward",
-        "process_occasion_auto_import/service ticket import"
-      ],
+      "legacy": [],
       "testFactory": "activity_assignment_factory"
     },
     {
@@ -168,11 +142,7 @@
         "import_users_from_tickets_client_sync_v1",
         "cancel_reception_registration_v1"
       ],
-      "legacy": [
-        "update_activities",
-        "shift_occasion_schedule_backward",
-        "process_occasion_auto_import/service ticket import"
-      ],
+      "legacy": [],
       "testFactory": "activity_assignment_factory"
     },
     {
@@ -194,10 +164,7 @@
         "move_place_client_sync_v1",
         "delete_place_client_sync_v1"
       ],
-      "legacy": [
-        "save_place_location",
-        "shared map direct DML"
-      ],
+      "legacy": [],
       "testFactory": "canonical_group_factory"
     }
   ],
@@ -378,13 +345,6 @@
       "signature": "replace_activities_graph_internal_v1(bigint,jsonb)"
     },
     {
-      "name": "update_activities",
-      "source": "database/functions/activities/canonical_activity_graph.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
-      "signature": "update_activities(bigint,jsonb)"
-    },
-    {
       "name": "write_activity_history_internal_v1",
       "source": "database/functions/activities/canonical_activity_history.sql",
       "removalGate": null,
@@ -397,20 +357,6 @@
       "removalGate": null,
       "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
       "signature": "clear_activity_draft_internal_v1(bigint,uuid,bigint,boolean)"
-    },
-    {
-      "name": "save_activity_history",
-      "source": "database/functions/activities/canonical_activity_history.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
-      "signature": "save_activity_history(bigint,jsonb,text,bigint,text)"
-    },
-    {
-      "name": "delete_autosave_history",
-      "source": "database/functions/activities/canonical_activity_history.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/activities/canonical_activity_commands_test.sql",
-      "signature": "delete_autosave_history(bigint)"
     },
     {
       "name": "lock_activity_aggregate_internal_v1",
@@ -511,39 +457,11 @@
       "signature": "import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb)"
     },
     {
-      "name": "import_occasion_users_from_csv",
-      "source": "database/functions/users/import_occasion_users_from_csv.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
-      "signature": "import_occasion_users_from_csv(bigint,jsonb,jsonb)"
-    },
-    {
       "name": "import_user_group_assignments_internal_v1",
       "source": "database/functions/users/import_user_group_assignments.sql",
       "removalGate": null,
       "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
       "signature": "import_user_group_assignments_internal_v1(bigint,jsonb)"
-    },
-    {
-      "name": "import_user_group_assignments",
-      "source": "database/functions/users/import_user_group_assignments.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
-      "signature": "import_user_group_assignments(bigint,jsonb)"
-    },
-    {
-      "name": "delete_occasion_user",
-      "source": "database/functions/users/delete_occasion_user.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
-      "signature": "delete_occasion_user(uuid,bigint)"
-    },
-    {
-      "name": "delete_occasion_user_ws",
-      "source": "database/functions/users/delete_occasion_user_ws.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
-      "signature": "delete_occasion_user_ws(uuid,bigint)"
     },
     {
       "name": "import_users_from_tickets",
@@ -565,13 +483,6 @@
       "removalGate": null,
       "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
       "signature": "complete_profile_inventory_membership_mutation_v1(uuid,bigint,text,jsonb,uuid[],jsonb,text)"
-    },
-    {
-      "name": "save_place_location",
-      "source": "database/functions/places/save_place_location.sql",
-      "removalGate": "G3",
-      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
-      "signature": "save_place_location(bigint,double precision,double precision)"
     },
     {
       "name": "create_reception_user_v1",
@@ -723,5 +634,7 @@
     "20261007120000_canonical_activity_mutations.sql",
     "20261007150000_canonical_mutation_observation.sql",
     "20261007160000_canonical_mutation_write_release.sql"
-  ]
+  ],
+  "registrySource": "database/operations/canonical_mutation_contraction.sql",
+  "retirementState": "contraction prepared; exact signatures removed only under validated G3/G4"
 }
