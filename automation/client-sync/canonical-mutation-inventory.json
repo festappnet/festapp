@@ -593,6 +593,22 @@
       "contractTest": "database/tests/canonical_mutation_neighbors_test.sql",
       "removalGate": null,
       "signature": "profile_group_import_state_internal_v1(bigint)"
+    },
+    {
+      "name": "log_canonical_mutation_request_v1",
+      "source": "database/functions/client_sync/canonical_mutation_observation.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_observation_test.sql",
+      "signature": "log_canonical_mutation_request_v1()",
+      "introducedMigration": "20261007150000_canonical_mutation_observation.sql"
+    },
+    {
+      "name": "log_canonical_mutation_scope_internal_v1",
+      "source": "database/functions/client_sync/canonical_mutation_observation.sql",
+      "removalGate": null,
+      "contractTest": "database/tests/canonical_mutation_observation_test.sql",
+      "signature": "log_canonical_mutation_scope_internal_v1(bigint)",
+      "introducedMigration": "20261007150000_canonical_mutation_observation.sql"
     }
   ],
   "historyOnly": [
@@ -679,5 +695,10 @@
     "delete_occasion_user_ws",
     "delete_occasion_user",
     "game_guess"
+  ],
+  "forwardMigrations": [
+    "20261007110000_canonical_group_mutations.sql",
+    "20261007120000_canonical_activity_mutations.sql",
+    "20261007150000_canonical_mutation_observation.sql"
   ]
 }

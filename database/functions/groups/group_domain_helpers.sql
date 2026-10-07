@@ -2,6 +2,7 @@
 CREATE OR REPLACE FUNCTION public.lock_group_occasion_internal_v1(p_occasion bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 BEGIN
+ PERFORM public.log_canonical_mutation_scope_internal_v1(p_occasion);
  PERFORM pg_catalog.pg_advisory_xact_lock(p_occasion);
  PERFORM 1 FROM public.user_group_info WHERE occasion=p_occasion ORDER BY id FOR UPDATE;
  INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)

@@ -4,6 +4,20 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pwa_install/pwa_install.dart';
 
 class PlatformHelper {
+  /// Measurement metadata is self-reported and never grants write permission.
+  /// An unavailable package plugin must not prevent backend initialization.
+  static Future<Map<String, String>> getBackendRequestHeaders() async {
+    final platform = kIsWeb ? 'web' : defaultTargetPlatform.name;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      return {
+        'X-Client-Info': 'festapp/${info.version}+${info.buildNumber}/$platform',
+      };
+    } catch (_) {
+      return {'X-Client-Info': 'festapp/unknown/$platform'};
+    }
+  }
+
   static Future<Map<String, dynamic>> getPlatform() async {
     var packageInfo = await PackageInfo.fromPlatform();
     var version = packageInfo.version;
@@ -33,6 +47,7 @@ class PlatformHelper {
     return {
       'platform': platform,
       'version': version,
+      'buildNumber': packageInfo.buildNumber,
       'buildMode': buildMode,
     };
   }

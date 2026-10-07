@@ -18,14 +18,15 @@ export function checkCanonicalInventory(root, dartFiles) {
   const inventory=JSON.parse(fs.readFileSync(path.join(root,'automation/client-sync/canonical-mutation-inventory.json'),'utf8'));
   const sql=fs.readFileSync(path.join(root,'supabase/migrations/20261007130000_canonical_mutation_registry.sql'),'utf8');
   const errors=verifyRegistrySlice(inventory,sql);
-  const forwardSql=['20261007110000_canonical_group_mutations.sql','20261007120000_canonical_activity_mutations.sql'].map(name=>fs.readFileSync(path.join(root,'supabase/migrations',name),'utf8')).join('\n');
+  const forwardSql=inventory.forwardMigrations.map(name=>fs.readFileSync(path.join(root,'supabase/migrations',name),'utf8')).join('\n');
   for(const f of inventory.functions) {
     const source=fs.readFileSync(path.join(root,f.source),'utf8');
     if(!source.includes(`FUNCTION public.${f.name}(`)) errors.push(`missing current SQL owner ${f.name}`);
     const pattern=new RegExp(`CREATE OR REPLACE FUNCTION public\\.${f.name}\\([\\s\\S]*?AS\\s+(\\$\\w*\\$)([\\s\\S]*?)\\1`,'gi');
     const currentBody=[...source.matchAll(pattern)].at(-1)?.[2]?.trim();
     const forwardBody=[...forwardSql.matchAll(pattern)].at(-1)?.[2]?.trim();
-    if(forwardBody!=null && currentBody!==forwardBody)errors.push(`forward migration body drift ${f.signature}`);
+    if(forwardBody==null && f.introducedMigration)errors.push(`missing forward migration owner ${f.signature}`);
+    else if(forwardBody!=null && currentBody!==forwardBody)errors.push(`forward migration body drift ${f.signature}`);
     if(!fs.existsSync(path.join(root,f.contractTest)))errors.push(`missing contract test ${f.name}`);
   }
   for(const file of dartFiles) {
