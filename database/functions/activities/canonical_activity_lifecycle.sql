@@ -35,6 +35,7 @@ CREATE OR REPLACE FUNCTION public.save_activity_draft_client_sync_v1(p_occasion 
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); b jsonb; v bigint; latest bigint; draft public.activity_history%rowtype; graph jsonb; history jsonb; result jsonb; hid bigint;
 BEGIN
+ PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
  IF actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
  IF p_history_data IS NULL OR jsonb_typeof(p_history_data)<>'object' OR octet_length(p_history_data::text)>2097152 THEN RAISE invalid_parameter_value USING MESSAGE='invalid draft'; END IF;
  b:=public.begin_client_mutation_v1(p_command_id,'activities.draft.save',p_occasion,actor,encode(extensions.digest(jsonb_build_object('occasion',p_occasion,'expectedVersion',p_expected_version,'history',p_history_data,'parent',p_parent_history_id)::text,'sha256'),'hex'));
@@ -54,6 +55,7 @@ CREATE OR REPLACE FUNCTION public.discard_activity_draft_client_sync_v1(p_occasi
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); b jsonb; v bigint; draft bigint;
 BEGIN
+ PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
  IF actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
  b:=public.begin_client_mutation_v1(p_command_id,'activities.draft.discard',p_occasion,actor,encode(extensions.digest(jsonb_build_object('occasion',p_occasion,'draft',p_expected_draft_id)::text,'sha256'),'hex'));
  v:=public.lock_activity_editor_internal_v1(p_occasion);
@@ -68,6 +70,7 @@ CREATE OR REPLACE FUNCTION public.publish_activities_client_sync_v1(p_occasion b
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); b jsonb; v bigint; latest bigint; graph jsonb; history jsonb; old_graph jsonb; previous_history jsonb; hid bigint; live_changed boolean; deleted int; impacts jsonb; replacements jsonb:='[]'; users uuid[];
 BEGIN
+ PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
  IF actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
  IF p_activities_data IS NULL OR jsonb_typeof(p_activities_data)<>'array' OR p_history_data IS NULL OR jsonb_typeof(p_history_data)<>'object' OR octet_length(p_activities_data::text)>2097152 OR octet_length(p_history_data::text)>2097152 THEN RAISE invalid_parameter_value USING MESSAGE='invalid activities aggregate'; END IF;
  b:=public.begin_client_mutation_v1(p_command_id,'activities.publish',p_occasion,actor,encode(extensions.digest(jsonb_build_object('occasion',p_occasion,'expectedVersion',p_expected_version,'activities',p_activities_data,'history',p_history_data,'parentHistoryId',p_parent_history_id)::text,'sha256'),'hex'));
