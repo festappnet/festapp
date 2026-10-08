@@ -10,6 +10,17 @@ class UnitStrings {
   static String get loadUnitFailed =>
       'Unit.loadUnitFailed'.tr(); // "Failed to load unit data."
 
+  static String get appLanding => 'Unit.appLanding'.tr();
+  static String get setAppLanding => 'Unit.setAppLanding'.tr();
+  static String get clearAppLanding => 'Unit.clearAppLanding'.tr();
+  static String get landingOverview => 'Unit.landingOverview'.tr();
+  static String landingSelected(String title) =>
+      'Unit.landingSelected'.tr(args: [title]);
+  static String get landingScope => 'Unit.landingScope'.tr();
+  static String get landingAdminOnly => 'Unit.landingAdminOnly'.tr();
+  static String get landingLoadFailed => 'Unit.landingLoadFailed'.tr();
+  static String get landingForced => 'Unit.landingForced'.tr();
+
   // Occasions screen
   static String get addNewEvent => 'Unit.addNewEvent'.tr(); // "Add New Event"
   static String get noEventsFound =>

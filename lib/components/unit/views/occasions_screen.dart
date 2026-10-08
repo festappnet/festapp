@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/unit/app_landing.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -26,6 +29,53 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   List<OccasionModel> _allOccasions = [];
   List<OccasionModel> _filteredOccasions = [];
   bool _isLoading = true;
+  AppLanding? _landing;
+  bool _landingFailed = false;
+  bool _savingLanding = false;
+  int _landingGeneration = 0;
+
+  Future<void> _loadLanding() async {
+    final generation = ++_landingGeneration;
+    try {
+      final landing = await AppLanding.load(widget.unit.id!);
+      if (!mounted || generation != _landingGeneration) return;
+      setState(() {
+        _landing = landing;
+        _landingFailed = false;
+      });
+    } catch (_) {
+      if (!mounted || generation != _landingGeneration) return;
+      setState(() => _landingFailed = true);
+    }
+  }
+
+  Future<void> _setLanding(int? occasionId) async {
+    final landing = _landing;
+    if (landing == null || !landing.canManage || _savingLanding) return;
+    final unitId = widget.unit.id!;
+    final generation = ++_landingGeneration;
+    setState(() => _savingLanding = true);
+    final saved = await ExceptionHandler.guard(context,
+        futureFunction: () => landing.save(unitId, occasionId));
+    if (!mounted || generation != _landingGeneration) return;
+    setState(() {
+      _savingLanding = false;
+      if (saved != null) _landing = saved;
+    });
+    if (saved == null) await _loadLanding();
+  }
+
+  Widget _buildLandingStatus() {
+    if (_landingFailed) {
+      return TextButton.icon(
+          onPressed: _loadLanding,
+          icon: const Icon(Icons.refresh),
+          label: Text(UnitStrings.landingLoadFailed));
+    }
+    return _landing == null || _savingLanding
+        ? const LinearProgressIndicator()
+        : const SizedBox.shrink();
+  }
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -35,6 +85,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   void initState() {
     super.initState();
     _initializeOccasions();
+    _loadLanding();
     _searchController.addListener(_filterOccasions);
     _searchFocusNode.addListener(_onSearchFocusChange);
   }
@@ -42,7 +93,14 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   @override
   void didUpdateWidget(covariant OccasionsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialOccasions != oldWidget.initialOccasions) {
+    if (widget.unit.id != oldWidget.unit.id) {
+      _landing = null;
+      _landingFailed = false;
+      _savingLanding = false;
+      _loadLanding();
+    }
+    if (widget.unit.id != oldWidget.unit.id ||
+        widget.initialOccasions != oldWidget.initialOccasions) {
       _initializeOccasions();
     }
   }
@@ -181,15 +239,17 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
-                onRefresh: _loadOccasions,
+                onRefresh: () async {
+                  await _loadOccasions();
+                  if (!_savingLanding) await _loadLanding();
+                },
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
                     if (_filteredOccasions.isEmpty &&
                         _searchController.text.isNotEmpty)
                       SliverFillRemaining(
-                          child: Center(
-                              child: Text(UnitStrings.noEventsFound)))
+                          child: Center(child: Text(UnitStrings.noEventsFound)))
                     else ...[
                       if (presentEvents.isNotEmpty) ...[
                         _buildSectionHeader(
@@ -228,6 +288,10 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16.0),
+          if (_landing == null || _landingFailed || _savingLanding) ...[
+            _buildLandingStatus(),
+            const SizedBox(height: 16),
+          ],
           LayoutBuilder(
             builder: (context, constraints) {
               const double buttonWidthThreshold = 550.0;
@@ -343,6 +407,17 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
               onTap: () => _handleView(occasion),
               onCreateCopy: () => _handleCreateCopy(occasion),
               isPresent: isPresent,
+              isAppLanding: _landing?.enabled == true &&
+                  _landing?.occasionId == occasion.id,
+              onSetAppLanding: _landing?.enabled == true &&
+                      _landing?.canManage == true &&
+                      !_savingLanding &&
+                      AppConfig.forceOccasionLink == null &&
+                      (occasion.isOpen == true ||
+                          _landing?.occasionId == occasion.id)
+                  ? () => _setLanding(
+                      _landing?.occasionId == occasion.id ? null : occasion.id)
+                  : null,
             );
           },
           childCount: occasions.length,

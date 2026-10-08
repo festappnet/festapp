@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -14,6 +15,8 @@ class OccasionEditCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onCreateCopy;
   final bool isPresent;
+  final bool isAppLanding;
+  final VoidCallback? onSetAppLanding;
 
   const OccasionEditCard({
     super.key,
@@ -21,6 +24,8 @@ class OccasionEditCard extends StatelessWidget {
     required this.onTap,
     required this.onCreateCopy,
     this.isPresent = false,
+    this.isAppLanding = false,
+    this.onSetAppLanding,
   });
 
   /// Builds a single stat widget with an icon, value, and tooltip.
@@ -80,11 +85,18 @@ class OccasionEditCard extends StatelessWidget {
                 icon: Icon(Icons.more_vert,
                     color: onSurfaceColor.withOpacity(0.7)),
                 onSelected: (value) {
+                  if (value == "app_landing") onSetAppLanding?.call();
                   if (value == "create_copy") {
                     onCreateCopy();
                   }
                 },
                 itemBuilder: (BuildContext context) => [
+                  if (onSetAppLanding != null)
+                    PopupMenuItem(
+                        value: 'app_landing',
+                        child: Text(isAppLanding
+                            ? UnitStrings.clearAppLanding
+                            : UnitStrings.setAppLanding)),
                   PopupMenuItem(
                     value: "create_copy",
                     child: Text(FormStrings.createCopy),
@@ -170,6 +182,12 @@ class OccasionEditCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (isAppLanding)
+                Tooltip(
+                    message: UnitStrings.appLanding,
+                    child: Icon(Icons.home,
+                        semanticLabel: UnitStrings.appLanding,
+                        color: theme.colorScheme.primary)),
               const SizedBox(width: 8),
               Icon(Icons.chevron_right, color: onSurfaceColor.withOpacity(0.5)),
               const SizedBox(width: 4),
