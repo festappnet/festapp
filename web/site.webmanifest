@@ -1,7 +1,7 @@
 {
-  "name": "Festapp",
-  "short_name": "Festapp",
-  "description": "Platforma pro správu akcí, programu a vstupenek.",
+  "name": "Člověk a víra",
+  "short_name": "ČaV",
+  "description": "Program, informace a služby fotografického společenství Člověk a Víra.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
