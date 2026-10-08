@@ -1809,9 +1809,9 @@
     "foodCreateHint": "To create food, fill in the title, unique code, and the reference of the event."
   },
   "Unit": {
-    "appLanding": "App opening screen",
-    "setAppLanding": "Set as app opening screen",
-    "clearAppLanding": "Show event overview",
+    "appLanding": "Default app event",
+    "setAppLanding": "Set as default app event",
+    "clearAppLanding": "Remove as default app event",
     "landingOverview": "The app opens the event card overview.",
     "landingSelected": "The app opens: {}",
     "landingScope": "Applies to the whole application, across all units.",
