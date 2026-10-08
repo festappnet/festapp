@@ -25,7 +25,7 @@ class _Translations extends AssetLoader {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
-      'switching and clearing landing updates the summary and unique marker',
+      'landing is controlled only through card menus with one visible marker',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
@@ -91,16 +91,14 @@ void main() {
                       ],
                     ))))));
     await tester.pumpAndSettle();
-    expect(
-        find.text('Aplikace se otevře akcí: Slunovrat 2026'), findsOneWidget);
+    expect(find.text('Aplikace se otevře akcí: Slunovrat 2026'), findsNothing);
     expect(find.byIcon(Icons.home), findsOneWidget);
     await tester.tap(find.byIcon(Icons.more_vert).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Nastavit jako úvodní akci aplikace'));
     await tester.pumpAndSettle();
     expect(selected, 2);
-    expect(
-        find.text('Aplikace se otevře akcí: Slunovrat 2027'), findsOneWidget);
+    expect(find.text('Aplikace se otevře akcí: Slunovrat 2027'), findsNothing);
     expect(find.byIcon(Icons.home), findsOneWidget);
     if (const bool.fromEnvironment('LANDING_PREVIEW')) {
       await tester.runAsync(() async {
@@ -113,12 +111,14 @@ void main() {
         image.dispose();
       });
     }
+    expect(find.text('Zrušit výběr a zobrazit přehled akcí'), findsNothing);
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Zrušit výběr a zobrazit přehled akcí'));
     await tester.pumpAndSettle();
     expect(selected, isNull);
     expect(find.byIcon(Icons.home), findsNothing);
-    expect(
-        find.text('Aplikace se otevře přehledem karet akcí.'), findsOneWidget);
+    expect(find.text('Aplikace se otevře přehledem karet akcí.'), findsNothing);
     expect(writes.length, 2);
     expect(tester.takeException(), isNull);
   });

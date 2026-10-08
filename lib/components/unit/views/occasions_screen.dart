@@ -72,32 +72,9 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
           icon: const Icon(Icons.refresh),
           label: Text(UnitStrings.landingLoadFailed));
     }
-    final landing = _landing;
-    if (landing == null) return const LinearProgressIndicator();
-    if (!landing.enabled) return const SizedBox.shrink();
-    final forced = AppConfig.forceOccasionLink;
-    final editable = landing.canManage && forced == null && !_savingLanding;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(UnitStrings.appLanding,
-          style: Theme.of(context).textTheme.titleSmall),
-      const SizedBox(height: 4),
-      Text(forced != null
-          ? UnitStrings.landingForced
-          : landing.occasionId == null
-              ? UnitStrings.landingOverview
-              : UnitStrings.landingSelected(
-                  landing.occasionTitle ?? '#${landing.occasionId}')),
-      Text(UnitStrings.landingScope,
-          style: Theme.of(context).textTheme.bodySmall),
-      if (!landing.canManage)
-        Text(UnitStrings.landingAdminOnly,
-            style: Theme.of(context).textTheme.bodySmall),
-      if (_savingLanding) const LinearProgressIndicator(),
-      if (landing.occasionId != null && landing.canManage && forced == null)
-        TextButton(
-            onPressed: editable ? () => _setLanding(null) : null,
-            child: Text(UnitStrings.clearAppLanding)),
-    ]);
+    return _landing == null || _savingLanding
+        ? const LinearProgressIndicator()
+        : const SizedBox.shrink();
   }
 
   final TextEditingController _searchController = TextEditingController();
@@ -311,8 +288,10 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16.0),
-          _buildLandingStatus(),
-          const SizedBox(height: 16),
+          if (_landing == null || _landingFailed || _savingLanding) ...[
+            _buildLandingStatus(),
+            const SizedBox(height: 16),
+          ],
           LayoutBuilder(
             builder: (context, constraints) {
               const double buttonWidthThreshold = 550.0;
