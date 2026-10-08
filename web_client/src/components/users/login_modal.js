@@ -471,8 +471,12 @@ export class LoginModal extends HTMLElement {
             await AuthService.login(finalEmail, password);
             ToastHelper.showSuccess(CommonStrings.success);
             this.modal.close();
-            // Force reload to ensure all components (UserHeader, etc) pick up the new auth state
-            window.location.reload(); 
+            // Generic organizer sign-in resumes administration; checkout stays in place.
+            if (window.location.pathname === '/' && RightsService.canSeeAdmin()) {
+                await RouterService.navigateToAdmin();
+            } else {
+                window.location.reload();
+            }
         } catch (err) {
             console.error("Login Error:", err);
             let msg = err.message || CommonStrings.error;
@@ -510,7 +514,12 @@ export class LoginModal extends HTMLElement {
         this.googleError = '';
         this.isLoading = false;
         if (result.status === 'authenticated' || result.status === 'unlinked') {
-            window.location.replace(result.returnPath || '/');
+            const target = result.returnPath || '/';
+            if (result.status === 'authenticated' && target === '/' && RightsService.canSeeAdmin()) {
+                RouterService.navigateToAdmin();
+            } else {
+                window.location.replace(target);
+            }
             return;
         }
         this._setView(result.status === 'needs_mfa' ? 'google_mfa' : result.status === 'needs_profile' ? 'google_profile' : 'google_proof');

@@ -166,8 +166,7 @@ abstract class UnitPageBaseState<T extends UnitPageBase> extends State<T> {
     VoidCallback? adminCallback;
     if (RightsService.currentUser()?.units?.isNotEmpty ?? false) {
       adminCallback = () {
-        _currentUnitId ??= RightsService.currentUser()!.units!.first.id;
-        RouterService.navigate(context, "unit/$_currentUnitId/edit").then((_) {
+        RouterService.handlePostLoginNavigation(context).then((_) {
           if (_currentUnitId != null) {
             _loadDataForUnit(_currentUnitId!);
           }
