@@ -274,7 +274,6 @@
       "effects": [
         "canonical-backend-health-read",
         "r2-evidence-write",
-        "healthchecks-heartbeat",
         "shared-monitoring-observations",
         "capability-scoped-email-health-read"
       ],

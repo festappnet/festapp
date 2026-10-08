@@ -37,13 +37,6 @@ async function probe(fetchImpl, host, check) {
   }
 }
 
-async function pingHeartbeat(fetchImpl, url, failed) {
-  if (!url) throw new Error("HEALTHCHECKS_PING_URL is not configured");
-  const target = failed ? `${url.replace(/\/$/, "")}/fail` : url;
-  const response = await fetchImpl(target, { method: "POST", body: failed ? "probe failed" : "ok" });
-  if (!response.ok) throw new Error(`heartbeat delivery failed with ${response.status}`);
-}
-
 export async function probeEmailHealth(env, fetchImpl = fetch) {
   try {
     const response = await fetchImpl(new URL('/rest/v1/rpc/get_festapp_monitoring_health_v1', env.FESTAPP_API_URL), {
@@ -78,8 +71,7 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
     env.EVIDENCE_BUCKET.put(key, encoded, { httpMetadata: { contentType: "application/json" } }),
     env.EVIDENCE_BUCKET.put("monitoring/latest.json", encoded, { httpMetadata: { contentType: "application/json" } }),
   ]);
-  // A single SDK batch reports both checks. The old independent watchdog
-  // now measures successful collection, not duplicate application incidents.
+  // Monitoring owns incident alerts and missed-heartbeat detection.
   try {
     const monitor = createMonitoring({
       baseUrl: env.MONITORING_URL, token: env.MONITORING_TOKEN,
@@ -100,10 +92,8 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
     const receipt = await monitor.close({ timeoutMs: 1000 });
     if (receipt.status !== 'flushed' || receipt.receipts.length !== TARGETS.length + 1 || receipt.dropped) throw new Error('monitoring_collection_failed');
   } catch {
-    await pingHeartbeat(fetchImpl, env.HEALTHCHECKS_PING_URL, true);
     throw new Error('Festapp shared Monitoring collection failed');
   }
-  await pingHeartbeat(fetchImpl, env.HEALTHCHECKS_PING_URL, false);
   if (failed) {
     console.error(JSON.stringify({ event: "festapp_self_hosted_probe_failed", observed_at: observedAt, results }));
     throw new Error("Festapp external health probe failed");

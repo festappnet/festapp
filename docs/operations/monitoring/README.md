@@ -3,8 +3,8 @@
 The shared `@festapp/monitoring` v0.1.1 service owns incidents and operational
 alert mail. `festapp-self-hosted-monitor` batches canonical backend
 availability and canonical email delivery health every five minutes. The
-existing Healthchecks destination independently watches successful collection;
-backend incidents go through Monitoring rather than two alert channels.
+shared Monitoring service owns incident alerts and missed-heartbeat detection.
+The former Festapp Healthchecks check and ping credential have been removed.
 The canonical Edge router reports handled HTTP 5xx and thrown worker failures,
 without request bodies, URLs, error messages, user identities or credentials.
 Its bounded reporting cannot change the application response. Browser/Flutter
