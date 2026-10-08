@@ -6,7 +6,9 @@ readonly COMPOSE_DIR="${FESTAPP_BACKUP_COMPOSE_DIR:-/opt/festapp-supabase/docker
 readonly CONFIG_FILE="${FESTAPP_BACKUP_CONFIG:-/etc/festapp-backup/r2.env}"
 readonly BACKUP_ROOT="${FESTAPP_BACKUP_ROOT:-/var/backups/festapp-supabase}"
 readonly EVIDENCE_ROOT="${FESTAPP_BACKUP_EVIDENCE_ROOT:-/var/lib/festapp-rehearsal-evidence}"
-readonly RETENTION_DAYS="${FESTAPP_BACKUP_RETENTION_DAYS:-30}"
+readonly RETENTION_DAYS="${FESTAPP_BACKUP_RETENTION_DAYS:-14}"
+readonly WEEKLY_COPIES="${FESTAPP_BACKUP_WEEKLY_COPIES:-4}"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 [[ "$(id -u)" == "0" && "$(hostname -s)" == "$EXPECTED_HOSTNAME" ]] ||
@@ -14,7 +16,8 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
 [[ -f "$CONFIG_FILE" && "$(stat -c '%U:%G' "$CONFIG_FILE")" == "root:root" &&
    "$(stat -c '%a' "$CONFIG_FILE")" == "600" ]] || fail "backup config must be root-owned mode 0600"
 [[ "$RETENTION_DAYS" =~ ^[0-9]+$ && "$RETENTION_DAYS" -ge 7 ]] || fail "retention must be at least 7 days"
-for dependency in age docker flock jq rclone sha256sum tar; do
+[[ "$WEEKLY_COPIES" =~ ^[0-9]+$ && "$WEEKLY_COPIES" -ge 4 ]] || fail "retain at least four weekly copies"
+for dependency in age docker flock jq python3 rclone sha256sum tar; do
   command -v "$dependency" >/dev/null || fail "$dependency is required"
 done
 
@@ -73,17 +76,18 @@ jq -n --arg run_id "$RUN_ID" --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg source_host "$EXPECTED_HOSTNAME" --arg source_database "$DATABASE" \
   --arg bucket "$R2_BUCKET" --arg prefix "backups/$EXPECTED_HOSTNAME/$RUN_ID" \
   --argjson retention_days "$RETENTION_DAYS" --argjson artifacts "$artifacts" \
+  --argjson weekly_copies "$WEEKLY_COPIES" \
   '{version:1,run_id:$run_id,created_at:$created_at,source_host:$source_host,
     source_database:$source_database,encrypted:true,plaintext_artifacts_written:false,
     consistency:"online-operational-backup-not-promotion-rpo0",destination:{provider:"cloudflare-r2",
     bucket:$bucket,prefix:$prefix,independent_failure_domain:true},retention_days:$retention_days,
-    artifacts:$artifacts}' >"$RUN_DIR/manifest.json"
+    weekly_copies:$weekly_copies,artifacts:$artifacts}' >"$RUN_DIR/manifest.json"
 
 readonly REMOTE="r2:$R2_BUCKET/backups/$EXPECTED_HOSTNAME/$RUN_ID"
 rclone --config "$RCLONE_CONFIG" copy "$RUN_DIR" "$REMOTE" --immutable --retries 3
 rclone --config "$RCLONE_CONFIG" check "$RUN_DIR" "$REMOTE" --size-only --one-way
-rclone --config "$RCLONE_CONFIG" delete "r2:$R2_BUCKET/backups/$EXPECTED_HOSTNAME" \
-  --min-age "${RETENTION_DAYS}d" --rmdirs
+python3 "$SCRIPT_DIR/prune-online-backups.py" --apply --config "$CONFIG_FILE" \
+  --evidence-dir "$EVIDENCE_DIR" --daily-days "$RETENTION_DAYS" --weekly-copies "$WEEKLY_COPIES"
 jq --arg uploaded_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '. + {uploaded_at:$uploaded_at,off_host_verified:true,production_cutover_authorized:false}' \
   "$RUN_DIR/manifest.json" >"$EVIDENCE_DIR/result.json"
