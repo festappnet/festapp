@@ -1,0 +1,76 @@
+# Festapp Monitoring and first-login notifications
+
+The shared `@festapp/monitoring` v0.1.1 service owns incidents and operational
+alert mail. `festapp-self-hosted-monitor` batches canonical/rehearsal backend
+availability and canonical email delivery health every five minutes. The
+existing Healthchecks destination independently watches successful collection;
+backend incidents go through Monitoring rather than two alert channels.
+The canonical Edge router reports handled HTTP 5xx and thrown worker failures,
+without request bodies, URLs, error messages, user identities or credentials.
+Its bounded reporting cannot change the application response. Browser/Flutter
+crash reporting and host CPU/disk metrics are outside this integration.
+
+The SDK archive is pinned with npm integrity and SHA-256
+`27dc3b2fa818aeb9a7e5ae4448ee75ba0c420fc020573693453c7dd56d353207`.
+The Deno copy is the identical immutable bundled JS plus declarations/license.
+Router reporting credentials are filtered out of child-worker environments.
+
+First-login messages use **Festapp's existing canonical email queue**, provider,
+quota, pause/suppression and signed delivery feedback. They are business
+notifications, not incidents subject to Monitoring's shared 10/hour alert budget.
+The minute scheduler calls `enqueue_first_login_notifications_v1()`. GoTrue's
+`last_sign_in_at` and a live session establish a successful password/Google
+login; accounts with verified MFA require an `aal2` session. Creating an account,
+failed login, linking Google to an existing user, and repeated login do not
+create another notification. Atomic dedupe is per user UUID. At initial
+activation, previously signed-in accounts become baseline tombstones. Existing
+accounts that have never signed in remain eligible. A session must still exist
+at observation; a login immediately followed by global signout can be detected
+on the next login. Email typically queues within one minute, subject to queue
+availability and global provider limits. At most 100 new accounts per tick.
+
+## Deployment
+
+1. Verify the selected tenant activation, host and canonical database. The
+   requested first-login scope is **prod/festapptickets, vstupenky.online,
+   organization 3**, generation 1. No other tenant is enabled or released.
+2. Validate SQL in the disposable email database with canonical service-role
+   helpers, router/SDK tests, Deno checks and the Worker dry-run. Publish reviewed
+   shared code on authoritative main, build its clean production function bundle.
+3. Back up the canonical database/configuration/functions; pause/drain the email
+   queue before installing the renderer/router bundle. Apply only
+   `20261009150000_festapp_monitoring_first_login.sql`, recording its ledger
+   atomically. It starts with no tenants enabled and no live capability.
+4. Provision the shared Monitoring `festapp`/`production` project in record mode,
+   separate `festapp-edge` and `festapp-probes` write credentials, an ops read
+   credential and management credential. Reuse the verified `miakh-operations`
+   recipient (`bujnmi@gmail.com`). Register heartbeat checks `canonical-backend`,
+   `rehearsal-backend`, `email-delivery` at 300000 ms cadence / 60000 ms grace.
+   Set project error occurrence threshold to 1; cooldown/budgets stay inherited.
+5. Store a separate random health capability hash/expiry in
+   `festapp_monitoring_credentials`. Set Worker secrets `FESTAPP_HEALTH_TOKEN`,
+   `FESTAPP_ANON_KEY`, `MONITORING_TOKEN`; deploy the same-account service binding.
+   The anon health RPC requires that capability and returns only ok/alert codes.
+   It grants no customer-table access, role escalation or mutation capability.
+6. Set the router's `FESTAPP_MONITORING_URL`, `FESTAPP_MONITORING_TOKEN`,
+   `FESTAPP_MONITORING_RELEASE` in the existing protected runtime environment and
+   reviewed email Compose overlay. Install the verified writer policy and bundle,
+   recreate only the Functions service, verify health/unauthorized routes, resume
+   the queue. Enable only organization 3 with
+   `configure_first_login_notifications_v1(3,'bujnmi@gmail.com',true)` and install
+   `install-first-login-notifications.sh` on the canonical control-plane scheduler.
+7. Verify fresh live check receipts, actual owner canary delivery and independent
+   watchdog readiness. Activate Monitoring email mode through audited management.
+   No frontend/Flutter build or production-branch propagation is needed.
+
+Capabilities expire after one year; rotate with an explicit short overlap and
+remove the old hash/credential after consumers switch. Secrets and raw event/mail
+receipts belong in protected operational evidence, never in repository files.
+
+## Rollback
+
+Change only Festapp's Monitoring project to record mode, disable organization 3
+with the configuration RPC, and restore the backed-up function bundle/router and
+runtime overlay. Preserve the new schema, first-login tombstones and email
+journals to prevent duplicate sends. Unknown provider outcomes never auto-retry.
+The existing canonical queue and Monitoring's external watchdog remain active.

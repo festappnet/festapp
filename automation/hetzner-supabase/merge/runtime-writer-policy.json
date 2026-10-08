@@ -274,7 +274,9 @@
       "effects": [
         "canonical-and-rehearsal-health-read",
         "r2-evidence-write",
-        "healthchecks-heartbeat"
+        "healthchecks-heartbeat",
+        "shared-monitoring-observations",
+        "capability-scoped-email-health-read"
       ],
       "mutates_authority": false
     },
