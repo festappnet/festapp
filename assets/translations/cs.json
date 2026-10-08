@@ -1812,6 +1812,16 @@
     "foodCreateHint": "Pro vytvoření jídla vyplňte název, jedinečný kód a referenci na program."
   },
   "Unit": {
+    "appLanding": "Úvodní akce aplikace",
+    "setAppLanding": "Nastavit jako úvodní akci aplikace",
+    "clearAppLanding": "Zrušit výběr a zobrazit přehled akcí",
+    "landingOverview": "Aplikace se otevře přehledem karet akcí.",
+    "landingSelected": "Aplikace se otevře akcí: {}",
+    "landingScope": "Platí pro celou aplikaci, napříč všemi jednotkami.",
+    "landingAdminOnly": "Nastavení může změnit pouze správce organizace.",
+    "landingLoadFailed": "Nastavení úvodní akce se nepodařilo načíst. Zkusit znovu",
+    "landingForced": "Úvodní akce je pevně určena v této verzi aplikace.",
+
     "addNewEvent": "Vytvořit novou událost",
     "createCopy": "Vytvořit kopii",
     "createCopyConfirm": "Chcete vytvořit kopii této události?",

@@ -1812,6 +1812,16 @@
     "foodCreateHint": "To create food, fill in the title, unique code, and the reference of the event."
   },
   "Unit": {
+    "appLanding": "App opening screen",
+    "setAppLanding": "Set as app opening screen",
+    "clearAppLanding": "Show event overview",
+    "landingOverview": "The app opens the event card overview.",
+    "landingSelected": "The app opens: {}",
+    "landingScope": "Applies to the whole application, across all units.",
+    "landingAdminOnly": "Only an organization administrator can change this setting.",
+    "landingLoadFailed": "Could not load the opening screen setting. Retry",
+    "landingForced": "The opening screen is fixed in this app build.",
+
     "addNewEvent": "Add New Event",
     "createCopy": "Create Copy",
     "createCopyConfirm": "Do you want to create copy of this event?",
