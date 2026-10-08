@@ -3,6 +3,34 @@
   publish = "build/web"
   command = "./automation/ci_build.sh"
 
+# The Netlify hostname remains only as a compatibility boundary. Preserve the
+# old worker endpoints long enough to retire cached shells and keep existing
+# origin-bound push registrations alive, then redirect every application URL
+# to the canonical Festapp hostname with its path and query intact.
+[[redirects]]
+  from = "https://clovekavira.netlify.app/festapp_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://clovekavira.netlify.app/flutter_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://clovekavira.netlify.app/push/*"
+  to = "/push/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://clovekavira.netlify.app/*"
+  to = "https://clovekavira.festapp.net/:splat"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
