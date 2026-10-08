@@ -1,15 +1,15 @@
-# Podmínky používání – Festapp
+# Podmínky – CSM Ostrava
 
-Účinnost: 25. srpna 2026. Verze: 1.0.
+Účinnost: 4. srpna 2026. Verze: 1.1.
 
-Platformu Festapp a Vstupenky.online technicky provozuje Michael Bujnovský. Kontakt je `info@festapp.net`.
+Vývojářem, vydavatelem a technickým provozovatelem aplikace CSM Ostrava je Michael Bujnovský, `info@festapp.net`. Aplikace je poskytována pro Asociaci křesťanských spolků mládeže, z. s. (AKSM), IČ 67775861, Thákurova 676/3, 160 00 Praha 6–Dejvice.
 
-Aplikace poskytuje informace o akcích a podle konkrétní akce může umožnit účet, registraci, objednávku nebo vstupenku. Smluvní podmínky konkrétní akce, vstupenky nebo jiné služby určuje její pořadatel a jsou uvedeny u nabídky nebo objednávky. Tyto podmínky aplikace je nenahrazují.
+Pro distribuci aplikace se používá standardní licenční smlouva Apple: <https://www.apple.com/legal/internet-services/itunes/dev/stdeula/>.
 
-Pro distribuci na zařízeních Apple se použije standardní licenční smlouva Apple: <https://www.apple.com/legal/internet-services/itunes/dev/stdeula/>. Použití aplikace získané z Google Play podléhá také příslušným podmínkám Google Play.
+Aplikace je určena účastníkům Celostátního setkání mládeže Ostrava 2026. Program, mapa, novinky a praktické informace jsou dostupné bez přihlášení. Osobní účet vydává účastníkům pořadatel; veřejná registrace účtu není dostupná. Přihlašovací údaje jsou osobní a nesmějí se předávat jiné osobě.
 
-Přihlašovací údaje a vstupenky jsou osobní. Aplikaci není dovoleno používat k narušování provozu, obcházení kapacitních nebo bezpečnostních omezení, neoprávněnému přístupu k cizím účtům či vstupenkám ani k odesílání protiprávního nebo škodlivého obsahu.
+Informace v aplikaci se mohou v průběhu akce měnit. Uživatel má dbát aktuálních pokynů pořadatele; data uložená pro offline použití nemusí do dalšího připojení obsahovat poslední změny.
 
-Informace o akci se mohou měnit a offline data nemusí do dalšího připojení obsahovat poslední změny. Tím nejsou dotčena práva spotřebitele ani odpovědnost, kterou nelze podle práva vyloučit.
+Aplikaci není dovoleno používat k narušování jejího provozu, obcházení kapacitních omezení, neoprávněnému přístupu k cizím účtům ani k odesílání protiprávního nebo škodlivého obsahu.
 
-Zpracování osobních údajů popisují zásady na <https://vstupenky.online/privacy/> a technická pomoc je na <https://vstupenky.online/support/>.
+Účet lze smazat postupem popsaným na <https://csmostrava.festapp.net/privacy/choices>. Zpracování osobních údajů popisují zásady na <https://csmostrava.festapp.net/privacy>. Pravidla registrace a účasti na samotné akci zůstávají samostatnými podmínkami pořadatele.
