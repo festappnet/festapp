@@ -1,4 +1,4 @@
-# Vaše volby a práva – Festapp
+# Vaše volby a práva – Slunovrat
 
 Účinnost: 25. srpna 2026. Verze: 1.0.
 
@@ -8,4 +8,4 @@ Po potvrzení se účet zablokuje a odstraní se autentizace, soukromý profil a
 
 Push oznámení a přístup k poloze lze změnit v systémovém nastavení zařízení. O přístup, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu nebo námitku lze požádat na `info@festapp.net`.
 
-Úplné zásady jsou na <https://vstupenky.online/privacy/> a stránka pro potvrzení již zahájeného smazání účtu je na <https://vstupenky.online/delete-account/>.
+Úplné zásady jsou na <https://app.festivalslunovrat.cz/privacy/> a stránka pro potvrzení již zahájeného smazání účtu je na <https://app.festivalslunovrat.cz/delete-account/>.
