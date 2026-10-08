@@ -7,6 +7,7 @@ import 'package:fstapp/components/app_management/language_model.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
+import 'package:fstapp/components/users/views/signup_page.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:fstapp/theme_config.dart';
@@ -421,6 +422,24 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     final bool isMobile = ResponsiveService.isMobile(context);
     final iconColor = widget.appBarIconColor ?? ThemeConfig.blackColor(context);
 
+    final canRegister =
+        RightsService.occasionLinkModel?.organization?.isRegistrationEnabled ??
+            false;
+    final addEventButton = FilledButton(
+      onPressed: () => RouterService.navigate(context, SignupPage.ROUTE),
+      style: FilledButton.styleFrom(
+        backgroundColor: ThemeConfig.brandAccentColor,
+        foregroundColor: ThemeData.estimateBrightnessForColor(
+                    ThemeConfig.brandAccentColor) ==
+                Brightness.light
+            ? Colors.black
+            : Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 10 : 18),
+        minimumSize: const Size(0, 40),
+      ),
+      child: Text(UserStrings.addEvent),
+    );
+
     // Define the admin button widget first if it exists
     Widget? adminButton;
     if (widget.onAdminPressed != null) {
@@ -433,11 +452,11 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
             minHeight: 38, // Match avatar height
           ),
           icon: Icon(
-            Icons.edit_calendar,
+            Icons.confirmation_number_outlined,
             size: 32,
             color: iconColor,
           ),
-          tooltip: UserStrings.admin,
+          tooltip: UserStrings.myEvents,
           onPressed: widget.onAdminPressed,
         );
       } else {
@@ -445,10 +464,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
         adminButton = OutlinedButton.icon(
           onPressed: widget.onAdminPressed,
           icon: Icon(
-            Icons.edit_calendar, // Added icon back
+            Icons.confirmation_number_outlined,
             color: iconColor,
           ),
-          label: Text(UserStrings.admin),
+          label: Text(UserStrings.myEvents),
           style: OutlinedButton.styleFrom(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28),
@@ -482,6 +501,15 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (canRegister) ...[
+              IconButton.filled(
+                tooltip: UserStrings.addEvent,
+                onPressed: () =>
+                    RouterService.navigate(context, SignupPage.ROUTE),
+                icon: const Icon(Icons.add),
+              ),
+              const SizedBox(width: 8),
+            ],
             IconButton(
               key: _userKey,
               constraints: const BoxConstraints(
@@ -521,6 +549,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (canRegister) ...[
+              addEventButton,
+              const SizedBox(width: 16),
+            ],
             OutlinedButton.icon(
               onPressed: () async {
                 await RouterService.navigate(context, LoginPage.ROUTE);
