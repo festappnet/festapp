@@ -1,12 +1,12 @@
 {
   "applinks": {
     "apps": [
-      "8WKBB6L8LT.festapp.festapp"
+      "8WKBB6L8LT.festapp.jm2025"
     ],
     "details": [
       {
         "appIDs": [
-          "8WKBB6L8LT.festapp.festapp"
+          "8WKBB6L8LT.festapp.jm2025"
         ],
         "paths": [
           "/app/google-auth",
@@ -25,7 +25,7 @@
   },
   "webcredentials": {
     "apps": [
-      "8WKBB6L8LT.festapp.festapp"
+      "8WKBB6L8LT.festapp.jm2025"
     ]
   }
 }
