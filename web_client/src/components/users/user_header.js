@@ -150,9 +150,7 @@ export class UserHeader extends HTMLElement {
                  adminBtn.setAttribute('aria-label', CommonStrings.myEvents);
                  adminBtn.title = CommonStrings.myEvents;
                  adminBtn.innerHTML = `<i class="material-icons" aria-hidden="true">grid_view</i><span class="admin-text">${CommonStrings.myEvents}</span>`;
-                 adminBtn.onclick = () => RouterService.navigateToAdmin(
-                     RightsService.currentUnit?.id ?? this.user?.units?.[0]?.id,
-                 );
+                 adminBtn.onclick = () => RouterService.navigateToAdmin();
                  actions.appendChild(adminBtn);
              }
 
