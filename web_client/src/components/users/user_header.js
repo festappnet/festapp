@@ -147,7 +147,9 @@ export class UserHeader extends HTMLElement {
              if (canSeeAdmin || canSeeReservations) {
                  const adminBtn = document.createElement('button');
                  adminBtn.className = 'btn-admin';
-                 adminBtn.innerHTML = `<i class="material-icons">admin_panel_settings</i><span class="admin-text">${CommonStrings.admin}</span>`;
+                 adminBtn.setAttribute('aria-label', CommonStrings.myEvents);
+                 adminBtn.title = CommonStrings.myEvents;
+                 adminBtn.innerHTML = `<i class="material-icons">confirmation_number</i><span class="admin-text">${CommonStrings.myEvents}</span>`;
                  adminBtn.onclick = () => RouterService.navigateToAdmin(
                      RightsService.currentUnit?.id ?? this.user?.units?.[0]?.id,
                  );
@@ -174,10 +176,25 @@ export class UserHeader extends HTMLElement {
              actions.appendChild(userContainer);
              
         } else {
+            if (RightsService.context?.organization?.IS_REGISTRATION_ENABLED !== false) {
+                const addEventBtn = document.createElement('button');
+                addEventBtn.type = 'button';
+                addEventBtn.className = 'btn-add-event';
+                addEventBtn.textContent = CommonStrings.addEvent;
+                addEventBtn.onclick = async () => {
+                    await import('./login_modal.js');
+                    const modal = document.createElement('login-modal');
+                    modal.currentView = 'register';
+                    document.body.appendChild(modal);
+                };
+                actions.appendChild(addEventBtn);
+            }
+
             // Guest -> Sign In Button
             // Only show if we confirm we are NOT logged in (context exists but user is null)
             const signInBtn = document.createElement('button');
             signInBtn.className = 'btn-sign-in';
+            signInBtn.setAttribute('aria-label', CommonStrings.signIn);
             // Use innerHTML to include icon and text span for responsive hiding
             signInBtn.innerHTML = `<i class="material-icons">person</i><span class="sign-in-text">${CommonStrings.signIn}</span>`;
             signInBtn.onclick = (e) => {
