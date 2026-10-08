@@ -95,7 +95,7 @@ void main() {
     expect(find.byIcon(Icons.home), findsOneWidget);
     await tester.tap(find.byIcon(Icons.more_vert).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Nastavit jako úvodní akci aplikace'));
+    await tester.tap(find.text('Nastavit jako výchozí akci aplikace'));
     await tester.pumpAndSettle();
     expect(selected, 2);
     expect(find.text('Aplikace se otevře akcí: Slunovrat 2027'), findsNothing);
@@ -111,10 +111,10 @@ void main() {
         image.dispose();
       });
     }
-    expect(find.text('Zrušit výběr a zobrazit přehled akcí'), findsNothing);
+    expect(find.text('Odebrat jako výchozí akci aplikace'), findsNothing);
     await tester.tap(find.byIcon(Icons.more_vert).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Zrušit výběr a zobrazit přehled akcí'));
+    await tester.tap(find.text('Odebrat jako výchozí akci aplikace'));
     await tester.pumpAndSettle();
     expect(selected, isNull);
     expect(find.byIcon(Icons.home), findsNothing);

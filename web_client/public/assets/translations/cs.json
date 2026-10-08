@@ -1809,9 +1809,9 @@
     "foodCreateHint": "Pro vytvoření jídla vyplňte název, jedinečný kód a referenci na program."
   },
   "Unit": {
-    "appLanding": "Úvodní akce aplikace",
-    "setAppLanding": "Nastavit jako úvodní akci aplikace",
-    "clearAppLanding": "Zrušit výběr a zobrazit přehled akcí",
+    "appLanding": "Výchozí akce aplikace",
+    "setAppLanding": "Nastavit jako výchozí akci aplikace",
+    "clearAppLanding": "Odebrat jako výchozí akci aplikace",
     "landingOverview": "Aplikace se otevře přehledem karet akcí.",
     "landingSelected": "Aplikace se otevře akcí: {}",
     "landingScope": "Platí pro celou aplikaci, napříč všemi jednotkami.",
