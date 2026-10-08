@@ -4,7 +4,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <application
-        android:label="Festapp"
+        android:label="Absolventský Velehrad"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
@@ -43,7 +43,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="vstupenky.online" android:path="/app/google-auth" />
+                <data android:scheme="https" android:host="app.absolventskyvelehrad.cz" android:path="/app/google-auth" />
             </intent-filter>
             <!-- FESTAPP_GOOGLE_AUTH_LINK_END -->
         </activity>
