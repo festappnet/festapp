@@ -452,7 +452,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
             minHeight: 38, // Match avatar height
           ),
           icon: Icon(
-            Icons.confirmation_number_outlined,
+            Icons.grid_view_rounded,
             size: 32,
             color: iconColor,
           ),
@@ -464,7 +464,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
         adminButton = OutlinedButton.icon(
           onPressed: widget.onAdminPressed,
           icon: Icon(
-            Icons.confirmation_number_outlined,
+            Icons.grid_view_rounded,
             color: iconColor,
           ),
           label: Text(UserStrings.myEvents),
