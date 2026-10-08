@@ -427,7 +427,8 @@
     "depositOnSiteLabel": "On site",
     "paymentReference": "Payment reference",
     "shortTitleHelp": "Name printed on the ticket, for example for dinner. If empty, the full product name is used.",
-    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit."
+    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit.",
+    "validApplications": "Valid applications"
   },
   "FormsFeature": {
     "showDepositDescription": "Show deposit / surcharge note on products",
@@ -1455,7 +1456,17 @@
     "googleCode": "Verification code",
     "googleUnlink": "Disconnect Google",
     "googlePasswordVisibility": "Show or hide password",
-    "googleMfa": "Enter the six-digit code from your authenticator app or SMS."
+    "googleMfa": "Enter the six-digit code from your authenticator app or SMS.",
+    "addEvent": "Create your own event",
+    "myEvents": "My events",
+    "createAccount": "Create account",
+    "emailAlternative": "or with email",
+    "emailExample": "jane@example.com",
+    "firstNameExample": "Jane",
+    "lastNameExample": "Smith",
+    "passwordPlaceholder": "Your password",
+    "existingAccountPrompt": "Already have an account?",
+    "newAccountPrompt": "Don’t have an account yet?"
   },
   "Common": {
     "fieldCannotBeEmpty": "Field cannot be empty",
@@ -1581,7 +1592,9 @@
     "user": "User",
     "discardChanges": "Discard changes",
     "discardChangesConfirmation": "Discard unsaved changes?",
-    "keepEditing": "Keep editing"
+    "keepEditing": "Keep editing",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "BankAccount": {
     "settingsTitle": "Bank Account Settings",
@@ -1818,7 +1831,6 @@
     "landingAdminOnly": "Only an organization administrator can change this setting.",
     "landingLoadFailed": "Could not load the opening screen setting. Retry",
     "landingForced": "The opening screen is fixed in this app build.",
-
     "addNewEvent": "Add New Event",
     "createCopy": "Create Copy",
     "createCopyConfirm": "Do you want to create copy of this event?",
@@ -2450,6 +2462,8 @@
     "product": "Product",
     "count": "Count",
     "applicationTimeline": "Application activity over time",
-    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time."
+    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
+    "onlyValid": "Valid only",
+    "includingCancelled": "Including cancelled"
   }
 }
