@@ -28,7 +28,7 @@ test("healthy probes persist timestamped and latest evidence then deliver heartb
   };
   const result = await runProbes(environment(writes), fetchImpl, new Date("2026-09-02T19:00:00Z"));
   assert.equal(result.pass, true);
-  assert.equal(result.results.length, 6);
+  assert.equal(result.results.length, 3);
   assert.deepEqual(writes.map(({ key }) => key), [
     "monitoring/2026-09-02/2026-09-02T19-00-00.000Z.json",
     "monitoring/latest.json",
@@ -83,7 +83,7 @@ test("unrecorded Monitoring events fail the independent watchdog", async () => {
   assert.equal(requests.at(-1), "https://hc-ping.example/uuid/fail");
 });
 
-test("email queue health failure is reported in the same three-check SDK batch", async () => {
+test("email queue health failure is reported in the same two-check SDK batch", async () => {
   const writes = []; let batch;
   await assert.rejects(runProbes(environment(writes), async (target, init) => {
     const url = String(target);
@@ -92,6 +92,6 @@ test("email queue health failure is reported in the same three-check SDK batch",
     if (url.endsWith("/get_festapp_monitoring_health_v1")) return Response.json({ ok: false, alerts: ["email_backlog"] });
     return new Response("", { status: url.endsWith("/storage/v1/status") ? 200 : 401 });
   }), /external health probe failed/);
-  assert.equal(batch.events.length, 3);
+  assert.equal(batch.events.length, 2);
   assert.equal(batch.events.find(e => e.check_id === "email-delivery").outcome, "failure");
 });

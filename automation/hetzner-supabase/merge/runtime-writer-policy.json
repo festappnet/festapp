@@ -272,7 +272,7 @@
       "deployment_contract": "workers/self-hosted-monitor/wrangler.toml",
       "trigger": "cloudflare-cron",
       "effects": [
-        "canonical-and-rehearsal-health-read",
+        "canonical-backend-health-read",
         "r2-evidence-write",
         "healthchecks-heartbeat",
         "shared-monitoring-observations",

@@ -1,7 +1,7 @@
 # Festapp Monitoring and first-login notifications
 
 The shared `@festapp/monitoring` v0.1.1 service owns incidents and operational
-alert mail. `festapp-self-hosted-monitor` batches canonical/rehearsal backend
+alert mail. `festapp-self-hosted-monitor` batches canonical backend
 availability and canonical email delivery health every five minutes. The
 existing Healthchecks destination independently watches successful collection;
 backend incidents go through Monitoring rather than two alert channels.
@@ -45,7 +45,7 @@ availability and global provider limits. At most 100 new accounts per tick.
    separate `festapp-edge` and `festapp-probes` write credentials, an ops read
    credential and management credential. Reuse the verified `miakh-operations`
    recipient (`bujnmi@gmail.com`). Register heartbeat checks `canonical-backend`,
-   `rehearsal-backend`, `email-delivery` at 300000 ms cadence / 60000 ms grace.
+   `email-delivery` at 300000 ms cadence / 60000 ms grace.
    Set project error occurrence threshold to 1; cooldown/budgets stay inherited.
 5. Store a separate random health capability hash/expiry in
    `festapp_monitoring_credentials`. Set Worker secrets `FESTAPP_HEALTH_TOKEN`,
@@ -74,3 +74,8 @@ with the configuration RPC, and restore the backed-up function bundle/router and
 runtime overlay. Preserve the new schema, first-login tombstones and email
 journals to prevent duplicate sends. Unknown provider outcomes never auto-retry.
 The existing canonical queue and Monitoring's external watchdog remain active.
+
+The initial live probe found HTTP 525 on the old rehearsal hostname. It is
+outside the requested production app and is excluded from production alerting;
+no rehearsal infrastructure changes were made. Canonical Auth/REST/Storage and
+email health passed with actual scheduled receipts.

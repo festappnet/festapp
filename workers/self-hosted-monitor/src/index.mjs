@@ -1,6 +1,6 @@
 import { createMonitoring } from "@festapp/monitoring";
 
-const TARGETS = ["api.festapp.net", "rehearsal-api.festapp.net"];
+const TARGETS = ["api.festapp.net"];
 const CHECKS = [
   { path: "/storage/v1/status", expectedStatus: 200 },
   { path: "/auth/v1/health", expectedStatus: 401 },
@@ -78,7 +78,7 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
     env.EVIDENCE_BUCKET.put(key, encoded, { httpMetadata: { contentType: "application/json" } }),
     env.EVIDENCE_BUCKET.put("monitoring/latest.json", encoded, { httpMetadata: { contentType: "application/json" } }),
   ]);
-  // A single SDK batch reports all three checks. The old independent watchdog
+  // A single SDK batch reports both checks. The old independent watchdog
   // now measures successful collection, not duplicate application incidents.
   try {
     const monitor = createMonitoring({
@@ -86,9 +86,9 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
       service: 'festapp-probes', release: env.MONITORING_RELEASE ?? 'v1',
       fetch: env.MONITORING_SERVICE?.fetch.bind(env.MONITORING_SERVICE) ?? fetchImpl,
     });
-    for (const [index, host] of TARGETS.entries()) {
+    for (const host of TARGETS) {
       const checks = results.filter((result) => result.host === host);
-      monitor.heartbeat(index === 0 ? 'canonical-backend' : 'rehearsal-backend', {
+      monitor.heartbeat('canonical-backend', {
         status: checks.every((check) => check.pass) ? 'ok' : 'failed',
         code: 'backend_health', context: { count: checks.filter((check) => !check.pass).length },
       });
@@ -98,7 +98,7 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
       context: { reason: email.reason, count: email.count ?? 0 },
     });
     const receipt = await monitor.close({ timeoutMs: 1000 });
-    if (receipt.status !== 'flushed' || receipt.receipts.length !== 3 || receipt.dropped) throw new Error('monitoring_collection_failed');
+    if (receipt.status !== 'flushed' || receipt.receipts.length !== TARGETS.length + 1 || receipt.dropped) throw new Error('monitoring_collection_failed');
   } catch {
     await pingHeartbeat(fetchImpl, env.HEALTHCHECKS_PING_URL, true);
     throw new Error('Festapp shared Monitoring collection failed');
