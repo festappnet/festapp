@@ -1,7 +1,7 @@
 {
-  "name": "Festapp",
-  "short_name": "Festapp",
-  "description": "Platforma pro správu akcí, programu a vstupenek.",
+  "name": "Absolventský Velehrad",
+  "short_name": "AV",
+  "description": "Mobilní aplikace pro Absolventský Velehrad.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
