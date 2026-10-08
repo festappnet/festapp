@@ -1,7 +1,7 @@
 {
-  "name": "Festapp",
-  "short_name": "Festapp",
-  "description": "Platforma pro správu akcí, programu a vstupenek.",
+  "name": "BISCUP",
+  "short_name": "BISCUP",
+  "description": "Program, informace a služby akce BISCUP.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
