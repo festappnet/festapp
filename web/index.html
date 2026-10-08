@@ -83,21 +83,21 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Festapp">
+  <meta name="apple-mobile-web-app-title" content="Slunovrat">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-title" content="Festapp">
+  <meta name="apple-mobile-web-app-title" content="Slunovrat">
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#e3e2d3">
 
-  <title>Festapp</title>
+  <title>Slunovrat 2026</title>
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
-    const oneSignalWebAppId = "73f77f22-961a-4ded-9647-e33a7ac14f90";
+    const oneSignalWebAppId = "4c5b7280-510f-4628-8fb8-b4bdd4fed1b2";
 
    let oneSignalSdkPromise;
    function loadOneSignalSdk() {
@@ -128,7 +128,7 @@
                try {
                  await OneSignal.init({
                        appId: oneSignalWebAppId,
-                       safari_web_id: "web.onesignal.auto.34cabfa2-ddd9-46d0-b8b2-6fad793020e0",
+                       safari_web_id: "web.onesignal.auto.2cee7bb2-7604-4e25-b1d2-cbd521c730a5",
                        allowLocalhostAsSecureOrigin: true,
                        persistNotification: false,
                        welcomeNotification: {
@@ -214,7 +214,7 @@
        OneSignalDeferred.push(async function(OneSignal) {
            try {
              await OneSignal.User.addTags({
-               app_generation: '',
+               app_generation: 'festivalslunovrat_cutover_v1',
                occasion: ''
              });
              if (callback) callback(null);
@@ -290,7 +290,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.145+629";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -486,7 +486,7 @@
       margin: 0px;
     }
     .main-content {
-      --festapp-loading-accent: #80BDF2;
+      --festapp-loading-accent: #f8c04f;
       position: fixed;
       inset: 0;
       z-index: 1000;
@@ -542,7 +542,7 @@
 </style>
 
   <div class="main-content" id="loader-content">
-    <img class="initial-logo" src="loading-logo.svg" alt="">
+    <img class="initial-logo" src="web-app-manifest-192x192.png" alt="">
     <div class="loader" role="status" aria-label="Načítání aplikace"></div>
   </div>
 </body>

@@ -12,7 +12,7 @@ class ThemeConfig {
   static const bool isDarkModeEnabled = true;
   static const AdaptiveThemeMode defaultThemeMode = AdaptiveThemeMode.light;
 
-  static final fontFamily = "Futura";
+  static final fontFamily = "Agrandir-Narrow";
 
   /// The single shared Material 3 factory for application and local themes.
   static ThemeData theme({Brightness brightness = Brightness.light}) {
@@ -137,10 +137,10 @@ class ThemeConfig {
       backgroundColor(context);
 
   static Color surfaceColor(BuildContext context) => grey200(context);
-  static Color seed1 = const Color(0xFF253759);
-  static Color seed2 = const Color(0xFF80BDF2);
-  static Color seed3 = const Color(0xFF4465A6);
-  static Color seed4 = const Color(0xFF0D0D0D);
+  static Color seed1 = const Color(0xFF53707f);
+  static Color seed2 = const Color(0xFFf8c04f);
+  static Color seed3 = const Color(0xFFde703e);
+  static Color seed4 = const Color(0xFFe9dabb);
 
   static Color attentionColor(BuildContext context) => const Color(0xFF8B0000);
 
