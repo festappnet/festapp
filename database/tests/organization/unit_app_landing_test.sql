@@ -23,6 +23,8 @@ BEGIN
   PERFORM assert_eq((result->>'occasion_id')::bigint,first_oc,'Legacy default is visible');
   result := set_unit_app_landing(unit_id,second_oc,first_oc);
   PERFORM assert_eq((result->>'occasion_id')::bigint,second_oc,'Switch to second occasion');
+  PERFORM assert_eq((SELECT (data->>'DEFAULT_OCCASION')::bigint FROM organizations WHERE id=org),second_oc,'Existing Android default occasion contract is preserved');
+  PERFORM assert_false((SELECT data ? 'REPRESENTATIVE_OCCASION' FROM organizations WHERE id=org),'No representative override replaces the default');
   BEGIN
     PERFORM set_unit_app_landing(unit_id,first_oc,first_oc);
     RAISE EXCEPTION 'Stale write accepted';
@@ -37,9 +39,18 @@ BEGIN
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
   result := set_unit_app_landing(unit_id,NULL,second_oc);
   PERFORM assert_true(result->>'occasion_id' IS NULL,'Clear opens overview');
-  PERFORM assert_eq((SELECT data FROM organizations WHERE id=org),'{"IS_APP_SUPPORTED":true,"APP_NAME":"Keep me"}'::jsonb,'Clear removes both defaults and preserves unrelated data');
+  PERFORM assert_eq((SELECT data FROM organizations WHERE id=org),'{"IS_APP_SUPPORTED":true,"APP_NAME":"Keep me"}'::jsonb,'Clear removes only the default and preserves unrelated data');
   result := set_unit_app_landing(unit_id,first_oc,NULL);
   PERFORM assert_eq((result->>'occasion_id')::bigint,first_oc,'Set from overview');
+  -- Representative applications keep their independent setting during all home actions.
+  UPDATE organizations SET data=data||jsonb_build_object('REPRESENTATIVE_OCCASION',second_oc) WHERE id=org;
+  result := get_unit_app_landing(unit_id);
+  PERFORM assert_eq((result->>'occasion_id')::bigint,first_oc,'Home reads DEFAULT_OCCASION even with a representative');
+  result := set_unit_app_landing(unit_id,NULL,first_oc);
+  PERFORM assert_true(result->>'occasion_id' IS NULL,'Cleared home does not inherit representative');
+  PERFORM assert_eq((SELECT (data->>'REPRESENTATIVE_OCCASION')::bigint FROM organizations WHERE id=org),second_oc,'Clearing home preserves representative');
+  result := set_unit_app_landing(unit_id,first_oc,NULL);
+  PERFORM assert_eq((SELECT (data->>'REPRESENTATIVE_OCCASION')::bigint FROM organizations WHERE id=org),second_oc,'Setting home preserves representative');
   PERFORM set_config('request.jwt.claim.sub',get_user_id('landing_reader')::text,true);
   result := get_unit_app_landing(unit_id);
   PERFORM assert_eq((result->>'can_manage')::boolean,false,'Unit manager does not gain organization admin rights');
