@@ -17,7 +17,8 @@ BEGIN
     RAISE insufficient_privilege USING MESSAGE = 'Access denied';
   END IF;
   SELECT data INTO v_data FROM public.organizations WHERE id = v_org;
-  v_occasion := (v_data->>'DEFAULT_OCCASION')::bigint;
+  v_occasion := coalesce((v_data->>'REPRESENTATIVE_OCCASION')::bigint,
+                        (v_data->>'DEFAULT_OCCASION')::bigint);
   SELECT title INTO v_title FROM public.occasions
     WHERE id = v_occasion AND organization = v_org;
   RETURN jsonb_build_object('enabled', coalesce((v_data->>'IS_APP_SUPPORTED')::boolean, false),
@@ -43,7 +44,8 @@ BEGIN
   IF NOT coalesce((v_data->>'IS_APP_SUPPORTED')::boolean, false) THEN
     RAISE invalid_parameter_value USING MESSAGE = 'Application is not enabled';
   END IF;
-  v_current := (v_data->>'DEFAULT_OCCASION')::bigint;
+  v_current := coalesce((v_data->>'REPRESENTATIVE_OCCASION')::bigint,
+                        (v_data->>'DEFAULT_OCCASION')::bigint);
   IF v_current IS DISTINCT FROM p_expected_occasion THEN
     RAISE serialization_failure USING MESSAGE = 'App landing changed. Refresh and try again.';
   END IF;
@@ -53,11 +55,11 @@ BEGIN
   ) THEN
     RAISE invalid_parameter_value USING MESSAGE = 'Choose an open occasion in this unit';
   END IF;
-  -- The representative occasion is a separate application setting; preserve it.
+  -- Remove the fallback too: clearing must really return to the card overview.
   UPDATE public.organizations
-    SET data = (coalesce(data, '{}'::jsonb) - 'DEFAULT_OCCASION')
+    SET data = (coalesce(data, '{}'::jsonb) - 'REPRESENTATIVE_OCCASION' - 'DEFAULT_OCCASION')
       || CASE WHEN p_occasion IS NULL THEN '{}'::jsonb
-         ELSE jsonb_build_object('DEFAULT_OCCASION', p_occasion) END
+         ELSE jsonb_build_object('REPRESENTATIVE_OCCASION', p_occasion) END
     WHERE id = v_org;
   RETURN public.get_unit_app_landing(p_unit);
 END;
