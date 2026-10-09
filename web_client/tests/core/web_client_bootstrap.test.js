@@ -86,3 +86,32 @@ test('a restricted service-worker getter cannot disable startup recovery', (t) =
     dom.window.markFestappAppReady();
     assert.equal(dom.window.document.getElementById('web-client-startup'), null);
 });
+
+test('retry repairs the native entry-script cache before preparing a reload', async (t) => {
+    const { dom } = boot({ blockedWorker: true });
+    t.after(() => dom.window.close());
+    const calls = [];
+    dom.window.fetch = async (url, options) => {
+        calls.push({ url, cache: options.cache });
+        return { ok: true, headers: new Headers({ 'content-type': 'application/javascript' }), arrayBuffer: async () => new ArrayBuffer(0) };
+    };
+    dom.window.prepareFestappNetworkReload = async () => {
+        calls.push('reload-prepared');
+        throw new Error('stop before JSDOM navigation');
+    };
+    await dom.window.retryFestappWebClient();
+    assert.equal(calls[0]?.cache, 'reload', 'a cached 404 must be replaced in the browser cache');
+    assert.match(calls[0].url, /src\/main\.js$/);
+    assert.equal(calls[1], 'reload-prepared');
+});
+
+test('retry keeps recovery usable if the entry script is still missing', async (t) => {
+    const { dom } = boot();
+    t.after(() => dom.window.close());
+    let reloads = 0;
+    dom.window.fetch = async () => ({ ok: false });
+    dom.window.prepareFestappNetworkReload = async () => { reloads++; };
+    await dom.window.retryFestappWebClient();
+    assert.equal(reloads, 0, 'a failed entry fetch must not reload into another cached error');
+    assert.equal(dom.window.document.querySelector('#web-client-startup button').disabled, false);
+});

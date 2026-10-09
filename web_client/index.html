@@ -101,6 +101,22 @@
             const button = document.querySelector('#web-client-startup button');
             if (button) button.disabled = true;
             try {
+                // A browser can cache an entry-script 404 for four hours. Reload
+                // bypasses and replaces that native cache even without workers.
+                const entry = document.querySelector('script[type="module"][src]');
+                if (entry && new URL(entry.src).origin === location.origin) {
+                    const controller = new AbortController();
+                    const timeout = window.setTimeout(function() { controller.abort(); }, 10000);
+                    try {
+                        const response = await fetch(entry.src, { cache: 'reload', signal: controller.signal });
+                        if (!response.ok || !/(?:java|ecma)script/i.test(response.headers.get('content-type') || '')) {
+                            throw new Error('Entry script is unavailable');
+                        }
+                        await response.arrayBuffer();
+                    } finally {
+                        window.clearTimeout(timeout);
+                    }
+                }
                 await window.prepareFestappNetworkReload?.();
                 window.location.reload();
             } catch (error) {
