@@ -1,13 +1,5 @@
--- A separate hashed capability exposes bounded operational facts only. It cannot
--- mint sessions, enqueue mail or access customer rows through another RPC.
-CREATE TABLE IF NOT EXISTS public.festapp_monitoring_credentials (
-  token_hash text PRIMARY KEY CHECK(length(token_hash)=64),
-  expires_at timestamptz NOT NULL,
-  registered_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.festapp_monitoring_credentials ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.festapp_monitoring_credentials FROM PUBLIC,anon,authenticated,service_role;
-
+-- Age due emails from their scheduled time, so future reminders do not
+-- become overdue immediately when they first become eligible.
 CREATE OR REPLACE FUNCTION public.get_festapp_monitoring_health_v1(p_token text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE c public.email_capacity;v_since timestamptz;v_oldest timestamptz;v_alerts text[]:='{}';
