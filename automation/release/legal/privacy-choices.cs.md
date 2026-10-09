@@ -1,21 +1,13 @@
-# Vaše volby a práva – Festapp
+# Vaše volby a práva – Hvězda Mořská
 
 Účinnost: 25. srpna 2026. Verze: 1.0.
 
-## Správa účtu
+V profilu můžete zkontrolovat své údaje, spravovat osobní program a registrace a zahájit smazání celého účtu. Žádost o smazání odešle časově omezený jednorázový odkaz na e-mailovou adresu účtu. Pouhé otevření odkazu nic nemaže; smazání spustí až závěrečné potvrzení tlačítkem.
 
-V profilu můžete zkontrolovat své údaje, spravovat program a registrace a zahájit smazání účtu. Časově omezený jednorázový odkaz zaslaný na e-mail sám nic nemaže; odstranění začne až po závěrečném potvrzení.
+Po potvrzení se účet zablokuje pro další použití a odstranění databázového účtu, autentizace a propojené push identity proběhne jako sledovatelná operace. Přechodný výpadek může zobrazit stav „zpracovává se“, nikoli nepravdivé dokončení. Účetní, daňové nebo jiné záznamy, které musí správce uchovat kvůli zákonné povinnosti nebo obhajobě právních nároků, mohou zůstat pouze v nezbytném rozsahu po příslušnou dobu.
 
-## Co se stane po smazání
+Push oznámení a oprávnění k poloze lze kdykoli změnit v systémovém nastavení zařízení. Bez přihlášení lze nadále používat veřejný program, mapu, novinky a praktické informace. Data uložená pro offline provoz lze odstranit odinstalováním aplikace nebo vymazáním dat webu či aplikace v nastavení zařízení.
 
-Po potvrzení se účet zablokuje a odstraní se autentizace, soukromý profil a propojená data, která není nutné dále uchovat. Záznamy vyžadované zákonem nebo potřebné k ochraně právních nároků mohou zůstat pouze v nezbytném rozsahu.
+O přístup, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu nebo námitku můžete požádat CK Hvězda Mořská s.r.o. na `info@hvezdamorska.cz`. Technický požadavek související s aplikací lze poslat také na `info@festapp.net`. Nikdy neposílejte heslo, přihlašovací kód ani jednorázový odkaz.
 
-## Vaše práva
-
-O přístup, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu nebo námitku lze požádat na `info@festapp.net`.
-
-## Další informace
-
-Samotná registrace není souhlasem s newsletterem ani nepovinným sledováním. V nastavení prohlížeče lze odstranit také uložené přihlašovací údaje, nastavení a mezipaměť; může tím dojít k odhlášení.
-
-Úplné informace najdete v dokumentu <https://vstupenky.online/privacy/>. Již zahájené smazání účtu dokončíte na stránce <https://vstupenky.online/delete-account/>.
+Úplné zásady ochrany osobních údajů jsou na <https://hvezdamorska.festapp.net/privacy/> a přímá stránka pro potvrzení již zahájeného smazání účtu je na <https://hvezdamorska.festapp.net/delete-account/>.
