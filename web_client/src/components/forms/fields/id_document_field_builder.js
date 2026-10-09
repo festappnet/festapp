@@ -1,3 +1,4 @@
+import { sanitizeHtml } from '../../../utils/html.js';
 import flatpickr from "flatpickr";
 // import 'flatpickr/dist/flatpickr.min.css'; // Commented out for Node.js test runner (JSDOM) compatibility
 import { Czech } from "flatpickr/dist/l10n/cs.js";
@@ -41,7 +42,7 @@ export class IdDocumentFieldBuilder {
         const idDesc = field.description ? document.createElement('div') : null;
         if (idDesc) {
             idDesc.className = 'form-field-description';
-            idDesc.innerHTML = field.description;
+            idDesc.innerHTML = sanitizeHtml(field.description);
         }
 
         // Expiry Section

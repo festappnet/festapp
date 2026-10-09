@@ -1,3 +1,6 @@
+[functions.exchange-sign-in-code]
+verify_jwt = false
+
 # Google broker endpoints validate cookie/state, verifier and one-time proofs.
 [functions.google-auth-start]
 verify_jwt = false

@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_ticket_to_used(
+CREATE OR REPLACE FUNCTION public.update_ticket_to_used(
     ticket_id bigint,
     scan_code text
 )
@@ -66,7 +66,7 @@ BEGIN
     END IF;
 
     -- 4. Validate Provided Scan Code
-    IF scan_code != expected_scan_code THEN
+    IF scan_code IS DISTINCT FROM expected_scan_code THEN
         RETURN jsonb_build_object(
             'code', 401,
             'message', 'Scan code is not correct.'

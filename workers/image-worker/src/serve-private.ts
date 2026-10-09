@@ -7,6 +7,7 @@ import {
   ProjectResolutionError,
 } from './project-registry';
 import { errorResponse } from './responses';
+import { isPrivateKey } from './private-key';
 
 /**
  * Serve private files from R2 with JWT authentication and editor permission check.
@@ -63,7 +64,7 @@ export async function handlePrivate(
     return new Response('Not found', { status: 404 });
   }
 
-  if (!key.startsWith('private/') || key.includes('..')) return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Invalid private key');
+  if (!isPrivateKey(key)) return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Invalid private key');
   let object = await project.privateBucket.get(key);
   if (!object && env.PRIVATE_MIGRATION_FALLBACK === 'enabled') {
     object = await project.publicBucket.get(key);
@@ -78,7 +79,8 @@ export async function handlePrivate(
   // Build response with private cache headers
   const headers = new Headers();
   object.writeHttpMetadata(headers);
-  headers.set('Cache-Control', 'private, no-cache');
+  headers.set('Cache-Control', 'private, no-store');
+  headers.set('X-Content-Type-Options', 'nosniff');
 
   return new Response(request.method === 'HEAD' ? null : object.body, { headers });
 }
