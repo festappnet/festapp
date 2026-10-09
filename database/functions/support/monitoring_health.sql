@@ -17,7 +17,7 @@ BEGIN
     WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex') AND expires_at>now();
   IF v_since IS NULL THEN RAISE insufficient_privilege USING MESSAGE='monitoring capability required'; END IF;
   SELECT * INTO c FROM public.email_capacity;
-  SELECT min(created_at) INTO v_oldest FROM public.email_messages WHERE workflow_state IN ('pending','retry_wait','preparing','sending') AND target_time<=now();
+  SELECT min(greatest(created_at,target_time)) INTO v_oldest FROM public.email_messages WHERE workflow_state IN ('pending','retry_wait','preparing','sending') AND target_time<=now();
   IF c.paused THEN v_alerts:=array_append(v_alerts,'email_paused'); END IF;
   IF c.quota_at IS NULL OR c.quota_at<now()-interval '15 minutes' THEN v_alerts:=array_append(v_alerts,'quota_stale'); END IF;
   IF v_oldest<now()-interval '5 minutes' THEN v_alerts:=array_append(v_alerts,'email_backlog'); END IF;

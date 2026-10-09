@@ -12,7 +12,7 @@ binding = "EVIDENCE_BUCKET"
 bucket_name = "festapp-supabase-backups"
 
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *"]
 
 [vars]
 MONITORING_URL = "https://festapp-monitoring.festapp.workers.dev"

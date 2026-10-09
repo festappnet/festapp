@@ -72,6 +72,7 @@ install_runtime_file "$SCRIPT_DIR/validate-operational-readiness.mjs" "$COMPOSE_
 install_runtime_file "$SCRIPT_DIR/install-production-function-bundle.sh" "$COMPOSE_DIR/install-production-function-bundle.sh"
 install_runtime_file "$SCRIPT_DIR/patch-function-proof-routes.py" "$COMPOSE_DIR/patch-function-proof-routes.py"
 install_runtime_file "$SCRIPT_DIR/patch-function-static-assets.py" "$COMPOSE_DIR/patch-function-static-assets.py"
+install_runtime_file "$SCRIPT_DIR/patch-function-email-cpu-budget.py" "$COMPOSE_DIR/patch-function-email-cpu-budget.py"
 install_runtime_file "$SCRIPT_DIR/install-google-auth-cleanup.sh" "$COMPOSE_DIR/install-google-auth-cleanup.sh"
 install_runtime_file "$SCRIPT_DIR/finalize-canonical-database-operations.sh" "$COMPOSE_DIR/finalize-canonical-database-operations.sh"
 install_runtime_file "$SCRIPT_DIR/upgrade-installed-production-runtime.sh" "$COMPOSE_DIR/upgrade-installed-production-runtime.sh"
@@ -97,7 +98,7 @@ readonly INSTALLED_STATE="$(printf '%s|%s' \
 for dependency in install-runtime-registries.mjs validate-production-promotion.mjs \
   promote-production-runtime.sh upgrade-installed-production-runtime.sh \
   set-production-target-write-barrier.sh validate-operational-readiness.mjs \
-  install-production-function-bundle.sh patch-function-proof-routes.py patch-function-static-assets.py install-google-auth-cleanup.sh \
+  install-production-function-bundle.sh patch-function-proof-routes.py patch-function-static-assets.py patch-function-email-cpu-budget.py install-google-auth-cleanup.sh \
   finalize-canonical-database-operations.sh \
   activate-admin-dashboard.sh Caddyfile docker-compose.festapp.yml \
   studio-customization/entrypoint.sh studio-customization/install-logout.mjs \

@@ -9,7 +9,7 @@ function environment(writes) {
     EVIDENCE_BUCKET: { async put(key, value) { writes.push({ key, value: JSON.parse(value) }); } },
   };
 }
-function transport({ requests, batches, backendFailed = false, emailFailed = false, unrecorded = false }) {
+function transport({ requests, batches, backendFailed = false, emailFailed = false, unrecorded = false, emailAlerts = ["email_backlog"] }) {
   return async (target, init) => {
     const url = String(target); requests.push(url);
     if (url.startsWith("https://monitor.example/")) {
@@ -17,7 +17,7 @@ function transport({ requests, batches, backendFailed = false, emailFailed = fal
       return Response.json({ results: unrecorded ? [] : batch.events.map(e => ({ eventId: e.event_id, recorded: true })) }, { status: 202 });
     }
     assert.equal(new URL(url).hostname, "api.festapp.net", "no external heartbeat destination is contacted");
-    if (url.endsWith("/get_festapp_monitoring_health_v1")) return Response.json({ ok: !emailFailed, alerts: emailFailed ? ["email_backlog"] : [] });
+    if (url.endsWith("/get_festapp_monitoring_health_v1")) return Response.json({ ok: !emailFailed, alerts: emailFailed ? emailAlerts : [] });
     return new Response("", { status: backendFailed ? 503 : url.endsWith("/storage/v1/status") ? 200 : 401 });
   };
 }
@@ -51,6 +51,30 @@ test("email queue health failure shares the same SDK batch", async () => {
   const writes = [], requests = [], batches = [];
   await assert.rejects(runProbes(environment(writes), transport({ requests, batches, emailFailed: true })), /external health probe failed/);
   assert.equal(batches.length, 1);
-  assert.equal(batches[0].events.length, 2);
+  assert.equal(batches[0].events.length, 3);
   assert.equal(batches[0].events.find(e => e.check_id === "email-delivery").outcome, "failure");
+  const incident = batches[0].events.find(e => e.error_code === "email_queue_stalled");
+  assert.equal(incident.kind, "error");
+  assert.equal(incident.operation, "email_delivery");
+  assert.deepEqual(incident.context, { reason: "due_over_five_minutes" });
+});
+
+
+test("other health failures retain heartbeat reporting without inventing a stalled queue", async () => {
+  const writes = [], requests = [], batches = [];
+  await assert.rejects(runProbes(environment(writes), transport({ requests, batches, emailFailed: true, emailAlerts: ["quota_stale"] })), /external health probe failed/);
+  assert.equal(batches[0].events.length, 2);
+  assert.equal(batches[0].events.some(e => e.error_code === "email_queue_stalled"), false);
+});
+
+test("a stalled queue incident must be recorded, not just its heartbeat", async () => {
+  const writes = [], requests = [], batches = [];
+  const base = transport({ requests, batches, emailFailed: true });
+  const fetchImpl = async (target, init) => {
+    const response = await base(target, init);
+    if (!String(target).startsWith("https://monitor.example/")) return response;
+    const batch = JSON.parse(init.body);
+    return Response.json({ results: batch.events.filter(e => e.kind !== "error").map(e => ({ eventId: e.event_id, recorded: true })) }, { status: 202 });
+  };
+  await assert.rejects(runProbes(environment(writes), fetchImpl), /shared Monitoring collection failed/);
 });
