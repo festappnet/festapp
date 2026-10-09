@@ -137,7 +137,7 @@ describe('LoginModal Conditional Registration', () => {
         const previous = LocalizationService.translations;
         try {
             for (const locale of ['cs', 'en', 'uk']) {
-                LocalizationService.translations = JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+                LocalizationService.translations = JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`, import.meta.url), 'utf8'));
                 const modal = new LoginModal();
                 modal.currentView = 'register';
                 const rendered = document.createElement('div');
