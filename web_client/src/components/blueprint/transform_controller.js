@@ -4,6 +4,7 @@ import { BlueprintConfig } from './blueprint_config.js';
 export class TransformController {
     constructor() {
         this.state = { x: 0, y: 0, scale: 1 };
+        this.panInsets = {};
         this.dims = {
             viewportW: 0,
             viewportH: 0,
@@ -12,7 +13,8 @@ export class TransformController {
         };
     }
 
-    updateDimensions(viewportW, viewportH, contentW, contentH) {
+    updateDimensions(viewportW, viewportH, contentW, contentH, panInsets = {}) {
+        this.panInsets = panInsets;
         this.dims.viewportW = viewportW;
         this.dims.viewportH = viewportH;
         this.dims.contentW = contentW || 100;
@@ -53,8 +55,6 @@ export class TransformController {
 
     // Unified interaction handler to prevent state drift
     onInteractionUpdate(deltaX, deltaY, scaleFactor, cx, cy, containerRect, allowOverscroll = true) {
-         const { contentW, contentH } = this.dims;
-         
          // 1. Calculate Target Scale
          let newScale = this.state.scale * scaleFactor;
          
@@ -98,38 +98,11 @@ export class TransformController {
          const newX = relCx - (relCx - pannedX) * effectiveFactor;
          const newY = relCy - (relCy - pannedY) * effectiveFactor;
          
-         // 3. Apply Limits
-         const { viewportW, viewportH } = this.dims;
-         const scaledW = contentW * newScale;
-         const scaledH = contentH * newScale;
-         
-         // --- Consistency with onInteractionUpdate ---
-         const margin = BlueprintConfig.panMargin || 0;
-         
-         let minX, maxX, minY, maxY;
-         
-         if (scaledW < viewportW) {
-             const gapX = (viewportW - scaledW) / 2;
-             minX = gapX; 
-             maxX = gapX;
-         } else {
-             // Allow panning past edge by 'margin'
-             // Valid range: [viewportW - scaledW - margin, 0 + margin]
-             minX = viewportW - scaledW - margin;
-             maxX = margin;
-         }
-         
-         if (scaledH < viewportH) {
-             const gapY = (viewportH - scaledH) / 2;
-             minY = gapY;
-             maxY = gapY;
-         } else {
-             minY = viewportH - scaledH - margin;
-             maxY = margin;
-         }
-         
+         // Gesture bounds and release bounds must preserve the same clearance.
+         const { minX, maxX, minY, maxY } = this.getPanBounds(newScale);
+
          // Apply Rubber Banding using Config
-         // If we are at fit scale (or smaller), strictly lock position (No Pan allowed)
+         // At fit scale, clamp directly to the stable bounds without rubber banding.
          const isAtMinScale = newScale <= fitScale * 1.001;
          
          let constrainedX, constrainedY;
@@ -159,8 +132,6 @@ export class TransformController {
     }
 
     getConstrainedState() {
-        const { viewportW, viewportH, contentW, contentH } = this.dims;
-        
         const fitScale = this.getFitScale();
         let targetScale = this.state.scale;
         
@@ -171,32 +142,7 @@ export class TransformController {
         if (targetScale < fitScale * 0.999) targetScale = fitScale; // Tolerance
         if (targetScale > maxAllowed) targetScale = maxAllowed;
 
-        const scaledW = contentW * targetScale;
-        const scaledH = contentH * targetScale;
-        
-        // --- Consistency with onInteractionUpdate ---
-        const margin = BlueprintConfig.panMargin || 0;
-
-        let minX, maxX, minY, maxY;
-
-        if (scaledW < viewportW) {
-             const gapX = (viewportW - scaledW) / 2;
-             minX = gapX;
-             maxX = gapX;
-        } else {
-             // Valid range includes margin
-             minX = viewportW - scaledW - margin;
-             maxX = margin;
-        }
-
-        if (scaledH < viewportH) {
-             const gapY = (viewportH - scaledH) / 2;
-             minY = gapY;
-             maxY = gapY;
-        } else {
-             minY = viewportH - scaledH - margin;
-             maxY = margin;
-        }
+        const { minX, maxX, minY, maxY } = this.getPanBounds(targetScale);
 
         let targetX = this.state.x;
         let targetY = this.state.y;
@@ -212,6 +158,24 @@ export class TransformController {
         return { x: targetX, y: targetY, scale: targetScale };
     }
     
+    getPanBounds(scale) {
+        const { viewportW, viewportH, contentW, contentH } = this.dims;
+        const margin = BlueprintConfig.panMargin || 0;
+        const axis = (viewport, content, clearance) => {
+            const scaled = content * scale;
+            if (scaled < viewport) {
+                const center = (viewport - scaled) / 2;
+                // A fitted/small map can still cover the controls. Let it move
+                // until its last edge is above/left of the protected corner.
+                return [Math.min(center, viewport - scaled - clearance), center];
+            }
+            return [viewport - scaled - Math.max(margin, clearance), margin];
+        };
+        const [minX, maxX] = axis(viewportW, contentW, this.panInsets.right || 0);
+        const [minY, maxY] = axis(viewportH, contentH, this.panInsets.bottom || 0);
+        return { minX, maxX, minY, maxY };
+    }
+
     shouldSnapBack() {
         const constrained = this.getConstrainedState();
         return (Math.abs(constrained.x - this.state.x) > 0.5 || 

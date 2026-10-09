@@ -204,6 +204,7 @@ export class BlueprintRenderer {
         this.zoomOutButton = button(BlueprintStrings.zoomOut, 'M5 12h14', () => this.zoomBy(1 / 1.25));
         const reset = button(BlueprintStrings.fitToScreen, 'M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5', () => this.fitToScreen());
         reset.classList.add('blueprint-zoom-reset');
+        this.zoomControls = controls;
         this.container.appendChild(controls);
     }
 
@@ -222,11 +223,20 @@ export class BlueprintRenderer {
 
     updateControllerDims() {
         if (!this.viewport) return;
+        const viewportRect = this.viewport.getBoundingClientRect();
+        const controlsRect = this.zoomControls?.getBoundingClientRect();
+        // Keep enough stable pan space to move edge seats out from under the
+        // floating controls, including their safe-area offsets.
+        const panInsets = controlsRect?.width && controlsRect?.height ? {
+            right: Math.max(0, Math.min(this.viewport.clientWidth - 44, viewportRect.right - controlsRect.left + 12)),
+            bottom: Math.max(0, Math.min(this.viewport.clientHeight - 44, viewportRect.bottom - controlsRect.top + 12)),
+        } : {};
         this.controller.updateDimensions(
             this.viewport.clientWidth,
             this.viewport.clientHeight,
             this.contentWidth,
-            this.contentHeight
+            this.contentHeight,
+            panInsets
         );
     }
 

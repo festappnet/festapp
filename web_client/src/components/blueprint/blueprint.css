@@ -309,22 +309,3 @@ body.blueprint-active #floating-price-widget {
         transition: none;
     }
 }
-
-
-@media (max-width: 600px) {
-    .blueprint-zoom-controls {
-        position: static;
-        flex: 0 0 auto;
-        align-self: center;
-        flex-direction: row;
-        margin: 8px max(8px, env(safe-area-inset-right)) 8px max(8px, env(safe-area-inset-left));
-    }
-
-    .blueprint-zoom-controls .blueprint-zoom-reset {
-        margin-top: 0;
-        margin-left: 2px;
-        border-top: 0;
-        border-left: 1px solid var(--input-border, #d1d5db);
-        border-radius: 0 6px 6px 0;
-    }
-}
