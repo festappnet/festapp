@@ -76,6 +76,11 @@ a:hover {
     min-height: 100vh;
 }
 
+.site-legal-links { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 32px; }
+.site-legal-links a { color: var(--primary-color); text-decoration: none; }
+.site-legal-links a:hover { text-decoration: underline; }
+.site-legal-links a:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 4px; }
+
 main {
     flex: 1;
     width: 100%;

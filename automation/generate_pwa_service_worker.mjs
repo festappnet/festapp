@@ -503,6 +503,13 @@ self.addEventListener('fetch', (event) => {
     }
     const selectedCacheName = clientCacheNames.get(clientId) || CACHE_NAME;
     const cache = await caches.open(selectedCacheName);
+    // The domain root belongs to the configured client, even when a prior
+    // Flutter navigation left a stale document under / or /index.html.
+    if (request.mode === 'navigate' && url.pathname === '/') {
+      const home = await cache.match(cachedNavigationTarget('/'));
+      if (home) return home;
+      return fetch(request, { cache: 'no-store' });
+    }
     const cached = await cache.match(request, { ignoreSearch: true });
     if (cached) return cached;
 

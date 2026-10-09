@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://slunovrat.festapp.net/sitemap.xml

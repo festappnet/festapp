@@ -1,3 +1,5 @@
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/services/last_administration_context.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -31,6 +33,10 @@ class RightsUnitAdministrationAccess implements UnitAdministrationAccess {
   Future<void> load(int unitId, {required bool force}) async {
     await RightsService.updateAppData(
         unitId: unitId, force: force, refreshOffline: false);
+    if (isSignedIn && currentUnit?.id == unitId && canAccess) {
+      await LastAdministrationContext.instance.remember(AppConfig.organization,
+          RightsService.currentUser()?.id, '/unit/$unitId/edit');
+    }
   }
 
   @override

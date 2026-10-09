@@ -121,7 +121,7 @@ BEGIN
     -----------------------------------------------------
     -- 5. Validate the scanned_code
     -----------------------------------------------------
-    IF scanned_code != expected_scan_code THEN
+    IF scanned_code IS DISTINCT FROM expected_scan_code THEN
         RETURN jsonb_build_object('code', 401, 'message', 'Scan code is not correct');
     END IF;
 

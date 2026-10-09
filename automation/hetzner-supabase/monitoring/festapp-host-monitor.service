@@ -1,0 +1,25 @@
+[Unit]
+Description=Festapp host CPU memory and disk observations
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=festapp-host-monitor
+Group=festapp-host-monitor
+ExecStart=/usr/bin/node /opt/festapp-host-monitor/agent.mjs
+StateDirectory=festapp-host-monitor
+StateDirectoryMode=0700
+TimeoutStartSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+UMask=0077

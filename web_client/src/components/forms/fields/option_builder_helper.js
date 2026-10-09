@@ -1,3 +1,4 @@
+import { html, sanitizeHtml } from '../../../utils/html.js';
 import { formatPrice } from '../../../utils/formatters.js';
 import { FormStrings } from '../form_strings.js';
 import { FeatureService, DEFAULT_META_SURCHARGE_CURRENCY } from '../../features/feature_service.js';
@@ -23,7 +24,7 @@ export class OptionBuilderHelper {
     static buildFieldLabel(field) {
         const label = document.createElement('label');
         label.className = 'form-field-label';
-        label.innerHTML = `${field.title || ''}${field.isRequired ? '<span class="required-star">*</span>' : ''}`;
+        label.innerHTML = html`${field.title || ''}${field.isRequired ? html`<span class="required-star">*</span>` : ''}`;
         return label;
     }
 
@@ -33,7 +34,7 @@ export class OptionBuilderHelper {
     static buildFieldDescription(field) {
         const desc = document.createElement('div');
         desc.className = 'form-field-description';
-        desc.innerHTML = field.description;
+        desc.innerHTML = sanitizeHtml(field.description);
         return desc;
     }
 
@@ -83,10 +84,10 @@ export class OptionBuilderHelper {
         optLabel.className = 'form-check-label';
         optLabel.htmlFor = input.id;
 
-        let labelContent = `<span>${opt.title || ''}</span>`;
+        let labelContent = html`<span>${opt.title || ''}</span>`;
         if (opt.price) {
             const priceDisplay = formatPrice(opt.price, currency, 0, 'cs-CZ');
-            labelContent += `<span class="option-price">+ ${priceDisplay}</span>`;
+            labelContent = html`${labelContent}<span class="option-price">+ ${priceDisplay}</span>`;
         }
         optLabel.innerHTML = labelContent;
 
@@ -114,19 +115,19 @@ export class OptionBuilderHelper {
             const optDesc = document.createElement('span');
             optDesc.className = 'option-description';
 
-            let descHtml = '';
+            let descHtml = html``;
             // Order: deposit (bold) → meta surcharge → original description
             if (hasDeposit) {
                 const depositPrice = formatPrice(depositData.amount, currency, 0, 'cs-CZ');
-                descHtml += `<span class="deposit-info">${FormStrings.depositInfo}: ${depositPrice}</span>`;
-                if (metaSurchargeHtml || opt.description) descHtml += '<br>';
+                descHtml = html`${descHtml}<span class="deposit-info">${FormStrings.depositInfo}: ${depositPrice}</span>`;
+                if (metaSurchargeHtml || opt.description) descHtml = html`${descHtml}<br>`;
             }
             if (metaSurchargeHtml) {
-                descHtml += metaSurchargeHtml;
-                if (opt.description) descHtml += '<br>';
+                descHtml = html`${descHtml}${sanitizeHtml(metaSurchargeHtml)}`;
+                if (opt.description) descHtml = html`${descHtml}<br>`;
             }
             if (opt.description) {
-                descHtml += opt.description;
+                descHtml = html`${descHtml}${sanitizeHtml(opt.description)}`;
             }
 
             optDesc.innerHTML = descHtml;
@@ -169,7 +170,7 @@ export class OptionBuilderHelper {
         const sign = amount < 0 ? '− ' : '+ ';
         const amountText = `${sign}${formatPrice(Math.abs(amount), currency, 0, locale)}`;
         const body = description ? `${amountText} — ${description}` : amountText;
-        return `<span class="meta-surcharge">${body}</span>`;
+        return html`<span class="meta-surcharge">${body}</span>`.toString();
     }
 
     static shouldPreselect(field, opt, inputType) {

@@ -238,6 +238,13 @@ elif data.startswith(b'\x89PNG\r\n\x1a\n'):
 else:
     raise SystemExit('Error: loading brand logo must be SVG or PNG')
 LOADING_LOGO
+mkdir -p "$PROJECT_ROOT/web_client/public"
+cp "$PROJECT_ROOT/web/loading-logo.svg" "$PROJECT_ROOT/web_client/public/brand-logo.svg"
+for icon in favicon.ico favicon-16x16.png favicon-32x32.png android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png; do
+    if [ -f "$PROJECT_ROOT/web/$icon" ]; then
+        cp "$PROJECT_ROOT/web/$icon" "$PROJECT_ROOT/web_client/public/$icon"
+    fi
+done
 [ -f "$PROJECT_ROOT/web/$WEB_LOADING_LOGO_ASSET" ] || {
     echo "Error: configured web loading asset does not exist: $WEB_LOADING_LOGO_ASSET"; exit 1;
 }
@@ -270,17 +277,27 @@ if [ -f "$INDEX_FILE" ]; then
     # crawlers before a forced-occasion tenant hands off to Flutter. Keep its
     # title and descriptions tenant-owned instead of leaking the generic
     # vstupenky.online branding into every production application.
-    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" <<'PY'
+    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" "$WEB_SUPPORTED_LANGUAGES" "${WEB_PAGE_TITLE:-$APP_NAME}" <<'PY'
 import html
 import re
 import sys
 
-path, app_name, app_description, domain = sys.argv[1:]
+path, app_name, app_description, domain, languages, page_title = sys.argv[1:]
 source = open(path, encoding="utf-8").read()
-title = html.escape(app_name, quote=True)
+title = html.escape(page_title, quote=True)
+site_name = html.escape(app_name, quote=True)
 description = html.escape(app_description, quote=True)
 origin = f"https://{domain}"
+language = languages.split(',')[0].strip()
+source = re.sub(r'(<html\s+lang=")[^"]*(")', lambda m: m.group(1) + language + m.group(2), source, count=1)
 source = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", source, count=1, flags=re.DOTALL)
+source, count = re.subn(
+    r'(<section id="site-introduction"[^>]*>\s*<h1[^>]*>).*?(</h1>\s*<p[^>]*>).*?(</p>\s*</section>)',
+    lambda m: m.group(1) + site_name + m.group(2) + description + m.group(3),
+    source, count=1, flags=re.DOTALL,
+)
+if count != 1:
+    raise SystemExit(f"missing site introduction in {path}")
 
 def replace_meta(attribute, key, value):
     global source
@@ -343,6 +360,22 @@ PY
     echo "✔ Updated meta tags"
 else
     echo "Warning: $INDEX_FILE not found."
+fi
+
+# Static host fallback; the Cloudflare router supplies the live public catalog.
+if [ -d "$PROJECT_ROOT/web_client/public" ]; then
+    printf 'User-agent: *\nAllow: /\nSitemap: https://%s/sitemap.xml\n' "$DOMAIN" > "$PROJECT_ROOT/web_client/public/robots.txt"
+    python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$DOMAIN" <<'SITEMAP'
+import html
+import pathlib
+import sys
+path, domain = sys.argv[1:]
+pathlib.Path(path).write_text(
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    f'  <url><loc>https://{html.escape(domain)}/</loc></url>\n'
+    '</urlset>\n', encoding='utf-8')
+SITEMAP
 fi
 
 # 2b. Update Flutter web template (web/index.html): <title> and the
