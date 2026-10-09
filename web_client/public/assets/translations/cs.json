@@ -1461,6 +1461,7 @@
     "googlePasswordVisibility": "Zobrazit nebo skrýt heslo",
     "googleMfa": "Zadejte šestimístný kód z ověřovací aplikace nebo SMS.",
     "addEvent": "Vytvořit vlastní akci",
+    "addEventShort": "+ Akce",
     "myEvents": "Moje akce",
     "createAccount": "Vytvořit účet",
     "emailAlternative": "nebo e-mailem",
