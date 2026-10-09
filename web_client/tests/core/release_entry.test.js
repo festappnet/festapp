@@ -1,19 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import config from '../../vite.config.js';
+import { fileURLToPath } from 'node:url';
+import { build } from 'vite';
 import { APP_VERSION } from '../../src/version.js';
 
-const transform = config.plugins.find(plugin => plugin.name === 'festapp-release-entry').transformIndexHtml.handler;
-const html = '<script type="module" crossorigin src="/web-assets/index-unchanged.js"></script>';
-
-test('an unchanged production entry hash gets this release cache key', () => {
-    const built = transform(html, { bundle: {} });
-    const src = built.match(/src="([^"]+)"/)[1];
-    const url = new URL(src, 'https://app.test');
-    assert.equal(url.pathname, '/web-assets/index-unchanged.js');
-    assert.equal(url.searchParams.get('release'), APP_VERSION);
-});
-
-test('development HTML keeps its original entry URL', () => {
-    assert.equal(transform(html, {}), html);
+test('production form imports the same versioned entry that HTML loads', async () => {
+    const { output } = await build({
+        root: fileURLToPath(new URL('../..', import.meta.url)),
+        logLevel: 'silent',
+        build: { write: false },
+    });
+    const html = output.find(asset => asset.fileName === 'index.html').source;
+    const entry = new URL(html.match(/<script type="module"[^>]*src="([^"]+)"/)[1], 'https://app.test');
+    assert.equal(entry.search, '', 'a query-only identity would execute the shared entry twice');
+    assert.ok(entry.pathname.endsWith('-' + APP_VERSION.replace('+', '-') + '.js'), 'a new release must bypass cached entry failures');
+    assert.ok(output.some(chunk => chunk.fileName === entry.pathname.slice(1)), 'the referenced entry must exist');
+    const form = output.find(chunk => chunk.type === 'chunk' && chunk.name === 'form_page');
+    assert.ok(form.imports.includes(entry.pathname.slice(1)), 'HTML and form dependencies must resolve to one module identity');
 });
