@@ -26,10 +26,15 @@ test('form loading never leaves an empty page while the request is pending', asy
     t.after(() => dom.window.close());
     await t.test('initial routing waits for visible form content', async (t) => {
         let finish;
-        t.mock.method(DbForms, 'getFormByLink', () => new Promise(resolve => { finish = resolve; }));
+        let started;
+        const requestStarted = new Promise(resolve => { started = resolve; });
+        t.mock.method(DbForms, 'getFormByLink', () => new Promise(resolve => {
+            finish = resolve;
+            started();
+        }));
         let handled = false;
         const loading = RouterService.handleInitialLoad().then(() => { handled = true; });
-        await new Promise(resolve => setImmediate(resolve));
+        await requestStarted;
         assert.equal(handled, false, 'startup must not report ready before rendering the form');
         assert.match(document.getElementById('form-page-container').textContent, /Načítání/);
         finish(null);
