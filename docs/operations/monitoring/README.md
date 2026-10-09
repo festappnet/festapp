@@ -8,7 +8,30 @@ The former Festapp Healthchecks check and ping credential have been removed.
 The canonical Edge router reports handled HTTP 5xx and thrown worker failures,
 without request bodies, URLs, error messages, user identities or credentials.
 Its bounded reporting cannot change the application response. Browser/Flutter
-crash reporting and host CPU/disk metrics are outside this integration.
+crash reporting is outside this integration.
+
+A dedicated unprivileged systemd agent on the canonical backend samples CPU,
+MemAvailable-based memory use and the filesystems backing `/`,
+`/opt/festapp-supabase`, `/var/lib/docker` and `/var/backups` every minute.
+It uses the identical pinned SDK and a separate `festapp-host` credential
+restricted to four heartbeat checks. Shared Monitoring sends warnings after
+five minutes of CPU or memory use at 90%, disk use at 90%, disk free space
+below 2 GiB, or inode use at 90%. Duplicate filesystems are measured once.
+A missing agent heartbeat is detected after three minutes, with the same
+five-minute warning delay. The agent is the parent of metric checks to avoid
+four alerts for one host outage. Measurement failures report failed checks.
+CPU uses interval counters, excludes double-counted guests and treats iowait
+as idle; boot/reset/stale samples start with a fresh one-second baseline.
+Only percentages and bounded reason codes enter Monitoring, never paths,
+process lists or credentials. The server is shared, so host alerts cover its
+resources regardless of which app consumes them.
+
+Host installation: stage `automation/hetzner-supabase/monitoring/*` with
+`supabase/functions/_shared/monitoring-sdk/index.js` renamed `sdk.mjs`, its
+LICENSE and a SHA256SUMS manifest. Supply a protected `token` file, verify
+the selected canonical identity, and run `install.sh` as root. No backend
+restart or database migration is involved. Disable the timer and revoke only
+its isolated credential to remove this agent; retain other Festapp monitors.
 
 The SDK archive is pinned with npm integrity and SHA-256
 `27dc3b2fa818aeb9a7e5ae4448ee75ba0c420fc020573693453c7dd56d353207`.
