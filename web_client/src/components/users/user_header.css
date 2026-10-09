@@ -29,9 +29,12 @@ user-header.header-hidden {
 
 
 
+.header-home-link { display: block; min-width: 0; line-height: 0; }
+.header-home-link:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 4px; }
 .header-logo { 
     height: 56px; 
     width: auto;
+    max-width: min(52vw, 294px);
     cursor: pointer;
     display: block; /* img should be block or inline-block */
     object-fit: contain;

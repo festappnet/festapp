@@ -1,4 +1,10 @@
-# Source overlay for the canonical Vstupenky.online Netlify deployment.
+# Source overlay for the canonical vstupenky.online deployment.
 automation/project.conf
 netlify.toml
 web_client/public/netlify-retire-worker.js
+assets/icons/vstupenky-icon.svg
+web/android-chrome-*.png
+web/apple-touch-icon.png
+web/favicon*.png
+web/favicon.ico
+web_client/favicon.ico

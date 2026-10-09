@@ -6,6 +6,13 @@ export class RouterService {
 
     static FORM_PATH_PREFIX = '/form/';
 
+    static getFormLink(path) {
+        if (!path.startsWith(RouterService.FORM_PATH_PREFIX)) return null;
+        const segment = path.substring(RouterService.FORM_PATH_PREFIX.length).split('/')[0];
+        try { return segment ? decodeURIComponent(segment) : null; }
+        catch { return null; }
+    }
+
     static openExternalUrl(url, { inCurrentWindow = false } = {}) {
         if (inCurrentWindow) {
             window.location.href = url;
@@ -313,8 +320,7 @@ export class RouterService {
 
         // 5. Load Component
         if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
-            const link = path.substring(RouterService.FORM_PATH_PREFIX.length);
-            const cleanLink = link.split('/')[0];
+            const cleanLink = RouterService.getFormLink(path);
             if (cleanLink) {
                 const { FormPage } = await import('../components/forms/form_page.js');
                 new FormPage('form-page-container').init(cleanLink, { onBack: RouterService.goBackProgrammatically });
@@ -393,7 +399,7 @@ export class RouterService {
             RouterService._lastPath = path;
 
             if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
-                 const link = path.substring(RouterService.FORM_PATH_PREFIX.length).split('/')[0];
+                 const link = RouterService.getFormLink(path);
                  const { FormPage } = await import('../components/forms/form_page.js');
                  new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically }); 
             } else {

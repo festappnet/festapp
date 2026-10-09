@@ -204,6 +204,10 @@ class UserStrings {
   static String get privacyChoices => 'FeatureUser.privacyChoices'.tr();
   static String get terms => 'FeatureUser.terms'.tr();
   static String get support => 'FeatureUser.support'.tr();
+  static String get signupLegalNotice =>
+      'FeatureUser.signupLegalNotice'.tr(namedArgs: {'button': signUp});
+  static String get signupTerms => 'FeatureUser.signupTerms'.tr();
+  static String get signupPrivacy => 'FeatureUser.signupPrivacy'.tr();
   static String get signupPrivacyNotice =>
       'FeatureUser.signupPrivacyNotice'.tr();
   static String get showMyCode =>

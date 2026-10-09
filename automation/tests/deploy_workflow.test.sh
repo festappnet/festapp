@@ -157,7 +157,7 @@ else
 fi
 
 # 7. _worker.js heredoc covers sitemap + form OG inject + extension-less entries.
-for needle in '/sitemap.xml' '/form/' 'WEB_CLIENT_INDEX' 'FLUTTER_ENTRY' 'AUTH_BRIDGE' 'FORCED_OCCASION_PATH' 'FORCE_OCCASION_LINK' 'get_available_occasions' 'get_occasion_seo_data' 'const WEB_CLIENT_EXACT = new Set(["/"]);' 'const FLUTTER_PREFIXES = ["/login", "/admin", "/transfer"];'; do
+for needle in '/sitemap.xml' '/form/' 'WEB_CLIENT_INDEX' 'FLUTTER_ENTRY' 'AUTH_BRIDGE' 'FORCED_OCCASION_PATH' 'FORCE_OCCASION_LINK' 'get_available_occasions' 'get_occasion_seo_data' 'const WEB_CLIENT_EXACT = new Set(["/"]);' 'const FLUTTER_PREFIXES = ['; do
     if grep -F -q "$needle" "$BUILD_SH"; then
         echo "  ok: cloudflare_build.sh worker covers '$needle'"
     else

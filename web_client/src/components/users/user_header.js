@@ -98,20 +98,21 @@ export class UserHeader extends HTMLElement {
 
         // Logo
         const logo = document.createElement('img');
-        logo.src = 'assets/icons/fstapplogo.svg'; 
-        logo.alt = 'Logo';
+        logo.src = '/brand-logo.svg';
+        logo.alt = AppConfig.appName;
         logo.className = 'header-logo';
         // Force height via inline style to beat any CSS loading issues or specificity wars
         logo.style.height = '56px';
         logo.style.cursor = 'pointer';
-        logo.onclick = () => {
-             // Force redirect to root
-             RouterService.openExternalUrl("/", { inCurrentWindow: true });
-        };
-        container.appendChild(logo);
+        const homeLink = document.createElement('a');
+        homeLink.href = '/';
+        homeLink.className = 'header-home-link';
+        homeLink.appendChild(logo);
+        container.appendChild(homeLink);
 
         // SEO: Hidden H1
-        const h1 = document.createElement('h1');
+        const introduction = document.getElementById('site-introduction');
+        const h1 = document.createElement(window.location.pathname === '/' && introduction && !introduction.hidden ? 'span' : 'h1');
         h1.textContent = AppConfig.appName;
         h1.style.position = 'absolute';
         h1.style.width = '1px';
