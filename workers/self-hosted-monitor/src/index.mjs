@@ -47,7 +47,7 @@ export async function probeEmailHealth(env, fetchImpl = fetch) {
     if (!response.ok) return { pass: false, reason: 'health_rpc_unavailable', http_status: response.status };
     const data = await response.json();
     if (typeof data.ok !== 'boolean' || !Array.isArray(data.alerts)) return { pass: false, reason: 'health_rpc_invalid' };
-    return { pass: data.ok, reason: data.ok ? 'ok' : 'email_health_failed', count: data.alerts.length };
+    return { pass: data.ok, reason: data.ok ? 'ok' : 'email_health_failed', count: data.alerts.length, stalled: data.alerts.includes('email_backlog') };
   } catch { return { pass: false, reason: 'health_rpc_unavailable' }; }
 }
 
@@ -89,8 +89,16 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
       status: email.pass ? 'ok' : 'failed', code: 'email_health',
       context: { reason: email.reason, count: email.count ?? 0 },
     });
+    if (email.stalled) {
+      // Report an error incident without the heartbeat warning delay. The
+      // independent health RPC covers pending, retries, preparation and sends.
+      monitor.reportError(new Error('Email queue stalled'), {
+        code: 'email_queue_stalled', operation: 'email_delivery',
+        context: { reason: 'due_over_five_minutes' },
+      });
+    }
     const receipt = await monitor.close({ timeoutMs: 1000 });
-    if (receipt.status !== 'flushed' || receipt.receipts.length !== TARGETS.length + 1 || receipt.dropped) throw new Error('monitoring_collection_failed');
+    if (receipt.status !== 'flushed' || receipt.receipts.length !== TARGETS.length + 1 + (email.stalled ? 1 : 0) || receipt.dropped) throw new Error('monitoring_collection_failed');
   } catch {
     throw new Error('Festapp shared Monitoring collection failed');
   }

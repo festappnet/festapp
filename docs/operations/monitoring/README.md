@@ -2,13 +2,21 @@
 
 The shared `@festapp/monitoring` v0.1.1 service owns incidents and operational
 alert mail. `festapp-self-hosted-monitor` batches canonical backend
-availability and canonical email delivery health every five minutes. The
+availability and canonical email delivery health every minute. The
 shared Monitoring service owns incident alerts and missed-heartbeat detection.
 The former Festapp Healthchecks check and ping credential have been removed.
 The canonical Edge router reports handled HTTP 5xx and thrown worker failures,
 without request bodies, URLs, error messages, user identities or credentials.
 Its bounded reporting cannot change the application response. Browser/Flutter
 crash reporting is outside this integration.
+
+An independently observed email older than five minutes past its due time
+produces `email_queue_stalled` through the existing `festapp-probes` credential
+and operations recipient. It covers pending/retry/preparing/sending states,
+including a worker killed by a CPU limit. The error incident uses the project
+occurrence threshold (currently one), without the heartbeat warning delay;
+shared recipient budgets and cooldown still apply. Scheduled reminders age from
+their due time. No synthetic CPU load or production queue fixture is needed.
 
 A dedicated unprivileged systemd agent on the canonical backend samples CPU,
 MemAvailable-based memory use and the filesystems backing `/`,
