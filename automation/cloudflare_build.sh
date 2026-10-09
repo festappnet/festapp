@@ -239,8 +239,7 @@ async function handleForm(request, env, path) {
 // ---------------------------------------------------------------------------
 // Entry-point
 // ---------------------------------------------------------------------------
-export default {
-  async fetch(request, env) {
+async function routeRequest(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -331,6 +330,21 @@ export default {
     // Unknown path -> Flutter SPA fallback (lets Flutter router handle it).
     const fallback = await serveAsset(env, request, FLUTTER_ENTRY);
     return htmlResponse(fallback.body, fallback.headers);
+}
+
+export default {
+  async fetch(request, env) {
+    const response = await routeRequest(request, env);
+    // Advanced-mode Pages routing bypasses _headers. Apply the shared policy
+    // to the final response, retaining route-specific cache and CORS headers.
+    const headers = new Headers(response.headers);
+    headers.set("content-security-policy", "base-uri 'self'; object-src 'none'");
+    headers.set("x-content-type-options", "nosniff");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
   },
 };
 WORKER
