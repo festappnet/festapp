@@ -1,0 +1,29 @@
+name: Web startup regressions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web-startup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web_client/package-lock.json
+      - name: Install web test dependencies
+        working-directory: web_client
+        run: npm ci --no-audit --no-fund
+      - name: Verify restricted WebViews and production module identity
+        run: bash automation/test_web_startup.sh
+      - name: Verify deployment gates
+        run: bash automation/tests/deploy_workflow.test.sh
