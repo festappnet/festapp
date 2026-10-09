@@ -51,7 +51,7 @@ export class RouterService {
         // Ensure to remove old instance if tracked via singleton in FormPage (which we removed)
         // Since we are moving to instance based, the Router should probably hold the current page reference
         // but for now, we just create new one which cleans up previous by id.
-        new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically });
+        await new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically });
     }
 
     static getLoginUrl() {
@@ -323,7 +323,7 @@ export class RouterService {
             const cleanLink = RouterService.getFormLink(path);
             if (cleanLink) {
                 const { FormPage } = await import('../components/forms/form_page.js');
-                new FormPage('form-page-container').init(cleanLink, { onBack: RouterService.goBackProgrammatically });
+                await new FormPage('form-page-container').init(cleanLink, { onBack: RouterService.goBackProgrammatically });
                 return true; // Handled
             }
         }

@@ -1,3 +1,4 @@
+import { browserStorage } from './browser_storage.js';
 import { AppConfig } from '../app_config.js';
 
 export class LocalizationService {
@@ -14,7 +15,7 @@ export class LocalizationService {
 
     static async _initialize() {
         // 1. Load preference
-        const saved = localStorage.getItem(AppConfig.Keys.locale);
+        const saved = browserStorage.getItem(AppConfig.Keys.locale);
         if (saved && AppConfig.supportedLanguages.includes(saved)) {
             LocalizationService.currentLocale = saved;
         } else {
@@ -35,7 +36,7 @@ export class LocalizationService {
             if (!res.ok) throw new Error('Translation not found');
             LocalizationService.translations = await res.json();
             LocalizationService.currentLocale = locale;
-            localStorage.setItem(AppConfig.Keys.locale, locale);
+            browserStorage.setItem(AppConfig.Keys.locale, locale);
             document.documentElement.lang = locale;
         } catch (e) {
             console.error("Failed to load translations", e);

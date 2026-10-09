@@ -58,15 +58,19 @@
             ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
             : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
         function reportFestappClientVersion() {
-            navigator.serviceWorker?.controller?.postMessage({
-                type: 'FESTAPP_CLIENT_VERSION',
-                version: window.__FESTAPP_BUILD_VERSION__,
-            });
+            try {
+                navigator.serviceWorker?.controller?.postMessage({
+                    type: 'FESTAPP_CLIENT_VERSION',
+                    version: window.__FESTAPP_BUILD_VERSION__,
+                });
+            } catch { /* Embedded browsers can deny service-worker access. */ }
         }
         reportFestappClientVersion();
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.addEventListener('controllerchange', reportFestappClientVersion);
-            navigator.serviceWorker.addEventListener('message', function(event) {
+        let startupServiceWorker;
+        try { startupServiceWorker = navigator.serviceWorker; } catch { /* optional API */ }
+        if (startupServiceWorker) {
+            startupServiceWorker.addEventListener('controllerchange', reportFestappClientVersion);
+            startupServiceWorker.addEventListener('message', function(event) {
                 if (event.data?.type === 'FESTAPP_REPORT_VERSION') reportFestappClientVersion();
             });
             window.addEventListener('focus', reportFestappClientVersion);
@@ -121,7 +125,7 @@
 
         // Reuse the same bounded cache recovery as the Flutter entrypoint.
         // The combined web build already ships this canonical public script.
-        if (!['localhost', '127.0.0.1', '::1'].includes(location.hostname)) {
+        if (startupServiceWorker && !['localhost', '127.0.0.1', '::1'].includes(location.hostname)) {
             const recovery = document.createElement('script');
             recovery.src = '/festapp_update_prompt.js';
             recovery.onload = function() {
@@ -189,11 +193,13 @@
     <!-- Application Entry (Module) -->
     <script type="module" src="/src/main.js"></script>
     <script type="module">
+        let serviceWorker;
+        try { serviceWorker = navigator.serviceWorker; } catch { /* optional API */ }
         async function persistUsedFontResources() {
-            await navigator.serviceWorker.ready;
-            if (!navigator.serviceWorker.controller) {
+            await serviceWorker.ready;
+            if (!serviceWorker.controller) {
                 await new Promise(function(resolve) {
-                    navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+                    serviceWorker.addEventListener('controllerchange', resolve, { once: true });
                 });
             }
             if (document.readyState !== 'complete') {
@@ -215,12 +221,14 @@
             }));
         }
 
-        if ('serviceWorker' in navigator) {
-            window.festappOfflineReady = navigator.serviceWorker.register('/festapp_service_worker.js', {
-                scope: '/',
-                updateViaCache: 'none'
+        if (serviceWorker) {
+            window.festappOfflineReady = Promise.resolve().then(function() {
+                return serviceWorker.register('/festapp_service_worker.js', {
+                    scope: '/',
+                    updateViaCache: 'none'
+                });
             }).then(async function() {
-                await navigator.serviceWorker.ready;
+                await serviceWorker.ready;
                 reportFestappClientVersion();
                 return persistUsedFontResources();
             }).catch(function(error) {

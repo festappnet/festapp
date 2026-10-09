@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import test from 'node:test';
 
+import { createBrowserStorage } from '../../src/services/browser_storage.js';
 import { BackendActivationService } from '../../src/services/backend_activation_service.js';
 import { canonicalBackendProfileSha256 } from '../../../automation/lib/backend_activation_manifest.mjs';
 
@@ -133,4 +134,17 @@ test('unavailable or failing storage keeps the legacy writer', async () => {
     });
     assert.equal((await service.resolve()).isCanonical, false);
   }
+});
+
+
+test('a verified canonical backend works with a page-only activation marker', async () => {
+  const storage = createBrowserStorage(() => { throw new Error('SecurityError'); });
+  const service = new BackendActivationService({
+    config, storage, subtle: webcrypto.subtle,
+    fetchImpl: async () => new Response(canonicalDocument),
+  });
+  const backend = await service.resolve();
+  assert.equal(backend.isCanonical, true);
+  assert.equal(backend.supabaseUrl, config.backendActivationCanonicalSupabaseUrl);
+  assert.equal(storage.getItem(BackendActivationService.markerPrefix + tenantId), 'canonical:1');
 });
