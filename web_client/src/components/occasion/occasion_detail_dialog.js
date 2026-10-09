@@ -6,6 +6,7 @@ import { FeatureService } from '../features/feature_service.js';
 import { FeatureConstants } from '../features/feature_constants.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { FormPage } from '../forms/form_page.js';
+import { getOccasionHref } from './occasion_link.js';
 
 export class OccasionDetailDialog {
 
@@ -151,26 +152,15 @@ export class OccasionDetailDialog {
     }
 
     static async handleReserveAction(occasion) {
-        const formFeature = FeatureService.getFeatureDetails(FeatureConstants.form, occasion.features);
-        
-        if (formFeature) {
-             // Check for external form usage (Standard: use_external_form)
-             if (formFeature.use_external_form === true) {
-                 const externalUrl = formFeature.external_form_link;
-                 if (externalUrl && externalUrl.length > 0) {
-                     RouterService.openExternalUrl(externalUrl);
-                     return;
-                 }
-             }
+        const href = getOccasionHref(occasion);
+        if (!href) return;
+        if (/^https?:\/\//i.test(href)) {
+            RouterService.openExternalUrl(href);
+            return;
         }
-        
-        // Fallback to internal form
-        const link = occasion.form ? occasion.form.link : occasion.link;
-        
-        if (link) {
-            RouterService.navigateToForm(link);
-        } else {
-            console.error("No link found for occasion form.");
+        if (href.startsWith('/form/')) {
+            return RouterService.navigateToForm(decodeURIComponent(href.slice('/form/'.length)));
         }
+        return RouterService.navigateToOccasionApp(occasion.link);
     }
 }

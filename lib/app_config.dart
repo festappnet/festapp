@@ -24,7 +24,7 @@ class AppConfig {
   static const int backendActivationCanonicalOrganizationId = 0;
   static const String backendActivationCanonicalProfileSha256 = '';
   static const String clientSyncTenantId = 'default';
-  static const String appName = 'Festapp';
+  static const String appName = 'vstupenky.online';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
   static const bool isOwnProgramSupportedWithoutSignIn = true;
