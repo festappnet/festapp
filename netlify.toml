@@ -3,6 +3,39 @@
   publish = "build/web"
   command = "./automation/ci_build.sh"
 
+# Keep vstupenky.online as the application origin. The generated Netlify
+# hostname is only a legacy compatibility boundary and must never serve an
+# independently cached application shell.
+[[redirects]]
+  from = "https://vstupenkyonline.netlify.app/"
+  to = "https://vstupenky.online/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://vstupenkyonline.netlify.app/festapp_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://vstupenkyonline.netlify.app/flutter_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://vstupenkyonline.netlify.app/push/*"
+  to = "/push/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://vstupenkyonline.netlify.app/*"
+  to = "https://vstupenky.online/:splat"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
