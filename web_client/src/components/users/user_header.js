@@ -98,20 +98,21 @@ export class UserHeader extends HTMLElement {
 
         // Logo
         const logo = document.createElement('img');
-        logo.src = 'assets/icons/fstapplogo.svg'; 
-        logo.alt = 'Logo';
+        logo.src = '/brand-logo.svg';
+        logo.alt = AppConfig.appName;
         logo.className = 'header-logo';
         // Force height via inline style to beat any CSS loading issues or specificity wars
         logo.style.height = '56px';
         logo.style.cursor = 'pointer';
-        logo.onclick = () => {
-             // Force redirect to root
-             RouterService.openExternalUrl("/", { inCurrentWindow: true });
-        };
-        container.appendChild(logo);
+        const homeLink = document.createElement('a');
+        homeLink.href = '/';
+        homeLink.className = 'header-home-link';
+        homeLink.appendChild(logo);
+        container.appendChild(homeLink);
 
         // SEO: Hidden H1
-        const h1 = document.createElement('h1');
+        const introduction = document.getElementById('site-introduction');
+        const h1 = document.createElement(window.location.pathname === '/' && introduction && !introduction.hidden ? 'span' : 'h1');
         h1.textContent = AppConfig.appName;
         h1.style.position = 'absolute';
         h1.style.width = '1px';
@@ -147,10 +148,10 @@ export class UserHeader extends HTMLElement {
              if (canSeeAdmin || canSeeReservations) {
                  const adminBtn = document.createElement('button');
                  adminBtn.className = 'btn-admin';
-                 adminBtn.innerHTML = `<i class="material-icons">admin_panel_settings</i><span class="admin-text">${CommonStrings.admin}</span>`;
-                 adminBtn.onclick = () => RouterService.navigateToAdmin(
-                     RightsService.currentUnit?.id ?? this.user?.units?.[0]?.id,
-                 );
+                 adminBtn.setAttribute('aria-label', CommonStrings.myEvents);
+                 adminBtn.title = CommonStrings.myEvents;
+                 adminBtn.innerHTML = `<i class="material-icons" aria-hidden="true">grid_view</i><span class="admin-text">${CommonStrings.myEvents}</span>`;
+                 adminBtn.onclick = () => RouterService.navigateToAdmin();
                  actions.appendChild(adminBtn);
              }
 
@@ -174,10 +175,25 @@ export class UserHeader extends HTMLElement {
              actions.appendChild(userContainer);
              
         } else {
+            if (RightsService.context?.organization?.IS_REGISTRATION_ENABLED !== false) {
+                const addEventBtn = document.createElement('button');
+                addEventBtn.type = 'button';
+                addEventBtn.className = 'btn-add-event';
+                addEventBtn.textContent = CommonStrings.addEvent;
+                addEventBtn.onclick = async () => {
+                    await import('./login_modal.js');
+                    const modal = document.createElement('login-modal');
+                    modal.currentView = 'register';
+                    document.body.appendChild(modal);
+                };
+                actions.appendChild(addEventBtn);
+            }
+
             // Guest -> Sign In Button
             // Only show if we confirm we are NOT logged in (context exists but user is null)
             const signInBtn = document.createElement('button');
             signInBtn.className = 'btn-sign-in';
+            signInBtn.setAttribute('aria-label', CommonStrings.signIn);
             // Use innerHTML to include icon and text span for responsive hiding
             signInBtn.innerHTML = `<i class="material-icons">person</i><span class="sign-in-text">${CommonStrings.signIn}</span>`;
             signInBtn.onclick = (e) => {

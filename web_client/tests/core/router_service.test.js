@@ -271,7 +271,7 @@ test('RouterService.handleInitialLoad', async (t) => {
             RouterService.getAdminUrl(5),
             '/unit/5/edit',
         );
-        assert.strictEqual(RouterService.getAdminUrl('5/admin'), '/admin');
+        assert.strictEqual(RouterService.getAdminUrl('5/admin'), '/login');
         AppConfig.flutterAppUrl = "https://vstupenky.online/flutter.html";
     });
 

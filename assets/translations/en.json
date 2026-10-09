@@ -398,7 +398,6 @@
     "orderSequence": "Order sequence",
     "orderSequenceHelp": "Fixed order sequence within this occasion.",
     "validOrders": "Valid orders",
-    "validApplications": "Valid applications",
     "validTickets": "Valid tickets",
     "orderSymbol": "Order Symbol",
     "customer": "Customer",
@@ -428,7 +427,8 @@
     "depositOnSiteLabel": "On site",
     "paymentReference": "Payment reference",
     "shortTitleHelp": "Name printed on the ticket, for example for dinner. If empty, the full product name is used.",
-    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit."
+    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit.",
+    "validApplications": "Valid applications"
   },
   "FormsFeature": {
     "showDepositDescription": "Show deposit / surcharge note on products",
@@ -1329,6 +1329,9 @@
     "uploadImageSuccess": "File uploaded successfully."
   },
   "FeatureUser": {
+    "signupLegalNotice": "By clicking “{button}”, you agree to the {terms} and acknowledge the {privacy}.",
+    "signupTerms": "terms of use",
+    "signupPrivacy": "privacy policy",
     "credentialsSent": "Login credentials have been sent to",
     "passwordResetSent": "Password reset email has been sent.",
     "enterEmailReset": "Enter your email to receive a password reset link.",
@@ -1456,7 +1459,17 @@
     "googleCode": "Verification code",
     "googleUnlink": "Disconnect Google",
     "googlePasswordVisibility": "Show or hide password",
-    "googleMfa": "Enter the six-digit code from your authenticator app or SMS."
+    "googleMfa": "Enter the six-digit code from your authenticator app or SMS.",
+    "addEvent": "Create your own event",
+    "myEvents": "My events",
+    "createAccount": "Create account",
+    "emailAlternative": "or with email",
+    "emailExample": "jane@example.com",
+    "firstNameExample": "Jane",
+    "lastNameExample": "Smith",
+    "passwordPlaceholder": "Your password",
+    "existingAccountPrompt": "Already have an account?",
+    "newAccountPrompt": "Don’t have an account yet?"
   },
   "Common": {
     "fieldCannotBeEmpty": "Field cannot be empty",
@@ -1490,8 +1503,6 @@
     "content": "Content",
     "contentChanged": "Content has been changed.",
     "continueAction": "Continue",
-    "copy": "Copy",
-    "copied": "Copied",
     "copiedToClipboard": "Copied to clipboard",
     "create": "Create",
     "currency": "Currency",
@@ -1584,7 +1595,9 @@
     "user": "User",
     "discardChanges": "Discard changes",
     "discardChangesConfirmation": "Discard unsaved changes?",
-    "keepEditing": "Keep editing"
+    "keepEditing": "Keep editing",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "BankAccount": {
     "settingsTitle": "Bank Account Settings",
@@ -1821,7 +1834,6 @@
     "landingAdminOnly": "Only an organization administrator can change this setting.",
     "landingLoadFailed": "Could not load the opening screen setting. Retry",
     "landingForced": "The opening screen is fixed in this app build.",
-
     "addNewEvent": "Add New Event",
     "createCopy": "Create Copy",
     "createCopyConfirm": "Do you want to create copy of this event?",
@@ -2400,8 +2412,6 @@
     "finishCanvasFirst": "To move elements, click Done first."
   },
   "OccasionReport": {
-    "onlyValid": "Valid only",
-    "includingCancelled": "Including cancelled",
     "transaction_currency_mismatch": "Transactions with a currency different from their order are excluded from the chart",
     "ratesUnavailable": "CNB rates are unavailable or a currency is missing. Select an individual currency to display payments.",
     "compareCurrencies": "All currencies in CZK",
@@ -2455,6 +2465,8 @@
     "product": "Product",
     "count": "Count",
     "applicationTimeline": "Application activity over time",
-    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time."
+    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
+    "onlyValid": "Valid only",
+    "includingCancelled": "Including cancelled"
   }
 }

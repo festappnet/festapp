@@ -48,12 +48,13 @@ const WEB_CLIENT_INDEX = "/webclient";
 const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
+const SITE_NAME = "Festapp"; // replaced from project.conf after generation
 
 // Web client SPA routes (form list handled by /form/<slug> below).
 const WEB_CLIENT_EXACT = new Set(["/"]);
 
 // Flutter SPA routes (login / admin / handover).
-const FLUTTER_PREFIXES = ["/login", "/admin", "/transfer"];
+const FLUTTER_PREFIXES = ["/login", "/login-qr", "/admin", "/transfer", "/unit", "/signup", "/settings", "/install", "/instanceInstall", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
 
 // auth_bridge.html alias — RouterService still posts to /auth_bridge.html.
 const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);
@@ -69,7 +70,7 @@ const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient"]);
 // revalidated on every load so a client never mixes assets from two builds.
 const MUTABLE_RUNTIME_ASSET = /(?:^|\/)(?:backend-activation\.json|client-sync-config\.json|festapp-version\.json|main\.dart\.js(?:_\d+\.part\.js)?|main\.dart\.mjs|flutter_bootstrap\.js|flutter\.js|flutter_service_worker\.js|festapp_service_worker\.js|festapp_update_prompt\.js|(?:canvaskit|skwasm)[\w.]*\.(?:js|mjs|wasm))$/;
 
-function htmlResponse(body, originHeaders) {
+function htmlResponse(body, originHeaders, status = 200) {
   const headers = new Headers(originHeaders || {});
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "no-cache, must-revalidate");
@@ -78,7 +79,66 @@ function htmlResponse(body, originHeaders) {
   headers.delete("content-length");
   headers.delete("content-range");
   headers.delete("accept-ranges");
-  return new Response(body, { status: 200, headers });
+  return new Response(body, { status, headers });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
+}
+
+// Must match the native links on OccasionCard (covered by contract tests).
+function occasionHref(occasion) {
+  const form = occasion.features?.find(feature => feature.code === "form" &&
+    (feature.is_enabled === true || feature.isEnabled === true));
+  if (form) {
+    const data = { ...form, ...form.data };
+    if (data.use_external_form === true && data.external_form_link) {
+      try {
+        const url = new URL(data.external_form_link);
+        if (["https:", "http:"].includes(url.protocol)) return url.href;
+      } catch { /* Fall back to an internal destination. */ }
+    }
+    const slug = (occasion.form?.link || occasion.link || "").split("?")[0].replace(/^\/+|\/+$/g, "");
+    return slug ? `/form/${encodeURIComponent(slug)}` : null;
+  }
+  const slug = (occasion.link || "").split("?")[0].replace(/^\/+|\/+$/g, "");
+  return slug ? `/${encodeURIComponent(slug)}/event` : null;
+}
+
+async function publicOccasions(env) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return [];
+  const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_available_occasions`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env.SUPABASE_ANON_KEY,
+      authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+    body: JSON.stringify({ p_organization_id: env.ORGANIZATION_ID || 1, p_unit_id: null }),
+    signal: AbortSignal.timeout(2500),
+  });
+  if (!rpc.ok) throw new Error(`Public catalog HTTP ${rpc.status}`);
+  const data = await rpc.json();
+  return Array.isArray(data) ? data : data?.occasions || data?.data?.occasions || [];
+}
+
+async function handleHome(request, env) {
+  const base = await serveAsset(env, request, WEB_CLIENT_INDEX);
+  let html = await base.text();
+  try {
+    const occasions = await publicOccasions(env);
+    const links = occasions.map(occasion => {
+      const href = occasionHref(occasion);
+      return href ? `<li><a href="${escapeHtml(href)}">${escapeHtml(occasion.title)}</a></li>` : "";
+    }).join("");
+    if (links) html = html.replace('<div id="events-grid"></div>', `<div id="events-grid"><ul>${links}</ul></div>`);
+  } catch (error) {
+    console.error("Public catalog HTML unavailable", error.message);
+  }
+  return htmlResponse(html, base.headers);
+}
+
+function notFound() {
+  return htmlResponse('<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stránka nenalezena</title></head><body><main><h1>Stránka nenalezena</h1><p><a href="/">Zpět na hlavní stránku</a></p></main></body></html>', null, 404);
 }
 
 function activationCorsHeaders(originHeaders) {
@@ -107,48 +167,26 @@ async function serveAsset(env, request, path) {
 async function handleSitemap(request, env) {
   const url = new URL(request.url);
   const baseUrl = url.origin;
-  const today = new Date().toISOString().split("T")[0];
   const xmlHeaders = { "content-type": "application/xml", "cache-control": "public, max-age=0, s-maxage=3600" };
 
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}/</loc>
-    <lastmod>${today}</lastmod>
     <priority>1.0</priority>
   </url>
 </urlset>`;
 
   try {
-    const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_ANON_KEY;
-    const orgId = env.ORGANIZATION_ID || 1;
-    if (!supabaseUrl || !supabaseKey) return new Response(fallback, { headers: xmlHeaders });
-
-    const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/get_available_occasions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        apikey: supabaseKey,
-        authorization: `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ p_organization_id: orgId, p_unit_id: null }),
-    });
-    if (!rpc.ok) return new Response(fallback, { headers: xmlHeaders });
-
-    const data = await rpc.json();
-    let occasions = [];
-    if (Array.isArray(data)) occasions = data;
-    else if (data && Array.isArray(data.occasions)) occasions = data.occasions;
-    else if (data && data.data && Array.isArray(data.data.occasions)) occasions = data.data.occasions;
+    const occasions = await publicOccasions(env);
     if (occasions.length === 0) return new Response(fallback, { headers: xmlHeaders });
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-    xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <lastmod>${today}</lastmod>\n    <priority>1.0</priority>\n  </url>\n`;
+    xml += `  <url>\n    <loc>${escapeHtml(baseUrl)}/</loc>\n    <priority>1.0</priority>\n  </url>\n`;
     for (const occ of occasions) {
-      const link = (occ && occ.link || "").trim();
-      if (!link) continue;
-      xml += `  <url>\n    <loc>${baseUrl}/form/${link}</loc>\n    <lastmod>${today}</lastmod>\n    <priority>0.8</priority>\n  </url>\n`;
+      const href = occasionHref(occ);
+      if (!href || !href.startsWith("/")) continue;
+      xml += `  <url>\n    <loc>${escapeHtml(baseUrl + href)}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
     }
     xml += `</urlset>`;
     return new Response(xml, { headers: xmlHeaders });
@@ -170,7 +208,7 @@ async function handleForm(request, env, path) {
   try {
     const url = new URL(request.url);
     const slug = path.replace(/^\/form\//, "").split("/")[0];
-    if (!slug) return htmlResponse(baseHtml, baseHeaders);
+    if (!slug || path.split("/").filter(Boolean).length !== 2) return notFound();
 
     const supabaseUrl = env.SUPABASE_URL;
     const supabaseKey = env.SUPABASE_ANON_KEY;
@@ -183,35 +221,36 @@ async function handleForm(request, env, path) {
         apikey: supabaseKey,
         authorization: `Bearer ${supabaseKey}`,
       },
-      body: JSON.stringify({ p_link_slug: slug }),
+      body: JSON.stringify({ p_link_slug: decodeURIComponent(slug) }),
+      signal: AbortSignal.timeout(2500),
     });
     if (!rpc.ok) return htmlResponse(baseHtml, baseHeaders);
     const seo = await rpc.json();
-    if (!seo) return htmlResponse(baseHtml, baseHeaders);
+    if (!seo) return notFound();
 
-    const unitTitle = seo.unit_title;
-    const orgTitle = seo.org_title || "Festapp";
+    const orgTitle = SITE_NAME;
     const title = seo.title || "Event";
     let description = seo.form_description || seo.description ||
       "Rychlé a jednoduché založení události, prodej vstupenek a registrace.";
     description = description.replace(/<[^>]+>/gm, " ").replace(/\s+/g, " ").trim();
     const imagePath = (seo.data && seo.data.image) || seo.image;
     let imageUrl;
-    if (imagePath && imagePath.startsWith("http")) imageUrl = imagePath;
+    if (imagePath && /^https?:\/\//i.test(imagePath)) imageUrl = imagePath;
     else if (imagePath) imageUrl = `https://img.festapp.net/${imagePath}`;
     else imageUrl = `${url.origin}/android-chrome-512x512.png`;
-    const fullTitle = `${title} - ${unitTitle || orgTitle}`;
+    const fullTitle = `${title} - ${orgTitle}`;
+    const canonicalUrl = new URL(url.pathname, url.origin).href;
 
     let page = baseHtml;
-    page = page.replace(/<title[^>]*>.*?<\/title>/i, `<title>${fullTitle}</title>`);
+    page = page.replace(/<title[^>]*>.*?<\/title>/i, () => `<title>${escapeHtml(fullTitle)}</title>`);
 
     const replaceMeta = (attr, name, content) => {
       const re = new RegExp(`(<meta[^>]*${attr}=["']${name}["'][^>]*content=["'])([^"']*)(["'][^>]*>)`, "gi");
       if (re.test(page)) {
-        page = page.replace(re, `$1${content}$3`);
+        page = page.replace(re, (_match, before, _old, after) => before + escapeHtml(content) + after);
       } else {
         const tagRe = new RegExp(`<meta[^>]*${attr}=["']${name}["'][^>]*>`, "gi");
-        page = page.replace(tagRe, (m) => m.replace(/content=["'][^"']*["']/i, `content="${content}"`));
+        page = page.replace(tagRe, (m) => m.replace(/content=["'][^"']*["']/i, () => `content="${escapeHtml(content)}"`));
       }
     };
 
@@ -222,11 +261,11 @@ async function handleForm(request, env, path) {
     replaceMeta("property", "twitter:description", description);
     replaceMeta("property", "og:image", imageUrl);
     replaceMeta("property", "twitter:image", imageUrl);
-    replaceMeta("property", "og:url", url.href);
-    replaceMeta("property", "twitter:url", url.href);
+    replaceMeta("property", "og:url", canonicalUrl);
+    replaceMeta("property", "twitter:url", canonicalUrl);
     page = page.replace(
       /<link[^>]*rel=["']canonical["'][^>]*href=["'][^"']*["'][^>]*>/i,
-      `<link rel="canonical" href="${url.href}">`
+      () => `<link rel="canonical" href="${escapeHtml(canonicalUrl)}">`
     );
 
     return htmlResponse(page, baseHeaders);
@@ -239,8 +278,7 @@ async function handleForm(request, env, path) {
 // ---------------------------------------------------------------------------
 // Entry-point
 // ---------------------------------------------------------------------------
-export default {
-  async fetch(request, env) {
+async function routeRequest(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -285,8 +323,7 @@ export default {
     }
 
     if (WEB_CLIENT_EXACT.has(path)) {
-      const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
-      return htmlResponse(res.body, res.headers);
+      return handleHome(request, env);
     }
 
     if (AUTH_BRIDGE_PATHS.has(path)) {
@@ -328,9 +365,39 @@ export default {
       return assetRes;
     }
 
-    // Unknown path -> Flutter SPA fallback (lets Flutter router handle it).
+    // Missing images/scripts must never be returned as a successful HTML asset.
+    if (/\.(?:png|svg|ico|jpg|jpeg|webp|gif|js|mjs|css|wasm|woff2?|ttf|json|xml|txt)$/i.test(path)) return notFound();
+
+    // Preserve real occasion/private app deep links. Only a successful backend
+    // answer may establish non-existence; an outage must not become a 404.
+    if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+      try {
+        const slug = decodeURIComponent(path.split('/').filter(Boolean)[0] || '');
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_occasion_seo_data`, {
+          method: "POST", headers: { "content-type": "application/json",
+            apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ p_link_slug: slug }), signal: AbortSignal.timeout(2500),
+        });
+        if (response.ok && await response.json() === null) return notFound();
+      } catch { /* Keep the established Flutter fallback during an outage. */ }
+    }
     const fallback = await serveAsset(env, request, FLUTTER_ENTRY);
     return htmlResponse(fallback.body, fallback.headers);
+}
+
+export default {
+  async fetch(request, env) {
+    const response = await routeRequest(request, env);
+    // Advanced-mode Pages routing bypasses _headers. Apply the shared policy
+    // to the final response, retaining route-specific cache and CORS headers.
+    const headers = new Headers(response.headers);
+    headers.set("content-security-policy", "base-uri 'self'; object-src 'none'");
+    headers.set("x-content-type-options", "nosniff");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
   },
 };
 WORKER
@@ -348,6 +415,9 @@ match = re.search(r"^FORCE_OCCASION_LINK=(.*)$", config, re.MULTILINE)
 occasion_link = match.group(1).strip().strip('"').strip("'") if match else ""
 occasion_link = occasion_link.strip().strip("/")
 replacement = json.dumps(f"/{occasion_link}/event" if occasion_link else None)
+name_match = re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
+site_name = name_match.group(1).strip().strip('"').strip("'") if name_match else 'Festapp'
+source = source.replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = ' + json.dumps(site_name, ensure_ascii=False) + ';', 1)
 source, count = re.subn(
     r"const FORCED_OCCASION_PATH = null;",
     f"const FORCED_OCCASION_PATH = {replacement};",
