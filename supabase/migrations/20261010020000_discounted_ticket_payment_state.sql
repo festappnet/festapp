@@ -1,3 +1,5 @@
+-- Keep ticket payment state in sync in both price-edit transports.
+-- Canonical source: database/functions/eshop_orders/update_ticket_products_ws.sql
 CREATE OR REPLACE FUNCTION public.update_ticket_products_wsv2(
   p_ticket_id    bigint,
   p_products     jsonb
