@@ -1,5 +1,7 @@
 # Bezpečnostní audit Festapp
 
+> Stav po nápravě: opravy nasazeny 2026-10-09, web 0.20.144+628. Následující nálezy zachycují stav při auditu; aktuální ověření a zbývající kompatibilitní omezení jsou v [záznamu vydání](security-release-2026-10-09.md).
+
 Druhý průchod potvrdil závažné chyby NULL autorizace a XSS. Dotčené SQL funkce jsou nasazené a mají anonymní EXECUTE granty; jejich zneužití bylo reprodukováno pouze v izolované lokální databázi. Dva původní předpoklady o přímých zápisech jsou vyvrácené: produkční granty chrání účast i identitu profilu. Soukromé soubory používají dokumentovaný společný přístup editorů, jehož změna musí respektovat legitimní sdílení.
 
 Datum: 2026-10-09. Větev: `feat/occasion-setup-wizard-20261007`, HEAD `eb2304724`, s existujícími necommitnutými změnami. Při samotném auditu nebyl aplikační kód ani produkční data změněny. Následně uživatel autorizoval lokální implementaci; její aktuální stav je níže. Původní nálezy a evidence dále popisují stav před opravou.
