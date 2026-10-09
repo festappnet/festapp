@@ -209,6 +209,17 @@ BEGIN
          updated_at = now()
    WHERE id = v_order_id;
 
+  -- A price edit can pay off the order without the usual paid transition.
+  -- Email acceptance only projects paid tickets to sent, so keep eligible
+  -- tickets in step with the order before creating its delivery intent.
+  IF v_new_state = 'paid' THEN
+    UPDATE eshop.tickets t
+       SET state = 'paid', updated_at = now()
+      FROM eshop.order_product_ticket opt
+     WHERE opt.ticket = t.id AND opt."order" = v_order_id
+       AND t.state IN ('ordered', 'expired');
+  END IF;
+
   IF v_price > 0 THEN
     -- If there's a balance due, set/update the payment deadline.
     SELECT elem INTO v_form_settings
@@ -243,3 +254,19 @@ BEGIN
   RETURN jsonb_build_object('code',200,'data',v_new_data);
 END;
 $$;
+
+-- The receipted Client Sync command must use the same payment and email
+-- transition as the legacy RPC, rather than its pre-email-cutover copy.
+CREATE OR REPLACE FUNCTION public.update_ticket_products_internal_v1(
+  p_ticket_id bigint, p_products jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public, extensions AS $$
+BEGIN
+  RETURN public.update_ticket_products_wsv2(p_ticket_id, p_products);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.update_ticket_products_internal_v1(bigint,jsonb)
+  FROM PUBLIC, anon, authenticated;
