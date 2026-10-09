@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "wrangler": "^4.131.0"
+  },
+  "dependencies": {
+    "@festapp/monitoring": "file:vendor/festapp-monitoring-0.1.1.tgz"
   }
 }

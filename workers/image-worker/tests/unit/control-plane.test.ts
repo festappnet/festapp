@@ -27,6 +27,63 @@ function env(): Env {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('control plane', () => {
+  it('rejects private uploads for the public-only AKH project before storage', async () => {
+    const configured = env();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    const form = new FormData();
+    form.set('file', new File(['sensitive'], 'export.txt'));
+    form.set('projectId', 'akhweb');
+    form.set('key', 'private/export.txt');
+    const response = await handleUpload(new Request('https://image-api.festapp.net/upload', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt' }, body: form,
+    }), configured);
+    expect(response.status).toBe(400);
+    expect(configured.IMAGES_BUCKET_AKHWEB.put).not.toHaveBeenCalled();
+  });
+
+  it.each(['/private/export.txt', '/presign/private/export.txt'])(
+    'denies non-editors before storage or signing at %s', async (path) => {
+      const configured = env();
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('false')));
+      const response = await worker.fetch(new Request(`https://image-api.festapp.net${path}?projectId=default`, {
+        method: path.startsWith('/presign/') ? 'POST' : 'GET',
+        headers: { Authorization: 'Bearer jwt' },
+      }), configured);
+      expect(response.status).toBe(403);
+      expect(configured.IMAGES_PRIVATE_BUCKET.get).not.toHaveBeenCalled();
+      expect(configured.IMAGES_BUCKET.get).not.toHaveBeenCalled();
+    });
+
+  it('preserves shared editor reads without caching private content', async () => {
+    const configured = env();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    vi.mocked(configured.IMAGES_PRIVATE_BUCKET.get).mockResolvedValue({
+      body: 'private export', writeHttpMetadata: (headers: Headers) => headers.set('Content-Type', 'text/plain'),
+    } as unknown as R2ObjectBody);
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/private/export.txt?projectId=default', {
+      headers: { Authorization: 'Bearer jwt' },
+    }), configured);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('private export');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+  });
+
+  it('preserves project-local time-limited presigning without caching credentials', async () => {
+    const configured = env();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/presign/private/export.txt?projectId=a&expiresIn=60', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt' },
+    }), configured);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { url: string };
+    const signed = new URL(body.url);
+    expect(signed.pathname).toBe('/festapp-images-a-private/private/export.txt');
+    expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+    expect(signed.searchParams.has('X-Amz-Signature')).toBe(true);
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
   it('allows live uploads through the actual configured origin list', async () => {
     const config = readFileSync(new URL('../../wrangler.toml', import.meta.url), 'utf8');
     const origins = config.match(/^CONTROL_ALLOWED_ORIGINS = "([^"]+)"/m)![1];

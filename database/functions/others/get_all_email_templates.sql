@@ -11,6 +11,8 @@ DECLARE
   v_org  bigint;
 
   v_effective_org bigint;
+  v_actual_unit bigint;
+  v_actual_org bigint;
   is_app_supported boolean := false;
 BEGIN
   -- 1. Extract context values from the JSON parameter
@@ -30,15 +32,39 @@ BEGIN
               ELSE NULL
             END;
 
-  -- 2. Determine the effective Organization ID to check settings
-  -- Priority: Explicit Org -> Org from Occasion -> Org from Unit
-  IF v_org IS NOT NULL THEN
-    v_effective_org := v_org;
-  ELSIF v_occ IS NOT NULL THEN
-    SELECT organization INTO v_effective_org FROM public.occasions WHERE id = v_occ;
+  -- Resolve ancestors from the requested object; never trust mixed tenant IDs.
+  IF v_occ IS NOT NULL THEN
+    SELECT unit, organization INTO v_actual_unit, v_actual_org
+    FROM public.occasions WHERE id = v_occ;
+    IF NOT FOUND OR (v_unit IS NOT NULL AND v_unit IS DISTINCT FROM v_actual_unit)
+        OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Invalid email template hierarchy';
+    END IF;
+    IF NOT public.is_service_role()
+       AND public.get_is_editor_view_on_occasion(v_occ) IS NOT TRUE
+       AND public.get_is_editor_order_view_on_occasion(v_occ) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Occasion template access denied';
+    END IF;
+    v_unit := v_actual_unit;
+    v_org := v_actual_org;
   ELSIF v_unit IS NOT NULL THEN
-    SELECT organization INTO v_effective_org FROM public.units WHERE id = v_unit;
+    SELECT organization INTO v_actual_org FROM public.units WHERE id = v_unit;
+    IF NOT FOUND OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Invalid email template hierarchy';
+    END IF;
+    IF NOT public.is_service_role()
+       AND public.get_is_manager_on_unit(v_unit) IS NOT TRUE
+       AND public.get_is_editor_on_unit(v_unit) IS NOT TRUE
+       AND public.get_is_editor_view_on_unit(v_unit) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Unit template access denied';
+    END IF;
+    v_org := v_actual_org;
+  ELSIF NOT public.is_service_role() THEN
+    IF v_org IS NULL OR public.get_is_admin_on_organization(v_org) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Organization template access denied';
+    END IF;
   END IF;
+  v_effective_org := v_org;
 
   -- 3. Check if App is Supported for the effective organization
   IF v_effective_org IS NOT NULL THEN
@@ -46,13 +72,6 @@ BEGIN
     INTO is_app_supported
     FROM public.organizations
     WHERE id = v_effective_org;
-  END IF;
-
-  -- 4. If an occasion is provided, perform the permission check.
-  IF v_occ IS NOT NULL THEN
-    IF (SELECT get_is_editor_view_on_occasion(v_occ)) <> TRUE AND (SELECT get_is_editor_order_view_on_occasion(v_occ)) <> TRUE THEN
-       RAISE EXCEPTION 'User is not editor view.';
-    END IF;
   END IF;
 
   -- 5. Retrieve email templates
@@ -102,3 +121,6 @@ BEGIN
   RETURN email_data;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.get_all_email_templates(jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_all_email_templates(jsonb) TO authenticated, service_role;

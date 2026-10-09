@@ -8,24 +8,24 @@ DECLARE
     v_occasion_id bigint;
     v_unit_id     bigint;
     v_org_id      bigint;
-    
+
     context       jsonb;
     email_data    jsonb;
-    
+
     occasion_data jsonb;
     unit_data     jsonb;
     org_data      jsonb;
-    
+
     final_result  jsonb;
 BEGIN
     -- 1. Resolve Hierarchy based on Entity Type
     IF p_entity_type = 'occasion' THEN
         v_occasion_id := p_entity_id;
-        
+
         -- Get Unit & Org from Occasion
         SELECT unit, organization INTO v_unit_id, v_org_id
         FROM public.occasions WHERE id = v_occasion_id;
-        
+
         IF v_unit_id IS NULL THEN
             RAISE EXCEPTION 'Occasion not found: %', p_entity_id;
         END IF;
@@ -33,11 +33,11 @@ BEGIN
     ELSIF p_entity_type = 'unit' THEN
         v_unit_id := p_entity_id;
         v_occasion_id := NULL;
-        
+
         -- Get Org from Unit
         SELECT organization INTO v_org_id
         FROM public.units WHERE id = v_unit_id;
-        
+
         IF v_org_id IS NULL THEN
             RAISE EXCEPTION 'Unit not found: %', p_entity_id;
         END IF;
@@ -56,7 +56,7 @@ BEGIN
     email_data := public.get_all_email_templates(context);
 
     -- 4. Retrieve Entity Details for Response
-    
+
     -- Organization
     SELECT jsonb_build_object('id', id, 'title', title, 'data', data)
     INTO org_data
@@ -87,3 +87,6 @@ BEGIN
     RETURN final_result;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.get_entity_email_templates(text, bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_entity_email_templates(text, bigint) TO authenticated, service_role;

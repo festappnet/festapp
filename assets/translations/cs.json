@@ -398,7 +398,6 @@
     "orderSequence": "Pořadí objednávky",
     "orderSequenceHelp": "Pevné pořadí objednávky v této události.",
     "validOrders": "Platné objednávky",
-    "validApplications": "Platné přihlášky",
     "validTickets": "Platné vstupenky",
     "orderSymbol": "Symbol objednávky",
     "customer": "Zákazník",
@@ -428,7 +427,8 @@
     "depositOnSiteLabel": "Na místě",
     "paymentReference": "Reference platby",
     "shortTitleHelp": "Název pro tisk na vstupence, například u večeře. Pokud není vyplněný, použije se plný název produktu.",
-    "maxHelp": "Maximální počet kusů produktu, které lze objednat. Prázdná hodnota nebo 0 znamená bez omezení."
+    "maxHelp": "Maximální počet kusů produktu, které lze objednat. Prázdná hodnota nebo 0 znamená bez omezení.",
+    "validApplications": "Platné přihlášky"
   },
   "FormsFeature": {
     "showDepositDescription": "Zobrazit popisek zálohy / doplatku u produktů",
@@ -1329,6 +1329,9 @@
     "uploadImageSuccess": "Soubor byl úspěšně nahrán."
   },
   "FeatureUser": {
+    "signupLegalNotice": "Vytvořením účtu souhlasíte s {terms} a berete na vědomí {privacy}.",
+    "signupTerms": "podmínkami používání",
+    "signupPrivacy": "zásady ochrany osobních údajů",
     "credentialsSent": "Přihlašovací údaje byly odeslány na",
     "passwordResetSent": "Byl odeslán e-mail pro obnovení hesla.",
     "enterEmailReset": "Zadejte svůj e-mail pro obdržení odkazu na obnovení hesla.",
@@ -1433,7 +1436,7 @@
     "googleUnlinkProof": "Pro odpojení Google nejprve ověřte svůj účet heslem.",
     "googleTerms": "Podmínky",
     "googlePrivacy": "Soukromí",
-    "googleContinue": "Pokračovat s Google",
+    "googleContinue": "Pokračovat přes Google",
     "googleSubtitle": "Přihlaste se ke svému účtu Festapp.",
     "googleOr": "nebo",
     "googleClose": "Zavřít",
@@ -1456,7 +1459,17 @@
     "googleCode": "Ověřovací kód",
     "googleUnlink": "Odpojit Google",
     "googlePasswordVisibility": "Zobrazit nebo skrýt heslo",
-    "googleMfa": "Zadejte šestimístný kód z ověřovací aplikace nebo SMS."
+    "googleMfa": "Zadejte šestimístný kód z ověřovací aplikace nebo SMS.",
+    "addEvent": "Vytvořit vlastní akci",
+    "myEvents": "Moje akce",
+    "createAccount": "Vytvořit účet",
+    "emailAlternative": "nebo e-mailem",
+    "emailExample": "Zadejte e-mail",
+    "firstNameExample": "Jan",
+    "lastNameExample": "Novák",
+    "passwordPlaceholder": "Vaše heslo",
+    "existingAccountPrompt": "Už máte účet?",
+    "newAccountPrompt": "Ještě nemáte účet?"
   },
   "Common": {
     "fieldCannotBeEmpty": "Pole nemůže být prázdné",
@@ -1490,8 +1503,6 @@
     "content": "Obsah",
     "contentChanged": "Obsah byl změněn.",
     "continueAction": "Pokračovat",
-    "copy": "Kopírovat",
-    "copied": "Zkopírováno",
     "copiedToClipboard": "Zkopírováno do schránky",
     "create": "Vytvořit",
     "currency": "Měna",
@@ -1584,7 +1595,9 @@
     "user": "Uživatel",
     "discardChanges": "Zahodit změny",
     "discardChangesConfirmation": "Opravdu chcete zahodit neuložené změny?",
-    "keepEditing": "Pokračovat v úpravách"
+    "keepEditing": "Pokračovat v úpravách",
+    "copy": "Kopírovat",
+    "copied": "Zkopírováno"
   },
   "BankAccount": {
     "settingsTitle": "Nastavení bankovního účtu",
@@ -1821,7 +1834,6 @@
     "landingAdminOnly": "Nastavení může změnit pouze správce organizace.",
     "landingLoadFailed": "Nastavení úvodní akce se nepodařilo načíst. Zkusit znovu",
     "landingForced": "Úvodní akce je pevně určena v této verzi aplikace.",
-
     "addNewEvent": "Vytvořit novou událost",
     "createCopy": "Vytvořit kopii",
     "createCopyConfirm": "Chcete vytvořit kopii této události?",
@@ -2401,8 +2413,6 @@
     "finishCanvasFirst": "Pro přesunutí prvků nejprve klikněte na Hotovo."
   },
   "OccasionReport": {
-    "onlyValid": "Pouze platné",
-    "includingCancelled": "Včetně stornovaných",
     "transaction_currency_mismatch": "Transakce s jinou měnou než objednávka nejsou v grafu zahrnuty",
     "ratesUnavailable": "Kurzy ČNB nejsou dostupné nebo některá měna chybí. Pro zobrazení plateb vyberte jednotlivou měnu.",
     "compareCurrencies": "Všechny měny v CZK",
@@ -2456,6 +2466,8 @@
     "product": "Produkt",
     "count": "Počet",
     "applicationTimeline": "Jak přibývaly přihlášky",
-    "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague."
+    "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague.",
+    "onlyValid": "Pouze platné",
+    "includingCancelled": "Včetně stornovaných"
   }
 }

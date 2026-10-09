@@ -29,9 +29,12 @@ user-header.header-hidden {
 
 
 
+.header-home-link { display: block; min-width: 0; line-height: 0; }
+.header-home-link:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 4px; }
 .header-logo { 
     height: 56px; 
     width: auto;
+    max-width: min(52vw, 294px);
     cursor: pointer;
     display: block; /* img should be block or inline-block */
     object-fit: contain;
@@ -41,7 +44,7 @@ user-header.header-hidden {
 .header-actions { display: flex; align-items: center; gap: var(--spacing-md); }
 
 
-.btn-sign-in, .btn-admin {
+.btn-sign-in, .btn-admin, .btn-add-event {
     color: white;
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(8px);
@@ -299,4 +302,45 @@ body.dark-mode .popover-logout-row:hover {
 /* Desktop default for sign-in icon */
 .btn-sign-in .material-icons {
     font-size: 28px;
+}
+
+.btn-add-event {
+    background: #82bff2;
+    color: #19243b;
+    border-color: transparent;
+    white-space: nowrap;
+}
+
+.btn-add-event:hover {
+    background: #a3d2f7;
+}
+
+.btn-add-event:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .header-actions { gap: 8px; }
+    .btn-add-event { padding: 8px 12px; }
+}
+
+@media (max-width: 380px) {
+    .user-header-container { padding: 0 8px; }
+    .header-logo { max-width: 80px; }
+    .header-actions { gap: 4px; }
+    .btn-add-event { padding: 8px; font-size: 14px; }
+}
+
+@media (max-width: 600px) {
+    .btn-add-event {
+        max-width: 150px;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.15;
+    }
+}
+
+@media (max-width: 380px) {
+    .btn-add-event { max-width: 120px; }
 }

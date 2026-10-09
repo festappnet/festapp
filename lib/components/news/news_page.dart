@@ -237,10 +237,9 @@ class _NewsPageState extends State<NewsPage> {
                                           },
                                         ),
                                       ),
-                                      Visibility(
-                                        visible: AuthService.isLoggedIn() &&
-                                            message.views != null,
-                                        child: Padding(
+                                      if (AuthService.isLoggedIn() &&
+                                          message.views != null)
+                                        Padding(
                                           padding: const EdgeInsets.all(8),
                                           child: Row(
                                             mainAxisAlignment:
@@ -263,7 +262,6 @@ class _NewsPageState extends State<NewsPage> {
                                             ],
                                           ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ),

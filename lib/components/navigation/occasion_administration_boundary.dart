@@ -1,3 +1,5 @@
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/services/last_administration_context.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +35,14 @@ class RightsAdministrationAccess implements AdministrationAccess {
   @override
   Future<bool> load(String link, {required bool reservations}) async {
     await RightsService.updateAppData(link: link, refreshOffline: false);
-    return loadedLink == link && canAccess(reservations: reservations);
+    final allowed = loadedLink == link && canAccess(reservations: reservations);
+    if (allowed) {
+      await LastAdministrationContext.instance.remember(
+          AppConfig.organization,
+          RightsService.currentUser()?.id,
+          '/$link/${reservations ? 'reservations' : 'admin'}');
+    }
+    return allowed;
   }
 }
 

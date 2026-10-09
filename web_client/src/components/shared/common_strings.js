@@ -1,6 +1,9 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class CommonStrings {
+    static signupLegalNotice(terms, privacy) { return LocalizationService.tr("FeatureUser.signupLegalNotice", { button: CommonStrings.createAccount, terms, privacy }); }
+    static get signupTerms() { return LocalizationService.tr("FeatureUser.signupTerms"); }
+    static get signupPrivacy() { return LocalizationService.tr("FeatureUser.signupPrivacy"); }
     static get googlePasswordVisibility() { return LocalizationService.tr("FeatureUser.googlePasswordVisibility"); }
     static get googleUnlinkProof() { return LocalizationService.tr("FeatureUser.googleUnlinkProof"); }
     static get googleContinue() { return LocalizationService.tr("FeatureUser.googleContinue"); }
@@ -29,8 +32,18 @@ export class CommonStrings {
 
     static get googleTerms() { return LocalizationService.tr("FeatureUser.googleTerms"); }
     static get googlePrivacy() { return LocalizationService.tr("FeatureUser.googlePrivacy"); }
+    static get emailExample() { return LocalizationService.tr("FeatureUser.emailExample"); }
+    static get firstNameExample() { return LocalizationService.tr("FeatureUser.firstNameExample"); }
+    static get lastNameExample() { return LocalizationService.tr("FeatureUser.lastNameExample"); }
+    static get passwordPlaceholder() { return LocalizationService.tr("FeatureUser.passwordPlaceholder"); }
+    static get emailAlternative() { return LocalizationService.tr("FeatureUser.emailAlternative"); }
+    static get existingAccountPrompt() { return LocalizationService.tr("FeatureUser.existingAccountPrompt"); }
+    static get newAccountPrompt() { return LocalizationService.tr("FeatureUser.newAccountPrompt"); }
+    static get createAccount() { return LocalizationService.tr("FeatureUser.createAccount"); }
     static get signIn() { return LocalizationService.tr("FeatureUser.signIn"); }
     static get signOut() { return LocalizationService.tr("FeatureUser.signOut"); }
+    static get addEvent() { return LocalizationService.tr("FeatureUser.addEvent", {}, "Create your own event"); }
+    static get myEvents() { return LocalizationService.tr("FeatureUser.myEvents", {}, "My events"); }
     static get admin() { return LocalizationService.tr("FeatureUser.admin", {}, "Admin"); }
     static get email() { return LocalizationService.tr("FeatureUser.email"); }
     static get password() { return LocalizationService.tr("FeatureUser.password"); }

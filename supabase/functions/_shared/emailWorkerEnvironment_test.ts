@@ -35,3 +35,7 @@ Deno.test("only the queue worker receives SES credentials; producers and feedbac
     );
   }
 });
+
+Deno.test("router Monitoring credentials never reach application workers", () => {
+  assertEquals(emailWorkerEnvironment("process-email-queue", { FESTAPP_MONITORING_TOKEN: "private", FESTAPP_MONITORING_URL: "https://monitor.invalid", DEFAULT_EMAIL: "sender" }), [["DEFAULT_EMAIL", "sender"]]);
+});

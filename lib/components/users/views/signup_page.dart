@@ -16,7 +16,7 @@ import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/buttons_helper.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/services/launch_url_service.dart';
+import 'package:url_launcher/link.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 @RoutePage()
@@ -29,6 +29,41 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+  Widget _registrationNotice(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.6);
+    final links = {
+      '{terms}': (UserStrings.signupTerms, AppConfig.termsUrl),
+      '{privacy}': (UserStrings.signupPrivacy, AppConfig.privacyUrl),
+    };
+    final spans = <InlineSpan>[];
+    final notice = UserStrings.signupLegalNotice;
+    var cursor = 0;
+    for (final match in RegExp(r'\{terms\}|\{privacy\}').allMatches(notice)) {
+      spans.add(TextSpan(text: notice.substring(cursor, match.start)));
+      final link = links[match.group(0)]!;
+      spans.add(WidgetSpan(
+        alignment: PlaceholderAlignment.baseline,
+        baseline: TextBaseline.alphabetic,
+        child: Link(
+          uri: Uri.parse(link.$2),
+          target: LinkTarget.blank,
+          builder: (context, followLink) => InkWell(
+            onTap: followLink,
+            child: Text(link.$1,
+                style: style?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    decoration: TextDecoration.underline)),
+          ),
+        ),
+      ));
+      cursor = match.end;
+    }
+    spans.add(TextSpan(text: notice.substring(cursor)));
+    return Text.rich(TextSpan(children: spans),
+        style: style, textAlign: TextAlign.center);
+  }
+
   bool _isLoading = false;
   bool _isRegistrationSuccess = false;
   Map<String, dynamic>? fieldsData;
@@ -118,17 +153,6 @@ class _SignupPageState extends State<SignupPage> {
                             const SizedBox(
                               height: 16,
                             ),
-                            Semantics(
-                              link: true,
-                              child: TextButton.icon(
-                                onPressed: () =>
-                                    LaunchUrlService.openExternalUrl(
-                                        AppConfig.privacyUrl),
-                                icon: const Icon(Icons.privacy_tip_outlined),
-                                label: Text(UserStrings.signupPrivacyNotice),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
                             ButtonsHelper.bigButton(
                               context: context,
                               onPressed: _isLoading
@@ -182,6 +206,8 @@ class _SignupPageState extends State<SignupPage> {
                               height: 50.0,
                               width: 250.0,
                             ),
+                            const SizedBox(height: 12),
+                            _registrationNotice(context),
                           ],
                         ]),
                       ),

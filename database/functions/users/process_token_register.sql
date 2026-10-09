@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION process_token_register(data jsonb) RETURNS jsonb
+CREATE OR REPLACE FUNCTION public.process_token_register(data jsonb) RETURNS jsonb
 SET search_path = public, extensions AS $$
 DECLARE
     email_exists boolean;
@@ -6,6 +6,9 @@ DECLARE
     token uuid;
     result jsonb;
 BEGIN
+    -- Legacy registration helper has no application caller; retained for trusted maintenance only.
+    PERFORM public.require_service_role();
+
     -- Check if the data contains an email
     IF NOT (data ? 'email') THEN
         -- Construct the result JSONB object with code 400
@@ -37,3 +40,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+REVOKE ALL ON FUNCTION public.process_token_register(jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.process_token_register(jsonb) TO service_role;

@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slunovrat 2026</title>
     <meta name="description" content="Mobilní aplikace pro Festival Slunovrat.">
-    <meta name="keywords" content="založení události, prodej vstupenek, registrace, akce, plesy, festivaly, festapp, vstupenky.online">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://slunovrat.festapp.net/">
 
@@ -42,7 +41,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
 
 
@@ -52,7 +53,7 @@
     <script>
         // This handshake must not depend on the module it unlocks. A resumed
         // mobile worker can forget the client generation before loading JS.
-        window.__FESTAPP_BUILD_VERSION__ = "0.20.145+629";
+        window.__FESTAPP_BUILD_VERSION__ = "0.20.146+630";
         const startupCopy = navigator.language.startsWith('cs') || navigator.language.startsWith('sk')
             ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
             : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
@@ -154,6 +155,10 @@
         <user-header id="universal-header"></user-header>
 
         <main>
+            <section id="site-introduction" hidden style="margin:24px 0;color:var(--text-color,inherit)">
+                <h1 style="margin:0 0 8px;font-size:28px;overflow-wrap:anywhere">Slunovrat 2026</h1>
+                <p style="margin:0;line-height:1.6">Mobilní aplikace pro Festival Slunovrat.</p>
+            </section>
             <!-- Search -->
             <div id="search-container" class="search-container">
                 <i class="material-icons search-icon">search</i>
@@ -163,6 +168,10 @@
 
             <!-- Content -->
             <div id="events-grid"></div>
+            <nav class="site-legal-links" aria-label="Právní informace">
+                <a href="/privacy/">Soukromí</a>
+                <a href="/terms/">Podmínky</a>
+            </nav>
         </main>
 
         <!-- FAB -->
@@ -173,6 +182,7 @@
              <div class="sp-loader"></div>
         </div>
     </div>
+    <noscript><style>#web-client-startup{display:none!important}#app{display:flex!important}</style></noscript>
 
     <div id="form-page-container" style="display: none;"></div>
 

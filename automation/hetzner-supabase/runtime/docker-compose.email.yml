@@ -3,6 +3,9 @@
 services:
   functions:
     environment:
+      FESTAPP_MONITORING_URL: ${FESTAPP_MONITORING_URL:-}
+      FESTAPP_MONITORING_TOKEN: ${FESTAPP_MONITORING_TOKEN:-}
+      FESTAPP_MONITORING_RELEASE: ${FESTAPP_MONITORING_RELEASE:-v1}
       EMAIL_SES_ACCOUNT_ID: ${EMAIL_SES_ACCOUNT_ID:?verify account identity and shared budget}
       EMAIL_SES_REGION: ${EMAIL_SES_REGION:?verify SES region}
       EMAIL_SES_ACCESS_KEY_ID: ${EMAIL_SES_ACCESS_KEY_ID:?configure the sender SES credential}

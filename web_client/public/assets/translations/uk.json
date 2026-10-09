@@ -154,6 +154,9 @@
     "ticketType": "Тип квитка"
   },
   "FeatureUser": {
+    "signupLegalNotice": "Натискаючи «{button}», ви погоджуєтеся з {terms} та ознайомлюєтеся з {privacy}.",
+    "signupTerms": "умовами використання",
+    "signupPrivacy": "політикою конфіденційності",
     "passwordResetLinkSent": "Посилання для скидання пароля надіслано на {email}. Перевірте пошту та дотримуйтеся інструкцій.",
     "passwordResetFailed": "Не вдалося надіслати лист для скидання пароля. Спробуйте пізніше.",
     "passwordResetEmailMissing": "У цього облікового запису немає електронної пошти для скидання пароля. Зверніться до служби підтримки.",
@@ -198,7 +201,17 @@
     "reinviteConfirm": "Деякі користувачі вже запрошені. Запросити знову та надіслати новий код?",
     "inviteInfo": "Користувачі отримають код для входу на e‑mail.",
     "welcomeIn": "Ласкаво просимо до {name}!",
-    "resetPasswordProceedConfirm": "Ви отримаєте лист із посиланням для скидання пароля. Продовжити?"
+    "resetPasswordProceedConfirm": "Ви отримаєте лист із посиланням для скидання пароля. Продовжити?",
+    "addEvent": "Створити власну подію",
+    "myEvents": "Мої події",
+    "createAccount": "Створити обліковий запис",
+    "emailAlternative": "або електронною поштою",
+    "emailExample": "ivan@example.com",
+    "firstNameExample": "Іван",
+    "lastNameExample": "Петренко",
+    "passwordPlaceholder": "Ваш пароль",
+    "existingAccountPrompt": "Вже маєте обліковий запис?",
+    "newAccountPrompt": "Ще не маєте облікового запису?"
   },
   "OccasionServices": {
     "accommodation": "Проживання",
@@ -320,7 +333,6 @@
     "landingAdminOnly": "Змінити налаштування може лише адміністратор організації.",
     "landingLoadFailed": "Не вдалося завантажити налаштування. Спробувати знову",
     "landingForced": "Початкову подію визначено в цій версії застосунку.",
-
     "addNewEvent": "Додати нову подію",
     "createCopy": "Створити копію",
     "createCopyConfirm": "Створити копію цієї події?",
