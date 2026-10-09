@@ -280,6 +280,7 @@
   "FeatureFormSettings": {
     "title": "Form Settings",
     "formNotFound": "Form not found.",
+    "loadFailed": "The form could not be loaded. Check your connection and try again.",
     "labelFormTitle": "Form Title",
     "labelFormLink": "Form Link",
     "helperFormLink": "Use only letters, numbers, and hyphens. This will be part of the URL.",

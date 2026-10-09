@@ -70,6 +70,7 @@ export class CommonStrings {
     static get checkEmail() { return LocalizationService.tr("FeatureUser.credentialsSent"); }
     static get passwordResetSent() { return LocalizationService.tr("FeatureUser.passwordResetSent"); }
     static get loading() { return LocalizationService.tr("Common.loading"); }
+    static get retry() { return LocalizationService.tr('Common.retry', {}, 'Try again'); }
     static get success() { return LocalizationService.tr("Common.success"); }
     static get error() { return LocalizationService.tr("Common.error"); }
     

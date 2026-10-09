@@ -10,11 +10,28 @@ export class DbForms {
         const client = SupabaseService.getClient();
         if (!client) throw new Error("Supabase client not initialized");
 
-        const { data, error } = await client.rpc('get_form_by_link', { form_link: link });
+        // Embedded browsers can leave a fetch pending indefinitely. Bound the
+        // public read even when the transport does not settle after aborting.
+        const controller = new AbortController();
+        let timeout;
+        let result;
+        try {
+            result = await Promise.race([
+                client.rpc('get_form_by_link', { form_link: link }).abortSignal(controller.signal),
+                new Promise((_, reject) => {
+                    timeout = setTimeout(() => {
+                        reject(new Error('Form loading timed out'));
+                        controller.abort();
+                    }, 20000);
+                }),
+            ]);
+        } finally {
+            clearTimeout(timeout);
+        }
+        const { data, error } = result;
         
         if (error) {
-            console.error("Error fetching form:", error);
-            return null;
+            throw new Error(error.message || 'Form loading failed');
         }
         
         if (data && data.code === 200) {

@@ -280,6 +280,7 @@
   "FeatureFormSettings": {
     "title": "Nastavení formuláře",
     "formNotFound": "Formulář nenalezen.",
+    "loadFailed": "Formulář se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.",
     "labelFormTitle": "Název formuláře",
     "labelFormLink": "Odkaz formuláře",
     "helperFormLink": "Používejte pouze písmena, číslice a pomlčky. Bude součástí URL adresy.",

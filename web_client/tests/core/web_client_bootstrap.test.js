@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 
 const html = await readFile(new URL('../../index.html', import.meta.url), 'utf8');
 
-function boot() {
+function boot({ blockedWorker = false } = {}) {
     const reports = [];
     const serviceWorker = new EventTarget();
     serviceWorker.controller = { postMessage: (message) => reports.push(message) };
@@ -14,7 +14,9 @@ function boot() {
         url: 'https://app.test/',
         runScripts: 'dangerously',
         beforeParse(window) {
-            Object.defineProperty(window.navigator, 'serviceWorker', { value: serviceWorker });
+            Object.defineProperty(window.navigator, 'serviceWorker', blockedWorker
+                ? { get() { throw new window.DOMException('Blocked', 'SecurityError'); } }
+                : { value: serviceWorker });
         },
     });
     return { dom, reports, serviceWorker };
@@ -72,4 +74,15 @@ test('an optional analytics module cannot reload a Google continuation', (t) => 
     const entry = [...document.querySelectorAll('script[type="module"][src]')].find(script => new URL(script.src).origin === dom.window.location.origin);
     entry.dispatchEvent(new Event('error'));
     assert.equal(recoveries, 1, 'the actual entry module must retain bounded recovery');
+});
+
+
+test('a restricted service-worker getter cannot disable startup recovery', (t) => {
+    const { dom } = boot({ blockedWorker: true });
+    t.after(() => dom.window.close());
+    assert.equal(typeof dom.window.failFestappWebClientStartup, 'function');
+    dom.window.failFestappWebClientStartup('restricted-webview');
+    assert.equal(dom.window.document.querySelector('#web-client-startup button').hidden, false);
+    dom.window.markFestappAppReady();
+    assert.equal(dom.window.document.getElementById('web-client-startup'), null);
 });

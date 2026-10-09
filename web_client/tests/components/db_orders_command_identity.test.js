@@ -44,3 +44,32 @@ test('ticket order sends stable command identity and clears it after success', a
     assert.equal(bodies[1].clientId, bodies[0].clientId);
     assert.equal(localStorage.getItem('client_command_pending:ticket_order'), null);
 });
+
+test('blocked persistent storage preserves order identity across in-page retries', async (t) => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+        configurable: true,
+        get() { throw new Error('SecurityError'); },
+    });
+    t.after(() => {
+        if (original) Object.defineProperty(globalThis, 'localStorage', original);
+        else delete globalThis.localStorage;
+    });
+    const bodies = [];
+    t.mock.method(SupabaseService, 'getClient', () => ({
+        functions: { invoke: async (_, { body }) => {
+            bodies.push(body);
+            return bodies.length === 1
+                ? { data: null, error: new Error('retry') }
+                : { data: { code: 200 }, error: null };
+        } },
+    }));
+    t.mock.method(console, 'error', () => {});
+    const order = { occasion: 1121, tickets: [] };
+    await DbOrders.sendOrder(order);
+    await DbOrders.sendOrder(order);
+    assert.equal(bodies[0].commandId, bodies[1].commandId);
+    assert.equal(bodies[0].clientId, bodies[1].clientId);
+    await DbOrders.sendOrder(order);
+    assert.notEqual(bodies[1].commandId, bodies[2].commandId, 'a completed order must clear its pending command');
+});

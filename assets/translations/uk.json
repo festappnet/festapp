@@ -1,4 +1,7 @@
 {
+  "FeatureFormSettings": {
+    "loadFailed": "Не вдалося завантажити форму. Перевірте з’єднання та спробуйте ще раз."
+  },
   "EmailDelivery": {
     "title": "Email",
     "history": "Email history",
