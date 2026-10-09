@@ -1,5 +1,5 @@
 -- Security remediation: preserve valid scanner and scoped administration flows.
-BEGIN;
+-- The release runner owns the transaction, including its migration ledger row.
 
 -- Source: database/functions/support/service_role.sql
 CREATE OR REPLACE FUNCTION public.is_service_role()
@@ -1217,4 +1217,3 @@ END;
 $$;
 
 NOTIFY pgrst, 'reload schema';
-COMMIT;

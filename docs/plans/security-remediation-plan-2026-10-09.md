@@ -113,3 +113,11 @@ Zbývající dokončovací podmínky, nikoli hotové opravy:
 Po review: aplikovat čtyři přesné migrace z main atomicky s ledgerem na ověřený canonical backend, vydat Function bundle s novým endpointem, aktualizovat pouze tenant festapp a worker přes jejich schválené cesty. Ověřit migrační ledger, legitimní readback a skutečnou verzi nasazení. Nenahrazovat produkční smoke fixtures nad zákaznickými daty.
 
 Před publikací byl balík rebased na `c19e10d7b` (upstream změna pouze news page a jejího testu, bez překryvu bezpečnostních změn).
+
+## GitHub security audit
+
+Na výslovnou navazující žádost byl zkontrolován i GitHub security audit: 53 otevřených Dependabot upozornění (19 high, 16 medium, 18 low). Všechna jsou pokryta opravenými verzemi v PR, navíc byl odstraněn jeden další high nález NanoID z lokálního npm auditu. Sedm npm projektů má audit 0 včetně dev dependencies. Podporované aktualizace Wrangler/Fastlane prošly cílenými testy, typechecky, web buildem, čtyřmi Wrangler dry-run balíčky a izolovanou kontrolou Fastlane. Nebyl spuštěn worker deploy, migrace obrázků ani mobile release.
+
+[Přesná mapa všech 53 upozornění a výsledky](../operations/github-security-alerts-2026-10-09.md) odlišuje opravený PR od dosud otevřených upozornění na main. Secret scanning, push protection a automatické Dependabot security updates jsou na GitHubu vypnuté; code scanning neposkytl analýzu. Nastavení GitHubu nebylo při auditu měněno.
+
+První migrace přenechává BEGIN/COMMIT release wrapperu, aby její změny a zápis do ledgeru byly atomické. Neobsahuje vnitřní COMMIT, který by obalový ledger transakční kontrakt předčasně ukončil.
