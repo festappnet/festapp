@@ -1,4 +1,4 @@
-create or replace function sign_user_to_event (ev bigint, usr uuid) returns jsonb
+create or replace function public.sign_user_to_event (ev bigint, usr uuid) returns jsonb
  language plpgsql
  SECURITY DEFINER
 SET search_path = public, extensions
@@ -28,6 +28,21 @@ declare
   v_active integer;
 
 begin
+  -- Authorize before any membership or attendance mutation.
+  IF auth.uid() IS NULL OR usr IS NULL THEN
+    RETURN jsonb_build_object('code', 403);
+  END IF;
+  IF auth.uid() IS DISTINCT FROM usr THEN
+      IF NOT EXISTS (
+        SELECT 1 FROM user_companions uc
+        JOIN events ce ON ce.id=ev AND ce.occasion=uc.occasion
+        WHERE uc."user" = auth.uid() AND uc.companion = usr
+          AND (public.get_companion_feature_policy_v1(uc.occasion)->>'is_enabled')::boolean) THEN
+          IF (SELECT get_is_editor_on_occasion((SELECT occasion FROM events WHERE id = ev))) IS NOT TRUE THEN
+            RETURN json_build_object('code', 403);
+          END IF;
+      END IF;
+  END IF;
 
   -- Check if the user already exists on the occasion
   IF (SELECT get_exists_on_occasion_user(usr, (SELECT occasion FROM events WHERE id = ev))) <> TRUE THEN
@@ -50,17 +65,6 @@ begin
       END IF;
   END IF;
 
-  IF auth.uid() <> usr THEN
-      IF NOT EXISTS (
-        SELECT 1 FROM user_companions uc
-        JOIN events ce ON ce.id=ev AND ce.occasion=uc.occasion
-        WHERE uc."user" = auth.uid() AND uc.companion = usr
-          AND (public.get_companion_feature_policy_v1(uc.occasion)->>'is_enabled')::boolean) THEN
-          IF (SELECT get_is_editor_on_occasion((SELECT occasion FROM events WHERE id = ev))) <> TRUE THEN
-            RETURN json_build_object('code', 403);
-          END IF;
-      END IF;
-  END IF;
 
   -- Resolve the occasion and detect whether this event is a counseling slot.
   SELECT occasion, (data->>'is_counseling_slot')::boolean IS TRUE

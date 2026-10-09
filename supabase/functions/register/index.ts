@@ -1,3 +1,4 @@
+import { generateSignInCode } from "../_shared/signInCode.ts";
 import {
   awaitEmailAccepted,
   emailRpc,
@@ -79,7 +80,7 @@ Deno.serve(async (req) => {
     const userLang = reqData.lang || defaultLang || "cs";
     const unitTitle = userLang === "cs" ? "Moje akce" : "My events";
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = generateSignInCode();
 
     const platforms = orgConfig.PLATFORMS || [];
     const platformLinksHtml = translatePlatformLinks(platforms, defaultLang);
@@ -97,13 +98,19 @@ Deno.serve(async (req) => {
     });
     const queued = await emailRpc("enqueue_account_email", {
       p_operation: "register",
-      p_domain: { password: code, data: reqData, unit_title: unitTitle },
+      p_domain: {
+        ...(reqData.signInCodeVersion === 2
+          ? { invitation_code: code }
+          : { password: code }),
+        data: reqData,
+        unit_title: unitTitle,
+      },
       p_context: { organization: organizationId },
       p_recipient: userEmail,
       ...snapshot,
       p_dedupe: `register:${userEmail.toLowerCase()}`,
       p_code: "SIGN_IN_CODE",
-      p_expires: new Date(Date.now() + 3600000).toISOString(),
+      p_expires: new Date(Date.now() + 600000).toISOString(),
     });
     const createResult = { data: queued.domain, error: null };
     try {
