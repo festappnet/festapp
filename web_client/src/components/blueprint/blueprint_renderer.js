@@ -39,14 +39,11 @@ export class BlueprintRenderer {
         this.state.scalingMode = mode;
         // Re-process not needed if data already prepared, but simple enough to re-render
         // Clear and re-render
-        this.container.innerHTML = '';
-        
-        // Re-init container
-        this.container.classList.add('blueprint-renderer-container');
+        this.createViewport();
 
         this.transformContainer = document.createElement('div');
         this.transformContainer.className = 'blueprint-transform-container';
-        this.container.appendChild(this.transformContainer);
+        this.viewport.appendChild(this.transformContainer);
         
         // Apply sizing
         if (this.contentWidth) {
@@ -72,8 +69,7 @@ export class BlueprintRenderer {
         }
 
         this.onSeatClick = onSeatClick;
-        this.container.innerHTML = '';
-        this.container.classList.add('blueprint-renderer-container');
+        this.createViewport();
 
         // Transform Container
         this.transformContainer = document.createElement('div');
@@ -84,7 +80,7 @@ export class BlueprintRenderer {
              this.transformContainer.style.height = this.contentHeight + 'px';
         } 
         
-        this.container.appendChild(this.transformContainer);
+        this.viewport.appendChild(this.transformContainer);
 
         this.createZoomControls();
 
@@ -164,6 +160,14 @@ export class BlueprintRenderer {
         });
     }
 
+    createViewport() {
+        this.container.innerHTML = '';
+        this.container.classList.add('blueprint-renderer-container');
+        this.viewport = document.createElement('div');
+        this.viewport.className = 'blueprint-map-viewport';
+        this.container.appendChild(this.viewport);
+    }
+
     createZoomControls() {
         const controls = document.createElement('div');
         controls.className = 'blueprint-zoom-controls';
@@ -200,6 +204,7 @@ export class BlueprintRenderer {
         this.zoomOutButton = button(BlueprintStrings.zoomOut, 'M5 12h14', () => this.zoomBy(1 / 1.25));
         const reset = button(BlueprintStrings.fitToScreen, 'M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5', () => this.fitToScreen());
         reset.classList.add('blueprint-zoom-reset');
+        this.zoomControls = controls;
         this.container.appendChild(controls);
     }
 
@@ -207,7 +212,7 @@ export class BlueprintRenderer {
         this.cancelAnimation();
         this.hideTooltip();
         this.updateControllerDims();
-        const rect = this.container.getBoundingClientRect();
+        const rect = this.viewport.getBoundingClientRect();
         this.handleZoom(factor, rect.left + rect.width / 2, rect.top + rect.height / 2);
     }
 
@@ -217,18 +222,27 @@ export class BlueprintRenderer {
     }
 
     updateControllerDims() {
-        if (!this.container) return;
+        if (!this.viewport) return;
+        const viewportRect = this.viewport.getBoundingClientRect();
+        const controlsRect = this.zoomControls?.getBoundingClientRect();
+        // Keep enough stable pan space to move edge seats out from under the
+        // floating controls, including their safe-area offsets.
+        const panInsets = controlsRect?.width && controlsRect?.height ? {
+            right: Math.max(0, Math.min(this.viewport.clientWidth - 44, viewportRect.right - controlsRect.left + 12)),
+            bottom: Math.max(0, Math.min(this.viewport.clientHeight - 44, viewportRect.bottom - controlsRect.top + 12)),
+        } : {};
         this.controller.updateDimensions(
-            this.container.clientWidth,
-            this.container.clientHeight,
+            this.viewport.clientWidth,
+            this.viewport.clientHeight,
             this.contentWidth,
-            this.contentHeight
+            this.contentHeight,
+            panInsets
         );
     }
 
     fitToScreen() {
         if (!this.contentWidth || !this.contentHeight) return;
-        if (this.container.clientWidth === 0 || this.container.clientHeight === 0) return;
+        if (this.viewport.clientWidth === 0 || this.viewport.clientHeight === 0) return;
 
         this.cancelAnimation();
         this.updateControllerDims();
@@ -238,7 +252,7 @@ export class BlueprintRenderer {
 
     attachEvents() {
         if (this.gestureController) this.gestureController.destroy();
-        this.gestureController = new GestureController(this.container, {
+        this.gestureController = new GestureController(this.viewport, {
             onPan: (dx, dy, x, y) => this.handlePan(dx, dy, x, y),
             onZoom: (factor, x, y) => this.handleZoom(factor, x, y),
             onPinch: (dx, dy, factor, x, y) => this.handlePinch(dx, dy, factor, x, y),
@@ -255,17 +269,17 @@ export class BlueprintRenderer {
     }
 
     handlePan(dx, dy, x, y) {
-        this.controller.onInteractionUpdate(dx, dy, 1, x, y, this.container.getBoundingClientRect());
+        this.controller.onInteractionUpdate(dx, dy, 1, x, y, this.viewport.getBoundingClientRect());
         this.updateTransform();
     }
 
     handleZoom(factor, x, y) {
-        this.controller.onInteractionUpdate(0, 0, factor, x, y, this.container.getBoundingClientRect(), false);
+        this.controller.onInteractionUpdate(0, 0, factor, x, y, this.viewport.getBoundingClientRect(), false);
         this.updateTransform();
     }
 
     handlePinch(dx, dy, factor, x, y) {
-        this.controller.onInteractionUpdate(dx, dy, factor, x, y, this.container.getBoundingClientRect());
+        this.controller.onInteractionUpdate(dx, dy, factor, x, y, this.viewport.getBoundingClientRect());
         this.updateTransform();
     }
 
