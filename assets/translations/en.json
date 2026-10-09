@@ -1462,6 +1462,7 @@
     "googlePasswordVisibility": "Show or hide password",
     "googleMfa": "Enter the six-digit code from your authenticator app or SMS.",
     "addEvent": "Create your own event",
+    "addEventShort": "+ Event",
     "myEvents": "My events",
     "createAccount": "Create account",
     "emailAlternative": "or with email",

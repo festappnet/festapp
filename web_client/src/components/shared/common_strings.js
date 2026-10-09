@@ -43,6 +43,7 @@ export class CommonStrings {
     static get signIn() { return LocalizationService.tr("FeatureUser.signIn"); }
     static get signOut() { return LocalizationService.tr("FeatureUser.signOut"); }
     static get addEvent() { return LocalizationService.tr("FeatureUser.addEvent", {}, "Create your own event"); }
+    static get addEventShort() { return LocalizationService.tr("FeatureUser.addEventShort", {}, "+ Event"); }
     static get myEvents() { return LocalizationService.tr("FeatureUser.myEvents", {}, "My events"); }
     static get admin() { return LocalizationService.tr("FeatureUser.admin", {}, "Admin"); }
     static get email() { return LocalizationService.tr("FeatureUser.email"); }

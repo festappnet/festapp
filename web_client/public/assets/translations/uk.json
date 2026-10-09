@@ -203,6 +203,7 @@
     "welcomeIn": "Ласкаво просимо до {name}!",
     "resetPasswordProceedConfirm": "Ви отримаєте лист із посиланням для скидання пароля. Продовжити?",
     "addEvent": "Створити власну подію",
+    "addEventShort": "+ Подія",
     "myEvents": "Мої події",
     "createAccount": "Створити обліковий запис",
     "emailAlternative": "або електронною поштою",
