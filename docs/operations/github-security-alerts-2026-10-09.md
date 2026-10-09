@@ -1,8 +1,8 @@
 # GitHub security alert reconciliation
 
-Readback: 2026-10-09. Default-branch alerts remain open until the PR is merged and GitHub re-evaluates its dependency graph. The fixed versions below are from the security release worktree, not a claim that GitHub has closed the alerts.
+Post-merge readback: 2026-10-09, **0 open Dependabot alerts**. No alerts were dismissed. The table preserves the initial alert inventory and merged fixed versions; see the [release evidence](security-release-2026-10-09.md).
 
-Open Dependabot alerts: 53. Severity: high 19, low 18, medium 16.
+Initial open Dependabot alerts: 53. Severity: high 19, low 18, medium 16.
 
 | Alert | Severity | Package | Manifest | Fixed PR version |
 | --- | --- | --- | --- | --- |
