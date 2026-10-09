@@ -1329,7 +1329,7 @@
     "uploadImageSuccess": "Soubor byl úspěšně nahrán."
   },
   "FeatureUser": {
-    "signupLegalNotice": "Kliknutím na „{button}“ souhlasíte s {terms} a berete na vědomí {privacy}.",
+    "signupLegalNotice": "Vytvořením účtu souhlasíte s {terms} a berete na vědomí {privacy}.",
     "signupTerms": "podmínkami používání",
     "signupPrivacy": "zásady ochrany osobních údajů",
     "credentialsSent": "Přihlašovací údaje byly odeslány na",
