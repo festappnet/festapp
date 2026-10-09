@@ -76,7 +76,7 @@ class AuthService {
       try {
         final response = await _supabase.functions
             .invoke('exchange-sign-in-code', body: {
-          'email': email,
+          'email': AppConfig.removeUserPrefix(email),
           'code': password,
           'organization': AppConfig.organization
         });
