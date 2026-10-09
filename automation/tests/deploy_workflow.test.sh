@@ -27,6 +27,16 @@ fi
 
 fail=0
 
+# Every production build must pass the same regressions as main CI.
+if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/automation/build_web_bundle.sh"; then
+    echo "  FAIL: shared production build is missing WebView regression gate"
+    fail=1
+fi
+if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/.github/workflows/web-startup-regressions.yml"; then
+    echo "  FAIL: main CI is missing WebView regressions"
+    fail=1
+fi
+
 # 1. YAML parse when the optional PyYAML parser is available. The structural
 # checks below remain the dependency-free fallback.
 if ! command -v python3 >/dev/null 2>&1; then
