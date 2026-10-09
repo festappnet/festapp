@@ -70,6 +70,29 @@ class AuthService {
 
   static Future<void> login(String email, String password) async {
     DbEvents.invalidateSavedProgramMutationScope();
+    // Invitations use expiring single-use proofs; ordinary passwords keep their flow.
+    if (RegExp(r'^\d{6}$').hasMatch(password)) {
+      String? refreshToken;
+      try {
+        final response = await _supabase.functions
+            .invoke('exchange-sign-in-code', body: {
+          'email': AppConfig.removeUserPrefix(email),
+          'code': password,
+          'organization': AppConfig.organization
+        });
+        refreshToken = response.data is Map
+            ? response.data['refresh_token'] as String?
+            : null;
+      } on FunctionException {
+        // Rolling deployment or transient exchange failure must not disable
+        // an existing ordinary six-digit password on the legacy Auth endpoint.
+      }
+      if (refreshToken != null) {
+        final result = await _supabase.auth.setSession(refreshToken);
+        await _finalizeLogin(result.session!);
+        return;
+      }
+    }
     var data = await _supabase.auth
         .signInWithPassword(email: email, password: password);
     await _finalizeLogin(data.session!);
@@ -325,6 +348,7 @@ class AuthService {
   static Future<Map<String, dynamic>> register(
       Map<String, dynamic> data) async {
     data["organization"] = AppConfig.organization;
+    data["signInCodeVersion"] = 2;
     var resp = await _supabase.functions.invoke("register", body: data);
     return resp.data;
   }

@@ -1,3 +1,6 @@
+/*
+  Content-Security-Policy: base-uri 'self'; object-src 'none'
+  X-Content-Type-Options: nosniff
 /privacy*
   Content-Type: text/html; charset=utf-8
   Cache-Control: public, max-age=300, must-revalidate
