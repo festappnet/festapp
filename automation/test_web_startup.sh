@@ -14,6 +14,8 @@ node --test \
   tests/core/auth_bridge.test.js \
   tests/core/release_entry.test.js \
   tests/components/db_orders_command_identity.test.js \
+  tests/components/user_header_create_event.test.js \
+  tests/components/user_header_admin_navigation.test.js \
   tests/components/blueprint_viewport.test.js \
   tests/core/gesture_controller.test.js \
   tests/forms/form_loading.test.js

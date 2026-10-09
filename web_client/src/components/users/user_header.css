@@ -332,15 +332,10 @@ body.dark-mode .popover-logout-row:hover {
     .btn-add-event { padding: 8px; font-size: 14px; }
 }
 
-@media (max-width: 600px) {
-    .btn-add-event {
-        max-width: 150px;
-        white-space: normal;
-        text-align: center;
-        line-height: 1.15;
-    }
-}
+.add-event-short { display: none; }
 
-@media (max-width: 380px) {
-    .btn-add-event { max-width: 120px; }
+@media (max-width: 600px) {
+    .add-event-full { display: none; }
+    .add-event-short { display: inline; }
+    .btn-add-event { flex-shrink: 0; white-space: nowrap; }
 }

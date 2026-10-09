@@ -175,11 +175,20 @@ export class UserHeader extends HTMLElement {
              actions.appendChild(userContainer);
              
         } else {
-            if (RightsService.context?.organization?.IS_REGISTRATION_ENABLED !== false) {
+            if (new URL(AppConfig.webLink).hostname === 'vstupenky.online' &&
+                RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
                 const addEventBtn = document.createElement('button');
                 addEventBtn.type = 'button';
                 addEventBtn.className = 'btn-add-event';
-                addEventBtn.textContent = CommonStrings.addEvent;
+                addEventBtn.setAttribute('aria-label', CommonStrings.addEvent);
+                const fullLabel = document.createElement('span');
+                fullLabel.className = 'add-event-full';
+                fullLabel.textContent = CommonStrings.addEvent;
+                const shortLabel = document.createElement('span');
+                shortLabel.className = 'add-event-short';
+                shortLabel.textContent = CommonStrings.addEventShort;
+                shortLabel.setAttribute('aria-hidden', 'true');
+                addEventBtn.append(fullLabel, shortLabel);
                 addEventBtn.onclick = async () => {
                     await import('./login_modal.js');
                     const modal = document.createElement('login-modal');
