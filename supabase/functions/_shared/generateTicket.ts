@@ -3,9 +3,31 @@ import { fitText, textInsets } from './ticketText.ts';
 import type { RenderData } from './ticketRenderData.ts';
 import type { Resources } from './ticketGeneration.ts';
 import QRCode from "npm:qrcode";
-import { PDFDocument, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
+import { PDFDocument, type PDFPage, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
 // Import all exports from fontkit (do not try to import a default)
 import * as fontkit from "npm:fontkit";
+
+/** A batch owns one decoded/compressed image; each output PDF gets its own copy. */
+export interface PreparedTicketBackground {
+  width: number;
+  height: number;
+  draw(document: PDFDocument, page: PDFPage, box: ReturnType<typeof pdfBox>): Promise<void>;
+}
+export async function prepareTicketBackground(bytes: Uint8Array): Promise<PreparedTicketBackground> {
+  const source = await PDFDocument.create();
+  const image = bytes[0] === 137 ? await source.embedPng(bytes) : await source.embedJpg(bytes);
+  const page = source.addPage([image.width, image.height]);
+  page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+  // Flush once so destination documents copy the encoded image stream instead
+  // of decoding PNG pixels and compressing them again for every attachment.
+  await source.flush();
+  return {
+    width: image.width, height: image.height,
+    async draw(document, destination, box) {
+      destination.drawPage(await document.embedPage(page), box);
+    },
+  };
+}
 
 export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_type:'wide'|'named'=t.page.width===595.28?'wide':'named',_sample=false) {
   validateLayout({schemaVersion:t.fontId||t.elements.some(e=>e.style.fontId)?2:1,templates:{[_type]:t}},new Set([...Object.keys(r.fonts??{}),...(r.registeredIds??[])]));
@@ -20,11 +42,14 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
   const area=pdfBox(t,{x:0,y:0,width:t.ticketArea.width,height:t.ticketArea.height});
   if(t.canvasColor!=='transparent'&&(t.canvasOpacity??1)>0)page.drawRectangle({...area,color:t.canvasColor?color(t.canvasColor):rgb(.9,.9,.9),opacity:t.canvasOpacity??1});
   if(r.background) {
-    const img=r.background[0]===137?await doc.embedPng(r.background):await doc.embedJpg(r.background);
+    const prepared=r.preparedBackground;
+    const img=prepared?null:r.background[0]===137?await doc.embedPng(r.background):await doc.embedJpg(r.background);
+    const width=prepared?.width??img!.width;const height=prepared?.height??img!.height;
     page.pushOperators(pushGraphicsState(),rectangle(area.x,area.y,area.width,area.height),clip(),endPath());
-    const crop=pdfBox(t,croppedBackgroundBox(t,img.width,img.height));
+    const crop=pdfBox(t,croppedBackgroundBox(t,width,height));
     page.pushOperators(rectangle(crop.x,crop.y,crop.width,crop.height),clip(),endPath());
-    page.drawImage(img,pdfBox(t,backgroundBox(t,img.width,img.height)));
+    const box=pdfBox(t,backgroundBox(t,width,height));
+    if(prepared)await prepared.draw(doc,page,box);else page.drawImage(img!,box);
     page.pushOperators(popGraphicsState());
   }
   if(t.border)page.drawRectangle({...area,borderColor:rgb(224/255,224/255,224/255),borderWidth:1,borderDashArray:[3.75,1.25]});
