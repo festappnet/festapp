@@ -1,3 +1,4 @@
+import 'package:fstapp/services/last_administration_context.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:auto_route/auto_route.dart';
@@ -426,13 +427,50 @@ class RouterService {
       await replaceRootPath(context.router.root, target.toString());
       return;
     }
+    final initialUnitId = RightsService.currentUnit()?.id;
+    final initialLink = currentOccasionLink;
+    // Explicit destinations above win. Only a generic administration entry
+    // resumes the previous workspace, after checking its current server rights.
+    if (LastAdministrationContext.canRestoreFor(fallbackPath)) {
+      final userId = RightsService.currentUser()?.id;
+      final remembered = await LastAdministrationContext.instance
+          .restore(AppConfig.organization, userId, canAccess: (path) async {
+        final parts = Uri.parse(path).pathSegments;
+        try {
+          if (parts.first == 'unit') {
+            final id = int.parse(parts[1]);
+            await RightsService.updateAppData(
+                unitId: id, force: true, refreshOffline: false);
+            return RightsService.currentUser()?.id == userId &&
+                RightsService.currentUnit()?.id == id &&
+                RightsService.isUnitEditorView();
+          }
+          await RightsService.updateAppData(
+              link: parts.first, force: true, refreshOffline: false);
+          return RightsService.currentUser()?.id == userId &&
+              RightsService.currentLink == parts.first &&
+              (parts.last == 'reservations'
+                  ? RightsService.canSeeReservations()
+                  : RightsService.canSeeAdministration());
+        } catch (_) {
+          final state = RightsService.occasionLinkModel;
+          if (state?.isAccessDenied() == true || state?.isNotFound() == true) {
+            return false;
+          }
+          rethrow;
+        }
+      });
+      if (!context.mounted) return;
+      if (remembered != null) {
+        await replaceRootPath(context.router.root, remembered);
+        return;
+      }
+    }
     // 1. Update App Data
-    var unitId = RightsService.currentUnit()?.id == 1
-        ? null
-        : RightsService.currentUnit()?.id;
+    var unitId = initialUnitId == 1 ? null : initialUnitId;
 
     // If no current link, try to extract it from the fallback path
-    String linkToUse = currentOccasionLink;
+    String linkToUse = initialLink;
     if ((linkToUse.isEmpty) &&
         fallbackPath != null &&
         fallbackPath.isNotEmpty) {

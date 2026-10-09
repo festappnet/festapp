@@ -13,3 +13,12 @@ bucket_name = "festapp-supabase-backups"
 
 [triggers]
 crons = ["*/5 * * * *"]
+
+[vars]
+MONITORING_URL = "https://festapp-monitoring.festapp.workers.dev"
+MONITORING_RELEASE = "v1"
+FESTAPP_API_URL = "https://api.festapp.net"
+
+[[services]]
+binding = "MONITORING_SERVICE"
+service = "festapp-monitoring"

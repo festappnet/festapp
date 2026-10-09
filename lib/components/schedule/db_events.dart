@@ -194,17 +194,14 @@ class DbEvents {
               "${Tb.events.end_time},"
               "${Tb.events.max_participants},"
               "${Tb.events.data},"
-              "${Tb.places.table}(${Tb.places.id}, ${Tb.places.title}),"
-              "${Tb.event_users.table}(count)")
+              "${Tb.places.table}(${Tb.places.id}, ${Tb.places.title})")
           .inFilter(Tb.events.id, event.childEventIds!)
           .eq(Tb.events.is_hidden, false);
 
       event.childEvents = List<EventModel>.from(
           childEventsData.map((x) => EventModel.fromJson(x))).sortEvents();
 
-      if (AuthService.isLoggedIn()) {
-        await loadIsCurrentUserSignedIn(event.childEvents);
-      }
+      await loadIsCurrentUserSignedIn(event.childEvents);
     }
     if ((event.isGroupEvent ?? false) && RightsService.hasGroup()) {
       event.isMyGroupEvent = true;
@@ -213,20 +210,26 @@ class DbEvents {
     return event;
   }
 
-  static Future<void> loadIsCurrentUserSignedIn(List<EventModel> events) async {
-    List<dynamic> currentUserStatePerEventData = await _supabase
-        .from(Tb.events.table)
-        .select("${Tb.events.id}, ${Tb.event_users.table}!inner(count)")
-        .eq("${Tb.event_users.table}.${Tb.event_users.user}",
-            AuthService.currentUserId())
-        .inFilter(Tb.events.id, events.map((e) => e.id).toList());
+  // Aggregate RPC exposes counts and the caller's state, never participant IDs.
+  static Future<Map<int, Map<String, dynamic>>> _getAttendanceSummary(
+      List<int> eventIds) async {
+    if (eventIds.isEmpty) return {};
+    final rows = await _supabase
+        .rpc('get_event_attendance_summary', params: {'p_events': eventIds});
+    return {
+      for (final row in rows as List)
+        (row['event'] as num).toInt(): (row as Map).cast<String, dynamic>(),
+    };
+  }
 
-    Set<int> userSignedInEvents = currentUserStatePerEventData
-        .where((c) => c[Tb.event_users.table][0]["count"] > 0)
-        .map((c) => c["id"] as int)
-        .toSet();
-    for (var e in events) {
-      e.isSignedIn = userSignedInEvents.contains(e.id!) ? true : false;
+  static Future<void> loadIsCurrentUserSignedIn(List<EventModel> events) async {
+    final summaries =
+        await _getAttendanceSummary(events.map((event) => event.id!).toList());
+    for (final event in events) {
+      final summary = summaries[event.id];
+      event.isSignedIn = summary?['is_signed_in'] == true;
+      event.currentParticipants =
+          (summary?['participant_count'] as num?)?.toInt() ?? 0;
     }
   }
 
@@ -245,22 +248,14 @@ class DbEvents {
   }
 
   static Future<int> getParticipantsPerEventCount(int eventId) async {
-    var result = await _supabase
-        .from(Tb.event_users.table)
-        .select()
-        .eq(Tb.event_users.event, eventId)
-        .count();
-    return result.count;
+    final summary = (await _getAttendanceSummary([eventId]))[eventId];
+    return (summary?['participant_count'] as num?)?.toInt() ?? 0;
   }
 
   static Future<bool> isCurrentUserSignedToEvent(int eventId) async {
-    var result = await _supabase
-        .from(Tb.event_users.table)
-        .select()
-        .eq(Tb.event_users.event, eventId)
-        .eq(Tb.event_users.user, AuthService.currentUserId())
-        .count();
-    return result.count > 0;
+    if (!AuthService.isLoggedIn()) return false;
+    final summary = (await _getAttendanceSummary([eventId]))[eventId];
+    return summary?['is_signed_in'] == true;
   }
 
   static Future<bool> signInToEvent(BuildContext context, int eventId,

@@ -34,6 +34,15 @@ web_client/public/auth_bridge.html
 web_client/public/backend-activation.json
 web_client/public/client-sync-config.json
 web_client/public/site.webmanifest
+web_client/public/robots.txt
+web_client/public/brand-logo.svg
+web_client/public/favicon.ico
+web_client/public/favicon-16x16.png
+web_client/public/favicon-32x32.png
+web_client/public/android-chrome-192x192.png
+web_client/public/android-chrome-512x512.png
+web_client/public/apple-touch-icon.png
+web_client/public/sitemap.xml
 web_client/src/app_config.js
 web_client/src/theme_config.css
 web_client/src/version.js

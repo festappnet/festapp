@@ -106,10 +106,15 @@ BEGIN
   v_source:=jsonb_build_object('reset_hash',encode(extensions.digest(p_domain->>'token','sha256'),'hex'));
  ELSIF p_operation='register' THEN
   v_kind:='registration';
-  v_domain_result:=public.create_user_from_registration((p_context->>'organization')::bigint,p_recipient,p_domain->>'password',p_domain->'data',p_domain->>'unit_title');
+  v_domain_result:=public.create_user_from_registration((p_context->>'organization')::bigint,p_recipient,CASE WHEN p_domain ? 'invitation_code' THEN encode(extensions.gen_random_bytes(32),'hex') ELSE p_domain->>'password' END,p_domain->'data',p_domain->>'unit_title');
   IF v_domain_result->>'code'<>'200' THEN RETURN jsonb_build_object('domain',v_domain_result); END IF;
   v_user:=(v_domain_result->>'id')::uuid;
-  v_source:=jsonb_build_object('password_version',(SELECT encode(extensions.digest(encrypted_password,'sha256'),'hex') FROM auth.users WHERE id=v_user));
+  IF p_domain ? 'invitation_code' THEN
+   PERFORM public.store_sign_in_code_v1(v_user,p_domain->>'invitation_code',p_expires);
+   v_source:=jsonb_build_object('sign_in_code_version',(SELECT version FROM public.sign_in_codes WHERE user_id=v_user));
+  ELSE
+   v_source:=jsonb_build_object('password_version',(SELECT encode(extensions.digest(encrypted_password,'sha256'),'hex') FROM auth.users WHERE id=v_user));
+  END IF;
  ELSIF p_operation='deletion_confirm' THEN
   v_kind:='deletion_confirm';
   v_domain_result:=public.create_account_deletion_request(v_user,(p_context->>'organization')::bigint,p_domain->>'token_hash',p_expires,p_domain->>'masked_email');
@@ -151,3 +156,26 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamptz) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamptz) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.enqueue_sign_in_code_v1(p_user uuid,p_password text,p_occasion bigint,p_sealed jsonb,p_content_hash text,p_dedupe text,p_expires timestamptz)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE v_answer jsonb; v_context jsonb; v_email text; v_result jsonb; v_existing public.email_messages; v_password_version text;
+BEGIN
+ -- Reuse the existing hierarchical permission check, including elevated-account protections.
+ IF auth.uid() IS NULL OR NOT coalesce(public.get_can_reset_user_password(p_user),false) THEN RAISE EXCEPTION 'password_reset_denied'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('sign-in:'||p_user::text||':'||p_occasion::text,0));
+ SELECT * INTO v_existing FROM public.email_messages WHERE recipient_user=p_user AND occasion=p_occasion AND message_kind='sign_in' AND (dedupe_key=p_dedupe OR (workflow_state IN ('pending','preparing','sending','retry_wait','unknown') AND expires_at>now())) ORDER BY id DESC LIMIT 1;
+ IF v_existing.id IS NOT NULL THEN
+  RETURN jsonb_build_object('message_id',v_existing.message_id,'replayed',true);
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user) THEN RAISE EXCEPTION 'user_not_in_occasion'; END IF;
+ PERFORM public.store_sign_in_code_v1(p_user,p_password,p_expires);
+ SELECT jsonb_build_object('organization',organization,'occasion',id,'unit',unit,'recipient_user',p_user) INTO v_context FROM public.occasions WHERE id=p_occasion;
+ v_email:=public.get_user_delivery_email(p_user);
+ SELECT version::text INTO v_password_version FROM public.sign_in_codes WHERE user_id=p_user;
+ v_result:=public.enqueue_email('sign_in',v_context,v_email,jsonb_build_object('sign_in_code_version',v_password_version,'content_hash',p_content_hash),p_dedupe,'SIGN_IN_CODE',now(),p_expires);
+ UPDATE public.email_messages SET prepared=p_sealed,prepared_hash=encode(extensions.digest(p_sealed::text,'sha256'),'hex'),prepared_at=now() WHERE message_id=(v_result->>'message_id')::uuid;
+ RETURN v_result;
+END $$;
+REVOKE ALL ON FUNCTION public.enqueue_sign_in_code_v1(uuid,text,bigint,jsonb,text,text,timestamptz) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.enqueue_sign_in_code_v1(uuid,text,bigint,jsonb,text,text,timestamptz) TO authenticated;

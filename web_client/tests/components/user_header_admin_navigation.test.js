@@ -52,7 +52,7 @@ test('the Admin header button opens the admin route', async () => {
     header.querySelector('.btn-admin').click();
 
     assert.equal(adminNavigations, 1);
-    assert.deepEqual(adminNavigationArgs, [5]);
+    assert.deepEqual(adminNavigationArgs, []);
     assert.equal(handoverNavigations, 0);
   } finally {
     RightsService.canSeeAdmin = originalCanSeeAdmin;

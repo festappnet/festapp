@@ -1,3 +1,4 @@
+import { sanitizeHtml } from '../../../utils/html.js';
 import flatpickr from "flatpickr";
 // import 'flatpickr/dist/flatpickr.min.css'; // Commented out for Node.js test runner (JSDOM) compatibility
 import { Czech } from "flatpickr/dist/l10n/cs.js";
@@ -27,7 +28,7 @@ export class DateFieldBuilder {
         if (field.description) {
             const desc = document.createElement('div');
             desc.className = 'form-field-description';
-            desc.innerHTML = field.description;
+            desc.innerHTML = sanitizeHtml(field.description);
             container.appendChild(desc);
         }
 
