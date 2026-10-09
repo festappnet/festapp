@@ -106,6 +106,22 @@
     top: 0;
 }
 
+/* Reserve a map viewport independently of mobile zoom controls. */
+.blueprint-renderer-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.blueprint-map-viewport {
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    touch-action: none;
+}
+
 /* Background */
 .blueprint-bg-container {
     position: absolute;
@@ -291,5 +307,24 @@ body.blueprint-active #floating-price-widget {
 @media (prefers-reduced-motion: reduce) {
     .blueprint-zoom-button {
         transition: none;
+    }
+}
+
+
+@media (max-width: 600px) {
+    .blueprint-zoom-controls {
+        position: static;
+        flex: 0 0 auto;
+        align-self: center;
+        flex-direction: row;
+        margin: 8px max(8px, env(safe-area-inset-right)) 8px max(8px, env(safe-area-inset-left));
+    }
+
+    .blueprint-zoom-controls .blueprint-zoom-reset {
+        margin-top: 0;
+        margin-left: 2px;
+        border-top: 0;
+        border-left: 1px solid var(--input-border, #d1d5db);
+        border-radius: 0 6px 6px 0;
     }
 }
