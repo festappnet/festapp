@@ -193,6 +193,11 @@ export class LoginModal extends HTMLElement {
             `;
         };
 
+        const registrationInformation = `<p class="auth-registration-info">${CommonStrings.signupLegalNotice(
+            `<a href="${AppConfig.termsUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.signupTerms}</a>`,
+            `<a href="${AppConfig.privacyUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.signupPrivacy}</a>`,
+        )}</p>`;
+
         const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
@@ -232,6 +237,7 @@ export class LoginModal extends HTMLElement {
                     <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
                         ${this.isLoading ? CommonStrings.loading : CommonStrings.createAccount}
                     </button>
+                    ${registrationInformation}
                 </form>
                 <div class="auth-switch-footer"><span>${CommonStrings.existingAccountPrompt}</span><button type="button" class="btn-link" data-auth-mode="login">${CommonStrings.signIn}</button></div>
             `;

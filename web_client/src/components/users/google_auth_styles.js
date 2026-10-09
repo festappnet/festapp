@@ -53,6 +53,10 @@ body.dark-mode .auth-container input:not([type=checkbox]) { background: #25272b;
 .auth-container button:focus-visible, .auth-container input:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; }
 .auth-container button.modal-close-btn { background: transparent; border: 0; min-width: 44px; min-height: 44px; top:12px; right:12px; line-height: 1; font: 24px sans-serif; }
 .auth-container .auth-feedback { padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; line-height: 1.5; color: var(--text-color); font-size: 14px; }
+.auth-container .auth-registration-info { margin: 0; font-size: 12px; line-height: 1.6; color: var(--text-secondary); text-align: center; }
+.auth-container .auth-registration-info a { color: var(--primary-color); text-decoration: underline; text-underline-offset: 3px; }
+.auth-container .auth-registration-info a:hover { text-decoration-thickness: 2px; }
+.auth-container .auth-registration-info a:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 3px; border-radius: 2px; }
 .auth-container .auth-consent { display:flex; align-items:flex-start; gap: 8px; margin: 16px 0; line-height: 1.4; font-size: 13px; }
 .auth-container .auth-consent input { width: 18px; height: 18px; flex-shrink: 0; }
 .auth-container .google-profile-actions { display: flex; flex-direction: column; gap: 12px; }
