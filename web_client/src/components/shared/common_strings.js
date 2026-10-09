@@ -1,6 +1,9 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class CommonStrings {
+    static signupLegalNotice(terms, privacy) { return LocalizationService.tr("FeatureUser.signupLegalNotice", { button: CommonStrings.createAccount, terms, privacy }); }
+    static get signupTerms() { return LocalizationService.tr("FeatureUser.signupTerms"); }
+    static get signupPrivacy() { return LocalizationService.tr("FeatureUser.signupPrivacy"); }
     static get googlePasswordVisibility() { return LocalizationService.tr("FeatureUser.googlePasswordVisibility"); }
     static get googleUnlinkProof() { return LocalizationService.tr("FeatureUser.googleUnlinkProof"); }
     static get googleContinue() { return LocalizationService.tr("FeatureUser.googleContinue"); }

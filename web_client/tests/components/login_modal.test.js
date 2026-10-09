@@ -129,6 +129,27 @@ describe('LoginModal Conditional Registration', () => {
         assert.equal(document.activeElement, modal.authContainer);
     });
 
+    it('shows tenant legal links below registration submit in every supported locale', async () => {
+        const { LocalizationService } = await import('../../src/services/localization_service.js');
+        const { AppConfig } = await import('../../src/app_config.js');
+        const { readFile } = await import('node:fs/promises');
+        const previous = LocalizationService.translations;
+        try {
+            for (const locale of ['cs', 'en', 'uk']) {
+                LocalizationService.translations = JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+                const modal = new LoginModal();
+                modal.currentView = 'register';
+                document.body.appendChild(modal);
+                const form = modal.authContainer.querySelector('#register-form');
+                const notice = form.querySelector('.auth-registration-info');
+                assert.equal(form.querySelector('button[type="submit"]').nextElementSibling, notice);
+                assert.deepEqual([...notice.querySelectorAll('a')].map(a => a.getAttribute('href')), [AppConfig.termsUrl, AppConfig.privacyUrl]);
+                assert.ok(!notice.textContent.includes('FeatureUser.'));
+                modal.remove();
+            }
+        } finally { LocalizationService.translations = previous; }
+    });
+
     it('prefills Google proof email and preserves manual edits across retry rendering', () => {
         const modal = new LoginModal();
         modal._render();

@@ -1329,6 +1329,9 @@
     "uploadImageSuccess": "File uploaded successfully."
   },
   "FeatureUser": {
+    "signupLegalNotice": "By clicking “{button}”, you agree to the {terms} and acknowledge the {privacy}.",
+    "signupTerms": "terms of use",
+    "signupPrivacy": "privacy policy",
     "credentialsSent": "Login credentials have been sent to",
     "passwordResetSent": "Password reset email has been sent.",
     "enterEmailReset": "Enter your email to receive a password reset link.",
