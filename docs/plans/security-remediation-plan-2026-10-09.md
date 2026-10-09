@@ -1,7 +1,7 @@
 # Bezpečnostní opravy Festapp se zachováním funkčnosti
 
 Datum: 2026-10-09
-Stav: Rozšířený balík implementován a ověřen na aktuálním main; čeká na povinné review a nasazení
+Stav: Balík sloučen a nasazen; konečná evidence a zbývající kompatibilitní brány viz [záznam vydání](../operations/security-release-2026-10-09.md). Uživatel výslovně autorizoval administrátorské sloučení.
 Ověření: standard
 
 ## Výsledek a rozsah
