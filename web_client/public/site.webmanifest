@@ -1,7 +1,7 @@
 {
-  "name": "vstupenky.online",
-  "short_name": "vstupenky.online",
-  "description": "Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.",
+  "name": "Hvězda Mořská",
+  "short_name": "Hvězda Mořská",
+  "description": "Mobile app for festivals, conferences or events.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
