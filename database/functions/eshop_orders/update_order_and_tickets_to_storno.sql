@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_order_and_tickets_to_storno_221(order_id BIGINT)
+CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_storno_221(order_id BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
 SET search_path = public, extensions
@@ -7,6 +7,7 @@ DECLARE
     ticket_ids BIGINT[];
     updated_order_data jsonb;
 BEGIN
+    PERFORM public.check_order_is_mutable(order_id);
     PERFORM public.cancel_order_email_intents(order_id);
     -- Retrieve all ticket ids associated with the order
     SELECT ARRAY_AGG(t.id) INTO ticket_ids

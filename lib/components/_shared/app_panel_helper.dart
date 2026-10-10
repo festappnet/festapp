@@ -915,6 +915,8 @@ class AppPanelHelper {
         .clamp(38.0, double.infinity);
     final tabBar = TabBar(
       controller: controller,
+      onTap: (index) =>
+          resetNestedTabs(context.tabsRouter, tabs[index].route.routeName),
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       labelColor: foreground,

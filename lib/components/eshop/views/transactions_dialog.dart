@@ -14,6 +14,7 @@ import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'add_cash_payment_dialog.dart';
+import '../models/order_model.dart';
 
 class TransactionsDialog extends StatefulWidget {
   final int orderId;
@@ -35,6 +36,11 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
   List<TransactionModel> _transactions = [];
   PaymentInfoModel? _payment;
   bool _isLoading = true;
+  String? _orderState;
+  bool get _canEdit =>
+      !_isLoading &&
+      _orderState != null &&
+      _orderState != OrderModel.stornoState;
 
   @override
   void initState() {
@@ -54,6 +60,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
       setState(() {
         _transactions = transactionObject.transactions;
         _payment = transactionObject.paymentInfo;
+        _orderState = transactionObject.orderState;
         _isLoading = false;
       });
     } else {
@@ -64,6 +71,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
   }
 
   void _addTransaction() async {
+    if (!_canEdit) return;
     List<int>? accountIds = RightsService.bankAccountAdmin();
     if (accountIds == null || accountIds.isEmpty) {
       accountIds = [0];
@@ -83,6 +91,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
   }
 
   void _addCashPayment() async {
+    if (!_canEdit) return;
     final result = await showDialog(
       context: context,
       builder: (context) => AddCashPaymentDialog(
@@ -102,6 +111,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
   }
 
   void _removeTransaction(TransactionModel transaction) async {
+    if (!_canEdit) return;
     final isManual = transaction.transactionType == 'manual';
     final confirmMessage = isManual
         ? OrdersStrings.deleteCashTransactionConfirmation
@@ -406,8 +416,9 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
                                               icon: Icon(Icons.delete),
                                               tooltip: OrdersStrings
                                                   .removeTransactionTooltip,
-                                              onPressed: () =>
-                                                  _removeTransaction(
+                                              onPressed: !_canEdit
+                                                  ? null
+                                                  : () => _removeTransaction(
                                                       transaction),
                                             ),
                                         ],
@@ -502,7 +513,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
                   runSpacing: 10,
                   children: [
                     ElevatedButton(
-                      onPressed: _addCashPayment,
+                      onPressed: _canEdit ? _addCashPayment : null,
                       style: ElevatedButton.styleFrom(
                         padding:
                             EdgeInsets.symmetric(horizontal: 16, vertical: 12),

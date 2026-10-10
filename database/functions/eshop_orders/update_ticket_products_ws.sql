@@ -38,7 +38,7 @@ BEGIN
   JOIN eshop.orders              AS o   ON o.id = opt."order"
   JOIN public.occasions          AS occ ON occ.id = o.occasion
   WHERE opt.ticket = p_ticket_id
-  LIMIT 1;
+  LIMIT 1 FOR UPDATE OF o;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION '%', jsonb_build_object('code', 404, 'message', 'Ticket not linked to any order')::text;
@@ -47,6 +47,8 @@ BEGIN
   IF NOT get_is_editor_order_on_occasion(v_occasion_id) THEN
     RAISE EXCEPTION '%', jsonb_build_object('code', 403, 'message', 'Not authorized')::text;
   END IF;
+
+  PERFORM public.check_ticket_is_mutable(p_ticket_id);
 
   /* Check for negative prices in the input */
   IF EXISTS (

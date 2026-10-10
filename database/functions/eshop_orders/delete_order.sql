@@ -45,6 +45,8 @@ BEGIN
     RAISE EXCEPTION 'Order not found or occasion changed.';
   END IF;
 
+  PERFORM public.check_order_is_mutable(order_id);
+
   -- Remove every queued/reminder/provider record for this order. log_emails
   -- and address suppressions are independent audit/safety records and remain.
   DELETE FROM public.email_delivery_events e

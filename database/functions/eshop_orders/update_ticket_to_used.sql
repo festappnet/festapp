@@ -73,6 +73,8 @@ BEGIN
         );
     END IF;
 
+    PERFORM public.check_ticket_is_mutable(ticket_id);
+
     -- 5. Update Ticket State to 'used' AND update timestamp
     UPDATE eshop.tickets
     SET

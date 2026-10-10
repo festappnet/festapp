@@ -6,6 +6,22 @@ import 'package:fstapp/components/_shared/red_strip_widget.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/theme_config.dart';
 
+/// Return a selected parent section to its first nested tab, keeping the
+/// selected object and the route guard for unsaved edits.
+Future<void> resetNestedTabs(RoutingController parent, String routeName) async {
+  var nested = parent.innerRouterOf<RoutingController>(routeName);
+  while (nested != null) {
+    if (nested is TabsRouter && nested.stack.isNotEmpty) {
+      final first = nested.stack.first.routeData;
+      await nested.navigate(PageRouteInfo(first.name,
+          args: first.args,
+          rawPathParams: first.params.rawMap,
+          rawQueryParams: parent.root.urlState.uri.queryParametersAll));
+    }
+    nested = nested.innerRouterOf<RoutingController>(nested.current.name);
+  }
+}
+
 /// Presentation metadata. The route, never the label or index, owns identity.
 class RoutedTabDefinition {
   final String slug;
@@ -81,6 +97,8 @@ class RoutedTabScaffold extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: TabBar(
                     controller: controller,
+                    onTap: (index) => resetNestedTabs(
+                        context.tabsRouter, tabs[index].route.routeName),
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
                     tabs: tabs

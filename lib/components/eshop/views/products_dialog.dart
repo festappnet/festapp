@@ -13,6 +13,7 @@ import 'package:fstapp/components/eshop/views/product_info_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 import '../orders_strings.dart';
+import '../models/order_model.dart';
 import 'edit_price_dialog.dart';
 
 class ProductsDialog extends StatefulWidget {
@@ -25,6 +26,11 @@ class ProductsDialog extends StatefulWidget {
 
 class _ProductsDialogState extends State<ProductsDialog> {
   bool _loading = true;
+  bool get _canEdit =>
+      !_loading &&
+      _bundle != null &&
+      _bundle!.order.canEdit &&
+      _bundle!.ticket.state != OrderModel.stornoState;
   TicketDetailsBundle? _bundle;
   List<ProductModel> _orig = [], _current = [];
   double _sumOrig = 0, _sumCur = 0;
@@ -58,6 +64,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   Future<void> _add() async {
+    if (!_canEdit) return;
     final added = await Navigator.of(context).push<List<ProductModel>>(
       MaterialPageRoute(
         builder: (_) => SearchProductsScreen(
@@ -75,6 +82,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   void _remove(ProductModel p) {
+    if (!_canEdit) return;
     setState(() {
       _current.removeWhere((c) => c.id == p.id);
       _recalc();
@@ -82,6 +90,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   void _addBack(ProductModel p) {
+    if (!_canEdit) return;
     setState(() {
       _current.add(p.copyWith());
       _recalc();
@@ -89,6 +98,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   Future<void> _editPrice(ProductModel product) async {
+    if (!_canEdit) return;
     final newPrice = await showDialog<double>(
       context: context,
       builder: (context) {
@@ -108,6 +118,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   Future<void> _save() async {
+    if (!_canEdit) return;
     setState(() => _loading = true);
     try {
       // The rpc call now either returns the success data or throws an exception.
@@ -140,9 +151,9 @@ class _ProductsDialogState extends State<ProductsDialog> {
       _current.map((p) => (p.id, p.price)).toList());
 
   Future<void> _showSendUpdateConfirmDialog() async {
-    if (_hasUnsavedChanges) return;
+    if (!_canEdit || _hasUnsavedChanges) return;
     await _fetch();
-    if (!mounted) return;
+    if (!mounted || !_canEdit) return;
     final order = _bundle?.order;
     final payment = _bundle?.paymentInfo;
     if (order == null) return;
@@ -221,7 +232,9 @@ class _ProductsDialogState extends State<ProductsDialog> {
                         paymentInfo: _bundle!.paymentInfo,
                         ticket: _bundle!.ticket,
                         orderHistory: _bundle!.orderHistory,
-                        onSendUpdate: _hasUnsavedChanges ? null : _showSendUpdateConfirmDialog,
+                        onSendUpdate: !_canEdit || _hasUnsavedChanges
+                            ? null
+                            : _showSendUpdateConfirmDialog,
                       ),
                       const Divider(height: 32),
                     ],
@@ -311,7 +324,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined),
                                       tooltip: OrdersStrings.editPriceTooltip,
-                                      onPressed: pCurrent == null
+                                      onPressed: !_canEdit || pCurrent == null
                                           ? null
                                           : () => _editPrice(pCurrent),
                                     ),
@@ -322,8 +335,11 @@ class _ProductsDialogState extends State<ProductsDialog> {
                                     tooltip: isRemoved
                                         ? OrdersStrings.addBackTooltip
                                         : OrdersStrings.removeTooltip,
-                                    onPressed: () =>
-                                        isRemoved ? _addBack(p) : _remove(p),
+                                    onPressed: !_canEdit
+                                        ? null
+                                        : () => isRemoved
+                                            ? _addBack(p)
+                                            : _remove(p),
                                   ),
                                 ],
                               ),
@@ -335,7 +351,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(
-                        onPressed: _add,
+                        onPressed: _canEdit ? _add : null,
                         icon: const Icon(Icons.add_shopping_cart),
                         label: Text(OrdersStrings.addProductsButton),
                       ),
@@ -350,7 +366,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
           child: Text(CommonStrings.storno),
         ),
         ElevatedButton(
-          onPressed: _hasUnsavedChanges ? _save : null,
+          onPressed: _canEdit && _hasUnsavedChanges ? _save : null,
           child: Text(CommonStrings.save),
         ),
       ],

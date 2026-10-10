@@ -1,4 +1,4 @@
-import '../orders_strings.dart';import 'package:auto_route/auto_route.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -10,6 +10,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 
 import '../models/orders_history_model.dart';
+import '../order_grid_filters.dart';
 
 class OrdersHistoryContent extends StatefulWidget {
   const OrdersHistoryContent({super.key});
@@ -99,6 +100,7 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
       idColumn: EshopColumns.HISTORY_ID,
       actionsExtended: DataGridActionsController(
         isAddActionPossible: () => false,
+        canDeleteRow: OrderGridFilters.orderIsNonCancelled,
       ),
       columns: EshopColumns.generateColumns(context, [
         EshopColumns.HISTORY_ID,

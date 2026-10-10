@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 
 class DataGridAction {
@@ -13,8 +14,12 @@ class DataGridAction {
 
 class DataGridActionsController {
   bool Function()? isAddActionPossible;
+  bool Function(TrinaRow)? canDeleteRow;
   bool Function()? areAllActionsEnabled;
   DataGridAction? saveAction;
   DataGridActionsController(
-      {this.saveAction, this.areAllActionsEnabled, this.isAddActionPossible});
+      {this.saveAction,
+      this.areAllActionsEnabled,
+      this.isAddActionPossible,
+      this.canDeleteRow});
 }

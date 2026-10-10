@@ -4,9 +4,12 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 class BankAccountStrings {
   static String get errorTitle => 'BankAccount.errorTitle'.tr();
   static String get tokenVerifying => 'BankAccount.tokenVerifying'.tr();
-  static String get tokenVerificationWait => 'BankAccount.tokenVerificationWait'.tr();
-  static String get tokenAwaitingActivation => 'BankAccount.tokenAwaitingActivation'.tr();
-  static String get tokenSavedNeedsVerification => 'BankAccount.tokenSavedNeedsVerification'.tr();
+  static String get tokenVerificationWait =>
+      'BankAccount.tokenVerificationWait'.tr();
+  static String get tokenAwaitingActivation =>
+      'BankAccount.tokenAwaitingActivation'.tr();
+  static String get tokenSavedNeedsVerification =>
+      'BankAccount.tokenSavedNeedsVerification'.tr();
   static String get linkedAccountIdentity =>
       'BankAccount.linkedAccountIdentity'.tr();
   static String get detailsSyncPending => 'BankAccount.detailsSyncPending'.tr();
@@ -124,6 +127,12 @@ class BankAccountStrings {
   static String get removeAccountConfirmation =>
       'BankAccount.removeAccountConfirmation'.tr();
   static String get deleteAccountTitle => 'BankAccount.deleteAccountTitle'.tr();
+  static String missingAccountForCurrencies(String currencies) =>
+      'BankAccount.missingAccountForCurrencies'.tr(args: [currencies]);
+  static String get addAccountForPayments =>
+      'BankAccount.addAccountForPayments'.tr();
+  static String get askManagerForPaymentAccount =>
+      'BankAccount.askManagerForPaymentAccount'.tr();
   static String get manageInUnitSettings =>
       'BankAccount.manageInUnitSettings'.tr();
 

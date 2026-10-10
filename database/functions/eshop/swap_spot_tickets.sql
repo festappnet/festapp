@@ -82,6 +82,7 @@ BEGIN
     SELECT * INTO opt FROM eshop.order_product_ticket WHERE id = p_opt_id;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order Product Ticket % not found', p_opt_id; END IF;
 
+    PERFORM public.check_ticket_is_mutable(opt.ticket);
     SELECT * INTO ord FROM eshop.orders WHERE id = opt."order";
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
@@ -178,7 +179,7 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION public.swap_spot_tickets(spot_id_1 BIGINT, spot_id_2 BIGINT)
+CREATE OR REPLACE FUNCTION public.swap_spot_tickets_internal_v1(spot_id_1 BIGINT, spot_id_2 BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -276,3 +277,15 @@ BEGIN
 
 END;
 $$;
+REVOKE ALL ON FUNCTION public.swap_spot_tickets_internal_v1(bigint,bigint)
+  FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION public.swap_spot_tickets(spot_id_1 bigint,spot_id_2 bigint)
+RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = public, extensions AS $$
+BEGIN
+  PERFORM public.swap_spot_tickets_client_sync_v1(
+    spot_id_1,spot_id_2,extensions.gen_random_uuid());
+END; $$;
+REVOKE ALL ON FUNCTION public.swap_spot_tickets(bigint,bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.swap_spot_tickets(bigint,bigint) TO authenticated;
