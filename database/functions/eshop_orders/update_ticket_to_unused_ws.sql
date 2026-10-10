@@ -17,6 +17,8 @@ BEGIN
 
     PERFORM public.check_is_editor_order_on_occasion(occasion_id);
 
+    PERFORM public.check_ticket_is_mutable(ticket_id);
+
     UPDATE eshop.tickets
     SET
         -- `sent` is the canonical unused state that can be scanned again.

@@ -1,4 +1,4 @@
-    CREATE OR REPLACE FUNCTION update_order_note_hidden(order_id bigint, new_note_hidden text)
+    CREATE OR REPLACE FUNCTION public.update_order_note_hidden(order_id bigint, new_note_hidden text)
     RETURNS jsonb SECURITY DEFINER
 SET search_path = public, extensions AS $$
     DECLARE
@@ -17,6 +17,8 @@ SET search_path = public, extensions AS $$
             -- Return an error if the user is not authorized
             RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
         END IF;
+
+        PERFORM public.check_order_is_mutable(order_id);
 
         -- Proceed to update note_hidden if the user is authorized
         UPDATE eshop.orders

@@ -156,6 +156,7 @@ class _OrdersContentState extends State<OrdersContent> {
           isUnitManager: RightsService.isUnitManager(),
         ),
         isAddActionPossible: () => false,
+        canDeleteRow: OrderGridFilters.orderIsNonCancelled,
       ),
       headerChildren: [
         DataGridAction(
@@ -163,14 +164,22 @@ class _OrdersContentState extends State<OrdersContent> {
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               cancelOrders(singleDataGrid),
-          isEnabled: RightsService.isOrderEditor,
+          isEnabled: () =>
+              RightsService.isOrderEditor() &&
+              (controller?.visibleCheckedRows
+                      .every(OrderGridFilters.orderIsNonCancelled) ??
+                  false),
         ),
         DataGridAction(
           name: OrdersStrings.sendActionText,
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               sendTicketsOrConfirmations(singleDataGrid),
-          isEnabled: RightsService.isOrderEditor,
+          isEnabled: () =>
+              RightsService.isOrderEditor() &&
+              (controller?.visibleCheckedRows
+                      .every(OrderGridFilters.orderIsNonCancelled) ??
+                  false),
         ),
       ],
       columns: EshopColumns.generateColumns(context, columnIdentifiers, data: {
@@ -255,8 +264,9 @@ class _OrdersContentState extends State<OrdersContent> {
         await DbOrders.getAllOrdersBundle(occasionLink: occasionLink!);
     for (var s in selected) {
       var o = ordersBundle.orders.firstWhere((o) => o.id == s.id);
-      selectedFull.add(o);
+      if (o.canEdit) selectedFull.add(o);
     }
+    if (selectedFull.isEmpty) return;
     var stateChange =
         selectedFull.where((s) => s.state == OrderModel.orderedState);
     if (stateChange.isNotEmpty) {
@@ -267,7 +277,8 @@ class _OrdersContentState extends State<OrdersContent> {
 
       if (confirm) {
         final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
-        var futures = stateChange.where((o) => visibleIds.contains(o.id)).map((s) {
+        var futures =
+            stateChange.where((o) => visibleIds.contains(o.id)).map((s) {
           return () async {
             await DbOrders.updateOrderAndTicketsToPaid(s.id!);
           };
@@ -287,7 +298,8 @@ class _OrdersContentState extends State<OrdersContent> {
 
     if (confirm) {
       final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
-      var futures = selectedFull.where((o) => visibleIds.contains(o.id)).map((s) {
+      var futures =
+          selectedFull.where((o) => visibleIds.contains(o.id)).map((s) {
         return () async {
           await sendTicketsToEmail(s);
         };
@@ -310,6 +322,7 @@ class _OrdersContentState extends State<OrdersContent> {
   List<OrderModel> _getChecked(SingleDataGridController singleDataGrid) {
     return List<OrderModel>.from(
       singleDataGrid.visibleCheckedRows
+          .where(OrderGridFilters.orderIsNonCancelled)
           .map((row) => OrderModel.fromPlutoJson(row.toJson())),
     );
   }

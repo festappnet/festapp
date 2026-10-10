@@ -1,4 +1,5 @@
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 // ignore_for_file: deprecated_member_use
@@ -122,8 +123,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _linkNotifier.dispose();
     super.dispose();
   }
-
-
 
   void _updateLinkPreview() {
     _linkNotifier.value = _linkController.text;
@@ -360,24 +359,36 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (usedCurrencies.isEmpty) return const SizedBox.shrink();
 
     final usedAccounts = _getUsedBankAccounts();
+    final missingCurrencies = usedCurrencies
+        .where((currency) => !usedAccounts
+            .any((account) => account.supportedCurrencies.contains(currency)))
+        .toList()
+      ..sort();
+    final unitId = RightsService.currentUnit()?.id;
+    final canManageAccounts = unitId != null && RightsService.isUnitEditor();
 
     return SelectionArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (usedAccounts.isEmpty)
-            Text(
-              BankAccountStrings.addInSettings,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
-            )
-          else ...[
-            Text(
-              BankAccountStrings.manageInUnitSettings,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+          if (missingCurrencies.isNotEmpty) ...[
+            Text(BankAccountStrings.missingAccountForCurrencies(
+                missingCurrencies.join(', '))),
+            const SizedBox(height: 4),
+            Text(canManageAccounts
+                ? BankAccountStrings.addAccountForPayments
+                : BankAccountStrings.askManagerForPaymentAccount),
+          ] else
+            Text(BankAccountStrings.manageInUnitSettings,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          if (canManageAccounts)
+            TextButton(
+              onPressed: () => pushRootPath(
+                  context.router.root, '/unit/$unitId/edit/bank-accounts'),
+              child: Text(BankAccountStrings.manageInSettings),
             ),
+          if (usedAccounts.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

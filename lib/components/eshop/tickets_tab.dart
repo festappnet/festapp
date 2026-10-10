@@ -87,8 +87,9 @@ class _TicketsTabState extends State<TicketsTab> {
       context: context,
       additionalFilterEnabled: true,
       additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
-      headerFilterBuilder: (context, controller) => OrderGridFilters.filterButton(
-          context, controller, label: OrdersStrings.validTickets),
+      headerFilterBuilder: (context, controller) =>
+          OrderGridFilters.filterButton(context, controller,
+              label: OrdersStrings.validTickets),
       loadData: () => DbTickets.getAllTickets(occasionLink!),
       fromPlutoJson: TicketModel.fromPlutoJson,
       firstColumnType: DataGridFirstColumn.check,
@@ -103,7 +104,11 @@ class _TicketsTabState extends State<TicketsTab> {
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               _stornoTickets(singleDataGrid),
-          isEnabled: RightsService.isOrderEditor,
+          isEnabled: () =>
+              RightsService.isOrderEditor() &&
+              (_controller?.visibleCheckedRows
+                      .every(OrderGridFilters.ticketIsNonCancelled) ??
+                  false),
         ),
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
           DataGridAction(
@@ -185,7 +190,9 @@ class _TicketsTabState extends State<TicketsTab> {
         futures: [
           () async {
             outcome = await DbTickets.stornoTickets(
-              _getCheckedTickets(singleDataGrid).map((ticket) => ticket.id!).toList(),
+              _getCheckedTickets(singleDataGrid)
+                  .map((ticket) => ticket.id!)
+                  .toList(),
             );
           },
         ],
@@ -243,6 +250,7 @@ class _TicketsTabState extends State<TicketsTab> {
   ) {
     return List<TicketModel>.from(
       singleDataGrid.visibleCheckedRows
+          .where(OrderGridFilters.ticketIsNonCancelled)
           .map((row) => TicketModel.fromPlutoJson(row.toJson())),
     );
   }

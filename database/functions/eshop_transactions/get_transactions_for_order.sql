@@ -35,6 +35,7 @@ BEGIN
 
   RETURN (
     SELECT jsonb_build_object(
+      'order_state', o.state,
       'payment_info', (
         SELECT to_jsonb(pi)
         FROM eshop.payment_info pi

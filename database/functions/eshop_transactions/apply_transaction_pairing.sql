@@ -30,6 +30,13 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_TRANSACTION_NOT_FOUND'; END IF;
   v_old_payment_info_id := v_transaction.payment_info;
 
+  IF p_actor_kind='user' THEN
+    FOR v_order_id IN SELECT id FROM eshop.orders
+      WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id) ORDER BY id LOOP
+      PERFORM public.check_order_is_mutable(v_order_id);
+    END LOOP;
+  END IF;
+
   IF v_old_payment_info_id IS NOT DISTINCT FROM p_payment_info_id THEN
     RETURN jsonb_build_object('status', 'unchanged', 'transaction_id', p_transaction_id,
       'payment_info_id', p_payment_info_id);

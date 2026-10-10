@@ -415,10 +415,12 @@ class DbEshop {
 // DATA MODELS
 
 class GetTransactionsForOrderResponse {
+  final String? orderState;
   final PaymentInfoModel? paymentInfo;
   final List<TransactionModel> transactions;
 
   GetTransactionsForOrderResponse({
+    this.orderState,
     required this.paymentInfo,
     required this.transactions,
   });
@@ -444,6 +446,7 @@ class GetTransactionsForOrderResponse {
     }
 
     return GetTransactionsForOrderResponse(
+      orderState: json['order_state'] as String?,
       paymentInfo: json['payment_info'] != null
           ? PaymentInfoModel.fromJson(json['payment_info'])
           : null,
@@ -490,7 +493,8 @@ class TicketDetailsBundle {
 
   factory TicketDetailsBundle.fromJson(Map<String, dynamic> json) {
     var bundle = TicketDetailsBundle(
-      changes: OrderChangeSummary.fromJson(Map<String, dynamic>.from(json['order_changes'])),
+      changes: OrderChangeSummary.fromJson(
+          Map<String, dynamic>.from(json['order_changes'])),
       ticket: TicketModel.fromJson(json['ticket']),
       order: OrderModel.fromJson(json['order']),
       paymentInfo: json['payment_info'] != null

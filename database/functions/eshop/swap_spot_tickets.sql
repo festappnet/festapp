@@ -82,6 +82,7 @@ BEGIN
     SELECT * INTO opt FROM eshop.order_product_ticket WHERE id = p_opt_id;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order Product Ticket % not found', p_opt_id; END IF;
 
+    PERFORM public.check_ticket_is_mutable(opt.ticket);
     SELECT * INTO ord FROM eshop.orders WHERE id = opt."order";
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
