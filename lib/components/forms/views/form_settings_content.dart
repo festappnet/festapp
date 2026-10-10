@@ -5,6 +5,7 @@ import 'package:fstapp/components/_shared/editor_action_bar.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -45,6 +46,7 @@ class FormSettingsContent extends StatefulWidget {
 
 class _FormSettingsContentState extends State<FormSettingsContent> {
   final _snapshot = EditorSnapshot();
+  final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
         _titleController.text,
         _linkController.text,
@@ -115,6 +117,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   @override
   void dispose() {
+    _bankSettingsLink.dispose();
     _titleController.dispose();
     _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
@@ -367,6 +370,18 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     final unitId = RightsService.currentUnit()?.id;
     final canManageAccounts = unitId != null && RightsService.isUnitEditor();
 
+    final guidance = missingCurrencies.isNotEmpty
+        ? (canManageAccounts
+            ? BankAccountStrings.addAccountForPayments
+            : BankAccountStrings.askManagerForPaymentAccount)
+        : BankAccountStrings.manageInUnitSettings;
+    final settingsLabel = BankAccountStrings.organizationSettings;
+    final linkStart = guidance.indexOf(settingsLabel);
+    _bankSettingsLink.onTap = canManageAccounts
+        ? () => pushRootPath(
+            context.router.root, '/unit/$unitId/edit/bank-accounts')
+        : null;
+
     return SelectionArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,19 +390,32 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
             Text(BankAccountStrings.missingAccountForCurrencies(
                 missingCurrencies.join(', '))),
             const SizedBox(height: 4),
-            Text(canManageAccounts
-                ? BankAccountStrings.addAccountForPayments
-                : BankAccountStrings.askManagerForPaymentAccount),
-          ] else
-            Text(BankAccountStrings.manageInUnitSettings,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          if (canManageAccounts)
-            TextButton(
-              onPressed: () => pushRootPath(
-                  context.router.root, '/unit/$unitId/edit/bank-accounts'),
-              child: Text(BankAccountStrings.manageInSettings),
+          ],
+          Text.rich(
+            TextSpan(
+              children: canManageAccounts && linkStart >= 0
+                  ? [
+                      TextSpan(text: guidance.substring(0, linkStart)),
+                      TextSpan(
+                        text: settingsLabel,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                        mouseCursor: SystemMouseCursors.click,
+                        recognizer: _bankSettingsLink,
+                      ),
+                      TextSpan(
+                          text: guidance.substring(
+                              linkStart + settingsLabel.length)),
+                    ]
+                  : [TextSpan(text: guidance)],
             ),
+            style: missingCurrencies.isNotEmpty
+                ? null
+                : Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
           if (usedAccounts.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
