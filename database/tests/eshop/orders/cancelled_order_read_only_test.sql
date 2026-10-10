@@ -21,8 +21,8 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000780'
 INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(780,'00000000-0000-0000-0000-000000000780',true);
 INSERT INTO public.occasions(id,organization,unit,title,link,start_time,end_time)
 VALUES(780,780,780,'Cancelled occasion','cancelled-order-read-only',now(),now()+interval '1 day');
-INSERT INTO public.occasion_users(occasion,"user",is_manager,is_editor,is_editor_order)
-VALUES(780,'00000000-0000-0000-0000-000000000780',true,true,true);
+INSERT INTO public.occasion_users(occasion,"user",is_manager,is_editor,is_editor_order,is_editor_order_view)
+VALUES(780,'00000000-0000-0000-0000-000000000780',true,true,true,true);
 INSERT INTO eshop.bank_accounts(id,title,account_number,type,supported_currencies)
 VALUES(7800,'Cancelled account','1234/5678','FIO',ARRAY['CZK']);
 INSERT INTO eshop.product_types(id,occasion,title) VALUES(7800,780,'Ticket');
@@ -85,6 +85,10 @@ BEGIN
  PERFORM pg_temp.assert_cancelled_rejected(format('SELECT public.apply_transaction_pairing(%s,%s,''manual_attach'',''user'')',tx,pi));
  PERFORM assert_true((SELECT payment_info IS NULL FROM eshop.transactions WHERE id=tx),'rejected manual attach preserves transaction');
  UPDATE eshop.transactions SET payment_info=pi WHERE id=tx;
+ result:=public.get_transactions_for_order(oid);
+ PERFORM assert_eq(result->>'order_state','storno','transaction dialog receives cancelled order state');
+ PERFORM assert_true((result->'transactions'->0) ? 'createdByName','transaction payer name contract is preserved');
+ PERFORM assert_true((SELECT prosrc LIKE '%swap_spot_tickets_client_sync_v1%' FROM pg_proc p WHERE p.oid='public.swap_spot_tickets(bigint,bigint)'::regprocedure),'seat-swap legacy entry retains client-sync receipts');
  PERFORM pg_temp.assert_cancelled_rejected(format('SELECT public.apply_transaction_pairing(%s,NULL,''manual_unlink'',''user'')',tx));
  PERFORM assert_eq((SELECT payment_info FROM eshop.transactions WHERE id=tx),pi,'rejected manual unlink preserves transaction');
  -- Real imported movement processing remains independent from order edits.
