@@ -1602,6 +1602,7 @@
     "copied": "Zkopírováno"
   },
   "BankAccount": {
+    "organizationSettings": "nastavení organizace",
     "settingsTitle": "Nastavení bankovního účtu",
     "generalTab": "Obecné",
     "fioTokenTab": "FIO Token",

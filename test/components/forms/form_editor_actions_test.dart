@@ -84,12 +84,26 @@ void main() {
         expect(
             find.text(canManage
                 ? BankAccountStrings.addAccountForPayments
-                : BankAccountStrings.askManagerForPaymentAccount),
+                : BankAccountStrings.askManagerForPaymentAccount,
+                findRichText: true),
             findsOneWidget);
-        expect(
-            find.widgetWithText(
-                TextButton, BankAccountStrings.manageInSettings),
-            canManage ? findsOneWidget : findsNothing);
+        final guidance = tester.widget<Text>(find.byWidgetPredicate(
+            (widget) => widget is Text &&
+                widget.textSpan?.toPlainText() ==
+                    (canManage
+                        ? BankAccountStrings.addAccountForPayments
+                        : BankAccountStrings.askManagerForPaymentAccount)));
+
+        final links = (guidance.textSpan! as TextSpan)
+            .children!
+            .whereType<TextSpan>()
+            .where((span) => span.recognizer != null);
+        expect(links.length, canManage ? 1 : 0);
+        if (canManage) {
+          expect(links.single.text, BankAccountStrings.organizationSettings);
+          expect(links.single.style?.decoration, TextDecoration.underline);
+        }
+        expect(find.text('Spravovat účty'), findsNothing);
         await tester.pumpWidget(const SizedBox.shrink());
       });
     }

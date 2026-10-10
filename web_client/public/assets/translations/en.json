@@ -1601,6 +1601,7 @@
     "copied": "Copied"
   },
   "BankAccount": {
+    "organizationSettings": "organization settings",
     "settingsTitle": "Bank Account Settings",
     "generalTab": "General",
     "fioTokenTab": "FIO Token",
