@@ -23,7 +23,7 @@ BEGIN
       ),
       'transactions', COALESCE((
         SELECT jsonb_agg(
-            to_jsonb(t) || jsonb_build_object('createdByName', 
+            to_jsonb(t) || jsonb_build_object('createdByName',
                 trim(both from COALESCE(ui.name, '') || ' ' || COALESCE(ui.surname, ''))
             )
         )
