@@ -85,6 +85,10 @@ BEGIN
  PERFORM pg_temp.assert_cancelled_rejected(format('SELECT public.apply_transaction_pairing(%s,%s,''manual_attach'',''user'')',tx,pi));
  PERFORM assert_true((SELECT payment_info IS NULL FROM eshop.transactions WHERE id=tx),'rejected manual attach preserves transaction');
  UPDATE eshop.transactions SET payment_info=pi WHERE id=tx;
+ result:=public.get_transactions_for_order(oid);
+ PERFORM assert_eq(result->>'order_state','storno','transaction dialog receives cancelled order state');
+ PERFORM assert_true((result->'transactions'->0) ? 'createdByName','transaction payer name contract is preserved');
+ PERFORM assert_true((SELECT prosrc LIKE '%swap_spot_tickets_client_sync_v1%' FROM pg_proc WHERE oid='public.swap_spot_tickets(bigint,bigint)'::regprocedure),'seat-swap legacy entry retains client-sync receipts');
  PERFORM pg_temp.assert_cancelled_rejected(format('SELECT public.apply_transaction_pairing(%s,NULL,''manual_unlink'',''user'')',tx));
  PERFORM assert_eq((SELECT payment_info FROM eshop.transactions WHERE id=tx),pi,'rejected manual unlink preserves transaction');
  -- Real imported movement processing remains independent from order edits.
