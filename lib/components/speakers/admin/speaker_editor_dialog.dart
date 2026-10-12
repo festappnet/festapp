@@ -6,7 +6,6 @@ import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_area.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/components/map/place_model.dart';
@@ -297,10 +296,8 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
                 onFileSelected: (file) async {
                   try {
                     final bytes = await file.readAsBytes();
-                    final compressed =
-                        await ImageCompressionHelper.compress(bytes, 400);
                     final url = await DbImages.uploadImage(
-                        compressed, RightsService.currentOccasionId(), null);
+                        bytes, RightsService.currentOccasionId(), null, profile: ImageUploadProfile.portrait);
                     if (mounted) setState(() => _image = url);
                     return url;
                   } catch (e) {

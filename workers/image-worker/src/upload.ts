@@ -1,3 +1,4 @@
+import { MAX_IMAGE_INPUT_BYTES, readUploadForm, resolveUploadPolicy, processUploadImage, ImageProcessingError } from './upload-policy';
 import type { Env } from './types';
 import {
   checkAkhEventManagerPermission,
@@ -9,14 +10,6 @@ import {
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
 import { isPrivateKey } from './private-key';
-
-/** Absolute maximum upload size (before any transform). */
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-
-/** Default transform thresholds — used when the caller doesn't specify overrides. */
-const DEFAULT_MAX_EDGE = 1200;          // longer-edge limit (px)
-const DEFAULT_MAX_BYTES = 800 * 1024;   // 800 KB — skip transform if already under
-const DEFAULT_JPEG_QUALITY = 70;        // ~200-400 KB at 1200 px
 
 /**
  * Sanitize a filename: remove special chars, keep alphanumeric, hyphens, underscores, dots.
@@ -47,12 +40,6 @@ export async function handleUpload(
     return errorResponse(405, 'METHOD_NOT_ALLOWED', 'Method not allowed');
   }
 
-  // Check file size before reading body
-  const contentLength = request.headers.get('Content-Length');
-  if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
-    return errorResponse(413, 'FILE_TOO_LARGE', 'File too large');
-  }
-
   // Authenticate
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
@@ -69,8 +56,9 @@ export async function handleUpload(
   // Parse multipart form data
   let formData: FormData;
   try {
-    formData = await request.formData();
-  } catch {
+    formData = await readUploadForm(request);
+  } catch (error) {
+    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
     return errorResponse(400, 'INVALID_FORM_DATA', 'Invalid form data');
   }
 
@@ -129,24 +117,12 @@ export async function handleUpload(
     return errorResponse(403, 'FORBIDDEN', 'Forbidden');
   }
 
-  // Validate file size from actual body
-  const buffer = await file.arrayBuffer();
-  if (buffer.byteLength > MAX_FILE_SIZE) {
-    return errorResponse(413, 'FILE_TOO_LARGE', 'File too large');
-  }
-
-  // Read optional per-request transform overrides from form fields
-  const maxEdgeRaw = formData.get('maxEdge');
-  const maxBytesRaw = formData.get('maxBytes');
-  const qualityRaw = formData.get('quality');
-
-  const maxEdge = maxEdgeRaw ? parseInt(String(maxEdgeRaw), 10) : DEFAULT_MAX_EDGE;
-  const maxBytes = maxBytesRaw ? parseInt(String(maxBytesRaw), 10) : DEFAULT_MAX_BYTES;
-  const jpegQuality = qualityRaw ? parseInt(String(qualityRaw), 10) : DEFAULT_JPEG_QUALITY;
-  if (!Number.isInteger(maxEdge) || maxEdge < 1 || maxEdge > 4000 ||
-      !Number.isInteger(maxBytes) || maxBytes < 0 || maxBytes > MAX_FILE_SIZE ||
-      !Number.isInteger(jpegQuality) || jpegQuality < 1 || jpegQuality > 100) {
-    return errorResponse(400, 'INVALID_TRANSFORM_INPUT', 'Upload transform values are out of bounds');
+  if (file.size > MAX_IMAGE_INPUT_BYTES) return errorResponse(413, 'FILE_TOO_LARGE', 'Image exceeds 20 MB');
+  let policy;
+  try { policy = resolveUploadPolicy(formData); }
+  catch (error) {
+    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message);
+    throw error;
   }
 
   // Use explicit key for private uploads, otherwise generate one
@@ -184,52 +160,22 @@ export async function handleUpload(
     key = `${prefix}/${uid}-${safeName}`;
   }
 
-  // Detect if PNG (has alpha channel — preserve format)
-  const bytes = new Uint8Array(buffer);
-  const isPng =
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47;
-
-  // Only transform if the file exceeds the byte threshold.
-  // Images already under the limit are stored as-is (no quality loss).
-  let body: ArrayBuffer | ReadableStream | null;
-  let contentType: string;
-
-  const needsTransform = buffer.byteLength > maxBytes;
-
-  if (needsTransform && env.IMAGES) {
-    const outputFormat = isPng ? 'image/png' : 'image/jpeg';
-    const outputOptions: Record<string, unknown> = { format: outputFormat };
-    if (!isPng) {
-      outputOptions.quality = jpegQuality;
-    }
-    try {
-      const transformed = await env.IMAGES
-        .input(buffer)
-        .transform({ width: maxEdge, height: maxEdge, fit: 'scale-down' })
-        .output(outputOptions);
-      const resp = transformed.response();
-      body = resp.body!;
-      contentType = outputFormat;
-    } catch (err) {
-      body = buffer;
-      contentType = file.type || 'application/octet-stream';
-      console.error('Images transform failed, storing original:', err);
-    }
-  } else {
-    // Already small enough or Images binding not available — store as-is
-    body = buffer;
-    contentType = file.type || 'application/octet-stream';
+  let processed;
+  try {
+    processed = key.startsWith('private/')
+      ? { body: file.stream(), contentType: file.type || 'application/octet-stream', extension: undefined }
+      : await processUploadImage(file, policy, env);
+  } catch (error) {
+    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
+    throw error;
   }
+  if (processed.extension) key = key.replace(/\.[^./]+$/, `.${processed.extension}`);
 
   const isPrivate = key.startsWith('private/');
   const bucket = isPrivate ? project.privateBucket : project.publicBucket;
-  await bucket.put(key, body, {
+  await bucket.put(key, processed.body, {
     httpMetadata: {
-      contentType,
+      contentType: processed.contentType,
       ...(isPrivate ? {} : { cacheControl: 'public, max-age=31536000, immutable' }),
     },
   });
