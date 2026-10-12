@@ -214,7 +214,7 @@ would discard the migrated font/appearance contract; reload the deployed editor.
 
 Backgrounds use the same `DbImages.uploadImage` → image Worker pipeline as all
 other app images. The client selects `ticket-background` and sends original
-bytes; the server owns the 1080 px edge, JPEG quality 85 and 800 KiB output
+bytes; the server owns the 1600 px edge, JPEG quality 90 and 2 MiB output
 budget. PNG remains lossless with transparency, EXIF orientation is applied by
 Cloudflare Images, and GIF/WebP print backgrounds become a still PNG. The editor
 loads and compares the processed artwork before changing its current preview.

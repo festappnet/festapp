@@ -5,8 +5,8 @@ export const MAX_IMAGE_PIXELS = 40_000_000;
 export const MAX_UPLOAD_BODY_BYTES = MAX_IMAGE_INPUT_BYTES + 64 * 1024;
 
 const profiles = {
-  standard: { maxEdge: 1200, maxBytes: 800 * 1024, quality: 70 },
-  'ticket-background': { maxEdge: 1080, maxBytes: 800 * 1024, quality: 85 },
+  standard: { maxEdge: 1600, maxBytes: 1536 * 1024, quality: 85 },
+  'ticket-background': { maxEdge: 1600, maxBytes: 2 * 1024 * 1024, quality: 90 },
   'blueprint-background': { maxEdge: 3000, maxBytes: 800 * 1024, quality: 90 },
   portrait: { maxEdge: 400, maxBytes: 200 * 1024, quality: 85 },
   thumbnail: { maxEdge: 200, maxBytes: 80 * 1024, quality: 85 },

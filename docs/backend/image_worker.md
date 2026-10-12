@@ -93,3 +93,5 @@ npm test
 control deploy requires `--deploy-control` plus the checkpoint environment
 variables described by the script. Public R2 custom-domain attachment and P4
 route contraction are operator-run actions after their evidence gates.
+
+Editor photos use a 1600 px maximum edge, JPEG quality 85 and a 1.5 MiB output budget. Ticket backgrounds use 1600 px, quality 90 and 2 MiB for print detail. The server keeps aspect ratio and never upscales; only an image that exceeds its byte budget receives additional downscaling. These storage dimensions are independent of the 1200 px in-memory preview bound.
