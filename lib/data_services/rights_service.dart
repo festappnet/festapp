@@ -101,7 +101,10 @@ class RightsService {
         }
       }
 
-      if (AppConfig.forceOccasionLink != null) {
+      // A tenant landing occasion must not replace an explicit admin context.
+      if (unitId == null &&
+          (link == null || link.isEmpty) &&
+          AppConfig.forceOccasionLink != null) {
         model.occasionLink = AppConfig.forceOccasionLink;
       }
 
