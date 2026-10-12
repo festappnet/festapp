@@ -15,9 +15,10 @@ function env(): Env {
     IMAGES_BUCKET: bucket(), IMAGES_BUCKET_A: bucket(),
     IMAGES_BUCKET_AKHWEB: bucket(),
     IMAGES_PRIVATE_BUCKET: bucket(), IMAGES_PRIVATE_BUCKET_A: bucket(),
-    SUPABASE_URL: 'https://default.supabase.co', SUPABASE_ANON_KEY: 'server-default',
-    SUPABASE_URL_A: 'https://a.supabase.co', SUPABASE_ANON_KEY_A: 'server-a',
+    SUPABASE_URL: 'https://api.festapp.net', SUPABASE_ANON_KEY: 'server-default',
+    SUPABASE_URL_A: 'https://api.festapp.net', SUPABASE_ANON_KEY_A: 'server-a',
     SUPABASE_URL_AKHWEB: 'https://akh.supabase.co', SUPABASE_ANON_KEY_AKHWEB: 'server-akh',
+    SUPABASE_URL_SLUNOVRAT: 'https://api.festapp.net', SUPABASE_ANON_KEY_SLUNOVRAT: 'server-canonical',
     R2_ACCESS_KEY_ID: 'id', R2_SECRET_ACCESS_KEY: 'secret', CF_ACCOUNT_ID: 'account',
     CF_ZONE_ID: 'zone', CF_CACHE_PURGE_TOKEN: 'purge-token',
     CONTROL_ALLOWED_ORIGINS: 'https://app.example',
@@ -96,6 +97,47 @@ describe('control plane', () => {
     expect(handleCors(new Request('https://image-api.festapp.net/upload', {
       method: 'OPTIONS', headers: { Origin: 'https://live.festapp.net.evil.example' },
     }), configured).status).toBe(403);
+  });
+
+  it('allows Slunovrat preflight through the deployed origin configuration', async () => {
+    const config = readFileSync(new URL('../../wrangler.toml', import.meta.url), 'utf8');
+    const origins = config.match(/^CONTROL_ALLOWED_ORIGINS = "([^"]+)"/m)![1];
+    const configured = { ...env(), CONTROL_ALLOWED_ORIGINS: origins };
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/upload', {
+      method: 'OPTIONS', headers: { Origin: 'https://slunovrat.festapp.net' },
+    }), configured);
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://slunovrat.festapp.net');
+    expect(handleCors(new Request('https://image-api.festapp.net/upload', {
+      method: 'OPTIONS', headers: { Origin: 'https://slunovrat.festapp.net.evil.example' },
+    }), configured).status).toBe(403);
+  });
+
+  it.each([true, false])('routes Slunovrat uploads to canonical authorization (editor=%s)', async (authorized) => {
+    const configured = env();
+    const fetchMock = vi.fn().mockImplementation(async (input: string) =>
+      new Response(input.endsWith('/check_upload_permission') ? JSON.stringify(authorized) : 'null'));
+    vi.stubGlobal('fetch', fetchMock);
+    const form = new FormData();
+    form.set('file', new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'picture.png', { type: 'image/png' }));
+    form.set('projectId', 'slunovrat');
+    form.set('unitId', '999');
+    const response = await handleUpload(new Request('https://image-api.festapp.net/upload', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt' }, body: form,
+    }), configured);
+    expect(response.status).toBe(authorized ? 200 : 403);
+    expect(fetchMock).toHaveBeenCalledWith('https://api.festapp.net/rest/v1/rpc/check_upload_permission',
+      expect.objectContaining({ headers: expect.objectContaining({ apikey: 'server-canonical' }), body: JSON.stringify({ p_unit_id: 999 }) }));
+    expect(configured.IMAGES_BUCKET_A.put).not.toHaveBeenCalled();
+    expect(configured.IMAGES_BUCKET_AKHWEB.put).not.toHaveBeenCalled();
+    expect(configured.IMAGES_PRIVATE_BUCKET.put).not.toHaveBeenCalled();
+    if (authorized) {
+      expect(configured.IMAGES_BUCKET.put).toHaveBeenCalledOnce();
+      expect(fetchMock).toHaveBeenCalledWith('https://api.festapp.net/rest/v1/rpc/add_image_record', expect.anything());
+      expect(await response.json()).toMatchObject({ projectId: 'slunovrat', url: expect.stringMatching(/^https:\/\/img\.festapp\.net\/images\/unit-999\//) });
+    } else {
+      expect(configured.IMAGES_BUCKET.put).not.toHaveBeenCalled();
+    }
   });
 
   it('uses exact CORS origins and Vary', () => {
@@ -215,7 +257,7 @@ describe('control plane', () => {
     vi.stubGlobal('fetch', mockedFetch);
     const response = await handleDelete(new Request('https://img.festapp.net/delete', {
       method: 'POST', headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ supabaseUrl: 'https://default.supabase.co', key: 'images/1/x.jpg' }),
+      body: JSON.stringify({ supabaseUrl: 'https://api.festapp.net', key: 'images/1/x.jpg' }),
     }), configured);
     expect(response.status).toBe(200);
     expect(mockedFetch.mock.calls[0][0]).toContain('/authorize_image_deletion');

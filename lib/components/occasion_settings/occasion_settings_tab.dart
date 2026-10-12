@@ -21,7 +21,6 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/dialog_helper.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
@@ -474,11 +473,8 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                     onFileSelected: (file) async {
                       Uint8List imageData = await file.readAsBytes();
                       try {
-                        var compressedImageData =
-                            await ImageCompressionHelper.compress(
-                                imageData, 900);
                         final publicUrl = await DbImages.uploadImage(
-                            compressedImageData, occasion!.id, null);
+                            imageData, occasion!.id, null, profile: ImageUploadProfile.banner);
                         setState(() {
                           occasion!.data ??= {};
                           occasion!.data![Tb.occasions.data_image] = publicUrl;

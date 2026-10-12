@@ -5,7 +5,6 @@ import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/services/dialog_helper.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
@@ -255,11 +254,8 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
     if (file != null) {
       try {
         Uint8List imageData = await file.readAsBytes();
-        var compressedImageData = await ImageCompressionHelper.compress(
-            imageData, 3000,
-            quality: 100);
         final publicUrl = await DbImages.uploadImage(
-            compressedImageData, widget.blueprint!.occasion, null);
+            imageData, widget.blueprint!.occasion, null, profile: ImageUploadProfile.blueprintBackground);
         setState(() {
           widget.blueprint!.backgroundSvg = publicUrl;
         });

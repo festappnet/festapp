@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'html_document_codec.dart';
+import 'html_image_preview.dart';
 import 'html_text_style.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -162,9 +163,9 @@ class _HtmlViewState extends State<HtmlView> {
             return const Icon(Icons.broken_image_outlined);
           final bytes = widget.imageBytesResolver?.call(src);
           final img = bytes != null
-              ? Image.memory(bytes)
+              ? HtmlImagePreview(bytes)
               : src.startsWith('data:image/')
-                  ? Image.memory(base64Decode(src.split(',').last))
+                  ? HtmlImagePreview(base64Decode(src.split(',').last))
                   : CachedNetworkImage(
                       imageUrl: src,
                       cacheManager: DefaultCacheManager(),

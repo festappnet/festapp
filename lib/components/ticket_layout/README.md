@@ -212,14 +212,13 @@ would discard the migrated font/appearance contract; reload the deployed editor.
 
 ## Background upload quality
 
-`TicketBackgroundImage` owns the print-artwork preparation policy: 1080 px on
-the longer edge, JPEG quality 85, and an 800 KiB output budget below the existing
-10 MiB upload/PDF limit. Suitable PNG/JPEG inputs are kept byte-for-byte; PNG
-transparency is preserved. Oversized images scale down without upscaling or a
-second JPEG pass. The upload service passes the same limits to the Worker so its
-ordinary 1200 px / quality 70 defaults do not recompress prepared ticket artwork.
-EXIF orientation is baked when necessary, and other decoded formats become PNG
-for the shared PDF renderer. Native platforms prepare in a compute isolate.
+Backgrounds use the same `DbImages.uploadImage` → image Worker pipeline as all
+other app images. The client selects `ticket-background` and sends original
+bytes; the server owns the 1600 px edge, JPEG quality 90 and 2 MiB output
+budget. PNG remains lossless with transparency, EXIF orientation is applied by
+Cloudflare Images, and GIF/WebP print backgrounds become a still PNG. The editor
+loads and compares the processed artwork before changing its current preview.
+No browser JPEG/PNG encoder or separate ticket compression policy remains.
 
 QR colors are edited together in the shared color picker: foreground/background
 selection, HEX entry, paired preview and a swap action. Contrast gates Apply,

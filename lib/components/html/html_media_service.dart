@@ -12,6 +12,7 @@ import 'package:fstapp/components/images/image_file_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'html_document_codec.dart';
+import 'html_image_preview.dart';
 export 'html_document_codec.dart' show HtmlContentProfile;
 
 /// The destination scope is fixed when an editing session starts.
@@ -300,7 +301,12 @@ Future<Uint8List> _validateAndNormalize(Uint8List bytes) async {
     }
     // HEIC must be genuinely decoded and normalized. Unsupported platform
     // decoders fail explicitly rather than storing HEIC bytes with a JPG name.
-    codec = await descriptor.instantiateCodec();
+    final longerEdge = width > height ? width : height;
+    final previewScale = HtmlImagePreview.maxDecodeEdge / longerEdge;
+    codec = await descriptor.instantiateCodec(
+      targetWidth: format != null && previewScale < 1 ? (width * previewScale).round().clamp(1, width) : null,
+      targetHeight: format != null && previewScale < 1 ? (height * previewScale).round().clamp(1, height) : null,
+    );
     image = (await codec.getNextFrame()).image;
     if (format != null) return bytes;
     final normalized = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -338,7 +344,4 @@ Future<bool> _ownsImage(String source, HtmlMediaOwner owner) =>
         unit: owner.isUnit ? owner.id : null);
 Future<String> _uploadImage(Uint8List bytes, HtmlMediaOwner owner) =>
     DbImages.uploadImage(
-        bytes, owner.isUnit ? null : owner.id, owner.isUnit ? owner.id : null,
-        // Preserve GIF/WebP animation and source format. The input was validated and
-        // bounded; server transformation is unnecessary for this editor contract.
-        maxBytes: HtmlMediaDraft.maxImageBytes);
+        bytes, owner.isUnit ? null : owner.id, owner.isUnit ? owner.id : null);

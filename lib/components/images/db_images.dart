@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/images/image_control_client.dart';
 import 'image_file_format.dart';
+export 'image_upload_profile.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,24 +15,20 @@ class DbImages {
   /// Detect image format from magic bytes and return extension.
   static String _detectExtension(Uint8List data) => ImageFileFormat.detect(data).extension;
 
-  /// Upload an image to the shared Worker with optional server-side transform.
+  /// Upload original image bytes. The Worker owns all processing rules.
   ///
   /// The control API resolves the server-owned project registry from projectId.
   ///
   /// [imageData]   – raw image bytes.
   /// [occasion]    – occasion ID for permission check (mutually exclusive with [unit]).
   /// [unit]        – unit ID for permission check (mutually exclusive with [occasion]).
-  /// [maxEdge]     – longer-edge limit in px (Worker default: 1200).
-  /// [maxBytes]    – skip transform when file is smaller (Worker default: 800 KB).
-  /// [quality]     – JPEG quality 1-100 (Worker default: 70, ignored for PNG).
+  /// [profile] – purpose-specific server processing, standard by default.
   /// [endpoint] – explicit endpoint injection for tests.
   static Future<String> uploadImage(
     Uint8List imageData,
     int? occasion,
     int? unit, {
-    int? maxEdge,
-    int? maxBytes,
-    int? quality,
+    ImageUploadProfile profile = ImageUploadProfile.standard,
     String? endpoint,
   }) async {
     final session = _supabase.auth.currentSession;
@@ -48,9 +45,7 @@ class DbImages {
       accessToken: session.accessToken,
       occasionId: occasion,
       unitId: unit,
-      maxEdge: maxEdge,
-      maxBytes: maxBytes,
-      quality: quality,
+      profile: profile,
     );
   }
 
