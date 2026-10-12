@@ -223,15 +223,16 @@ describe('festapp_update_prompt.js', () => {
         assert.strictEqual(button(window, 'reload').textContent, 'Obnovit');
     });
 
-    test('version check stays silent until the matching worker is installed', async () => {
-        const { window } = boot({ buildVersion: '1.0.0+1', latestVersion: '1.0.0+2' });
+    test('a ready app offers the newer build before worker installation succeeds', async () => {
+        const { window } = boot({ buildVersion: '1.0.0+1', latestVersion: '1.0.0+2', appReady: true, activeWorkerWithoutUpdate: true });
         window.dispatchEvent(new window.Event('focus'));
         await flush();
 
         assert.ok(window.__fetchCalls.some((u) => u.includes('/festapp-version.json')),
             'should poll /festapp-version.json');
-        assert.strictEqual(banner(window), null,
-            'a manifest alone must not advertise a potentially incomplete deployment');
+        assert.ok(banner(window),
+            'worker preparation must not hide the update from an already running app');
+        assert.strictEqual(window.__navigationErrors.length, 0, 'offering an update must preserve in-progress edits');
     });
 
     test('newer build atomically activates its waiting worker before fallback UI', async () => {

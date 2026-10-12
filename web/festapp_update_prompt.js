@@ -590,10 +590,17 @@
         return;
       }
 
-      // Do not advertise a deployment merely because its manifest reached an
-      // edge cache. The matching worker proves that the executable core was
-      // downloaded and installed as one coherent shell.
-      if (!(await getReadyWorkerForVersion(latestVersion))) return;
+      // Inform an interactive app immediately. Installing a worker can stall
+      // or fail; it must not hide the update indefinitely. The explicit reload
+      // action still verifies and activates the coherent shell before cutover.
+      if (window.__FESTAPP_APP_READY__ === true) {
+        showUpdateBanner(latestVersion, 'new-version');
+        return;
+      }
+      if (!(await getReadyWorkerForVersion(latestVersion))) {
+        showUpdateBanner(latestVersion, 'new-version');
+        return;
+      }
 
       // A page still on its loader may already have hit an incomplete stale
       // shell, so recover it automatically. Once Flutter is running, preserve
