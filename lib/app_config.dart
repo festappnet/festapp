@@ -16,14 +16,14 @@ class AppConfig {
     defaultValue: anonKey,
   );
   static const String supabaseAuthStorageKey = 'sb-kjdpmixlnhntmxjedpxh-auth-token';
-  static const String backendActivationTenantId = '';
-  static const String backendActivationManifestUrl = '';
-  static const String backendActivationCanonicalManifestSha256 = '';
-  static const String backendActivationCanonicalSupabaseUrl = '';
-  static const String backendActivationCanonicalAnonKey = '';
-  static const int backendActivationCanonicalOrganizationId = 0;
-  static const String backendActivationCanonicalProfileSha256 = '';
-  static const String clientSyncTenantId = 'default';
+  static const String backendActivationTenantId = 'festapptickets';
+  static const String backendActivationManifestUrl = 'https://vstupenky.online/backend-activation.json';
+  static const String backendActivationCanonicalManifestSha256 = 'c964ba8e23a79e0a082a280d0a44fe3a424b5168eae0853f33d34c630b1cc31c';
+  static const String backendActivationCanonicalSupabaseUrl = 'https://api.festapp.net';
+  static const String backendActivationCanonicalAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M';
+  static const int backendActivationCanonicalOrganizationId = 3;
+  static const String backendActivationCanonicalProfileSha256 = '40ca6bdd5461d29f4497b41d08c86494ee03e71d98ba7903d632348b3ba13c4e';
+  static const String clientSyncTenantId = 'festapptickets';
   static const String appName = 'vstupenky.online';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
@@ -33,7 +33,7 @@ class AppConfig {
   static const bool isWebNotificationsSupported = true;
   static const String oneSignalAppId = '';
   static const String oneSignalWebAppId = '73f77f22-961a-4ded-9647-e33a7ac14f90';
-  static const String pushAppGeneration = '';
+  static const String pushAppGeneration = 'festapptickets_cutover_v1';
   static const String effectivePushAppGeneration = String.fromEnvironment(
     'FESTAPP_PUSH_APP_GENERATION',
     defaultValue: pushAppGeneration,
@@ -43,12 +43,12 @@ class AppConfig {
   static const String programLogoAsset = 'assets/icons/fstapplogo.svg';
   static const String defaultAdministrationRoute = AdminPage.ROUTE;
 
-  static int organization = 1;
+  static int organization = 3;
   //setup occasion id to force occasion
   static const String? forceOccasionLink = null;
   static const bool isPublicNotificationSendingDisabled = false;
   static const bool isAllUnit = false;
-  static const bool isAppSupported = true;
+  static const bool isAppSupported = false;
   static const bool isWebclientSupported = true;
   static const bool isContractFeatureEnabled = false;
   static const bool showBankSupportRole = false;
@@ -59,8 +59,8 @@ class AppConfig {
   static const String termsUrl = "https://vstupenky.online/terms/";
   static const String supportUrl = "https://vstupenky.online/support/";
   static const String deleteAccountUrl = "https://vstupenky.online/delete-account/";
-  static const String syncHeadOrigin = "";
-  static const String syncAssetOrigin = "";
+  static const String syncHeadOrigin = "https://sync.festapp.net";
+  static const String syncAssetOrigin = "https://assets.festapp.net";
   static const String imageApiUrl = 'https://image-api.festapp.net';
   static const String imageProjectId = 'default';
   static bool isProLicense = true;
