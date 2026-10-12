@@ -46,6 +46,17 @@ class _ActivityProbeState extends State<_ActivityProbe> {
 }
 
 void main() {
+  testWidgets('clicking Orders from history returns to current orders',
+      (tester) async {
+    final router = FixtureRouter(Access());
+    await mount(tester, router,
+        '/occasion-a/reservations/orders/history?filter=one&filter=two');
+    await tester.tap(find.text('Orders'));
+    await tester.pumpAndSettle();
+    expect(router.currentUrl,
+        '/occasion-a/reservations/orders/current?filter=one&filter=two');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets('nested forms route follows the containing tab activity',
       (tester) async {
     final activity = <bool>[];
@@ -249,7 +260,7 @@ void main() {
   });
 
   testWidgets(
-      'deep link, tab clicks and history retain the same nested selection',
+      'deep links select history and parent clicks return to current orders',
       (tester) async {
     final router = FixtureRouter(Access());
     await mount(tester, router, '/occasion-a/reservations/orders/history');
@@ -270,7 +281,7 @@ void main() {
     expect(find.text('FORMS LIST'), findsOneWidget);
     await tester.tap(find.text('Orders'));
     await tester.pumpAndSettle();
-    expect(router.currentUrl, '/occasion-a/reservations/orders/history');
+    expect(router.currentUrl, '/occasion-a/reservations/orders/current');
   });
   testWidgets('feature-disabled direct link replaces with first available tab',
       (tester) async {

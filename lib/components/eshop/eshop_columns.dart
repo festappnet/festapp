@@ -1,4 +1,5 @@
 import 'order_symbol_cell.dart';
+import 'order_grid_filters.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -120,47 +121,68 @@ class EshopColumns {
   // Define columns
   // These narrow identity columns use a tooltip rather than the shared
   // interactive help button, whose accessible controls require 160 px.
-  static Widget _compactOrderHeader(TrinaColumnTitleRendererContext r, String help) =>
-      Builder(builder: (context) => Tooltip(
-        message: '${r.column.title}\n$help',
-        child: Container(
-          height: r.height,
-          decoration: BoxDecoration(color: r.column.backgroundColor,
-              border: BorderDirectional(end: r.stateManager.style.enableColumnBorderVertical
-                  ? BorderSide(color: r.stateManager.style.borderColor) : BorderSide.none)),
-          padding: r.column.titlePadding ?? r.stateManager.style.defaultColumnTitlePadding,
-          child: Row(children: [
-            Expanded(child: Text(r.column.title,
-                style: r.stateManager.style.columnTextStyle,
-                maxLines: 1, overflow: TextOverflow.ellipsis)),
-            if (r.isFiltered) SizedBox(width: 24, child: IconButton(
-              padding: EdgeInsets.zero, iconSize: 18,
-              icon: const Icon(Icons.filter_alt_outlined),
-              onPressed: () => r.stateManager.showFilterPopup(context, calledColumn: r.column),
-            )),
-            if (r.showContextIcon) SizedBox(width: 24, child: r.contextMenuIcon),
-          ]),
-        ),
-      ));
+  static Widget _compactOrderHeader(
+          TrinaColumnTitleRendererContext r, String help) =>
+      Builder(
+          builder: (context) => Tooltip(
+                message: '${r.column.title}\n$help',
+                child: Container(
+                  height: r.height,
+                  decoration: BoxDecoration(
+                      color: r.column.backgroundColor,
+                      border: BorderDirectional(
+                          end: r.stateManager.style.enableColumnBorderVertical
+                              ? BorderSide(
+                                  color: r.stateManager.style.borderColor)
+                              : BorderSide.none)),
+                  padding: r.column.titlePadding ??
+                      r.stateManager.style.defaultColumnTitlePadding,
+                  child: Row(children: [
+                    Expanded(
+                        child: Text(r.column.title,
+                            style: r.stateManager.style.columnTextStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)),
+                    if (r.isFiltered)
+                      SizedBox(
+                          width: 24,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            iconSize: 18,
+                            icon: const Icon(Icons.filter_alt_outlined),
+                            onPressed: () => r.stateManager.showFilterPopup(
+                                context,
+                                calledColumn: r.column),
+                          )),
+                    if (r.showContextIcon)
+                      SizedBox(width: 24, child: r.contextMenuIcon),
+                  ]),
+                ),
+              ));
 
   static TrinaColumn orderSequenceColumn() => TrinaColumn(
-    readOnly: true,
-    enableEditingMode: false,
-    title: OrdersStrings.gridOrderSequence,
-    field: ORDER_SEQUENCE,
-    type: TrinaColumnType.number(format: "#", defaultValue: null),
-    width: 76,
-    titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSequenceHelp),
-  );
+        readOnly: true,
+        enableEditingMode: false,
+        title: OrdersStrings.gridOrderSequence,
+        field: ORDER_SEQUENCE,
+        type: TrinaColumnType.number(format: "#", defaultValue: null),
+        width: 76,
+        titleRenderer: (r) =>
+            _compactOrderHeader(r, OrdersStrings.gridOrderSequenceHelp),
+      );
 
   static double _orderSymbolWidth(BuildContext context) {
     final painter = TextPainter(
-      text: TextSpan(text: '9W9W9W9W9W', style: DefaultTextStyle.of(context).style
-          .merge(TrinaGridStyleConfig.defaultLightCellTextStyle)),
+      text: TextSpan(
+          text: '9W9W9W9W9W',
+          style: DefaultTextStyle.of(context)
+              .style
+              .merge(TrinaGridStyleConfig.defaultLightCellTextStyle)),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     )..layout();
-    final width = (painter.width + 46).ceilToDouble().clamp(144.0, double.infinity);
+    final width =
+        (painter.width + 46).ceilToDouble().clamp(144.0, double.infinity);
     painter.dispose();
     return width;
   }
@@ -170,9 +192,11 @@ class EshopColumns {
         enableEditingMode: true,
         title: OrdersStrings.gridOrderSymbol,
         field: ORDER_SYMBOL,
-        renderer: (r) => OrderSymbolCell(symbol: r.cell.value?.toString() ?? '',
+        renderer: (r) => OrderSymbolCell(
+            symbol: r.cell.value?.toString() ?? '',
             style: r.stateManager.style.cellTextStyle),
-        titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
+        titleRenderer: (r) =>
+            _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
         type: TrinaColumnType.text(),
         width: context == null ? 144 : _orderSymbolWidth(context),
       );
@@ -556,6 +580,8 @@ class EshopColumns {
             enableAutoEditing: true,
             title: OrdersStrings.gridHiddenNote,
             field: TICKET_NOTE_HIDDEN,
+            checkReadOnly: (row, _) =>
+                !OrderGridFilters.ticketIsNonCancelled(row),
             type: TrinaColumnType.text(),
             width: 200,
           ),
@@ -692,6 +718,8 @@ class EshopColumns {
             enableAutoEditing: true,
             title: OrdersStrings.gridHiddenNote,
             field: ORDER_NOTE_HIDDEN,
+            checkReadOnly: (row, _) =>
+                !OrderGridFilters.orderIsNonCancelled(row),
             type: TrinaColumnType.text(),
             width: 200,
           ),
@@ -816,18 +844,21 @@ class EshopColumns {
                 width: 150,
                 renderer: (rendererContext) {
                   return ElevatedButton(
-                    onPressed: () async {
-                      final ticketId =
-                          rendererContext.row.cells[TICKET_ID]!.value as int;
-                      final changed =
-                          await _showTicketProducts(context, ticketId);
-                      if (changed == true) {
-                        var afterFunction = data[TICKET_PRODUCTS_EDIT];
-                        if (afterFunction is Future<void> Function()?) {
-                          afterFunction?.call();
-                        }
-                      }
-                    },
+                    onPressed: OrderGridFilters.ticketIsNonCancelled(
+                            rendererContext.row)
+                        ? () async {
+                            final ticketId = rendererContext
+                                .row.cells[TICKET_ID]!.value as int;
+                            final changed =
+                                await _showTicketProducts(context, ticketId);
+                            if (changed == true) {
+                              var afterFunction = data[TICKET_PRODUCTS_EDIT];
+                              if (afterFunction is Future<void> Function()?) {
+                                afterFunction?.call();
+                              }
+                            }
+                          }
+                        : null,
                     child: Row(
                       children: [
                         const Icon(Icons.category),
@@ -853,7 +884,9 @@ class EshopColumns {
                       rendererContext.row.cells[TICKET_STATE]?.value as String?;
                   final isUsed =
                       formattedState?.split(';').first == OrderModel.usedState;
-                  final canToggleUsage = canToggleTicketUsage(formattedState);
+                  final canToggleUsage = canToggleTicketUsage(formattedState) &&
+                      OrderGridFilters.ticketIsNonCancelled(
+                          rendererContext.row);
                   final actionLabel = isUsed
                       ? OrdersStrings.restoreTicket
                       : OrdersStrings.confirmTicket;
@@ -941,7 +974,8 @@ class EshopColumns {
                 width: 150,
                 renderer: (ctx) {
                   final val = ctx.cell.value?.toString() ?? "";
-                  final canUpdate = RightsService.canUpdateOrders();
+                  final canUpdate = RightsService.canUpdateOrders() &&
+                      OrderGridFilters.orderIsNonCancelled(ctx.row);
                   return Row(
                     children: [
                       InkWell(
@@ -1240,7 +1274,8 @@ class EshopColumns {
           TrinaColumn(
             title: OrdersStrings.gridOrderSymbol,
             field: HISTORY_ORDER_SYMBOL,
-            renderer: (r) => OrderSymbolCell(symbol: r.cell.value?.toString() ?? '',
+            renderer: (r) => OrderSymbolCell(
+                symbol: r.cell.value?.toString() ?? '',
                 style: r.stateManager.style.cellTextStyle),
             type: TrinaColumnType.text(),
             readOnly: true,
@@ -1359,6 +1394,8 @@ class EshopColumns {
       {bool alignToEnd = true, bool enableEditing = false}) {
     return TrinaColumn(
       readOnly: !enableEditing,
+      checkReadOnly: (row, _) =>
+          !enableEditing || !OrderGridFilters.ticketIsNonCancelled(row),
       enableEditingMode: true,
       title: title,
       field: field,

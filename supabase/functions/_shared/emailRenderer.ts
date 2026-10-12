@@ -1,3 +1,4 @@
+import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
 import { supabaseAdmin } from "./supabaseUtil.ts";
 import { prepareTicketRenderer } from "./ticketGeneration.ts";
@@ -25,6 +26,9 @@ export type EmailRow = {
 export async function renderQueuedEmail(
   row: EmailRow,
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
+  if (row.message_kind === "custom" && row.code === "NEW_USER_FIRST_LOGIN") {
+    return { prepared: firstLoginEmail(row.recipient, row.data, Deno.env.get("DEFAULT_EMAIL") ?? ""), postAction: { tracking_policy: "disabled" } };
+  }
   if (row.message_kind === "order_tickets") {
     const result = await emailRpc("get_order_details_for_email", {
       p_order_id: row.order_id,

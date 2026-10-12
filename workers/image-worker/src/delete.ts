@@ -10,6 +10,7 @@ import {
 import { assertControlHost, ProjectResolutionError, resolveControlProject } from './project-registry';
 import { purgeSourceUrl } from './purge';
 import { errorResponse, jsonResponse } from './responses';
+import { isPrivateKey } from './private-key';
 
 const MAX_DELETE_LINKS = 50;
 
@@ -50,11 +51,11 @@ export async function handleDelete(request: Request, env: Env): Promise<Response
   }
   const auth: SupabaseAuth = { supabaseUrl: project.supabaseUrl, anonKey: project.anonKey };
 
-  if (body.key !== undefined && body.key.startsWith('private/')) {
+  if (typeof body.key === 'string' && body.key.startsWith('private/')) {
     if (!project.supportsPrivate) {
       return errorResponse(400, 'PRIVATE_NOT_SUPPORTED', 'Private images are not supported for this project');
     }
-    if (!/^private\/[A-Za-z0-9._/-]+$/.test(body.key) || body.key.includes('..')) {
+    if (!isPrivateKey(body.key)) {
       return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Only canonical private keys may be deleted by key');
     }
     if (!await checkIsEditorOnAnyOccasion(jwt, auth)) return errorResponse(403, 'FORBIDDEN', 'Forbidden');

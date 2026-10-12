@@ -262,6 +262,31 @@ void main() {
     expect(router.currentUrl, '/occasion-a/reservations/forms?list=true');
     expect(find.text('FORM LIST'), findsOneWidget);
   });
+  for (final single in [true, false]) {
+    testWidgets('form breadcrumb returns to editor (single: $single)',
+        (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final router = ObjectFixture();
+      if (single)
+        router.forms =
+            (_) async => [FormModel(id: 2, link: 'second', title: 'Second')];
+      await mount(
+          tester, router, '/occasion-a/reservations/forms/second/design');
+      expect(find.text('FORM DESIGN'), findsOneWidget);
+      await tester.tap(find.text('Second'));
+      if (!single) {
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Second').last);
+      }
+      await tester.pumpAndSettle();
+      expect(router.currentUrl, '/occasion-a/reservations/forms/second/editor');
+      expect(find.text('FORM EDITOR'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
   for (final id in ['deleted', 'foreign']) {
     testWidgets('a $id form never creates its child', (tester) async {
       final router = ObjectFixture();

@@ -18,6 +18,19 @@ node "$TMP_ROOT/automation/release/render_legal_pages.mjs" --validate >/dev/null
 node "$TMP_ROOT/automation/release/render_legal_pages.mjs" >/dev/null
 node "$TMP_ROOT/automation/release/render_legal_pages.mjs" --check >/dev/null
 
+node --input-type=module - "$TMP_ROOT" <<'JS'
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const root = process.argv[2];
+const policy = fs.readFileSync(`${root}/web/privacy/index.html`, 'utf8');
+assert.match(policy, /<h2>Kdo odpovídá za vaše údaje<\/h2>/);
+assert.match(policy, /href="mailto:info@festapp.net"/);
+assert.match(policy, /href="\/privacy\/" data-legal-link aria-current="page"/);
+assert.match(policy, /class="app-close"/);
+assert.match(policy, /class="theme-toggle"/);
+assert.doesNotMatch(policy, /<p>## /);
+JS
+
 sed -i.bak '/^TERMS_URL=/d' "$TMP_ROOT/automation/project.conf"
 if node "$TMP_ROOT/automation/release/render_legal_pages.mjs" --validate >/dev/null 2>&1; then
   echo "Missing TERMS_URL unexpectedly passed"

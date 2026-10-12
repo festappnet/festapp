@@ -44,6 +44,9 @@ DECLARE
     v_ticket_type_id bigint;
     v_price numeric;
     v_paid numeric;
+    v_message_id uuid;
+    v_used_ticket bigint;
+    v_storno_ticket bigint;
 BEGIN
     -- 1. Create Initial Order
     INSERT INTO eshop.payment_info (variable_symbol, amount, currency_code, bank_account, created_at, paid)
@@ -145,6 +148,54 @@ BEGIN
         RAISE EXCEPTION 'Scenario 4 Failed: Expected Price 200.0, got %', v_price;
     END IF;
     RAISE NOTICE 'Scenario 4 (Sequential Idempotency) PASSED. Price: %', v_price;
+
+    -- SCENARIO 5: Discounting the final product to zero must make tickets
+    -- eligible for the real email acceptance projection, not just the order.
+    UPDATE public.occasions
+    SET organization = 777, is_order_synchronization_enabled = true,
+        features = '[{"code":"ticket","is_enabled":true}]'::jsonb
+    WHERE id = 777;
+    UPDATE eshop.orders SET data = data || '{"email":"free-ticket@example.invalid"}'::jsonb
+    WHERE id = v_order_id;
+    INSERT INTO eshop.tickets(occasion,state) VALUES(777,'used') RETURNING id INTO v_used_ticket;
+    INSERT INTO eshop.tickets(occasion,state) VALUES(777,'storno') RETURNING id INTO v_storno_ticket;
+    INSERT INTO eshop.order_product_ticket("order",ticket)
+    VALUES(v_order_id,v_used_ticket),(v_order_id,v_storno_ticket);
+
+    PERFORM public.update_ticket_products_wsv2(v_ticket_id, '[{"id":8002,"price":0}]'::jsonb);
+    PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=v_order_id),0::numeric,'discount makes order free');
+    PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=v_order_id),'paid','free order is paid');
+    PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=v_ticket_id),'paid','discount makes ordered ticket eligible for delivery');
+    SELECT message_id INTO v_message_id FROM public.email_messages
+    WHERE order_id=v_order_id AND message_kind='order_tickets'
+      AND source_version=(SELECT email_payment_version FROM eshop.orders WHERE id=v_order_id);
+    PERFORM assert_not_null(v_message_id,'free order enqueues ticket delivery');
+    UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now(),
+        post_action=jsonb_build_object('ticket_ids',jsonb_build_array(v_ticket_id,v_used_ticket,v_storno_ticket))
+    WHERE message_id=v_message_id;
+    PERFORM public.apply_email_post_actions(v_message_id);
+    PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=v_order_id),'sent','acceptance marks free order sent');
+    PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=v_ticket_id),'sent','acceptance marks discounted ticket sent');
+    PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=v_used_ticket),'used','discount and delivery preserve used ticket');
+    PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=v_storno_ticket),'storno','discount and delivery preserve cancelled ticket');
+
+    -- The Client Sync command delegates to this internal boundary.
+    UPDATE eshop.orders SET state='ordered',price=200,
+        data=jsonb_set(data,ARRAY['tickets','0','products'], '[{"id":8002,"price":200}]'::jsonb)
+    WHERE id=v_order_id;
+    UPDATE eshop.payment_info SET amount=200 WHERE id=v_payment_info_id;
+    UPDATE eshop.tickets SET state='ordered' WHERE id=v_ticket_id;
+    PERFORM public.update_ticket_products_internal_v1(v_ticket_id,'[{"id":8002,"price":0}]'::jsonb);
+    PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=v_ticket_id),'paid','sync price edit pays ordered ticket');
+    SELECT message_id INTO v_message_id FROM public.email_messages
+    WHERE order_id=v_order_id AND message_kind='order_tickets'
+      AND source_version=(SELECT email_payment_version FROM eshop.orders WHERE id=v_order_id);
+    PERFORM assert_not_null(v_message_id,'sync price edit enqueues the current ticket delivery');
+    UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now(),
+        post_action=jsonb_build_object('ticket_ids',jsonb_build_array(v_ticket_id))
+    WHERE message_id=v_message_id;
+    PERFORM public.apply_email_post_actions(v_message_id);
+    PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=v_ticket_id),'sent','sync discounted ticket projects to sent');
 
 END $$;
 

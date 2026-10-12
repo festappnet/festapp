@@ -8,6 +8,7 @@ import {
 } from './auth';
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
+import { isPrivateKey } from './private-key';
 
 /** Absolute maximum upload size (before any transform). */
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -151,8 +152,10 @@ export async function handleUpload(
   // Use explicit key for private uploads, otherwise generate one
   const explicitKey = formData.get('key') as string | null;
   let key: string;
-  if (explicitKey && /^private\/[A-Za-z0-9._/-]+$/.test(explicitKey) &&
-      !explicitKey.includes('..') && explicitKey.length <= 1024) {
+  if (explicitKey && !project.supportsPrivate) {
+    return errorResponse(400, 'PRIVATE_NOT_SUPPORTED', 'Private images are not supported for this project');
+  }
+  if (explicitKey && isPrivateKey(explicitKey)) {
     key = explicitKey;
   } else if (explicitKey) {
     return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Explicit keys must be canonical private keys');

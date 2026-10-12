@@ -1,3 +1,8 @@
+import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
+import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:fstapp/components/eshop/models/product_type_model.dart';
 import 'package:fstapp/components/forms/views/form_design_content.dart';
 import 'package:fstapp/components/forms/views/form_settings_content.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -25,6 +30,84 @@ void main() {
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>));
   });
+  for (final canManage in [true, false]) {
+    for (final hasCzkAccount in [true, false]) {
+      testWidgets(
+          'bank guidance handles missing currencies and access ($canManage, $hasCzkAccount)',
+          (tester) async {
+        tester.view.physicalSize = const Size(1600, 1400);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          unit: UnitModel(id: 5),
+          unitUser: OccasionUserModel(isEditor: canManage),
+          occasionUser: OccasionUserModel(isEditor: true),
+          occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [FormFeature(code: 'form')]),
+        );
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final accounts = hasCzkAccount
+            ? [
+                BankAccountModel(
+                    id: 1, title: 'CZK account', supportedCurrencies: ['CZK'])
+              ]
+            : <BankAccountModel>[];
+        final field = FormFieldModel(
+            productType: ProductTypeModel(products: [
+          ProductModel(currencyCode: 'CZK'),
+          ProductModel(currencyCode: 'EUR')
+        ]));
+        await tester.pumpWidget(MaterialApp(
+            home: FormSettingsContent(
+          formLink: 'test',
+          loadBundle: (_) async => FormEditBundle(
+            form: FormModel(
+                link: 'test',
+                relatedFields: [field],
+                availableBankAccounts: accounts,
+                data: {}),
+            formFields: [field],
+            productTypes: [],
+            products: [],
+            availableBankAccounts: accounts,
+          ),
+        )));
+        await tester.pumpAndSettle();
+        expect(
+            find.text(BankAccountStrings.missingAccountForCurrencies(
+                hasCzkAccount ? 'EUR' : 'CZK, EUR')),
+            findsOneWidget);
+        expect(
+            find.text(canManage
+                ? BankAccountStrings.addAccountForPayments
+                : BankAccountStrings.askManagerForPaymentAccount,
+                findRichText: true),
+            findsOneWidget);
+        final guidance = tester.widget<Text>(find.byWidgetPredicate(
+            (widget) => widget is Text &&
+                widget.textSpan?.toPlainText() ==
+                    (canManage
+                        ? BankAccountStrings.addAccountForPayments
+                        : BankAccountStrings.askManagerForPaymentAccount)));
+
+        final links = (guidance.textSpan! as TextSpan)
+            .children!
+            .whereType<TextSpan>()
+            .where((span) => span.recognizer != null);
+        expect(links.length, canManage ? 1 : 0);
+        if (canManage) {
+          expect(links.single.text, BankAccountStrings.organizationSettings);
+          expect(links.single.style?.decoration, TextDecoration.underline);
+        }
+        expect(find.text('Spravovat účty'), findsNothing);
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+  }
   testWidgets('failed loading leaves the spinner and retry recovers',
       (tester) async {
     var calls = 0;

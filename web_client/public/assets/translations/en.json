@@ -427,7 +427,8 @@
     "depositOnSiteLabel": "On site",
     "paymentReference": "Payment reference",
     "shortTitleHelp": "Name printed on the ticket, for example for dinner. If empty, the full product name is used.",
-    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit."
+    "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit.",
+    "validApplications": "Valid applications"
   },
   "FormsFeature": {
     "showDepositDescription": "Show deposit / surcharge note on products",
@@ -1328,6 +1329,9 @@
     "uploadImageSuccess": "File uploaded successfully."
   },
   "FeatureUser": {
+    "signupLegalNotice": "By clicking “{button}”, you agree to the {terms} and acknowledge the {privacy}.",
+    "signupTerms": "terms of use",
+    "signupPrivacy": "privacy policy",
     "credentialsSent": "Login credentials have been sent to",
     "passwordResetSent": "Password reset email has been sent.",
     "enterEmailReset": "Enter your email to receive a password reset link.",
@@ -1455,7 +1459,18 @@
     "googleCode": "Verification code",
     "googleUnlink": "Disconnect Google",
     "googlePasswordVisibility": "Show or hide password",
-    "googleMfa": "Enter the six-digit code from your authenticator app or SMS."
+    "googleMfa": "Enter the six-digit code from your authenticator app or SMS.",
+    "addEvent": "Create your own event",
+    "addEventShort": "+ Event",
+    "myEvents": "My events",
+    "createAccount": "Create account",
+    "emailAlternative": "or with email",
+    "emailExample": "jane@example.com",
+    "firstNameExample": "Jane",
+    "lastNameExample": "Smith",
+    "passwordPlaceholder": "Your password",
+    "existingAccountPrompt": "Already have an account?",
+    "newAccountPrompt": "Don’t have an account yet?"
   },
   "Common": {
     "fieldCannotBeEmpty": "Field cannot be empty",
@@ -1581,9 +1596,12 @@
     "user": "User",
     "discardChanges": "Discard changes",
     "discardChangesConfirmation": "Discard unsaved changes?",
-    "keepEditing": "Keep editing"
+    "keepEditing": "Keep editing",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "BankAccount": {
+    "organizationSettings": "organization settings",
     "settingsTitle": "Bank Account Settings",
     "generalTab": "General",
     "fioTokenTab": "FIO Token",
@@ -1809,6 +1827,15 @@
     "foodCreateHint": "To create food, fill in the title, unique code, and the reference of the event."
   },
   "Unit": {
+    "appLanding": "Default app event",
+    "setAppLanding": "Set as default app event",
+    "clearAppLanding": "Remove as default app event",
+    "landingOverview": "The app opens the event card overview.",
+    "landingSelected": "The app opens: {}",
+    "landingScope": "Applies to the whole application, across all units.",
+    "landingAdminOnly": "Only an organization administrator can change this setting.",
+    "landingLoadFailed": "Could not load the opening screen setting. Retry",
+    "landingForced": "The opening screen is fixed in this app build.",
     "addNewEvent": "Add New Event",
     "createCopy": "Create Copy",
     "createCopyConfirm": "Do you want to create copy of this event?",
@@ -2440,6 +2467,8 @@
     "product": "Product",
     "count": "Count",
     "applicationTimeline": "Application activity over time",
-    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time."
+    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
+    "onlyValid": "Valid only",
+    "includingCancelled": "Including cancelled"
   }
 }

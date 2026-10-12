@@ -1,9 +1,8 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:trina_grid/trina_grid.dart';
+import 'package:fstapp/widgets/info_tooltip_button.dart';
 // TrinaGrid exports this public widget only through its UI library.
 // ignore: implementation_imports
 import 'package:trina_grid/src/ui/ui.dart' show CheckboxAllSelectionWidget;
@@ -83,10 +82,8 @@ class _InstalledHeader {
 }
 
 class _DataGridColumnHeaderState extends State<DataGridColumnHeader> {
-  GlobalKey<TooltipState> _tooltipKey = GlobalKey<TooltipState>();
+  final _helpKey = GlobalKey<InfoTooltipButtonState>();
   final _buttonFocus = FocusNode();
-  Timer? _dismissTimer;
-  bool _tooltipActive = false;
   TrinaCell? _lastCell;
 
   TrinaGridStateManager get _manager => widget.rendererContext.stateManager;
@@ -122,38 +119,12 @@ class _DataGridColumnHeaderState extends State<DataGridColumnHeader> {
     });
   }
 
-  // Tooltip exposes only a global dismissal API. Replacing this local tooltip
-  // disposes its overlay without closing unrelated tooltips elsewhere in the app.
-  void _dismiss({bool restoreButtonFocus = false}) {
-    _dismissTimer?.cancel();
-    if (!mounted || !_tooltipActive) return;
-    _tooltipActive = false;
-    final restoreFocus = restoreButtonFocus && _buttonFocus.hasFocus;
-    setState(() => _tooltipKey = GlobalKey<TooltipState>());
-    if (restoreFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _buttonFocus.requestFocus();
-      });
-    }
-  }
-
-  void _show() {
-    _tooltipActive = true;
-    _tooltipKey.currentState?.ensureTooltipVisible();
-    // ensureTooltipVisible is persistent in this SDK; showDuration alone does
-    // not limit manual activation.
-    _dismissTimer?.cancel();
-    _dismissTimer = Timer(
-      const Duration(seconds: 10),
-      () => _dismiss(restoreButtonFocus: true),
-    );
-  }
+  void _dismiss() => _helpKey.currentState?.dismiss();
 
   @override
   void dispose() {
     _manager.removeListener(_onGridChanged);
     _manager.scroll.horizontal?.removeOffsetChangedListener(_dismiss);
-    _dismissTimer?.cancel();
     _buttonFocus.dispose();
     super.dispose();
   }
@@ -196,55 +167,12 @@ class _DataGridColumnHeaderState extends State<DataGridColumnHeader> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Focus(
-              canRequestFocus: false,
-              onKeyEvent: (_, event) {
-                if (event is KeyDownEvent &&
-                    event.logicalKey == LogicalKeyboardKey.escape) {
-                  _dismiss(restoreButtonFocus: true);
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onHorizontalDragStart: (_) => _dismiss(),
-                onHorizontalDragUpdate: (_) {},
-                onHorizontalDragEnd: (_) {},
-                child: MouseRegion(
-                  onEnter: (_) => _tooltipActive = true,
-                  child: Tooltip(
-                    key: _tooltipKey,
-                    message: widget.help,
-                    excludeFromSemantics: true,
-                    triggerMode: TooltipTriggerMode.manual,
-                    waitDuration: const Duration(milliseconds: 350),
-                    exitDuration: const Duration(milliseconds: 100),
-                    showDuration: const Duration(seconds: 10),
-                    constraints: BoxConstraints(
-                      maxWidth: math.min(
-                        360,
-                        math.max(0, MediaQuery.sizeOf(context).width - 32),
-                      ),
-                    ),
-                    child: Semantics(
-                      label: '${column.title}: ${widget.help}',
-                      child: IconButton(
-                        focusNode: _buttonFocus,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints.tightFor(
-                          width: DataGridColumnHeader._hitSize,
-                          height: DataGridColumnHeader._hitSize,
-                        ),
-                        iconSize: 18,
-                        color: style.iconColor,
-                        onPressed: _show,
-                        icon: const Icon(Icons.info_outline),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            InfoTooltipButton(
+              key: _helpKey,
+              message: widget.help,
+              semanticLabel: '${column.title}: ${widget.help}',
+              focusNode: _buttonFocus,
+              color: style.iconColor,
             ),
             if (_manager.isFilteredColumn(column) && filter != null)
               SizedBox(

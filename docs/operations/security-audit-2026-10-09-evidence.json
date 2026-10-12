@@ -1,0 +1,389 @@
+{
+  "checked_at": "2026-10-08T23:43:54.607793+00:00",
+  "production_scope": {
+    "tenant": "festapp",
+    "organization": 1,
+    "transport": "persisted SSH with project-scoped ProxyCommand override",
+    "identity_verified": true,
+    "transaction": "READ ONLY",
+    "customer_rows_queried": false,
+    "production_writes": false
+  },
+  "production_grants": {
+    "user_info_org_update": false,
+    "user_info_email_update": false,
+    "event_users_anon_select": true,
+    "event_users_auth_delete": false,
+    "event_users_auth_insert": false,
+    "event_users_auth_update": false,
+    "user_info_delivery_update": false
+  },
+  "functions": [
+    {
+      "signature": "add_user_to_unit(bigint,uuid)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "ce8d9d3f6f6f6587b4ecdf259ae468f7afba076f02d0a63f93b08edda2d48964",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "get_bank_account_users(bigint)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "5fe914dae46f458b1b48dfb9d692a4648e1645006d6ffb6da80b8b8452a2f996",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "get_bank_account_users(bigint,bigint)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "52dccecae4554c60929ad0db223157407e088cb87f6bb4f467144deee0afd103",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "get_entity_email_templates(text,bigint)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "b068d1318fd5bb89f8dca9847cc2f65e2fd397abd1df97e5591ab617585e79e7",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "get_is_editor_on_any_occasion()",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "096ba0cef6c526bfc994cd2db0222446695fe4319dc436a55169b7bfe0889cca",
+      "matches_isolated_local_definition": null
+    },
+    {
+      "signature": "get_last_sign_in_at(uuid)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "9fa52055e8b1a4fc3e3f89830b3953b1531c98052fa5b46adcfdaaed721552cd",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "get_user_id_by_email(text)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "64923aeb9fed879ea459a84363c846b273e7793d666f8a9a29d518ee89687389",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)",
+      "definer": true,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "definition_sha256": "9fe830bfcf689091091b2e6044edde915b11f28d53390f42e9fb62510b7eeab1",
+      "matches_isolated_local_definition": null
+    },
+    {
+      "signature": "reset_password_via_scan(bigint,text,text)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "5a9c18401263c4863af8cee64c2371f909493c8fc7bde465472ac6675bc11d48",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "reset_user_password(uuid,text)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "76382d4a48e68a8e815aeccb345e95f7bbd23d50bf641fd9943fe50eaa6e12d9",
+      "matches_isolated_local_definition": null
+    },
+    {
+      "signature": "scan_ticket(text,text)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "4597bf77a6da209cb75a62a795c3ccf2eb6b757889bf7e2b1863f7206ebda328",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "sign_user_out_of_event(bigint,uuid)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "0a86714abb0639e04ed191cfe616b645f88f53333f365dfe19319e7c2c7c6b24",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "sign_user_to_event(bigint,uuid)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "04beb87535fce1b3a2a348bf2700e8b196db5544f29f895b040b769028f78de3",
+      "matches_isolated_local_definition": true
+    },
+    {
+      "signature": "update_ticket_to_used(bigint,text)",
+      "definer": true,
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "definition_sha256": "0838ee9af67d97b156285fb3992785c287d29f4ee8237a276dcc1db14fdc297b",
+      "matches_isolated_local_definition": true
+    }
+  ],
+  "local_sql": {
+    "checks": 51,
+    "candidate_checks": 19,
+    "existing_integration_scenarios": 3,
+    "all_assertions_passed": true,
+    "changes_rolled_back": true,
+    "checks_detail": [
+      {
+        "name": "scan_wrong_code_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "scan_valid_code_works",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_scan_null_exposes_order",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_scan_null_has_order",
+        "assertion_passed": true
+      },
+      {
+        "name": "mark_wrong_code_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_mark_null_accepted",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_mark_null_changes_state",
+        "assertion_passed": true
+      },
+      {
+        "name": "mark_valid_code_works",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anonymous_signin",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anonymous_signout",
+        "assertion_passed": true
+      },
+      {
+        "name": "owner_signin_works",
+        "assertion_passed": true
+      },
+      {
+        "name": "owner_signout_works",
+        "assertion_passed": true
+      },
+      {
+        "name": "editor_signin_works",
+        "assertion_passed": true
+      },
+      {
+        "name": "editor_signout_works",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anon_unit_membership",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anon_unit_membership_persisted",
+        "assertion_passed": true
+      },
+      {
+        "name": "single_argument_bank_overload_is_ambiguous",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anon_bank_users_overload",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anon_email_lookup",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anon_last_signin",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_anon_participation_read",
+        "assertion_passed": true
+      },
+      {
+        "name": "FALSE_POSITIVE_direct_attendance_write",
+        "assertion_passed": true
+      },
+      {
+        "name": "FALSE_POSITIVE_profile_identity_write",
+        "assertion_passed": true
+      },
+      {
+        "name": "direct_attendance_insert_is_denied",
+        "assertion_passed": true
+      },
+      {
+        "name": "direct_profile_identity_update_is_denied",
+        "assertion_passed": true
+      },
+      {
+        "name": "occasion_templates_are_transitively_guarded",
+        "assertion_passed": true
+      },
+      {
+        "name": "VULNERABILITY_unit_templates_metadata_unguarded",
+        "assertion_passed": true
+      },
+      {
+        "name": "live_legacy_late_membership_call_is_guarded",
+        "assertion_passed": true
+      },
+      {
+        "name": "live_legacy_failed_call_leaves_no_membership",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_scan_null_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_scan_valid_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_scan_wrong_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_mark_null_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_mark_null_no_state_change",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_mark_valid_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_anonymous_signin_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_anonymous_signout_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_wrong_actor_rejected",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_wrong_actor_no_membership",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_owner_signin_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_duplicate_signin_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_owner_signout_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_editor_signin_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_editor_signout_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_companion_signin_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_companion_signout_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_disabled_workshops_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "candidate_full_event_unchanged",
+        "assertion_passed": true
+      },
+      {
+        "name": "existing_integration_full_deposit_flow",
+        "assertion_passed": true
+      },
+      {
+        "name": "existing_integration_on_site_surcharge_flow",
+        "assertion_passed": true
+      },
+      {
+        "name": "existing_integration_overpayment_flow",
+        "assertion_passed": true
+      }
+    ]
+  },
+  "browser": {
+    "engine": "isolated headless Chrome",
+    "real_project_modules_bundled": true,
+    "html_label_payload_executed_automatically": true,
+    "sanitized_javascript_url_executed_after_click": true,
+    "benign_rich_formatting_preserved": true,
+    "checkbox_before": false,
+    "checkbox_after": true
+  },
+  "image_worker": {
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "dependencies_mocked": [
+      "Supabase fetch",
+      "R2 bucket"
+    ],
+    "real_worker_router_and_handlers": true,
+    "tests_detail": [
+      "rejects missing token before bucket access",
+      "rejects callers failing the editor check",
+      "confirms any editor reads arbitrary private keys",
+      "confirms the same editor signs arbitrary private keys for seven days"
+    ]
+  },
+  "public_http_probe": [
+    {
+      "check": "bank_users_two_parameters",
+      "status": 403,
+      "contentType": "text/plain; charset=UTF-8",
+      "redirected": false,
+      "json": false
+    }
+  ],
+  "not_validated": [
+    "production exploit execution",
+    "full application E2E",
+    "all frontend rendering paths after a sanitizer replacement",
+    "invitation flow migration",
+    "private object ownership migration"
+  ]
+}

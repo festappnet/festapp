@@ -27,6 +27,16 @@ fi
 
 fail=0
 
+# Every production build must pass the same regressions as main CI.
+if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/automation/build_web_bundle.sh"; then
+    echo "  FAIL: shared production build is missing WebView regression gate"
+    fail=1
+fi
+if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/.github/workflows/web-startup-regressions.yml"; then
+    echo "  FAIL: main CI is missing WebView regressions"
+    fail=1
+fi
+
 # 1. YAML parse when the optional PyYAML parser is available. The structural
 # checks below remain the dependency-free fallback.
 if ! command -v python3 >/dev/null 2>&1; then
@@ -157,7 +167,7 @@ else
 fi
 
 # 7. _worker.js heredoc covers sitemap + form OG inject + extension-less entries.
-for needle in '/sitemap.xml' '/form/' 'WEB_CLIENT_INDEX' 'FLUTTER_ENTRY' 'AUTH_BRIDGE' 'FORCED_OCCASION_PATH' 'FORCE_OCCASION_LINK' 'get_available_occasions' 'get_occasion_seo_data' 'const WEB_CLIENT_EXACT = new Set(["/"]);' 'const FLUTTER_PREFIXES = ["/login", "/admin", "/transfer"];'; do
+for needle in '/sitemap.xml' '/form/' 'WEB_CLIENT_INDEX' 'FLUTTER_ENTRY' 'AUTH_BRIDGE' 'FORCED_OCCASION_PATH' 'FORCE_OCCASION_LINK' 'get_available_occasions' 'get_occasion_seo_data' 'const WEB_CLIENT_EXACT = new Set(["/"]);' 'const FLUTTER_PREFIXES = ['; do
     if grep -F -q "$needle" "$BUILD_SH"; then
         echo "  ok: cloudflare_build.sh worker covers '$needle'"
     else

@@ -1,4 +1,5 @@
 export const SHARED_MODAL_STYLES = `
+
 .auth-container {
     padding: 20px;
     display: flex;
@@ -67,6 +68,11 @@ input {
     background-color: var(--bg-input, #fff);
     color: var(--text-color, #333);
     box-sizing: border-box;
+}
+
+input::placeholder {
+    color: var(--text-secondary, #666);
+    opacity: 0.75;
 }
 
 input:focus {

@@ -28,6 +28,7 @@ class OrderModel extends ITrinaRowModel {
   DateTime? updatedAt;
   double? price;
   String? state;
+  bool get canEdit => state != stornoState;
   Map<String, dynamic>? data;
   int? occasion;
   int? paymentInfo;

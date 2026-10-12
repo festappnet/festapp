@@ -1,3 +1,4 @@
+import { sanitizeHtml } from '../../../utils/html.js';
 import { OptionBuilderHelper } from './option_builder_helper.js';
 
 export class CheckBoxFieldBuilder {
@@ -48,7 +49,10 @@ export class CheckBoxFieldBuilder {
             optLabel.className = 'form-check-label';
             optLabel.textContent = field.title || '';
             if (field.isRequired) {
-                optLabel.innerHTML += ' <span class="required-star">*</span>';
+                const star = document.createElement('span');
+                star.className = 'required-star';
+                star.textContent = ' *';
+                optLabel.appendChild(star);
             }
 
             optWrapper.appendChild(input);
@@ -59,7 +63,7 @@ export class CheckBoxFieldBuilder {
                 const desc = document.createElement('div');
                 desc.className = 'form-field-description';
                 desc.style.marginLeft = '1.5em';
-                desc.innerHTML = field.description;
+                desc.innerHTML = sanitizeHtml(field.description);
                 container.appendChild(desc);
             }
         }

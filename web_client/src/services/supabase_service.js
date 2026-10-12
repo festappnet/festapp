@@ -1,3 +1,4 @@
+import { browserStorage } from './browser_storage.js';
 import { AppConfig } from '../app_config.js';
 import { createClient } from '@supabase/supabase-js';
 import { BackendActivationService } from './backend_activation_service.js';
@@ -10,7 +11,7 @@ export class SupabaseService {
     static tokenKey = AppConfig.Keys.auth;
     static originMarkerKey = 'festapp-supabase-auth-origin';
     static clientOptions = Object.freeze({
-        auth: Object.freeze({ storageKey: AppConfig.Keys.auth }),
+        auth: Object.freeze({ storageKey: AppConfig.Keys.auth, storage: browserStorage }),
         global: Object.freeze({ headers: Object.freeze({
             'X-Client-Info': `festapp/${APP_VERSION}/js`,
         }) }),
@@ -49,11 +50,11 @@ export class SupabaseService {
     }
 
     static async _initialize() {
-        SupabaseService._backend = await new BackendActivationService().resolve();
+        SupabaseService._backend = await new BackendActivationService({ storage: browserStorage }).resolve();
         AppConfig.organization = SupabaseService._backend.organizationId;
         const client = SupabaseService.getClient();
         const activeOrigin = SupabaseService._backend.supabaseUrl;
-        const previousOrigin = localStorage.getItem(SupabaseService.originMarkerKey);
+        const previousOrigin = browserStorage.getItem(SupabaseService.originMarkerKey);
         const { data, error } = await client.auth.getSession();
         if (error) throw error;
         const session = data?.session;
@@ -69,14 +70,14 @@ export class SupabaseService {
                     } catch (signOutError) {
                         console.warn('Local Supabase session cleanup failed', signOutError);
                     }
-                    localStorage.removeItem(SupabaseService.tokenKey);
-                    localStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
+                    browserStorage.removeItem(SupabaseService.tokenKey);
+                    browserStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
                     return client;
                 }
                 throw refreshError ?? new Error('Supabase session refresh returned no session');
             }
         }
-        localStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
+        browserStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
         return client;
     }
 
@@ -91,7 +92,7 @@ export class SupabaseService {
 
     // --- Auth ---
     static getLocalUser() {
-        const localSessionStr = localStorage.getItem(SupabaseService.tokenKey);
+        const localSessionStr = browserStorage.getItem(SupabaseService.tokenKey);
         if (localSessionStr) {
             try {
                 const sessionData = JSON.parse(localSessionStr);
@@ -108,7 +109,7 @@ export class SupabaseService {
         const { data, error } = await SupabaseService.getClient().auth.getSession();
         if (error || !data.session) {
             // Invalid, clear local
-            localStorage.removeItem(SupabaseService.tokenKey);
+            browserStorage.removeItem(SupabaseService.tokenKey);
             return null;
         }
         return data.session.user;
@@ -116,7 +117,7 @@ export class SupabaseService {
 
     static async signOut() {
         await SupabaseService.getClient().auth.signOut();
-        localStorage.removeItem(SupabaseService.tokenKey);
+        browserStorage.removeItem(SupabaseService.tokenKey);
         window.location.reload();
     }
 }

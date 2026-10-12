@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION delete_order_history(p_history_id bigint)
+CREATE OR REPLACE FUNCTION public.delete_order_history(p_history_id bigint)
 RETURNS void
 SECURITY DEFINER
 LANGUAGE plpgsql
@@ -31,6 +31,8 @@ BEGIN
     -- Verify the user is a manager on the unit.
     -- This function will raise an exception if the user does not have manager permissions.
     PERFORM check_is_manager_on_unit(v_unit_id);
+
+    PERFORM public.check_order_is_mutable((SELECT "order" FROM eshop.orders_history WHERE id=p_history_id));
 
     -- Proceed with the deletion if permission check passes
     DELETE FROM eshop.orders_history WHERE id = p_history_id;

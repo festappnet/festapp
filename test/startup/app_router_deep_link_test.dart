@@ -1,3 +1,6 @@
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/organization/organization_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/users/views/reset_password_page.dart';
@@ -6,6 +9,27 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 
 void main() {
+  test(
+      'cleared landing opens unit cards or organization cards, never a null route',
+      () {
+    final previous = RightsService.occasionLinkModelNotifier.value;
+    final previousLink = RightsService.currentLink;
+    final previousOffline = RightsService.useOfflineVersion;
+    addTearDown(() {
+      RightsService.occasionLinkModelNotifier.value = previous;
+      RightsService.currentLink = previousLink;
+      RightsService.useOfflineVersion = previousOffline;
+    });
+    RightsService.useOfflineVersion = false;
+    RightsService.currentLink = null;
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(organization: OrganizationModel(defaultUnit: 999));
+    expect(AppRouter.getDefaultLink(), '/unit/999');
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel();
+    expect(AppRouter.getDefaultLink(), '/');
+    RightsService.currentLink = 'slunovrat';
+    expect(AppRouter.getDefaultLink(), '/slunovrat/event');
+  });
   test('occasion landing path targets the program route', () {
     expect(AppRouter.getOccasionLandingPath('av2025'), '/av2025/event');
   });

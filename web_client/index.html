@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Festapp</title>
-    <meta name="description" content="Platforma pro správu akcí, programu a vstupenek.">
-    <meta name="keywords" content="založení události, prodej vstupenek, registrace, akce, plesy, festivaly, festapp, vstupenky.online">
+    <title>vstupenky.online - prodej vstupenek a registrace na akce</title>
+    <meta name="description" content="Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://vstupenky.online/">
 
@@ -13,7 +12,7 @@
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Festapp",
+      "name": "vstupenky.online",
       "url": "https://vstupenky.online/",
       "potentialAction": {
         "@type": "SearchAction",
@@ -26,15 +25,15 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://vstupenky.online/">
-    <meta property="og:title" content="Festapp">
-    <meta property="og:description" content="Platforma pro správu akcí, programu a vstupenek.">
+    <meta property="og:title" content="vstupenky.online - prodej vstupenek a registrace na akce">
+    <meta property="og:description" content="Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.">
     <meta property="og:image" content="https://vstupenky.online/android-chrome-512x512.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://vstupenky.online/">
-    <meta property="twitter:title" content="Festapp">
-    <meta property="twitter:description" content="Platforma pro správu akcí, programu a vstupenek.">
+    <meta property="twitter:title" content="vstupenky.online - prodej vstupenek a registrace na akce">
+    <meta property="twitter:description" content="Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.">
     <meta property="twitter:image" content="https://vstupenky.online/android-chrome-512x512.png">
 
     <!-- Used font stylesheets and their binaries are persisted by the Festapp
@@ -42,7 +41,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
 
 
@@ -57,15 +58,19 @@
             ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
             : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
         function reportFestappClientVersion() {
-            navigator.serviceWorker?.controller?.postMessage({
-                type: 'FESTAPP_CLIENT_VERSION',
-                version: window.__FESTAPP_BUILD_VERSION__,
-            });
+            try {
+                navigator.serviceWorker?.controller?.postMessage({
+                    type: 'FESTAPP_CLIENT_VERSION',
+                    version: window.__FESTAPP_BUILD_VERSION__,
+                });
+            } catch { /* Embedded browsers can deny service-worker access. */ }
         }
         reportFestappClientVersion();
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.addEventListener('controllerchange', reportFestappClientVersion);
-            navigator.serviceWorker.addEventListener('message', function(event) {
+        let startupServiceWorker;
+        try { startupServiceWorker = navigator.serviceWorker; } catch { /* optional API */ }
+        if (startupServiceWorker) {
+            startupServiceWorker.addEventListener('controllerchange', reportFestappClientVersion);
+            startupServiceWorker.addEventListener('message', function(event) {
                 if (event.data?.type === 'FESTAPP_REPORT_VERSION') reportFestappClientVersion();
             });
             window.addEventListener('focus', reportFestappClientVersion);
@@ -96,6 +101,22 @@
             const button = document.querySelector('#web-client-startup button');
             if (button) button.disabled = true;
             try {
+                // A browser can cache an entry-script 404 for four hours. Reload
+                // bypasses and replaces that native cache even without workers.
+                const entry = document.querySelector('script[type="module"][src]');
+                if (entry && new URL(entry.src).origin === location.origin) {
+                    const controller = new AbortController();
+                    const timeout = window.setTimeout(function() { controller.abort(); }, 10000);
+                    try {
+                        const response = await fetch(entry.src, { cache: 'reload', signal: controller.signal });
+                        if (!response.ok || !/(?:java|ecma)script/i.test(response.headers.get('content-type') || '')) {
+                            throw new Error('Entry script is unavailable');
+                        }
+                        await response.arrayBuffer();
+                    } finally {
+                        window.clearTimeout(timeout);
+                    }
+                }
                 await window.prepareFestappNetworkReload?.();
                 window.location.reload();
             } catch (error) {
@@ -120,7 +141,7 @@
 
         // Reuse the same bounded cache recovery as the Flutter entrypoint.
         // The combined web build already ships this canonical public script.
-        if (!['localhost', '127.0.0.1', '::1'].includes(location.hostname)) {
+        if (startupServiceWorker && !['localhost', '127.0.0.1', '::1'].includes(location.hostname)) {
             const recovery = document.createElement('script');
             recovery.src = '/festapp_update_prompt.js';
             recovery.onload = function() {
@@ -154,6 +175,10 @@
         <user-header id="universal-header"></user-header>
 
         <main>
+            <section id="site-introduction" hidden style="margin:24px 0;color:var(--text-color,inherit)">
+                <h1 style="margin:0 0 8px;font-size:28px;overflow-wrap:anywhere">vstupenky.online</h1>
+                <p style="margin:0;line-height:1.6">Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.</p>
+            </section>
             <!-- Search -->
             <div id="search-container" class="search-container">
                 <i class="material-icons search-icon">search</i>
@@ -163,6 +188,10 @@
 
             <!-- Content -->
             <div id="events-grid"></div>
+            <nav class="site-legal-links" aria-label="Právní informace">
+                <a href="/privacy/">Soukromí</a>
+                <a href="/terms/">Podmínky</a>
+            </nav>
         </main>
 
         <!-- FAB -->
@@ -173,17 +202,20 @@
              <div class="sp-loader"></div>
         </div>
     </div>
+    <noscript><style>#web-client-startup{display:none!important}#app{display:flex!important}</style></noscript>
 
     <div id="form-page-container" style="display: none;"></div>
 
     <!-- Application Entry (Module) -->
     <script type="module" src="/src/main.js"></script>
     <script type="module">
+        let serviceWorker;
+        try { serviceWorker = navigator.serviceWorker; } catch { /* optional API */ }
         async function persistUsedFontResources() {
-            await navigator.serviceWorker.ready;
-            if (!navigator.serviceWorker.controller) {
+            await serviceWorker.ready;
+            if (!serviceWorker.controller) {
                 await new Promise(function(resolve) {
-                    navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+                    serviceWorker.addEventListener('controllerchange', resolve, { once: true });
                 });
             }
             if (document.readyState !== 'complete') {
@@ -205,12 +237,14 @@
             }));
         }
 
-        if ('serviceWorker' in navigator) {
-            window.festappOfflineReady = navigator.serviceWorker.register('/festapp_service_worker.js', {
-                scope: '/',
-                updateViaCache: 'none'
+        if (serviceWorker) {
+            window.festappOfflineReady = Promise.resolve().then(function() {
+                return serviceWorker.register('/festapp_service_worker.js', {
+                    scope: '/',
+                    updateViaCache: 'none'
+                });
             }).then(async function() {
-                await navigator.serviceWorker.ready;
+                await serviceWorker.ready;
                 reportFestappClientVersion();
                 return persistUsedFontResources();
             }).catch(function(error) {

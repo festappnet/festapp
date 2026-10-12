@@ -95,12 +95,61 @@ describe('LoginModal Conditional Registration', () => {
             console.log('DEBUG: Test 1 HTML Length:', html.length);
             
             assert.match(html, /id="link-register"/, 'Registration link should be visible');
-            assert.match(html, /FeatureUser.signUp/, 'Link text should be present');
+            assert.match(html, /FeatureUser.createAccount/, 'Link text should be present');
             console.log('DEBUG: Test 1 Passed');
         } catch (e) {
             console.error('DEBUG: Test 1 FAILED', e);
             throw e;
         }
+    });
+
+    it('opens registration directly and switches both ways inside the same modal', () => {
+        RightsService._context = { organization: { IS_REGISTRATION_ENABLED: true } };
+        const modal = new LoginModal();
+        modal.currentView = 'register';
+        modal.googleEnabled = true;
+        document.body.appendChild(modal);
+        const dialog = modal.modal;
+
+        assert.ok(modal.authContainer.querySelector('#register-form'));
+        assert.ok(modal.authContainer.querySelector('#google-start'));
+        for (const [id, autocomplete] of [
+            ['email', 'email'], ['firstName', 'given-name'], ['lastName', 'family-name'],
+        ]) {
+            const input = modal.authContainer.querySelector(`#${id}`);
+            assert.equal(input.autocomplete, autocomplete);
+            assert.ok(input.placeholder);
+        }
+        modal.authContainer.querySelector('[data-auth-mode="login"]').click();
+        assert.ok(modal.authContainer.querySelector('#login-form'));
+        assert.ok(modal.authContainer.querySelector('#google-start'));
+        modal.authContainer.querySelector('[data-auth-mode="register"]').click();
+        assert.ok(modal.authContainer.querySelector('#register-form'));
+        assert.equal(modal.modal, dialog);
+        assert.equal(document.activeElement, modal.authContainer);
+    });
+
+    it('shows tenant legal links below registration submit in every supported locale', async () => {
+        const { LocalizationService } = await import('../../src/services/localization_service.js');
+        const { AppConfig } = await import('../../src/app_config.js');
+        const { readFile } = await import('node:fs/promises');
+        RightsService._context = { organization: { IS_REGISTRATION_ENABLED: true } };
+        const previous = LocalizationService.translations;
+        try {
+            for (const locale of ['cs', 'en', 'uk']) {
+                LocalizationService.translations = JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+                const modal = new LoginModal();
+                modal.currentView = 'register';
+                const rendered = document.createElement('div');
+                rendered.innerHTML = modal._getContent();
+                const form = rendered.querySelector('#register-form');
+                const notice = form.querySelector('.auth-registration-info');
+                assert.equal(form.querySelector('button[type="submit"]').nextElementSibling, notice);
+                assert.deepEqual([...notice.querySelectorAll('a')].map(a => a.getAttribute('href')), [AppConfig.termsUrl, AppConfig.privacyUrl]);
+                assert.ok(!notice.textContent.includes('FeatureUser.'));
+                modal.remove();
+            }
+        } finally { LocalizationService.translations = previous; }
     });
 
     it('prefills Google proof email and preserves manual edits across retry rendering', () => {

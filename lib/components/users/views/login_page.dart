@@ -80,12 +80,7 @@ class _LoginPageState extends State<LoginPage> {
         GoogleAuthService.isContinuation) {
       return;
     }
-    var userUnits = RightsService.currentUser()?.units;
-    if (userUnits != null && userUnits.isNotEmpty) {
-      await RouterService.navigateToUnitAdmin(context, userUnits.first);
-    } else {
-      await _refreshSignedInStatus(null);
-    }
+    await _refreshSignedInStatus(null);
   }
 
   Future<void> _recoverAuthenticatedNavigation() async {

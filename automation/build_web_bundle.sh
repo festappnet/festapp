@@ -69,7 +69,11 @@ else
     mv build/web/index.html build/web/flutter.html
 fi
 
-(cd web_client && npm ci && npm run build)
+(cd web_client && npm ci)
+# Both direct deployment and GitHub Deploy use this shared build path.
+# Fail before publishing if restricted WebViews or built module identity regress.
+bash automation/test_web_startup.sh
+(cd web_client && npm run build)
 cp -R web_client/dist/. build/web/
 
 if [ "$TARGET" = cloudflare ]; then

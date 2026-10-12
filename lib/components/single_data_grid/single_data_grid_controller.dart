@@ -249,13 +249,18 @@ class SingleDataGridController<T extends ITrinaRowModel> {
 
   /// Applies [rows] to the grid and inserts the first column if needed.
   void applyDataToGrid() async {
-    final sorted = additionalRowPredicate == null ? null : stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
+    final sorted = additionalRowPredicate == null
+        ? null
+        : stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
     htmlSave.clearBindings();
     stateManager.removeAllRows();
     stateManager.appendRows(rows);
     if (sorted != null) {
-      if (sorted.sort.isAscending) { stateManager.sortAscending(sorted); }
-      else { stateManager.sortDescending(sorted); }
+      if (sorted.sort.isAscending) {
+        stateManager.sortAscending(sorted);
+      } else {
+        stateManager.sortDescending(sorted);
+      }
     }
 
     if (additionalRowPredicate != null) {
@@ -290,20 +295,24 @@ class SingleDataGridController<T extends ITrinaRowModel> {
           if (firstColumnType != DataGridFirstColumn.check) {
             rowChildren.add(
               IconButton(
-                onPressed: () async {
-                  var row = rendererContext.row;
-                  if (deletedRows.contains(row)) {
-                    deletedRows.remove(row);
-                  } else if (newRows.contains(row)) {
-                    newRows.remove(row);
-                    rendererContext.stateManager.removeRows([row]);
-                  } else {
-                    deletedRows.add(row);
-                  }
-                  row.setState(TrinaRowState.updated);
-                  applyRowFilter();
-                  rendererContext.stateManager.notifyListeners();
-                },
+                onPressed:
+                    (actionsExtended?.canDeleteRow?.call(rendererContext.row) ??
+                            true)
+                        ? () async {
+                            var row = rendererContext.row;
+                            if (deletedRows.contains(row)) {
+                              deletedRows.remove(row);
+                            } else if (newRows.contains(row)) {
+                              newRows.remove(row);
+                              rendererContext.stateManager.removeRows([row]);
+                            } else {
+                              deletedRows.add(row);
+                            }
+                            row.setState(TrinaRowState.updated);
+                            applyRowFilter();
+                            rendererContext.stateManager.notifyListeners();
+                          }
+                        : null,
                 icon: const Icon(Icons.delete_forever),
               ),
             );

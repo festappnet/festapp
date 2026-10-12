@@ -1,3 +1,4 @@
+import { browserStorage } from './browser_storage.js';
 import { SupabaseService } from './supabase_service.js';
 import { AppConfig } from '../app_config.js';
 import { RightsService } from './rights_service.js';
@@ -25,7 +26,7 @@ export class AuthService {
     static async logout() {
         await SupabaseService.getClient().auth.signOut();
         // Clear local data if needed
-        localStorage.removeItem(SupabaseService.tokenKey);
+        browserStorage.removeItem(SupabaseService.tokenKey);
         // Reset Rights
         // (RightsService usually listens to auth state changes, but we force it here too)
         await RightsService.updateAppData(); 

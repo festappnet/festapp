@@ -1,3 +1,4 @@
+import { generateSignInCode } from "../_shared/signInCode.ts";
 import {
   awaitEmailAccepted,
   prepareAccountEmail,
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
     );
 
     // Generate a 6-digit sign in code.
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = generateSignInCode();
 
     // Retrieve occasion user data.
     const occasionUser = await supabaseAdmin
@@ -164,7 +165,9 @@ Deno.serve(async (req) => {
 
       const snapshot = await prepareAccountEmail(emailInput);
       const { data: queued, error: queueError } = await supabaseUser.rpc(
-        "reset_password_and_enqueue_email",
+        reqData.signInCodeVersion === 2
+          ? "enqueue_sign_in_code_v1"
+          : "reset_password_and_enqueue_email",
         {
           p_user: userId,
           p_password: code,

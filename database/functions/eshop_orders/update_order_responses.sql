@@ -10,6 +10,7 @@ AS $$
 DECLARE
     v_occasion_id BIGINT;
     v_order_form_id BIGINT;
+    v_current_state text;
     v_current_data JSONB;
     v_new_data JSONB;
     v_field_definitions JSONB;
@@ -29,11 +30,13 @@ BEGIN
     SELECT
         o.data,
         o.occasion,
-        o.form
+        o.form,
+        o.state
     INTO
         v_current_data,
         v_occasion_id,
-        v_order_form_id
+        v_order_form_id,
+        v_current_state
     FROM eshop.orders o
     WHERE o.id = p_order_id;
 
@@ -47,6 +50,12 @@ BEGIN
         RAISE EXCEPTION 'User does not have permission to edit this order.';
     END IF;
 
+    -- Reject the terminal state before form validation, without reversing
+    -- the form -> order lock order used by form-field removal.
+    IF v_current_state='storno' THEN
+        RAISE EXCEPTION 'ORDER_CANCELLED: Cancelled orders are read-only' USING ERRCODE='55000';
+    END IF;
+
     -- Raise an exception if the order is not linked to a form
     IF v_order_form_id IS NULL THEN
         RAISE EXCEPTION 'Order % has no associated form.', p_order_id;
@@ -54,6 +63,8 @@ BEGIN
 
     -- Coordinate response validation/writes with form saves and field removal.
     PERFORM 1 FROM public.forms WHERE id = v_order_form_id FOR SHARE;
+    PERFORM public.check_order_is_mutable(p_order_id);
+    SELECT data INTO v_current_data FROM eshop.orders WHERE id=p_order_id;
 
     -- Fetch all field definitions for this form into a JSONB map { "field_id": "field_type" }
     SELECT jsonb_object_agg(ff.id::text, ff.type)

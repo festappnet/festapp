@@ -8,7 +8,7 @@ DECLARE
     current_state text;
 BEGIN
     -- Retrieve the occasion associated with the order
-    SELECT occasion, state INTO occasion_id, current_state FROM eshop.orders WHERE id = order_id;
+    SELECT occasion, state INTO occasion_id, current_state FROM eshop.orders WHERE id = order_id FOR UPDATE;
 
     -- Check if the order exists and has an associated occasion
     IF occasion_id IS NULL THEN

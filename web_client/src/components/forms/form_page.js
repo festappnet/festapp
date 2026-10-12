@@ -111,8 +111,8 @@ export class FormPage extends Component {
              return;
         }
         
-        // Clear previous content but DO NOT add a spinner
-        this.host.innerHTML = '';
+        // Keep visible content while an embedded browser waits for the RPC.
+        this.renderLoading();
         // Containment for fixed children (Embedding Support)
         this.host.style.transform = 'translate(0)'; 
         this.host.style.display = 'block';
@@ -167,7 +167,8 @@ export class FormPage extends Component {
 
         } catch (e) {
             console.error(e);
-            this.renderError(e.message + "\n" + e.stack);
+            this.currentLink = null; // A retry must not hit the same-link guard.
+            this.renderError(FormStrings.loadFailed, () => this.init(link));
         }
     }
 
@@ -217,11 +218,21 @@ export class FormPage extends Component {
     }
 
     renderLoading() {
-        this.host.innerHTML = `<div class="loading-spinner">${CommonStrings.loading}</div>`;
+        this.host.innerHTML = '<div class="loading-spinner" role="status"></div>';
+        this.host.firstElementChild.textContent = CommonStrings.loading;
     }
 
-    renderError(message) {
-        this.host.innerHTML = `<div class="error-message">${message}</div>`;
+    renderError(message, onRetry) {
+        this.host.innerHTML = '<div class="error-message" role="alert"></div>';
+        const error = this.host.firstElementChild;
+        error.textContent = message;
+        if (onRetry) {
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.textContent = CommonStrings.retry;
+            retry.addEventListener('click', onRetry);
+            error.appendChild(retry);
+        }
     }
 
     // Delegated to ThemeService

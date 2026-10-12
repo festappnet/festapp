@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_ticket_to_used_ws(
+CREATE OR REPLACE FUNCTION public.update_ticket_to_used_ws(
     ticket_id bigint
 )
 RETURNS void
@@ -27,6 +27,8 @@ BEGIN
     -- 2. Check if the current user has editor permissions for the occasion.
     -- This function will raise an exception if the user is not an editor.
     PERFORM public.check_is_editor_order_on_occasion(occasion_id);
+
+    PERFORM public.check_ticket_is_mutable(ticket_id);
 
     -- 3. Update the ticket state to 'used' AND update timestamp.
     -- This is only reached if the previous checks pass without raising an exception.

@@ -70,3 +70,18 @@ test('web client reports before module loading and keeps its worker generation c
   assert.ok(messages.every((message) => message.version === '7.8.9+123'));
   dom.window.close();
 });
+
+
+test('the actual PWA module remains usable when a WebView denies serviceWorker access', async (t) => {
+  const dom = new JSDOM('<!doctype html><body></body>', {
+    url: 'https://app.test/',
+    runScripts: 'outside-only',
+  });
+  t.after(() => dom.window.close());
+  const { window } = dom;
+  Object.defineProperty(window.navigator, 'serviceWorker', {
+    get() { throw new window.DOMException('Blocked by WebView', 'SecurityError'); },
+  });
+  assert.doesNotThrow(() => window.eval(moduleSource));
+  await window.festappOfflineReady;
+});
