@@ -34,6 +34,11 @@
     "import_users_from_tickets(bigint)",
     "cancel_reception_registration_v1(bigint,uuid) - existing registration status identity; no receipt protocol"
   ],
-  "sqlSha256": "136cae6ca89197d5e7651fea693457bd6d987eac589db6fcefac3c51fc5fabe6",
-  "status": "pending G2/G3/G4 - no production authority"
+  "sqlSha256": "0d18d7e8262a2ca72cc049c696b808444c4a7be475df6dc5d046d573aee9126c",
+  "sourceFile": "database/operations/canonical_mutation_contraction.sql",
+  "sourceFileSha256": "f5ff03ea903c0c402c766adfa4bcd025a202f0479e840a41481155ac310d0f24",
+  "preparedFromMain": "da56a92bf942d27e22f628a88d38e73dda5484b1",
+  "productionApplied": false,
+  "G3Satisfied": false,
+  "G4Approved": false
 }

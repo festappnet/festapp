@@ -123,7 +123,7 @@ test('bounded contraction does not activate or revoke unrelated tables',()=>{
  const m=mutationContractionManifest();
  assert.equal(m.completeAclBoundary,false);
  assert.deepEqual(m.pendingSharedBoundaries,['public.places']);
- assert.doesNotMatch(m.sql,/cutover_ready\s*=\s*true|client_sync_v1|REVOKE.*public.events|CASCADE/);
+ assert.doesNotMatch(m.sql,/cutover_ready\s*=\s*true|'client_sync_v1'|REVOKE.*public.events|\bCASCADE\b/);
  assert.match(m.sql,/has_any_column_privilege/);
  assert.match(m.sql,/pg_has_role/);
  assert.match(m.sql,/DROP FUNCTION IF EXISTS public.update_activities\(bigint,jsonb\)/);

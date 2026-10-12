@@ -81,13 +81,5 @@ BEGIN
   END LOOP;
  END LOOP;
 END $$;
--- G3 boundary: released raw graph writer remains a kernel bypass until contraction.
-CREATE OR REPLACE FUNCTION public.update_activities(p_occasion_id bigint,p_activities_data jsonb)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.check_is_editor_on_occasion(p_occasion_id);
- PERFORM public.lock_group_occasion_internal_v1(p_occasion_id);
- PERFORM public.replace_activities_graph_internal_v1(p_occasion_id,p_activities_data);
- RETURN jsonb_build_object('code',200,'message','Activities saved successfully.');
-END $$;
+
 REVOKE ALL ON FUNCTION public.activity_time_internal_v1(text,bigint,boolean),public.normalize_activity_graph_internal_v1(bigint,jsonb,boolean,boolean),public.activity_history_graph_internal_v1(bigint,jsonb,boolean),public.activity_graph_history_internal_v1(jsonb),public.current_activity_graph_internal_v1(bigint),public.replace_activities_graph_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated;

@@ -10,24 +10,41 @@ DECLARE
   v_org   bigint;
   v_code  text;
   v_existing_id bigint;
+  v_actual_unit bigint;
+  v_actual_org bigint;
 BEGIN
   -- Extract values from input JSON.
   v_occ  := CASE WHEN p_data ? 'occasion' THEN (p_data ->> 'occasion')::bigint ELSE NULL END;
   v_unit := CASE WHEN p_data ? 'unit' THEN (p_data ->> 'unit')::bigint ELSE NULL END;
-  -- If no organization is provided, default to 1.
-  v_org  := CASE WHEN p_data ? 'organization' THEN (p_data ->> 'organization')::bigint ELSE 1 END;
+  v_org := (p_data ->> 'organization')::bigint;
   v_code := p_data ->> 'code';
 
-  -- Permission Checks
+  -- Resolve the actual hierarchy before authorizing template writes.
   IF v_occ IS NOT NULL THEN
-     IF (SELECT public.get_is_editor_on_occasion(v_occ)) IS NOT TRUE 
-        AND (SELECT public.get_is_editor_order_on_occasion(v_occ)) IS NOT TRUE THEN
-        RAISE EXCEPTION 'Permission denied: User is not an editor of this occasion.';
-     END IF;
+    SELECT unit, organization INTO v_actual_unit, v_actual_org FROM public.occasions WHERE id=v_occ;
+    IF NOT FOUND OR (v_unit IS NOT NULL AND v_unit IS DISTINCT FROM v_actual_unit)
+        OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE insufficient_privilege USING MESSAGE='Invalid email template hierarchy';
+    END IF;
+    v_unit := v_actual_unit;
+    v_org := v_actual_org;
+    IF NOT public.is_service_role() AND public.get_is_editor_on_occasion(v_occ) IS NOT TRUE
+       AND public.get_is_editor_order_on_occasion(v_occ) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE='Occasion template write denied';
+    END IF;
   ELSIF v_unit IS NOT NULL THEN
-     IF (SELECT public.get_is_editor_on_unit(v_unit)) IS NOT TRUE THEN
-        RAISE EXCEPTION 'Permission denied: User is not an editor of this unit.';
-     END IF;
+    SELECT organization INTO v_actual_org FROM public.units WHERE id=v_unit;
+    IF NOT FOUND OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE insufficient_privilege USING MESSAGE='Invalid email template hierarchy';
+    END IF;
+    v_org := v_actual_org;
+    IF NOT public.is_service_role() AND public.get_is_editor_on_unit(v_unit) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE='Unit template write denied';
+    END IF;
+  ELSIF NOT public.is_service_role() THEN
+    IF v_org IS NULL OR public.get_is_admin_on_organization(v_org) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE='Organization template write denied';
+    END IF;
   END IF;
 
   -- Try to find an existing email template matching the given context and code.
@@ -72,3 +89,6 @@ BEGIN
   END IF;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.update_email_template(jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.update_email_template(jsonb) TO authenticated, service_role;

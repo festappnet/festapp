@@ -118,9 +118,3 @@ BEGIN
     END IF;
 END;
 $$;
-
-CREATE OR REPLACE FUNCTION public.game_guess(check_point_id bigint, guess text)
-RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.game_guess_internal_v1(check_point_id,guess);
-$$;

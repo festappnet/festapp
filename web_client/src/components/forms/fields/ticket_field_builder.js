@@ -1,3 +1,4 @@
+import { html, sanitizeHtml } from '../../../utils/html.js';
 import * as FormFieldBuilderModule from './form_field_builder.js';
 import { FormStrings } from '../form_strings.js';
 import { CommonStrings } from '../../shared/common_strings.js';
@@ -208,7 +209,7 @@ export class TicketFieldBuilder {
             if (field.description) {
                 const desc = document.createElement('div');
                 desc.className = 'form-field-description';
-                desc.innerHTML = field.description;
+                desc.innerHTML = sanitizeHtml(field.description);
                 container.appendChild(desc);
             }
 
@@ -365,10 +366,10 @@ export class TicketFieldBuilder {
                                 displayDiv.style.alignItems = 'center';
 
                                 const formattedPart = formatPrice(priceVal, currency);
-                                const priceHtml = priceVal > 0 ? `&nbsp;<span class="option-price">+${formattedPart}</span>` : '';
+                                const priceHtml = priceVal > 0 ? html`&nbsp;<span class="option-price">+${formattedPart}</span>` : '';
                                 const prefix = productTitle ? `${productTitle} - ` : '';
                                 
-                                displayDiv.innerHTML = `<span>${prefix}${seatName}</span>${priceHtml}`;
+                                displayDiv.innerHTML = html`<span>${prefix}${seatName}</span>${priceHtml}`;
                                 
                                 displayContainer.appendChild(displayDiv);
                                 ticketItem.appendChild(displayContainer);
@@ -498,6 +499,13 @@ export class TicketFieldBuilder {
                      existingBtn.type = 'button';
                      existingBtn.className = 'btn btn-primary btn-blueprint-select w-100 d-block';
                      existingBtn.textContent = FormStrings.seatSelection || "Select Seats";
+                     const seatIcon = document.createElement('i');
+                     seatIcon.className = 'material-icons';
+                     seatIcon.setAttribute('aria-hidden', 'true');
+                     seatIcon.textContent = 'event_seat';
+                     seatIcon.style.verticalAlign = 'middle';
+                     seatIcon.style.marginInlineEnd = '8px';
+                     existingBtn.prepend(seatIcon);
                      container.appendChild(existingBtn);
                 }
 

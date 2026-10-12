@@ -1,4 +1,4 @@
-import { drawLayoutTicket } from './generateTicket.ts';
+import { drawLayoutTicket, prepareTicketBackground, type PreparedTicketBackground } from './generateTicket.ts';
 import { importTicketTemplate } from './ticketTemplateImport.ts';
 import { validateLayout, pdfBox, type Template, type TicketLayout } from './ticketLayout.ts';
 import { normalizeTicketData, type RenderData } from './ticketRenderData.ts';
@@ -7,7 +7,7 @@ import { fetchPublicImage, UnsafeTargetError } from '../fetch-http-data/safeFetc
 import {futuraId,legacyFontIds,legacyNamedFontId,type TicketFont} from './ticketFonts.ts';
 import {resolveTicketFont,parseRegisteredTicketLayout} from './ticketFontStorage.ts';
 import {effectiveFontId,layoutFontIds} from './ticketLayout.ts';
-export interface Resources { fonts?:Record<string,TicketFont>;registeredIds?:ReadonlySet<string>;font:Uint8Array;metrics:FontMetrics;background?:Uint8Array;missingBackground?:boolean;logo?:Uint8Array;productTypeMap?:any }
+export interface Resources { fonts?:Record<string,TicketFont>;registeredIds?:ReadonlySet<string>;font:Uint8Array;metrics:FontMetrics;background?:Uint8Array;preparedBackground?:PreparedTicketBackground;missingBackground?:boolean;logo?:Uint8Array;productTypeMap?:any }
 export async function loadLayoutResources(occasion:any,featureOverride?:any,options:{allowMissingBackground?:boolean;legacyFontProtocol?:boolean}={},readImage=fetchPublicImage):Promise<Resources> {
   const feature=featureOverride??occasion.features?.find((f:any)=>f.code==='ticket');
   const type=feature?.ticket_type==='named'?'named':'wide';
@@ -53,7 +53,8 @@ export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={
 }) {
   const layout=occasion.features?.find((f:any)=>f.code==='ticket')?.layout;
   if(layout)await parseRegisteredTicketLayout(layout);
-  const resources=await dependencies.load(occasion);
+  const resources={...await dependencies.load(occasion)};
+  if(resources.background)resources.preparedBackground=await prepareTicketBackground(resources.background);
   const template=await resolveTicketTemplate(occasion,resources);
   const products=await dependencies.products(occasion.id);
   const types=new Map((products?.product_types??[]).map((p:any)=>[p.id,p.type]));

@@ -9,6 +9,7 @@ DECLARE
   v_place public.places%ROWTYPE; v_commit jsonb; v_public jsonb; v_response jsonb;
   v_is_publishable boolean; v_affects_public boolean; v_group bigint; v_impacts jsonb:='[]'; v_replacements jsonb:='[]';
 BEGIN
+ PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
   SELECT p.* INTO v_place FROM public.places p
     WHERE p.id=p_place_id AND p.occasion=p_occasion;
   IF NOT FOUND THEN RAISE invalid_parameter_value USING MESSAGE='place not found'; END IF;

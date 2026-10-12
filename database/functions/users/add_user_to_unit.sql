@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION add_user_to_unit(
+CREATE OR REPLACE FUNCTION public.add_user_to_unit(
     unit_id BIGINT,
     usr uuid
 ) RETURNS jsonb
@@ -11,6 +11,10 @@ DECLARE
     user_org BIGINT;
     user_exists BOOLEAN;
 BEGIN
+    IF NOT public.is_service_role() AND public.get_is_manager_on_unit(unit_id) IS NOT TRUE THEN
+        RAISE insufficient_privilege USING MESSAGE = 'Unit manager required';
+    END IF;
+
     -- Get the organization ID of the unit
     SELECT organization INTO unit_org
     FROM public.units
@@ -65,3 +69,6 @@ EXCEPTION WHEN OTHERS THEN
     RAISE;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.add_user_to_unit(bigint, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.add_user_to_unit(bigint, uuid) TO authenticated, service_role;

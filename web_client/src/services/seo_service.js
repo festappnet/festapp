@@ -9,7 +9,7 @@ export class SeoService {
     static updateMetaTags(formModel, currentUrl) {
         if (!formModel) return;
 
-        const title = formModel.title || 'Festapp Event';
+        const title = formModel.title || AppConfig.appName;
         
         // Extract plain text description from HTML header
         let description = '';
@@ -40,31 +40,35 @@ export class SeoService {
         this._setMetaTag('name', 'description', description);
 
         // 3. Update OG Tags
-        this._setMetaTag('property', 'og:title', title);
+        this._setMetaTag('property', 'og:title', document.title);
         this._setMetaTag('property', 'og:description', description);
         
         if (currentUrl) {
-             this._setMetaTag('property', 'og:url', currentUrl);
-             // Also update canonical if possible, though usually static
+            const canonicalUrl = new URL(currentUrl, window.location.origin);
+            canonicalUrl.search = '';
+            canonicalUrl.hash = '';
+            let canonical = document.querySelector('link[rel="canonical"]');
+            if (!canonical) {
+                canonical = document.createElement('link');
+                canonical.rel = 'canonical';
+                document.head.appendChild(canonical);
+            }
+            canonical.href = canonicalUrl.href;
+            this._setMetaTag('property', 'og:url', canonicalUrl.href);
+            this._setMetaTag('property', 'twitter:url', canonicalUrl.href);
         }
 
-        if (imageData && imageData.src) {
-            this._setMetaTag('property', 'og:image', imageData.src);
-            
-            if (imageData.width) {
-                 this._setMetaTag('property', 'og:image:width', imageData.width);
-            }
-            if (imageData.height) {
-                 this._setMetaTag('property', 'og:image:height', imageData.height);
-            }
+        const imageUrl = imageData?.src || new URL('/android-chrome-512x512.png', window.location.origin).href;
+        this._setMetaTag('property', 'og:image', imageUrl);
+        for (const dimension of ['width', 'height']) {
+            if (imageData?.[dimension]) this._setMetaTag('property', `og:image:${dimension}`, imageData[dimension]);
+            else document.querySelector(`meta[property="og:image:${dimension}"]`)?.remove();
         }
 
         // 4. Update Twitter Tags
-        this._setMetaTag('property', 'twitter:title', title);
+        this._setMetaTag('property', 'twitter:title', document.title);
         this._setMetaTag('property', 'twitter:description', description);
-        if (imageData && imageData.src) {
-            this._setMetaTag('property', 'twitter:image', imageData.src);
-        }
+        this._setMetaTag('property', 'twitter:image', imageUrl);
     }
 
     static _setMetaTag(attrName, attrValue, content) {

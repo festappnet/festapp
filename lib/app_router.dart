@@ -582,12 +582,11 @@ class AppRouter extends RootStackRouter {
       return getOccasionLandingPath(RightsService.currentLink!);
     }
 
-    if (AppConfig.isAllUnit) {
-      return "/${RightsService.currentLink}";
-    }
+    if (AppConfig.isAllUnit) return "/";
 
-    // This now correctly points to the /unit/:id route
-    return "/${UnitPage.ROUTE}/${RightsService.currentUnit()?.id}";
+    final unitId = RightsService.currentUnit()?.id ??
+        RightsService.occasionLinkModel?.organization?.defaultUnit;
+    return unitId == null ? "/" : "/${UnitPage.ROUTE}/$unitId";
   }
 
   static String getOccasionLandingPath(String occasionLink) =>

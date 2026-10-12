@@ -59,6 +59,16 @@ BEGIN
     RAISE EXCEPTION 'Registration and its email must enqueue atomically under the runtime role';
   END IF;
 
+  v_result := public.enqueue_account_email(
+    'register', '{"invitation_code":"012345","data":{"name":"Secure","surname":"Account"},"unit_title":"Fixture unit"}',
+    v_context, 'secure-registration@example.invalid', '{"sealed":"fixture"}', repeat('d', 64),
+    'account-role-register-v2', 'SIGN_IN_CODE', now() + interval '10 minutes'
+  );
+  IF v_result#>>'{domain,code}' <> '200' OR NOT EXISTS (
+    SELECT 1 FROM public.sign_in_codes WHERE user_id=(v_result#>>'{domain,id}')::uuid
+  ) THEN RAISE EXCEPTION 'V2 registration must store separate proof'; END IF;
+  PERFORM set_config('festapp.v2_registered_user',v_result#>>'{domain,id}',true);
+
   FOREACH v_kind IN ARRAY ARRAY[
     'registration', 'sign_in', 'reset_password', 'app_links', 'deletion_confirm',
     'deletion_complete', 'google_mailbox', 'gotrue', 'custom'
@@ -78,4 +88,14 @@ BEGIN
 END;
 $$;
 
+RESET ROLE;
+DO $$
+DECLARE u uuid := current_setting('festapp.v2_registered_user')::uuid; pw text;
+BEGIN
+ SELECT encrypted_password INTO pw FROM auth.users WHERE id=u;
+ IF extensions.crypt('012345',pw)=pw THEN RAISE EXCEPTION 'One-time code became permanent password'; END IF;
+ IF public.consume_sign_in_code_v1('secure-registration@example.invalid',
+     (current_setting('festapp.account_fixture')::jsonb->>'organization')::bigint,'012345')->>'userId'
+     IS DISTINCT FROM u::text THEN RAISE EXCEPTION 'V2 registration proof exchange failed'; END IF;
+END $$;
 ROLLBACK;

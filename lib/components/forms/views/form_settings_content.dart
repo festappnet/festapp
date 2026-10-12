@@ -1,9 +1,11 @@
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -44,6 +46,7 @@ class FormSettingsContent extends StatefulWidget {
 
 class _FormSettingsContentState extends State<FormSettingsContent> {
   final _snapshot = EditorSnapshot();
+  final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
         _titleController.text,
         _linkController.text,
@@ -114,6 +117,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   @override
   void dispose() {
+    _bankSettingsLink.dispose();
     _titleController.dispose();
     _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
@@ -122,8 +126,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _linkNotifier.dispose();
     super.dispose();
   }
-
-
 
   void _updateLinkPreview() {
     _linkNotifier.value = _linkController.text;
@@ -360,24 +362,61 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (usedCurrencies.isEmpty) return const SizedBox.shrink();
 
     final usedAccounts = _getUsedBankAccounts();
+    final missingCurrencies = usedCurrencies
+        .where((currency) => !usedAccounts
+            .any((account) => account.supportedCurrencies.contains(currency)))
+        .toList()
+      ..sort();
+    final unitId = RightsService.currentUnit()?.id;
+    final canManageAccounts = unitId != null && RightsService.isUnitEditor();
+
+    final guidance = missingCurrencies.isNotEmpty
+        ? (canManageAccounts
+            ? BankAccountStrings.addAccountForPayments
+            : BankAccountStrings.askManagerForPaymentAccount)
+        : BankAccountStrings.manageInUnitSettings;
+    final settingsLabel = BankAccountStrings.organizationSettings;
+    final linkStart = guidance.indexOf(settingsLabel);
+    _bankSettingsLink.onTap = canManageAccounts
+        ? () => pushRootPath(
+            context.router.root, '/unit/$unitId/edit/bank-accounts')
+        : null;
 
     return SelectionArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (usedAccounts.isEmpty)
-            Text(
-              BankAccountStrings.addInSettings,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
-            )
-          else ...[
-            Text(
-              BankAccountStrings.manageInUnitSettings,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+          if (missingCurrencies.isNotEmpty) ...[
+            Text(BankAccountStrings.missingAccountForCurrencies(
+                missingCurrencies.join(', '))),
+            const SizedBox(height: 4),
+          ],
+          Text.rich(
+            TextSpan(
+              children: canManageAccounts && linkStart >= 0
+                  ? [
+                      TextSpan(text: guidance.substring(0, linkStart)),
+                      TextSpan(
+                        text: settingsLabel,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                        mouseCursor: SystemMouseCursors.click,
+                        recognizer: _bankSettingsLink,
+                      ),
+                      TextSpan(
+                          text: guidance.substring(
+                              linkStart + settingsLabel.length)),
+                    ]
+                  : [TextSpan(text: guidance)],
             ),
+            style: missingCurrencies.isNotEmpty
+                ? null
+                : Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+          if (usedAccounts.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

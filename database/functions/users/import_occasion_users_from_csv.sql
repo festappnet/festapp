@@ -302,8 +302,3 @@ END;
 $function$
 ;
 REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb),public.import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
--- Released G3 compatibility facade; current callers use import_profiles_client_sync_v1.
-CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv(p_occasion_id bigint,p_rows jsonb,p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
-RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
-SELECT public.import_occasion_users_from_csv_internal_v1(p_occasion_id,p_rows,p_delete_user_ids);
-$$;

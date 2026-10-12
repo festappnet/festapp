@@ -5,6 +5,7 @@ import test, { beforeEach, afterEach, mock } from 'node:test';
 import { AppConfig } from '../../src/app_config.js';
 import { BackendActivationService } from '../../src/services/backend_activation_service.js';
 import { SupabaseService } from '../../src/services/supabase_service.js';
+import { APP_VERSION } from '../../src/version.js';
 
 const resolvedBackend = {
   supabaseUrl: 'https://canonical.fixture.invalid',
@@ -34,6 +35,12 @@ test('unsupported-app header data loads only after Supabase initialization', asy
 test('Supabase JS persists sessions under the key shared with the auth bridge', () => {
   assert.equal(SupabaseService.tokenKey, AppConfig.Keys.auth);
   assert.equal(SupabaseService.clientOptions.auth.storageKey, AppConfig.Keys.auth);
+});
+
+test('all JS backend requests identify their release and build for cutover observation', () => {
+  assert.deepEqual(SupabaseService.clientOptions.global.headers, {
+    'X-Client-Info': `festapp/${APP_VERSION}/js`,
+  });
 });
 
 test('backend-origin change refreshes the preserved session before startup', async () => {

@@ -375,6 +375,7 @@ class _FormPageState extends State<FormPage> {
       barrierDismissible: false, // Disable dismissing by tapping outside
       barrierLabel: "FinishOrderDialog",
       pageBuilder: (context, anim1, anim2) => FinishOrderScreen(
+        occasionTitle: form!.occasionModel?.title ?? form!.title,
         orderFutureFunction: () async {
           return await DbOrders.sendTicketOrder(data);
         },

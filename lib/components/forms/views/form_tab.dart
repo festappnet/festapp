@@ -163,16 +163,25 @@ class _FormDetailPageState extends State<FormDetailPage> {
                   style:
                       TextStyle(fontSize: 14, color: color.withOpacity(0.4)))),
           if (_forms.length <= 1)
-            title
+            InkWell(
+                onTap: () =>
+                    resetNestedTabs(context.router, FormDetailRoute.name),
+                child: title)
           else
             PopupMenuButton<FormModel>(
                 elevation: 0,
                 onSelected: (form) {
-                  if (form.link != widget.formLink)
+                  if (form.link == widget.formLink) {
+                    resetNestedTabs(context.router, FormDetailRoute.name);
+                  } else {
                     RetainedDraftGuard.instance.leaveOwner(
                         context,
-                        () => context.router
-                            .navigate(FormDetailRoute(formLink: form.link!)));
+                        () => context.router.navigate(FormDetailRoute(
+                                formLink: form.link!,
+                                children: const [
+                                  FormTabsRoute(children: [FormEditorRoute()])
+                                ])));
+                  }
                 },
                 itemBuilder: (_) => _forms
                     .map((form) => PopupMenuItem(

@@ -210,6 +210,12 @@ assert_missing "$TMP_ROOT/web/index.html" 'CSM Ostrava 2026'
 echo
 echo "--- web_client/index.html (crawler metadata) ---"
 assert_contains "$TMP_ROOT/web_client/index.html" '<title>Test App Name</title>'
+assert_contains "$TMP_ROOT/web_client/index.html" '<html lang="cs">'
+assert_contains "$TMP_ROOT/web_client/index.html" '>Test App Name</h1>'
+assert_contains "$TMP_ROOT/web_client/public/robots.txt" 'Sitemap: https://test.example.com/sitemap.xml'
+assert_contains "$TMP_ROOT/web_client/public/sitemap.xml" '<loc>https://test.example.com/</loc>'
+assert_missing "$TMP_ROOT/web_client/public/sitemap.xml" '<lastmod>'
+cmp "$TMP_ROOT/web/loading-logo.svg" "$TMP_ROOT/web_client/public/brand-logo.svg" || { echo "Public header logo must match the configured dark brand"; exit 1; }
 assert_contains "$TMP_ROOT/web_client/index.html" '<meta name="description" content="Test application description.">'
 assert_contains "$TMP_ROOT/web_client/index.html" '<meta property="og:title" content="Test App Name">'
 assert_contains "$TMP_ROOT/web_client/index.html" '<meta property="twitter:description" content="Test application description.">'

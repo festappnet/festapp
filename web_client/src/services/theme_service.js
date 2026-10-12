@@ -1,3 +1,4 @@
+import { browserStorage } from './browser_storage.js';
 import { AppConfig } from '../app_config.js';
 import { ColorUtils } from '../utils/color_utils.js';
 
@@ -8,7 +9,7 @@ export class ThemeService {
 
     static init() {
         // Load saved preference
-        const saved = localStorage.getItem(AppConfig.Keys.theme); // 'light', 'dark', or null/missing for auto
+        const saved = browserStorage.getItem(AppConfig.Keys.theme); // 'light', 'dark', or null/missing for auto
         
         if (saved && (saved === 'light' || saved === 'dark')) {
             ThemeService.currentMode = saved;
@@ -47,11 +48,11 @@ export class ThemeService {
         ThemeService.currentMode = mode;
         
         if (mode === 'auto') {
-            localStorage.removeItem(AppConfig.Keys.theme);
+            browserStorage.removeItem(AppConfig.Keys.theme);
             ThemeService.isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         } else {
             ThemeService.isDark = (mode === 'dark');
-            localStorage.setItem(AppConfig.Keys.theme, mode); // 'light' or 'dark'
+            browserStorage.setItem(AppConfig.Keys.theme, mode); // 'light' or 'dark'
         }
         
         ThemeService.apply();

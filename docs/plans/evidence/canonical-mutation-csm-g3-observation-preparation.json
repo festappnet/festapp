@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "action": "prepare-canonical-mutation-observation",
+  "productionApplied": false,
+  "G3Satisfied": false,
+  "clientDeployed": false,
+  "baseMain": "89dab29985aa09369a7f5e1ccd545eb190cb72ef",
+  "wizardExcluded": true,
+  "sql": [
+    {
+      "file": "supabase/migrations/20261007150000_canonical_mutation_observation.sql",
+      "sha256": "4db0cc12a3afaa613167383c7ea99077fc0e826bba2afb0902ef79c5d2a791da"
+    },
+    {
+      "file": "database/operations/canonical_mutation_observation.sql",
+      "sha256": "0eab2c29880c8f4db864a333be1b56fb1220a9b9ae6a5332b88fd937a89d3c73"
+    }
+  ],
+  "verificationLogs": [
+    {
+      "file": "canonical-g3-full-tests.log",
+      "sha256": "68afa8b151770c83f798e2bf9362f35fa44f8e53c7e2e2e1c1ada183f8648215"
+    },
+    {
+      "file": "canonical-g3-targeted-db-final.log",
+      "sha256": "6009f947eb1735f2411bd4f0ac94b78b66cc72247abb78e45c31647b9094f7aa"
+    },
+    {
+      "file": "canonical-g3-observation-tests.log",
+      "sha256": "8eabc1cb0ea8aff9c802ff8d804352ddca6a07d2df00416f60eacf77dafb7cf4"
+    },
+    {
+      "file": "canonical-g3-js-config.log",
+      "sha256": "91783c1b260b4b975d513b067bc36dd14eaf6ed412c3c1250a8d4a89f783d606"
+    },
+    {
+      "file": "canonical-g3-flutter-headers.log",
+      "sha256": "34b4d5fe38d8fa643ec5138598f7a4d1683f7f05b14b632c8a63198c29b9cc78"
+    }
+  ]
+}

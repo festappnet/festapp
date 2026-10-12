@@ -91,7 +91,8 @@ export class LoginModal extends HTMLElement {
         this.modal.open();
         
         this._updateContent();
-        this.authContainer.querySelector('input,button')?.focus();
+        this.authContainer.tabIndex = -1;
+        this.authContainer.focus();
         
         const originalClose = this.modal.close.bind(this.modal);
         this.modal.close = () => {
@@ -157,6 +158,13 @@ export class LoginModal extends HTMLElement {
         // Helper to generate a validated field wrapper
         const validatedField = (id, label, type = 'text', required = true, minlength = 0, placeholder = '', autocomplete = 'on') => {
             const isPassword = type === 'password';
+            const example = placeholder || ({
+                email: CommonStrings.emailExample,
+                firstName: CommonStrings.firstNameExample,
+                lastName: CommonStrings.lastNameExample,
+                password: CommonStrings.passwordPlaceholder,
+            })[id] || '';
+
             
             return `
             <div class="form-field-container" data-field="${id}">
@@ -169,8 +177,9 @@ export class LoginModal extends HTMLElement {
                             name="${id}" 
                             ${required ? 'required' : ''} 
                             ${minlength > 0 ? `minlength="${minlength}"` : ''}
-                            ${placeholder ? `placeholder="${placeholder}"` : ''}
+                            ${example ? `placeholder="${example}"` : ''}
                             autocomplete="${autocomplete}"
+                            ${type === 'email' ? 'inputmode="email" autocapitalize="none" spellcheck="false"' : ''}
                         >
                         ${isPassword ? `
                         <button type="button" class="btn-icon toggle-password" data-target="${id}" aria-label="${CommonStrings.googlePasswordVisibility}">
@@ -184,7 +193,12 @@ export class LoginModal extends HTMLElement {
             `;
         };
 
-        const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.googleOr}</div>` : '';
+        const registrationInformation = `<p class="auth-registration-info">${CommonStrings.signupLegalNotice(
+            `<a href="${AppConfig.termsUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.signupTerms}</a>`,
+            `<a href="${AppConfig.privacyUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.signupPrivacy}</a>`,
+        )}</p>`;
+
+        const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
         if (this.currentView === 'google_mfa') return `<h2>${CommonStrings.signIn}</h2><p>${CommonStrings.googleMfa}</p>${feedback}<form id="google-mfa-form" novalidate>${validatedField('mfa-code', CommonStrings.googleCode, 'text', true)}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.googleVerifyCode}</button></form>`;
@@ -202,17 +216,15 @@ export class LoginModal extends HTMLElement {
                     </button>
                     <div class="auth-links">
                         <button type="button" class="btn-link" id="link-forgot">${CommonStrings.forgotPassword}</button>
-                        ${this._isRegistrationEnabled() ? `
-                        <button type="button" class="btn-link" id="link-register">${CommonStrings.signUp}</button>
-                        ` : ''}
                     </div>
                 </form>
+                ${this._isRegistrationEnabled() ? `<div class="auth-switch-footer"><span>${CommonStrings.newAccountPrompt}</span><button type="button" class="btn-link" id="link-register" data-auth-mode="register">${CommonStrings.createAccount}</button></div>` : ''}
             `;
         } else if (this.currentView === 'register') {
              return `
-                <h2>${CommonStrings.signUp}</h2>
+                <h2>${CommonStrings.createAccount}</h2>
                 ${feedback}${googleAction}
-                <form id="register-form" novalidate>
+                <form id="register-form" autocomplete="on" novalidate>
                     ${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'email')}
                     <div class="form-row">
                         <div style="flex:1">
@@ -223,10 +235,11 @@ export class LoginModal extends HTMLElement {
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
-                        ${this.isLoading ? CommonStrings.loading : CommonStrings.signUp}
+                        ${this.isLoading ? CommonStrings.loading : CommonStrings.createAccount}
                     </button>
-                    <button type="button" class="btn-secondary" id="btn-back">${CommonStrings.back}</button>
+                    ${registrationInformation}
                 </form>
+                <div class="auth-switch-footer"><span>${CommonStrings.existingAccountPrompt}</span><button type="button" class="btn-link" data-auth-mode="login">${CommonStrings.signIn}</button></div>
             `;
         } else if (this.currentView === 'reset_password') {
             return `
@@ -292,17 +305,21 @@ export class LoginModal extends HTMLElement {
             this.authContainer.querySelector('#google-send-code')?.addEventListener('click', e => this._advanceGoogle(e, 'mailbox_send'));
             this.authContainer.querySelector('#google-verify-code')?.addEventListener('click', e => this._advanceGoogle(e, 'mailbox_verify'));
         }
+        this.authContainer.querySelectorAll('[data-auth-mode]').forEach(button => {
+            button.addEventListener('click', () => {
+                const mode = button.dataset.authMode;
+                if (mode === this.currentView) return;
+                this._setView(mode);
+                this.authContainer.focus();
+            });
+        });
         if (this.currentView === 'login') {
             attach('#login-form', this._handleLogin, 'submit');
             attach('#link-forgot', (e) => { e.preventDefault(); this._setView('forgot'); });
             
-            if (this._isRegistrationEnabled()) {
-                attach('#link-register', (e) => { e.preventDefault(); this._setView('register'); });
-            }
         } 
         else if (this.currentView === 'register') {
             attach('#register-form', this._handleRegister, 'submit');
-            attach('#btn-back', (e) => { e.preventDefault(); this._setView('login'); });
         }
         else if (this.currentView === 'forgot') {
             attach('#forgot-form', this._handleReset, 'submit');
@@ -362,7 +379,7 @@ export class LoginModal extends HTMLElement {
     _getSubmitButtonLabel() {
         switch (this.currentView) {
             case 'login': return CommonStrings.signIn;
-            case 'register': return CommonStrings.signUp;
+            case 'register': return CommonStrings.createAccount;
             case 'forgot': return CommonStrings.send;
             case 'reset_password': return CommonStrings.changePassword;
             default: return CommonStrings.signIn;
@@ -460,8 +477,12 @@ export class LoginModal extends HTMLElement {
             await AuthService.login(finalEmail, password);
             ToastHelper.showSuccess(CommonStrings.success);
             this.modal.close();
-            // Force reload to ensure all components (UserHeader, etc) pick up the new auth state
-            window.location.reload(); 
+            // Generic organizer sign-in resumes administration; checkout stays in place.
+            if (window.location.pathname === '/' && RightsService.canSeeAdmin()) {
+                await RouterService.navigateToAdmin();
+            } else {
+                window.location.reload();
+            }
         } catch (err) {
             console.error("Login Error:", err);
             let msg = err.message || CommonStrings.error;
@@ -499,7 +520,12 @@ export class LoginModal extends HTMLElement {
         this.googleError = '';
         this.isLoading = false;
         if (result.status === 'authenticated' || result.status === 'unlinked') {
-            window.location.replace(result.returnPath || '/');
+            const target = result.returnPath || '/';
+            if (result.status === 'authenticated' && target === '/' && RightsService.canSeeAdmin()) {
+                RouterService.navigateToAdmin();
+            } else {
+                window.location.replace(target);
+            }
             return;
         }
         this._setView(result.status === 'needs_mfa' ? 'google_mfa' : result.status === 'needs_profile' ? 'google_profile' : 'google_proof');
