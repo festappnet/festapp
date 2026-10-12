@@ -339,6 +339,8 @@ Future<bool> _ownsImage(String source, HtmlMediaOwner owner) =>
 Future<String> _uploadImage(Uint8List bytes, HtmlMediaOwner owner) =>
     DbImages.uploadImage(
         bytes, owner.isUnit ? null : owner.id, owner.isUnit ? owner.id : null,
-        // Preserve GIF/WebP animation and source format. The input was validated and
-        // bounded; server transformation is unnecessary for this editor contract.
-        maxBytes: HtmlMediaDraft.maxImageBytes);
+        // Let the Worker compress photos using its standard thresholds. Keep
+        // animated GIF/WebP and transparent PNG bytes unchanged.
+        maxBytes: ImageFileFormat.detect(bytes) == ImageFileFormat.jpeg
+            ? null
+            : HtmlMediaDraft.maxImageBytes);
