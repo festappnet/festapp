@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/images/image_area.dart';
-import '../ticket_background_image.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_layout_controller.dart';
@@ -264,77 +263,74 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (imageBusy) return null;
     setState(() => imageBusy = true);
     String? uploaded;
-    ui.Image? previousImage;
-    bool staged = false, committed = false;
-    await ExceptionHandler.guard(context, futureFunction: () async {
-      final bytes =
-          await TicketBackgroundImage.prepare(await file.readAsBytes());
-      final codec = await ui.instantiateImageCodec(bytes);
-      final image = (await codec.getNextFrame()).image;
-      codec.dispose();
-      if (!mounted) {
-        image.dispose();
-        return;
-      }
-      final artwork = resources.artworks[controller.artworkKey];
-      final currentImage =
-          artwork != null ? artwork.image : resources.background;
-      final ratioChanged = currentImage == null ||
-          (currentImage.width / currentImage.height -
-                      image.width / image.height)
-                  .abs() >
-              .01;
-      previousImage = resources.background;
-      staged = true;
-      resources.background = image;
-      imageRevision++;
-      setState(() {});
-      uploaded =
-          await widget.service.uploadBackground(bytes, widget.occasionId);
-      if (!mounted) return;
-      final resolved = await widget.service
-          .resolve(widget.occasionId, widget.type, draftLayout, uploaded);
-      if (!mounted) {
-        resolved.dispose();
-        return;
-      }
-      final old = resources;
-      setState(() {
-        resolved.fonts.addAll(resources.fonts);
-        resources = resolved;
-        background = uploaded;
-      });
-      old.dispose();
-      previousImage?.dispose();
-      committed = true;
-      controller.replace(
-          controller.document
-              .withBackgroundCrop(const Rect.fromLTWH(0, 0, 1, 1)),
-          artworkKey: 'classic');
-      if (ratioChanged) {
-        final reset = await showDialog<bool>(
+    bool committed = false;
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        final bytes = await file.readAsBytes();
+        uploaded = await widget.service.uploadBackground(
+          bytes,
+          widget.occasionId,
+        );
+        if (!mounted || uploaded == null) return;
+        final resolved = await widget.service.resolve(
+          widget.occasionId,
+          widget.type,
+          draftLayout,
+          uploaded,
+        );
+        if (!mounted) {
+          resolved.dispose();
+          return;
+        }
+        final current =
+            resources.artworks[controller.artworkKey]?.image ??
+            resources.background;
+        final processed =
+            resolved.artworks['classic']?.image ?? resolved.background;
+        final ratioChanged =
+            current == null ||
+            processed == null ||
+            (current.width / current.height -
+                        processed.width / processed.height)
+                    .abs() >
+                .01;
+        final old = resources;
+        setState(() {
+          resolved.fonts.addAll(resources.fonts);
+          resources = resolved;
+          background = uploaded;
+          imageRevision++;
+        });
+        old.dispose();
+        committed = true;
+        controller.replace(
+          controller.document.withBackgroundCrop(
+            const Rect.fromLTWH(0, 0, 1, 1),
+          ),
+          artworkKey: 'classic',
+        );
+        if (ratioChanged) {
+          final reset = await showDialog<bool>(
             context: editorContext,
             builder: (c) => AlertDialog(
-                    content: Text(TicketLayoutStrings.aspectChange),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(c, false),
-                          child: Text(TicketLayoutStrings.keep)),
-                      FilledButton(
-                          onPressed: () => Navigator.pop(c, true),
-                          child: Text(TicketLayoutStrings.reset))
-                    ]));
-        if (reset == true && mounted) controller.replace(resources.preset);
-      }
-    });
-    if (staged && !committed) {
-      if (mounted) {
-        resources.background?.dispose();
-        resources.background = previousImage;
-      } else {
-        previousImage?.dispose();
-      }
-    }
+              content: Text(TicketLayoutStrings.aspectChange),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: Text(TicketLayoutStrings.keep),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: Text(TicketLayoutStrings.reset),
+                ),
+              ],
+            ),
+          );
+          if (reset == true && mounted) controller.replace(resources.preset);
+        }
+      },
+    );
     if (mounted) setState(() => imageBusy = false);
     return committed ? uploaded : null;
   }

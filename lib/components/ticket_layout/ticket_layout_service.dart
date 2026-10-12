@@ -8,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/ticket_layout.dart';
 import '../images/db_images.dart';
 import 'ticket_text.dart';
-import 'ticket_background_image.dart';
 
 class TicketFontResource {
   final String id, family, loaderName;
@@ -133,9 +132,7 @@ class TicketLayoutService {
 
   Future<String?> uploadBackground(Uint8List bytes, int occasionId) =>
       DbImages.uploadImage(bytes, occasionId, null,
-          maxEdge: TicketBackgroundImage.maxEdge,
-          maxBytes: TicketBackgroundImage.maxBytes,
-          quality: TicketBackgroundImage.jpegQuality);
+          profile: ImageUploadProfile.ticketBackground);
 
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background) async {

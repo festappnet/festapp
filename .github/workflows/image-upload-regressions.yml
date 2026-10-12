@@ -1,0 +1,75 @@
+name: Image upload regressions
+on:
+  pull_request:
+    paths:
+      - 'workers/image-worker/**'
+      - 'lib/components/images/**'
+      - 'lib/components/html/**'
+      - 'lib/components/ticket_layout/**'
+      - 'lib/components/blueprint/**'
+      - 'lib/components/occasion_settings/**'
+      - 'lib/components/schedule/**'
+      - 'lib/components/speakers/**'
+      - 'lib/components/email_templates/**'
+      - 'test/components/images/**'
+      - 'test/components/html/**'
+      - 'test/components/ticket_layout/**'
+      - '.github/workflows/image-upload-regressions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'workers/image-worker/**'
+      - 'lib/components/images/**'
+      - 'lib/components/html/**'
+      - 'lib/components/ticket_layout/**'
+      - 'lib/components/blueprint/**'
+      - 'lib/components/occasion_settings/**'
+      - 'lib/components/schedule/**'
+      - 'lib/components/speakers/**'
+      - 'lib/components/email_templates/**'
+      - '.github/workflows/image-upload-regressions.yml'
+permissions:
+  contents: read
+jobs:
+  server-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: workers/image-worker/package-lock.json
+      - run: npm ci
+        working-directory: workers/image-worker
+      - run: npm run typecheck && npm run test:unit
+        working-directory: workers/image-worker
+  client-contract:
+    runs-on: ubuntu-latest
+    env:
+      FVM_CACHE_PATH: ${{ runner.temp }}/fvm
+    steps:
+      - uses: actions/checkout@v4
+      - id: sdk
+        run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.sdk.outputs.version }}
+          cache: true
+      - name: Use the installed SDK through FVM
+        run: |
+          dart pub global activate fvm 4.1.2
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          mkdir -p "$FVM_CACHE_PATH/versions"
+          ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
+      - run: fvm flutter pub get
+      - run: >-
+          fvm flutter test --no-pub
+          test/components/images/image_upload_contract_test.dart
+          test/components/images/image_control_client_test.dart
+          test/components/html/html_media_service_test.dart
+          test/components/ticket_layout/ticket_layout_test.dart
+          test/components/ticket_layout/ticket_layout_saver_test.dart
+      - run: >-
+          fvm flutter test --no-pub --platform chrome
+          test/components/html/html_image_preview_test.dart
