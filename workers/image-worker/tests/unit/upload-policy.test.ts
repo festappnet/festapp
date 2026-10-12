@@ -22,7 +22,7 @@ describe('one server-owned image upload policy', () => {
     const f = fixture();
     const result = await processUploadImage(file, policy(String(profile)), f.env);
     expect(f.transform).toHaveBeenCalledWith({ width: edge, height: edge, fit: 'scale-down' });
-    expect(f.output).toHaveBeenCalledWith({ format: 'image/jpeg', quality, anim: profile !== 'ticket-background' });
+    expect(f.output).toHaveBeenCalledWith({ format: 'image/jpeg', quality, anim: false });
     expect(result.contentType).toBe('image/jpeg');
     expect(result.extension).toBe('jpg');
   });

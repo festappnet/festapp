@@ -92,7 +92,7 @@ export async function processUploadImage(file: File, policy: UploadPolicy, env: 
     for (let attempt = 0; attempt < 6; attempt++) {
       const output = await env.IMAGES.input(file.stream())
         .transform({ width: edge, height: edge, fit: 'scale-down' })
-        .output({ format, ...(format === 'image/png' || format === 'image/gif' ? {} : { quality: policy.quality }), anim: !printArtwork });
+        .output({ format, ...(format === 'image/png' || format === 'image/gif' ? {} : { quality: policy.quality }), anim: !printArtwork && (format === 'image/gif' || format === 'image/webp') });
       const response = output.response();
       const bytes = await response.arrayBuffer();
       if (bytes.byteLength <= outputBudget) {
@@ -106,6 +106,7 @@ export async function processUploadImage(file: File, policy: UploadPolicy, env: 
   } catch (error) {
     if (!policy.profile) return original();
     if (error instanceof ImageProcessingError) throw error;
+    console.error('Image transform failed', error instanceof Error ? error.message : String(error));
     throw new ImageProcessingError(502, 'IMAGE_TRANSFORM_FAILED', 'Image processing failed', true);
   }
 }
