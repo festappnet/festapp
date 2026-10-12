@@ -8,6 +8,11 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const backup = path.join(root, 'automation/hetzner-supabase/backup');
 
+test('retention preserves daily and weekly recovery points and refuses unsafe selections', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_backup_retention.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('scheduled backup is encrypted, bounded, off-host and never authorizes cutover', () => {
   const create = fs.readFileSync(path.join(backup, 'create-online-encrypted-backup.sh'), 'utf8');
   assert.match(create, /plaintext_artifacts_written:false/);
@@ -17,7 +22,7 @@ test('scheduled backup is encrypted, bounded, off-host and never authorizes cuto
   assert.match(create, /rclone.+--immutable/);
   assert.match(create, /rclone.+check/);
   assert.match(create, /no_check_bucket = true/);
-  assert.match(create, /--min-age/);
+  assert.match(create, /prune-online-backups\.py/);
   assert.match(create, /"\$BACKUP_ROOT\/\.lock"/);
   assert.doesNotMatch(create, /docker compose (?:stop|down|restart|up)/);
   assert.doesNotMatch(create, /ALTER |DELETE FROM|DROP DATABASE/);
