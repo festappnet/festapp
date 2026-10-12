@@ -1,4 +1,4 @@
-export type ProjectId = 'default' | 'a' | 'akhweb' | 'slunovrat';
+export type ProjectId = 'default' | 'a' | 'akhweb';
 
 export interface Env {
   IMAGES_BUCKET: R2Bucket;
@@ -13,8 +13,6 @@ export interface Env {
   SUPABASE_ANON_KEY_A: string;
   SUPABASE_URL_AKHWEB: string;
   SUPABASE_ANON_KEY_AKHWEB: string;
-  SUPABASE_URL_SLUNOVRAT?: string;
-  SUPABASE_ANON_KEY_SLUNOVRAT?: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
   CF_ACCOUNT_ID: string;
