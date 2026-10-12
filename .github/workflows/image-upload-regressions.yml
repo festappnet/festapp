@@ -47,7 +47,7 @@ jobs:
   client-contract:
     runs-on: ubuntu-latest
     env:
-      FVM_CACHE_PATH: ${{ runner.temp }}/fvm
+      FVM_CACHE_PATH: /tmp/festapp-fvm
     steps:
       - uses: actions/checkout@v4
       - id: sdk
