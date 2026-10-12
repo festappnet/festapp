@@ -6,6 +6,7 @@ import 'package:http_parser/http_parser.dart';
 
 import 'image_file_format.dart';
 import 'image_upload_profile.dart';
+import 'image_upload_limits.dart';
 export 'image_upload_profile.dart';
 
 class ImageControlClient {
@@ -27,7 +28,7 @@ class ImageControlClient {
     int? unitId,
     ImageUploadProfile profile = ImageUploadProfile.standard,
   }) async {
-    if (bytes.length > 20000000)
+    if (bytes.length > ImageUploadLimits.maxInputBytes)
       throw const FormatException('Image exceeds 20 MB');
     final format = ImageFileFormat.detect(bytes);
     final stem = filename.replaceFirst(RegExp(r'\.[^.]*$'), '');
