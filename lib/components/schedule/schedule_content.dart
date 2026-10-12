@@ -20,6 +20,7 @@ import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/components/users/db_users.dart';
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/images/image_area.dart';
@@ -628,11 +629,13 @@ class ScheduleContentState extends State<ScheduleContent> {
                           imageUrl: imageUrl,
                           onFileSelected: (file) async {
                             final bytes = await file.readAsBytes();
+                            final compressed =
+                                await ImageCompressionHelper.compress(
+                                    bytes, 200);
                             final publicUrl = await DbImages.uploadImage(
-                              bytes,
+                              compressed,
                               RightsService.currentOccasionId(),
                               null,
-                              profile: ImageUploadProfile.thumbnail,
                             );
                             ctx.stateManager.changeCellValue(
                                 ctx.cell, publicUrl,

@@ -14,7 +14,6 @@ import 'package:super_editor/super_editor.dart';
 import 'package:super_editor_clipboard/super_editor_clipboard.dart';
 
 import 'html_editor_document.dart';
-import 'html_image_preview.dart';
 import 'html_strings.dart';
 import 'html_text_style.dart';
 import 'html_view.dart';
@@ -653,9 +652,9 @@ class _DraftImageBuilder extends ImageComponentBuilder {
         opacity: model.opacity,
         imageBuilder: (_, source) {
           final bytes = controller.media.previewBytes(source);
-          if (bytes != null) return HtmlImagePreview(bytes, fit: BoxFit.contain);
+          if (bytes != null) return Image.memory(bytes, fit: BoxFit.contain);
           if (source.startsWith('data:image/'))
-            return HtmlImagePreview(UriData.parse(source).contentAsBytes(),
+            return Image.memory(UriData.parse(source).contentAsBytes(),
                 fit: BoxFit.contain);
           if (source.isEmpty) return const Icon(Icons.broken_image_outlined);
           if (controller.owner.canImport &&
@@ -714,7 +713,7 @@ class _AuthorizedImagePreviewState extends State<_AuthorizedImagePreview> {
               child: const Icon(Icons.broken_image_outlined));
         if (!snapshot.hasData)
           return const Center(child: CircularProgressIndicator());
-        return HtmlImagePreview(snapshot.data!, fit: BoxFit.contain);
+        return Image.memory(snapshot.data!, fit: BoxFit.contain);
       });
 }
 

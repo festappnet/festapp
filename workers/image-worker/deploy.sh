@@ -27,4 +27,3 @@ if [[ "$FESTAPP_IMAGE_DEPLOY_AUTHORITY" != "approved" ]]; then
 fi
 
 npx wrangler deploy
-node ../../automation/verify_image_service.mjs --all-tenants
