@@ -54,3 +54,15 @@ and staged deletions. Child editors report changes to refresh the action bar;
 plain text fields also use the surrounding Form's change callback. HTML drafts
 that are still open are included via `HtmlSaveCoordinator.hasActiveDraft`.
 Keep model getters free of writes so rendering defaults does not create edits.
+
+## Global ticket order limit
+
+`MAX_TICKETS_PER_ORDER=20` in `automation/project.conf` is the technical ceiling
+for every order, including editor-created orders. Individual forms may choose
+lower limits. `apply_config.sh` generates the Flutter/public-client cap; values
+above it cannot be typed into the form editor and old oversized settings are
+clamped when read. SQL rejects oversized form settings and order payloads before
+creating any tickets. To change the ceiling, run `apply_config.sh` and
+`python3 automation/assemble-ticket-limits-migration.py --output supabase/migrations/<timestamp>_global_ticket_order_limit.sql`; ship the resulting SQL
+and both clients together. After the initial migration is deployed, publish a new
+migration for later cap changes instead of rewriting the deployed migration.

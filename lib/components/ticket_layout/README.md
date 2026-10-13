@@ -9,28 +9,34 @@ matrix. Images are decoded once when their source changes.
 `ticketGeneration.ts` resolves saved layout data and resources; `drawLayoutTicket`
 (in `generateTicket.ts`) is the sole PDF renderer. Download, email and PDF preview
 all use it. The separate named and image-relative PDF implementations are removed.
-`ticketTemplateImport.ts` is a one-way data adapter for existing feature records
-without a layout. It imports geometry, bundled original font, QR foreground and
-background/opacity/quiet margin, named border, and compact optional rows. It never
-renders PDFs. Saved edits take precedence. The adapter remains for unmigrated
-organizations and may be removed once their configured ticket features all store
-layouts; blank events use the ordinary preset. Unknown historical font URLs fail
-explicitly rather than silently substituting a font.
+Historical geometry import exists only in the offline converter. The runtime
+accepts schema 3 and creates neutral presets for new, unconfigured slots. It
+rejects legacy artwork configurations awaiting materialization. Saved layouts
+and ordered product snapshots remain authoritative.
 
 Bundled fonts (`futura`, `robotoSlab`, `roboto`, `russoOne`) are selected once per
 ticket. The server supplies the same font bytes and metrics to Flutter and PDF.
-Templates can store `flow` bindings and `flowStep` to compact missing detail rows;
+Templates can store `flow` element IDs and `flowStep` to compact missing detail rows;
 all ordinary presets retain fixed positions. QR contrast compares both colors.
+
+## Shared font catalog
+
+`supabase/functions/_shared/ticket-assets/font-catalog.json` is the sole pinned
+catalog. Edge functions import it directly; Flutter bundles the same file through
+`pubspec.yaml` and loads it through `TicketFontCatalog`. The generator
+`automation/generate_ticket_font_catalog.mjs` produces that catalog, Dart legacy
+font IDs and the append-only SQL seed from the locked font package. Do not add
+another frontend copy. Existing font IDs, metadata and font bytes are unchanged.
 
 ## Contract
 
-The optional `ticket.layout` contains `schemaVersion: 1` and `templates.wide`
+The optional `ticket.layout` contains `schemaVersion: 3` and `templates.wide`
 and/or `templates.named`. Each template stores PDF points with a top-left
 origin, a PDF page, a ticket area
 and a flat list of elements. Each element has an id, binding, box, visible,
 locked and style (fontSize, minFontSize, maxLines, color, align).
 
-Bindings: qr, ticketSymbol, spotGroup, food, note, price, occasionTitle,
+Bindings: qr, ticketSymbol, spotGroup, productType, note, price, occasionTitle,
 occasionDatePlace, orderName, logo, footer. Missing values leave fixed boxes
 empty unless their template explicitly enables compact flow; zero prices remain visible. Multiple products select the first matching
 product by order-product-ticket id. OrderName means the order's name/surname,
@@ -76,11 +82,10 @@ by the Deno suite. Flutter tests cover controller gestures, live repaint before
 pointer up, zero implicit PDF calls and draft serialization. Deno tests cover
 schema, dispatch, normalized content, vector QR and preview authorization.
 
-Deploy separately, in order: `20261001120000_ticket_layout_editor.sql`, the
-updated `download-ticket`, `send-tickets` and new `preview-ticket-layout` plus
-shared sources/font asset, then the Flutter client for the selected tenant.
-The runtime policy and coverage matrix include preview. No tenant rollout is
-implied. Once a layout is saved, backend rollback must keep supporting it.
+Release the dedicated product cutover SQL/data transaction, all shared Edge
+consumers and the selected tenant client in one fenced window. The exact
+production ordering and unapplied gates are in the implementation evidence.
+Do not apply unrelated pending migrations or deploy other tenant branches.
 
 
 ## Style choices and alignment
@@ -93,11 +98,18 @@ request or saved style identifier is involved. Historical event image references
 are distinct from geometry and must be reviewed before becoming reusable assets.
 
 Known event title/date/place override synthetic values in all preview scenarios.
-After authorization, preview reads the occasion's product catalog and selects
-the first visible admission product (by id) and a dinner in the same currency.
-The displayed price is their sum and dinner uses its short title when present.
-An empty or unusable catalog uses the illustrative dinner and price fallback;
-a real catalog without dinner leaves that field empty. Names and table numbers
+After authorization, preview reads one occasion catalog snapshot. Product fields
+select an explicit `productTypeId` and editable label; data, warnings and flow
+are addressed by element ID. Examples use the first visible product by order
+and ID, with trimmed short/full titles selected by the shared server formatter.
+The picker includes groups referenced by a form in this occasion, including
+hidden fields. Already saved historical references remain printable, and hidden
+purchased products are included in production rendering. No matching product
+means no text or prefix. Catalog failures are visible and retry loads only the
+catalog. Edits and undo project examples locally, without resolve/PDF calls.
+Preview price deduplicates selected examples and never combines currencies.
+Admission is identified by blueprint product membership, independent of the
+product type classification. Names and table numbers
 remain illustrative. The QR stays deliberately invalid.
 Resolve reads these fields from the authorized occasion on the canonical backend.
 Without an assigned background, custom layouts use the same plain fill in
@@ -192,23 +204,30 @@ preserve its square shape across Dart Rect arithmetic and JSON validation at
 phone zoom levels; this is below printable pixel precision.
 
 
-Preview fields follow inspected Skautský ples 2026 purchases: ten-character
-code shape (X382 prefix), 200 CZK admission plus a 170 CZK dinner, and the actual
-short dinner title. Customer names/codes are not copied. The printed sample
-code looks like a normal ticket; the QR payload has a preview namespace and
-cannot match a real admission code. Preview artwork has no printed watermark.
+Production previews use real normalized catalog examples for explicit group IDs.
+Names, table numbers and codes are synthetic. QR payloads use the preview
+namespace and cannot match a real admission code. Historical PDF fixtures remain
+unchanged as visual baselines; no customer credential is copied.
 
-## Existing-layout import operation
+## Product type cutover operation
 
-`automation/tickets/import-layouts.ts inventory.json plan.sql ORGANIZATION`
-creates a reviewable forward-only transaction from an explicit tenant inventory
-(`id`, `organization`, `features`, `data.font`, `features_hash=md5(features::text)`).
-It only imports configured artwork/named tickets without saved layouts. Missing
-assets are reported separately and never substituted. Run reviewed SQL through
-`access-sql.py`; every write checks the full feature hash and original font,
-protects concurrent edits, validates the layout and is safe to repeat. Unconfigured
-events still get the first-open gallery. The save RPC rejects older clients that
-would discard the migrated font/appearance contract; reload the deployed editor.
+Active SQL, Dart and Edge contracts accept schema 3 only. Legacy schemas and
+implicit artwork geometry are read only by the offline converter in
+`automation/tickets/product-type-cutover/`. It preserves historical product
+links and fonts, materializes both slots, removes unused print fields without
+moving retained content, and never creates a transport field automatically.
+The former runtime template importer and fixed dinner selector are retired.
+
+Use `inventory.sql` with an explicit organization and current versions/hashes,
+then `run.ts inventory|dry-run|apply|verify`. `apply` produces reviewable SQL
+containing only the scoped forward migration, data conversion, sync invalidation,
+audit and migration ledger in one transaction. It does not execute database
+writes. Failed hashes abort the whole transaction; replay does not increment
+versions. See [implementation evidence and production gates](../../../docs/plans/ticket-product-type-cutover-implementation-2026-10-13.md).
+Production writes, deployment, commit and push require separate authorization.
+A schema-3 occasion copy remaps both slots through the complete product type map
+and validates them inside the existing atomic copy command. Direct catalog
+reparent/delete writes are revoked. A purchased product cannot change group.
 
 ## Background upload quality
 
@@ -301,7 +320,7 @@ before publishing the client.
 Explicit canvas/element geometry edits materialize the currently displayed flow
 positions once and remove compact-flow rules in that same undo transaction.
 This makes bounds, dragging, resizing and magnets agree with what is painted,
-including price rows shifted up past missing or hidden food/note rows. Canvas
+including price rows shifted up past missing or hidden product/note rows. Canvas
 magnets also include the cropped artwork; Alt and disabled snapping bypass them.
 
 All editor color dialogs preview immediately, commit as one undo step, and
@@ -328,3 +347,11 @@ panel beside the full-page preview (below it on phones). Numeric dimensions
 commit on Enter/blur through the same canvas controller as edge drags. Required
 element blockers link directly to element editing. Changes use ordinary undo;
 there is no second modal Apply step.
+
+## Selection scaling
+
+Shift/Ctrl/Cmd-click toggles selection; Shift-drag on empty space adds a marquee
+selection. A multi-selection exposes eight shared resize handles. Resizing scales
+unlocked boxes, their relative positions and text sizes around the opposite
+anchor in one undo step. QR remains square and at least 60 pt; font size and
+canvas bounds constrain the entire group uniformly.

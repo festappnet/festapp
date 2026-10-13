@@ -14,25 +14,26 @@ _fetching_, but **write logic** is often in SQL.
 
 ### 1. Order Creation & Storno
 
-The web client relies on the same SQL backend functions as the Flutter app:
+`db_orders.js` submits to `send-ticket-order`. New orders use
+`create_ticket_order_client_sync_v1`; authenticated seat replacement uses
+`replace_blueprint_order_client_sync_v1`. SQL owns validation, cancellations,
+allocations, ticket changes and transactional confirmation intents under one
+receipted command. Do not split replacement into frontend requests.
 
-- `database/functions/eshop/confirm_blueprint_order_change.sql`
+The replacement RPC still calls the internal preparation logic sourced from
+`database/functions/eshop/confirm_blueprint_order_change.sql`; it is not dead
+code merely because the frontend invokes a different RPC.
 
-**Logic**:
-
-1. **Analyze**: Checks for spot occupancy.
-2. **Storno**: Cancels old tickets if necessary.
-3. **Unlock**: Clears secrets.
-4. **Prepare**: Constructs new order payload.
-
-**Risk**: Modifying the order creation flow must be done with awareness of the
-SQL "heavy lifting".
+The HTTP response confirms the committed order with `delivery: queued` and an
+optional confirmation receipt. Only the global `process-email-queue` sends;
+provider acceptance and delivery feedback are separate evidence.
 
 ## Database Layers
 
-1. **JS (`db_orders.js`)**: Wrapper calling Supabase RPCs.
-2. **Supabase (`database/functions`)**: Business logic.
-3. **Edge Functions**: Emailing/Payments.
+1. **JS (`db_orders.js`)**: Thin authenticated request wrapper.
+2. **Edge (`send-ticket-order`)**: Request boundary selecting the receipted RPC.
+3. **PostgreSQL (`database/functions`)**: Atomic business logic and durable effects.
+4. **Queue worker (`process-email-queue`)**: Globally gated SES sending.
 
 ## Critical Implementation Details
 

@@ -144,6 +144,9 @@ assert_not_file() {
 
 echo
 echo "--- generated Flutter SDK adapters ---"
+assert_contains "$TMP_ROOT/lib/app_config.dart" 'static const int maxTicketsPerOrder = 7;'
+assert_contains "$TMP_ROOT/web_client/src/app_config.js" 'static maxTicketsPerOrder = 7;'
+
 assert_contains "$TMP_ROOT/.fvmrc" '"flutter": "9.9.9"'
 assert_contains "$TMP_ROOT/.fvm/fvm_config.json" '"flutterSdkVersion": "9.9.9"'
 assert_contains "$TMP_ROOT/.fvm/release" '9.9.9'

@@ -10,7 +10,7 @@ The `project.conf` file is the **Single Source of Truth** for the project. It
 defines:
 
 - Deployment domains.
-- Supabase credentials.
+- Public Supabase client settings and tenant backend activation (no private credentials).
 - Theme colors.
 - Android/iOS application identity and OneSignal public IDs.
 - Brand asset paths and optional installation-generation cutover marker.

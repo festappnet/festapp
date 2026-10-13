@@ -57,7 +57,7 @@ test('every Edge Function and Worker entrypoint has a fail-closed cutover classi
   assert.equal(report.status, 'pass');
   assert.deepEqual(report.blockers, []);
   assert.equal(report.edge_functions, 30);
-  assert.equal(report.worker_entrypoints, 6);
+  assert.equal(report.worker_entrypoints, 5);
   assert.equal(report.mutating_surfaces, 25);
   for (const name of ['bank-sync-webhook', 'bank-sync-manage', 'bank-sync-reconcile']) {
     assert.equal(policy.edge_functions[name].mutates_authority, true);

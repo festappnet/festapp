@@ -287,6 +287,8 @@
     "users": "Užívatelia"
   },
   "Unit": {
+    "copyTargetUnit": "Do organizácie",
+    "copyTargetHint": "Vyberte organizáciu pre kópiu. E-mailové šablóny sa priradia cieľovej organizácii. Bankový účet sa prevezme iba, ak je v nej dostupný.",
     "addNewEvent": "Pridať novú udalosť"
   },
   "OccasionHome": {
@@ -555,5 +557,30 @@
     "unknownUpload": "Výsledok nahrávania obrázka nie je známy. Opakovanie môže vytvoriť ďalší obrázok.",
     "retryUpload": "Zopakovať nahrávanie",
     "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
-  }
+  },
+  "TicketLayout":{
+    "manageProducts":"Správa formulárov a produktov",
+    "layoutLimit":"Rozloženie prekročilo limit 32 KiB. Skráťte popisy alebo odstráňte polia.",
+  "addProduct": "Pridať produktové pole",
+  "productGroup": "Skupina produktov",
+  "productLabel": "Popis na vstupenke",
+  "labelHint": "Prázdny popis zobrazí iba názov produktu",
+  "example": "Príklad",
+  "noExample": "Bez dostupného príkladu",
+  "removeProduct": "Odstrániť pole",
+  "searchProducts": "Hľadať skupinu",
+  "alreadyAdded": "Už je na vstupenke - vybrať pole",
+  "emptyProducts": "Žiadne vhodné skupiny. Pridajte produkty v nastavení formulára.",
+  "retryCatalog": "Skúsiť znova",
+  "catalogError": "Katalóg sa nepodarilo načítať",
+  "missingProduct": "Skupina chýba - opravte alebo odstráňte pole",
+  "hiddenProduct": "Skupina už nie je v ponuke",
+  "offeredProduct": "V ponuke formulára",
+  "catalogProduct": "Produkty tejto akcie",
+  "noSpace": "Pre ďalšie pole nie je miesto. Zväčšite vstupenku alebo uvoľnite miesto.",
+  "elementLimit": "Vstupenka môže mať najviac 32 prvkov",
+  "draftProducts": "Produktové polia upravíte po vytvorení akcie.",
+  "replacementProducts": "Použitie predlohy nahradí rozloženie a odstráni produktové polia: {count}",
+  "productType": "Skupina produktov"
+}
 }

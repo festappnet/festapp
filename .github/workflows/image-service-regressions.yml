@@ -1,0 +1,30 @@
+name: Image service regressions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: workers/image-worker/package-lock.json
+      - name: Install image test dependencies
+        working-directory: workers/image-worker
+        run: npm ci --no-audit --no-fund
+      - name: Verify every active origin, project and authorization contract
+        working-directory: workers/image-worker
+        run: npm run typecheck && npm run test:unit
+      - name: Verify production deployment probe regressions
+        run: node --test automation/tests/image_service_preflight.test.mjs

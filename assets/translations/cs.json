@@ -1853,7 +1853,9 @@
     "loadEventFailed": "Nepodařilo se načíst událost. Zkuste to prosím znovu.",
     "loadUnitFailed": "Nepodařilo se načíst data organizace.",
     "noEventsFound": "Nebyly nalezeny žádné události.",
-    "unit": "Organizace"
+    "unit": "Organizace",
+    "copyTargetUnit": "Do organizace",
+    "copyTargetHint": "Vyberte organizaci, ve které vznikne kopie. E-mailové šablony se přiřadí cílové organizaci. Bankovní účet se převezme pouze, pokud je v ní dostupný."
   },
   "OccasionHome": {
     "addToSchedule": "Přidat do programu",
@@ -2418,7 +2420,30 @@
     "dimensionInputHint": "Rozměr potvrďte Enterem nebo kliknutím mimo pole. Obsah zůstává na místě.",
     "editBlockingElement": "Upravit: {name}",
     "transparency": "Průhlednost",
-    "finishCanvasFirst": "Pro přesunutí prvků nejprve klikněte na Hotovo."
+    "finishCanvasFirst": "Pro přesunutí prvků nejprve klikněte na Hotovo.",
+    "manageProducts": "Správa formulářů a produktů",
+    "layoutLimit": "Rozložení překročilo limit 32 KiB. Zkraťte popisky nebo odeberte pole.",
+    "addProduct": "Přidat produktové pole",
+    "productGroup": "Skupina produktů",
+    "productLabel": "Popisek na vstupence",
+    "labelHint": "Prázdný popisek zobrazí jen název produktu",
+    "example": "Příklad",
+    "noExample": "Bez dostupného příkladu",
+    "removeProduct": "Odstranit pole",
+    "searchProducts": "Hledat skupinu",
+    "alreadyAdded": "Už je na vstupence - vybrat pole",
+    "emptyProducts": "Žádné vhodné skupiny. Přidejte produkty ve správě formuláře.",
+    "retryCatalog": "Zkusit znovu",
+    "catalogError": "Katalog se nepodařilo načíst",
+    "missingProduct": "Skupina chybí - opravte nebo odstraňte pole",
+    "hiddenProduct": "Skupina již není v nabídce",
+    "offeredProduct": "V nabídce formuláře",
+    "catalogProduct": "Produkty této akce",
+    "noSpace": "Pro další pole není místo. Zvětšete plochu vstupenky nebo uvolněte místo.",
+    "elementLimit": "Vstupenka může mít nejvýše 32 prvků",
+    "draftProducts": "Produktová pole upravíte po vytvoření akce.",
+    "replacementProducts": "Použití předlohy nahradí rozložení a odstraní produktová pole: {count}",
+    "productType": "Produktová skupina"
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transakce s jinou měnou než objednávka nejsou v grafu zahrnuty",
@@ -2477,5 +2502,22 @@
     "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague.",
     "onlyValid": "Pouze platné",
     "includingCancelled": "Včetně stornovaných"
+  },
+  "OccasionSetup": {
+    "drafts": "Rozpracované koncepty",
+    "untitled": "Nová událost",
+    "resume": "Pokračovat",
+    "basics": "Základ",
+    "review": "Souhrn",
+    "saving": "Ukládání…",
+    "saved": "Uloženo",
+    "saveFailed": "Koncept se nepodařilo uložit nebo načíst.",
+    "conflict": "Koncept změnil jiný editor. Vaše rozepsané změny zůstávají zde.",
+    "retry": "Zkusit znovu",
+    "reload": "Načíst novější koncept",
+    "reloadConfirm": "Načíst uloženou verzi? Vaše neuložené změny se zahodí.",
+    "leave": "Uložit a vrátit se do seznamu",
+    "incomplete": "Koncept zůstává soukromý. Nastavení funkcí, formuláře a plánku přidáme v dalších krocích.",
+    "deleteConfirm": "Opravdu smazat tento rozpracovaný koncept?"
   }
 }

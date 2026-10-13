@@ -9,7 +9,7 @@ import '../ticket_layout_strings.dart';
 
 class TicketLayoutProperties extends StatelessWidget {
   final TicketLayoutController controller;
-  final Widget? fontControl;
+  final Widget? fontControl, productControl;
   final TicketTemplate? defaults;
   final ui.Image? backgroundImage;
   final TicketFontMetrics? metrics;
@@ -18,6 +18,7 @@ class TicketLayoutProperties extends StatelessWidget {
       {super.key,
       required this.controller,
       this.fontControl,
+      this.productControl,
       this.metrics,
       this.backgroundImage,
       this.data,
@@ -43,17 +44,29 @@ class TicketLayoutProperties extends StatelessWidget {
         if (e == null) return const SizedBox.shrink();
         final text = !['qr', 'logo'].contains(e.binding);
         var overflow = false;
-        if (text && metrics != null && data?[e.binding] != null) {
+        if (text && metrics != null && data?[e.id] != null) {
           try {
-            final fit = fitTicketText(data![e.binding]!, e, metrics!);
+            final fit = fitTicketText(data![e.id]!, e, metrics!);
             overflow = fit.overflow || fit.replaced;
           } on FormatException {
             overflow = true;
           }
         }
         final original = defaults?.elements
-            .where((item) => item.binding == e.binding)
-            .firstOrNull;
+                .where((item) =>
+                    item.id == e.id ||
+                    (e.binding != 'productType' && item.binding == e.binding))
+                .firstOrNull ??
+            (e.binding == 'productType'
+                ? TicketElement(
+                    id: e.id,
+                    binding: 'productType',
+                    productTypeId: e.productTypeId,
+                    label: e.label,
+                    box: e.box,
+                    fontSize: 12,
+                    maxLines: 3)
+                : null);
         void resetFont() {
           if (!e.locked && original != null) {
             controller.change(e.copyWith(
@@ -72,6 +85,7 @@ class TicketLayoutProperties extends StatelessWidget {
                         style: const TextStyle(color: Colors.orange)),
                   Text(TicketLayoutStrings.binding(e.binding),
                       style: Theme.of(context).textTheme.titleMedium),
+                  if (productControl != null) productControl!,
                   if (text) ...[
                     if (fontControl != null) fontControl!,
                     const SizedBox(height: 12),
@@ -408,4 +422,56 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
                         )),
                 child: Text(TicketLayoutStrings.apply)),
           ]);
+}
+
+class TicketProductLabelInput extends StatefulWidget {
+  final TicketLayoutController controller;
+  final TicketElement element;
+  const TicketProductLabelInput(
+      {super.key, required this.controller, required this.element});
+  @override
+  State<TicketProductLabelInput> createState() =>
+      _TicketProductLabelInputState();
+}
+
+class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
+  late final text = TextEditingController(text: widget.element.label);
+  late final focus = FocusNode()..addListener(_focusChanged);
+  void _focusChanged() {
+    if (focus.hasFocus)
+      widget.controller.beginGesture();
+    else
+      widget.controller.endGesture();
+  }
+
+  @override
+  void didUpdateWidget(covariant TicketProductLabelInput old) {
+    super.didUpdateWidget(old);
+    if (!focus.hasFocus && text.text != widget.element.label)
+      text.text = widget.element.label ?? '';
+  }
+
+  @override
+  void dispose() {
+    focus.removeListener(_focusChanged);
+    focus.dispose();
+    text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => TextField(
+      controller: text,
+      focusNode: focus,
+      enabled: !widget.element.locked,
+      maxLength: 120,
+      decoration: InputDecoration(
+          labelText: TicketLayoutStrings.productLabel,
+          helperText: TicketLayoutStrings.labelHint),
+      onChanged: (value) {
+        widget.controller.beginGesture();
+        widget.controller.change(widget.element.copyWith(label: value.trim()));
+      },
+      onSubmitted: (_) => focus.unfocus(),
+      onTapOutside: (_) => focus.unfocus());
 }

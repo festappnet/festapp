@@ -18,7 +18,8 @@ and handle payments.
 ## Features
 
 - Available on Android, iOS, and Web.
-- Event is available for offline use (Android, iOS, Web/PWA).
+- Previously synchronized event data is available offline (Android, iOS, Web/PWA);
+  availability depends on the selected sync capability and populated local cache.
 - Dark and light modes are available.
 - **Volunteer Management**: Dedicated staffing system for managing tasks,
   shifts, and assignments.
@@ -109,6 +110,12 @@ and handle payments.
 - Ticket scanning
   - QR-code-based ticket verification.
 
+Developer references for current features:
+[Google sign-in](docs/operations/auth/google-sign-in.md),
+[ticket layout editor](lib/components/ticket_layout/README.md),
+[occasion reports](lib/components/eshop/README.md#occasion-report-snapshot), and
+[BankSync account management](lib/components/bank_accounts/README.md).
+
 ---
 
 ## Architecture
@@ -116,9 +123,12 @@ and handle payments.
 This project is built using the [Flutter](https://github.com/flutter/flutter)
 framework and the Dart programming language.
 
-The backend uses the [Supabase](https://github.com/supabase/supabase) stack
-across managed-cloud and self-hosted targets during the current cutover. It
-includes:
+The backend uses the self-hosted [Supabase](https://github.com/supabase/supabase)
+stack at `https://api.festapp.net`. The production switch completed on
+2026-09-10; former cloud sources are retained for history and reconciliation,
+not routine application writes or migrations. See the
+[cutover record](docs/operations/work-items/completed/canonical-self-hosted-cutover-2026-09-02.md).
+It includes:
 
 - Deno functions written in TypeScript
 - PostgreSQL scripts for database operations
@@ -142,9 +152,11 @@ graph TD
 
 **Key Architectural Highlights**:
 
-- **Offline-First**: The app is designed to work fully offline (critical for
-  festivals). It uses a robust caching strategy (`OfflineDataService`) and local
-  databases.
+- **Offline data**: Client Sync v1 uses versioned projections in `ClientSyncStore`;
+  the legacy path populates `OfflineDataService`. Cached content can be read
+  offline after synchronization. Initial loading, authentication, payments and
+  server-confirmed writes require a connection. See the
+  [service flows](docs/architecture/SERVICES.md).
 - **SQL-Centric Logic**: A significant portion of business logic (orders, games,
   permissions) resides in **PostgreSQL Functions (RPC)** rather than Dart code.
 - **Multi-Tenant**: Supports multiple organizations, units, and occasions with
@@ -176,13 +188,26 @@ The project uses a **centralized configuration system** driven by
 `automation/project.conf`. This file is the single source of truth for:
 
 - **Deployment**: Domain settings (`DOMAIN`, `CNAME`).
-- **Application**: Supabase credentials (`SUPABASE_URL`, `ANON_KEY`),
+- **Application**: Public Supabase client settings (`SUPABASE_URL`, `SUPABASE_ANON_KEY`),
   Organization ID, and integration links.
 - **Theme**: Brand colors (`THEME_SEED_1`...`4`) which are automatically applied
   to both Flutter (`app_config.dart`) and Web Client (`theme_config.css`).
 - **Fonts**: Font family configuration (`FONT_FAMILY_BASE`) and form scaling.
 - **Version**: Application version (`VERSION`), propagating to `pubspec.yaml`,
   `package.json`, and the app.
+
+For a production tenant, require `BACKEND_ACTIVATION_PHASE=canonical` in
+its `automation/project.conf` and verify the published
+`WEB_LINK/backend-activation.json`: tenant ID, canonical generation and endpoint
+must match the selected configuration. Verify
+`BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID` and any `FORCE_OCCASION_LINK`
+in that same canonical database before reading event or user data. Stop on a
+mismatch. `SUPABASE_URL` can be a compiled legacy mobile fallback; neither it
+nor a project ref in `.env.local` selects the live database. The shared main
+configuration is a development template, not evidence of a tenant's activation.
+
+Private credentials stay outside `project.conf` and generated client assets.
+See [tenant setup](docs/setup/howto.md) for private-input boundaries.
 
 ### Applying Configuration
 

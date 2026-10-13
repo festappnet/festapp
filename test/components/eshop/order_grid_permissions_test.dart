@@ -7,9 +7,20 @@ void main() {
       canSaveOrderGridChanges(
         isOrderEditor: false,
         isUnitManager: true,
+        isUnitEditor: false,
       ),
       isTrue,
     );
+  });
+
+  test('unit editor can save an order row deletion', () {
+    expect(
+        canSaveOrderGridChanges(
+          isOrderEditor: false,
+          isUnitManager: false,
+          isUnitEditor: true,
+        ),
+        isTrue);
   });
 
   test('read-only order viewer cannot save grid changes', () {
@@ -17,6 +28,7 @@ void main() {
       canSaveOrderGridChanges(
         isOrderEditor: false,
         isUnitManager: false,
+        isUnitEditor: false,
       ),
       isFalse,
     );

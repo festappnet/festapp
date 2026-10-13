@@ -80,7 +80,7 @@
         },
         {
           "id": "food",
-          "binding": "food",
+          "binding": "productType",
           "box": {
             "x": 50,
             "y": 223.36049999999994,
@@ -95,7 +95,9 @@
             "maxLines": 1,
             "color": "643617",
             "align": "left"
-          }
+          },
+          "productTypeId": 123,
+          "label": "Večeře"
         },
         {
           "id": "note",
@@ -219,7 +221,7 @@
         },
         {
           "id": "food",
-          "binding": "food",
+          "binding": "productType",
           "box": {
             "x": 50,
             "y": 223.36049999999994,
@@ -234,7 +236,9 @@
             "maxLines": 1,
             "color": "FFFFFF",
             "align": "left"
-          }
+          },
+          "productTypeId": 123,
+          "label": "Večeře"
         },
         {
           "id": "note",
@@ -360,7 +364,7 @@
         },
         {
           "id": "food",
-          "binding": "food",
+          "binding": "productType",
           "box": {
             "x": 50,
             "y": 223.36049999999994,
@@ -375,7 +379,9 @@
             "maxLines": 1,
             "color": "000000",
             "align": "left"
-          }
+          },
+          "productTypeId": 123,
+          "label": "Večeře"
         },
         {
           "id": "note",

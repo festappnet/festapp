@@ -1,3 +1,4 @@
+import { AppConfig } from '../../app_config.js';
 import { FormHelper } from './form_helper.js';
 import { FormDataReader } from './form_data_reader.js';
 import { DbForms } from './db_forms.js';
@@ -39,7 +40,7 @@ export class FormSession extends EventTarget {
             if (ticketField && ticketField.data && ticketField.data.max_tickets) {
                 const limit = parseInt(ticketField.data.max_tickets, 10);
                 if (!isNaN(limit) && limit > 0) {
-                    this.maxTickets = limit;
+                    this.maxTickets = Math.min(limit, AppConfig.maxTicketsPerOrder);
                 }
             }
         }
@@ -221,24 +222,33 @@ export class FormSession extends EventTarget {
                      
 
                      if (validOptions.length > 0) {
-                         // Select first one as default
-                         const autoSelect = validOptions[0];
-                         
-                         // Use ID if available, otherwise fallback to title (matches RadioFieldBuilder logic)
-                         const autoSelectValue = (autoSelect.id !== undefined && autoSelect.id !== null) ? autoSelect.id : autoSelect.title;
-                         
-                         
+                         const configuredDefault = subDef.data?.default_value;
+                         const isMany = subDef.type === 'select_many' || subDef.data?.selection_type === 'select_many';
+                         const keys = isMany
+                             ? (Array.isArray(configuredDefault) ? configuredDefault : [])
+                             : [configuredDefault];
+                         const selected = configuredDefault == null
+                             ? [validOptions[0]]
+                             : validOptions.filter(o => keys.some(key =>
+                                 String(key) === String(o.id ?? o.title) || key === o.title));
+                         for (const autoSelect of (isMany ? selected : selected.slice(0, 1))) {
 
-                         const valObj = {
-                             [subDef.type]: autoSelectValue,
-                             _subFieldId: subDef.id,
-                             currency_code: currency
-                         };
-                         
-                         if (autoSelect.price !== undefined) valObj.price = autoSelect.price;
-                         if (subDef.type === 'product_type') valObj.product_type = autoSelectValue;
-                         
-                         newTicket.fields.push(valObj);
+                             // Use ID if available, otherwise fallback to title (matches RadioFieldBuilder logic)
+                             const autoSelectValue = (autoSelect.id !== undefined && autoSelect.id !== null) ? autoSelect.id : autoSelect.title;
+
+
+
+                             const valObj = {
+                                 [subDef.type]: autoSelectValue,
+                                 _subFieldId: subDef.id,
+                                 currency_code: currency
+                             };
+
+                             if (autoSelect.price !== undefined) valObj.price = autoSelect.price;
+                             if (subDef.type === 'product_type') valObj.product_type = autoSelectValue;
+
+                             newTicket.fields.push(valObj);
+                         }
                      }
                 });
         }

@@ -1853,7 +1853,9 @@
     "loadEventFailed": "Could not load event. Please try again.",
     "loadUnitFailed": "Failed to load organization data.",
     "noEventsFound": "No events found.",
-    "unit": "Organization"
+    "unit": "Organization",
+    "copyTargetUnit": "Destination organization",
+    "copyTargetHint": "Choose the organization for the copy. Email templates will belong to it. A bank account is kept only if it is available there."
   },
   "OccasionHome": {
     "addToSchedule": "Add To Schedule",
@@ -2417,7 +2419,30 @@
     "dimensionInputHint": "Confirm with Enter or click outside the field. Content stays in place.",
     "editBlockingElement": "Edit: {name}",
     "transparency": "Transparency",
-    "finishCanvasFirst": "To move elements, click Done first."
+    "finishCanvasFirst": "To move elements, click Done first.",
+    "manageProducts": "Manage forms and products",
+    "layoutLimit": "Layout exceeds 32 KiB. Shorten labels or remove fields.",
+    "addProduct": "Add product field",
+    "productGroup": "Product group",
+    "productLabel": "Printed label",
+    "labelHint": "An empty label prints only the product name",
+    "example": "Example",
+    "noExample": "No available example",
+    "removeProduct": "Remove field",
+    "searchProducts": "Search groups",
+    "alreadyAdded": "Already on ticket - select field",
+    "emptyProducts": "No eligible groups. Add products in form settings.",
+    "retryCatalog": "Retry",
+    "catalogError": "Could not load the catalog",
+    "missingProduct": "Missing group - repair or remove field",
+    "hiddenProduct": "Group is no longer offered",
+    "offeredProduct": "Offered in form",
+    "catalogProduct": "Products of this event",
+    "noSpace": "No room for another field. Enlarge the ticket or free some space.",
+    "elementLimit": "A ticket can contain at most 32 elements",
+    "draftProducts": "Edit product fields after creating the event.",
+    "replacementProducts": "Using this template replaces the layout and removes product fields: {count}",
+    "productType": "Product group"
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transactions with a currency different from their order are excluded from the chart",
@@ -2476,5 +2501,22 @@
     "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
     "onlyValid": "Valid only",
     "includingCancelled": "Including cancelled"
+  },
+  "OccasionSetup": {
+    "drafts": "Drafts",
+    "untitled": "New event",
+    "resume": "Continue",
+    "basics": "Basics",
+    "review": "Summary",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "saveFailed": "Could not save or load the draft.",
+    "conflict": "Another editor changed this draft. Your unsaved changes remain here.",
+    "retry": "Retry",
+    "reload": "Load newer draft",
+    "reloadConfirm": "Load the saved version and discard your unsaved changes?",
+    "leave": "Save and return to list",
+    "incomplete": "This draft stays private. Features, forms and seating plans will be added in the next steps.",
+    "deleteConfirm": "Delete this draft?"
   }
 }

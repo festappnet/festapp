@@ -2143,7 +2143,7 @@
           },
           {
             "id": "food",
-            "binding": "food",
+            "binding": "productType",
             "box": {
               "x": 50,
               "y": 189.87599999999998,
@@ -2158,7 +2158,9 @@
               "maxLines": 1,
               "color": "2A2A2A",
               "align": "left"
-            }
+            },
+            "productTypeId": 123,
+            "label": "Večeře"
           },
           {
             "id": "note",
@@ -2328,7 +2330,7 @@
           },
           {
             "id": "food",
-            "binding": "food",
+            "binding": "productType",
             "box": {
               "x": 20,
               "y": 181.87599999999998,
@@ -2343,7 +2345,9 @@
               "maxLines": 1,
               "color": "2A2A2A",
               "align": "left"
-            }
+            },
+            "productTypeId": 123,
+            "label": "Večeře"
           },
           {
             "id": "note",
@@ -2532,7 +2536,7 @@
           },
           {
             "id": "food",
-            "binding": "food",
+            "binding": "productType",
             "box": {
               "x": 20,
               "y": 194,
@@ -2547,7 +2551,9 @@
               "maxLines": 1,
               "color": "2A2A2A",
               "align": "left"
-            }
+            },
+            "productTypeId": 123,
+            "label": "Večeře"
           },
           {
             "id": "note",
@@ -3065,5 +3071,20 @@
     "orderName": "Jana Nováková",
     "logo": null,
     "footer": "Vstupenka je nepřenosná"
-  }
+  },
+  "catalog": [
+    {
+      "id": 123,
+      "title": "VIP menu",
+      "offered": true,
+      "referenced": true,
+      "example": {
+        "id": 22,
+        "value": "Řízek",
+        "price": 170,
+        "currency_code": "CZK",
+        "currency_symbol":"Kč"
+      }
+    }
+  ]
 }

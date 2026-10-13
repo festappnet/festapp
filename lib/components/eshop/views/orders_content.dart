@@ -33,8 +33,9 @@ class OrdersContent extends StatefulWidget {
 bool canSaveOrderGridChanges({
   required bool isOrderEditor,
   required bool isUnitManager,
+  required bool isUnitEditor,
 }) =>
-    isOrderEditor || isUnitManager;
+    isOrderEditor || isUnitManager || isUnitEditor;
 
 // The state class has been renamed accordingly
 class _OrdersContentState extends State<OrdersContent> {
@@ -146,17 +147,18 @@ class _OrdersContentState extends State<OrdersContent> {
         return newBundle.orders;
       },
       fromPlutoJson: OrderModel.fromPlutoJson,
-      firstColumnType: RightsService.isUnitManager()
-          ? DataGridFirstColumn.deleteAndCheck
-          : DataGridFirstColumn.check,
+      firstColumnType:
+          (RightsService.isUnitManager() || RightsService.isUnitEditor())
+              ? DataGridFirstColumn.deleteAndCheck
+              : DataGridFirstColumn.check,
       idColumn: TbEshop.orders.id,
       actionsExtended: DataGridActionsController(
         areAllActionsEnabled: () => canSaveOrderGridChanges(
           isOrderEditor: RightsService.isEditorOrder(),
           isUnitManager: RightsService.isUnitManager(),
+          isUnitEditor: RightsService.isUnitEditor(),
         ),
         isAddActionPossible: () => false,
-        canDeleteRow: OrderGridFilters.orderIsNonCancelled,
       ),
       headerChildren: [
         DataGridAction(

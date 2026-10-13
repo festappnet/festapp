@@ -1350,3 +1350,19 @@ REVOKE ALL ON eshop.bank_sync_connections,eshop.bank_sync_account_aliases,eshop.
 -- End BankSync canonical import authority and audit.
 
 CREATE UNIQUE INDEX IF NOT EXISTS planned_product_wave_target_unique ON eshop.planned_changes(wave_id,subject_id,change_type) WHERE wave_id IS NOT NULL AND NOT applied;
+
+-- Drafts are private workspace objects, never public occasions.
+CREATE TABLE IF NOT EXISTS public.occasion_setup_drafts (
+  id uuid PRIMARY KEY,
+  unit bigint NOT NULL REFERENCES public.units(id) ON DELETE CASCADE,
+  organization bigint NOT NULL REFERENCES public.organizations(id),
+  author uuid NOT NULL REFERENCES auth.users(id),
+  data jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(data) = 'object' AND octet_length(data::text) <= 262144),
+  revision bigint NOT NULL DEFAULT 1,
+  current_step integer NOT NULL DEFAULT 0 CHECK (current_step BETWEEN 0 AND 6),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS occasion_setup_drafts_unit_idx ON public.occasion_setup_drafts(unit);
+ALTER TABLE public.occasion_setup_drafts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.occasion_setup_drafts FROM PUBLIC, anon, authenticated;

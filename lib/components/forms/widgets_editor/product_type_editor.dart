@@ -236,11 +236,12 @@ class ProductTypeEditorWidgets {
     DefaultValueHelper.remove(field, productId.toString());
   }
 
-  /// Read-only indicator of the stored default product selection.
+  /// Edits the stored default product selection.
   static Widget _buildDefaultSelector({
     required FormFieldModel ptField,
     required ProductModel product,
     required bool isSelectMany,
+    required VoidCallback onChanged,
   }) {
     final key = product.id?.toString();
     if (key == null) {
@@ -251,13 +252,20 @@ class ProductTypeEditorWidgets {
       final selected = DefaultValueHelper.readList(ptField).contains(key);
       return Checkbox(
         value: selected,
-        onChanged: null,
+        onChanged: (value) {
+          DefaultValueHelper.toggleInList(ptField, key, value ?? false);
+          onChanged();
+        },
       );
     }
     return Radio<String>(
       value: key,
       groupValue: DefaultValueHelper.readString(ptField),
-      onChanged: null,
+      toggleable: true,
+      onChanged: (value) {
+        DefaultValueHelper.write(ptField, value);
+        onChanged();
+      },
     );
   }
 }
@@ -438,6 +446,10 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                         ptField: ptField,
                         product: group.products![i],
                         isSelectMany: canSelectMany,
+                        onChanged: () {
+                          setState(() {});
+                          refresh();
+                        },
                       ),
                       Expanded(
                         child: TicketProductEditorRow(

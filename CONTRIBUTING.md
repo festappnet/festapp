@@ -67,9 +67,11 @@ Deploy Deno functions from their checked-in
 
 ## 2. Secrets & Configuration
 
-- **Local**: Keys in `.env.local` (NOT committed). This file is automatically
-  loaded by local scripts and Vite. **Put all secrets here.**
-- **Web Client**: Public keys in `web_client/src/app_config.js`.
+- **Local**: Ignored `.env.local` holds private local inputs for scripts that
+  explicitly load them. Follow service-specific secret paths and production
+  private-input schemas; never expose private values through Vite/client assets.
+- **Web Client**: Generated public settings in `web_client/src/app_config.js`,
+  sourced from `automation/project.conf`; no service-role or provider credentials.
 - **Database**: `DATABASE_URL` required for test runner.
 
 ## 3. Security Audit (Before Commit)
@@ -223,16 +225,20 @@ the Deno runtime.
 # Serve locally
 supabase functions serve <function-name> --env-file .env.local
 
-# Deploy
-supabase functions deploy <function-name>
 ```
+
+Production deployment uses the canonical reviewed Function bundle, not the
+cloud CLI deploy command. Follow [Edge deployment](docs/backend/edge_functions.md#deployment).
 
 ### Shared Utilities
 
 Common code lives in `supabase/functions/_shared/`:
 
 - `supabaseUtil.ts` - Admin client, template fetching
-- `emailClient.ts` - Email sending (SMTP via nodemailer)
+- `emailQueueClient.ts` / `emailDelivery.ts` - Render and encrypt snapshots,
+  enqueue durable intents, and optionally await provider acceptance
+- `emailSender.ts` - SES transport used only by `process-email-queue` after the
+  canonical SQL send gate grants its fenced permit
 - `auth.ts` - Request authorization (`authorizeRequest`)
 - `utilities.ts` - General helpers
 

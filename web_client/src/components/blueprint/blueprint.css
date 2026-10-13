@@ -309,3 +309,19 @@ body.blueprint-active #floating-price-widget {
         transition: none;
     }
 }
+
+/* Reserve a map viewport independently of mobile zoom controls. */
+.blueprint-renderer-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.blueprint-map-viewport {
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    touch-action: none;
+}

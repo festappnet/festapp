@@ -8,7 +8,7 @@ for (const item of catalog) {
   for (const element of template.elements) {
     if (element.binding !== 'qr') element.style.color = item.textColor;
   }
-  validateLayout({ schemaVersion: 1, templates: { wide: template } });
+  validateLayout({ schemaVersion: 3, templates: { wide: template } });
   item.template = template;
 }
 catalog.push({id:'portrait',label:'Jmenná na výšku',image:null,width:200,height:375,template:portraitPreset()});
