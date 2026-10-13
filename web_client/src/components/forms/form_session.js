@@ -1,3 +1,4 @@
+import { OptionBuilderHelper } from './fields/option_builder_helper.js';
 import { AppConfig } from '../../app_config.js';
 import { FormHelper } from './form_helper.js';
 import { FormDataReader } from './form_data_reader.js';
@@ -229,13 +230,20 @@ export class FormSession extends EventTarget {
                      if (validOptions.length > 0) {
                          const configuredDefault = subDef.data?.default_value;
                          const isMany = subDef.type === 'select_many' || subDef.data?.selection_type === 'select_many';
-                         const keys = isMany
-                             ? (Array.isArray(configuredDefault) ? configuredDefault : [])
-                             : [configuredDefault];
                          const selected = configuredDefault == null
                              ? [validOptions[0]]
-                             : validOptions.filter(o => keys.some(key =>
-                                 String(key) === String(o.id ?? o.title) || key === o.title));
+                             : validOptions.filter(o => OptionBuilderHelper.shouldPreselect(
+                                 subDef, o, isMany ? 'checkbox' : 'radio'));
+                         if (isMany && subDef.type !== 'product_type') {
+                             newTicket.fields.push({
+                                 [subDef.type]: selected.map(o => o.id ?? o.title).join(' | '),
+                                 _subFieldId: subDef.id,
+                                 currency_code: currency,
+                                 ...(selected.some(o => o.price !== undefined)
+                                     ? { price: selected.reduce((sum, o) => sum + Number(o.price || 0), 0) } : {}),
+                             });
+                             return;
+                         }
                          for (const autoSelect of (isMany ? selected : selected.slice(0, 1))) {
 
                              // Use ID if available, otherwise fallback to title (matches RadioFieldBuilder logic)
@@ -419,6 +427,9 @@ export class FormSession extends EventTarget {
                 let pipeKey = null;
 
                 subDef = this._getTicketSubDef(fObj._subFieldId);
+                // Keep explicit clears in the draft, but never submit them as products.
+                if (subDef?.type === 'product_type' && (fObj.product_type === '' ||
+                    (Array.isArray(fObj.product_type) && !fObj.product_type.length))) return;
 
                 if (subDef) {
                     if (subDef.type === 'checkbox') isMultiSelect = true;
@@ -487,7 +498,7 @@ export class FormSession extends EventTarget {
             });
 
             const ticketObj = {
-                ...(t.participantId ? { participantId: t.participantId } : {}),
+                ...(t.ticketId ? { ticketId: t.ticketId } : {}),
                 fields: processedFields.map(field => {
                     const definition = this._getTicketSubDef(field._subFieldId);
                     if (!definition || ['product_type', 'spot'].includes(definition.type)) return field;
@@ -515,10 +526,11 @@ export class FormSession extends EventTarget {
         // --- Standard Fields Sync ---
         this.payload.fields = [];
         for (const [fieldId, value] of this.state.fields.entries()) {
-            if (value === null || value === undefined || value === '') continue;
+            if (value === null || value === undefined) continue;
 
             const fieldDef = this.formModel.visibleFields.find(f => String(f.id) === String(fieldId));
             if (!fieldDef) continue; // Should not happen
+            if (value === '' && !['select_one', 'select_many'].includes(fieldDef.type)) continue;
 
             const entry = { [fieldId]: value };
             
@@ -705,8 +717,8 @@ export class FormSession extends EventTarget {
               
               this.updateTicket(index, subDef.id, valueObj);
          } else {
-             // Remove field
-             this.updateTicket(index, subDef.id, null);
+             // Preserve explicit clears so rebuilding does not restore defaults.
+             this.updateTicket(index, subDef.id, { [subDef.type]: '', _subFieldId: subDef.id });
          }
     }
 

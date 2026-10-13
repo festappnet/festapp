@@ -346,8 +346,8 @@ class FormHelper {
           final ticketKey = ticket.tickets[i].ticketKey;
           if (ticketKey.currentState == null) continue;
           Map<String, dynamic> ticketData = {
-            if (ticket.tickets[i].participantId != null)
-              'participantId': ticket.tickets[i].participantId,
+            if (ticket.tickets[i].ticketId != null)
+              'ticketId': ticket.tickets[i].ticketId,
           };
           for (var subFieldHolder in ticket.fields) {
             if (ticketData[metaFields] == null) {

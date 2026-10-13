@@ -20,10 +20,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  RETURN jsonb_build_object('organization',org,'unit',un,'occasion',oc,'form',f,'key',fk,'type',pt,'product',prod,'actor',actor,'link',suffix);
 END $$;
-CREATE FUNCTION pg_temp.checkout(x jsonb,persons uuid[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+CREATE FUNCTION pg_temp.checkout(x jsonb,tickets bigint[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('form',x->'key','email','regression@example.invalid','ticket',
- CASE WHEN persons IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
- ELSE (SELECT jsonb_agg(jsonb_build_object('participantId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(persons) id) END);
+ CASE WHEN tickets IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
+ ELSE (SELECT jsonb_agg(jsonb_build_object('ticketId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(tickets) id) END);
 $$;
 CREATE FUNCTION pg_temp.delivery(code text,token text,oid bigint DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('orderId',oid,'recipient','regression@example.invalid','templateCode',code,
@@ -32,7 +32,7 @@ $$;
 CREATE FUNCTION pg_temp.register(x jsonb,n integer,token text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE r jsonb; payload jsonb;
 BEGIN
- payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','people',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
+ payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
  r:=public.execute_waitlist_command_client_sync_v1('register',payload,gen_random_uuid(),gen_random_uuid(),NULL,jsonb_build_array(pg_temp.delivery('waitlist_confirmation',coalesce(token,encode(extensions.gen_random_bytes(32),'hex')))));
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Register failed %',r; END IF;
  RETURN jsonb_build_object('order',(r#>>'{data,order,id}')::bigint,'response',r,'payload',payload);
@@ -46,11 +46,20 @@ BEGIN
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Offer failed %',r; END IF;
  RETURN jsonb_build_object('id',r#>>'{data,offers,0,offerId}','response',r);
 END $$;
-CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,persons uuid[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
- SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','personIds',to_jsonb(persons),'token',token,'orderDetails',pg_temp.checkout(x,persons)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,tickets bigint[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+ SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','ticketIds',to_jsonb(tickets),'token',token,'orderDetails',pg_temp.checkout(x,tickets)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
 $$;
--- Legacy ordinary ticket-field transport and numeric transport share one
--- validated participant representation; aliases never bypass metadata scope.
+-- Read-only test convenience view: every identity, answer and owner comes from
+-- existing tickets/OPT/orders. Lifecycle is the public server projection.
+CREATE VIEW pg_temp.ticket_rows AS
+ SELECT t.*,o.id current_order_id,o.form form_id,coalesce(o.source_waitlist_order_id,o.id) origin_order_id,
+ t.data answers,t.waitlist_queue_at queue_at,t.id ticket_id,
+ public.get_effective_waitlist_ticket_lifecycle_internal(t.id) lifecycle
+ FROM eshop.tickets t JOIN (SELECT DISTINCT "order",ticket FROM eshop.order_product_ticket) link ON link.ticket=t.id
+ JOIN eshop.orders o ON o.id=link."order";
+CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql AS $$
+ SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
+$$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(2); name_id bigint; surname_id bigint; foreign_form bigint; foreign_name bigint;
  product_field_id bigint; legacy jsonb; modern jsonb; result jsonb; legacy_order bigint; modern_order bigint; legacy_answers jsonb; modern_answers jsonb;
@@ -71,11 +80,11 @@ BEGIN
  result:=public.create_ticket_order_internal_v1(modern);
  PERFORM assert_eq(result->>'code','200','Numeric-key ordinary checkout succeeds');
  modern_order:=(result#>>'{order,id}')::bigint;
- SELECT answers INTO legacy_answers FROM eshop.order_participants WHERE current_order_id=legacy_order;
- SELECT answers INTO modern_answers FROM eshop.order_participants WHERE current_order_id=modern_order;
- PERFORM assert_eq(legacy_answers,modern_answers,'Legacy and modern fields create identical canonical participant answers');
+ SELECT answers INTO legacy_answers FROM pg_temp.ticket_rows WHERE current_order_id=legacy_order;
+ SELECT answers INTO modern_answers FROM pg_temp.ticket_rows WHERE current_order_id=modern_order;
+ PERFORM assert_eq(legacy_answers,modern_answers,'Legacy and modern fields create identical canonical ticket answers');
  PERFORM assert_eq(legacy_answers#>>ARRAY['fields','0',name_id::text],'Regular','Legacy name has a stable field-ID projection');
- PERFORM assert_eq(jsonb_array_length(legacy_answers->'fields'),2,'Product choices and metadata stay outside the participant ledger');
+ PERFORM assert_eq(jsonb_array_length(legacy_answers->'fields'),2,'Product choices and metadata stay outside the ticket data');
  PERFORM assert_true(NOT legacy_answers::text LIKE '%_subFieldId%' AND NOT legacy_answers::text LIKE '%product_type%' AND NOT legacy_answers::text LIKE '%"name"%',
   'Canonical participant answers contain stable field IDs only');
  PERFORM assert_eq((SELECT data#>>'{input_data,ticket,0,fields,0,name}' FROM eshop.orders_history WHERE "order"=legacy_order ORDER BY id DESC LIMIT 1),

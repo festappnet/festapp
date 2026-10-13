@@ -122,40 +122,15 @@ export class FormValidator {
         // 2. Nested 'fields' array (Standard for Festapp)
         if (ticketItem.fields) {
             ticketItem.fields.forEach(fObj => {
-                // fObj is { key: value } or { key: value, _subFieldId: id }
-                
-                Object.keys(fObj).forEach(key => {
-                    if (key === 'currency_code' || key === 'price' || key === '_subFieldId') return;
-                    
-                    const val = fObj[key];
-                    
-                    let match = false;
-                    if (fObj['_subFieldId']) {
-                        // Strict ID match if available
-                        if (String(fObj['_subFieldId']) === String(subFieldDef.id)) {
-                             match = true;
-                        }
-                    } else {
-                        // Loose Type match ONLY if the subDef type matches the key
-                        // This corresponds to legacy or simple fields
-                        if (key === subFieldDef.type) {
-                            match = true;
-                        }
-                    }
-                    
-                    if (match) {
-                        // Ensure we don't count empty strings as values?
-                        // If val is "" or null, it shouldn't count?
-                        // But "0" should count.
-                        if (val !== null && val !== undefined && val !== '') {
-                             if (String(val).includes(' | ')) {
-                                 values.push(...String(val).split(' | '));
-                             } else {
-                                 values.push(val);
-                             }
-                        }
-                    }
-                });
+                const id = String(subFieldDef.id);
+                if (fObj._subFieldId != null && String(fObj._subFieldId) !== id) return;
+                const hasId = Object.hasOwn(fObj, id);
+                if (!hasId && fObj._subFieldId == null && Object.keys(fObj).some(key => /^\d+$/.test(key))) return;
+                // Stable ID and legacy type are aliases of one answer, never two selections.
+                const val = hasId ? fObj[id] : fObj[subFieldDef.type];
+                const selected = Array.isArray(val) ? val : (typeof val === 'string' ? val.split(' | ') : [val]);
+                values.push(...selected.filter(value => value !== null && value !== undefined && value !== ''));
+
             });
         }
         

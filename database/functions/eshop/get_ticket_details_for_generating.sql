@@ -90,7 +90,8 @@ BEGIN
         ON opt.ticket = t.id
     LEFT JOIN eshop.orders ord
         ON ord.id = opt."order"
-    WHERE t.id = ticket_id_input;
+    WHERE t.id = ticket_id_input AND t.state IS DISTINCT FROM 'waitlisted' AND t.ticket_symbol IS NOT NULL
+      AND ord.state IS DISTINCT FROM 'waitlisted';
 
     RETURN result;
 END;

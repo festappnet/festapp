@@ -20,10 +20,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  RETURN jsonb_build_object('organization',org,'unit',un,'occasion',oc,'form',f,'key',fk,'type',pt,'product',prod,'actor',actor,'link',suffix);
 END $$;
-CREATE FUNCTION pg_temp.checkout(x jsonb,persons uuid[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+CREATE FUNCTION pg_temp.checkout(x jsonb,tickets bigint[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('form',x->'key','email','regression@example.invalid','ticket',
- CASE WHEN persons IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
- ELSE (SELECT jsonb_agg(jsonb_build_object('participantId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(persons) id) END);
+ CASE WHEN tickets IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
+ ELSE (SELECT jsonb_agg(jsonb_build_object('ticketId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(tickets) id) END);
 $$;
 CREATE FUNCTION pg_temp.delivery(code text,token text,oid bigint DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('orderId',oid,'recipient','regression@example.invalid','templateCode',code,
@@ -32,7 +32,7 @@ $$;
 CREATE FUNCTION pg_temp.register(x jsonb,n integer,token text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE r jsonb; payload jsonb;
 BEGIN
- payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','people',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
+ payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
  r:=public.execute_waitlist_command_client_sync_v1('register',payload,gen_random_uuid(),gen_random_uuid(),NULL,jsonb_build_array(pg_temp.delivery('waitlist_confirmation',coalesce(token,encode(extensions.gen_random_bytes(32),'hex')))));
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Register failed %',r; END IF;
  RETURN jsonb_build_object('order',(r#>>'{data,order,id}')::bigint,'response',r,'payload',payload);
@@ -46,11 +46,22 @@ BEGIN
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Offer failed %',r; END IF;
  RETURN jsonb_build_object('id',r#>>'{data,offers,0,offerId}','response',r);
 END $$;
-CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,persons uuid[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
- SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','personIds',to_jsonb(persons),'token',token,'orderDetails',pg_temp.checkout(x,persons)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,tickets bigint[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+ SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','ticketIds',to_jsonb(tickets),'token',token,'orderDetails',pg_temp.checkout(x,tickets)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+$$;
+-- Read-only test convenience view: every identity, answer and owner comes from
+-- existing tickets/OPT/orders. Lifecycle is the public server projection.
+CREATE VIEW pg_temp.ticket_rows AS
+ SELECT t.*,o.id current_order_id,o.form form_id,coalesce(o.source_waitlist_order_id,o.id) origin_order_id,
+ t.data answers,t.waitlist_queue_at queue_at,t.id ticket_id,
+ public.get_effective_waitlist_ticket_lifecycle_internal(t.id) lifecycle
+ FROM eshop.tickets t JOIN (SELECT DISTINCT "order",ticket FROM eshop.order_product_ticket) link ON link.ticket=t.id
+ JOIN eshop.orders o ON o.id=link."order";
+CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql AS $$
+ SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
 DO $$
-DECLARE x jsonb:=pg_temp.fixture(5); f bigint:=(x->>'form')::bigint; regular bigint; source bigint; r jsonb; c jsonb; w jsonb; persons uuid[]; before_symbol text; before_sequence bigint;
+DECLARE x jsonb:=pg_temp.fixture(5); f bigint:=(x->>'form')::bigint; regular bigint; source bigint; r jsonb; c jsonb; w jsonb; persons bigint[]; before_symbol text; before_sequence bigint;
 BEGIN
  r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));
  PERFORM assert_eq(r->>'code','200'::text,'regular checkout'); regular:=(r#>>'{order,id}')::bigint;
@@ -62,7 +73,7 @@ BEGIN
  UPDATE eshop.orders SET created_at=now()-interval '7 days' WHERE id=source;
  UPDATE forms SET deadline_duration_seconds=86400 WHERE id=f;
  PERFORM assert_true((SELECT price IS NULL AND payment_info IS NULL AND state='waitlisted' FROM eshop.orders WHERE id=source),'waitlist has no finance');
- PERFORM assert_eq((SELECT count(*) FROM eshop.order_product_ticket WHERE "order"=source),0::bigint,'waitlist has no products or tickets');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.order_product_ticket WHERE "order"=source AND product IS NOT NULL),0::bigint,'waitlist has no products or tickets');
  FOR regular IN SELECT id FROM eshop.orders WHERE form=f AND state<>'waitlisted' LOOP PERFORM public.update_order_and_tickets_to_storno_221(regular); END LOOP;
  c:=public.get_form_capacity_snapshot_internal(f);
  PERFORM assert_jsonb_contains(c,'{"occupiedPeople":0,"waitingPeople":2,"offeredPlaces":0,"remainingPublic":3,"offerablePlaces":5,"heldForWaiting":2}','release five waiting two gives P three');
@@ -73,7 +84,7 @@ BEGIN
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"waitlist_enabled":false}'); RAISE EXCEPTION 'disable active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
  w:=pg_temp.offer(x,source,2);
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'below reserved allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%CAPACITY_BELOW_COMMITTED%' THEN RAISE; END IF; END;
- SELECT array_agg(id ORDER BY id) INTO persons FROM eshop.order_participants WHERE current_order_id=source;
+ SELECT array_agg(id ORDER BY id) INTO persons FROM pg_temp.ticket_rows WHERE current_order_id=source;
  UPDATE eshop.products SET maximum=1 WHERE id=(x->>'product')::bigint;
  r:=pg_temp.accept(x,w,persons);
  PERFORM assert_true(r#>>'{data,code}' IS DISTINCT FROM '200','sold-out product fails');

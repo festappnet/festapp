@@ -62,7 +62,7 @@ BEGIN
     -----------------------------------------------------
     -- 1.b. Final Check if Ticket is still missing
     -----------------------------------------------------
-    IF ticket_row IS NULL THEN
+    IF ticket_row IS NULL OR ticket_row.state='waitlisted' OR ticket_row.ticket_symbol IS NULL THEN
         RETURN jsonb_build_object('code', 404, 'message', 'Ticket or User with valid ticket not found');
     END IF;
 

@@ -3,10 +3,11 @@
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = [
+    'database/functions/eshop_waitlist/retire_participants.sql',
     'database/functions/eshop_waitlist/schema.sql',
-    'database/functions/eshop_waitlist/form_capacity.sql',
-    'database/functions/eshop_waitlist/participants.sql',
+    'database/functions/eshop_waitlist/tickets.sql',
     'database/functions/eshop_waitlist/capabilities.sql',
+    'database/functions/eshop_waitlist/form_capacity.sql',
     'database/functions/eshop_waitlist/offers.sql',
     'database/functions/eshop_waitlist/accept_offer.sql',
     'database/functions/eshop_waitlist/commands.sql',
@@ -45,8 +46,13 @@ SOURCES = [
     'database/functions/seed/crons.sql',
     'database/functions/eshop_waitlist/client_sync.sql',
     'database/functions/eshop/product_write_permissions.sql',
+    'database/functions/eshop_orders/scan_ticket.sql',
+    'database/functions/eshop_orders/get_all_tickets_for_scan.sql',
+    'database/functions/eshop/get_tickets_with_details.sql',
+    'database/functions/eshop/get_ticket_details_for_generating.sql',
+    'database/functions/eshop_orders/update_order_and_tickets_to_sent.sql',
 ]
-TARGET = ROOT / "supabase/migrations/20261013190000_form_capacity_waitlist.sql"
+TARGET = ROOT / "supabase/migrations/20261013200000_waitlist_canonical_tickets.sql"
 content = "-- Canonical form-capacity and waitlist expansion. Additive defaults keep existing forms unlimited.\n"
 for source in SOURCES:
     content += "\n-- Source: " + source + "\n" + (ROOT / source).read_text() + "\n"

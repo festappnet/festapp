@@ -1,11 +1,12 @@
 CREATE OR REPLACE FUNCTION public.get_form_capacity_snapshot_internal(p_form bigint,p_at timestamptz DEFAULT clock_timestamp())
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  WITH counts AS (
- SELECT f.*, (SELECT count(*) FROM eshop.order_participants p JOIN eshop.orders o ON o.id=p.current_order_id
-  WHERE p.form_id=f.id AND p.lifecycle='admitted' AND o.state IS DISTINCT FROM 'storno') occupied,
+ SELECT f.*, (SELECT count(DISTINCT t.id) FROM eshop.tickets t JOIN eshop.order_product_ticket x ON x.ticket=t.id JOIN eshop.orders o ON o.id=x."order"
+  WHERE o.form=f.id AND t.state IS DISTINCT FROM 'storno' AND t.state IS DISTINCT FROM 'waitlisted' AND o.state IS DISTINCT FROM 'storno') occupied,
  (SELECT count(*) FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
   WHERE s.form_id=f.id AND s.outcome='pending' AND w.expires_at>p_at) reserved,
- (SELECT count(*) FROM eshop.order_participants p WHERE p.form_id=f.id AND p.lifecycle='waiting') waiting
+ (SELECT count(DISTINCT t.id) FROM eshop.tickets t JOIN eshop.order_product_ticket x ON x.ticket=t.id JOIN eshop.orders o ON o.id=x."order"
+  WHERE o.form=f.id AND o.state='waitlisted' AND public.get_effective_waitlist_ticket_lifecycle_internal(t.id)='waiting') waiting
  FROM public.forms f WHERE f.id=p_form), free AS (
  SELECT *,greatest(participant_capacity-occupied-reserved,0) available FROM counts)
  SELECT jsonb_build_object('enabled',participant_capacity IS NOT NULL,'limit',participant_capacity,
@@ -36,8 +37,6 @@ BEGIN
  n:=CASE WHEN p_input ? 'participant_capacity' THEN (p_input->>'participant_capacity')::integer ELSE f.participant_capacity END;
  enabled:=CASE WHEN p_input ? 'waitlist_enabled' THEN (p_input->>'waitlist_enabled')::boolean ELSE f.waitlist_enabled END;
  bp:=CASE WHEN p_input ? 'blueprint' THEN nullif(p_input->>'blueprint','')::bigint ELSE f.blueprint END;
- IF n IS NOT NULL AND EXISTS(SELECT 1 FROM eshop.form_participant_backfill_issues WHERE form_id=p_form) THEN
-  RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','PARTICIPANT_BACKFILL_REQUIRED','message','Participant data requires repair')::text; END IF;
  IF n IS NOT NULL AND n<(c->>'occupiedPeople')::bigint+(c->>'offeredPlaces')::bigint THEN
   RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','CAPACITY_BELOW_COMMITTED','capacity',c)::text; END IF;
  IF ((NOT enabled) OR n IS NULL OR bp IS NOT NULL) AND

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/forms/models/form_option_model.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/holder_models/field_holder.dart';
@@ -10,25 +11,64 @@ import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 
 void main() {
   testWidgets(
-      'offer reuses runtime fields and keeps person IDs with their answers',
+      'offer reuses runtime fields and keeps numeric ticket IDs with their answers',
       (tester) async {
+    tester.view.physicalSize = const Size(1200, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     FieldHolder name(String value) => FieldHolder(
         id: 7,
         fieldType: 'name',
         isRequired: true,
         defaultValue: value,
         title: 'Name');
-    final ticket = TicketHolder(
-        fieldType: 'ticket', id: 1, maxTickets: 2, fields: [name('')])
-      ..fixedParticipants = true;
+    FieldHolder custom(int id, String value) => FieldHolder(
+        id: id,
+        fieldType: 'text',
+        isRequired: false,
+        defaultValue: value,
+        title: 'Custom $id');
+    OptionsFieldHolder choices(dynamic saved) => OptionsFieldHolder(
+            id: 112,
+            fieldType: 'select_many',
+            isRequired: false,
+            title: 'Choices',
+            options: [
+              FormOptionModel('a', 'A'),
+              FormOptionModel('b', 'B'),
+              FormOptionModel('c', 'C')
+            ],
+            value: [
+              'A'
+            ])
+          ..defaultValue = saved;
+    final ticket =
+        TicketHolder(fieldType: 'ticket', id: 1, maxTickets: 2, fields: [
+      name(''),
+      custom(109, ''),
+      custom(110, ''),
+      choices(['A'])
+    ])
+          ..fixedTickets = true;
     ticket.tickets = [
       FormTicketModel(
-          participantId: 'a',
-          ticketValues: [name('Alex')],
+          ticketId: 101,
+          ticketValues: [
+            name('Alex'),
+            custom(109, 'Vegan'),
+            custom(110, 'Step-free'),
+            choices('B | C')
+          ],
           ticketKey: GlobalKey<FormBuilderState>()),
       FormTicketModel(
-          participantId: 'b',
-          ticketValues: [name('Robin')],
+          ticketId: 102,
+          ticketValues: [
+            name('Robin'),
+            custom(109, 'No nuts'),
+            custom(110, 'Hearing loop'),
+            choices('')
+          ],
           ticketKey: GlobalKey<FormBuilderState>()),
     ];
     final key = GlobalKey<FormBuilderState>();
@@ -47,10 +87,16 @@ void main() {
     expect(find.byIcon(Icons.add), findsNothing);
     expect(find.byIcon(Icons.close), findsNothing);
     final data = FormHelper.getDataFromForm(holder);
-    expect(data['ticket'][0]['participantId'], 'a');
+    expect(data['ticket'][0]['ticketId'], 101);
     expect(data['ticket'][0]['fields'][0]['7'], 'Alex');
-    expect(data['ticket'][1]['participantId'], 'b');
+    expect(data['ticket'][1]['ticketId'], 102);
     expect(data['ticket'][1]['fields'][0]['7'], 'Robin');
+    expect(data['ticket'][0]['fields'][1]['109'], 'Vegan');
+    expect(data['ticket'][0]['fields'][2]['110'], 'Step-free');
+    expect(data['ticket'][1]['fields'][1]['109'], 'No nuts');
+    expect(data['ticket'][1]['fields'][2]['110'], 'Hearing loop');
+    expect(data['ticket'][0]['fields'].any((f) => f['112'] == 'B | C'), isTrue);
+    expect(data['ticket'][1]['fields'].any((f) => f['112'] == 'A'), isFalse);
     expect(tester.takeException(), isNull);
   });
 }

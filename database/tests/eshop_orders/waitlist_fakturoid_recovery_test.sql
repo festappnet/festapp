@@ -20,10 +20,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  RETURN jsonb_build_object('organization',org,'unit',un,'occasion',oc,'form',f,'key',fk,'type',pt,'product',prod,'actor',actor,'link',suffix);
 END $$;
-CREATE FUNCTION pg_temp.checkout(x jsonb,persons uuid[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+CREATE FUNCTION pg_temp.checkout(x jsonb,tickets bigint[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('form',x->'key','email','regression@example.invalid','ticket',
- CASE WHEN persons IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
- ELSE (SELECT jsonb_agg(jsonb_build_object('participantId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(persons) id) END);
+ CASE WHEN tickets IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
+ ELSE (SELECT jsonb_agg(jsonb_build_object('ticketId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(tickets) id) END);
 $$;
 CREATE FUNCTION pg_temp.delivery(code text,token text,oid bigint DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('orderId',oid,'recipient','regression@example.invalid','templateCode',code,
@@ -32,7 +32,7 @@ $$;
 CREATE FUNCTION pg_temp.register(x jsonb,n integer,token text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE r jsonb; payload jsonb;
 BEGIN
- payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','people',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
+ payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
  r:=public.execute_waitlist_command_client_sync_v1('register',payload,gen_random_uuid(),gen_random_uuid(),NULL,jsonb_build_array(pg_temp.delivery('waitlist_confirmation',coalesce(token,encode(extensions.gen_random_bytes(32),'hex')))));
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Register failed %',r; END IF;
  RETURN jsonb_build_object('order',(r#>>'{data,order,id}')::bigint,'response',r,'payload',payload);
@@ -46,11 +46,22 @@ BEGIN
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Offer failed %',r; END IF;
  RETURN jsonb_build_object('id',r#>>'{data,offers,0,offerId}','response',r);
 END $$;
-CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,persons uuid[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
- SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','personIds',to_jsonb(persons),'token',token,'orderDetails',pg_temp.checkout(x,persons)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,tickets bigint[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+ SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','ticketIds',to_jsonb(tickets),'token',token,'orderDetails',pg_temp.checkout(x,tickets)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+$$;
+-- Read-only test convenience view: every identity, answer and owner comes from
+-- existing tickets/OPT/orders. Lifecycle is the public server projection.
+CREATE VIEW pg_temp.ticket_rows AS
+ SELECT t.*,o.id current_order_id,o.form form_id,coalesce(o.source_waitlist_order_id,o.id) origin_order_id,
+ t.data answers,t.waitlist_queue_at queue_at,t.id ticket_id,
+ public.get_effective_waitlist_ticket_lifecycle_internal(t.id) lifecycle
+ FROM eshop.tickets t JOIN (SELECT DISTINCT "order",ticket FROM eshop.order_product_ticket) link ON link.ticket=t.id
+ JOIN eshop.orders o ON o.id=link."order";
+CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql AS $$
+ SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
 DO $$
-DECLARE x jsonb; f bigint; source bigint; regular bigint; r jsonb; w jsonb; person uuid; remainder uuid; command uuid; target bigint; original_symbol text; original_sequence bigint; before_history bigint; price_id bigint; result_vs bigint;
+DECLARE x jsonb; f bigint; source bigint; regular bigint; r jsonb; w jsonb; person bigint; remainder bigint; command uuid; target bigint; original_symbol text; original_sequence bigint; before_history bigint; price_id bigint; result_vs bigint;
 BEGIN
  FOR people IN 1..2 LOOP
   x:=pg_temp.fixture(1); f:=(x->>'form')::bigint;
@@ -59,8 +70,8 @@ BEGIN
   SELECT order_symbol,order_sequence INTO original_symbol,original_sequence FROM eshop.orders WHERE id=source;
   PERFORM public.update_order_and_tickets_to_storno_221(regular);
   w:=pg_temp.offer(x,source,1);
-  SELECT participant_id INTO person FROM eshop.waitlist_offer_slots WHERE offer_id=(w->>'id')::uuid;
-  SELECT id INTO remainder FROM eshop.order_participants WHERE current_order_id=source AND id<>person;
+  SELECT ticket_id INTO person FROM eshop.waitlist_offer_slots WHERE offer_id=(w->>'id')::uuid;
+  SELECT id INTO remainder FROM pg_temp.ticket_rows WHERE current_order_id=source AND id<>person;
   INSERT INTO eshop.external_services(unit,type,data) VALUES((x->>'unit')::bigint,'FAKTUROID','{}');
   command:=gen_random_uuid(); r:=pg_temp.accept(x,w,ARRAY[person],command);
   PERFORM assert_eq(r#>>'{data,code}','200'::text,'Fakturoid prepare'); target:=(r#>>'{data,order,id}')::bigint;
@@ -71,7 +82,7 @@ BEGIN
   BEGIN PERFORM public.update_order_and_tickets_to_storno_221(target); RAISE EXCEPTION 'cancel during prepare accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='cancel during prepare accepted' THEN RAISE; END IF; END;
   IF remainder IS NOT NULL THEN
    -- The unrelated remainder is still mutable while the accepted child prepares.
-   r:=public.execute_waitlist_command_client_sync_v1('withdraw',jsonb_build_object('orderId',source,'personIds',jsonb_build_array(remainder)),gen_random_uuid(),gen_random_uuid(),(x->>'actor')::uuid);
+   r:=public.execute_waitlist_command_client_sync_v1('withdraw',jsonb_build_object('orderId',source,'ticketIds',jsonb_build_array(remainder)),gen_random_uuid(),gen_random_uuid(),(x->>'actor')::uuid);
    PERFORM assert_eq(r#>>'{data,code}','200'::text,'unoffered remainder not blocked');
   END IF;
   PERFORM set_config('request.jwt.claim.sub','',true);
@@ -82,12 +93,12 @@ BEGIN
   PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=source),'waitlisted'::text,'source restored');
   PERFORM assert_eq((SELECT order_symbol FROM eshop.orders WHERE id=source),original_symbol,'abort symbol preserved');
   PERFORM assert_eq((SELECT order_sequence FROM eshop.orders WHERE id=source),original_sequence,'abort sequence preserved');
-  PERFORM assert_true((SELECT current_order_id=source AND lifecycle='offered' AND ticket_id IS NULL FROM eshop.order_participants WHERE id=person),'person restored');
+  PERFORM assert_true((SELECT current_order_id=source AND lifecycle='offered' AND ticket_symbol IS NULL FROM pg_temp.ticket_rows WHERE id=person),'person restored');
   PERFORM assert_eq((SELECT count(*) FROM eshop.waitlist_offer_slots WHERE offer_id=(w->>'id')::uuid AND outcome='pending'),1::bigint,'reservation restored');
-  PERFORM assert_eq((SELECT count(*) FROM eshop.order_product_ticket WHERE "order"=target),0::bigint,'failed products detached');
+  PERFORM assert_eq((SELECT count(*) FROM eshop.order_product_ticket WHERE "order"=target AND product IS NOT NULL),0::bigint,'failed products detached');
   PERFORM assert_eq((SELECT workflow_state FROM email_messages WHERE code='TICKET_ORDER_CONFIRMATION' AND data->>'command_id'=command::text),'cancelled'::text,'failed confirmation remains cancelled');
   IF remainder IS NOT NULL THEN
-   PERFORM assert_eq((SELECT lifecycle FROM eshop.order_participants WHERE id=remainder),'withdrawn'::text,'abort preserves changed remainder');
+   PERFORM assert_eq((SELECT lifecycle FROM pg_temp.ticket_rows WHERE id=remainder),'withdrawn'::text,'abort preserves changed remainder');
    PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=target),'storno'::text,'failed child historical');
   END IF;
   BEGIN PERFORM public.complete_fakturoid_ticket_order_v1(target,command,123456789); RAISE EXCEPTION 'late complete accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%Acceptance attempt aborted%' THEN RAISE; END IF; END;
@@ -105,14 +116,14 @@ BEGIN
  r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x)); regular:=(r#>>'{order,id}')::bigint;
  source:=(pg_temp.register(x,1)->>'order')::bigint;
  PERFORM public.update_order_and_tickets_to_storno_221(regular); w:=pg_temp.offer(x,source,1);
- SELECT participant_id INTO person FROM eshop.waitlist_offer_slots WHERE offer_id=(w->>'id')::uuid;
+ SELECT ticket_id INTO person FROM eshop.waitlist_offer_slots WHERE offer_id=(w->>'id')::uuid;
  INSERT INTO eshop.external_services(unit,type,data) VALUES((x->>'unit')::bigint,'FAKTUROID','{}');
  command:=gen_random_uuid(); r:=pg_temp.accept(x,w,ARRAY[person],command); target:=(r#>>'{data,order,id}')::bigint;
  PERFORM assert_eq(r#>>'{data,code}','200'::text,'expiry prepare');
  UPDATE eshop.waitlist_offers SET created_at=now()-interval '2 hours',expires_at=clock_timestamp()-interval '1 second' WHERE id=(w->>'id')::uuid;
  PERFORM set_config('request.jwt.claim.sub','',true);
  PERFORM public.abort_fakturoid_ticket_order_v1(target,command);
- PERFORM assert_eq((SELECT lifecycle FROM eshop.order_participants WHERE id=person),'offer_expired'::text,'expired prepare abort person');
+ PERFORM assert_eq((SELECT lifecycle FROM pg_temp.ticket_rows WHERE id=person),'offer_expired'::text,'expired prepare abort person');
  PERFORM assert_eq((SELECT outcome FROM eshop.waitlist_offer_slots WHERE offer_id=(w->>'id')::uuid),'expired'::text,'expired prepare abort slot');
  PERFORM assert_jsonb_contains(public.get_form_capacity_snapshot_internal(f),'{"occupiedPeople":0,"offeredPlaces":0,"waitingPeople":0,"remainingPublic":1}','expiry abort releases capacity');
  RAISE NOTICE 'PASS Fakturoid full/split abort twice/complete twice/late complete/prepare locks/remainder/expiry';

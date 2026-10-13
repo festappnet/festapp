@@ -33,7 +33,7 @@ DECLARE
     product_data RECORD;
     ticket_id BIGINT;
     order_product_ticket_id BIGINT;
-    ticket_symbol TEXT;
+    v_ticket_symbol TEXT;
     ticket_products JSONB := '[]'::JSONB;
     payment_info_id BIGINT;
     generated_variable_symbol BIGINT;
@@ -159,11 +159,11 @@ BEGIN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1002, 'message', 'Missing email in input data')::TEXT;
         END IF;
 
-        input_data:=jsonb_set(input_data,'{ticket}',public.normalize_form_participant_answers_internal(form_id,input_data->'ticket'));
+        input_data:=jsonb_set(input_data,'{ticket}',public.normalize_form_ticket_answers_internal(form_id,input_data->'ticket'));
 
         SELECT id,order_symbol,order_sequence INTO order_id,assigned_order_symbol,assigned_order_sequence
         FROM eshop.orders WHERE id=p_target_order AND form=form_id FOR UPDATE;
-        IF order_id IS NULL OR EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE "order"=order_id) THEN
+        IF order_id IS NULL OR EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE "order"=order_id AND (NOT p_offer OR product IS NOT NULL)) THEN
           RAISE EXCEPTION 'Invalid finalization target'; END IF;
         IF NOT p_offer AND (SELECT participant_capacity IS NOT NULL FROM public.forms WHERE id=form_id)
            AND jsonb_array_length(input_data->'ticket') >
@@ -224,14 +224,20 @@ BEGIN
                 END LOOP;
             END IF;
 
-            ticket_symbol := generate_ticket_symbol(organization_id, occasion_id);
-            INSERT INTO eshop.tickets (state, occasion, ticket_symbol, note, created_at, updated_at)
-            VALUES ('ordered', occasion_id, ticket_symbol, ticket_note, now, now)
-            RETURNING id INTO ticket_id;
-
-            IF NOT p_offer THEN
-              INSERT INTO eshop.order_participants(current_order_id,origin_order_id,form_id,ticket_id,lifecycle,answers)
-              VALUES(order_id,order_id,form_id,ticket_id,'admitted',public.extract_participant_answers_internal(form_id,ticket_data));
+            v_ticket_symbol := generate_ticket_symbol(organization_id, occasion_id);
+            IF p_offer THEN
+              ticket_id:=(ticket_data->>'ticketId')::bigint;
+              UPDATE eshop.tickets t SET state='ordered',ticket_symbol=v_ticket_symbol,
+                note=ticket_note,data=public.extract_ticket_answers_internal(form_id,ticket_data),updated_at=now
+              WHERE t.id=ticket_id AND t.state='waitlisted' AND t.ticket_symbol IS NULL
+                AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x.ticket=t.id AND x."order"=order_id AND x.product IS NULL)
+                AND EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots x WHERE x.ticket_id=t.id AND x.outcome='accepted');
+              IF NOT FOUND THEN RAISE EXCEPTION 'Invalid waiting ticket finalization'; END IF;
+              DELETE FROM eshop.order_product_ticket WHERE "order"=order_id AND ticket=ticket_id AND product IS NULL;
+            ELSE
+              IF ticket_data ? 'ticketId' THEN RAISE EXCEPTION 'Ticket identity is server assigned'; END IF;
+              INSERT INTO eshop.tickets (state,occasion,ticket_symbol,note,data,created_at,updated_at)
+              VALUES('ordered',occasion_id,v_ticket_symbol,ticket_note,public.extract_ticket_answers_internal(form_id,ticket_data),now,now) RETURNING id INTO ticket_id;
             END IF;
             ticket_products := '[]'::JSONB;
 
@@ -375,9 +381,12 @@ BEGIN
             END IF;
 
             -- Append the ticket details (with its products and the extracted ticket note) to the overall ticket_details array
+            IF NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x."order"=order_id AND x.ticket=ticket_id) THEN
+              INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES(order_id,ticket_id,NULL);
+            END IF;
             ticket_details := ticket_details || JSONB_BUILD_OBJECT(
                 'id', ticket_id,
-                'ticket_symbol', ticket_symbol,
+                'ticket_symbol', v_ticket_symbol,
                 'note', ticket_note,
                 'products', ticket_products
             );

@@ -49,13 +49,13 @@ class WaitlistCommands {
   Future<Map<String, dynamic>> accept(
           {required String offerId,
           String? token,
-          required List<String> personIds,
+          required List<int> ticketIds,
           required Map<String, dynamic> orderDetails}) =>
       _invoke('send-ticket-order', {
         'waitlistAcceptance': {
           'offerId': offerId,
           if (token != null) 'token': token,
-          'personIds': personIds
+          'ticketIds': ticketIds
         },
         'orderDetails': orderDetails,
       });

@@ -37,7 +37,7 @@ BEGIN
  RETURN jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,
   'organization',org.id,'occasion',occ.id,'unit',occ.unit,'formLink',f.link,
   'webLink',org.data->>'DEFAULT_URL','replyTo',public.get_reply_to_email_for_order(o.id),
-  'participantCount',(SELECT count(*) FROM eshop.order_participants WHERE current_order_id=o.id),
+  'participantCount',(SELECT count(*) FROM public.get_order_tickets_internal(o.id)),
   'offeredCount',(SELECT count(*) FROM eshop.waitlist_offer_slots
     WHERE offer_id=p_offer_id AND outcome='pending'),
   'expiresAt',(SELECT expires_at FROM eshop.waitlist_offers WHERE id=p_offer_id),

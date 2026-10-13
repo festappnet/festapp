@@ -23,7 +23,7 @@ const successful = (result) => Number(result.data?.code ?? result.code) === 200;
 
 // Collect only FK descendants of the synthetic tenant and its bank account.
 // Replica mode is local to the cleanup transaction and permits deleting cycles
-// (orders/participants/tickets) without altering constraints or touching baseline rows.
+// (orders/tickets) without altering constraints or touching baseline rows.
 async function cleanup(client, fixture) {
   await client.query('BEGIN');
   try {
@@ -142,7 +142,7 @@ for (const scenario of ['last person', 'shared product across forms', 'shared in
       }
       const results = await race(control, fixture, [checkoutJob(first), checkoutJob(second)]);
       assert.equal(results.filter(successful).length, 1, JSON.stringify(results));
-      assert.equal(Number((await control.query("SELECT count(*) n FROM eshop.order_participants WHERE form_id IN(SELECT id FROM forms WHERE occasion=$1) AND lifecycle='admitted'", [fixture.occasion])).rows[0].n), 1);
+      assert.equal(Number((await control.query("SELECT count(*) n FROM pg_temp.ticket_rows WHERE form_id IN(SELECT id FROM forms WHERE occasion=$1) AND lifecycle='admitted'", [fixture.occasion])).rows[0].n), 1);
       if (scenario === 'shared inventory pool') {
         assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.spots WHERE occasion=$1 AND order_product_ticket IS NOT NULL', [fixture.occasion])).rows[0].n), 1);
       }
@@ -157,11 +157,11 @@ for (const scenario of ['accept versus cancel', 'cancel versus accept', 'accept 
       const source = Number((await control.query('SELECT pg_temp.register($1::jsonb,1) result', [fixture])).rows[0].result.order);
       await control.query('SELECT public.update_order_and_tickets_to_storno_221($1)', [regular.order.id]);
       const offer = (await control.query('SELECT pg_temp.offer($1::jsonb,$2,1) result', [fixture, source])).rows[0].result;
-      const person = (await control.query('SELECT participant_id FROM eshop.waitlist_offer_slots WHERE offer_id=$1', [offer.id])).rows[0].participant_id;
-      const details = (await control.query('SELECT pg_temp.checkout($1::jsonb,$2::uuid[]) result', [fixture, [person]])).rows[0].result;
-      const accept = commandJob('accept', { offerId: offer.id, personIds: [person], orderDetails: details }, fixture.actor);
+      const person = (await control.query('SELECT ticket_id FROM eshop.waitlist_offer_slots WHERE offer_id=$1', [offer.id])).rows[0].ticket_id;
+      const details = (await control.query('SELECT pg_temp.checkout($1::jsonb,$2::bigint[]) result', [fixture, [person]])).rows[0].result;
+      const accept = commandJob('accept', { offerId: offer.id, ticketIds: [person], orderDetails: details }, fixture.actor);
       const other = scenario !== 'accept versus expiry'
-        ? commandJob('cancel', { offerId: offer.id, personIds: [person] }, fixture.actor)
+        ? commandJob('cancel', { offerId: offer.id, ticketIds: [person] }, fixture.actor)
         : { sql: 'SELECT public.expire_waitlist_offers(100) result', params: [] };
       if (scenario === 'accept versus expiry') await control.query("UPDATE eshop.waitlist_offers SET created_at=now()-interval '2 hours',expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", [offer.id]);
       const results = await race(control, fixture, scenario === 'cancel versus accept' ? [other, accept] : [accept, other]);
@@ -175,57 +175,24 @@ for (const scenario of ['accept versus cancel', 'cancel versus accept', 'accept 
   });
 }
 
-test('canonical migration backfill counts distinct people and blocks ambiguous activation', { skip: !enabled }, async () => {
+test('legacy tickets count immediately without backfill and duplicate products count once', { skip: !enabled }, async () => {
   await withFixture(null, async (control, fixture) => {
-    await withFixture(null, async (_otherControl, otherFixture) => {
-    const result = (await control.query('SELECT public.create_ticket_order_internal_v1(pg_temp.checkout($1::jsonb)) result', [fixture])).rows[0].result;
-    assert.ok(successful(result));
-    const original = (await control.query('SELECT order_symbol,order_sequence,price,data FROM eshop.orders WHERE id=$1', [result.order.id])).rows[0];
-    const ticket = (await control.query('SELECT ticket FROM eshop.order_product_ticket WHERE "order"=$1 LIMIT 1', [result.order.id])).rows[0].ticket;
+    const source = (await control.query('SELECT public.allocate_ticket_order_identity_internal($1) id', [fixture.form])).rows[0].id;
+    const ticket = (await control.query("INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES($1,'ordered',$2) RETURNING id", [fixture.occasion, `LEGACY${randomUUID()}`])).rows[0].id;
     const extra = (await control.query("INSERT INTO eshop.products(product_type,occasion,title,price,currency_code) VALUES($1,$2,'Legacy second product',100,'CZK') RETURNING id", [fixture.type, fixture.occasion])).rows[0].id;
-    await control.query('INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES($1,$2,$3)', [result.order.id, ticket, extra]);
-    await control.query('DELETE FROM eshop.order_participants WHERE form_id=$1', [fixture.form]);
-    const schema = await fs.readFile(repositoryFile('database/functions/eshop_waitlist/schema.sql'), 'utf8');
-    const statements = schema.slice(schema.indexOf('INSERT INTO eshop.order_participants'), schema.indexOf('DO $$ DECLARE n text;')).split(';').map((sql) => sql.trim()).filter(Boolean);
-    // Make every operational backfill INSERT eligible in another tenant: one
-    // clear ticket, one ticket shared by two orders, and an orphan order.
-    const otherRegular = (await control.query('SELECT public.create_ticket_order_internal_v1(pg_temp.checkout($1::jsonb)) result', [otherFixture])).rows[0].result;
-    assert.ok(successful(otherRegular));
-    const otherClear = (await control.query('SELECT public.create_ticket_order_internal_v1(pg_temp.checkout($1::jsonb)) result', [otherFixture])).rows[0].result;
-    assert.ok(successful(otherClear));
-    const otherTicket = (await control.query('SELECT ticket FROM eshop.order_product_ticket WHERE "order"=$1 LIMIT 1', [otherRegular.order.id])).rows[0].ticket;
-    const otherDuplicate = (await control.query('SELECT public.allocate_ticket_order_identity_internal($1) id', [otherFixture.form])).rows[0].id;
-    await control.query('INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES($1,$2,$3)', [otherDuplicate, otherTicket, otherFixture.product]);
-    await control.query('SELECT public.allocate_ticket_order_identity_internal($1)', [otherFixture.form]);
-    await control.query('DELETE FROM eshop.order_participants WHERE form_id=$1', [otherFixture.form]);
-    const runScopedBackfill = async (form) => {
-      for (const sql of statements) await control.query(sql.replace('WHERE o.form IS NOT NULL', 'WHERE o.form=$1'), [form]);
-    };
-    const unchangedTenant = async (form) => {
-      assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.order_participants WHERE form_id=$1', [form])).rows[0].n), 0, 'out-of-scope participant rows untouched');
-      assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.form_participant_backfill_issues WHERE form_id=$1', [form])).rows[0].n), 0, 'out-of-scope ambiguity rows untouched');
-    };
-    await control.query("SELECT set_config('festapp.waitlist_backfill_organization','',false)");
-    await runScopedBackfill(fixture.form);
-    await runScopedBackfill(otherFixture.form);
-    await unchangedTenant(fixture.form);
-    await unchangedTenant(otherFixture.form);
-    await control.query("SELECT set_config('festapp.waitlist_backfill_organization',$1,false)", [String(fixture.organization)]);
-    // Even when the test's form predicate explicitly selects the other tenant,
-    // the canonical organization guard must keep all three statements inert.
-    await runScopedBackfill(otherFixture.form);
-    await unchangedTenant(otherFixture.form);
-    // Execute the canonical queries for the explicitly selected tenant.
-
-    for (const sql of statements) await control.query(sql.replace('WHERE o.form IS NOT NULL', 'WHERE o.form=$1'), [fixture.form]);
-    assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.order_participants WHERE current_order_id=$1', [result.order.id])).rows[0].n), 1, 'two product rows are one person');
-    assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.form_participant_backfill_issues WHERE form_id=$1', [fixture.form])).rows[0].n), 0, 'clear linkage not quarantined');
-    assert.deepEqual((await control.query('SELECT order_symbol,order_sequence,price,data FROM eshop.orders WHERE id=$1', [result.order.id])).rows[0], original, 'backfill preserves historical identity and data');
-    const ambiguous = (await control.query('SELECT public.allocate_ticket_order_identity_internal($1) id', [fixture.form])).rows[0].id;
-    for (const sql of statements.slice(1)) await control.query(sql.replace('WHERE o.form IS NOT NULL', 'WHERE o.form=$1'), [fixture.form]);
-    assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.form_participant_backfill_issues WHERE order_id=$1', [ambiguous])).rows[0].n), 1, 'ambiguous order explicitly quarantined');
-    await assert.rejects(control.query('SELECT public.check_form_capacity_settings_internal($1,$2)', [fixture.form, { participant_capacity: 2 }]), /PARTICIPANT_BACKFILL_REQUIRED/);
-    });
+    await control.query('INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES($1,$2,$3),($1,$2,$4)', [source,ticket,fixture.product,extra]);
+    const original = (await control.query('SELECT * FROM eshop.tickets WHERE id=$1', [ticket])).rows[0];
+    assert.deepEqual(original.data, {}, 'preexisting ticket needs no fabricated answers');
+    await control.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [fixture.actor]);
+    const configured = (await control.query('SELECT public.update_form_internal_v1($1::jsonb) result', [{id:fixture.form,occasion:fixture.occasion,link:fixture.link,participant_capacity:1}])).rows[0].result;
+    assert.equal(Number(configured.code),200,JSON.stringify(configured));
+    const snapshot = (await control.query('SELECT public.get_form_capacity_snapshot_internal($1) result',[fixture.form])).rows[0].result;
+    assert.equal(snapshot.occupiedPeople,1,'actual legacy ticket occupies one place for two product rows');
+    assert.equal(snapshot.remainingPublic,0);
+    assert.deepEqual((await control.query('SELECT * FROM eshop.tickets WHERE id=$1',[ticket])).rows[0],original,'capacity activation never rewrites legacy tickets');
+    assert.equal((await control.query("SELECT to_regclass('eshop.order_participants') ledger,to_regclass('eshop.form_participant_backfill_issues') backfill")).rows[0].ledger,null);
+    await control.query('SELECT public.update_order_and_tickets_to_storno_221($1)',[source]);
+    assert.equal((await control.query('SELECT public.get_form_capacity_snapshot_internal($1) result',[fixture.form])).rows[0].result.occupiedPeople,0,'regular ticket cancellation is direct occupancy truth');
   });
 });
 

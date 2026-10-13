@@ -16,7 +16,7 @@ class TicketHolder extends FieldHolder {
   List<FormTicketModel> tickets = [];
 
   int maxTickets;
-  bool fixedParticipants = false;
+  bool fixedTickets = false;
   final bool showDepositDescription;
   final List<FieldHolder> fields;
 

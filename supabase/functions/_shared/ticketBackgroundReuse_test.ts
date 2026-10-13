@@ -1,4 +1,4 @@
-import { assertEquals, assert } from 'jsr:@std/assert@1';
+import { assertEquals, assert, assertRejects } from 'jsr:@std/assert@1';
 import { PDFDocument, PDFName, PDFRawStream, PDFDict } from 'npm:pdf-lib';
 import { inflateSync } from 'node:zlib';
 import { prepareTicketRenderer, generateTicketPdf } from './ticketGeneration.ts';
@@ -51,4 +51,17 @@ Deno.test('JPEG artwork retains its exact encoded image in each independent PDF'
  const render=await prepareTicketRenderer(occasion,{}, {}, {load:async()=>resources,products:async()=>({products:[],product_types:[]})});
  const baseline=await generateTicketPdf(sampleData(),resources,t);
  for(let i=0;i<2;i++)assertEquals(await images((await render({ticket_symbol:`FAKE00001${i}`})).bytes),await images(baseline.bytes));
+});
+
+Deno.test('waiting tickets cannot allocate a PDF or QR while ordinary tickets still render',async()=>{
+ const render=await prepareTicketRenderer(occasion,{}, {}, {load:async()=>({font,metrics}),products:async()=>({products:[],product_types:[]})});
+ const original=PDFDocument.create;let created=0;
+ PDFDocument.create=async(options)=>{created++;return await original(options);};
+ try{
+  await assertRejects(()=>render({id:100,state:'waitlisted',ticket_symbol:null}),Error,'Waiting tickets cannot be issued for admission');
+  assertEquals(created,0,'a waiting ticket never enters PDF/QR construction');
+  const ordinary=await render({id:200,state:'ordered',ticket_symbol:'FAKE000200',price:100,currency_code:'CZK'});
+  assert(ordinary.bytes.length>1000,'the same renderer still issues an ordinary admission ticket');
+  assertEquals(created,1);
+ }finally{PDFDocument.create=original;}
 });

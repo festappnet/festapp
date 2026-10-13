@@ -20,10 +20,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  RETURN jsonb_build_object('organization',org,'unit',un,'occasion',oc,'form',f,'key',fk,'type',pt,'product',prod,'actor',actor,'link',suffix);
 END $$;
-CREATE FUNCTION pg_temp.checkout(x jsonb,persons uuid[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+CREATE FUNCTION pg_temp.checkout(x jsonb,tickets bigint[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('form',x->'key','email','regression@example.invalid','ticket',
- CASE WHEN persons IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
- ELSE (SELECT jsonb_agg(jsonb_build_object('participantId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(persons) id) END);
+ CASE WHEN tickets IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
+ ELSE (SELECT jsonb_agg(jsonb_build_object('ticketId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(tickets) id) END);
 $$;
 CREATE FUNCTION pg_temp.delivery(code text,token text,oid bigint DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('orderId',oid,'recipient','regression@example.invalid','templateCode',code,
@@ -32,7 +32,7 @@ $$;
 CREATE FUNCTION pg_temp.register(x jsonb,n integer,token text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE r jsonb; payload jsonb;
 BEGIN
- payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','people',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
+ payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
  r:=public.execute_waitlist_command_client_sync_v1('register',payload,gen_random_uuid(),gen_random_uuid(),NULL,jsonb_build_array(pg_temp.delivery('waitlist_confirmation',coalesce(token,encode(extensions.gen_random_bytes(32),'hex')))));
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Register failed %',r; END IF;
  RETURN jsonb_build_object('order',(r#>>'{data,order,id}')::bigint,'response',r,'payload',payload);
@@ -46,12 +46,23 @@ BEGIN
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Offer failed %',r; END IF;
  RETURN jsonb_build_object('id',r#>>'{data,offers,0,offerId}','response',r);
 END $$;
-CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,persons uuid[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
- SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','personIds',to_jsonb(persons),'token',token,'orderDetails',pg_temp.checkout(x,persons)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,tickets bigint[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+ SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','ticketIds',to_jsonb(tickets),'token',token,'orderDetails',pg_temp.checkout(x,tickets)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+$$;
+-- Read-only test convenience view: every identity, answer and owner comes from
+-- existing tickets/OPT/orders. Lifecycle is the public server projection.
+CREATE VIEW pg_temp.ticket_rows AS
+ SELECT t.*,o.id current_order_id,o.form form_id,coalesce(o.source_waitlist_order_id,o.id) origin_order_id,
+ t.data answers,t.waitlist_queue_at queue_at,t.id ticket_id,
+ public.get_effective_waitlist_ticket_lifecycle_internal(t.id) lifecycle
+ FROM eshop.tickets t JOIN (SELECT DISTINCT "order",ticket FROM eshop.order_product_ticket) link ON link.ticket=t.id
+ JOIN eshop.orders o ON o.id=link."order";
+CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql AS $$
+ SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(2); name_id bigint; surname_id bigint; product_field_id bigint; r jsonb; payload jsonb;
- source bigint; w jsonb; ids uuid[]; person uuid; details jsonb; selected jsonb; first_answers jsonb; second_answers jsonb; offer_bundle jsonb;
+ source bigint; w jsonb; ids bigint[]; person bigint; details jsonb; selected jsonb; first_answers jsonb; second_answers jsonb; offer_bundle jsonb;
 BEGIN
  INSERT INTO form_fields(form,type,is_ticket_field,is_required) VALUES((x->>'form')::bigint,'name',true,true) RETURNING id INTO name_id;
  INSERT INTO form_fields(form,type,is_ticket_field,is_required) VALUES((x->>'form')::bigint,'surname',true,true) RETURNING id INTO surname_id;
@@ -64,26 +75,26 @@ BEGIN
   r:=public.create_ticket_order_internal_v1(details);
   IF r->>'code'<>'200' THEN RAISE EXCEPTION 'Fill failed %',r; END IF;
  END LOOP;
- payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','people',jsonb_build_array(
+ payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',jsonb_build_array(
   jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('name','Waiting','_subFieldId',name_id),jsonb_build_object('surname','One','_subFieldId',surname_id))),
   jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(name_id::text,'Waiting'),jsonb_build_object(surname_id::text,'One')))));
  r:=public.execute_waitlist_command_client_sync_v1('register',payload,gen_random_uuid(),gen_random_uuid(),NULL,
   jsonb_build_array(pg_temp.delivery('waitlist_confirmation',encode(extensions.gen_random_bytes(32),'hex'))));
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Register failed %',r; END IF;
  source:=(r#>>'{data,order,id}')::bigint;
- SELECT array_agg(id ORDER BY id) INTO ids FROM eshop.order_participants WHERE current_order_id=source;
- PERFORM assert_eq((SELECT answers FROM eshop.order_participants WHERE id=ids[1]),(SELECT answers FROM eshop.order_participants WHERE id=ids[2]),'Waitlist registration aliases project to identical canonical answers');
- FOR person IN SELECT p.id FROM eshop.order_participants p JOIN eshop.orders o ON o.id=p.current_order_id WHERE o.form=(x->>'form')::bigint AND o.state<>'waitlisted' LOOP
-  PERFORM public.update_order_and_tickets_to_storno_221((SELECT current_order_id FROM eshop.order_participants WHERE id=person));
+ SELECT array_agg(id ORDER BY id) INTO ids FROM pg_temp.ticket_rows WHERE current_order_id=source;
+ PERFORM assert_eq((SELECT answers FROM pg_temp.ticket_rows WHERE id=ids[1]),(SELECT answers FROM pg_temp.ticket_rows WHERE id=ids[2]),'Waitlist registration aliases project to identical canonical answers');
+ FOR person IN SELECT p.id FROM pg_temp.ticket_rows p JOIN eshop.orders o ON o.id=p.current_order_id WHERE o.form=(x->>'form')::bigint AND o.state<>'waitlisted' LOOP
+  PERFORM public.update_order_and_tickets_to_storno_221((SELECT current_order_id FROM pg_temp.ticket_rows WHERE id=person));
  END LOOP;
  w:=pg_temp.offer(x,source,2);
  -- Existing pre-normalization rows must also be read without transport aliases.
- UPDATE eshop.order_participants SET answers=jsonb_build_object('fields',jsonb_build_array(
+ UPDATE eshop.tickets SET data=jsonb_build_object('fields',jsonb_build_array(
   jsonb_build_object(name_id::text,'Waiting','name','Waiting','_subFieldId',name_id),
   jsonb_build_object(surname_id::text,'One','surname','One','_subFieldId',surname_id))) WHERE id=ids[1];
  offer_bundle:=public.get_waitlist_offer_form(NULL,(w->>'id')::uuid);
  PERFORM assert_eq(offer_bundle->>'code','200','Authorized offer bundle loads');
- PERFORM assert_true(NOT (offer_bundle->'participants')::text LIKE '%_subFieldId%' AND NOT (offer_bundle->'participants')::text LIKE '%"name"%',
+ PERFORM assert_true(NOT (offer_bundle->'tickets')::text LIKE '%_subFieldId%' AND NOT (offer_bundle->'tickets')::text LIKE '%"name"%',
   'Offer participant DTO excludes transport aliases and internal metadata');
  FOR i IN 1..2 LOOP
   person:=ids[i];
@@ -92,13 +103,13 @@ BEGIN
    ELSE jsonb_build_array(jsonb_build_object(name_id::text,'Waiting'),jsonb_build_object(surname_id::text,'One')) END;
   selected:=selected||jsonb_build_array(jsonb_build_object('product_type',x->>'product','_subFieldId',product_field_id,'price',0.01,'currency_code','CZK'));
   details:=jsonb_set(details,'{ticket,0,fields}',selected);
-  r:=public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','personIds',jsonb_build_array(person),'orderDetails',details),
+  r:=public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','ticketIds',jsonb_build_array(person),'orderDetails',details),
    gen_random_uuid(),gen_random_uuid(),(x->>'actor')::uuid);
   IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Acceptance failed %',r; END IF;
   PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=(r#>>'{data,order,id}')::bigint),100::numeric,'Product price hint cannot alter ordinary acceptance pricing');
  END LOOP;
- SELECT answers INTO first_answers FROM eshop.order_participants WHERE id=ids[1];
- SELECT answers INTO second_answers FROM eshop.order_participants WHERE id=ids[2];
+ SELECT answers INTO first_answers FROM pg_temp.ticket_rows WHERE id=ids[1];
+ SELECT answers INTO second_answers FROM pg_temp.ticket_rows WHERE id=ids[2];
  PERFORM assert_eq(first_answers,second_answers,'Legacy and modern offer acceptance store identical canonical personal answers');
  PERFORM assert_eq(jsonb_array_length(first_answers->'fields'),2,'Product selections do not become personal answers');
  PERFORM assert_true(NOT first_answers::text LIKE '%_subFieldId%' AND NOT first_answers::text LIKE '%product_type%' AND NOT first_answers::text LIKE '%"name"%',

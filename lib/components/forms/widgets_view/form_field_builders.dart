@@ -104,7 +104,7 @@ class FormFieldBuilders {
     }
     if (ticket.fields.none((f) => f.fieldType == FormHelper.fieldTypeSpot)) {
       if (ticket.tickets.isEmpty &&
-          !ticket.fixedParticipants &&
+          !ticket.fixedTickets &&
           ticket.maxTickets > 0) {
         ticket.tickets.add(FormTicketModel(
             ticketValues: ticket.fields,
@@ -118,8 +118,7 @@ class FormFieldBuilders {
                       Expanded(
                           child: Text(
                               '${WaitlistStrings.text('person')} ${i + 1}')),
-                      if (!ticket.fixedParticipants &&
-                          ticket.tickets.length > 1)
+                      if (!ticket.fixedTickets && ticket.tickets.length > 1)
                         IconButton(
                           tooltip: CommonStrings.delete,
                           icon: const Icon(Icons.close),
@@ -139,7 +138,7 @@ class FormFieldBuilders {
                               formHolder,
                               ticket.tickets[i].ticketValues))),
                 ],
-                if (!ticket.fixedParticipants &&
+                if (!ticket.fixedTickets &&
                     ticket.tickets.length < ticket.maxTickets)
                   TextButton.icon(
                     icon: const Icon(Icons.add),

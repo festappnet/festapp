@@ -1,6 +1,6 @@
 import { WaitlistStrings as S } from './waitlist_strings.js';
 
-export function participantLabel(person) {
+export function ticketLabel(person) {
     return (person.answers?.fields || []).flatMap(field => {
         const canonical = Object.entries(field).filter(([key]) => /^\d+$/.test(key));
         const entries = canonical.length ? canonical : Object.entries(field).filter(([key]) => !key.startsWith('_'));
@@ -13,13 +13,13 @@ export function prepareOfferSession(session, model) {
     if (!bundle) return;
     const saved = model.offerDraft;
     session.state.fields = new Map(saved?.fields || (bundle.orderData?.fields || []).flatMap(f => Object.entries(f)));
-    const selected = model.selectedPeople || bundle.slots.filter(s => s.outcome === 'pending').map(s => s.participantId);
-    model.selectedPeople = selected.slice(0, session.maxTickets);
-    session.state.tickets = model.selectedPeople.map(id => {
-        const previous = model.personDrafts?.get(id) || saved?.tickets.find(t => t.participantId === id);
+    const selected = model.selectedTicketIds || bundle.slots.filter(s => s.outcome === 'pending').map(s => s.ticketId);
+    model.selectedTicketIds = selected.slice(0, session.maxTickets);
+    session.state.tickets = model.selectedTicketIds.map(id => {
+        const previous = model.ticketDrafts?.get(id) || saved?.tickets.find(t => t.ticketId === id);
         if (previous) return previous;
-        const person = bundle.participants.find(p => p.id === id);
-        return { participantId: id, id, fields: (person?.answers?.fields || []).flatMap(f =>
+        const person = bundle.tickets.find(p => p.id === id);
+        return { ticketId: id, id, fields: (person?.answers?.fields || []).flatMap(f =>
             Object.entries(f).flatMap(([key, value]) => {
                 const def = session._getTicketSubDef(key);
                 return def ? [{ [def.type]: value, [key]: value, _subFieldId: def.id }] : [];
@@ -51,26 +51,26 @@ export function renderWaitlistControls(page, model) {
     legend.textContent = S.selectPeople;
     fieldset.appendChild(legend);
     section.appendChild(fieldset);
-    for (const person of b.participants) {
+    for (const person of b.tickets) {
         if (['admitted', 'withdrawn', 'cancelled'].includes(person.lifecycle)) continue;
         const label = document.createElement('label');
         label.style.cssText = 'display:block;padding:12px 0';
         const input = document.createElement('input');
         input.type = 'checkbox';
-        input.checked = model.selectedPeople.includes(person.id);
-        input.disabled = person.lifecycle === 'offered' && !b.slots.some(s => s.participantId === person.id && s.outcome === 'pending');
-        const name = participantLabel(person);
+        input.checked = model.selectedTicketIds.includes(person.id);
+        input.disabled = person.lifecycle === 'offered' && !b.slots.some(s => s.ticketId === person.id && s.outcome === 'pending');
+        const name = ticketLabel(person);
         label.append(input, document.createTextNode(` ${name} ${S.text(person.lifecycle)}`));
         input.onchange = () => {
-            if (input.checked && model.selectedPeople.length >= session.maxTickets) {
+            if (input.checked && model.selectedTicketIds.length >= session.maxTickets) {
                 input.checked = false;
                 message.textContent = `${S.selectPeople}: ${session.maxTickets}`;
                 return;
             }
-            model.personDrafts ||= new Map();
-            for (const t of session.state.tickets) model.personDrafts.set(t.participantId, t);
+            model.ticketDrafts ||= new Map();
+            for (const t of session.state.tickets) model.ticketDrafts.set(t.ticketId, t);
             model.offerDraft = { fields: [...session.state.fields], tickets: session.state.tickets };
-            model.selectedPeople = input.checked ? [...model.selectedPeople, person.id] : model.selectedPeople.filter(id => id !== person.id);
+            model.selectedTicketIds = input.checked ? [...model.selectedTicketIds, person.id] : model.selectedTicketIds.filter(id => id !== person.id);
             page.renderForm(model, false);
         };
         fieldset.appendChild(label);
@@ -79,9 +79,9 @@ export function renderWaitlistControls(page, model) {
     form.querySelectorAll('.btn-add-ticket,.btn-remove-ticket').forEach(el => el.hidden = true);
     const decline = document.createElement('button');
     decline.type = 'button'; decline.className = 'btn btn-secondary'; decline.textContent = S.decline;
-    decline.disabled = !model.selectedPeople.length || !model.selectedPeople.every(id => b.slots.some(s => s.participantId === id && s.outcome === 'pending'));
-    decline.onclick = () => page.resolveWaitlist('decline', model.selectedPeople);
-    if (decline.disabled && model.selectedPeople.length) {
+    decline.disabled = !model.selectedTicketIds.length || !model.selectedTicketIds.every(id => b.slots.some(s => s.ticketId === id && s.outcome === 'pending'));
+    decline.onclick = () => page.resolveWaitlist('decline', model.selectedTicketIds);
+    if (decline.disabled && model.selectedTicketIds.length) {
         const reason = document.createElement('p'); reason.textContent = S.text('declineAssigned'); section.appendChild(reason);
     }
     section.appendChild(decline);

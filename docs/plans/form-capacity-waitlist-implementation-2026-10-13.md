@@ -1,3 +1,36 @@
+# Korekce: jedinou evidencí jsou eshop.tickets
+
+Stav 2026-10-13: PR #382 sloučen na main `e3edc42b5287d67b3c169a296e4a9a80ab00e9fd`
+po výslovně schváleném admin override. Produkční DB, Functions a klient nebyly
+nasazeny. Uživatel následně odmítl samostatnou evidenci osob a backfill.
+
+Aktuální kontrakt je [opravený plán](form-capacity-waitlist-plan-2026-10-13.md).
+Probíhá forward korekce na eshop.tickets jako jedinou evidenci a dynamický počet
+platných vstupenek. Nabídky odkazují přímo na ticket ID. Obě produkčně neaplikované
+migrace budou provedeny atomicky bez vytváření historických osob.
+
+Aktuální ticket korekce - ověření:
+
+- 168/168 SQL testů PASS na čerstvé DB. Poslední mechanická úprava price hintu
+  prošla 4 affected testy a po další fresh aplikaci 6 cílenými kontrolami.
+- Přesné finální soubory 1900+2000 aplikovány atomicky bez backfill scope; katalog
+  potvrzuje absenci evidence osob, jejího guardu a UUID slot vazeb.
+- 11/11 concurrency/Fakturoid případů a 67/67 Deno testů PASS, včetně čekajícího
+  ticket PDF guardu a běžného rendereru.
+- 98 formulářových JS případů PASS po sjednocení defaultů a opravě počítání
+  scoped odpovědí. Numeric ID a typed alias reprezentují jednu odpověď.
+- Cílené Flutter checks PASS: vlastní odpovědi, defaulty i obnovený multiselect,
+  waiting použití/PDF a filtr platných vstupenek; scoped analyze bez errors.
+- Defaulty select_one/select_many/product_type sdílejí data.default_value;
+  uložená i výslovně prázdná odpověď mají přednost. Web počáteční výběr i renderer
+  používají jeden choice helper. Nepřidán druhý serverový default engine.
+- Skutečný finální browser průchod probíhá; produkční aplikace stále neprovedena.
+
+Níže uvedené výsledky jsou **historické ověření původní verze**, nikoli důkaz
+správnosti ticket korekce. Její cílené výsledky budou doplněny po dokončení.
+
+---
+
 # Kapacita formuláře a náhradníci - implementační evidence
 
 Autoritativní zadání: [plán](form-capacity-waitlist-plan-2026-10-13.md) a
