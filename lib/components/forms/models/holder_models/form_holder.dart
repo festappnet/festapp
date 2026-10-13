@@ -61,6 +61,10 @@ class FormHolder {
     final ticketChildFields = formModel.relatedFields
         .where((f) =>
             f.isTicketField == true &&
+            (!formModel.isWaitlist ||
+                (f.type != FormHelper.fieldTypeProductType &&
+                    f.type != FormHelper.fieldTypeSpot &&
+                    f.productTypeId == null)) &&
             !(f.type == FormHelper.fieldTypeSpot && f.isHidden == true) &&
             !(f.type == FormHelper.fieldTypeProductType &&
                 f.productType?.type == ProductModel.spotType &&
@@ -72,6 +76,10 @@ class FormHolder {
     final otherFields = formModel.relatedFields
         .where((f) =>
             f.isTicketField != true &&
+            (!formModel.isWaitlist ||
+                (f.type != FormHelper.fieldTypeProductType &&
+                    f.type != FormHelper.fieldTypeSpot &&
+                    f.productTypeId == null)) &&
             !(f.type == FormHelper.fieldTypeProductType &&
                 f.productType?.type == ProductModel.spotType &&
                 formModel.usesSeatSelection))
@@ -83,6 +91,11 @@ class FormHolder {
         (f) => f.fieldType == FormHelper.fieldTypeTicket) as TicketHolder?;
     if (ticket != null) {
       ticket.fields.addAll(ticketChildFields.map((f) => createFieldHolder(f)));
+      if (formModel.registrationMode == 'regular' &&
+          formModel.capacity?.remainingPublic != null) {
+        ticket.maxTickets =
+            ticket.maxTickets.clamp(0, formModel.capacity!.remainingPublic!);
+      }
     }
     return FormHolder(
         fields: otherFields,

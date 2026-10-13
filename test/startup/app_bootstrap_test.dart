@@ -18,6 +18,16 @@ void main() {
     );
   });
 
+  test('personal form startup preserves capability only in its fragment', () {
+    const path = '/form/example#waitlist?offer_id=offer&token=synthetic';
+    final route = initialRouteForUri(Uri.parse('https://preview.example$path'));
+    expect(route, path);
+    expect(Uri.parse(route).hasQuery, isFalse);
+    expect(Uri.parse(route).fragment, 'waitlist?offer_id=offer&token=synthetic');
+    expect(initialRouteForUri(Uri.parse('https://preview.example/login#section')),
+        '/login');
+  });
+
   test('startup preserves nested tabs and both calendar query parameters', () {
     const path =
         '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10';

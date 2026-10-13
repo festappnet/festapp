@@ -1,3 +1,5 @@
+import { sanitizeHtml } from '../../utils/html.js';
+import { WaitlistStrings } from './waitlist_strings.js';
 import { CountdownWidget } from './widgets/countdown_widget.js';
 import { NotAvailableWidget } from './widgets/not_available_widget.js';
 
@@ -16,6 +18,9 @@ export class FormAvailabilityService {
      * @returns {Object} { status, message, targetTime? }
      */
     static getStatus(formModel) {
+        if (formModel.registrationMode === 'offer') return { status: this.Status.OPEN };
+        if (formModel.registrationMode === 'full') return { status: 'FULL' };
+        if (formModel.registrationMode === 'closed') return { status: this.Status.CLOSED };
         const now = new Date();
         
         if (formModel.startTime && now < formModel.startTime) {
@@ -48,6 +53,17 @@ export class FormAvailabilityService {
         const { showPreview } = context;
         const { status } = statusResult;
 
+        if (status === 'FULL' && !showPreview) {
+            container.replaceChildren();
+            if (formModel.header) {
+                const intro = document.createElement('div');
+                intro.className = 'form-header'; intro.innerHTML = sanitizeHtml(formModel.header); container.appendChild(intro);
+            }
+            const message = document.createElement('p');
+            message.textContent = WaitlistStrings.full;
+            container.appendChild(message);
+            return true;
+        }
         // Preview Mode overrides everything
         if (showPreview) return false;
 

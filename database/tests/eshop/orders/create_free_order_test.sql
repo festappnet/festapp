@@ -14,6 +14,8 @@ INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority) VALUES (997,
 INSERT INTO eshop.product_types (id, occasion, title, type) VALUES (900, 125, 'Free Ticket Type', 'spot');
 INSERT INTO eshop.products (id, product_type, title, price, currency_code, is_hidden) VALUES (901, 900, 'Free Ticket', 0, 'CZK', false);
 
+INSERT INTO public.form_fields(form,product_type,type) VALUES(800,900,'product_type');
+
 -- 2. Call create_ticket_order with Price 0
 -- We simulate a JSON payload for a free ticket
 DO $$

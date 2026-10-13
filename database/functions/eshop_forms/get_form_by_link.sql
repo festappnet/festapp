@@ -1,5 +1,5 @@
-CREATE OR REPLACE FUNCTION get_form_by_link(form_link TEXT)
-RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.get_form_bundle_internal(p_form_id bigint,p_allow_closed boolean DEFAULT false)
+RETURNS JSON LANGUAGE plpgsql SECURITY INVOKER
 SET search_path = public, extensions AS $$
 DECLARE
     allData JSON;
@@ -12,7 +12,7 @@ BEGIN
     SELECT EXISTS (
         SELECT 1
         FROM public.forms
-        WHERE link = form_link
+        WHERE id = p_form_id
     ) INTO form_exists;
 
     IF NOT form_exists THEN
@@ -22,14 +22,14 @@ BEGIN
         );
     END IF;
 
-    SELECT occasion INTO occ_id FROM public.forms WHERE link = form_link;
+    SELECT occasion INTO occ_id FROM public.forms WHERE id = p_form_id;
     is_editor_view := public.get_is_editor_order_view_on_occasion(occ_id);
 
 
-    IF NOT is_editor_view AND NOT EXISTS (
+    IF NOT p_allow_closed AND NOT is_editor_view AND NOT EXISTS (
         SELECT 1
         FROM public.forms
-        WHERE link = form_link AND is_open = true
+        WHERE id = p_form_id AND is_open = true
     ) THEN
         -- If the form is closed, retrieve only the 'header_off' message
         SELECT jsonb_build_object(
@@ -41,7 +41,7 @@ BEGIN
         )
         INTO allData
         FROM public.forms f
-        WHERE f.link = form_link;
+        WHERE f.id = p_form_id;
 
         RETURN allData;
     END IF;
@@ -50,7 +50,12 @@ BEGIN
     SELECT jsonb_build_object(
         'code', 200,
         'data', jsonb_build_object(
+            'capacity', public.get_form_capacity_snapshot_internal(f.id),
+            'registrationMode',public.get_form_registration_mode_internal(f.id),
+            'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+            'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
             'id', f.id,
+            'link', f.link,
             'key', f.key,
             'created_at', f.created_at,
             'data', public.get_effective_form_data(f.id),
@@ -129,8 +134,16 @@ BEGIN
     FROM public.forms f
     LEFT JOIN eshop.bank_accounts ba ON f.bank_account = ba.id
     LEFT JOIN public.occasions o ON f.occasion = o.id
-    WHERE f.link = form_link;
+    WHERE f.id = p_form_id;
 
     RETURN allData;
 END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
+RETURNS json LANGUAGE sql SECURITY DEFINER
+SET search_path=public,extensions AS $$
+ SELECT public.get_form_bundle_internal((SELECT id FROM public.forms WHERE link=form_link),false);
 $$;

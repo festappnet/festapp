@@ -120,3 +120,73 @@ databáze je odstraněná. Původní lokální databáze zůstala nedotčená.
 Produkční resources, aktuální queue contents, live grant drift a deployed package
 digest nebyly nově ověřované. Produkční readiness není zaměněná za dokončenou
 lokální implementaci. Žádné jiné tenant branche nejsou v rollout scope.
+
+## Produkční dokončení po následné autorizaci 2026-10-13
+
+Uživatel následně schválil publikaci, celý dokončený pracovní celek, již
+implementované mazání stornovaných objednávek a sdílený převod všech konzumentů.
+Produkční rozsah klienta zůstal pouze vstupenky.online / prod/festapptickets.
+Výše uvedený seznam zbývajících kroků popisuje původní lokální předání; tyto
+kroky byly následně dokončeny.
+
+- Všech 133 konfigurací napříč 12 evidovanými organizacemi je schema 3;
+  readback přesně odpovídá manifestům, verze se zvýšily jednou, katalogové
+  a historické vazby zůstaly zachované. Akce 32316 z uživatelského odkazu je
+  převedená a editovatelná. Osm konkrétních migrací dokončeného release bylo
+  aplikováno spolu s konverzí atomicky, bez blanket migration-up.
+- Obnovené tři původní backgroundy mají ověřené původní bajty. Před migrací
+  byla ověřená nová šifrovaná záloha. První pokus o SQL transakci se celý
+  vrátil při kolizi aliasu v PL/pgSQL; alias i regresní test byly opravené
+  na canonical main před opakováním.
+- Canonical Edge bundle je aktivní, REST i Functions zdravé, původní
+  email_capacity.paused=false je obnovené. Syntetické PDF skutečné konfigurace
+  akce 32316 úspěšně vzniklo (280215 bajtů); nebyl rozeslán ověřovací zákaznický
+  e-mail. Lokální rehearsal databáze i pomocné runtime canary byly odstraněné.
+- Následný UI požadavek provedl explicitně vyžádaný Astra Medium subagent:
+  kratší akce Přidat produkt, čitelnější vlastnosti, zalamovaný hint, dynamický
+  formátovaný příklad a tooltip označené/neoznačené výchozí volby. Příklad
+  preferuje viditelný produkt s konečnou cenou >0. Ověřením nasazeného katalogu
+  akce 32316 prošly obě skupiny s placenými příklady. Widget testy, 6 Deno
+  testů a CI prošly; desktop i mobil 320 px byly vizuálně ověřené.
+- Finální canonical main: 5f5fd33402a3fd4f723343377f3da45df02fc5c9.
+  Tenant commit: eff8cc653febbd1bfb90ab53cc3218c6c35e43f4.
+  Veřejná verze: 0.20.162+646. Oficiální Deploy workflow i coherent live
+  probes prošly: https://github.com/festappnet/festapp/actions/runs/38397736201.
+  Produkční kroky tohoto celku jsou dokončené; jiné tenant klienty nebyly
+  publikované. Původní pracovní strom a cizí rozpracované změny zůstaly zachované.
+
+### Následná úprava přehlednosti produktových vlastností
+
+Na další uživatelský požadavek provedl Astra Medium kompaktní členění panelu:
+celý řádek výběru skupiny je klikací, popisek a nápověda jsou spolu, ukázka
+vstupenky je oddělená a odebrání má menší vizuální váhu. Počítadlo se ukazuje
+blízko limitu. Pět cílených widget kontrol prošlo, včetně lokálního náhledu bez
+PDF requestů, picker cancel, zamknutých ovladačů, empty-label undo a 320 px /
+200 % textu; vizuální kontrola použila dlouhý skutečný příklad večeře.
+Samostatně zaznamenaná existující odchylka: placeholder nahrávání prázdného
+pozadí přetéká při 320 px / 200 %; tato nesouvisející část nebyla měněná.
+
+PR #380 / canonical main 7c2f10c4bab16fda2b3840627fbe7b061145117a;
+tenant commit 4709c6073635b9e5285470f973f4081b43d6d503.
+Deploy a coherent live probes prošly pro 0.20.163+647:
+https://github.com/festappnet/festapp/actions/runs/38400520347.
+Rozsah nasazení zůstal pouze vstupenky.online; backend a databáze se pro tuto
+UI úpravu neměnily. Cizí rozpracované změny byly zachované.
+
+### Oprava rozlišení skrytých a nepoužívaných skupin v pickeru
+
+Read-only evidence akce 32316 potvrdila skutečné pole Odvoz se skrytou
+form-reference. Stav offered=false proto neznamená odstraněnou skupinu.
+Picker dál nepoužité skupiny nenabízí; použité skryté pole nyní popisuje
+pravdivě jako skryté pole formuláře a neopakuje jeho název v kontextu.
+Varování u dříve uloženého, ale nyní nepoužívaného pole je samostatné.
+Starý zavádějící překlad/getter byl odstraněn ve všech šesti katalozích.
+Nový widget regression ověřil exclusion nepoužité skupiny, výběr skryté
+použité skupiny, správný lokální příklad a nula implicitních PDF requestů.
+Cílená analýza má pouze style infos; CI, tenant drift a deploy prošly.
+
+PR #381 / main 643e8757ef176f16c649b69007a00520f867a20a;
+tenant 332fef27171f44a41aa6b4e27023aa66b9cd4084;
+veřejně ověřeno 0.20.164+648.
+https://github.com/festappnet/festapp/actions/runs/38404211106.
+Backend a historické reference se touto UI opravou neměnily.

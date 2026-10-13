@@ -61,7 +61,7 @@ export class TicketFieldBuilder {
         // Complex Mode: >1 Tickets OR Spots (Ticket List UI).
         
         let forceComplex = false;
-        if (session && session.maxTickets > 1) {
+        if (session && (session.maxTickets > 1 || formModel.offerBundle)) {
              forceComplex = true;
         }
 
@@ -139,7 +139,7 @@ export class TicketFieldBuilder {
                          let newVal = '';
                          if (fieldEntry) {
                              // Try to resolve type from subFields in scope
-                             const subDef = subFields.find(sf => sf.id === subId);
+                             const subDef = subFields.find(sf => String(sf.id) === String(subId));
                              const typeKey = subDef ? subDef.type : null;
                              
                              newVal = fieldEntry.value;
@@ -282,7 +282,7 @@ export class TicketFieldBuilder {
                         container.selectedSeats = container.selectedSeats.filter(s => s.id !== seat.id);
                     }
                 };
-                header.appendChild(removeBtn);
+                if (!formModel.offerBundle) header.appendChild(removeBtn);
                 ticketItem.appendChild(header);
                 
                 // Sort fields to ensure Spot is first
@@ -440,7 +440,7 @@ export class TicketFieldBuilder {
                         let val = undefined;
                         if (fieldEntry) {
                             // Try to resolve type from subFields in scope
-                            const subDef = subFields.find(sf => sf.id === subId);
+                            const subDef = subFields.find(sf => String(sf.id) === String(subId));
                             const typeKey = subDef ? subDef.type : null;
                         
                             val = fieldEntry.value;
@@ -541,10 +541,10 @@ export class TicketFieldBuilder {
                      // --- STATE INVERSION: Call Session ---
                      if (session) session.addTicket(); // Add dummy/empty ticket
                 };
-                container.appendChild(addBtn);
+                if (!formModel.offerBundle) container.appendChild(addBtn);
                 
                 // Default 1 ticket (if session empty)
-                if (session && session.state.tickets.length === 0) {
+                if (session && session.state.tickets.length === 0 && !formModel.offerBundle) {
                      session.addTicket();
                      renderTicketItem(0);
                 } else if (session && session.state.tickets.length > 0) {
@@ -553,7 +553,7 @@ export class TicketFieldBuilder {
                          renderTicketItem(i);
                          // TODO: Restore values?
                     });
-                } else {
+                } else if (!formModel.offerBundle) {
                     // Fallback
                     renderTicketItem(0);
                 }

@@ -203,7 +203,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
 
     // Combine order symbol and customer name for the title
     final dialogTitle =
-        "${_bundle?.order.toBasicString() ?? ""} $customerName".trim();
+        "${_bundle?.order.orderSymbol ?? ""} $customerName".trim();
 
     return AlertDialog(
       insetPadding: const EdgeInsets.all(16),

@@ -123,6 +123,12 @@ BEGIN
         'occasion', f.occasion,
         'type', f.type,
         'deadline_duration_seconds', f.deadline_duration_seconds,
+        'participant_capacity',f.participant_capacity,
+        'waitlist_enabled',f.waitlist_enabled,
+        'show_remaining_capacity',f.show_remaining_capacity,
+        'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+        'capacity',public.get_form_capacity_snapshot_internal(f.id),
+        'registrationMode',public.get_form_registration_mode_internal(f.id),
         'is_open', f.is_open,
         'link', f.link,
         'blueprint', f.blueprint,
@@ -136,6 +142,12 @@ BEGIN
     IF v_form_id IS NOT NULL THEN
         SELECT jsonb_agg(jsonb_build_object(
             'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL
+              OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
+              THEN public.get_waitlist_summary_internal(o.id) END,
+            'isActive',(public.get_waitlist_summary_internal(o.id)->>'isActive')::boolean,
+            'allowedActions',public.get_waitlist_summary_internal(o.id)->'allowedActions',
+            'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
@@ -150,6 +162,12 @@ BEGIN
     ELSE
         SELECT jsonb_agg(jsonb_build_object(
             'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL
+              OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
+              THEN public.get_waitlist_summary_internal(o.id) END,
+            'isActive',(public.get_waitlist_summary_internal(o.id)->>'isActive')::boolean,
+            'allowedActions',public.get_waitlist_summary_internal(o.id)->'allowedActions',
+            'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE

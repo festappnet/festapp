@@ -78,7 +78,7 @@ BEGIN
     END IF;
 
     -- Step 6: Copy the main form record to the target occasion.
-    INSERT INTO public.forms (title, data, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off)
+    INSERT INTO public.forms (title, data, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds)
     SELECT
         title || ' (Copy)',
         data,
@@ -90,7 +90,7 @@ BEGIN
         v_new_form_link, -- Use the generated unique link
         blueprint,
         header,
-        header_off
+        header_off,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds
     FROM public.forms
     WHERE id = source_form_id
     RETURNING id INTO new_form_id;

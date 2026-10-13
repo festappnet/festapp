@@ -9,7 +9,7 @@ const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.tt
 const metrics=fontMetrics(font);
 const background=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='),c=>c.charCodeAt(0));
 const t=preset('wide');t.backgroundTransform={scale:1.4,x:-.1,y:.05};
-const occasion={id:1,title:'Testovací ples',features:[{code:'ticket',ticket_type:'wide',layout:{schemaVersion:1,templates:{wide:t}}}]};
+const occasion={id:1,title:'Testovací ples',features:[{code:'ticket',ticket_type:'wide',layout:{schemaVersion:3,templates:{wide:t}}}]};
 async function images(bytes:Uint8Array){
  const doc=await PDFDocument.load(bytes);const result=[];
  for(const [,object] of doc.context.enumerateIndirectObjects())if(object instanceof PDFRawStream&&object.dict.get(PDFName.of('Subtype'))===PDFName.of('Image')){
@@ -36,19 +36,19 @@ Deno.test('eight independent ticket PDFs decode the batch background once and pr
    assert(result.bytes.length>1000);
   }
   assertEquals(new Set(results.map(r=>Array.from(r.bytes).join(','))).size,8);
-  await prepareTicketRenderer(occasion,{}, {}, {load:async()=>({...resources,background:background.slice()}),products:async()=>({})});
+  await prepareTicketRenderer(occasion,{}, {}, {load:async()=>({...resources,background:background.slice()}),products:async()=>({products:[],product_types:[]})});
   assertEquals(embeds,3,'a separate batch owns a separate prepared image');
  }finally{PDFDocument.prototype.embedPng=original;}
 });
 Deno.test('a batch without artwork retains the existing renderer path',async()=>{
- const render=await prepareTicketRenderer(occasion,{}, {}, {load:async()=>({font,metrics}),products:async()=>({})});
+ const render=await prepareTicketRenderer(occasion,{}, {}, {load:async()=>({font,metrics}),products:async()=>({products:[],product_types:[]})});
  const result=await render({ticket_symbol:'FAKE000009',price:450,currency_code:'CZK'});
  assertEquals(await images(result.bytes),[]);
 });
 Deno.test('JPEG artwork retains its exact encoded image in each independent PDF',async()=>{
  const jpg=await Deno.readFile('test/fixtures/ticket_layout/historical/cream.jpg');
  const resources={font,metrics,background:jpg};
- const render=await prepareTicketRenderer(occasion,{}, {}, {load:async()=>resources,products:async()=>({})});
+ const render=await prepareTicketRenderer(occasion,{}, {}, {load:async()=>resources,products:async()=>({products:[],product_types:[]})});
  const baseline=await generateTicketPdf(sampleData(),resources,t);
  for(let i=0;i<2;i++)assertEquals(await images((await render({ticket_symbol:`FAKE00001${i}`})).bytes),await images(baseline.bytes));
 });

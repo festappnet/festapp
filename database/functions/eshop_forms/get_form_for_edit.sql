@@ -41,7 +41,9 @@ BEGIN
     ) INTO canDelete;
 
     SELECT jsonb_build_object(
-        'id', f.id,
+        'id', f.id,'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+        'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+        'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
         'key', f.key,
         'is_open', f.is_open,
         'created_at', f.created_at,
@@ -158,6 +160,10 @@ BEGIN
         OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(s.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
     ) OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM form_tickets))
       OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (SELECT 1 FROM form_tickets WHERE NULLIF(note, '') IS NOT NULL))
+      OR EXISTS(SELECT 1 FROM eshop.order_participants person CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(person.answers->'fields')='array' THEN person.answers->'fields' ELSE '[]' END) answer
+        WHERE person.form_id=ff.form AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
+      OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_participants WHERE form_id=ff.form))
     THEN 'responses' ELSE (
       SELECT p->>'delete_blocked_reason' FROM public.form_fields member
       JOIN jsonb_array_elements(productsData) p ON (p->>'product_type')::bigint = member.product_type

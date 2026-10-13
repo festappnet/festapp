@@ -1,3 +1,4 @@
+import '../waitlist_strings.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -102,22 +103,55 @@ class FormFieldBuilders {
       });
     }
     if (ticket.fields.none((f) => f.fieldType == FormHelper.fieldTypeSpot)) {
-      if (ticket.tickets.isEmpty) {
+      if (ticket.tickets.isEmpty &&
+          !ticket.fixedParticipants &&
+          ticket.maxTickets > 0) {
         ticket.tickets.add(FormTicketModel(
             ticketValues: ticket.fields,
             ticketKey: GlobalKey<FormBuilderState>()));
       }
-      return FormBuilder(
-        key: ticket.tickets[0].ticketKey,
-        onChanged: formHolder.controller!.updateTotalPrice,
-        child: Column(
-          children: FormHelper.getFormFields(
-              context,
-              ticket.tickets[0].ticketKey,
-              formHolder,
-              ticket.tickets[0].ticketValues),
-        ),
-      );
+      return StatefulBuilder(
+          builder: (context, update) => Column(children: [
+                for (var i = 0; i < ticket.tickets.length; i++) ...[
+                  if (ticket.maxTickets > 1)
+                    Row(children: [
+                      Expanded(
+                          child: Text(
+                              '${WaitlistStrings.text('person')} ${i + 1}')),
+                      if (!ticket.fixedParticipants &&
+                          ticket.tickets.length > 1)
+                        IconButton(
+                          tooltip: CommonStrings.delete,
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            update(() => ticket.tickets.removeAt(i));
+                            formHolder.controller!.updateTotalPrice?.call();
+                          },
+                        ),
+                    ]),
+                  FormBuilder(
+                      key: ticket.tickets[i].ticketKey,
+                      onChanged: formHolder.controller!.updateTotalPrice,
+                      child: Column(
+                          children: FormHelper.getFormFields(
+                              context,
+                              ticket.tickets[i].ticketKey,
+                              formHolder,
+                              ticket.tickets[i].ticketValues))),
+                ],
+                if (!ticket.fixedParticipants &&
+                    ticket.tickets.length < ticket.maxTickets)
+                  TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: Text(WaitlistStrings.text('addPerson')),
+                    onPressed: () {
+                      update(() => ticket.tickets.add(FormTicketModel(
+                          ticketValues: ticket.fields,
+                          ticketKey: GlobalKey<FormBuilderState>())));
+                      formHolder.controller!.updateTotalPrice?.call();
+                    },
+                  ),
+              ]));
     }
     return StatefulBuilder(
       builder: (context, setState) {

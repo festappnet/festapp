@@ -92,6 +92,17 @@ void main() {
     await tester.tap(find.byIcon(Icons.delete_forever));
     await tester.pumpAndSettle();
     enabled(true);
+    await tester
+        .tap(find.widgetWithText(ElevatedButton, CommonStrings.saveChanges));
+    await tester.pumpAndSettle();
+    expect(find.text(CommonStrings.confirmRemoval), findsOneWidget);
+    expect(find.text('${DataGridStrings.items}: 1'), findsOneWidget);
+    expect(find.widgetWithText(SelectableText, '1'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, CommonStrings.delete),
+        findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
+    await tester.pumpAndSettle();
+    expect(controller.deletedRows, hasLength(1));
     await tester.tap(find.byIcon(Icons.delete_forever));
     await tester.pumpAndSettle();
     enabled(false);

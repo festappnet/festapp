@@ -66,3 +66,23 @@ creating any tickets. To change the ceiling, run `apply_config.sh` and
 `python3 automation/assemble-ticket-limits-migration.py --output supabase/migrations/<timestamp>_global_ticket_order_limit.sql`; ship the resulting SQL
 and both clients together. After the initial migration is deployed, publish a new
 migration for later cap changes instead of rewriting the deployed migration.
+
+## Participant capacity and waitlisted orders
+
+Capacity counts `eshop.order_participants`, including people in unpaid regular
+orders. `participant_capacity=NULL` preserves unlimited registration. Blueprint
+forms cannot enable this limit or waitlisting. Form saves preserve omitted
+settings; removing a limit uses an explicit NULL. Live waiting people or offers
+block disabling waitlisting, removing the limit and switching to a blueprint.
+
+The server bundle owns `capacity` and `registrationMode`. Public availability
+subtracts admitted people, valid offer slots and the priority of active waiting
+people. Expired offers cease holding capacity even before the bounded cleanup
+job runs. Clients must use the snapshot rather than calculate availability.
+
+Waitlisted orders collect person/contact answers without products, tickets or
+payments. Editors explicitly confirm offers of a number of places. A personal
+link opens a prefilled form; only its explicit submit accepts selected people
+and currently available products. Offers hold person capacity only. The same
+per-order person ceiling applies to both modes. See the
+[implementation contract](../../../docs/plans/form-capacity-waitlist-plan-2026-10-13.md).

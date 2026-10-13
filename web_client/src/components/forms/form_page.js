@@ -1,3 +1,7 @@
+import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
+import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, participantLabel } from './waitlist_form.js';
+import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
+import { FormModel } from './form_models.js';
 
 import './form_component.css';
 import './order_preview.css';
@@ -123,7 +127,22 @@ export class FormPage extends Component {
 
         try {
             // 3. Fetch Data
-            const formModel = await DbForms.getFormByLink(link);
+            this.waitlistScope = parseWaitlistFragment(window.location.hash);
+            this.waitlistCommands ||= new WaitlistCommands();
+            let formModel;
+            if (this.waitlistScope) {
+                let referrer = document.querySelector('meta[name="referrer"]');
+                if (!referrer) { referrer = document.createElement('meta'); referrer.name = 'referrer'; document.head.appendChild(referrer); }
+                referrer.content = 'no-referrer';
+                const bundle = await this.waitlistCommands.read(this.waitlistScope);
+                this.waitlistBundle = bundle;
+                if (!this.waitlistScope.offerId || !bundle.pendingCount) {
+                    this.renderWaitlistManagement(bundle);
+                    return;
+                }
+                formModel = new FormModel(bundle.form);
+                formModel.offerBundle = bundle;
+            } else formModel = await DbForms.getFormByLink(link);
             
             if (!formModel) {
                 this.renderError(FormStrings.formNotFound);
@@ -134,7 +153,7 @@ export class FormPage extends Component {
             this.applyTheme(formModel);
             
             // 5. Update SEO
-            SeoService.updateMetaTags(formModel, window.location.href);
+            if (!this.waitlistScope) SeoService.updateMetaTags(formModel, window.location.href);
 
 
             // --- Availability Check Logic ---
@@ -144,7 +163,8 @@ export class FormPage extends Component {
             // Check URL params/Rules for preview
             const urlParams = new URLSearchParams(window.location.search);
             const isPreviewParam = urlParams.get('preview') === 'true';
-            const canPreview = true; // Placeholder for RightsService check
+            if (isPreviewParam) await RightsService.updateAppData({ formLink: link });
+            const canPreview = RightsService.canSeeReservations();
             const showPreview = canPreview && isPreviewParam;
 
             const handled = FormAvailabilityService.renderStatus(this.host, formModel, statusResult, {
@@ -168,7 +188,89 @@ export class FormPage extends Component {
         } catch (e) {
             console.error(e);
             this.currentLink = null; // A retry must not hit the same-link guard.
-            this.renderError(FormStrings.loadFailed, () => this.init(link));
+            this.renderError(e.message === 'INVALID_CAPABILITY' ? WaitlistStrings.invalid : FormStrings.loadFailed, () => this.init(link));
+        }
+    }
+
+    async refreshOffer(model) {
+        try {
+            const bundle = await this.waitlistCommands.read(this.waitlistScope);
+            if (!bundle.form || !bundle.pendingCount) { this.renderWaitlistManagement(bundle); return; }
+            const updated = new FormModel(bundle.form); updated.offerBundle = bundle;
+            updated.offerDraft = { fields: [...this.currentSession.state.fields], tickets: this.currentSession.state.tickets };
+            updated.selectedPeople = model.selectedPeople.filter(id => bundle.participants.some(p => p.id === id && !['admitted', 'withdrawn', 'cancelled'].includes(p.lifecycle))).slice(0, bundle.pendingCount);
+            this.renderForm(updated, false);
+        } catch { /* Keep the editable draft on a network failure. */ }
+    }
+
+    async refreshCapacityChoice(model) {
+        const current = this.currentSession;
+        const latest = await DbForms.getFormByLink(this.currentLink);
+        if (!latest) return;
+        const message = document.createElement('p'); message.setAttribute('role', 'alert');
+        message.textContent = WaitlistStrings.text('FORM_CAPACITY_EXCEEDED');
+        const button = document.createElement('button'); button.type = 'button';
+        button.textContent = latest.registrationMode === 'waitlist' ? WaitlistStrings.text('regularToWaitlist') : WaitlistStrings.refresh;
+        button.onclick = () => {
+            if (latest.registrationMode === 'waitlist' && !window.confirm(WaitlistStrings.explanation)) return;
+            if (FormAvailabilityService.renderStatus(this.host, latest, FormAvailabilityService.getStatus(latest))) return;
+            this.renderForm(latest, false);
+            for (const [id, value] of current.state.fields) this.currentSession.state.fields.set(id, value);
+            this.currentSession.state.tickets = current.state.tickets.map(t => ({ ...t, fields: t.fields.filter(f => this.currentSession._getTicketSubDef(f._subFieldId)) }));
+            this.currentSession._syncPayloadFromState(); this.currentSession._emitStateChanged();
+        };
+        message.appendChild(button); this.host.prepend(message);
+    }
+
+    async submitWaitlistRegistration(model) {
+        const button = this.host.querySelector('.btn-submit');
+        if (button.disabled) return;
+        button.disabled = true;
+        try {
+            const data = await this.waitlistCommands.command('register', waitlistRegistrationPayload(this.currentSession));
+            this.cleanup({ preserveEditButton: true });
+            this.host.replaceChildren();
+            const result = document.createElement('p');
+            result.setAttribute('role', 'status');
+            result.textContent = `${WaitlistStrings.registered} ${data.order?.order_symbol || ''}. ${WaitlistStrings.explanation} ${WaitlistStrings.queued}`;
+            this.host.appendChild(result);
+        } catch (e) {
+            button.disabled = false;
+            const error = document.createElement('p'); error.setAttribute('role', 'alert');
+            error.textContent = WaitlistStrings.text(e.message);
+            this.host.appendChild(error);
+        }
+    }
+
+    renderWaitlistManagement(bundle) {
+        this.host.replaceChildren();
+        const title = document.createElement('h2');
+        title.textContent = bundle.offerStatus ? WaitlistStrings.text(bundle.offerStatus) : (this.waitlistScope.offerId ? WaitlistStrings.expired : WaitlistStrings.title);
+        this.host.appendChild(title);
+        const selected = new Set();
+        for (const person of bundle.participants) {
+            const label = document.createElement('label'); label.style.cssText = 'display:block;padding:12px';
+            const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
+            checkbox.disabled = ['admitted', 'cancelled', 'withdrawn'].includes(person.lifecycle);
+            checkbox.onchange = () => checkbox.checked ? selected.add(person.id) : selected.delete(person.id);
+            label.append(checkbox, document.createTextNode(` ${participantLabel(person)} ${WaitlistStrings.text(person.lifecycle)}`));
+            this.host.appendChild(label);
+        }
+        if (!this.waitlistScope.offerId) {
+            const button = document.createElement('button'); button.textContent = WaitlistStrings.withdraw;
+            button.onclick = () => this.resolveWaitlist('withdraw', [...selected]);
+            this.host.appendChild(button);
+        }
+    }
+
+    async resolveWaitlist(operation, personIds) {
+        if (!personIds.length || !window.confirm(WaitlistStrings.confirm)) return;
+        try {
+            await this.waitlistCommands.command(operation, { ...this.waitlistScope, personIds });
+            const link = this.currentLink; this.currentLink = null; await this.init(link);
+        } catch (e) {
+            const error = document.createElement('p'); error.setAttribute('role', 'alert');
+            error.textContent = WaitlistStrings.text(e.message); this.host.appendChild(error);
         }
     }
 
@@ -241,9 +343,12 @@ export class FormPage extends Component {
     }
 
     renderForm(formModel, showPreview) {
+        this.currentPriceWidget?.destroy();
+        this.currentPriceWidget = null;
         // Initialize Session
         const session = new FormSession(formModel);
         this.currentSession = session;
+        prepareOfferSession(session, formModel);
         
         // Subscribe to Validation Changes
         session.addEventListener('validation-changed', (e) => {
@@ -251,7 +356,7 @@ export class FormPage extends Component {
         });
 
         // Initialize Widget (it subscribes itself)
-        this.currentPriceWidget = new PriceWidget(session, this.host);
+        if (formModel.registrationMode !== 'waitlist') this.currentPriceWidget = new PriceWidget(session, this.host);
         FormRenderer.render(this.host, session, formModel, showPreview, {
             onSubmit: (form, model) => this.validateAndSubmit(form, model),
             onInput: (e, form, model) => {
@@ -268,7 +373,8 @@ export class FormPage extends Component {
             }
         });
         
-        new CurrencySelectorWidget(session, this.host);
+        if (formModel.registrationMode !== 'waitlist') new CurrencySelectorWidget(session, this.host);
+        renderWaitlistControls(this, formModel);
         
         
 
@@ -395,11 +501,13 @@ export class FormPage extends Component {
         
         // Trigger initial update for the price widget
         setTimeout(() => {
+            if (this.currentSession !== session) return;
             const form = this.host.querySelector('form');
             if (form) {
                 // Initial syncing
                 // Parse the initial form state (e.g. default values) into the session
                 session.initialize(form);
+                if (formModel.offerBundle) prefillOfferFields(form, session);
                 
                 // Initial syncing
                 // If the session initialized with a currency (e.g. from logic), ensure filter runs.
@@ -436,10 +544,18 @@ export class FormPage extends Component {
     }
 
     validateAndSubmit(form, formModel) {
+        if (this.currentSession.state.tickets.length > this.currentSession.maxTickets) {
+            const error = document.createElement('p'); error.setAttribute('role', 'alert'); error.textContent = WaitlistStrings.text('FORM_CAPACITY_EXCEEDED'); form.prepend(error); return;
+        }
+        if (formModel.offerBundle && !formModel.selectedPeople?.length) {
+            const message = document.createElement('p'); message.setAttribute('role', 'alert'); message.textContent = WaitlistStrings.selectPeople; form.prepend(message); return;
+        }
         const isValid = FormValidator.validateAndShowErrors(form, formModel, this.currentSession);
         
         if (isValid) {
-            this.handlePreview(form, formModel);
+            if (formModel.registrationMode === 'waitlist') {
+                if (window.confirm(WaitlistStrings.explanation)) this.submitWaitlistRegistration(formModel);
+            } else this.handlePreview(form, formModel);
         }
     }
 
@@ -536,7 +652,15 @@ export class FormPage extends Component {
         }
 
         // 4. Submit via Network
-        FormNetwork.submitOrder(payload).then(async result => {
+        const request = formModel.offerBundle
+            ? this.waitlistCommands.accept(this.waitlistScope, formModel.selectedPeople, {
+                ...payload, ticket: payload.ticket.map(t => ({ ...t, fields: t.fields.map(f => {
+                    const def = this.currentSession._getTicketSubDef(f._subFieldId);
+                    return def && def.type !== 'product_type' ? { ...f, [def.id]: f[def.type] } : f;
+                }) })),
+            }).then(data => ({ success: true, data }))
+            : FormNetwork.submitOrder(payload);
+        request.then(async result => {
              // history.back() is asynchronous. Rendering the result before the
              // preview popstate arrives lets that stale event close the result.
              await previewHistoryClosed;
@@ -545,6 +669,12 @@ export class FormPage extends Component {
              document.body.style.overflow = ''; 
              
              if (result.success) {
+                 if (formModel.offerBundle) {
+                     const link = this.currentLink; this.currentLink = null;
+                     await this.init(link);
+                     this.showFullScreenResult(true, { ...result.data, ticketOrder: { order: result.data.order } }, formModel);
+                     return;
+                 }
                  // Clean up old widgets first
                  this.cleanup({ preserveEditButton: true });
 
@@ -556,6 +686,7 @@ export class FormPage extends Component {
                  window.scrollTo(0, 0); 
              }
              
+             if (!result.success && result.data?.errorCode === 'FORM_CAPACITY_EXCEEDED') await this.refreshCapacityChoice(formModel);
              this.showFullScreenResult(result.success, result.data, formModel);
              
         }).catch(async e => {
@@ -564,7 +695,8 @@ export class FormPage extends Component {
              console.error("Submit Error:", e);
              loader.remove();
              document.body.style.overflow = ''; 
-             this.showFullScreenResult(false, { code: 999 }, formModel);
+             if (formModel.offerBundle) await this.refreshOffer(formModel);
+             this.showFullScreenResult(false, e.data || { code: 999, errorCode: e.message }, formModel);
         });
     }
 
@@ -652,7 +784,7 @@ export class FormPage extends Component {
             container.remove();
             document.body.style.overflow = ''; // Restore scroll
             
-            if (success) {
+            if (success && !formModel.offerBundle) {
                     // Clean up old widget instance first
                     this.cleanup({ preserveEditButton: true });
                     

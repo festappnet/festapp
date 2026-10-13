@@ -24,7 +24,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extension
 DECLARE v_hash text; v_row public.email_messages; v_org bigint:=(p_context->>'organization')::bigint; v_occ bigint:=(p_context->>'occasion')::bigint; v_unit bigint:=(p_context->>'unit')::bigint;
 BEGIN
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
- IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue')
+ IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer')
  OR p_dedupe IS NULL OR length(p_dedupe)>512 OR (p_recipient IS NOT NULL AND (length(p_recipient)>320 OR position('@' in p_recipient)=0)) THEN RAISE EXCEPTION 'invalid_email_intent'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=v_org) OR
  (v_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=v_occ AND organization=v_org AND (NOT p_context ? 'unit' OR unit IS NOT DISTINCT FROM v_unit))) THEN RAISE EXCEPTION 'email_scope_mismatch'; END IF;
@@ -64,6 +64,14 @@ BEGIN
  END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_message.order_id;
  IF v_order.id IS NULL OR v_order.occasion<>p_message.occasion THEN RETURN false; END IF;
+ IF p_message.message_kind='waitlist_confirmation' THEN
+  RETURN v_order.state='waitlisted' AND v_order.data->>'email'=p_message.recipient;
+ END IF;
+ IF p_message.message_kind='waitlist_offer' THEN
+  RETURN v_order.state='waitlisted' AND v_order.data->>'email'=p_message.recipient AND EXISTS(
+   SELECT 1 FROM eshop.waitlist_offers w JOIN eshop.waitlist_offer_slots s ON s.offer_id=w.id
+   WHERE w.id=(p_message.data->>'offer_id')::uuid AND w.order_id=v_order.id AND w.expires_at>clock_timestamp() AND s.outcome='pending');
+ END IF;
  IF p_message.message_kind='order_storno' THEN RETURN true; END IF;
  IF v_order.state IN ('storno','expired','preparing_payment') THEN RETURN false; END IF;
  IF p_message.message_kind IN ('order_payment_notice','order_tickets') THEN
@@ -175,6 +183,20 @@ BEGIN
   UPDATE public.email_messages SET workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now() WHERE attempt_id=p_attempt;
   RETURN jsonb_build_object('disposition','cancelled');
+ END IF;
+ -- A partial acceptance can change a queued offer after its rendered snapshot
+ -- was cached. Re-render within this same queue before granting a send permit.
+ IF v_row.message_kind='waitlist_offer' AND
+  (v_row.post_action->>'waitlist_pending_count')::bigint IS DISTINCT FROM
+  (SELECT count(*) FROM eshop.waitlist_offer_slots
+   WHERE offer_id=(v_row.data->>'offer_id')::uuid AND outcome='pending') THEN
+  UPDATE public.email_messages SET workflow_state='pending',target_time=now(),
+   prepared=NULL,prepared_hash=NULL,prepared_at=NULL,
+   post_action=post_action-'waitlist_pending_count',lease_token=NULL,lease_until=NULL,
+   last_error='offer_snapshot_changed' WHERE id=v_row.id;
+  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),
+   error_code='offer_snapshot_changed' WHERE attempt_id=p_attempt;
+  RETURN jsonb_build_object('disposition','deferred');
  END IF;
  v_rate:=CASE WHEN v_cap.shared_account THEN least(v_cap.max_rate*0.8,v_cap.allocated_rate) ELSE v_cap.max_rate*0.8 END*v_cap.rate_factor;
  v_daily:=CASE WHEN v_cap.shared_account THEN least(v_cap.daily_quota,v_cap.allocated_daily) ELSE v_cap.daily_quota END*0.9;

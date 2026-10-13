@@ -345,7 +345,10 @@ class FormHelper {
         for (int i = 0; i < ticket.tickets.length; i++) {
           final ticketKey = ticket.tickets[i].ticketKey;
           if (ticketKey.currentState == null) continue;
-          Map<String, dynamic> ticketData = {};
+          Map<String, dynamic> ticketData = {
+            if (ticket.tickets[i].participantId != null)
+              'participantId': ticket.tickets[i].participantId,
+          };
           for (var subFieldHolder in ticket.fields) {
             if (ticketData[metaFields] == null) {
               ticketData[metaFields] = [];
@@ -363,7 +366,11 @@ class FormHelper {
                 }
               }
             } else {
-              ticketData[metaFields].add({subFieldHolder.fieldType: value});
+              ticketData[metaFields].add({
+                subFieldHolder.fieldType: value,
+                if (subFieldHolder.fieldType != fieldTypeProductType)
+                  subFieldHolder.id.toString(): value,
+              });
             }
           }
           if (ticket.tickets[i].seat != null) {

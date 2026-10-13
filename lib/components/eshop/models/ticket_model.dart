@@ -76,6 +76,7 @@ class TicketModel extends ITrinaRowModel {
   TrinaRow toTrinaRow(BuildContext context) {
     Map<String, TrinaCell> cells = {
       EshopColumns.TICKET_ID: TrinaCell(value: id ?? 0),
+      EshopColumns.TICKET_MODEL_REFERENCE: TrinaCell(value: this),
       EshopColumns.TICKET_CREATED_AT: TrinaCell(
           value: createdAt != null
               ? DateFormat('yyyy-MM-dd').format(createdAt!)
@@ -88,16 +89,16 @@ class TicketModel extends ITrinaRowModel {
       EshopColumns.TICKET_STATE: TrinaCell(
           value: OrderModel.formatState(state ?? OrderModel.orderedState)),
       EshopColumns.TICKET_DOWNLOAD: TrinaCell(value: ""),
-      EshopColumns.TICKET_NOTE: TrinaCell(
-          value: Utilities.removeTabsAndNewLines(note ?? "")),
-      EshopColumns.TICKET_NOTE_HIDDEN: TrinaCell(
-          value: Utilities.removeTabsAndNewLines(noteHidden ?? "")),
+      EshopColumns.TICKET_NOTE:
+          TrinaCell(value: Utilities.removeTabsAndNewLines(note ?? "")),
+      EshopColumns.TICKET_NOTE_HIDDEN:
+          TrinaCell(value: Utilities.removeTabsAndNewLines(noteHidden ?? "")),
       EshopColumns.ORDER_SEQUENCE: TrinaCell(
         value: relatedOrder?.orderSequence,
       ),
       EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: relatedOrder),
-      EshopColumns.ORDER_SYMBOL: TrinaCell(
-          value: relatedOrder != null ? relatedOrder!.toBasicString() : ""),
+      EshopColumns.ORDER_SYMBOL:
+          TrinaCell(value: relatedOrder?.orderSymbol ?? ""),
       EshopColumns.ORDER_DATA: TrinaCell(
           value: relatedOrder != null ? relatedOrder!.toCustomerData() : ""),
       EshopColumns.TICKET_PRODUCTS: TrinaCell(
@@ -122,10 +123,15 @@ class TicketModel extends ITrinaRowModel {
   }
 
   static TicketModel fromPlutoJson(Map<String, dynamic> json) {
+    final original = json[EshopColumns.TICKET_MODEL_REFERENCE] as TicketModel?;
     return TicketModel(
         id: json[EshopColumns.TICKET_ID] == -1
             ? null
             : json[EshopColumns.TICKET_ID],
+        ticketSymbol: json[EshopColumns.TICKET_SYMBOL] as String?,
+        relatedOrder: json[EshopColumns.ORDER_MODEL_REFERENCE] as OrderModel?,
+        relatedSpot: original?.relatedSpot,
+        relatedProducts: original?.relatedProducts,
         noteHidden: json[EshopColumns.TICKET_NOTE_HIDDEN]);
   }
 
@@ -140,5 +146,15 @@ class TicketModel extends ITrinaRowModel {
   }
 
   @override
-  String toBasicString() => ticketSymbol ?? id.toString();
+  String toBasicString() => [
+        if (ticketSymbol?.trim().isNotEmpty == true)
+          ticketSymbol!.trim()
+        else if (id != null)
+          '#$id',
+        if (relatedSpot?.toSpotString().trim().isNotEmpty == true)
+          relatedSpot!.toSpotString().trim(),
+        ...?relatedProducts
+            ?.map((product) => product.toBasicString().trim())
+            .where((label) => label.isNotEmpty),
+      ].join(' - ');
 }

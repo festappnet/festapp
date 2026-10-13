@@ -9,6 +9,13 @@ import 'models/orders_history_model.dart';
 import 'orders_strings.dart';
 
 class OrderGridFilters {
+  static OrderModel? order(TrinaRow row) =>
+      row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
+  static bool orderIsActive(TrinaRow row) =>
+      order(row)?.isActive ?? orderIsNonCancelled(row);
+  static bool allows(TrinaRow row, String action) =>
+      order(row)?.allows(action) ?? false;
+
   static bool orderIsNonCancelled(TrinaRow row) {
     final order =
         row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
