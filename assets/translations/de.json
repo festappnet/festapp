@@ -749,8 +749,8 @@
     "adminWithdrawHelp": "Wenn der Teilnehmer nicht teilnimmt, entfernen Sie seine Anmeldung aus der Warteliste. Das Warten endet und ein angebotener Platz wird freigegeben.",
     "acceptOne": "Anmeldung bestätigen",
     "limitTickets": "Anzahl der Tickets begrenzen",
-    "capacityRegistrations": "Anzahl der Anmeldungen",
-    "capacityTickets": "Anzahl der Tickets"
+    "capacityRegistrations": "Maximale Anzahl der Anmeldungen in diesem Formular",
+    "capacityTickets": "Maximale Anzahl der Tickets in diesem Formular"
   },
   "EmailTemplates": {
     "subs": {
