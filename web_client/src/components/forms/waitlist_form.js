@@ -63,15 +63,15 @@ export function renderWaitlistControls(page, model) {
     section.className = 'form-registration-status';
     section.setAttribute('aria-live', 'polite');
     const capacity = model.capacity;
-    if (!model.offerBundle && model.registrationMode !== 'waitlist' && capacity?.showRemaining && Number.isFinite(capacity.limit) && Number.isFinite(capacity.occupiedPeople)) {
+    if (capacity?.showRemaining && Number.isFinite(capacity.limit) && Number.isFinite(capacity.occupiedPeople)) {
         const occupancy = document.createElement('p');
         occupancy.className = 'form-occupancy';
-        occupancy.textContent = S.text('occupancy').replace('{occupied}', capacity.occupiedPeople + (capacity.offeredPlaces ?? 0) + (capacity.waitingPeople ?? 0)).replace('{capacity}', capacity.limit);
+        occupancy.textContent = S.text('occupancy').replace('{occupied}', capacity.occupiedPeople).replace('{capacity}', capacity.limit);
         section.appendChild(occupancy);
     }
     const message = document.createElement('p');
     message.className = 'waitlist-intro';
-    if (!model.offerBundle && model.registrationMode === 'waitlist') {
+    if (model.registrationMode === 'waitlist') {
         section.classList.add('is-waitlist');
         const heading = document.createElement('strong');
         heading.className = 'waitlist-mode-label';
@@ -92,7 +92,7 @@ export function renderWaitlistControls(page, model) {
         const target = group.closest('.form-field-card') || group;
         target.before(reason);
     };
-    if (!model.offerBundle && model.registrationMode === 'waitlist') {
+    if (model.registrationMode === 'waitlist') {
         placeProductNotice();
         session.addEventListener('state-changed', placeProductNotice);
     }
@@ -102,7 +102,7 @@ export function renderWaitlistControls(page, model) {
     const facts = document.createElement('dl');
     facts.className = 'waitlist-offer-facts';
     for (const [label, value] of [
-        [S.text('offeredPlaces'), b.pendingCount],
+        [S.remaining, b.pendingCount],
         [S.expiresAt, new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short', ...(b.timeZone ? { timeZone: b.timeZone } : {}) }).format(new Date(b.expiresAt))],
     ]) {
         const fact = document.createElement('div');

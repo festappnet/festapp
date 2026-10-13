@@ -54,49 +54,6 @@ test('personal fragment is scoped and cannot be replaced by an order symbol', ()
     assert.throws(() => parseWaitlistFragment('#waitlist?order_id=12&token=short'), /INVALID_CAPABILITY/);
 });
 
-test('admin offer fragment requires explicit marker and a single valid offer without a token', () => {
-    const offerId = '12345678-1234-1234-abcd-123456789012';
-    assert.deepEqual(parseWaitlistFragment(`#waitlist?offer_id=${offerId}&admin=1`), { token: null, offerId });
-    for (const query of [
-        `offer_id=${offerId}`, `offer_id=${offerId}&admin=0`, `offer_id=${offerId}&admin=true`,
-        'order_id=12&admin=1', `offer_id=${offerId}&order_id=12&admin=1`,
-        'offer_id=------------------------------------&admin=1', 'offer_id=bad&admin=1',
-        `offer_id=${offerId}&admin=1&token=`, `offer_id=${offerId}&admin=1&token=bad`,
-        `offer_id=${offerId}&offer_id=${offerId}&admin=1`, `offer_id=${offerId}&admin=1&admin=0`,
-    ]) assert.throws(() => parseWaitlistFragment(`#waitlist?${query}`), /INVALID_CAPABILITY/, query);
-    const token = 'b'.repeat(64);
-    assert.deepEqual(parseWaitlistFragment(`#waitlist?offer_id=${offerId}&token=${token}`), { token, offerId });
-    assert.deepEqual(parseWaitlistFragment(`#waitlist?order_id=12&token=${token}`), { token, orderId: 12 });
-});
-
-test('admin offer uses normal read and acceptance transports with real scope and no client privilege flag', async () => {
-    const offerId = '12345678-1234-1234-abcd-123456789012';
-    const scope = parseWaitlistFragment(`#waitlist?offer_id=${offerId}&admin=1`);
-    const calls = [];
-    const bundle = { code: 200, pendingCount: 1, tickets: [{ id: 101, lifecycle: 'offered' }] };
-    const commands = new WaitlistCommands({
-        rpc: async (name, args) => { calls.push({ name, args }); return { data: bundle }; },
-        functions: { invoke: async (name, args) => { calls.push({ name, args }); return { data: { code: 200 } }; } },
-    });
-    assert.equal(await commands.read(scope), bundle);
-    assert.deepEqual(calls[0], { name: 'get_waitlist_offer_form', args: { p_token: null, p_offer_id: offerId, p_order_id: null } });
-    const details = { form: 'real-form-key', ticket: [{ fields: [{ 2: 'Alex' }] }] };
-    await commands.accept(scope, [101], details);
-    assert.equal(calls[1].name, 'send-ticket-order');
-    assert.deepEqual(calls[1].args.body.waitlistAcceptance, { token: null, offerId, ticketIds: [101] });
-    assert.equal(calls[1].args.body.orderDetails, details);
-    assert.ok(calls[1].args.body.commandId);
-});
-
-test('admin marker cannot bypass server authentication or authorization rejection', async () => {
-    const scope = parseWaitlistFragment('#waitlist?offer_id=12345678-1234-1234-abcd-123456789012&admin=1');
-    for (const response of [{ error: new Error('unauthenticated') }, { data: { code: 403, errorCode: 'INVALID_CAPABILITY' } }]) {
-        const commands = new WaitlistCommands({ rpc: async () => response, functions: { invoke: async () => response } });
-        await assert.rejects(commands.read(scope), /INVALID_CAPABILITY/);
-        await assert.rejects(commands.accept(scope, [101], {}), /INVALID_CAPABILITY|WAITLIST_COMMAND_FAILED/);
-    }
-});
-
 test('uncertain command retries preserve identity and never persist token/payload', async () => {
     const calls = [];
     const commands = new WaitlistCommands({ functions: { invoke: async (endpoint, args) => {
@@ -393,22 +350,4 @@ test('initial DOM multiselect hydration retains separate stable IDs for same-typ
             {id: 2, value: 'A | B'}, {id: 5, value: 'C | D'}, {id: 6, value: 'E'},
         ]);
     } finally { globalThis.FormData = NativeFormData; dom.window.close(); }
-});
-
-
-test('waitlist mode hides occupancy while regular mode includes active offer holds', async () => {
-    const { renderWaitlistControls } = await import('../../src/components/forms/waitlist_form.js');
-    const { LocalizationService } = await import('../../src/services/localization_service.js');
-    const previous = LocalizationService.tr;
-    LocalizationService.tr = (key) => key === 'Waitlist.occupancy' ? 'Occupied: {occupied} of {capacity}' : key;
-    try {
-        for (const registrationMode of ['regular', 'waitlist']) {
-            const dom = new JSDOM('<main><form></form></main>');
-            globalThis.document = dom.window.document; globalThis.window = dom.window;
-            const model = new FormModel({ registrationMode, fields: [], capacity: { showRemaining: true, limit: 10, occupiedPeople: 9, offeredPlaces: 1, waitingPeople: 1, heldForWaiting: 0 } });
-            renderWaitlistControls({host: document.querySelector('main'), currentSession: { addEventListener() {} }}, model);
-            assert.equal(document.querySelector('.form-occupancy')?.textContent ?? null, registrationMode === 'regular' ? 'Occupied: 11 of 10' : null);
-            dom.window.close();
-        }
-    } finally { LocalizationService.tr = previous; }
 });

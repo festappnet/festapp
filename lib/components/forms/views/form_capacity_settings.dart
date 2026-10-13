@@ -4,8 +4,6 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import '../models/form_model.dart';
-import '../../features/feature_service.dart';
-import '../../features/feature_constants.dart';
 import '../waitlist_strings.dart';
 
 /// Edits the existing form draft. The editor's Save/Discard owns persistence.
@@ -25,7 +23,7 @@ class FormCapacitySettings extends StatelessWidget {
     final snapshot = form.capacity;
     final occupancy = !blueprint && snapshot?.limit != null
         ? WaitlistStrings.text('occupancy')
-            .replaceAll('{occupied}', '${snapshot!.occupiedPlaces}')
+            .replaceAll('{occupied}', '${snapshot!.occupiedPeople}')
             .replaceAll('{capacity}', '${snapshot.limit}')
         : null;
     final settingsSummary = blueprint
@@ -53,7 +51,9 @@ class FormCapacitySettings extends StatelessWidget {
       title: Text(WaitlistStrings.settings,
           style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle:
-          Padding(padding: const EdgeInsets.only(top: 4), child: Text(summary)),
+          Padding(padding: const EdgeInsets.only(top: 4), child: Text(summary,
+              semanticsLabel: occupancy == null ? null : summary.replaceFirst(
+                  occupancy, '${OrdersStrings.validTickets}: ${snapshot!.occupiedPeople} / ${snapshot.limit}'))),
       trailing: canEdit && !blueprint ? const Icon(Icons.chevron_right) : null,
       onTap: canEdit && !blueprint
           ? () async {
@@ -137,10 +137,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                               children: [
                                 SwitchListTile(
                                     contentPadding: EdgeInsets.zero,
-                                    title: Text(FeatureService.isFeatureEnabled(
-                                            FeatureConstants.ticket)
-                                        ? WaitlistStrings.limitTickets
-                                        : WaitlistStrings.limitCapacity),
+                                    title: Text(WaitlistStrings.limitCapacity),
                                     subtitle: Text(_blocked
                                         ? WaitlistStrings.activeEntries
                                         : _limited
@@ -165,13 +162,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                   TextFormField(
                                       controller: _capacity,
                                       decoration: InputDecoration(
-                                          labelText:
-                                              FeatureService.isFeatureEnabled(
-                                                      FeatureConstants.ticket)
-                                                  ? WaitlistStrings.text(
-                                                      'capacityTickets')
-                                                  : WaitlistStrings.text(
-                                                      'capacityRegistrations'),
+                                          labelText: WaitlistStrings.capacity,
                                           border: const OutlineInputBorder(),
                                           errorMaxLines: 4),
                                       keyboardType: TextInputType.number,
@@ -186,8 +177,11 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                         }
                                         if (number <
                                             (widget.form.capacity
-                                                    ?.minimumCapacity ??
-                                                0)) {
+                                                        ?.occupiedPeople ??
+                                                    0) +
+                                                (widget.form.capacity
+                                                        ?.offeredPlaces ??
+                                                    0)) {
                                           return WaitlistStrings.text(
                                               'CAPACITY_BELOW_COMMITTED');
                                         }
