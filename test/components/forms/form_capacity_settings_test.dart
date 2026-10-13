@@ -141,17 +141,17 @@ void main() {
           waitlistEnabled: true,
           stats: FormStatsModel(total: 80),
           capacity: FormCapacityModel.fromJson(
-              {'occupiedPeople': 11, 'offeredPlaces': 1}));
+              {'occupiedPeople': 11, 'offeredPlaces': 1, 'limit': 12}));
       await tester.pumpWidget(MaterialApp(
           home: Scaffold(
               body: FormCapacitySettings(
                   form: form,
                   canEdit: false,
                   onChanged: () => fail('readonly draft changed')))));
-      expect(
-          find.textContaining(
-              '${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}: 11'),
-          findsOneWidget);
+      expect(find.textContaining('Obsazenost: 11 z 12'), findsOneWidget);
+      expect(find.textContaining('${WaitlistStrings.capacity}: 12'), findsNothing);
+      expect(find.byWidgetPredicate((widget) => widget is Text &&
+          (widget.semanticsLabel?.startsWith('${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}: 11 / 12') ?? false)), findsOneWidget);
       expect(
           find.textContaining('Místa v platných nabídkách: 1'), findsOneWidget);
       expect(tester.widget<ListTile>(find.byType(ListTile)).onTap, isNull);

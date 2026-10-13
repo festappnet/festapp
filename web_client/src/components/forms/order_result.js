@@ -19,9 +19,9 @@ export class OrderResult {
         let colorClass = 'success-color'; 
 
         if (success) {
-            title = isWaitlist ? WaitlistStrings.registered : PublicOrderStrings.successTitle(tone, hasTickets);
+            title = isWaitlist ? WaitlistStrings.text('registered', tone) : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
-            subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus')} ${WaitlistStrings.text('managementExplanation')}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+            subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus', tone)} ${WaitlistStrings.text('resultNextStep', tone)}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
             const prodTitle = (resultData.product && resultData.product.title) || "";
             title = PublicOrderStrings.productUnavailable(prodTitle);
@@ -32,7 +32,7 @@ export class OrderResult {
             // Generic Error
             const code = (resultData && resultData.code) || 0;
             title = PublicOrderStrings.orderFailed;
-            subtitle = resultData?.errorCode ? WaitlistStrings.text(resultData.errorCode) : PublicOrderStrings.orderError(code);
+            subtitle = resultData?.errorCode ? WaitlistStrings.text(resultData.errorCode, tone) : PublicOrderStrings.orderError(code);
             icon = 'error';
             colorClass = 'error-color';
         }

@@ -46,7 +46,8 @@ void main() {
       final sent = <Map<String, dynamic>>[];
       await tester.pumpWidget(MaterialApp(
           home: Scaffold(
-              body: WaitlistOffersDialog(
+              body: Builder(builder: (context) => TextButton(
+        onPressed: () => showDialog<bool>(context: context, builder: (_) => WaitlistOffersDialog(
         form: form,
         orders: [selected, other],
         targetOrderId: 5,
@@ -69,10 +70,17 @@ void main() {
         },
         loadPreview: (id) async => {
           'occasionTitle': 'Festival <test>',
+          'toneSubstitutions': {
+            'waitlist_offer_button_single': 'Potvrdit přihlášení',
+            'waitlist_offer_button_multiple': 'Potvrdit vybrané osoby',
+            'waitlist_manage_button_label': 'Spravovat čekání',
+            'waitlist_offer_heading': count == 2 ? 'Máme pro tebe nabídku' : 'Máme pro vás nabídku',
+            'waitlist_offer_instructions': count == 2 ? 'Objednávku pak potvrdíš.' : 'Objednávku pak potvrdíte.',
+          },
           'template': {
             'subject': 'Nabídka pro {{offered_places}}',
             'html':
-                '<p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | {{offer_expires_at}}</p><p>{{occasion_title}}</p>{{offer_button}}'
+                '<h2>{{waitlist_offer_heading}}</h2><p>{{waitlist_offer_instructions}}</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasion_title}}</p>{{offer_button}}'
           },
           'wrapper': {'html': '<main>{{content}}</main>'},
         },
@@ -80,7 +88,8 @@ void main() {
           sent.add({'operation': operation, ...payload});
           return {'code': 200};
         },
-      ))));
+      )), child: const Text('open'))))));
+      await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsOneWidget);
       expect(
@@ -91,8 +100,7 @@ void main() {
           contains('Jana Nováková'));
       expect(find.textContaining('OTHER6'), findsNothing);
       expect(find.text(WaitlistStrings.offerReviewExplanation), findsOneWidget);
-      await tester.tap(find.widgetWithText(ExpansionTile, 'SELECTED5'));
-      await tester.pumpAndSettle();
+      expect(find.byType(ExpansionTile), findsNothing);
       final html = tester.widget<HtmlWidget>(find.byType(HtmlWidget)).html;
       final people = count == 1
           ? '1 osobu'
@@ -104,9 +112,14 @@ void main() {
           : count == 2
               ? '2 místa'
               : '5 míst';
+      expect(html, contains(count == 2 ? 'Máme pro tebe nabídku' : 'Máme pro vás nabídku'));
+      expect(html, contains(count == 2 ? 'Objednávku pak potvrdíš.' : 'Objednávku pak potvrdíte.'));
+      expect(html, contains(count == 1 ? 'Potvrdit přihlášení' : 'Potvrdit vybrané osoby'));
       expect(html, contains(people));
       expect(html, contains(places));
-      expect(html, contains('29. 3. 2026 03:30'));
+      expect(html.replaceAll('\u00a0', ' '), contains('29. 3. 2026 03:30'));
+      expect(html, contains('white-space:nowrap'));
+      expect(html, contains('29.\u00a03.\u00a02026\u00a003:30'));
       expect(html, contains('Festival &lt;test&gt;'));
       expect(html, isNot(contains('Europe')));
       expect(html, isNot(contains('UTC')));
@@ -123,8 +136,92 @@ void main() {
       ]);
       expect(DateTime.parse(sent.single['expiresAt']),
           DateTime.parse('2026-03-29T01:30:00Z'));
-      expect(find.text(WaitlistStrings.queued), findsOneWidget);
+      expect(find.byType(WaitlistOffersDialog), findsNothing);
+      expect(find.text(WaitlistStrings.text('offerSending')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
+  for (final succeeds in [true, false]) {
+    testWidgets('send closes with confirmation only on success: $succeeds', (tester) async {
+      bool? result;
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
+        builder: (context) => TextButton(child: const Text('open'), onPressed: () async {
+          result = await showDialog<bool>(context: context, builder: (_) => WaitlistOffersDialog(
+            form: FormModel(id: 7),
+            loadProposal: (_) async => {
+              'revision': 1, 'serverTime': '2026-10-13T12:00:00Z', 'offerDurationSeconds': 3600,
+              'capacity': {'enabled': true, 'canSendOffers': true, 'offerablePlaces': 2},
+              'recipients': [{'orderId': 5, 'count': 1}, {'orderId': 6, 'count': 1}],
+            },
+            loadPreview: (_) async => {},
+            executeCommand: (_, __) async => {'code': succeeds ? 200 : 409},
+          ));
+        }),
+      ))));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, WaitlistStrings.send));
+      await tester.pumpAndSettle();
+      if (succeeds) {
+        expect(result, true);
+        expect(find.byType(WaitlistOffersDialog), findsNothing);
+        expect(find.text(WaitlistStrings.text('offersSending')), findsOneWidget);
+      } else {
+        expect(result, isNull);
+        expect(find.byType(WaitlistOffersDialog), findsOneWidget);
+        expect(find.text(WaitlistStrings.stale), findsOneWidget);
+        expect(find.text(WaitlistStrings.refresh), findsOneWidget);
+        expect(find.byType(SnackBar), findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('RPC timezone controls preview, picker defaults and UTC submission independently of global timezone', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final sent = <Map<String, dynamic>>[];
+    expect(tz.local.name, 'Europe/Prague');
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(builder: (context) => TextButton(
+      child: const Text('open zone proof'),
+      onPressed: () => showDialog<bool>(context: context, builder: (_) => WaitlistOffersDialog(
+        form: FormModel(id: 7),
+        loadProposal: (_) async => {
+          'revision': 1, 'serverTime': '2027-01-01T01:30:00Z', 'offerDurationSeconds': 3600,
+          'capacity': {'enabled': true, 'canSendOffers': true, 'offerablePlaces': 1},
+          'recipients': [{'orderId': 5, 'count': 1}],
+        },
+        loadPreview: (_) async => {
+          'timeZone': 'America/New_York',
+          'template': {'subject': 'Date proof', 'html': '<span style="white-space:nowrap">{{offer_expires_at}}</span>'},
+        },
+        executeCommand: (_, payload) async { sent.add(payload); return {'code': 200}; },
+      )),
+    )))));
+    await tester.tap(find.text('open zone proof'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('31. 12. 2026 21:30'), findsOneWidget);
+    final preview = tester.widget<HtmlWidget>(find.byType(HtmlWidget)).html;
+    expect(preview.replaceAll('\u00a0', ' '), contains('31. 12. 2026 21:30'));
+    expect(preview, isNot(contains('1. 1. 2027 03:30')));
+    await tester.tap(find.textContaining('31. 12. 2026 21:30'));
+    await tester.pumpAndSettle();
+    final date = tester.widget<DatePickerDialog>(find.byType(DatePickerDialog));
+    expect(date.initialDate, DateTime(2026, 12, 31));
+    await tester.tap(find.widgetWithText(TextButton, 'OK'));
+    await tester.pumpAndSettle();
+    final time = tester.widget<TimePickerDialog>(find.byType(TimePickerDialog));
+    expect(time.initialTime, const TimeOfDay(hour: 21, minute: 30));
+    await tester.tap(find.widgetWithText(TextButton, 'OK'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, WaitlistStrings.send));
+    await tester.pumpAndSettle();
+    expect(sent, hasLength(1));
+    expect(DateTime.parse(sent.single['expiresAt']), DateTime.parse('2027-01-01T02:30:00Z'));
+    expect(tz.local.name, 'Europe/Prague', reason: 'Preview must not alter global settings');
+    expect(tester.takeException(), isNull);
+  });
+
 }

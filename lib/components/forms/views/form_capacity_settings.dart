@@ -20,11 +20,17 @@ class FormCapacitySettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final blueprint = form.blueprint != null;
+    final snapshot = form.capacity;
+    final occupancy = !blueprint && snapshot?.limit != null
+        ? WaitlistStrings.text('occupancy')
+            .replaceAll('{occupied}', '${snapshot!.occupiedPeople}')
+            .replaceAll('{capacity}', '${snapshot.limit}')
+        : null;
     final settingsSummary = blueprint
         ? WaitlistStrings.blueprintCapacity
         : form.participantCapacity == null
             ? WaitlistStrings.unlimited
-            : '${WaitlistStrings.capacity}: ${form.participantCapacity}\n'
+            : '${occupancy ?? '${WaitlistStrings.capacity}: ${form.participantCapacity}'}\n'
                 '${(form.waitlistEnabled ? WaitlistStrings.waitlistOn : WaitlistStrings.waitlistOff)}';
     final showOffers = !blueprint &&
         form.participantCapacity != null &&
@@ -33,7 +39,8 @@ class FormCapacitySettings extends StatelessWidget {
     final counts = form.capacity == null
         ? null
         : [
-            '${OrdersStrings.validTickets}: ${form.capacity!.occupiedPeople}',
+            if (occupancy == null)
+              '${OrdersStrings.validTickets}: ${form.capacity!.occupiedPeople}',
             if (showOffers)
               '${WaitlistStrings.offeredPlacesCount}: ${form.capacity!.offeredPlaces}',
           ].join('\n');
@@ -44,7 +51,9 @@ class FormCapacitySettings extends StatelessWidget {
       title: Text(WaitlistStrings.settings,
           style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle:
-          Padding(padding: const EdgeInsets.only(top: 4), child: Text(summary)),
+          Padding(padding: const EdgeInsets.only(top: 4), child: Text(summary,
+              semanticsLabel: occupancy == null ? null : summary.replaceFirst(
+                  occupancy, '${OrdersStrings.validTickets}: ${snapshot!.occupiedPeople} / ${snapshot.limit}'))),
       trailing: canEdit && !blueprint ? const Icon(Icons.chevron_right) : null,
       onTap: canEdit && !blueprint
           ? () async {

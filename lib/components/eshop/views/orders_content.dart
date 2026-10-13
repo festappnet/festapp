@@ -1,6 +1,7 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import '../../forms/waitlist_strings.dart';
+import '../../forms/models/form_model.dart';
 import '../../forms/views/waitlist_offers_dialog.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +41,80 @@ bool canSaveOrderGridChanges({
   required bool isUnitEditor,
 }) =>
     isOrderEditor || isUnitManager || isUnitEditor;
+
+/// Toolbar presence follows actual server-owned active waitlist rows, not form configuration.
+bool hasActiveWaitlistOrders(Iterable<OrderModel> orders) =>
+    orders.any((order) => order.isWaitlisted && order.isActive);
+
+List<OrderModel> checkedWaitingOrdersForOffers(
+        SingleDataGridController grid, List<FormModel> forms) =>
+    grid.visibleCheckedRows
+        .map(OrderGridFilters.order)
+        .whereType<OrderModel>()
+        .where((order) =>
+            order.isWaitlisted &&
+            order.isActive &&
+            order.allows('offer') &&
+            (order.waitlistSummary?.counts['waiting'] ?? 0) > 0 &&
+            forms
+                .any((form) => form.id == order.formId && form.waitlistEnabled))
+        .toList();
+
+/// The grid and widget tests use the same selection and canonical offer orchestration.
+DataGridAction createWaitlistOffersAction(
+  BuildContext context, {
+  required List<FormModel> Function() forms,
+  required SingleDataGridController<OrderModel>? Function() controller,
+  required Future<void> Function() onRefresh,
+  Widget Function(FormModel, List<OrderModel>, Set<int>)? offerDialogBuilder,
+}) =>
+    DataGridAction(
+      name: WaitlistStrings.send,
+      requiresSelection: true,
+      isEnabled: () {
+        final grid = controller();
+        return RightsService.isEditorOrder() &&
+            grid != null &&
+            grid.isGridLoaded &&
+            !grid.hasUnsavedChanges &&
+            checkedWaitingOrdersForOffers(grid, forms()).isNotEmpty;
+      },
+      action: (SingleDataGridController grid, [_]) async {
+        if (!RightsService.isEditorOrder() || grid.hasUnsavedChanges) return;
+        final selected = checkedWaitingOrdersForOffers(grid, forms());
+        if (selected.isEmpty) return;
+        final eligible = forms()
+            .where((form) =>
+                form.waitlistEnabled &&
+                selected.any((order) => order.formId == form.id))
+            .toList();
+        final chosen = eligible.length == 1
+            ? eligible.first
+            : await showDialog<FormModel>(
+                context: context,
+                builder: (context) => AppSimpleDialog(
+                        title: Text(WaitlistStrings.settings),
+                        children: [
+                          for (final form in eligible)
+                            SimpleDialogOption(
+                                onPressed: () => Navigator.pop(context, form),
+                                child: Text(form.title ?? form.link ?? '')),
+                        ]));
+        if (chosen == null || !context.mounted) return;
+        final recipients =
+            selected.where((order) => order.formId == chosen.id).toList();
+        final selectedIds = recipients.map((order) => order.id!).toSet();
+        await showDialog(
+            context: context,
+            builder: (_) =>
+                offerDialogBuilder?.call(chosen, recipients, selectedIds) ??
+                WaitlistOffersDialog(
+                    form: chosen,
+                    orders: recipients,
+                    selectedOrderIds: selectedIds));
+        await onRefresh();
+      },
+    );
 
 // The state class has been renamed accordingly
 class _OrdersContentState extends State<OrdersContent> {
@@ -145,33 +220,11 @@ class _OrdersContentState extends State<OrdersContent> {
     // Create the controller with the final column list
     List<OrderModel>? firstLoadOrders = bundle.orders;
 
-    final sendOffersAction = DataGridAction(
-      name: WaitlistStrings.send,
-      requiresSelection: false,
-      action: (SingleDataGridController singleDataGrid, [_]) async {
-        final eligible = forms.where((f) => f.waitlistEnabled).toList();
-        final chosen = eligible.length == 1
-            ? eligible.first
-            : await showDialog<dynamic>(
-                context: context,
-                builder: (context) => AppSimpleDialog(
-                      title: Text(WaitlistStrings.settings),
-                      children: [
-                        for (final f in eligible)
-                          SimpleDialogOption(
-                              onPressed: () => Navigator.pop(context, f),
-                              child: Text(f.title ?? f.link ?? ''))
-                      ],
-                    ));
-        if (chosen == null || !mounted) return;
-        await showDialog(
-            context: context,
-            builder: (_) =>
-                WaitlistOffersDialog(form: chosen, orders: bundle.orders));
-        await refreshData();
-      },
-      isEnabled: RightsService.isEditorOrder,
-    );
+    bool hasWaitingRows() => hasActiveWaitlistOrders(bundle.orders);
+    final sendOffersAction = createWaitlistOffersAction(context,
+        forms: () => forms,
+        controller: () => controller,
+        onRefresh: refreshData);
 
     final newController = SingleDataGridController<OrderModel>(
       context: context,
@@ -194,7 +247,7 @@ class _OrdersContentState extends State<OrdersContent> {
         if (mounted && controller != null) updateWaitlistColumn(controller!);
         final actions = controller?.headerChildren;
         actions?.removeWhere((action) => identical(action, sendOffersAction));
-        if (RightsService.isEditorOrder() && waitlistEnabled()) {
+        if (RightsService.isEditorOrder() && hasWaitingRows()) {
           actions?.insert(0, sendOffersAction);
         }
         return newBundle.orders;
@@ -215,8 +268,7 @@ class _OrdersContentState extends State<OrdersContent> {
         isAddActionPossible: () => false,
       ),
       headerChildren: [
-        if (RightsService.isEditorOrder() && waitlistEnabled())
-          sendOffersAction,
+        if (RightsService.isEditorOrder() && hasWaitingRows()) sendOffersAction,
         DataGridAction(
           name: CommonStrings.cancel,
           requiresSelection: true,

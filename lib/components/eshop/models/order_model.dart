@@ -34,6 +34,15 @@ class OrderModel extends ITrinaRowModel {
   bool? active;
   Set<String>? allowedActions;
   bool get isWaitlisted => state == waitlistedState;
+  String get stateLabel {
+    final counts = waitlistSummary?.counts;
+    if (isWaitlisted && counts != null &&
+        counts.values.fold<int>(0, (sum, count) => sum + count) == 1 &&
+        counts['offered'] == 1) {
+      return WaitlistStrings.text('offered');
+    }
+    return stateToLocale(state);
+  }
   bool get isActive =>
       active ??
       waitlistSummary?.isActive ??
@@ -51,6 +60,13 @@ class OrderModel extends ITrinaRowModel {
       _ => false,
     };
   }
+
+  /// Payment changes use the same mutable ordinary-order states as transactions.
+  /// Adding a receipt is distinct from the action that marks an order paid.
+  static bool canChangePaymentInState(String? state) =>
+      state != null &&
+      ![waitlistedState, stornoState, 'preparing_payment'].contains(state);
+  bool get canChangePayment => canChangePaymentInState(state) && allows('edit');
 
   bool get canEdit => allows('edit');
   Map<String, dynamic>? data;

@@ -223,6 +223,7 @@ export class FormPage extends Component {
 
     renderWaitlistManagement(bundle) {
         this.waitlistBundle = bundle;
+        const tone = bundle.form ? new FormModel(bundle.form).communicationTone : null;
         this.host.replaceChildren();
         if (bundle.form) this.applyTheme(new FormModel(bundle.form));
         const content = document.createElement('section');
@@ -232,7 +233,7 @@ export class FormPage extends Component {
         title.textContent = bundle.offerStatus ? WaitlistStrings.text(bundle.offerStatus) : (this.waitlistScope.offerId ? WaitlistStrings.expired : WaitlistStrings.text('registrationDetail'));
         const intro = document.createElement('p');
         intro.className = 'waitlist-intro';
-        intro.textContent = WaitlistStrings.text('managementExplanation');
+        intro.textContent = WaitlistStrings.text('managementExplanation', tone);
         content.append(title, intro);
         this.host.appendChild(content);
         const eligible = bundle.tickets.filter(person => !['admitted', 'cancelled', 'withdrawn'].includes(person.lifecycle));
@@ -255,12 +256,12 @@ export class FormPage extends Component {
             const name = document.createElement('strong');
             name.textContent = ticketLabel(person, index, bundle.form, bundle.tickets.length);
             const status = document.createElement('span'); status.className = 'waitlist-person-status';
-            status.textContent = WaitlistStrings.text(person.lifecycle === 'waiting' ? 'waitingStatus' : person.lifecycle);
+            status.textContent = WaitlistStrings.text(person.lifecycle === 'waiting' ? 'waitingStatus' : person.lifecycle, tone);
             label.append(name, status); content.appendChild(label);
         }
         if (!this.waitlistScope.offerId && eligible.length) {
             if (eligible.length > 1) {
-                const hint = document.createElement('p'); hint.textContent = WaitlistStrings.text('withdrawSelection');
+                const hint = document.createElement('p'); hint.textContent = WaitlistStrings.text('withdrawSelection', tone);
                 content.appendChild(hint);
             }
             button.onclick = () => this.resolveWaitlist('withdraw', [...selected]);
@@ -272,6 +273,7 @@ export class FormPage extends Component {
         if (!ticketIds.length) return;
         const { OrderPreview } = await import('./order_preview.js');
         const bundle = this.waitlistBundle;
+        const tone = bundle?.form ? new FormModel(bundle.form).communicationTone : null;
         const title = operation === 'withdraw'
             ? (ticketIds.length === 1 ? WaitlistStrings.text('withdrawInterest') : WaitlistStrings.withdraw)
             : WaitlistStrings.decline;
@@ -294,7 +296,7 @@ export class FormPage extends Component {
         }, null, { fields: [], ticket: [] }, {
             title, submitLabel: title,
             occasionTitle: bundle?.occasionTitle, orderSymbol: bundle?.orderSymbol,
-            explanation: WaitlistStrings.text(operation === 'withdraw' ? (ticketIds.length === 1 ? 'withdrawConfirmationOne' : 'withdrawConfirmation') : 'declineConfirmation'),
+            explanation: WaitlistStrings.text(operation === 'withdraw' ? (ticketIds.length === 1 ? 'withdrawConfirmationOne' : 'withdrawConfirmation') : 'declineConfirmation', tone),
             people: (bundle?.tickets || []).flatMap((person, index) => ticketIds.includes(person.id) ? [ticketLabel(person, index, bundle.form, bundle.tickets.length)] : []),
         });
     }
@@ -705,11 +707,8 @@ export class FormPage extends Component {
                  // Clean up old widgets first
                  this.cleanup({ preserveEditButton: true });
 
-                 // Reset Form
-                 if (this.host) {
-                     this.host.innerHTML = '';
-                     this.renderForm(formModel, false);
-                 }
+                 // Do not rebuild from the pre-submission capacity snapshot.
+                 this.host?.replaceChildren();
                  window.scrollTo(0, 0); 
              }
              
@@ -811,21 +810,13 @@ export class FormPage extends Component {
             container.remove();
             document.body.style.overflow = ''; // Restore scroll
             
-            if (success && !formModel.offerBundle) {
-                    // Clean up old widget instance first
-                    this.cleanup({ preserveEditButton: true });
-                    
-                    // Reset Form State BEHIND the overlay
-                    if (this.host) {
-                        this.host.innerHTML = '';
-                        this.renderForm(formModel, false);
-                    }
-                    
-                    // Scroll to top immediately
-                    window.scrollTo(0, 0);
-            } else {
-                    // Failure: Ensure widget is visible (defensive)
+            if (success) {
+                const link = this.currentLink;
+                this.currentLink = null;
+                // init renders a loading state before fetching the current server mode.
+                void this.init(link);
             }
+
         };
 
         // Handle Back History

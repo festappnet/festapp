@@ -77,6 +77,57 @@ BEGIN
  PERFORM assert_eq(r->>'manageTokenHash',encode(extensions.digest(manage,'sha256'),'hex'),'renderer manage hash');
  PERFORM assert_jsonb_contains(r,'{"participantCount":2,"offeredCount":2,"manageEnvelope":{"ciphertext":"sealed-test-double"}}','renderer current counts and sealed envelope');
  PERFORM assert_true(NOT r ? 'token' AND NOT r ? 'manageToken' AND r->>'orderId'=source::text,'renderer no plaintext token');
+ -- Use precisely the existing normal-order form tone resolver.
+ PERFORM assert_eq(r->>'communicationTone','formal'::text,'default tone is formal');
+ PERFORM assert_eq(r#>>'{toneSubstitutions,waitlist_confirmation_heading}','Jste mezi náhradníky'::text,'actual formal confirmation heading');
+ PERFORM assert_true(r#>>'{toneSubstitutions,waitlist_confirmation_explanation}' LIKE '%nic neplatíte%pošleme vám%můžete%','actual formal confirmation wording');
+ PERFORM assert_true(r#>>'{toneSubstitutions,waitlist_offer_instructions}' LIKE '%vyberete%potvrdíte%','actual formal offer wording');
+ PERFORM assert_eq(r#>>'{toneSubstitutions,waitlist_offer_button_single}','Potvrdit přihlášení'::text,'single actual email button');
+ PERFORM assert_eq(r#>>'{toneSubstitutions,waitlist_offer_button_multiple}','Potvrdit vybrané osoby'::text,'multiple actual email button');
+
+ UPDATE public.units SET data=coalesce(data,'{}')||'{"communication_tone":"informal"}'::jsonb WHERE id=(x->>'unit')::bigint;
+ r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
+ PERFORM assert_eq(r->>'communicationTone','informal'::text,'unit tone inherited');
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"communication_tone":"formal"}'::jsonb WHERE id=f;
+ r:=public.get_waitlist_email_render_context_v1(source,NULL,'regression@example.invalid');
+ PERFORM assert_eq(r->>'communicationTone','formal'::text,'form formal override used for confirmation');
+ UPDATE public.forms SET data=data||'{"communication_tone":"informal"}'::jsonb WHERE id=f;
+ r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
+ PERFORM assert_eq(r->>'communicationTone','informal'::text,'form informal override used for offer');
+ PERFORM assert_eq(r#>>'{toneSubstitutions,waitlist_confirmation_heading}','Jsi mezi náhradníky'::text,'actual informal confirmation heading');
+ PERFORM assert_true(r#>>'{toneSubstitutions,waitlist_confirmation_explanation}' LIKE '%nic neplatíš%pošleme ti%můžeš%','actual informal confirmation wording');
+ PERFORM assert_true(r#>>'{toneSubstitutions,waitlist_offer_instructions}' LIKE '%vybereš%potvrdíš%','actual informal offer wording');
+
+ PERFORM assert_eq(r#>>'{toneSubstitutions,waitlist_offer_heading}','Máme pro tebe nabídku'::text,'actual informal default copy');
+ PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->'toneSubstitutions',r->'toneSubstitutions','preview uses identical authoritative tone copy');
+ PERFORM assert_true(public.get_waitlist_offer_email_preview(f)#>>'{template,html}' LIKE '%Máme pro tebe nabídku%','legacy preview receives expanded informal heading');
+ PERFORM assert_false(public.get_waitlist_offer_email_preview(f)#>>'{template,html}' LIKE '%{{waitlist_%','legacy preview has no new semantic placeholders');
+ PERFORM assert_true(public.get_waitlist_offer_email_preview(f)#>>'{template,html}' LIKE '%{{offered_places}}%{{offer_expires_at}}%','old preview count/date contract retained');
+ PERFORM assert_true(public.get_waitlist_offer_email_preview(f)#>>'{template,html}' LIKE '%white-space:nowrap%','preview date chunk nowrap');
+ PERFORM assert_false(public.get_waitlist_offer_email_preview(f)#>>'{template,html}' LIKE '%{{manage_waitlist_button}}%','default offer omits redundant management button');
+ UPDATE public.organizations SET data=coalesce(data,'{}')||'{"timezone":"America/New_York"}'::jsonb WHERE id=(x->>'organization')::bigint;
+ UPDATE public.units SET data=data-'timezone' WHERE id=(x->>'unit')::bigint;
+ UPDATE public.occasions SET data=coalesce(data,'{}')-'timezone' WHERE id=(x->>'occasion')::bigint;
+ r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
+ PERFORM assert_eq(r->>'timeZone','America/New_York'::text,'delivery organization timezone fallback');
+ PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->>'timeZone',r->>'timeZone','preview organization timezone matches delivery');
+ UPDATE public.occasions SET data=data||'{"timezone":"Asia/Tokyo"}'::jsonb WHERE id=(x->>'occasion')::bigint;
+ r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
+ PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->>'timeZone','Asia/Tokyo'::text,'preview occasion timezone override');
+ PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->>'timeZone',r->>'timeZone','preview occasion override matches delivery');
+
+
+ PERFORM assert_false(has_function_privilege('anon','public.get_waitlist_email_tone_substitutions_internal(bigint)','EXECUTE'),'presentation helper anon private');
+ PERFORM assert_false(has_function_privilege('authenticated','public.get_waitlist_email_tone_substitutions_internal(bigint)','EXECUTE'),'presentation helper authenticated private');
+
+ UPDATE public.forms SET data=data||'{"communication_tone":"unknown"}'::jsonb WHERE id=f;
+ r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
+ PERFORM assert_eq(r->>'communicationTone','informal'::text,'invalid form value inherits existing unit tone');
+ UPDATE public.units SET data=data||'{"communication_tone":"unknown"}'::jsonb WHERE id=(x->>'unit')::bigint;
+ r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
+ PERFORM assert_eq(r->>'communicationTone','formal'::text,'invalid unit value preserves canonical formal default');
+
+
  BEGIN PERFORM public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'other@example.invalid'); RAISE EXCEPTION 'wrong recipient render accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%waitlist_email_source_invalid%' THEN RAISE; END IF; END;
  y:=pg_temp.fixture(1);
  BEGIN PERFORM public.get_waitlist_email_render_context_v1(source,gen_random_uuid(),'regression@example.invalid'); RAISE EXCEPTION 'foreign offer render accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%waitlist_email_source_invalid%' THEN RAISE; END IF; END;

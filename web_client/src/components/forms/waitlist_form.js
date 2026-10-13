@@ -14,7 +14,7 @@ export function ticketLabel(person, index = 0, form = null, total = 1) {
             (!form ? fields.find(field => typeof field[type] === 'string')?.[type] : null);
         return typeof value === 'string' && value.trim() ? [value.trim()] : [];
     });
-    return names.join(' ') || (total === 1 ? S.text('yourRegistration') : `${S.text('person')} ${index + 1}`);
+    return names.join(' ') || (total === 1 ? S.text('yourRegistration', form?.communicationTone || form?.data?.communication_tone) : `${S.text('person')} ${index + 1}`);
 }
 
 export function appendWaitlistContext(container, context) {
@@ -55,6 +55,7 @@ export function prepareOfferSession(session, model) {
 
 export function renderWaitlistControls(page, model) {
     const session = page.currentSession;
+    const tone = model.communicationTone;
     const form = page.host.querySelector('form');
     if (!form) return;
     const section = document.createElement('section');
@@ -75,25 +76,32 @@ export function renderWaitlistControls(page, model) {
         heading.className = 'waitlist-mode-label';
         heading.textContent = S.text('registrationModeLabel');
         section.appendChild(heading);
-        message.textContent = S.explanation;
+        message.textContent = S.text('explanation', tone);
     }
     section.appendChild(message);
-    if (model.registrationMode === 'waitlist' && form.querySelector('.waitlist-product-options')) {
-        const reason = document.createElement('aside');
+    form.prepend(section);
+    const placeProductNotice = () => {
+        const group = form.querySelector('.waitlist-product-options');
+        if (!group) return;
+        const reason = form.querySelector('#waitlist-product-reason') || document.createElement('aside');
         reason.id = 'waitlist-product-reason';
         reason.className = 'waitlist-product-notice';
         reason.setAttribute('role', 'note');
-        reason.textContent = S.text('productsAfterOffer');
-        section.appendChild(reason);
+        reason.textContent = S.text('productsAfterOffer', tone);
+        const target = group.closest('.form-field-card') || group;
+        target.before(reason);
+    };
+    if (model.registrationMode === 'waitlist') {
+        placeProductNotice();
+        session.addEventListener('state-changed', placeProductNotice);
     }
-    form.prepend(section);
     const b = model.offerBundle;
     if (!b) return;
     message.textContent = `${S.remaining}: ${b.pendingCount} · ${S.expiresAt}: ${new Date(b.expiresAt).toLocaleString()}. ${S.productAvailability}`;
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'waitlist-people';
     const legend = document.createElement('legend');
-    legend.textContent = S.selectPeople;
+    legend.textContent = S.text('selectPeople', tone);
     fieldset.appendChild(legend);
     section.appendChild(fieldset);
     const eligiblePeople = b.tickets.filter(person => !['admitted', 'withdrawn', 'cancelled'].includes(person.lifecycle));
@@ -112,7 +120,7 @@ export function renderWaitlistControls(page, model) {
         input.onchange = () => {
             if (input.checked && model.selectedTicketIds.length >= session.maxTickets) {
                 input.checked = false;
-                message.textContent = `${S.selectPeople}: ${session.maxTickets}`;
+                message.textContent = `${S.text('selectPeople', tone)}: ${session.maxTickets}`;
                 return;
             }
             model.ticketDrafts ||= new Map();
@@ -123,14 +131,14 @@ export function renderWaitlistControls(page, model) {
         };
         fieldset.appendChild(label);
     }
-    form.querySelector('.btn-submit').textContent = S.accept;
+    form.querySelector('.btn-submit').textContent = S.text(model.selectedTicketIds.length === 1 ? 'acceptOne' : 'accept', tone);
     form.querySelectorAll('.btn-add-ticket,.btn-remove-ticket').forEach(el => el.hidden = true);
     const decline = document.createElement('button');
     decline.type = 'button'; decline.className = 'btn btn-secondary'; decline.textContent = S.decline;
     decline.disabled = !model.selectedTicketIds.length || !model.selectedTicketIds.every(id => b.slots.some(s => s.ticketId === id && s.outcome === 'pending'));
     decline.onclick = () => page.resolveWaitlist('decline', model.selectedTicketIds);
     if (decline.disabled && model.selectedTicketIds.length) {
-        const reason = document.createElement('p'); reason.textContent = S.text('declineAssigned'); section.appendChild(reason);
+        const reason = document.createElement('p'); reason.textContent = S.text('declineAssigned', tone); section.appendChild(reason);
     }
     section.appendChild(decline);
 }

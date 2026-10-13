@@ -18,6 +18,9 @@ class OrderGridFilters {
     return value != null && value.state != 'preparing_payment';
   }
 
+  static bool orderCanReceivePayment(TrinaRow row) =>
+      order(row)?.canChangePayment ?? false;
+
   static bool orderIsActive(TrinaRow row) =>
       order(row)?.isActive ?? orderIsNonCancelled(row);
   static bool allows(TrinaRow row, String action) =>

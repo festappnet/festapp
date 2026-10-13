@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { renderEmail } from "./emailDelivery.ts";
+import { openEmail, sealEmail } from "./emailPayload.ts";
 import { emailRegistry, kindForTemplate } from "./emailRegistry.ts";
 import { sha256Text, type WaitlistEmailSource } from "./waitlistEmail.ts";
 import {
@@ -65,6 +66,15 @@ async function fixture(offer = false) {
     participantCount: offer ? 3 : 4,
     expiresAt: selected.expiresAt,
     timeZone: "Europe/Prague",
+    toneSubstitutions: {
+      waitlist_offer_button_single: "Potvrdit přihlášení",
+      waitlist_offer_button_multiple: "Potvrdit vybrané osoby",
+      waitlist_manage_button_label: "Spravovat čekání",
+      waitlist_confirmation_heading: "Jste mezi náhradníky",
+      waitlist_confirmation_explanation: "Zatím nic neplatíte. Jakmile se uvolní místo, pošleme vám nabídku. Čekání můžete spravovat nebo ukončit přes tento odkaz:",
+      waitlist_offer_heading: "Máme pro vás nabídku",
+      waitlist_offer_instructions: "Po otevření nabídky vyberete, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíte.",
+    },
     manageEnvelope: manageSealed,
     manageContentHash: await sha256Text(JSON.stringify(source)),
     manageTokenHash: await sha256Text(source.token),
@@ -254,6 +264,8 @@ Deno.test("offer expiry uses configured timezone through both DST boundaries", (
   const beforeSpring = waitlistExpiryText("2026-03-29T00:30:00Z", "Europe/Prague");
   const afterSpring = waitlistExpiryText("2026-03-29T01:30:00Z", "Europe/Prague");
   assert.match(beforeSpring, /01:30/);
+  assert.ok(beforeSpring.includes("\u00a0"));
+  assert.doesNotMatch(beforeSpring, /[ \t\n\r]/);
   assert.match(afterSpring, /03:30/);
   assert.match(waitlistExpiryText("2026-10-25T00:30:00Z", "Europe/Prague"), /02:30/);
   assert.match(waitlistExpiryText("2026-10-25T01:30:00Z", "Europe/Prague"), /02:30/);
@@ -283,4 +295,89 @@ Deno.test("semantic phrases render alongside unchanged custom numeric placeholde
     assert.match(result.prepared.html, /14:00/);
     assert.doesNotMatch(result.prepared.html, /Europe\/Prague|UTC/);
   }
+});
+
+// Render the actual canonical default SQL templates through the same encrypted
+// queue-source -> waitlist renderer -> inherited wrapper path as production.
+for (const informal of [false, true]) {
+  for (const count of [1, 2]) {
+    for (const offer of [false, true]) {
+      Deno.test(`encrypted queued ${offer ? "offer" : "confirmation"} ${informal ? "informal" : "formal"} for ${count}`, async () => {
+        const previousKey = Deno.env.get("EMAIL_PAYLOAD_KEY");
+        Deno.env.set("EMAIL_PAYLOAD_KEY", btoa(String.fromCharCode(...new Uint8Array(32).fill(7))));
+        try {
+          const sql = await Deno.readTextFile(new URL("../../../database/functions/eshop_waitlist/email_templates.sql", import.meta.url));
+          const defaults = new Map([...sql.matchAll(/\('([^']+)','([^']+)',\s*'([^']+)'\)/g)]
+            .map((match) => [match[1], { id: 1, subject: match[2], html: match[3] }]));
+          const f = await fixture(offer);
+          f.selected.participantCount = count;
+          f.context.participantCount = count;
+          f.context.communicationTone = informal ? "informal" : "formal";
+          if (informal) f.context.toneSubstitutions = {
+            waitlist_offer_button_single: "Potvrdit přihlášení",
+            waitlist_offer_button_multiple: "Potvrdit vybrané osoby",
+            waitlist_manage_button_label: "Spravovat čekání",
+            waitlist_confirmation_heading: "Jsi mezi náhradníky",
+            waitlist_confirmation_explanation: "Zatím nic neplatíš. Jakmile se uvolní místo, pošleme ti nabídku. Čekání můžeš spravovat nebo ukončit přes tento odkaz:",
+            waitlist_offer_heading: "Máme pro tebe nabídku",
+            waitlist_offer_instructions: "Po otevření nabídky vybereš, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíš.",
+          };
+          f.context.timeZone = "UTC"; // Even this configured zone has no visible suffix.
+          if (offer) {
+            f.selected.offeredCount = count;
+            f.context.offeredCount = count;
+          }
+          f.row.data.content_hash = await sha256Text(JSON.stringify(f.selected));
+          f.row.data.waitlistEnvelope = await sealEmail(f.selected);
+          f.context.manageEnvelope = await sealEmail(source);
+          const result = await renderWaitlistEmail(f.row, {
+            ...f.dependencies,
+            open: (value) => openEmail<WaitlistEmailSource>(value),
+            render: (input) => renderEmail(input, async (code) => ({
+              template: defaults.get(code),
+              wrapper: { html: '<main data-wrapper="inherited">{{content}}</main>' },
+            })),
+          });
+          assert.match(result.prepared.html, /data-wrapper="inherited"/);
+          assert.ok(result.prepared.html.includes(waitlistCountPhrase(count, offer ? "place" : "person")));
+          assert.match(result.prepared.html, /COMMITTED123/);
+          assert.doesNotMatch(result.prepared.html, /\{\{|\bUTC\b/);
+          if (offer) {
+            assert.ok(result.prepared.html.includes(count === 1 ? "Potvrdit přihlášení" : "Potvrdit vybrané osoby"));
+            assert.doesNotMatch(result.prepared.html, /Otevřít nabídku|Spravovat čekání/);
+            const dateChunk = result.prepared.html.match(/<span style="white-space:nowrap">([^<]+)<\/span>/)?.[1];
+            assert.ok(dateChunk && dateChunk.includes("\u00a0"));
+            assert.doesNotMatch(dateChunk!, /[ \t\n\r]/);
+            assert.ok(result.prepared.html.includes(informal ? "Máme pro tebe nabídku" : "Máme pro vás nabídku"));
+            assert.ok(result.prepared.html.includes(informal ? "vybereš" : "vyberete"));
+            assert.ok(result.prepared.html.includes(informal ? "potvrdíš" : "potvrdíte"));
+            assert.doesNotMatch(result.prepared.html, informal ? /pro vás|vyberete|potvrdíte/ : /pro tebe|vybereš|potvrdíš/);
+          } else {
+            assert.match(result.prepared.html, /Spravovat čekání/);
+            assert.ok(result.prepared.html.includes(informal ? "Jsi mezi náhradníky" : "Jste mezi náhradníky"));
+            assert.ok(result.prepared.html.includes(informal ? "nic neplatíš" : "nic neplatíte"));
+            assert.ok(result.prepared.html.includes(informal ? "pošleme ti" : "pošleme vám"));
+            assert.ok(result.prepared.html.includes(informal ? "můžeš" : "můžete"));
+            assert.doesNotMatch(result.prepared.html, informal ? /Jste|neplatíte|pošleme vám|můžete/ : /Jsi|neplatíš|pošleme ti|můžeš/);
+          }
+        } finally {
+          if (previousKey === undefined) Deno.env.delete("EMAIL_PAYLOAD_KEY");
+          else Deno.env.set("EMAIL_PAYLOAD_KEY", previousKey);
+        }
+      });
+    }
+  }
+}
+Deno.test("informal communication setting does not rewrite an authored formal template", async () => {
+  const f = await fixture();
+  f.context.communicationTone = "informal";
+  const authored = "Vážení zákazníci, prosíme vás o trpělivost. Vlastní text pořadatele.";
+  const result = await renderWaitlistEmail(f.row, {
+    ...f.dependencies,
+    render: (input) => renderEmail(input, async () => ({
+      template: { id: 10, subject: "Vlastní předmět pořadatele", html: authored },
+    })),
+  });
+  assert.equal(result.prepared.html, authored);
+  assert.equal(result.prepared.subject, "Vlastní předmět pořadatele");
 });
