@@ -1,5 +1,5 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
+import '../../_shared/common_strings.dart';
 import '../../../data_services/rights_service.dart';
 import '../../../services/dialog_helper.dart';
 import '../../forms/waitlist_commands.dart';
@@ -79,8 +79,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   }
 
   @override
-  Widget build(BuildContext context) => AppAlertDialog(
-        onClose: () => Navigator.pop(context),
+  Widget build(BuildContext context) => AlertDialog(
         title:
             Text('${WaitlistStrings.detail} ${widget.order.orderSymbol ?? ''}'),
         content: SizedBox(
@@ -186,6 +185,10 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                     Text(
                         '${order['orderSymbol']} · ${OrderModel.stateToLocale(order['state'])}'),
                 ]))),
-        actions: [],
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(CommonStrings.close))
+        ],
       );
 }

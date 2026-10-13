@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -243,7 +242,7 @@ class _CleaningPageState extends State<CleaningPage> {
     final name = report.createdByName ?? CleaningStrings.anonymous;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AppAlertDialog(
+      builder: (ctx) => AlertDialog(
         title: Text(CleaningStrings.blockReporter),
         content: Text(CleaningStrings.blockReporterConfirm(name)),
         actions: [

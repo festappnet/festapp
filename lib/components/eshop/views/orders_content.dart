@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import '../../forms/waitlist_strings.dart';
 import '../../forms/views/waitlist_offers_dialog.dart';
@@ -144,7 +143,7 @@ class _OrdersContentState extends State<OrdersContent> {
             ? eligible.first
             : await showDialog<dynamic>(
                 context: context,
-                builder: (context) => AppSimpleDialog(
+                builder: (context) => SimpleDialog(
                       title: Text(WaitlistStrings.settings),
                       children: [
                         for (final f in eligible)

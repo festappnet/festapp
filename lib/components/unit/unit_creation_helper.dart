@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -14,10 +13,7 @@ class UnitCreationHelper {
     return await showDialog<UnitModel?>(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
-          onClose: () {
-            Navigator.of(context).pop(null);
-          },
+        return AlertDialog(
           title:
               Text(AdministrationStrings.newUnitButton), // "New organization"
           content: Form(

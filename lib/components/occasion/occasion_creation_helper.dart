@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -113,7 +112,7 @@ class OccasionCreationHelper {
                   });
                 }
 
-                return AppAlertDialog(
+                return AlertDialog(
                   title: Text(AdministrationStrings.addNewEventTitle),
                   content: Form(
                     key: formKey,

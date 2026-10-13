@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
@@ -244,13 +243,16 @@ class _EmailOptionDialog extends StatelessWidget {
     final theme = Theme.of(context);
     final subtleColor = theme.textTheme.bodySmall?.color;
 
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       insetPadding: const EdgeInsets.all(16),
       titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       title: Row(
         children: [
           Expanded(child: SelectableText(FeedbackStrings.helpTitle)),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(context).pop(),
+          )
         ],
       ),
       content: SingleChildScrollView(

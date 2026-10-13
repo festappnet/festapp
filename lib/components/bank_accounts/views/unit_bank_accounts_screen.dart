@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +41,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   void _showError(String message) {
     showDialog(
       context: context,
-      builder: (context) => AppAlertDialog(
+      builder: (context) => AlertDialog(
         title: const Text('Error'),
         content: SelectableText(message),
         actions: [
@@ -59,9 +58,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     setState(() => _isLoading = true);
     try {
       // Share the initial list request with a routed detail; mutations refresh.
-      final accounts =
-          BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
-              DbBankAccounts.getBankAccountsForUnit(widget.unitId);
+      final accounts = BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
+          DbBankAccounts.getBankAccountsForUnit(widget.unitId);
       _hasLoaded = true;
       _unitAccounts = await accounts;
       // Get Organization ID (if admin)
@@ -93,7 +91,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
       final choice = await showDialog<String>(
         context: context,
-        builder: (context) => AppSimpleDialog(
+        builder: (context) => SimpleDialog(
           title: Text(BankAccountStrings.addBankAccount),
           children: [
             SimpleDialogOption(
@@ -155,7 +153,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
         selectedAccount = await showDialog<BankAccountModel>(
           context: context,
-          builder: (context) => AppSimpleDialog(
+          builder: (context) => SimpleDialog(
             title: Text(BankAccountStrings.selectAccount),
             children: availableAccounts
                 .map((a) => SimpleDialogOption(
@@ -221,7 +219,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<void> _unlinkAccount(BankAccountModel account) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AppAlertDialog(
+      builder: (context) => AlertDialog(
         title: Text(BankAccountStrings.unlinkConfirmationTitle),
         content: Text(BankAccountStrings.unlinkConfirmationMessage),
         actions: [
@@ -287,7 +285,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       BankAccountModel account, List<dynamic> conflicts) {
     showDialog(
       context: context,
-      builder: (context) => AppAlertDialog(
+      builder: (context) => AlertDialog(
         title: Text(BankAccountStrings.unlinkDependencyWarningTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,

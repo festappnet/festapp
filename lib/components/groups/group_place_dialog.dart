@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
@@ -46,8 +45,7 @@ class GroupPlaceDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       title: Text(GroupsStrings.placeDialogTitle),
       content: SizedBox(
         width: 460,

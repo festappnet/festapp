@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -9,7 +8,7 @@ class ConfirmationDialogs {
     await showDialog(
         context: context,
         builder: (BuildContext context) {
-          return AppAlertDialog(
+          return AlertDialog(
             title: Text(titleMessage),
             content: SelectableText(textMessage),
             actions: [
@@ -35,7 +34,7 @@ class ConfirmationDialogs {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
+        return AlertDialog(
           title: Text(titleMessage),
           content: Container(),
           actions: [
@@ -64,11 +63,7 @@ class ConfirmationDialogs {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
-          onClose: () {
-            result = false;
-            Navigator.of(context).pop();
-          },
+        return AlertDialog(
           title: Text(titleMessage),
           content: SingleChildScrollView(child: Text(textMessage)),
           actions: [
@@ -104,11 +99,7 @@ class ConfirmationDialogs {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
-          onClose: () {
-            result = false;
-            Navigator.of(context).pop();
-          },
+        return AlertDialog(
           title: Text(titleMessage),
           content: SingleChildScrollView(child: textMessage),
           actions: [
@@ -143,10 +134,7 @@ class ConfirmationDialogs {
     final result = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
-          onClose: () {
-            Navigator.of(context).pop(false);
-          },
+        return AlertDialog(
           title: Text(title),
           content: content,
           actions: [
@@ -177,7 +165,7 @@ class ConfirmationDialogs {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AppAlertDialog(
+        return AlertDialog(
           title: Text(CommonStrings.notifications),
           content: SingleChildScrollView(
             child: ListBody(

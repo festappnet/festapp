@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/form_feature.dart';
 import 'package:fstapp/router_service.dart';
@@ -65,8 +64,14 @@ class OccasionDetailDialog extends StatelessWidget {
       minimumSize: const Size.fromHeight(50),
     );
 
-    return AppDialog(
+    return Dialog(
       elevation: 16,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        side: BorderSide(
+          color: Colors.white.withOpacity(0.2),
+        ),
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: StylesConfig.formMaxWidthMid),
         child: Padding(
@@ -78,14 +83,14 @@ class OccasionDetailDialog extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    AppDialogHeader(
-                        title: SelectableText(
+                    const SizedBox(height: 32), // Space for close button
+                    SelectableText(
                       occasion.title ?? '',
                       style: Theme.of(context)
                           .textTheme
                           .titleLarge
                           ?.copyWith(fontWeight: FontWeight.w600),
-                    )),
+                    ),
                     const SizedBox(height: 8),
                     SelectableText(
                       TimeHelper.getMinimalisticDateRange(
@@ -112,6 +117,7 @@ class OccasionDetailDialog extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
+
                     OutlinedButton(
                       onPressed: () => _onReservePressed(context),
                       style: unifiedButtonStyle,
@@ -121,8 +127,23 @@ class OccasionDetailDialog extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+
                     const SizedBox(height: 24),
                   ],
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: 24,
+                    color: ThemeConfig.blackColor(context).withOpacity(0.8),
+                  ),
+                  splashRadius: 20,
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: CommonStrings.close,
                 ),
               ),
             ],

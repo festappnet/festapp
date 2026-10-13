@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -146,8 +145,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
     if (!dirty) return true;
     return await showDialog<bool>(
           context: context,
-          builder: (context) => AppAlertDialog(
-            onClose: () => Navigator.pop(context, false),
+          builder: (context) => AlertDialog(
             title: Text(CommonStrings.discardChanges),
             content: Text(CommonStrings.discardChangesConfirmation),
             actions: [
@@ -246,8 +244,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
   Future<void> cancel(ProductPriceChange plan) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AppAlertDialog(
-        onClose: () => Navigator.pop(context, false),
+      builder: (context) => AlertDialog(
         title: Text(OrdersStrings.cancelPriceChange),
         content: Text(
           priceChangeText(OrdersStrings.priceCancelConfirm, [
@@ -256,6 +253,10 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
           ]),
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(CommonStrings.close),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(OrdersStrings.cancelPriceChange),
@@ -439,6 +440,10 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
     }
     final actions = [
       TextButton(
+        onPressed: busy ? null : close,
+        child: Text(CommonStrings.close),
+      ),
+      TextButton(
         onPressed: busy ? null : reload,
         child: Text(OrdersStrings.priceRefreshAction),
       ),
@@ -473,11 +478,22 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
       children: [
         Padding(
           padding: const EdgeInsets.all(20),
-          child: AppDialogHeader(
-            title: Text(OrdersStrings.priceChangesTitle,
-                style: Theme.of(context).textTheme.titleLarge),
-            onClose: close,
-            closeEnabled: !busy,
+          child: Row(
+            children: [
+              const SizedBox(width: 48),
+              Expanded(
+                child: Text(
+                  OrdersStrings.priceChangesTitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              IconButton(
+                tooltip: CommonStrings.close,
+                onPressed: busy ? null : close,
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
         ),
         Flexible(
@@ -506,12 +522,8 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         if (!didPop) close();
       },
       child: MediaQuery.sizeOf(context).width < 600
-          ? AppDialog.fullscreen(
-              onClose: close, dismissible: !busy, child: SafeArea(child: body))
-          : AppDialog(
-              onClose: close,
-              dismissible: !busy,
-              child: SizedBox(width: 560, child: body)),
+          ? Dialog.fullscreen(child: SafeArea(child: body))
+          : Dialog(child: SizedBox(width: 560, child: body)),
     );
   }
 }

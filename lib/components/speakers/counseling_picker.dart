@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -557,7 +556,7 @@ Future<void> _showCounselorProfileDialog(
 }) {
   return showDialog(
     context: context,
-    builder: (ctx) => AppDialog(
+    builder: (ctx) => Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
@@ -568,14 +567,21 @@ Future<void> _showCounselorProfileDialog(
             // Practical info (place) left, close right — above the profile.
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 12, 0),
-              child: AppDialogHeader(
-                title: (placeTitle != null && placeTitle.isNotEmpty)
-                    ? Align(
-                        alignment: Alignment.centerLeft,
-                        child: _placeLink(ctx, placeId, placeTitle),
-                      )
-                    : null,
-                onClose: () => Navigator.of(ctx).pop(),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: (placeTitle != null && placeTitle.isNotEmpty)
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: _placeLink(ctx, placeId, placeTitle),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
               ),
             ),
             // Only the profile scrolls; the header and the action bar below

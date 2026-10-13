@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -29,8 +28,7 @@ class ProgressDialogs {
         return ValueListenableBuilder<int>(
           valueListenable: progressNotifier,
           builder: (context, progress, _) {
-            return AppAlertDialog(
-              dismissible: false,
+            return AlertDialog(
               title: Text(title),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -173,8 +171,7 @@ class ProgressDialogs {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AppAlertDialog(
-          dismissible: false,
+        return AlertDialog(
           title: Text(title),
           content: Column(
             mainAxisSize: MainAxisSize.min,

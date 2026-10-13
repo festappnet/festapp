@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -95,8 +94,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     final discard = !_controller!.hasUserChanges ||
         await showDialog<bool>(
               context: context,
-              builder: (context) => AppAlertDialog(
-                onClose: () => Navigator.pop(context, false),
+              builder: (context) => AlertDialog(
                 title: Text(HtmlStrings.discardDraft),
                 actions: [
                   TextButton(

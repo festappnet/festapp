@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -194,7 +193,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
     final fallbackDetail = _plainSnippet(result.snippet);
     return showDialog<void>(
       context: context,
-      builder: (dialogContext) => AppDialog(
+      builder: (dialogContext) => Dialog(
         key: const Key('speaker-profile-dialog'),
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: ConstrainedBox(
@@ -203,7 +202,13 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AppDialogHeader(onClose: () => Navigator.of(dialogContext).pop()),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                ),
+              ),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -227,7 +232,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AppDialog(
+    return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 48),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560, maxHeight: 640),
@@ -236,8 +241,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
-              child: AppDialogHeader(
-                  title: Row(
+              child: Row(
                 children: [
                   const Icon(Icons.search),
                   const SizedBox(width: 8),
@@ -254,8 +258,12 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
                       onSubmitted: _run,
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                 ],
-              )),
+              ),
             ),
             const Divider(height: 1),
             Expanded(child: _buildBody(theme)),

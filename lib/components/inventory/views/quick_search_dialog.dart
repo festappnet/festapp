@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'inventory_strings.dart';
@@ -70,8 +69,7 @@ class _QuickSearchDialogState<T> extends State<QuickSearchDialog<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       title: Text(widget.title),
       contentPadding: const EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 0),
       content: SizedBox(

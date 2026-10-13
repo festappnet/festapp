@@ -213,11 +213,7 @@ class EmailTemplateModel {
         EmailTemplateSub(
             code: 'participant_count',
             description: EmailTemplatesStrings.subParticipantCount,
-            defaultValue: '1'),
-        EmailTemplateSub(
-            code: 'participant_phrase',
-            description: EmailTemplatesStrings.subParticipantCount,
-            defaultValue: '1 osobu'),
+            defaultValue: '4'),
         EmailTemplateSub(
             code: 'manage_waitlist_url',
             description: EmailTemplatesStrings.subManageWaitlistUrl,
@@ -237,15 +233,11 @@ class EmailTemplateModel {
       EmailTemplateSub(
           code: 'offered_count',
           description: EmailTemplatesStrings.subOfferedCount,
-          defaultValue: '1'),
-      EmailTemplateSub(
-          code: 'offered_places',
-          description: EmailTemplatesStrings.subOfferedCount,
-          defaultValue: '1 místo'),
+          defaultValue: '2'),
       EmailTemplateSub(
           code: 'offer_expires_at',
           description: EmailTemplatesStrings.subOfferExpiresAt,
-          defaultValue: '14. 10. 2026 14:00'),
+          defaultValue: '2026-10-14T12:00:00Z'),
       EmailTemplateSub(
           code: 'offer_url',
           description: EmailTemplatesStrings.subOfferUrl,

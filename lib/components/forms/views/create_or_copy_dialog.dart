@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
@@ -131,8 +130,7 @@ class _CreateOrCopyFormDialogState extends State<CreateOrCopyFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       title: Text(FormStrings.createFormTitle),
       contentPadding: EdgeInsets.zero,
       // We wrap the content in a Container with BoxConstraints to make it responsive.

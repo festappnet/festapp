@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/dialogs/dialogs_strings.dart';
@@ -72,9 +71,8 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                 .appMaxWidth; // Using appMaxWidth as a breakpoint or define a smaller one like 600
 
         if (isMobile) {
-          return AppDialog.fullscreen(
-              child: Scaffold(
-            appBar: AppDialogAppBar(
+          return Scaffold(
+            appBar: AppBar(
               title: TextField(
                 controller: _controller,
                 autofocus: true,
@@ -84,6 +82,10 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                   hintStyle: const TextStyle(color: Colors.white70),
                 ),
                 style: const TextStyle(color: Colors.white),
+              ),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
               ),
               actions: [
                 if (_controller.text.isNotEmpty)
@@ -96,9 +98,12 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
               ],
             ),
             body: _buildList(),
-          ));
+          );
         } else {
-          return AppDialog(
+          return Dialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
             // Limit the size of the dialog
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
@@ -107,8 +112,7 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: AppDialogHeader(
-                        title: Row(
+                    child: Row(
                       children: [
                         const Icon(Icons.search),
                         const SizedBox(width: 16),
@@ -131,7 +135,7 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                             },
                           ),
                       ],
-                    )),
+                    ),
                   ),
                   const Divider(height: 1),
                   Expanded(

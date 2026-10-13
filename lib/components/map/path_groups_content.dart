@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -216,8 +215,7 @@ class _PathGroupsContentState extends State<PathGroupsContent> {
         final hexController = TextEditingController(
             text: _colorToHex(pickerColor).replaceFirst('#', ''));
         final hexFocus = FocusNode();
-        return AppAlertDialog(
-          onClose: () => Navigator.of(dialogContext).pop(),
+        return AlertDialog(
           title: Text(CommonStrings.color),
           content: StatefulBuilder(
             builder: (context, setDialogState) {

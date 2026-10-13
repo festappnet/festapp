@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -443,8 +442,7 @@ class _ScanPageState extends State<ScanPage> {
     bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AppAlertDialog(
-          onClose: () => Navigator.of(context).pop(false),
+        return AlertDialog(
           title: Text(ScanStrings.resetPassword),
           content: Text(
             OrdersStrings.resetPasswordConfirmationContent(
@@ -481,7 +479,7 @@ class _ScanPageState extends State<ScanPage> {
       if (email != null && email.isNotEmpty) {
         showDialog(
           context: context,
-          builder: (context) => AppAlertDialog(
+          builder: (context) => AlertDialog(
             title: Text(OrdersStrings.newLoginCredentials),
             content: Column(
               mainAxisSize: MainAxisSize.min,

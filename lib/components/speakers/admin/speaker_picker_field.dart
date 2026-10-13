@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/speakers/speaker_avatar.dart';
@@ -85,8 +84,7 @@ class SpeakerPickerField extends StatelessWidget {
                     runSpacing: 8,
                     children: selected
                         .map((s) => InputChip(
-                              avatar:
-                                  SpeakerAvatar(imageUrl: s.image, radius: 12),
+                              avatar: SpeakerAvatar(imageUrl: s.image, radius: 12),
                               label: Text(s.title ?? ''),
                               deleteIcon: const Icon(Icons.close, size: 18),
                               onDeleted: () => onChanged(
@@ -169,8 +167,7 @@ class _SpeakerPickerDialogState extends State<_SpeakerPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       title: Text(SpeakersStrings.speakersOnEvent),
       content: SizedBox(
         width: 460,
@@ -198,8 +195,8 @@ class _SpeakerPickerDialogState extends State<_SpeakerPickerDialog> {
                           .map((s) => CheckboxListTile(
                                 dense: true,
                                 value: _selected.contains(s.id),
-                                secondary: SpeakerAvatar(
-                                    imageUrl: s.image, radius: 18),
+                                secondary:
+                                    SpeakerAvatar(imageUrl: s.image, radius: 18),
                                 title: Text(s.title ?? ''),
                                 onChanged: (v) => setState(() {
                                   if (v == true) {

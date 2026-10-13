@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
@@ -57,8 +56,7 @@ class _IconsManagementWidgetState extends State<IconsManagementWidget> {
     }
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AppAlertDialog(
-        onClose: () => Navigator.pop(ctx, false),
+      builder: (ctx) => AlertDialog(
         title: Text(IconsStrings.uploadIcon),
         content: Text(IconsStrings.deleteConfirm),
         actions: [
@@ -79,12 +77,15 @@ class _IconsManagementWidgetState extends State<IconsManagementWidget> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (ctx) => AppAlertDialog(
-            onClose: () => Navigator.pop(ctx),
+          builder: (ctx) => AlertDialog(
             title: Text(IconsStrings.inUseTitle),
             content: Text(
                 IconsStrings.inUseDetail(e.places, e.pathGroups, e.placeTypes)),
-            actions: [],
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(CommonStrings.close)),
+            ],
           ),
         );
       }
@@ -386,9 +387,7 @@ class _UploadIconDialogState extends State<UploadIconDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(false),
-      dismissible: !(_saving),
+    return AlertDialog(
       title: Text(IconsStrings.uploadIcon),
       content: SizedBox(
         width: 440,

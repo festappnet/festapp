@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/app_management/app_management_strings.dart';
@@ -37,7 +36,7 @@ class _PwaStorageAdvancedSettingsState
   Future<void> _prune() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AppAlertDialog(
+      builder: (context) => AlertDialog(
         title: Text(AppManagementStrings.pruneShells),
         content: Text(AppManagementStrings.pruneShellsConfirm),
         actions: [

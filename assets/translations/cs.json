@@ -826,7 +826,7 @@
       "manageWaitlistUrl": "Osobní odkaz pro správu čekání",
       "manageWaitlistButton": "Tlačítko pro správu čekání (HTML)",
       "offeredCount": "Počet nabídnutých míst",
-      "offerExpiresAt": "Platnost nabídky do",
+      "offerExpiresAt": "Platnost nabídky do (UTC)",
       "offerUrl": "Osobní odkaz na nabídku",
       "offerButton": "Tlačítko pro otevření nabídky (HTML)"
     },
@@ -2600,15 +2600,6 @@
     "WAITLIST_COMMAND_FAILED": "Požadavek se nepodařilo dokončit. Zkuste to znovu.",
     "regularToWaitlist": "Dostupnost se změnila. Přejít k přihlášení náhradníků?",
     "declineAssigned": "Odmítnout lze aktuálně nabídnutá místa. Pro přijetí můžete vybrat jiné osoby.",
-    "orderState": "Náhradníci",
-    "limitCapacity": "Omezit počet osob",
-    "capacityHelp": "Bez omezení se mohou přihlašovat všichni zájemci.",
-    "waitlistOn": "Náhradníci povoleni",
-    "waitlistOff": "Po naplnění kapacity se přihlášení uzavře",
-    "waitlistHelp": "Po naplnění kapacity se zájemci mohou přihlásit mezi náhradníky. Nabídky uvolněných míst odesíláte ručně.",
-    "durationHelp": "Jak dlouho mají náhradníci na přijetí zaslané nabídky.",
-    "blueprintCapacity": "Kapacitu určuje počet míst v plánku. Náhradníci nejsou pro plánek dostupní.",
-    "saveWithForm": "Změny se uloží společně s formulářem tlačítkem Uložit.",
-    "applySettings": "Použít nastavení"
+    "orderState": "Náhradníci"
   }
 }

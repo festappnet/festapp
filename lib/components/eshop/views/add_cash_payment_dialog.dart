@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,9 +88,7 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
-      dismissible: !(_isSaving),
+    return AlertDialog(
       title: Text(OrdersStrings.addCashPaymentTitle),
       content: SingleChildScrollView(
         child: Form(

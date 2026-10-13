@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -54,8 +53,7 @@ class _TicketCanvasColorDialogState extends State<TicketCanvasColorDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AppAlertDialog(
-          onClose: () => Navigator.pop(context),
+  Widget build(BuildContext context) => AlertDialog(
           title: Text(TicketLayoutStrings.canvasColor),
           content: SizedBox(
               width: 320,

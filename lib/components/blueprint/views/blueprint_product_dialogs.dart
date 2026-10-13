@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
@@ -136,8 +135,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       title: Text(BlueprintStrings.selectProduct),
       content: SizedBox(
         width: 500, // Make it a bit wider
@@ -229,8 +227,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       title: Text(widget.isCreating
           ? BlueprintStrings.createProduct
           : BlueprintStrings.editProduct),
@@ -448,8 +445,7 @@ class _GroupProductManagerDialogState extends State<GroupProductManagerDialog> {
     final Color warningColor =
         ThemeConfig.isDarkMode(context) ? Colors.orangeAccent : Colors.orange;
 
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
+    return AlertDialog(
       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
       title: Text(
           "${BlueprintStrings.manageGroupProducts}: ${widget.group.title}"),
@@ -625,6 +621,10 @@ class _GroupProductManagerDialogState extends State<GroupProductManagerDialog> {
               ],
             ),
           ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(CommonStrings.close),
+        ),
       ],
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
     );

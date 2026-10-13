@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -45,6 +44,8 @@ class FormCreationHelper {
           severity: ToastSeverity.NotOk);
     }
   }
+
+
 
   static Future<void> showCreateFormDialog(
     BuildContext context, {
@@ -103,8 +104,7 @@ class FormCreationHelper {
                   linkError == null;
             }
 
-            return AppAlertDialog(
-              onClose: () => Navigator.of(context).pop(),
+            return AlertDialog(
               title: Text(FormStrings.createNewForm),
               content: Form(
                 key: formKey,
@@ -146,7 +146,8 @@ class FormCreationHelper {
                       ValueListenableBuilder<String>(
                         valueListenable: linkNotifier,
                         builder: (context, formLink, child) {
-                          if (formLink.isEmpty) return const SizedBox.shrink();
+                          if (formLink.isEmpty)
+                            return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: FormPublicLink(link: formLink),

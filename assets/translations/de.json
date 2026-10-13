@@ -651,16 +651,7 @@
     "WAITLIST_COMMAND_FAILED": "Die Anfrage konnte nicht abgeschlossen werden. Versuchen Sie es erneut.",
     "regularToWaitlist": "Die Verfügbarkeit hat sich geändert. Mit der Wartelistenanmeldung fortfahren?",
     "declineAssigned": "Nur aktuell angebotene Plätze können abgelehnt werden. Für die Aufnahme können Sie andere Personen auswählen.",
-    "orderState": "Warteliste",
-    "limitCapacity": "Personenzahl begrenzen",
-    "capacityHelp": "Ohne Begrenzung können sich alle Interessierten anmelden.",
-    "waitlistOn": "Warteliste aktiviert",
-    "waitlistOff": "Bei voller Kapazität wird die Anmeldung geschlossen",
-    "waitlistHelp": "Bei voller Kapazität können sich Interessierte auf die Warteliste setzen lassen. Angebote für freie Plätze senden Sie manuell.",
-    "durationHelp": "So lange können Personen auf der Warteliste ein gesendetes Angebot annehmen.",
-    "blueprintCapacity": "Die Kapazität richtet sich nach dem Sitzplan. Wartelisten sind für Sitzpläne nicht verfügbar.",
-    "saveWithForm": "Die Änderungen werden mit dem Formular über Speichern gespeichert.",
-    "applySettings": "Einstellungen übernehmen"
+    "orderState": "Warteliste"
   },
   "EmailTemplates": {
     "subs": {
@@ -668,7 +659,7 @@
       "manageWaitlistUrl": "Persönlicher Wartelistenlink",
       "manageWaitlistButton": "Wartelistenverwaltung (HTML-Schaltfläche)",
       "offeredCount": "Anzahl angebotener Plätze",
-      "offerExpiresAt": "Angebot gültig bis",
+      "offerExpiresAt": "Angebot gültig bis (UTC)",
       "offerUrl": "Persönlicher Angebotslink",
       "offerButton": "Angebot öffnen (HTML-Schaltfläche)"
     },

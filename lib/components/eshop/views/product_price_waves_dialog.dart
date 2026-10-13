@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -108,8 +107,7 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   Future<void> remove(ProductPriceWave wave) async {
     final confirmed = await showDialog<bool>(
         context: context,
-        builder: (_) => AppAlertDialog(
-                onClose: () => Navigator.pop(context, false),
+        builder: (_) => AlertDialog(
                 scrollable: true,
                 title: Text(OrdersStrings.cancelWave),
                 content: Text(OrdersStrings.cancelWaveConfirm),
@@ -133,13 +131,15 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   @override
   Widget build(BuildContext context) {
     final waves = ProductPriceWave.columns(bundle.priceWaves, bundle.products);
-    return AppDialog.fullscreen(
-      dismissible: !busy,
+    return Dialog.fullscreen(
       child: Scaffold(
-        appBar: AppDialogAppBar(
+        appBar: AppBar(
           title: Text(OrdersStrings.priceWaves),
-          onClose: () => Navigator.pop(context),
-          closeEnabled: !busy,
+          leading: IconButton(
+            tooltip: CommonStrings.close,
+            onPressed: busy ? null : () => Navigator.pop(context),
+            icon: const Icon(Icons.close),
+          ),
           actions: [
             IconButton(
               tooltip: OrdersStrings.priceRefreshAction,
@@ -493,8 +493,7 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
     if (dirty) {
       final discard = await showDialog<bool>(
           context: context,
-          builder: (_) => AppAlertDialog(
-                  onClose: () => Navigator.pop(context, false),
+          builder: (_) => AlertDialog(
                   scrollable: true,
                   title: Text(CommonStrings.discardChanges),
                   content: Text(CommonStrings.discardChangesConfirmation),
@@ -539,9 +538,7 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
       onPopInvokedWithResult: (popped, _) {
         if (!popped) close();
       },
-      child: AppAlertDialog(
-          onClose: close,
-          dismissible: !(busy),
+      child: AlertDialog(
           scrollable: true,
           title: Text(widget.product.title ?? ''),
           content: SizedBox(
@@ -646,9 +643,7 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: !busy,
-      child: AppAlertDialog(
-          onClose: () => Navigator.pop(context, false),
-          dismissible: !(busy),
+      child: AlertDialog(
           scrollable: true,
           title: Text(widget.wave == null
               ? OrdersStrings.addWave

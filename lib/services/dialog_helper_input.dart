@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/features_strings.dart';
@@ -20,8 +19,7 @@ class InputDialogs {
     return await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
-          onClose: () => Navigator.pop(context),
+        return AlertDialog(
           title: Text(dialogTitle),
           content: TextField(
             controller: controller,
@@ -57,8 +55,7 @@ class InputDialogs {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
-          onClose: () => Navigator.pop(context),
+        return AlertDialog(
           title: Text(titleMessage),
           content: SingleChildScrollView(
             child: Column(
@@ -116,11 +113,10 @@ class InputDialogs {
               },
             );
 
-            return AppAlertDialog(
-              onClose: () {
-                result = null;
-                Navigator.pop(context);
-              },
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               title: Text(titleMessage),
               content: SingleChildScrollView(
                 child: Column(
@@ -186,7 +182,10 @@ class InputDialogs {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AppAlertDialog(
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           title: Text(
             titleMessage,
           ),

@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'ticket_color_suggestions.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -336,8 +335,7 @@ class _TicketColorDialogState extends State<_TicketColorDialog> {
         widget.onPreview?.call(colorHex(foreground), colorHex(background));
       });
   @override
-  Widget build(BuildContext context) => AppAlertDialog(
-          onClose: () => Navigator.pop(context),
+  Widget build(BuildContext context) => AlertDialog(
           title: Text(widget.element.binding == 'qr'
               ? TicketLayoutStrings.qrColors
               : TicketLayoutStrings.color),

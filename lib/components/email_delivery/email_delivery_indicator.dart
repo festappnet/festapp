@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -116,10 +115,8 @@ class EmailDeliveryIndicator extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppDialogHeader(
-              title: Text(EmailDeliveryStrings.title,
-                  style: Theme.of(context).textTheme.titleLarge),
-            ),
+            Text(EmailDeliveryStrings.title,
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             if (messages.isEmpty) Text(EmailDeliveryStrings.unavailable),
             for (final entry in messages)
@@ -148,14 +145,12 @@ class EmailDeliveryIndicator extends StatelessWidget {
       showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
-          shape: appDialogShape,
-          builder: (_) => AppDialogDismissal(
-              child: SafeArea(child: SingleChildScrollView(child: content))));
+          builder: (_) =>
+              SafeArea(child: SingleChildScrollView(child: content)));
     } else {
       showDialog<void>(
           context: context,
-          builder: (_) =>
-              AppDialog(child: SingleChildScrollView(child: content)));
+          builder: (_) => Dialog(child: SingleChildScrollView(child: content)));
     }
   }
 }

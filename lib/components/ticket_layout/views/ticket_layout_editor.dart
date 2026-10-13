@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -187,17 +186,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (dirty) {
       final discard = await showDialog<bool>(
           context: editorContext,
-          builder: (c) => AppAlertDialog(
-                  onClose: () => Navigator.pop(c, false),
-                  title: Text(TicketLayoutStrings.discard),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(c, false),
-                        child: Text(TicketLayoutStrings.cancel)),
-                    FilledButton(
-                        onPressed: () => Navigator.pop(c, true),
-                        child: Text(TicketLayoutStrings.discard))
-                  ]));
+          builder: (c) =>
+              AlertDialog(title: Text(TicketLayoutStrings.discard), actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(c, false),
+                    child: Text(TicketLayoutStrings.cancel)),
+                FilledButton(
+                    onPressed: () => Navigator.pop(c, true),
+                    child: Text(TicketLayoutStrings.discard))
+              ]));
       if (discard != true) return;
     }
     if (mounted) Navigator.pop(context);
@@ -272,12 +269,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       if (!mounted || signature != captured) return;
       await showDialog<void>(
           context: editorContext,
-          builder: (c) => AppDialog.fullscreen(
+          builder: (c) => Dialog.fullscreen(
               child: Scaffold(
-                  appBar: AppDialogAppBar(
-                    title: Text(TicketLayoutStrings.pdf),
-                    onClose: () => Navigator.pop(c),
-                  ),
+                  appBar:
+                      AppBar(title: Text(TicketLayoutStrings.pdf), actions: [
+                    IconButton(
+                        tooltip: TicketLayoutStrings.cancel,
+                        onPressed: () => Navigator.pop(c),
+                        icon: const Icon(Icons.close)),
+                  ]),
                   body: Column(children: [
                     if (result.warnings.isNotEmpty)
                       Padding(
@@ -345,7 +345,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         if (ratioChanged) {
           final reset = await showDialog<bool>(
             context: editorContext,
-            builder: (c) => AppAlertDialog(
+            builder: (c) => AlertDialog(
               content: Text(TicketLayoutStrings.aspectChange),
               actions: [
                 TextButton(
@@ -429,8 +429,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     try {
       selected = await showDialog<String>(
           context: editorContext,
-          builder: (context) => AppAlertDialog(
-                  onClose: () => Navigator.pop(context),
+          builder: (context) => AlertDialog(
                   title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -808,9 +807,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         : CommonStrings.save))
               ];
               if (MediaQuery.sizeOf(context).width < 600)
-                return dismissible(AppDialog.fullscreen(
+                return dismissible(Dialog.fullscreen(
                     child: Scaffold(
-                        appBar: AppDialogAppBar(
+                        appBar: AppBar(
                             title: Text(TicketLayoutStrings.productGroup)),
                         body: Padding(
                             padding: const EdgeInsets.all(16), child: content),
@@ -818,7 +817,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                             child: Wrap(
                                 alignment: WrapAlignment.end,
                                 children: actions)))));
-              return dismissible(AppAlertDialog(
+              return dismissible(AlertDialog(
                   title: Text(TicketLayoutStrings.productGroup),
                   content: SizedBox(width: 480, height: 450, child: content),
                   actions: actions));
@@ -1296,49 +1295,49 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         isScrollControlled: true,
         useSafeArea: true,
         showDragHandle: true,
-        shape: appDialogShape,
         builder: (context) => Focus(
             autofocus: true,
             onKeyEvent: _historyKey,
-            child: AppDialogDismissal(
-                child: DefaultTabController(
-                    initialIndex: tab,
-                    length: 2,
-                    child: SizedBox(
-                        height: MediaQuery.sizeOf(context).height * .72,
-                        child: Column(children: [
-                          AppDialogHeader(
-                              title: TabBar(
-                                  onTap: (index) {
-                                    if (root != null)
-                                      DayRouteSelection.write(
-                                          root,
-                                          'panel',
-                                          index == 0
-                                              ? 'elements'
-                                              : 'properties');
-                                  },
-                                  tabs: [
-                                Tab(text: TicketLayoutStrings.elements),
-                                Tab(text: TicketLayoutStrings.properties),
-                              ])),
-                          Expanded(
-                              child: TabBarView(
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  children: [
-                                Builder(
-                                    builder: (tabContext) =>
-                                        SingleChildScrollView(
-                                            child: elements(onSelected: () {
-                                          DefaultTabController.of(tabContext)
-                                              .animateTo(1);
-                                          if (root != null)
-                                            DayRouteSelection.write(
-                                                root, 'panel', 'properties');
-                                        }))),
-                                panel(includeElements: false),
-                              ])),
-                        ]))))));
+            child: DefaultTabController(
+                initialIndex: tab,
+                length: 2,
+                child: SizedBox(
+                    height: MediaQuery.sizeOf(context).height * .72,
+                    child: Column(children: [
+                      Row(children: [
+                        Expanded(
+                            child: TabBar(
+                                onTap: (index) {
+                                  if (root != null)
+                                    DayRouteSelection.write(root, 'panel',
+                                        index == 0 ? 'elements' : 'properties');
+                                },
+                                tabs: [
+                              Tab(text: TicketLayoutStrings.elements),
+                              Tab(text: TicketLayoutStrings.properties),
+                            ])),
+                        IconButton(
+                            tooltip: MaterialLocalizations.of(context)
+                                .closeButtonTooltip,
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close)),
+                      ]),
+                      Expanded(
+                          child: TabBarView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                            Builder(
+                                builder: (tabContext) => SingleChildScrollView(
+                                        child: elements(onSelected: () {
+                                      DefaultTabController.of(tabContext)
+                                          .animateTo(1);
+                                      if (root != null)
+                                        DayRouteSelection.write(
+                                            root, 'panel', 'properties');
+                                    }))),
+                            panel(includeElements: false),
+                          ])),
+                    ])))));
     _panelOpen = false;
     if (root != null && mounted)
       await DayRouteSelection.write(root, 'panel', null, replace: true);
@@ -1590,9 +1589,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             if (!didPop && !saving) cancel();
           },
           child: Scaffold(
-            appBar: AppDialogAppBar(
-                onClose: cancel,
-                closeEnabled: !saving,
+            appBar: AppBar(
+                leading: IconButton(
+                    style: IconButton.styleFrom(foregroundColor: Colors.white),
+                    tooltip: TicketLayoutStrings.cancel,
+                    onPressed: cancel,
+                    icon: const Icon(Icons.close)),
                 title: Text(TicketLayoutStrings.title,
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 actions: [

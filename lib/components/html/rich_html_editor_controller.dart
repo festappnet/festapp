@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -470,17 +469,15 @@ Future<bool> confirmHtmlDiscard(
   if (!coordinator.hasDraft) return true;
   return await showDialog<bool>(
           context: context,
-          builder: (context) => AppAlertDialog(
-                  onClose: () => Navigator.pop(context, false),
-                  title: Text(HtmlStrings.discardDraft),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text(CommonStrings.storno)),
-                    TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: Text(CommonStrings.ok)),
-                  ])) ==
+          builder: (context) =>
+              AlertDialog(title: Text(HtmlStrings.discardDraft), actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(CommonStrings.storno)),
+                TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(CommonStrings.ok)),
+              ])) ==
       true;
 }
 
@@ -491,17 +488,15 @@ Future<bool> confirmHtmlUploadRetry(BuildContext context, HtmlMediaDraft media,
       : !media.hasUnknownUploadsIn(html)) return true;
   final retry = await showDialog<bool>(
       context: context,
-      builder: (context) => AppAlertDialog(
-              onClose: () => Navigator.pop(context, false),
-              content: Text(HtmlStrings.unknownUpload),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(CommonStrings.storno)),
-                FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(HtmlStrings.retryUpload)),
-              ]));
+      builder: (context) =>
+          AlertDialog(content: Text(HtmlStrings.unknownUpload), actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(CommonStrings.storno)),
+            FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(HtmlStrings.retryUpload)),
+          ]));
   if (retry == true) media.allowExplicitUnknownRetry();
   return retry == true;
 }

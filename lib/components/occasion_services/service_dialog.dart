@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -236,8 +235,7 @@ class _ServiceDialogState extends State<ServiceDialog> {
       context: context,
       builder: (context) {
         return StatefulBuilder(
-          builder: (context, setInnerState) => AppAlertDialog(
-            onClose: () => Navigator.of(context).pop(),
+          builder: (context, setInnerState) => AlertDialog(
             title: Text(CommonStrings.edit),
             content: SizedBox(
               width: 360,
@@ -329,7 +327,8 @@ class _ServiceDialogState extends State<ServiceDialog> {
                 child: _buildReferenceField(
                   selected: _selectedPlace,
                   numericController: _referenceController,
-                  onSelected: (place) => setState(() => _selectedPlace = place),
+                  onSelected: (place) =>
+                      setState(() => _selectedPlace = place),
                 ),
               ),
             ],
@@ -396,8 +395,7 @@ class _ServiceDialogState extends State<ServiceDialog> {
         final refLabel = _referenceLabel(companion.reference);
         final onSurface = Theme.of(context).colorScheme.onSurface;
         return ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           minVerticalPadding: 8,
           title: Text(
             companion.title ?? '',
@@ -463,7 +461,7 @@ class _ServiceDialogState extends State<ServiceDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AppAlertDialog(
+    return AlertDialog(
       title: Text(widget.title),
       contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       content: SizedBox(
