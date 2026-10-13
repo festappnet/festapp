@@ -820,8 +820,11 @@ class ScheduleContentState extends State<ScheduleContent> {
           title: CommonStrings.type,
           field: Tb.events.type,
           // Field in EventModel storing the type code
+          formatter: (value) => _eventTypeLabel(value?.toString() ?? _noTypeSelectValue),
+          applyFormatterInEditing: true,
           type: TrinaColumnType.select<String>(
             _eventTypeSelectOptions,
+            menuWidth: 300,
             itemToString: _eventTypeLabel,
             menuItemBuilder: (code) {
               final type = _definedEventTypes.firstWhereOrNull(
