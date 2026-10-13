@@ -715,17 +715,12 @@
     "historyOfferSent": "Miesto ponúknuté",
     "offerSending": "Ponuku odosielame e-mailom.",
     "offersSending": "Ponuky odosielame e-mailom.",
-    "manageWaiting": "Zmena prihlášky",
     "activeOffer": "Aktuálna ponuka miesta",
     "openOfferFormHelp": "Formulár sa otvorí na novej karte. Po dokončení obnovte tento prehľad.",
     "offerHistory": "História ponúk",
     "emptyDetail": "V tejto prihláške nie sú žiadne čakajúce osoby.",
-    "participantDeclinesScenario": "Účastník ponúknuté miesto odmietol",
-    "participantDeclinesConsequence": "Zaznamenáte odmietnutie účastníkom. Ponúknuté miesta sa uvoľnia a vybrané prihlášky už aktívne nečakajú na ďalšiu ponuku.",
-    "withdrawScenario": "Prihlášku chcete vyradiť z poradovníka",
-    "withdrawConsequence": "Účastník už nemá záujem alebo ho vyraďujete ako organizátor. Vybrané prihlášky stornujete; prípadné ponúknuté miesta sa uvoľnia. Nemožno vrátiť.",
-    "managementHelp": "Odmietnutie ponuky alebo vyradenie z poradovníka",
     "adminWithdraw": "Vyradiť z náhradníkov",
+    "adminWithdrawHelp": "Ak sa účastník nezúčastní, vyraďte jeho prihlášku. Čakanie sa skončí a prípadné ponúknuté miesto sa uvoľní.",
     "acceptOne": "Potvrdiť prihlásenie"
   },
   "EmailTemplates": {

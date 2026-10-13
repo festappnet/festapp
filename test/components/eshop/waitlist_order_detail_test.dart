@@ -196,15 +196,17 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text(WaitlistStrings.text('manageWaiting')));
-      await tester.pumpAndSettle();
       await tester.ensureVisible(
         find.widgetWithText(
-            OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.tap(
         find.widgetWithText(
-            OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.pumpAndSettle();
       expect(find.text(WaitlistStrings.withdrawTitle), findsOneWidget);
@@ -216,7 +218,9 @@ void main() {
       expect(mutations, isEmpty);
       await tester.tap(
         find.widgetWithText(
-            ElevatedButton, WaitlistStrings.text('adminWithdraw')),
+          ElevatedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.pumpAndSettle();
       expect(mutations, [
@@ -250,13 +254,13 @@ void main() {
   );
 
   Map<String, dynamic> waitingDetail({bool canSendOffers = true}) => {
-        'tickets': [
-          {'id': 8837, 'displayName': 'Jana', 'lifecycle': 'waiting'},
-        ],
-        'offers': [],
-        'linkedOrders': [],
-        'capacity': {'canSendOffers': canSendOffers},
-      };
+    'tickets': [
+      {'id': 8837, 'displayName': 'Jana', 'lifecycle': 'waiting'},
+    ],
+    'offers': [],
+    'linkedOrders': [],
+    'capacity': {'canSendOffers': canSendOffers},
+  };
   void editor() =>
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}),
@@ -286,15 +290,17 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text(WaitlistStrings.text('manageWaiting')));
-      await tester.pumpAndSettle();
       await tester.ensureVisible(
         find.widgetWithText(
-            OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.tap(
         find.widgetWithText(
-            OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.pumpAndSettle();
       expect(
@@ -385,17 +391,19 @@ void main() {
         isNull,
       );
       expect(find.text(WaitlistStrings.full), findsOneWidget);
-      await tester.tap(find.text(WaitlistStrings.text('manageWaiting')));
-      await tester.pumpAndSettle();
       expect(find.text(WaitlistStrings.text('recordDecline')), findsNothing);
       expect(find.text(WaitlistStrings.text('retractOffer')), findsNothing);
-      expect(find.text(WaitlistStrings.text('withdrawConsequence')),
-          findsOneWidget);
+      expect(
+        find.text(WaitlistStrings.text('adminWithdrawHelp')),
+        findsOneWidget,
+      );
       expect(
         tester
             .widget<OutlinedButton>(
               find.widgetWithText(
-                  OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+                OutlinedButton,
+                WaitlistStrings.text('adminWithdraw'),
+              ),
             )
             .onPressed,
         isNotNull,
@@ -432,20 +440,24 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text(WaitlistStrings.text('manageWaiting')));
-      await tester.pumpAndSettle();
       await tester.ensureVisible(
         find.widgetWithText(
-            OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.tap(
         find.widgetWithText(
-            OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.pumpAndSettle();
       await tester.tap(
         find.widgetWithText(
-            ElevatedButton, WaitlistStrings.text('adminWithdraw')),
+          ElevatedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
       );
       await tester.pumpAndSettle();
       expect(mutations, 1);
@@ -454,121 +466,125 @@ void main() {
       expect(find.text(WaitlistStrings.stale), findsNothing);
       expect(
         find.widgetWithText(
-            OutlinedButton, WaitlistStrings.text('adminWithdraw')),
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        ),
         findsNothing,
       );
     },
   );
   for (final count in [1, 2]) {
-    testWidgets('offered $count selection enables only scoped offer actions', (
-      tester,
-    ) async {
-      editor();
-      zones.initializeTimeZones();
-      tz.setLocalLocation(tz.getLocation('Europe/Prague'));
-      tester.view.physicalSize = const Size(1000, 1200);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final sent = <Map<String, dynamic>>[];
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WaitlistOrderDetail(
-              order: OrderModel(
-                id: 5,
-                state: 'waitlisted',
-                form: FormModel(id: 7, waitlistEnabled: true),
-              ),
-              loadDetail: (_) async => {
-                'tickets': [
-                  for (var i = 1; i <= count; i++)
-                    {
-                      'id': i,
-                      'displayName': 'Junák $i',
-                      'lifecycle': 'offered',
-                    },
-                ],
-                'offers': [
-                  for (var i = 1; i <= count; i++)
-                    {
-                      'id': i == 1 ? 'offer-one' : 'offer-two',
-                      'expires_at': '2030-01-02T12:00:00Z',
-                      'slots': [
-                        {'ticketId': i, 'outcome': 'pending'},
-                      ],
-                    },
-                ],
-                'capacity': {
-                  'canSendOffers': false,
-                  'serverTime': '2030-01-01T12:00:00Z',
+    testWidgets(
+      'withdraws $count selected tickets across offers only after confirmation',
+      (tester) async {
+        editor();
+        zones.initializeTimeZones();
+        tz.setLocalLocation(tz.getLocation('Europe/Prague'));
+        tester.view.physicalSize = const Size(1000, 1200);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final sent = <Map<String, dynamic>>[];
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: WaitlistOrderDetail(
+                order: OrderModel(
+                  id: 5,
+                  state: 'waitlisted',
+                  form: FormModel(id: 7, waitlistEnabled: true),
+                ),
+                loadDetail: (_) async => {
+                  'tickets': [
+                    for (var i = 1; i <= count; i++)
+                      {
+                        'id': i,
+                        'displayName': 'Junák $i',
+                        'lifecycle': 'offered',
+                      },
+                  ],
+                  'offers': [
+                    for (var i = 1; i <= count; i++)
+                      {
+                        'id': i == 1 ? 'offer-one' : 'offer-two',
+                        'expires_at': '2030-01-02T12:00:00Z',
+                        'slots': [
+                          {'ticketId': i, 'outcome': 'pending'},
+                        ],
+                      },
+                  ],
+                  'capacity': {
+                    'canSendOffers': false,
+                    'serverTime': '2030-01-01T12:00:00Z',
+                  },
                 },
-              },
-              executeCommand: (operation, payload) async {
-                sent.add({'operation': operation, ...payload});
-                return {'code': 200};
-              },
+                executeCommand: (operation, payload) async {
+                  sent.add({'operation': operation, ...payload});
+                  return {'code': 200};
+                },
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text(WaitlistStrings.full), findsNothing);
-      expect(find.text(WaitlistStrings.offerPlace), findsNothing);
-      expect(
-        find.widgetWithText(
-          FilledButton,
-          WaitlistStrings.text('completeRegistration'),
-        ),
-        findsNWidgets(count),
-      );
-      final decline = find.widgetWithText(
-        OutlinedButton,
-        WaitlistStrings.text('recordDecline'),
-      );
-      await tester.tap(find.text(WaitlistStrings.text('manageWaiting')));
-      await tester.pumpAndSettle();
-      if (count == 2) {
-        expect(tester.widget<OutlinedButton>(decline).onPressed, isNull);
-
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(WaitlistStrings.full), findsNothing);
+        expect(find.text(WaitlistStrings.offerPlace), findsNothing);
         expect(
-          find.text(WaitlistStrings.text('offerSelectionRequired')),
+          find.widgetWithText(
+            FilledButton,
+            WaitlistStrings.text('completeRegistration'),
+          ),
+          findsNWidgets(count),
+        );
+        final withdraw = find.widgetWithText(
+          OutlinedButton,
+          WaitlistStrings.text('adminWithdraw'),
+        );
+        expect(find.byType(OutlinedButton), findsOneWidget);
+        expect(find.text(WaitlistStrings.text('recordDecline')), findsNothing);
+        expect(find.text(WaitlistStrings.text('retractOffer')), findsNothing);
+        if (count == 2) {
+          expect(tester.widget<OutlinedButton>(withdraw).onPressed, isNull);
+          expect(
+            find.text(WaitlistStrings.text('withdrawSelection')),
+            findsOneWidget,
+          );
+          for (var index = 0; index < count; index++) {
+            final checkbox = find.byType(CheckboxListTile).at(index);
+            await tester.ensureVisible(checkbox);
+            await tester.tap(checkbox);
+            await tester.pumpAndSettle();
+          }
+        } else {
+          expect(find.byType(Checkbox), findsNothing);
+        }
+        expect(
+          tester.widget<OutlinedButton>(withdraw).onPressed,
+          isNotNull,
+          reason: 'Withdrawal supports selected tickets from different offers',
+        );
+        await tester.ensureVisible(withdraw);
+        await tester.tap(withdraw);
+        await tester.pumpAndSettle();
+        expect(
+          find.textContaining(WaitlistStrings.withdrawExplanation),
           findsOneWidget,
         );
-        await tester.ensureVisible(find.byType(CheckboxListTile).first);
-        await tester.tap(find.byType(CheckboxListTile).first);
+        expect(sent, isEmpty);
+        await tester.tap(
+          find.widgetWithText(
+            ElevatedButton,
+            WaitlistStrings.text('adminWithdraw'),
+          ),
+        );
         await tester.pumpAndSettle();
-        expect(find.byType(OutlinedButton), findsNWidgets(2),
-            reason: 'Multiple offers still expose only two scenario actions');
-        await tester.ensureVisible(find.byType(CheckboxListTile).last);
-        await tester.tap(find.byType(CheckboxListTile).last);
-        await tester.pumpAndSettle();
-        expect(tester.widget<OutlinedButton>(decline).onPressed, isNull,
-            reason: 'A selection spanning offers cannot decline one offer');
-        await tester.tap(find.byType(CheckboxListTile).last);
-        await tester.pumpAndSettle();
-      } else {
-        expect(find.byType(Checkbox), findsNothing);
-      }
-      expect(tester.widget<OutlinedButton>(decline).onPressed, isNotNull);
-      await tester.ensureVisible(decline);
-      await tester.tap(decline);
-      await tester.pumpAndSettle();
-      expect(
-        find.textContaining(WaitlistStrings.declineOfferExplanation),
-        findsOneWidget,
-      );
-      expect(sent, isEmpty);
-      await tester.tap(
-        find.widgetWithText(
-          ElevatedButton,
-          WaitlistStrings.text('recordDecline'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(sent.single['ticketIds'], [1]);
-      expect(sent.single['offerId'], 'offer-one');
-    });
+        expect(sent.single, {
+          'operation': 'withdraw',
+          'orderId': 5,
+          'ticketIds': [for (var i = 1; i <= count; i++) i],
+        });
+      },
+    );
   }
 
   for (final size in [const Size(320, 760), const Size(1000, 800)]) {
@@ -634,19 +650,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.byType(FilledButton), findsOneWidget);
-      expect(find.text(WaitlistStrings.text('adminWithdraw')), findsNothing);
+      expect(find.text(WaitlistStrings.text('adminWithdraw')), findsOneWidget);
       expect(find.text(WaitlistStrings.text('recordDecline')), findsNothing);
       expect(find.byIcon(Icons.open_in_new), findsOneWidget);
       final expiry = tester.widget<Text>(find.text('2. 1. 2030 13:00'));
       expect(expiry.maxLines, 1);
       expect(expiry.softWrap, isFalse);
       if (Platform.environment['WAITLIST_SCREENSHOTS'] == '1') {
-        final boundary = capture.currentContext!.findRenderObject()!
-            as RenderRepaintBoundary;
+        final boundary =
+            capture.currentContext!.findRenderObject()!
+                as RenderRepaintBoundary;
         await tester.runAsync(() async {
           final image = await boundary.toImage();
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-          await File('/tmp/waitlist-detail-${size.width.toInt()}.png')
+          await File('/tmp/waitlist-single-withdraw-${size.width.toInt()}.png')
               .writeAsBytes(bytes!.buffer.asUint8List());
           image.dispose();
         });
@@ -659,45 +676,15 @@ void main() {
       await tester.tap(find.text(WaitlistStrings.refresh));
       await tester.pumpAndSettle();
       expect(loads, 2);
-      await tester.tap(find.text(WaitlistStrings.text('manageWaiting')));
-      await tester.pumpAndSettle();
+      expect(find.text(WaitlistStrings.text('retractOffer')), findsNothing);
+      expect(find.text(WaitlistStrings.text('recordDecline')), findsNothing);
+      expect(find.byType(ExpansionTile), findsNothing);
       expect(
-        find.text(WaitlistStrings.text('retractOffer')),
-        findsNothing,
-      );
-      expect(
-        find.text(WaitlistStrings.text('participantDeclinesScenario')),
+        find.text(WaitlistStrings.text('adminWithdrawHelp')),
         findsOneWidget,
       );
-      expect(
-        find.text(WaitlistStrings.text('withdrawScenario')),
-        findsOneWidget,
-      );
-      expect(
-        find.text(WaitlistStrings.text('participantDeclinesConsequence')),
-        findsOneWidget,
-      );
-      expect(
-        find.byType(ElevatedButton),
-        findsNothing,
-        reason: 'Inline scenarios still require a separate confirmation',
-      );
-      await tester
-          .ensureVisible(find.text(WaitlistStrings.text('manageWaiting')));
-      await tester.pumpAndSettle();
-      if (Platform.environment['WAITLIST_SCREENSHOTS'] == '1') {
-        final boundary = capture.currentContext!.findRenderObject()!
-            as RenderRepaintBoundary;
-        await tester.runAsync(() async {
-          final image = await boundary.toImage();
-          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-          await File('/tmp/waitlist-scenarios-${size.width.toInt()}.png')
-              .writeAsBytes(bytes!.buffer.asUint8List());
-          image.dispose();
-        });
-      }
       await tester.ensureVisible(
-        find.text(WaitlistStrings.text('withdrawScenario')),
+        find.text(WaitlistStrings.text('adminWithdraw')),
       );
       expect(tester.takeException(), isNull);
     });
@@ -734,7 +721,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.text('activeOffer')), findsOneWidget);
     expect(find.byType(FilledButton), findsNothing);
-    expect(find.text(WaitlistStrings.text('manageWaiting')), findsNothing);
+    expect(find.text(WaitlistStrings.text('adminWithdraw')), findsNothing);
   });
 
   testWidgets('failed detail load can refresh into an explicit empty state', (
@@ -757,7 +744,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.invalid), findsOneWidget);
-    expect(find.text(WaitlistStrings.text('manageWaiting')), findsNothing);
+    expect(find.text(WaitlistStrings.text('adminWithdraw')), findsNothing);
     await tester.tap(find.text(WaitlistStrings.refresh));
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.invalid), findsNothing);
