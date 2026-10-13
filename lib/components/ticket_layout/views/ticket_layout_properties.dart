@@ -470,6 +470,14 @@ class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
               focusNode: focus,
               enabled: !widget.element.locked,
               maxLength: 120,
+              buildCounter: (context,
+                      {required currentLength,
+                      required isFocused,
+                      required maxLength}) =>
+                  currentLength >= 100
+                      ? Text('$currentLength/$maxLength',
+                          style: Theme.of(context).textTheme.bodySmall)
+                      : null,
               decoration: InputDecoration(
                   isDense: true,
                   contentPadding: const EdgeInsets.all(12),
@@ -481,6 +489,7 @@ class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
               },
               onSubmitted: (_) => focus.unfocus(),
               onTapOutside: (_) => focus.unfocus()),
+          const SizedBox(height: 8),
           Text(TicketLayoutStrings.labelHint,
               style: Theme.of(context).textTheme.bodySmall),
         ],

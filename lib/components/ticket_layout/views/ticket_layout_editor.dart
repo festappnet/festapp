@@ -592,37 +592,78 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (e?.binding != 'productType') return null;
     final type =
         resources.catalog.where((t) => t.id == e!.productTypeId).firstOrNull;
+    final theme = Theme.of(context);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(TicketLayoutStrings.productGroup,
-          style: Theme.of(context).textTheme.labelMedium),
-      Row(children: [
-        Expanded(
-            child: Text(type?.title ?? TicketLayoutStrings.missingProduct,
-                style: Theme.of(context).textTheme.titleMedium)),
-        IconButton(
-            tooltip: TicketLayoutStrings.edit,
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            onPressed: widget.productEditing && !e!.locked
-                ? () => pickProduct(element: e)
-                : null),
-      ]),
-      if (e!.locked) Text(TicketLayoutStrings.locked),
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          key: const ValueKey('ticket-product-group'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: theme.colorScheme.onSurface,
+            padding: const EdgeInsets.all(12),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onPressed: widget.productEditing && !e!.locked
+              ? () => pickProduct(element: e)
+              : null,
+          child: Row(children: [
+            Expanded(
+                child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(TicketLayoutStrings.productGroup,
+                    style: theme.textTheme.bodySmall),
+                const SizedBox(height: 4),
+                Text(type?.title ?? TicketLayoutStrings.missingProduct,
+                    style: theme.textTheme.titleMedium),
+              ],
+            )),
+            const SizedBox(width: 8),
+            Icon(e!.locked ? Icons.lock_outline : Icons.edit_outlined,
+                size: 20),
+          ]),
+        ),
+      ),
+      if (e.locked) Text(TicketLayoutStrings.locked),
       if (!widget.productEditing) Text(TicketLayoutStrings.draftProducts),
-      const SizedBox(height: 8),
-      TicketProductLabelInput(
-          key: ValueKey('label-${e.id}'), controller: controller, element: e),
-      const SizedBox(height: 12),
-      Text(TicketLayoutStrings.example,
-          style: Theme.of(context).textTheme.labelMedium),
-      const SizedBox(height: 4),
-      Text(resources.previewData(controller.document, scenario)[e.id] ??
-          TicketLayoutStrings.noExample),
       if (type != null && !type.eligible)
         Text(TicketLayoutStrings.hiddenProduct),
-      TextButton.icon(
-          onPressed: e.locked ? null : () => controller.removeProductField(e),
-          icon: const Icon(Icons.delete_outline),
-          label: Text(TicketLayoutStrings.removeProduct)),
+      const SizedBox(height: 20),
+      TicketProductLabelInput(
+          key: ValueKey('label-${e.id}'), controller: controller, element: e),
+      const SizedBox(height: 16),
+      Container(
+        key: const ValueKey('ticket-product-example'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(TicketLayoutStrings.example, style: theme.textTheme.bodySmall),
+          const SizedBox(height: 8),
+          Text(
+              resources.previewData(controller.document, scenario)[e.id] ??
+                  TicketLayoutStrings.noExample,
+              style: theme.textTheme.bodyLarge),
+        ]),
+      ),
+      const SizedBox(height: 4),
+      Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.onSurfaceVariant,
+              textStyle: theme.textTheme.bodySmall,
+              minimumSize: const Size(0, 48),
+            ),
+            onPressed: e.locked ? null : () => controller.removeProductField(e),
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: Text(TicketLayoutStrings.removeProduct)),
+      ),
+      const Divider(height: 16),
     ]);
   }
 
