@@ -49,6 +49,10 @@ void main() {
       expect(find.byType(AppAlertDialog), findsOneWidget);
       expect(find.byType(AppDialogHeader), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
+      final footer = tester.getRect(find.byType(AppDialogActions));
+      final save = tester.getRect(find.descendant(
+          of: find.byType(AppDialogActions), matching: find.byType(FilledButton)));
+      expect(save.right, closeTo(footer.right, 1));
       expect(tester.takeException(), isNull);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
