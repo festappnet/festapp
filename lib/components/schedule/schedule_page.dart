@@ -424,8 +424,7 @@ class _SchedulePageState extends State<SchedulePage>
         child: RoutedDayTabs(
           key: ValueKey<String>(
             'SchedulePage_TabController_${occasionId}_'
-            '${datedEvents.map((group) => group.dateTime?.millisecondsSinceEpoch ?? 0).join('_')}_'
-            '$currentTargetTabIndex',
+            '${datedEvents.map((group) => group.dateTime?.millisecondsSinceEpoch ?? 0).join('_')}',
           ),
           initialIndex: currentTargetTabIndex,
           days: datedEvents.map((day) => day.dateTime!).toList(),

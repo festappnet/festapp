@@ -86,8 +86,7 @@ class _LightTimelineViewState extends State<LightTimelineView> {
       child: RoutedDayTabs(
         key: ValueKey<String>(
           'LightTimelineView_TabController_${widget.sessionOccasionId}_'
-          '${days.map((day) => day.dateTime?.millisecondsSinceEpoch ?? 0).join('_')}_'
-          '$initialIndex',
+          '${days.map((day) => day.dateTime?.millisecondsSinceEpoch ?? 0).join('_')}',
         ),
         days: days.map((day) => day.dateTime!).toList(),
         parameter: widget.dayParameter,

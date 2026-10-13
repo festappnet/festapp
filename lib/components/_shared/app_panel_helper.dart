@@ -3,6 +3,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/project_picker_widget.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -189,9 +190,12 @@ class AppPanelHelper {
 
         _ActionMenuItem currentAction;
 
-        if (currentRoutePath.endsWith(ReservationsPage.ROUTE)) {
+        final routeNames = originalContext.routeData.breadcrumbs
+            .map((route) => route.name)
+            .toSet();
+        if (routeNames.contains(ReservationsRoute.name)) {
           currentAction = reservationsAction;
-        } else if (currentRoutePath.endsWith(AdminPage.ROUTE)) {
+        } else if (routeNames.contains(AdminRoute.name)) {
           currentAction = adminAction;
         } else {
           currentAction = viewAppAction;
@@ -254,117 +258,49 @@ class AppPanelHelper {
       );
     }
 
-    // The entire segment is now the trigger for the custom dialog
-    return Builder(builder: (buttonContext) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: Material(
+        color: Colors.transparent,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          InkWell(
             hoverColor: hoverColor,
-            borderRadius: BorderRadius.circular(6),
-            onTap: () {
-              _showActionPicker(
-                  buttonContext: buttonContext,
-                  currentAction: currentAction,
-                  availableActions: availableActions);
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                visiblePart,
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child:
-                      Icon(Icons.arrow_drop_down, color: iconColor, size: 22),
-                ),
-              ],
+            onTap: currentAction.onSelect,
+            child: visiblePart,
+          ),
+          PopupMenuButton<_ActionMenuItem>(
+            tooltip: CommonStrings.moreOptions,
+            color: theme.brightness == Brightness.dark
+                ? const Color(0xFF2D2D2D)
+                : Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            onSelected: (action) => action.onSelect(),
+            itemBuilder: (_) => availableActions
+                .where((action) => action != currentAction)
+                .map((action) => PopupMenuItem<_ActionMenuItem>(
+                      value: action,
+                      child: Row(children: [
+                        if (action.icon != null) ...[
+                          Icon(action.icon,
+                              size: 20,
+                              color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 12),
+                        ],
+                        Flexible(child: Text(action.label)),
+                      ]),
+                    ))
+                .toList(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: Icon(Icons.arrow_drop_down, color: iconColor, size: 22),
             ),
           ),
-        ),
-      );
-    });
-  }
-
-  /// Displays a custom rounded dialog for selecting an action.
-  static void _showActionPicker({
-    required BuildContext buttonContext,
-    required _ActionMenuItem currentAction,
-    required List<_ActionMenuItem> availableActions,
-  }) {
-    final overlay = Overlay.of(buttonContext);
-    late OverlayEntry overlayEntry;
-
-    final renderBox = buttonContext.findRenderObject() as RenderBox;
-    final size = renderBox.size;
-    final offset = renderBox.localToGlobal(Offset.zero);
-
-    final menuActions =
-        availableActions.where((action) => action != currentAction).toList();
-
-    final theme = Theme.of(buttonContext);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    final textColor = isDarkMode ? Colors.grey[300] : Colors.grey[800];
-    final listIconColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
-    final titleTextStyle =
-        theme.textTheme.bodyMedium?.copyWith(color: textColor);
-
-    overlayEntry = OverlayEntry(
-      builder: (context) {
-        return Stack(
-          children: <Widget>[
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () => overlayEntry.remove(),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-            Positioned(
-              top: offset.dy + size.height + 8,
-              left: offset.dx,
-              child: Material(
-                elevation: 4.0,
-                color: theme.brightness == Brightness.dark
-                    ? const Color(0xFF2D2D2D)
-                    : Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0)),
-                child: SizedBox(
-                  width: 240,
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    shrinkWrap: true,
-                    children: menuActions.map((action) {
-                      return ListTile(
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 0),
-                        leading: action.icon != null
-                            ? Icon(action.icon, size: 20, color: listIconColor)
-                            : null,
-                        title: Text(
-                          action.label,
-                          style: titleTextStyle,
-                        ),
-                        onTap: () {
-                          overlayEntry.remove();
-                          action.onSelect();
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+        ]),
+      ),
     );
-
-    overlay.insert(overlayEntry);
   }
 
-  /// Builds a single, hoverable segment of the breadcrumb.
   static Widget _buildBreadcrumbSegment<T>({
     required BuildContext context,
     required String title,
@@ -882,7 +818,7 @@ class AppPanelHelper {
                                   Theme.of(context).textTheme.bodyLarge?.color),
                           const SizedBox(width: 12),
                         ],
-                        Text(action.label),
+                        Flexible(child: Text(action.label)),
                       ],
                     ),
                   );

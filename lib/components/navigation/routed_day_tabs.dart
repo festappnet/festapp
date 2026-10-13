@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/services/app_logger.dart';
 
 /// Calendar identity in the occasion's timezone, independent of weekday/order.
 abstract final class DayRouteSelection {
@@ -80,6 +81,9 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
   TabController? _controller;
   bool _fromRoute = false;
   String? _lastDay;
+  String? _pendingDay;
+  String? _dayBeforeWrite;
+  int _writeRevision = 0;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -116,6 +120,13 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
   void _sync() {
     if (!mounted || _root == null || !_active || widget.days.isEmpty) return;
     final value = _root!.urlState.uri.queryParameters[widget.parameter];
+    // Router/dependency notifications may precede the async URL commit. Keep
+    // the user's tab selection while that notification still describes the
+    // old date; incoming committed URLs continue to own calendar state.
+    if (_pendingDay != null && value == _dayBeforeWrite && value != _pendingDay)
+      return;
+    _pendingDay = null;
+    _dayBeforeWrite = null;
     final index =
         DayRouteSelection.resolve(widget.days, value, _controller!.index);
     _lastDay = DayRouteSelection.format(widget.days[index]);
@@ -136,7 +147,23 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
     final value = DayRouteSelection.format(widget.days[_controller!.index]);
     if (_lastDay == value) return;
     _lastDay = value;
-    unawaited(DayRouteSelection.write(_root!, widget.parameter, value));
+    _dayBeforeWrite = _root!.urlState.uri.queryParameters[widget.parameter];
+    _pendingDay = value;
+    unawaited(_writeDay(value, ++_writeRevision));
+  }
+
+  Future<void> _writeDay(String value, int revision) async {
+    try {
+      await DayRouteSelection.write(_root!, widget.parameter, value);
+    } catch (error) {
+      AppLogger.error('Calendar navigation failed: $error');
+    } finally {
+      if (mounted && revision == _writeRevision) {
+        _pendingDay = null;
+        _dayBeforeWrite = null;
+        _sync();
+      }
+    }
   }
 
   @override

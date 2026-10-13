@@ -1,0 +1,51 @@
+name: Navigation interaction regressions
+on:
+  pull_request:
+    paths:
+      - 'lib/components/_shared/app_panel_helper.dart'
+      - 'lib/components/navigation/**'
+      - 'lib/components/schedule/**'
+      - 'lib/components/timeline/**'
+      - 'test/components/navigation/**'
+      - 'test/components/schedule/**'
+      - 'test/components/breadcrumb_row_test.dart'
+      - 'test/support/navigation_fixture.dart'
+      - '.github/workflows/navigation-interactions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/components/_shared/app_panel_helper.dart'
+      - 'lib/components/navigation/**'
+      - 'lib/components/schedule/**'
+      - 'lib/components/timeline/**'
+      - 'test/components/navigation/**'
+      - '.github/workflows/navigation-interactions.yml'
+permissions:
+  contents: read
+jobs:
+  navigation-interactions:
+    runs-on: ubuntu-latest
+    env:
+      FVM_CACHE_PATH: /tmp/festapp-fvm
+    steps:
+      - uses: actions/checkout@v4
+      - id: sdk
+        run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.sdk.outputs.version }}
+          cache: true
+      - name: Use the installed SDK through FVM
+        run: |
+          dart pub global activate fvm 4.1.2
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          mkdir -p "$FVM_CACHE_PATH/versions"
+          ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
+      - run: fvm flutter pub get
+      - run: >-
+          fvm flutter test --no-pub
+          test/components/navigation/routed_tab_navigation_test.dart
+          test/components/navigation/admin_breadcrumb_navigation_test.dart
+          test/components/schedule/light_timeline_initial_day_test.dart
+          test/components/schedule/schedule_initial_day_test.dart
+          test/components/breadcrumb_row_test.dart

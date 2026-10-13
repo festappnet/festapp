@@ -13,6 +13,7 @@ import 'package:fstapp/components/news/news_strings.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/services/toast_helper.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/widgets/pop_button.dart';
@@ -233,7 +234,10 @@ class _NewsPageState extends State<NewsPage> {
                                               aggregateVersion: htmlVersion);
                                             await DbNews.updateNewsMessage(snapshot,
                                                 originalMessage: htmlOriginal);
-                                            if (mounted) await loadData();
+                                            if (!mounted) return;
+                                            ToastHelper.Show(
+                                                this.context, NewsStrings.messageChanged);
+                                            await loadData();
                                           },
                                         ),
                                       ),
@@ -270,7 +274,10 @@ class _NewsPageState extends State<NewsPage> {
                                 PopupMenuButton<ContextMenuChoice>(
                                   onSelected: (choice) async {
                                     await DbNews.deleteNewsMessage(message);
-                                    if (mounted) await loadData();
+                                    if (!mounted) return;
+                                    ToastHelper.Show(
+                                        this.context, NewsStrings.messageRemoved);
+                                    await loadData();
                                   },
                                   icon: const Icon(Icons.more_horiz),
                                   itemBuilder: (BuildContext context) =>
