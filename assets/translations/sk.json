@@ -32,6 +32,8 @@
       "feedback_overdue": "Provider feedback is overdue"
     },
     "kind": {
+      "waitlist_confirmation": "Potvrdenie náhradníka",
+      "waitlist_offer": "Ponuka miest náhradníkovi",
       "order_confirmation": "Order confirmation",
       "order_payment_notice": "Order payment notice",
       "order_tickets": "Order tickets",
@@ -727,15 +729,20 @@
     "acceptedTitle": "Prijatie potvrdené",
     "acceptedExplanation": "Prijatie ponuky je dokončené.",
     "continueToConfirmation": "Pokračovať k potvrdeniu",
-    "detailSelection": "Na ukončenie čakania, odmietnutie alebo zrušenie ponuky označte príslušné osoby.",
-    "completeRegistration": "Doplniť a potvrdiť prihlášku",
-    "retractOffer": "Stiahnuť ponuku",
+    "detailSelection": "Pre správu čakania označte príslušné prihlášky.",
+    "completeRegistration": "Vyplniť prihlášku za účastníka",
+    "retractOffer": "Zrušiť ponuku miesta",
     "recordDecline": "Zaznamenať odmietnutie účastníkom",
     "organizerOfferActionsHelp": "Stiahnutím ponuky uvoľníte vybrané miesta. Odmietnutie zaznamenajte, ak ich odmietol účastník.",
-    "offerSelectionRequired": "Na odmietnutie alebo zrušenie vyberte iba osoby z tejto ponuky.",
+    "offerSelectionRequired": "Pre správu ponuky vyberte prihlášky z jednej ponuky.",
     "historyOfferSent": "Miesto ponúknuté",
     "offerSending": "Ponuku odosielame e-mailom.",
     "offersSending": "Ponuky odosielame e-mailom.",
+    "manageWaiting": "Správa čakania",
+    "activeOffer": "Aktuálna ponuka miesta",
+    "openOfferFormHelp": "Formulár sa otvorí na novej karte. Po dokončení obnovte tento prehľad.",
+    "offerHistory": "História ponúk",
+    "emptyDetail": "V tejto prihláške nie sú žiadne čakajúce osoby.",
     "acceptOne": "Potvrdiť prihlásenie"
   },
   "EmailTemplates": {

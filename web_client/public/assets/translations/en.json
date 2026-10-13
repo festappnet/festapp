@@ -32,6 +32,8 @@
       "feedback_overdue": "Provider feedback is overdue"
     },
     "kind": {
+      "waitlist_confirmation": "Waitlist confirmation",
+      "waitlist_offer": "Waitlist place offer",
       "order_confirmation": "Order confirmation",
       "order_payment_notice": "Order payment notice",
       "order_tickets": "Order tickets",
@@ -2656,15 +2658,20 @@
     "acceptedTitle": "Acceptance confirmed",
     "acceptedExplanation": "Acceptance of the offer is complete.",
     "continueToConfirmation": "Continue to confirmation",
-    "detailSelection": "Select the relevant people to end waiting, decline or cancel an offer.",
-    "completeRegistration": "Complete and confirm registration",
-    "retractOffer": "Retract offer",
+    "detailSelection": "Select the registrations you want to manage.",
+    "completeRegistration": "Complete registration for participant",
+    "retractOffer": "Cancel place offer",
     "recordDecline": "Record participant decline",
     "organizerOfferActionsHelp": "Retracting the offer releases the selected places. Record a decline when the participant declined them.",
-    "offerSelectionRequired": "To decline or cancel, select only people included in this offer.",
+    "offerSelectionRequired": "To manage an offer, select registrations from a single offer.",
     "historyOfferSent": "Place offered",
     "offerSending": "We are sending the offer by email.",
     "offersSending": "We are sending the offers by email.",
+    "manageWaiting": "Manage waiting",
+    "activeOffer": "Current place offer",
+    "openOfferFormHelp": "The form opens in a new tab. Refresh this overview after completing it.",
+    "offerHistory": "Offer history",
+    "emptyDetail": "There are no waiting participants in this registration.",
     "acceptOne": "Confirm registration"
   }
 }

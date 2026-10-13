@@ -32,6 +32,8 @@
       "feedback_overdue": "Provider feedback is overdue"
     },
     "kind": {
+      "waitlist_confirmation": "Wartelistenbestätigung",
+      "waitlist_offer": "Platzangebot für die Warteliste",
       "order_confirmation": "Order confirmation",
       "order_payment_notice": "Order payment notice",
       "order_tickets": "Order tickets",
@@ -705,15 +707,20 @@
     "acceptedTitle": "Annahme bestätigt",
     "acceptedExplanation": "Die Annahme des Angebots ist abgeschlossen.",
     "continueToConfirmation": "Weiter zur Bestätigung",
-    "detailSelection": "Wählen Sie die betreffenden Personen aus, um das Warten zu beenden oder ein Angebot abzulehnen oder zu stornieren.",
-    "completeRegistration": "Anmeldung ergänzen und bestätigen",
-    "retractOffer": "Angebot zurückziehen",
+    "detailSelection": "Wählen Sie die zu verwaltenden Anmeldungen aus.",
+    "completeRegistration": "Anmeldung für Teilnehmer ausfüllen",
+    "retractOffer": "Platzangebot zurückziehen",
     "recordDecline": "Ablehnung durch Teilnehmer erfassen",
     "organizerOfferActionsHelp": "Durch Zurückziehen des Angebots werden die ausgewählten Plätze freigegeben. Erfassen Sie eine Ablehnung, wenn der Teilnehmer diese abgelehnt hat.",
-    "offerSelectionRequired": "Wählen Sie zum Ablehnen oder Stornieren nur Personen aus diesem Angebot.",
+    "offerSelectionRequired": "Wählen Sie Anmeldungen aus einem einzelnen Angebot aus.",
     "historyOfferSent": "Platz angeboten",
     "offerSending": "Das Angebot wird per E-Mail versendet.",
     "offersSending": "Die Angebote werden per E-Mail versendet.",
+    "manageWaiting": "Warteliste verwalten",
+    "activeOffer": "Aktuelles Platzangebot",
+    "openOfferFormHelp": "Das Formular öffnet sich in einem neuen Tab. Aktualisieren Sie danach diese Übersicht.",
+    "offerHistory": "Angebotsverlauf",
+    "emptyDetail": "In dieser Anmeldung warten keine Teilnehmer.",
     "acceptOne": "Anmeldung bestätigen"
   },
   "EmailTemplates": {

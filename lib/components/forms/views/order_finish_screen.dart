@@ -14,7 +14,6 @@ class FinishOrderScreen extends StatefulWidget {
   final String? tone;
   final bool hasTickets;
   final String? occasionTitle;
-  final String? successBackLabel;
   final Future<String?> Function(String)? deliveryStatusReader;
 
   const FinishOrderScreen({
@@ -25,7 +24,6 @@ class FinishOrderScreen extends StatefulWidget {
     this.tone,
     this.hasTickets = true,
     this.occasionTitle,
-    this.successBackLabel,
     this.deliveryStatusReader,
   });
 
@@ -286,9 +284,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
-            child: Text(_isSuccess
-                ? widget.successBackLabel ?? PublicOrderStrings.backToForm
-                : PublicOrderStrings.backToForm),
+            child: Text(PublicOrderStrings.backToForm),
           ),
         ],
       ),

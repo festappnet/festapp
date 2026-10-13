@@ -32,6 +32,8 @@
       "feedback_overdue": "Provider feedback is overdue"
     },
     "kind": {
+      "waitlist_confirmation": "Potwierdzenie listy rezerwowej",
+      "waitlist_offer": "Oferta miejsc dla osoby z listy rezerwowej",
       "order_confirmation": "Order confirmation",
       "order_payment_notice": "Order payment notice",
       "order_tickets": "Order tickets",
@@ -728,15 +730,20 @@
     "acceptedTitle": "Przyjęcie potwierdzone",
     "acceptedExplanation": "Przyjęcie oferty zostało zakończone.",
     "continueToConfirmation": "Przejdź do potwierdzenia",
-    "detailSelection": "Zaznacz odpowiednie osoby, aby zakończyć oczekiwanie, odrzucić lub anulować ofertę.",
-    "completeRegistration": "Uzupełnij i potwierdź zgłoszenie",
-    "retractOffer": "Wycofaj ofertę",
+    "detailSelection": "Zaznacz zgłoszenia, którymi chcesz zarządzać.",
+    "completeRegistration": "Wypełnij zgłoszenie za uczestnika",
+    "retractOffer": "Anuluj ofertę miejsca",
     "recordDecline": "Zarejestruj odmowę uczestnika",
     "organizerOfferActionsHelp": "Wycofanie oferty zwalnia wybrane miejsca. Zarejestruj odmowę, jeśli uczestnik je odrzucił.",
-    "offerSelectionRequired": "Aby odrzucić lub anulować, wybierz tylko osoby objęte tą ofertą.",
+    "offerSelectionRequired": "Aby zarządzać ofertą, wybierz zgłoszenia z jednej oferty.",
     "historyOfferSent": "Zaproponowano miejsce",
     "offerSending": "Wysyłamy ofertę e-mailem.",
     "offersSending": "Wysyłamy oferty e-mailem.",
+    "manageWaiting": "Zarządzaj oczekiwaniem",
+    "activeOffer": "Aktualna oferta miejsca",
+    "openOfferFormHelp": "Formularz otworzy się w nowej karcie. Po zakończeniu odśwież ten widok.",
+    "offerHistory": "Historia ofert",
+    "emptyDetail": "W tym zgłoszeniu nie ma oczekujących uczestników.",
     "acceptOne": "Potwierdź zgłoszenie"
   },
   "EmailTemplates": {
