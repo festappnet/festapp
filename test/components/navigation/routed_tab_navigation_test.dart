@@ -45,6 +45,19 @@ class _ActivityProbeState extends State<_ActivityProbe> {
   Widget build(BuildContext context) => const Text('CURRENT CONTENT');
 }
 
+class _DelayedCalendarRouter extends FixtureRouter {
+  _DelayedCalendarRouter() : super(Access());
+  Completer<void>? pending;
+  bool failNext = false;
+  @override
+  Future<dynamic> navigate(PageRouteInfo route,
+      {OnNavigationFailure? onFailure}) async {
+    if (pending != null) await pending!.future;
+    if (failNext) throw StateError('Calendar navigation rejected');
+    return super.navigate(route, onFailure: onFailure);
+  }
+}
+
 void main() {
   testWidgets('clicking Orders from history returns to current orders',
       (tester) async {
@@ -409,6 +422,42 @@ void main() {
     access.notifyListeners();
     await tester.pumpAndSettle();
     expect(find.text('HISTORY CONTENT'), findsOneWidget);
+  });
+  testWidgets('one calendar tap stays selected while navigation is pending',
+      (tester) async {
+    final router = _DelayedCalendarRouter();
+    await mount(tester, router, '/calendar?day=2026-10-10');
+    router.pending = Completer<void>();
+    await tester.tap(find.text('3 October'));
+    await tester.pump();
+    final context = tester.element(find.byType(TabBar));
+    expect(DefaultTabController.of(context).index, 0);
+    router
+        .notifyAll(); // Other navigation listeners can update before URL commit.
+    await tester.pump();
+    final selected = DefaultTabController.of(context).index;
+    router.pending!.complete();
+    await tester.pumpAndSettle();
+    expect(selected, 0,
+        reason: 'a stale URL must not undo the first day click');
+    expect(Uri.parse(router.currentUrl).queryParameters['day'], '2026-10-03');
+    await tester.pumpWidget(const SizedBox.shrink());
+    router.dispose();
+  });
+  testWidgets(
+      'a failed day click restores committed state without an unhandled error',
+      (tester) async {
+    final router = _DelayedCalendarRouter();
+    await mount(tester, router, '/calendar?day=2026-10-10');
+    router.failNext = true;
+    await tester.tap(find.text('3 October'));
+    await tester.pumpAndSettle();
+    expect(
+        DefaultTabController.of(tester.element(find.byType(TabBar))).index, 1);
+    expect(Uri.parse(router.currentUrl).queryParameters['day'], '2026-10-10');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    router.dispose();
   });
   testWidgets('invalid date replaces with a valid calendar day',
       (tester) async {
