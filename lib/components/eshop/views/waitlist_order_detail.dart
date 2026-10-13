@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../services/time_helper.dart';
-import '../../_shared/common_strings.dart';
 import '../../../data_services/rights_service.dart';
 import '../../../services/dialog_helper.dart';
 import '../../forms/waitlist_commands.dart';
@@ -90,29 +89,47 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
     }
   }
 
-  Future<void> _withdraw() async {
+  Future<void> _resolve(String operation, [String? offerId]) async {
     if (!RightsService.isEditorOrder() ||
         _selected.isEmpty ||
         _busy ||
         _error != null) {
       return;
     }
-    final title = _selected.length == 1
-        ? WaitlistStrings.withdrawTitle
-        : WaitlistStrings.withdrawSelectedTitle;
+    final (title, explanation, button) = switch (operation) {
+      'withdraw' => (
+          _selected.length == 1
+              ? WaitlistStrings.withdrawTitle
+              : WaitlistStrings.withdrawSelectedTitle,
+          WaitlistStrings.withdrawExplanation,
+          WaitlistStrings.withdraw,
+        ),
+      'decline' => (
+          WaitlistStrings.text('recordDecline'),
+          WaitlistStrings.declineOfferExplanation,
+          WaitlistStrings.text('recordDecline'),
+        ),
+      'cancel' => (
+          WaitlistStrings.text('retractOffer'),
+          WaitlistStrings.cancelOfferExplanation,
+          WaitlistStrings.text('retractOffer'),
+        ),
+      _ => throw ArgumentError.value(operation),
+    };
     if (!await DialogHelper.showConfirmationDialog(
       context,
       title,
-      '${WaitlistStrings.withdrawExplanation}\n${WaitlistStrings.count}: ${_selected.length}',
-      confirmButtonMessage: WaitlistStrings.text('adminWithdraw'),
+      '$explanation\n${WaitlistStrings.count}: ${_selected.length}',
+      confirmButtonMessage: button,
     )) {
       return;
     }
     if (!mounted) return;
     setState(() => _busy = true);
     try {
-      await (widget.executeCommand ?? _commands.command)('withdraw', {
+      await (widget.executeCommand ?? _commands.command)(operation, {
         'orderId': widget.order.id,
+        if (offerId != null) 'offerId': offerId,
         'ticketIds': _selected.toList(),
       });
     } catch (_) {
@@ -164,6 +181,14 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
     await _notifyParent();
   }
 
+  bool _selectionBelongsTo(dynamic offer) =>
+      _selected.isNotEmpty &&
+      _selected.every(
+        (id) => (offer['slots'] as List).any(
+          (s) => s['ticketId'] == id && s['outcome'] == 'pending',
+        ),
+      );
+
   bool _isSelectable(dynamic ticket) => const {
         'waiting',
         'offered',
@@ -180,14 +205,6 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
         ? OrdersStrings.itemSingular
         : '${OrdersStrings.itemSingular} ${index + 1}';
   }
-
-  String _ticketStatus(dynamic ticket) => WaitlistStrings.text(
-        switch (ticket['lifecycle'] as String) {
-          'waiting' => 'waitingForPlace',
-          'offered' => 'awaitingOfferAcceptance',
-          final String lifecycle => lifecycle,
-        },
-      );
 
   String _slotLabel(dynamic slot) {
     final tickets = _detail?['tickets'] as List? ?? [];
@@ -244,26 +261,47 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
     await _notifyParent();
   }
 
-  Widget _withdrawalAction() => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            OutlinedButton(
-              onPressed: !_busy && _error == null && _selected.isNotEmpty
-                  ? _withdraw
-                  : null,
-              child: Text(WaitlistStrings.text('adminWithdraw')),
-            ),
-            if (_selected.isEmpty && !_busy && _error == null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  WaitlistStrings.text('withdrawSelection'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+  Widget _managementMenu(List<dynamic> activeOffers) =>
+      PopupMenuButton<(String, String?)>(
+        tooltip: WaitlistStrings.text('manageWaiting'),
+        enabled: !_busy && _error == null,
+        onSelected: (action) => _resolve(action.$1, action.$2),
+        itemBuilder: (_) => [
+          for (final offer in activeOffers) ...[
+            if (activeOffers.length > 1)
+              PopupMenuItem<(String, String?)>(
+                enabled: false,
+                child:
+                    Text((offer['slots'] as List).map(_slotLabel).join(', ')),
               ),
+            PopupMenuItem(
+              value: ('cancel', offer['id'] as String),
+              enabled: _selectionBelongsTo(offer),
+              child: Text(WaitlistStrings.text('retractOffer')),
+            ),
+            PopupMenuItem(
+              value: ('decline', offer['id'] as String),
+              enabled: _selectionBelongsTo(offer),
+              child: Text(WaitlistStrings.text('recordDecline')),
+            ),
           ],
+          if (activeOffers.isNotEmpty) const PopupMenuDivider(),
+          PopupMenuItem(
+            value: ('withdraw', null),
+            enabled: _selected.isNotEmpty,
+            child: Text(WaitlistStrings.withdraw),
+          ),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.more_horiz, size: 20),
+              const SizedBox(width: 8),
+              Flexible(child: Text(WaitlistStrings.text('manageWaiting'))),
+            ],
+          ),
         ),
       );
 
@@ -288,17 +326,14 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
             Wrap(
               spacing: 4,
               children: [
+                Text('${WaitlistStrings.expiresAt}:',
+                    style: theme.textTheme.bodyMedium),
                 Text(
-                  '${WaitlistStrings.expiresAt}:',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                Text(
-                  DateFormat('d. M. yyyy HH:mm')
-                      .format(expires.toOccasionTime()),
-                  maxLines: 1,
-                  softWrap: false,
-                  style: theme.textTheme.bodyMedium,
-                ),
+                    DateFormat('d. M. yyyy HH:mm')
+                        .format(expires.toOccasionTime()),
+                    maxLines: 1,
+                    softWrap: false,
+                    style: theme.textTheme.bodyMedium),
               ],
             ),
           ],
@@ -367,6 +402,11 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                     style: TextStyle(color: theme.colorScheme.error),
                   ),
                 ),
+              if (_detail?['occasionTitle'] case final String title)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(title, style: theme.textTheme.titleMedium),
+                ),
               if (multiple && editor)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -394,7 +434,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                               value: _selected.contains(entry.$2['id']),
                               title: Text(_ticketLabel(entry.$2, entry.$1)),
                               subtitle: Text(
-                                _ticketStatus(entry.$2),
+                                WaitlistStrings.text(entry.$2['lifecycle']),
                               ),
                               onChanged: _busy || _error != null
                                   ? null
@@ -420,7 +460,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _ticketStatus(entry.$2),
+                                    WaitlistStrings.text(entry.$2['lifecycle']),
                                     style: theme.textTheme.bodyMedium,
                                   ),
                                 ],
@@ -431,7 +471,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                           _offerContext(offer, active: true),
                         if (canManage && _hasWaitingTickets) ...[
                           const SizedBox(height: 16),
-                          FilledButton(
+                          OutlinedButton(
                             onPressed: _canOffer ? _offer : null,
                             child: Text(WaitlistStrings.offerPlace),
                           ),
@@ -449,23 +489,31 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                               ),
                             ),
                         ],
-                        if (canManage) _withdrawalAction(),
                       ],
                     ),
                   ),
                 ),
-              if (_error != null)
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    TextButton.icon(
-                      onPressed: _busy ? null : _refresh,
-                      icon: const Icon(Icons.refresh, size: 18),
-                      label: Text(CommonStrings.retry),
-                    ),
-                  ],
+              const SizedBox(height: 8),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  if (canManage) _managementMenu(activeOffers),
+                  TextButton.icon(
+                    onPressed: _busy ? null : _refresh,
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: Text(WaitlistStrings.refresh),
+                  ),
+                ],
+              ),
+              if (canManage &&
+                  multiple &&
+                  activeOffers.isNotEmpty &&
+                  !activeOffers.any(_selectionBelongsTo))
+                Text(
+                  WaitlistStrings.text('offerSelectionRequired'),
+                  style: theme.textTheme.bodySmall,
                 ),
               if (history.isNotEmpty)
                 ExpansionTile(

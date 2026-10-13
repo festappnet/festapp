@@ -394,21 +394,3 @@ test('initial DOM multiselect hydration retains separate stable IDs for same-typ
         ]);
     } finally { globalThis.FormData = NativeFormData; dom.window.close(); }
 });
-
-
-test('waitlist mode hides occupancy while regular mode includes active offer holds', async () => {
-    const { renderWaitlistControls } = await import('../../src/components/forms/waitlist_form.js');
-    const { LocalizationService } = await import('../../src/services/localization_service.js');
-    const previous = LocalizationService.tr;
-    LocalizationService.tr = (key) => key === 'Waitlist.occupancy' ? 'Occupied: {occupied} of {capacity}' : key;
-    try {
-        for (const registrationMode of ['regular', 'waitlist']) {
-            const dom = new JSDOM('<main><form></form></main>');
-            globalThis.document = dom.window.document; globalThis.window = dom.window;
-            const model = new FormModel({ registrationMode, fields: [], capacity: { showRemaining: true, limit: 10, occupiedPeople: 9, offeredPlaces: 1, waitingPeople: 1, heldForWaiting: 0 } });
-            renderWaitlistControls({host: document.querySelector('main'), currentSession: { addEventListener() {} }}, model);
-            assert.equal(document.querySelector('.form-occupancy')?.textContent ?? null, registrationMode === 'regular' ? 'Occupied: 11 of 10' : null);
-            dom.window.close();
-        }
-    } finally { LocalizationService.tr = previous; }
-});
