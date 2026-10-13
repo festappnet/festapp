@@ -739,11 +739,17 @@
     "historyOfferSent": "Zaproponowano miejsce",
     "offerSending": "Wysyłamy ofertę e-mailem.",
     "offersSending": "Wysyłamy oferty e-mailem.",
-    "manageWaiting": "Zarządzaj oczekiwaniem",
+    "manageWaiting": "Zmiana zgłoszenia",
     "activeOffer": "Aktualna oferta miejsca",
     "openOfferFormHelp": "Formularz otworzy się w nowej karcie. Po zakończeniu odśwież ten widok.",
     "offerHistory": "Historia ofert",
     "emptyDetail": "W tym zgłoszeniu nie ma oczekujących uczestników.",
+    "participantDeclinesScenario": "Uczestnik odmówił przyjęcia miejsca",
+    "participantDeclinesConsequence": "Zapiszesz odmowę uczestnika. Oferowane miejsca zostaną zwolnione, a wybrane zgłoszenia nie będą już aktywnie oczekiwać na kolejną ofertę.",
+    "withdrawScenario": "Usuń zgłoszenie z listy oczekujących",
+    "withdrawConsequence": "Uczestnik nie jest już zainteresowany lub usuwasz go jako organizator. Wybrane zgłoszenia zostaną anulowane, a oferowane miejsca zwolnione. Nie można tego cofnąć.",
+    "managementHelp": "Odrzucenie oferty lub usunięcie zgłoszenia",
+    "adminWithdraw": "Usuń z listy oczekujących",
     "acceptOne": "Potwierdź zgłoszenie"
   },
   "EmailTemplates": {
