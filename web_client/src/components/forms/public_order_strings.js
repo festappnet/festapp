@@ -3,7 +3,7 @@ import { LocalizationService } from '../../services/localization_service.js';
 export class PublicOrderStrings {
     static _prefix = 'PublicOrder';
 
-    static _tr(key, tone) {
+    static text(key, tone) {
         if (tone === 'informal') {
             const informalKey = `${key}_informal`;
             const val = LocalizationService.tr(informalKey);
@@ -16,31 +16,31 @@ export class PublicOrderStrings {
 
     static successTitle(tone, hasTickets = true) {
         if (hasTickets) {
-            return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.successTitle`, tone);
+            return PublicOrderStrings.text(`${PublicOrderStrings._prefix}.successTitle`, tone);
         }
-        return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.successRegistrationTitle`, tone);
+        return PublicOrderStrings.text(`${PublicOrderStrings._prefix}.successRegistrationTitle`, tone);
     }
 
     static paymentInfo(tone) {
-        return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.paymentInfo`, tone);
+        return PublicOrderStrings.text(`${PublicOrderStrings._prefix}.paymentInfo`, tone);
     }
 
     static confirmationInfo(tone, hasPayment, email, state = 'queued') {
         const key = hasPayment ? 'paymentInfo' : 'confirmationInfo';
-        const template = PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.${key}${email ? 'WithEmail' : ''}${['accepted','delivered'].includes(state) ? 'Accepted' : ['invalid_email','failed','unknown','dead','suppressed','expired','cancelled','retry_wait'].includes(state) ? 'Unconfirmed' : ''}`, tone);
+        const template = PublicOrderStrings.text(`${PublicOrderStrings._prefix}.${key}${email ? 'WithEmail' : ''}${['accepted','delivered'].includes(state) ? 'Accepted' : ['invalid_email','failed','unknown','dead','suppressed','expired','cancelled','retry_wait'].includes(state) ? 'Unconfirmed' : ''}`, tone);
         const text = email ? template.replace('{email}', email) : template;
-        return state === 'invalid_email' ? `${text} ${PublicOrderStrings._tr('PublicOrder.invalidEmailAddress', tone)}` : text;
+        return state === 'invalid_email' ? `${text} ${PublicOrderStrings.text('PublicOrder.invalidEmailAddress', tone)}` : text;
     }
 
     static selectSeat(tone) {
-        return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.selectSeat`, tone);
+        return PublicOrderStrings.text(`${PublicOrderStrings._prefix}.selectSeat`, tone);
     }
 
     static getSubmitButton(hasTickets, tone) {
         if (hasTickets) {
-            return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.submitOrder`, tone);
+            return PublicOrderStrings.text(`${PublicOrderStrings._prefix}.submitOrder`, tone);
         }
-        return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.submitRegistration`, tone);
+        return PublicOrderStrings.text(`${PublicOrderStrings._prefix}.submitRegistration`, tone);
     }
 
     static get summary() {
@@ -64,7 +64,7 @@ export class PublicOrderStrings {
     }
 
     static chooseDifferentVariant(tone) {
-        return PublicOrderStrings._tr(`${PublicOrderStrings._prefix}.chooseDifferentVariant`, tone);
+        return PublicOrderStrings.text(`${PublicOrderStrings._prefix}.chooseDifferentVariant`, tone);
     }
 
     static totalPrice(price) {

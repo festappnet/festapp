@@ -1,6 +1,7 @@
+import { PublicOrderStrings } from './public_order_strings.js';
 import { LocalizationService } from '../../services/localization_service.js';
 export class WaitlistStrings {
-    static text(key) { return LocalizationService.tr(`Waitlist.${key}`); }
+    static text(key, tone) { return PublicOrderStrings.text(`Waitlist.${key}`, tone); }
     static get settings() { return LocalizationService.tr('Waitlist.settings'); }
     static get capacity() { return LocalizationService.tr('Waitlist.capacity'); }
     static get unlimited() { return LocalizationService.tr('Waitlist.unlimited'); }

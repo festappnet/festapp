@@ -391,6 +391,7 @@ export class OrderPreview {
             currency: totalPriceData.currency,
             hasTickets: FeatureService.isFeatureEnabled(FeatureService.FeatureConstants.ticket, formModel.occasionFeatures),
             tone: formModel.communicationTone,
+            acceptingOffer: Boolean(formModel.offerBundle),
             deposit: depositInfo,
             metaSurchargeSums
         };
@@ -460,7 +461,7 @@ export class OrderPreview {
     static _render(data) {
         // Determine labels
         const isWaitlist = data.registrationMode === 'waitlist';
-        const itemLabel = isWaitlist ? WaitlistStrings.text((data.ticketCount ?? data.tickets.length) === 1 ? 'yourRegistration' : 'person') : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
+        const itemLabel = isWaitlist ? WaitlistStrings.text((data.ticketCount ?? data.tickets.length) === 1 ? 'yourRegistration' : 'person', data.tone) : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
 
         // Header
         let html = `
@@ -480,7 +481,7 @@ export class OrderPreview {
         if (occasionTitle || orderSymbol) {
             html += `<div class="waitlist-context">${occasionTitle ? htmlText`<strong>${occasionTitle}</strong>` : ''}${orderSymbol ? htmlText`<p>${WaitlistStrings.text('registrationSymbol')}: ${orderSymbol}</p>` : ''}</div>`;
         }
-        if (isWaitlist) html += `<p class="waitlist-intro preview-section">${data.presentation?.explanation || WaitlistStrings.explanation}</p>`;
+        if (isWaitlist) html += `<p class="waitlist-intro preview-section">${data.presentation?.explanation || WaitlistStrings.text('explanation', data.tone)}</p>`;
 
         if (data.presentation?.people) {
             html += `<div class="preview-section">${data.presentation.people.map(name => htmlText`${name}`).join('<br>')}</div>`;
@@ -598,7 +599,7 @@ export class OrderPreview {
         const tone = data.tone; 
         const hasTickets = data.hasTickets;
         
-        const submitLabel = data.presentation?.submitLabel || (isWaitlist ? WaitlistStrings.register : PublicOrderStrings.getSubmitButton(hasTickets, tone));
+        const submitLabel = data.presentation?.submitLabel || (isWaitlist ? WaitlistStrings.register : data.acceptingOffer ? WaitlistStrings.text(data.ticketCount === 1 ? 'acceptOne' : 'accept', tone) : PublicOrderStrings.getSubmitButton(hasTickets, tone));
 
         html += `
              <div class="preview-actions">

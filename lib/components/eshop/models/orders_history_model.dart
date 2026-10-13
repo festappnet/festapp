@@ -14,6 +14,7 @@ import 'package:fstapp/theme_config.dart';
 import 'package:trina_grid/trina_grid.dart';
 
 import '../orders_strings.dart';
+import '../../forms/waitlist_strings.dart';
 import 'order_data_product_model.dart';
 
 // Helper class to bundle a product with its ticket context
@@ -195,9 +196,35 @@ class OrderHistoryModel extends ITrinaRowModel {
   /// **MODIFIED METHOD**
   /// Generates a single-line string summary of all changes for the data grid.
   /// Handles products with null prices.
+  /// Historical events use their immutable payload, never the current order summary.
+  String? get waitlistActionSummary {
+    final key = const {
+      'offer_sent': 'historyOfferSent',
+      'waitlist_accept': 'admitted',
+      'waitlist_decline': 'declined',
+      'waitlist_withdraw': 'withdrawn',
+      'waitlist_cancel': 'cancelled',
+      'waitlist_register': 'orderState',
+    }[data?['action']];
+    if (key == null) return null;
+    final parts = [WaitlistStrings.text(key)];
+    final count = data?['count'] ?? (data?['ticketIds'] is List ? (data!['ticketIds'] as List).length : null);
+    if (count is num && count > 1) parts.add('${WaitlistStrings.count}: $count');
+    final expiry = DateTime.tryParse(data?['expiresAt']?.toString() ?? '');
+    if (expiry != null) {
+      parts.add('${WaitlistStrings.expiresAt}: ${DateFormat('d. M. yyyy HH:mm').format(expiry.toOccasionTime())}');
+    }
+    return parts.join(' · ');
+  }
+
   String _generateChangesSummaryString(BuildContext context) {
+    if (waitlistActionSummary != null && data?['action'] != 'waitlist_accept') {
+      return waitlistActionSummary!;
+    }
     final changes = _calculateChanges();
-    final changeStrings = <String>[];
+    final changeStrings = <String>[
+      if (waitlistActionSummary != null) waitlistActionSummary!,
+    ];
 
     // Helper to format an optional price into a display string.
     String formatOptionalPrice(double? price, String? currencyCode) {
@@ -254,9 +281,14 @@ class OrderHistoryModel extends ITrinaRowModel {
   /// Generates a single-line, horizontally scrollable widget for the data grid column.
   /// Handles products with null prices.
   Widget generateSingleLineSummaryWidget(BuildContext context) {
+    if (waitlistActionSummary != null && data?['action'] != 'waitlist_accept') {
+      return Text(waitlistActionSummary!);
+    }
     final changes = _calculateChanges();
     final defaultStyle = DefaultTextStyle.of(context).style;
-    final changeSpans = <TextSpan>[];
+    final changeSpans = <TextSpan>[
+      if (waitlistActionSummary != null) TextSpan(text: waitlistActionSummary!),
+    ];
 
     // Helper to format an optional price into a display string.
     String formatOptionalPrice(double? price, String? currencyCode) {
@@ -334,13 +366,16 @@ class OrderHistoryModel extends ITrinaRowModel {
   /// Generates a multi-line, sectioned widget for the history dialog.
   /// Handles products with null prices.
   Widget generateMultiLineSummaryWidget(BuildContext context) {
+    if (waitlistActionSummary != null && data?['action'] != 'waitlist_accept') {
+      return Text(waitlistActionSummary!);
+    }
     final changes = _calculateChanges();
     final theme = Theme.of(context);
 
     if (changes.added.isEmpty &&
         changes.removed.isEmpty &&
         changes.changed.isEmpty) {
-      return Text(OrdersStrings.noProductChanges,
+      return Text(waitlistActionSummary ?? OrdersStrings.noProductChanges,
           style: TextStyle(
               color: theme.textTheme.bodySmall?.color,
               fontStyle: FontStyle.italic));
@@ -359,7 +394,9 @@ class OrderHistoryModel extends ITrinaRowModel {
       ...changedByTicket.keys
     }.toList();
 
-    final List<Widget> ticketWidgets = [];
+    final List<Widget> ticketWidgets = [
+      if (waitlistActionSummary != null) Text(waitlistActionSummary!),
+    ];
     for (final ticketSymbol in allTicketSymbols) {
       final addedItems = addedByTicket[ticketSymbol] ?? [];
       final removedItems = removedByTicket[ticketSymbol] ?? [];
