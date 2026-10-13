@@ -301,9 +301,9 @@
     "labelAdvancedSettings": "Advanced Settings",
     "labelReserveButtonTitle": "Reserve Button Title",
     "labelDeadlineDuration": "Payment Deadline (in days)",
-    "helperDeadlineDuration": "Set how many days a user has to pay for an order. Leave empty for no deadline.",
+    "helperDeadlineDuration": "Default number of days to pay a new order. An empty field means 7 days.",
     "labelReminderEnabled": "Enable Payment Reminders",
-    "helperReminderEnabled": "Automatically send an email reminder about payment.",
+    "helperReminderEnabled": "Send payment reminders by default. Each form can override this setting.",
     "labelReminderInterval": "Reminder Interval (days before deadline)",
     "helperReminderInterval": "How many days before the deadline should the reminder be sent.",
     "validationReminderInterval": "Reminder interval must be less than the payment deadline.",
@@ -378,7 +378,14 @@
     "seatSelection": "Seat selection",
     "moreFonts": "More fonts",
     "fontSearchHint": "Search by font name. Browse samples on Google Fonts and copy a name here, for example Roboto Slab. Your selection appears in the preview.",
-    "loadFailed": "The form could not be loaded. Check your connection and try again."
+    "loadFailed": "The form could not be loaded. Check your connection and try again.",
+    "nonNegativeDays": "Enter zero or a positive number of days.",
+    "inheritDays": "Event default (days): {}. Leave empty to use this value.",
+    "inheritReminder": "Use event default ({})",
+    "remindersOff": "Off",
+    "remindersOn": "On",
+    "occasionPaymentDefaultsHelp": "Defaults for all forms in this event. Individual forms can override them.",
+    "formPaymentDefaultsHelp": "This form inherits payment and reminder settings from the event’s Form feature. Overrides apply only to this form."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -828,7 +835,7 @@
       "manageWaitlistUrl": "Personal waitlist management link",
       "manageWaitlistButton": "Waitlist management button (HTML)",
       "offeredCount": "Number of offered places",
-      "offerExpiresAt": "Offer expiry (UTC)",
+      "offerExpiresAt": "Offer expiry",
       "offerUrl": "Personal offer link",
       "offerButton": "Open offer button (HTML)"
     },
@@ -2675,11 +2682,24 @@
     "offerSending": "We are sending the offer by email.",
     "offersSending": "We are sending the offers by email.",
     "activeOffer": "Current place offer",
-    "openOfferFormHelp": "The form opens in a new tab. Refresh this overview after completing it.",
+    "openOfferFormHelp": "The form opens in a new tab.",
     "offerHistory": "Offer history",
     "emptyDetail": "There are no waiting participants in this registration.",
     "adminWithdraw": "Remove from waiting list",
     "adminWithdrawHelp": "If the participant will not attend, remove their registration from the waiting list. Their wait ends and any offered place is released.",
-    "acceptOne": "Confirm registration"
+    "acceptOne": "Confirm registration",
+    "capacityHelpLimited": "Once capacity is reached, further applicants can join the waiting list if enabled.",
+    "offeredPlacesCount": "Places in active offers",
+    "limitCapacity": "Limit the number of people",
+    "capacityHelp": "Without a limit, everyone can register.",
+    "waitlistOn": "Waitlist enabled",
+    "waitlistOff": "Registration closes when capacity is reached",
+    "waitlistHelp": "Once capacity is reached, people can join the waitlist. You send offers of available places manually.",
+    "durationHelp": "How long waitlisted people have to accept an offer you send.",
+    "blueprintCapacity": "Capacity is determined by the seat map. Waitlisting is not available for seat maps.",
+    "saveWithForm": "Changes are saved with the form using Save.",
+    "applySettings": "Apply settings",
+    "waitingForPlace": "Waiting for a place",
+    "awaitingOfferAcceptance": "Awaiting offer acceptance"
   }
 }

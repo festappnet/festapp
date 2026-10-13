@@ -280,13 +280,6 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
-    "nonNegativeDays": "Zadejte nulu nebo kladný počet dní.",
-    "inheritDays": "Výchozí počet dní z události: {}. Prázdné pole tuto hodnotu převezme.",
-    "inheritReminder": "Podle události ({})",
-    "remindersOff": "Vypnuto",
-    "remindersOn": "Zapnuto",
-    "occasionPaymentDefaultsHelp": "Výchozí nastavení pro všechny formuláře této události. Jednotlivé formuláře je mohou přepsat.",
-    "formPaymentDefaultsHelp": "Formulář přebírá nastavení platby a připomínek z funkce Formulář na této události. Vlastní hodnoty platí jen pro tento formulář.",
     "title": "Nastavení formuláře",
     "formNotFound": "Formulář nenalezen.",
     "labelFormTitle": "Název formuláře",
@@ -385,7 +378,14 @@
     "seatSelection": "Výběr místa",
     "moreFonts": "Další fonty",
     "fontSearchHint": "Vyhledejte font podle názvu. Na Google Fonts si můžete prohlédnout ukázky a název sem zkopírovat, například Roboto Slab. Výběr se ukáže přímo v náhledu.",
-    "loadFailed": "Formulář se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu."
+    "loadFailed": "Formulář se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.",
+    "nonNegativeDays": "Zadejte nulu nebo kladný počet dní.",
+    "inheritDays": "Výchozí počet dní z události: {}. Prázdné pole tuto hodnotu převezme.",
+    "inheritReminder": "Podle události ({})",
+    "remindersOff": "Vypnuto",
+    "remindersOn": "Zapnuto",
+    "occasionPaymentDefaultsHelp": "Výchozí nastavení pro všechny formuláře této události. Jednotlivé formuláře je mohou přepsat.",
+    "formPaymentDefaultsHelp": "Formulář přebírá nastavení platby a připomínek z funkce Formulář na této události. Vlastní hodnoty platí jen pro tento formulář."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -2545,8 +2545,6 @@
     "deleteConfirm": "Opravdu smazat tento rozpracovaný koncept?"
   },
   "Waitlist": {
-    "capacityHelpLimited": "Po naplnění kapacity se další zájemci mohou přihlásit jen jako náhradníci, pokud je povolíte.",
-    "offeredPlacesCount": "Místa v platných nabídkách",
     "settings": "Kapacita a náhradníci",
     "capacity": "Kapacita (osoby)",
     "unlimited": "Bez omezení",
@@ -2613,15 +2611,6 @@
     "regularToWaitlist": "Dostupnost se změnila. Přejít k přihlášení náhradníků?",
     "declineAssigned": "Odmítnout lze aktuálně nabídnutá místa. Pro přijetí můžete vybrat jiné osoby.",
     "orderState": "Náhradníci",
-    "limitCapacity": "Omezit počet osob",
-    "capacityHelp": "Bez omezení se mohou přihlašovat všichni zájemci.",
-    "waitlistOn": "Náhradníci povoleni",
-    "waitlistOff": "Po naplnění kapacity se přihlášení uzavře",
-    "waitlistHelp": "Po naplnění kapacity se zájemci mohou přihlásit mezi náhradníky. Nabídky uvolněných míst odesíláte ručně.",
-    "durationHelp": "Jak dlouho mají náhradníci na přijetí zaslané nabídky.",
-    "blueprintCapacity": "Kapacitu určuje počet míst v plánku. Náhradníci nejsou pro plánek dostupní.",
-    "saveWithForm": "Změny se uloží společně s formulářem tlačítkem Uložit.",
-    "applySettings": "Použít nastavení",
     "occupancy": "Obsazenost: {occupied} z {capacity}",
     "productsAfterOffer": "Podrobnosti přihlášky a produkty doplníte až při přijetí nabídky místa. Tyto možnosti teď nelze vybrat.",
     "managementExplanation": "Až vám nabídneme místo, pošleme vám e-mail s odkazem pro potvrzení.",
@@ -2694,11 +2683,24 @@
     "offerSending": "Nabídku odesíláme e-mailem.",
     "offersSending": "Nabídky odesíláme e-mailem.",
     "activeOffer": "Aktuální nabídka místa",
-    "openOfferFormHelp": "Formulář se otevře na nové kartě. Po dokončení obnovte tento přehled.",
+    "openOfferFormHelp": "Formulář se otevře na nové kartě.",
     "offerHistory": "Historie nabídek",
     "emptyDetail": "V této přihlášce nejsou žádné čekající osoby.",
     "adminWithdraw": "Vyřadit z náhradníků",
     "adminWithdrawHelp": "Pokud se účastník nezúčastní, vyřaďte jeho přihlášku. Čekání skončí a případné nabídnuté místo se uvolní.",
-    "acceptOne": "Potvrdit přihlášení"
+    "acceptOne": "Potvrdit přihlášení",
+    "capacityHelpLimited": "Po naplnění kapacity se další zájemci mohou přihlásit jen jako náhradníci, pokud je povolíte.",
+    "offeredPlacesCount": "Místa v platných nabídkách",
+    "limitCapacity": "Omezit počet osob",
+    "capacityHelp": "Bez omezení se mohou přihlašovat všichni zájemci.",
+    "waitlistOn": "Náhradníci povoleni",
+    "waitlistOff": "Po naplnění kapacity se přihlášení uzavře",
+    "waitlistHelp": "Po naplnění kapacity se zájemci mohou přihlásit mezi náhradníky. Nabídky uvolněných míst odesíláte ručně.",
+    "durationHelp": "Jak dlouho mají náhradníci na přijetí zaslané nabídky.",
+    "blueprintCapacity": "Kapacitu určuje počet míst v plánku. Náhradníci nejsou pro plánek dostupní.",
+    "saveWithForm": "Změny se uloží společně s formulářem tlačítkem Uložit.",
+    "applySettings": "Použít nastavení",
+    "waitingForPlace": "Čeká na místo",
+    "awaitingOfferAcceptance": "Čeká na přijetí nabídky"
   }
 }
