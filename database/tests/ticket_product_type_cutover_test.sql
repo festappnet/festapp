@@ -13,6 +13,7 @@ BEGIN
  field:=jsonb_build_object('id','vip','binding','productType','productTypeId',typ,'label','VIP','visible',true,'locked',false,'box','{"x":10,"y":10,"width":180,"height":24}'::jsonb,'style','{"fontSize":12,"minFontSize":6,"maxLines":2,"color":"000000","align":"left"}'::jsonb);
  layout:=jsonb_set(layout,'{templates,wide,elements}',(layout#>'{templates,wide,elements}')||jsonb_build_array(field));
  PERFORM public.validate_ticket_layout_references(oc,layout);
+ PERFORM public.validate_ticket_layout_references(oc,jsonb_set(layout,'{templates,wide,flow}','["vip"]'::jsonb));
  UPDATE public.occasions SET features=jsonb_build_array(jsonb_build_object('code','ticket','layout',layout)) WHERE id=oc;
  PERFORM assert_true(public.ticket_layout_uses_product_type(oc,typ),'explicit product reference is indexed');
  changed:=jsonb_set(layout,'{templates,wide,elements,2,productTypeId}',to_jsonb(other_typ));
