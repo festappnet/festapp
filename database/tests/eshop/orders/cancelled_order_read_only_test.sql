@@ -59,7 +59,6 @@ BEGIN
   format('SELECT public.update_order_responses(%s,''{}'')',oid),
   format('SELECT public.update_order_and_tickets_to_sent(%s,ARRAY[%s]::bigint[])',oid,tid),
   format('SELECT public.update_order_and_tickets_to_storno_221(%s)',oid),
-  format('SELECT public.delete_order_history(%s)',hid),
   format('SELECT public.set_payment_deadline(%s,now())',pi),
   format('SELECT public.update_payment_info_variable_symbol(%s,123)',pi),
   format('SELECT public.enqueue_order_email(''TICKET_ORDER_UPDATE'',jsonb_build_object(''order_id'',%s),780::bigint,780::bigint,780::bigint)',oid)
@@ -73,6 +72,35 @@ BEGIN
  PERFORM assert_eq((SELECT to_jsonb(p) FROM eshop.payment_info p WHERE id=pi),before_payment,'rejected commands preserve complete payment');
  PERFORM assert_eq((SELECT count(*)::int FROM eshop.orders_history WHERE "order"=oid),1,'rejected commands preserve history');
  PERFORM assert_eq((SELECT count(*)::int FROM public.email_messages WHERE order_id=oid),0,'rejected commands enqueue no email');
+ -- History deletion is a unit-manager administration action, independent of
+ -- the cancelled parent's business mutability. No other permission is widened.
+ UPDATE public.unit_users SET is_manager=false,is_editor=true WHERE unit=780 AND "user"=auth.uid();
+ blocked:=false;
+ BEGIN PERFORM public.delete_order_history(hid); EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='User is not manager.'; END;
+ PERFORM assert_true(blocked,'unit editor cannot delete cancelled history');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.orders_history WHERE id=hid),'editor rejection preserves history');
+ UPDATE public.unit_users SET is_editor=false,is_editor_view=true WHERE unit=780 AND "user"=auth.uid();
+ blocked:=false;
+ BEGIN PERFORM public.delete_order_history(hid); EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='User is not manager.'; END;
+ PERFORM assert_true(blocked,'viewer cannot delete cancelled history');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.orders_history WHERE id=hid),'viewer rejection preserves history');
+ UPDATE public.unit_users SET is_editor_view=false WHERE unit=780 AND "user"=auth.uid();
+ blocked:=false;
+ BEGIN PERFORM public.delete_order_history(hid); EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='User is not manager.'; END;
+ PERFORM assert_true(blocked,'nonmanager cannot delete cancelled history');
+ INSERT INTO public.units(id,organization,title) VALUES(781,780,'Other history unit');
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(781,auth.uid(),true);
+ blocked:=false;
+ BEGIN PERFORM public.delete_order_history(hid); EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='User is not manager.'; END;
+ PERFORM assert_true(blocked,'different unit manager cannot delete cancelled history');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.orders_history WHERE id=hid),'wrong unit rejection preserves history');
+ UPDATE public.unit_users SET is_manager=true WHERE unit=780 AND "user"=auth.uid();
+ PERFORM public.delete_order_history(hid);
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.orders_history WHERE id=hid),'actual manager deletes cancelled history');
+ PERFORM assert_eq((SELECT to_jsonb(o) FROM eshop.orders o WHERE id=oid),before_order,'history deletion preserves complete cancelled order');
+ PERFORM assert_eq((SELECT to_jsonb(t) FROM eshop.tickets t WHERE id=tid),before_ticket,'history deletion preserves complete cancelled ticket');
+ PERFORM assert_eq((SELECT to_jsonb(p) FROM eshop.payment_info p WHERE id=pi),before_payment,'history deletion preserves complete payment');
+ PERFORM assert_eq((SELECT count(*)::int FROM public.email_messages WHERE order_id=oid),0,'history deletion queues no email');
  -- Independently guard the parent even if an inconsistent ticket still says used/sent.
  UPDATE eshop.tickets SET state='used' WHERE id=tid;
  PERFORM pg_temp.assert_cancelled_rejected(format('SELECT public.update_ticket_to_unused_ws(%s)',tid));
@@ -101,6 +129,12 @@ BEGIN
  result:=public.update_order_note_hidden(oid,'active note');
  PERFORM assert_eq(result->>'code','200','active order remains editable');
  PERFORM assert_eq((SELECT note_hidden FROM eshop.orders WHERE id=oid),'active note','active note edit persists');
+ INSERT INTO eshop.orders_history("order",state,price) VALUES(oid,'ordered',0) RETURNING id INTO hid;
+ SELECT to_jsonb(o) INTO before_order FROM eshop.orders o WHERE id=oid;
+ PERFORM public.delete_order_history(hid);
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.orders_history WHERE id=hid),'manager still deletes ordinary order history');
+ PERFORM assert_eq((SELECT to_jsonb(o) FROM eshop.orders o WHERE id=oid),before_order,'ordinary history deletion preserves parent');
+
 
 END $$;
 ROLLBACK;

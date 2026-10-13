@@ -49,6 +49,7 @@ class OrderHistoryModel extends ITrinaRowModel {
   UserInfoModel? createdBy;
 
   OrderModel? orderModel;
+  bool get isPersisted => id != null && id! > 0;
   OrderHistoryModel? previousHistoryRecord;
   List<OrderDataTicketModel>? dataTickets;
 
@@ -651,6 +652,9 @@ class OrderHistoryModel extends ITrinaRowModel {
 
   @override
   Future<void> deleteMethod(BuildContext context) async {
+    if (!isPersisted) {
+      throw StateError('The current-state projection is not a history record.');
+    }
     await DbOrders.deleteOrderHistory(id!);
   }
 

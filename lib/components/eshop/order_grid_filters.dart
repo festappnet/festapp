@@ -21,6 +21,12 @@ class OrderGridFilters {
   static bool orderCanReceivePayment(TrinaRow row) =>
       order(row)?.canChangePayment ?? false;
 
+  static bool historyCanBeDeleted(TrinaRow row) =>
+      (row.cells[EshopColumns.HISTORY_MODEL_REFERENCE]?.value
+              as OrderHistoryModel?)
+          ?.isPersisted ??
+      false;
+
   static bool orderIsActive(TrinaRow row) =>
       order(row)?.isActive ?? orderIsNonCancelled(row);
   static bool allows(TrinaRow row, String action) =>
