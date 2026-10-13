@@ -687,11 +687,7 @@ class EshopColumns {
             ),
             renderer: (rendererContext) => _originalOrderStateRenderer(context,
                 rendererContext, OrderModel.singleDataGridStateToColor,
-                label: rendererContext.cell.value.toString().split(';').first ==
-                            OrderModel.waitlistedState &&
-                        OrderGridFilters.order(rendererContext.row)?.isWaitlisted == true
-                    ? OrderGridFilters.order(rendererContext.row)?.stateLabel
-                    : null),
+                label: OrderGridFilters.order(rendererContext.row)?.stateLabel),
             textAlign: TrinaColumnTextAlign.center,
             width: 140,
           ),

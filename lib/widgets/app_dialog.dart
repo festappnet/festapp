@@ -74,7 +74,7 @@ class AppDialogActions extends StatelessWidget {
     return Row(children: [
       Expanded(child: leading!),
       const SizedBox(width: 8),
-      Expanded(child: buttons),
+      Flexible(child: buttons),
     ]);
   }
 }
