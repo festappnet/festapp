@@ -354,6 +354,10 @@ class FormHelper {
               ticketData[metaFields] = [];
             }
             var value = getFieldData(ticketKey, subFieldHolder);
+            if (subFieldHolder.fieldType == fieldTypeProductType &&
+                (value == null || value == '')) {
+              continue;
+            }
 
             if (subFieldHolder.fieldType == fieldTypeProductType &&
                 subFieldHolder is OptionsFieldProductHolder &&

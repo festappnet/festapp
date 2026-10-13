@@ -24,7 +24,10 @@ Aktuální ticket korekce - ověření:
 - Defaulty select_one/select_many/product_type sdílejí data.default_value;
   uložená i výslovně prázdná odpověď mají přednost. Web počáteční výběr i renderer
   používají jeden choice helper. Nepřidán druhý serverový default engine.
-- Skutečný finální browser průchod probíhá; produkční aplikace stále neprovedena.
+- Skutečný finální browser průchod PASS: čekající ticket IDs 20/21 zůstaly po
+  partial/full stejné, vlastní odpovědi/poznámky a produkty 100/200 Kč oddělené.
+  Fyzický reload obnovil uložené B/C namísto defaultu A. Prázdný optional produkt
+  se v obou klientech neposílá. Produkční aplikace stále neprovedena.
 
 Níže uvedené výsledky jsou **historické ověření původní verze**, nikoli důkaz
 správnosti ticket korekce. Její cílené výsledky budou doplněny po dokončení.

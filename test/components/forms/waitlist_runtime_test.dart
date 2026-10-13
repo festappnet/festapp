@@ -43,12 +43,16 @@ void main() {
               'A'
             ])
           ..defaultValue = saved;
+    OptionsFieldProductHolder emptyProduct() => OptionsFieldProductHolder(
+      id: 113, fieldType: 'product_type', isRequired: false, title: 'Optional admission',
+      productOptions: [], selectionType: OptionsFieldProductSelectionType.selectOne);
     final ticket =
         TicketHolder(fieldType: 'ticket', id: 1, maxTickets: 2, fields: [
       name(''),
       custom(109, ''),
       custom(110, ''),
-      choices(['A'])
+      choices(['A']),
+      emptyProduct()
     ])
           ..fixedTickets = true;
     ticket.tickets = [
@@ -58,7 +62,8 @@ void main() {
             name('Alex'),
             custom(109, 'Vegan'),
             custom(110, 'Step-free'),
-            choices('B | C')
+            choices('B | C'),
+            emptyProduct()
           ],
           ticketKey: GlobalKey<FormBuilderState>()),
       FormTicketModel(
@@ -67,7 +72,8 @@ void main() {
             name('Robin'),
             custom(109, 'No nuts'),
             custom(110, 'Hearing loop'),
-            choices('')
+            choices(''),
+            emptyProduct()
           ],
           ticketKey: GlobalKey<FormBuilderState>()),
     ];
@@ -97,6 +103,9 @@ void main() {
     expect(data['ticket'][1]['fields'][2]['110'], 'Hearing loop');
     expect(data['ticket'][0]['fields'].any((f) => f['112'] == 'B | C'), isTrue);
     expect(data['ticket'][1]['fields'].any((f) => f['112'] == 'A'), isFalse);
+    for (final item in data['ticket']) {
+      expect(item['fields'].any((f) => (f as Map).containsKey('product_type')), isFalse);
+    }
     expect(tester.takeException(), isNull);
   });
 }
