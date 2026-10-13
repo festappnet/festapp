@@ -93,7 +93,7 @@ class _NewsPageState extends State<NewsPage> {
   }
 
   void _showMessageDialog(BuildContext context) {
-    context.router.root.push<bool>(NewsFormRoute(onSubmit: (submission) =>
+    context.router.root.push<bool>(NewsFormRoute(occasionLink: context.routeData.inheritedPathParams.getString('{occasionLink}'), onSubmit: (submission) =>
       DbNews.publishSubmission(context, submission))).then((saved) async {
         if (saved == true && mounted) await loadData();
       });

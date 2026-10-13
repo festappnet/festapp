@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/platform_route_parser.dart';
 
 // The pinned Flutter web engine reconstructs Uri from the query map, then
@@ -9,6 +10,17 @@ import 'package:fstapp/components/navigation/platform_route_parser.dart';
 String platformUrl(Uri uri) => Uri.decodeComponent(
     Uri(path: uri.path, queryParameters: uri.queryParametersAll).toString());
 void main() {
+  test('typed news form navigation writes the concrete occasion URL', () async {
+    final router = AppRouter();
+    for (final link in ['2025we-copy-5e6268f4', 'another-occasion']) {
+      final match = router.matcher.matchByRoute(NewsFormRoute(occasionLink: link));
+      expect(match!.stringMatch, '/$link/newsForm');
+      final parser = PlatformRouteParser(router.matcher, platformDecodesQueries: true);
+      final restored = await parser.parseRouteInformation(
+          AutoRouteInformation(uri: Uri.parse(match.stringMatch)));
+      expect(restored.segments.last.params.getString('{occasionLink}'), link);
+    }
+  });
   test('login reload keeps the entire nested return URL across web transport',
       () async {
     const target =

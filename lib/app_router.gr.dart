@@ -1353,6 +1353,7 @@ class NavigationNotFoundRoute extends _i71.PageRouteInfo<void> {
 class NewsFormRoute extends _i71.PageRouteInfo<NewsFormRouteArgs> {
   NewsFormRoute({
     _i75.Key? key,
+    String occasionLink = '',
     _i72.Widget? editorOverride,
     _i73.Future<void> Function(_i34.NewsSubmission)? onSubmit,
     List<_i71.PageRouteInfo>? children,
@@ -1360,9 +1361,11 @@ class NewsFormRoute extends _i71.PageRouteInfo<NewsFormRouteArgs> {
           NewsFormRoute.name,
           args: NewsFormRouteArgs(
             key: key,
+            occasionLink: occasionLink,
             editorOverride: editorOverride,
             onSubmit: onSubmit,
           ),
+          rawPathParams: {'{occasionLink}': occasionLink},
           initialChildren: children,
         );
 
@@ -1371,11 +1374,15 @@ class NewsFormRoute extends _i71.PageRouteInfo<NewsFormRouteArgs> {
   static _i71.PageInfo page = _i71.PageInfo(
     name,
     builder: (data) {
+      final pathParams = data.inheritedPathParams;
       final args = data.argsAs<NewsFormRouteArgs>(
-        orElse: () => const NewsFormRouteArgs(),
+        orElse: () => NewsFormRouteArgs(
+          occasionLink: pathParams.getString('{occasionLink}', ''),
+        ),
       );
       return _i34.NewsFormPage(
         key: args.key,
+        occasionLink: args.occasionLink,
         editorOverride: args.editorOverride,
         onSubmit: args.onSubmit,
       );
@@ -1384,9 +1391,16 @@ class NewsFormRoute extends _i71.PageRouteInfo<NewsFormRouteArgs> {
 }
 
 class NewsFormRouteArgs {
-  const NewsFormRouteArgs({this.key, this.editorOverride, this.onSubmit});
+  const NewsFormRouteArgs({
+    this.key,
+    this.occasionLink = '',
+    this.editorOverride,
+    this.onSubmit,
+  });
 
   final _i75.Key? key;
+
+  final String occasionLink;
 
   final _i72.Widget? editorOverride;
 
@@ -1394,18 +1408,21 @@ class NewsFormRouteArgs {
 
   @override
   String toString() {
-    return 'NewsFormRouteArgs{key: $key, editorOverride: $editorOverride, onSubmit: $onSubmit}';
+    return 'NewsFormRouteArgs{key: $key, occasionLink: $occasionLink, editorOverride: $editorOverride, onSubmit: $onSubmit}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! NewsFormRouteArgs) return false;
-    return key == other.key && editorOverride == other.editorOverride;
+    return key == other.key &&
+        occasionLink == other.occasionLink &&
+        editorOverride == other.editorOverride;
   }
 
   @override
-  int get hashCode => key.hashCode ^ editorOverride.hashCode;
+  int get hashCode =>
+      key.hashCode ^ occasionLink.hashCode ^ editorOverride.hashCode;
 }
 
 /// generated route for

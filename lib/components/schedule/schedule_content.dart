@@ -177,6 +177,13 @@ class ScheduleContentState extends State<ScheduleContent> {
     return result.id;
   }
 
+  String _eventTypeLabel(String code) => code == _noTypeSelectValue
+      ? FeaturesStrings.noType
+      : _definedEventTypes
+              .firstWhereOrNull((type) => type.code == code)
+              ?.title ??
+          code;
+
   /// Persists the speaker selection for one event and keeps the local map in
   /// sync so re-opening the cell shows the saved set.
   Future<int?> _saveEventSpeakers(
@@ -813,7 +820,39 @@ class ScheduleContentState extends State<ScheduleContent> {
           title: CommonStrings.type,
           field: Tb.events.type,
           // Field in EventModel storing the type code
-          type: TrinaColumnType.select(_eventTypeSelectOptions),
+          type: TrinaColumnType.select<String>(
+            _eventTypeSelectOptions,
+            itemToString: _eventTypeLabel,
+            menuItemBuilder: (code) {
+              final type = _definedEventTypes.firstWhereOrNull(
+                (et) => et.code == code,
+              );
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    if (type != null) ...[
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: type.getColor(),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        _eventTypeLabel(code),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
           // Dropdown with loaded type codes
           width: 150,
           // Adjust width as needed

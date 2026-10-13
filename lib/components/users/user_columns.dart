@@ -194,8 +194,15 @@ class UserColumns {
             title: UserStrings.sex,
             enableEditingMode: RightsService.canUpdateUsers(),
             field: SEX,
-            type: TrinaColumnType.select(UserInfoModel.sexes,
-                defaultValue: UserInfoModel.sexes.first),
+            type: TrinaColumnType.select(
+              UserInfoModel.sexes,
+              defaultValue: UserInfoModel.sexes.first,
+              itemToString: UserInfoModel.sexToLocale,
+              menuItemBuilder: (value) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(UserInfoModel.sexToLocale(value)),
+              ),
+            ),
             formatter: (value) => DataGridHelper.textTransform(
                 value, UserInfoModel.sexes, UserInfoModel.sexToLocale),
             applyFormatterInEditing: true,
