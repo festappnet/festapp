@@ -134,6 +134,15 @@
     "orderLabel": "Bestellung"
   },
   "FeatureFormSettings": {
+    "helperReminderEnabled": "Zahlungserinnerungen standardmäßig senden. Jedes Formular kann diese Einstellung überschreiben.",
+    "helperDeadlineDuration": "Standardzahl der Tage zur Bezahlung einer neuen Bestellung. Ein leeres Feld bedeutet 7 Tage.",
+    "nonNegativeDays": "Geben Sie null oder eine positive Anzahl von Tagen ein.",
+    "inheritDays": "Standardwert der Veranstaltung (Tage): {}. Leer lassen, um diesen Wert zu übernehmen.",
+    "inheritReminder": "Veranstaltungsstandard ({})",
+    "remindersOff": "Aus",
+    "remindersOn": "Ein",
+    "occasionPaymentDefaultsHelp": "Standardwerte für alle Formulare dieser Veranstaltung. Einzelne Formulare können sie überschreiben.",
+    "formPaymentDefaultsHelp": "Dieses Formular übernimmt Zahlungs- und Erinnerungseinstellungen aus der Formularfunktion der Veranstaltung. Eigene Werte gelten nur für dieses Formular.",
     "labelShowPaymentQr": "Zahlungs-QR nach Bestellung anzeigen",
     "helperShowPaymentQr": "Zeigt nach der Bestellung den Zahlungs-QR-Code und die Daten direkt auf dem Bestätigungsbildschirm an."
   },

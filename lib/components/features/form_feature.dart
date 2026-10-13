@@ -205,6 +205,10 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
           Column(
             children: [
               Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(FormStrings.occasionPaymentDefaultsHelp),
+              ),
+              Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: TextFormField(

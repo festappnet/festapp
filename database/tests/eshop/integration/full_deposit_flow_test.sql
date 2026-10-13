@@ -88,7 +88,8 @@ BEGIN
     -- Verify deposit reminder queued at order creation
     SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
     WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
-    AND (data->>'order_id')::bigint = v_order_id;
+    AND (data->>'order_id')::bigint = v_order_id
+    AND (data->>'is_deposit_reminder')::boolean IS TRUE;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 1: Deposit reminder should be queued at order creation');
     RAISE NOTICE 'Step 1 PASSED: Order created, deposit=500, reminder queued';
 
@@ -120,7 +121,8 @@ BEGIN
     -- ==================================================================
     SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
     WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
-    AND (data->>'order_id')::bigint = v_order_id;
+    AND (data->>'order_id')::bigint = v_order_id
+    AND (data->>'is_deposit_reminder')::boolean IS TRUE;
     PERFORM assert_eq(v_reminder_count, 1::bigint, 'Step 3: Deposit reminder should still be queued');
     RAISE NOTICE 'Step 3 PASSED: Deposit reminder still active';
 
