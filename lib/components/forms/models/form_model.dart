@@ -85,6 +85,7 @@ class FormModel {
   bool? canDelete;
 
   static const String metaIsCardDesign = "is_card_design";
+  static const String metaReminderIntervalSeconds = "reminder_interval_seconds";
   static const String metaIsReminderEnabled = "is_reminder_enabled";
   static const String metaFields = "fields";
   static const String metaVariableSymbol = "variable_symbol";
