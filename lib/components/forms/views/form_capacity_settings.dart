@@ -4,6 +4,8 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import '../models/form_model.dart';
+import '../../features/feature_service.dart';
+import '../../features/feature_constants.dart';
 import '../waitlist_strings.dart';
 
 /// Edits the existing form draft. The editor's Save/Discard owns persistence.
@@ -135,7 +137,10 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                               children: [
                                 SwitchListTile(
                                     contentPadding: EdgeInsets.zero,
-                                    title: Text(WaitlistStrings.limitCapacity),
+                                    title: Text(FeatureService.isFeatureEnabled(
+                                            FeatureConstants.ticket)
+                                        ? WaitlistStrings.limitTickets
+                                        : WaitlistStrings.limitCapacity),
                                     subtitle: Text(_blocked
                                         ? WaitlistStrings.activeEntries
                                         : _limited
@@ -160,7 +165,13 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                   TextFormField(
                                       controller: _capacity,
                                       decoration: InputDecoration(
-                                          labelText: WaitlistStrings.capacity,
+                                          labelText:
+                                              FeatureService.isFeatureEnabled(
+                                                      FeatureConstants.ticket)
+                                                  ? WaitlistStrings.text(
+                                                      'capacityTickets')
+                                                  : WaitlistStrings.text(
+                                                      'capacityRegistrations'),
                                           border: const OutlineInputBorder(),
                                           errorMaxLines: 4),
                                       keyboardType: TextInputType.number,
