@@ -668,7 +668,7 @@
       "manageWaitlistUrl": "Osobisty link do zarządzania oczekiwaniem",
       "manageWaitlistButton": "Przycisk zarządzania oczekiwaniem (HTML)",
       "offeredCount": "Liczba oferowanych miejsc",
-      "offerExpiresAt": "Oferta ważna do (UTC)",
+      "offerExpiresAt": "Oferta ważna do",
       "offerUrl": "Osobisty link do oferty",
       "offerButton": "Przycisk otwarcia oferty (HTML)"
     },

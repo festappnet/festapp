@@ -826,7 +826,7 @@
       "manageWaitlistUrl": "Personal waitlist management link",
       "manageWaitlistButton": "Waitlist management button (HTML)",
       "offeredCount": "Number of offered places",
-      "offerExpiresAt": "Offer expiry (UTC)",
+      "offerExpiresAt": "Offer expiry",
       "offerUrl": "Personal offer link",
       "offerButton": "Open offer button (HTML)"
     },

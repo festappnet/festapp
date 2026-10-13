@@ -51,10 +51,10 @@ export function waitlistCountPhrase(count: number, noun: "person" | "place"): st
 export function waitlistExpiryText(expiresAt: string, timeZone: string): string {
   const date = new Date(expiresAt);
   if (!Number.isFinite(date.getTime()) || !timeZone) throw new Error("waitlist_email_timezone_invalid");
-  return `${new Intl.DateTimeFormat("cs-CZ", {
+  return new Intl.DateTimeFormat("cs-CZ", {
     timeZone, day: "numeric", month: "numeric", year: "numeric",
     hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).format(date)} (${timeZone})`;
+  }).format(date);
 }
 
 function escapeHtml(value: unknown): string {

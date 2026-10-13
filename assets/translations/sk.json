@@ -667,7 +667,7 @@
       "manageWaitlistUrl": "Osobný odkaz na správu čakania",
       "manageWaitlistButton": "Tlačidlo na správu čakania (HTML)",
       "offeredCount": "Počet ponúknutých miest",
-      "offerExpiresAt": "Platnosť ponuky do (UTC)",
+      "offerExpiresAt": "Platnosť ponuky do",
       "offerUrl": "Osobný odkaz na ponuku",
       "offerButton": "Tlačidlo na otvorenie ponuky (HTML)"
     },

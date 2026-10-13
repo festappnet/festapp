@@ -245,7 +245,7 @@ class EmailTemplateModel {
       EmailTemplateSub(
           code: 'offer_expires_at',
           description: EmailTemplatesStrings.subOfferExpiresAt,
-          defaultValue: '14. 10. 2026 14:00 (Europe/Prague)'),
+          defaultValue: '14. 10. 2026 14:00'),
       EmailTemplateSub(
           code: 'offer_url',
           description: EmailTemplatesStrings.subOfferUrl,
