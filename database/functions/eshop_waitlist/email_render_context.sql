@@ -1,3 +1,19 @@
+-- One presentation vocabulary for both gated delivery and authenticated preview.
+-- The existing effective-form resolver owns tone inheritance.
+CREATE OR REPLACE FUNCTION public.get_waitlist_email_tone_substitutions_internal(p_form bigint)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT jsonb_build_object(
+  'waitlist_offer_button_single','Potvrdit přihlášení',
+  'waitlist_offer_button_multiple','Potvrdit vybrané osoby',
+  'waitlist_manage_button_label','Spravovat čekání',
+  'waitlist_confirmation_heading',CASE WHEN informal THEN 'Jsi mezi náhradníky' ELSE 'Jste mezi náhradníky' END,
+  'waitlist_confirmation_explanation',CASE WHEN informal THEN 'Zatím nic neplatíš. Jakmile se uvolní místo, pošleme ti nabídku. Čekání můžeš spravovat nebo ukončit přes tento odkaz:' ELSE 'Zatím nic neplatíte. Jakmile se uvolní místo, pošleme vám nabídku. Čekání můžete spravovat nebo ukončit přes tento odkaz:' END,
+  'waitlist_offer_heading',CASE WHEN informal THEN 'Máme pro tebe nabídku' ELSE 'Máme pro vás nabídku' END,
+  'waitlist_offer_instructions',CASE WHEN informal THEN 'Po otevření nabídky vybereš, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíš.' ELSE 'Po otevření nabídky vyberete, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíte.' END)
+ FROM (SELECT coalesce(public.get_effective_form_data(p_form)->>'communication_tone','formal')='informal' informal) tone;
+$$;
+REVOKE ALL ON FUNCTION public.get_waitlist_email_tone_substitutions_internal(bigint) FROM PUBLIC,anon,authenticated;
+
 -- Private queue renderer boundary. Personal capabilities remain encrypted in
 -- existing queue sources; the renderer receives only their hashes and envelopes.
 CREATE OR REPLACE FUNCTION public.get_waitlist_email_render_context_v1(
@@ -51,6 +67,8 @@ BEGIN
   'offeredCount',(SELECT count(*) FROM eshop.waitlist_offer_slots
     WHERE offer_id=p_offer_id AND outcome='pending'),
   'timeZone',v_timezone,
+  'communicationTone',public.get_effective_form_data(f.id)->>'communication_tone',
+  'toneSubstitutions',public.get_waitlist_email_tone_substitutions_internal(f.id),
   'expiresAt',(SELECT expires_at FROM eshop.waitlist_offers WHERE id=p_offer_id),
   'tokenHash',source_cap.token_hash,'manageTokenHash',manage_cap.token_hash,
   'manageEnvelope',manage_message.data->'waitlistEnvelope',

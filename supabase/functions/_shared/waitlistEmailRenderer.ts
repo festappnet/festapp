@@ -37,6 +37,8 @@ export type WaitlistRenderContext = {
   offeredCount?: number;
   expiresAt?: string;
   timeZone?: string;
+  communicationTone?: "formal" | "informal";
+  toneSubstitutions?: Record<string, string>;
   manageEnvelope?: Record<string, string>;
   manageContentHash?: string;
   manageTokenHash?: string;
@@ -54,7 +56,7 @@ export function waitlistExpiryText(expiresAt: string, timeZone: string): string 
   return new Intl.DateTimeFormat("cs-CZ", {
     timeZone, day: "numeric", month: "numeric", year: "numeric",
     hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).format(date);
+  }).format(date).replace(/\s/g, "\u00a0");
 }
 
 function escapeHtml(value: unknown): string {
@@ -191,7 +193,13 @@ export async function renderWaitlistEmail(
   const manageUrl = escapeHtml(waitlistCapabilityUrl(context, manageSource));
   const button = (href: string, label: string) =>
     `<a href="${href}" rel="noreferrer noopener" referrerpolicy="no-referrer" style="display:inline-block;padding:12px 20px;background:#1565c0;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a>`;
+  // Delivery and editor preview consume the same authoritative form-tone copy.
+  const toneKeys = ["waitlist_offer_button_single", "waitlist_offer_button_multiple", "waitlist_manage_button_label", "waitlist_confirmation_heading", "waitlist_confirmation_explanation", "waitlist_offer_heading", "waitlist_offer_instructions"];
+  if (toneKeys.some((key) => typeof context.toneSubstitutions?.[key] !== "string")) {
+    throw new Error("waitlist_email_tone_context_invalid");
+  }
   const substitutions: Record<string, string | number> = {
+    ...Object.fromEntries(toneKeys.map((key) => [key, escapeHtml(context.toneSubstitutions![key])])),
     order_symbol: escapeHtml(context.orderSymbol),
     occasion_title: escapeHtml(source.occasionTitle),
     participant_count: offer
@@ -199,14 +207,14 @@ export async function renderWaitlistEmail(
       : source.participantCount,
     participant_phrase: waitlistCountPhrase(offer ? context.participantCount! : source.participantCount, "person"),
     manage_waitlist_url: manageUrl,
-    manage_waitlist_button: button(manageUrl, "Spravovat čekání"),
+    manage_waitlist_button: button(manageUrl, escapeHtml(context.toneSubstitutions!.waitlist_manage_button_label)),
     ...(offer
       ? {
         offered_count: context.offeredCount!,
         offered_places: waitlistCountPhrase(context.offeredCount!, "place"),
         offer_expires_at: escapeHtml(waitlistExpiryText(source.expiresAt!, context.timeZone!)),
         offer_url: url,
-        offer_button: button(url, "Otevřít nabídku"),
+        offer_button: button(url, escapeHtml(context.toneSubstitutions![context.offeredCount === 1 ? "waitlist_offer_button_single" : "waitlist_offer_button_multiple"])),
       }
       : {}),
   };

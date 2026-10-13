@@ -17,13 +17,16 @@ class WaitlistCapacitySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) => !capacity.enabled
       ? const SizedBox.shrink()
-      : Text([
-          '${WaitlistStrings.capacity}: ${capacity.limit}',
-          '${WaitlistStrings.text('admitted')}: ${capacity.occupiedPeople}',
-          '${WaitlistStrings.text('offered')}: ${capacity.offeredPlaces}',
-          '${WaitlistStrings.text('waiting')}: ${capacity.waitingPeople}',
-          '${WaitlistStrings.remaining}: ${capacity.remainingPublic}',
-        ].join(' · '));
+      : Wrap(spacing: 16, runSpacing: 4, children: [
+          Text(WaitlistStrings.text('occupancy')
+              .replaceAll('{occupied}', '${capacity.occupiedPeople}')
+              .replaceAll('{capacity}', '${capacity.limit ?? ''}')),
+          Text('${WaitlistStrings.text('waiting')}: ${capacity.waitingPeople}'),
+          if (capacity.offeredPlaces > 0)
+            Text('${WaitlistStrings.text('offered')}: ${capacity.offeredPlaces}'),
+          Text('${WaitlistStrings.remaining}: ${capacity.offerablePlaces}'),
+        ]);
+
 }
 
 class WaitlistOffersDialog extends StatefulWidget {
@@ -32,12 +35,14 @@ class WaitlistOffersDialog extends StatefulWidget {
       required this.form,
       this.orders = const [],
       this.targetOrderId,
+      this.selectedOrderIds,
       this.loadProposal,
       this.loadPreview,
       this.executeCommand});
   final FormModel form;
   final List<OrderModel> orders;
   final int? targetOrderId;
+  final Set<int>? selectedOrderIds;
   final Future<Map<String, dynamic>> Function(int)? loadProposal;
   final Future<Map<String, dynamic>> Function(int)? loadPreview;
   final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
@@ -53,9 +58,9 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
   Map<String, dynamic>? _preview;
   List<OrderModel> _orders = [];
   DateTime? _expiresAt;
+  String? get _expiryTimeZone => _preview?['timeZone'] as String?;
   String? _error;
   bool _busy = true;
-  bool _sent = false;
   @override
   void initState() {
     super.initState();
@@ -69,6 +74,10 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     }
     super.dispose();
   }
+
+  bool _includesOrder(int id) =>
+      (widget.targetOrderId == null || id == widget.targetOrderId) &&
+      (widget.selectedOrderIds == null || widget.selectedOrderIds!.contains(id));
 
   Future<void> _load() async {
     setState(() => _busy = true);
@@ -92,12 +101,11 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
       for (final order in _orders.where((o) =>
           o.isWaitlisted &&
           o.formId == widget.form.id &&
-          (widget.targetOrderId == null || o.id == widget.targetOrderId))) {
+          _includesOrder(o.id!))) {
         _counts[order.id!] = TextEditingController(text: '0');
       }
       for (final row in proposal['recipients'] as List) {
-        if (widget.targetOrderId != null &&
-            row['orderId'] != widget.targetOrderId) continue;
+        if (!_includesOrder(row['orderId'] as int)) continue;
         (_counts[row['orderId']] ??= TextEditingController()).text =
             row['count'].toString();
       }
@@ -118,18 +126,24 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
       _busy = true;
       _error = null;
     });
+    final recipients = [
+      for (final e in _counts.entries)
+        if ((int.tryParse(e.value.text) ?? 0) > 0)
+          {'orderId': e.key, 'count': int.parse(e.value.text)}
+    ];
     try {
-      await (widget.executeCommand ?? _commands.command)('send', {
+      final result = await (widget.executeCommand ?? _commands.command)('send', {
         'formId': widget.form.id,
         'revision': _proposal!['revision'],
-        'recipients': [
-          for (final e in _counts.entries)
-            if ((int.tryParse(e.value.text) ?? 0) > 0)
-              {'orderId': e.key, 'count': int.parse(e.value.text)}
-        ],
+        'recipients': recipients,
         'expiresAt': _expiresAt!.toUtc().toIso8601String(),
       });
-      if (mounted) setState(() => _sent = true);
+      if (result['code'] != 200) throw WaitlistCommandException(result);
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.pop(context, true);
+      messenger.showSnackBar(SnackBar(content: Text(WaitlistStrings.text(
+          recipients.length == 1 ? 'offerSending' : 'offersSending'))));
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -160,8 +174,23 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
             : 'míst';
     final expiry = _expiresAt == null
         ? ''
-        : DateFormat('d. M. yyyy HH:mm').format(_expiresAt!.toOccasionTime());
+        : DateFormat('d. M. yyyy HH:mm')
+            .format(_expiresAt!.toOccasionTime(_expiryTimeZone))
+            .replaceAll(RegExp(r'\s'), '\u00a0');
+    final toneSubstitutions = _preview?['toneSubstitutions'];
+    String previewLabel(String key, String fallback) =>
+        toneSubstitutions is Map && toneSubstitutions[key] is String
+            ? escape(toneSubstitutions[key] as String)
+            : escape(fallback);
     final vars = <String, String>{
+      for (final key in const [
+        'waitlist_confirmation_heading',
+        'waitlist_confirmation_explanation',
+        'waitlist_offer_heading',
+        'waitlist_offer_instructions',
+      ])
+        if (toneSubstitutions is Map && toneSubstitutions[key] is String)
+          key: escape(toneSubstitutions[key] as String),
       'order_symbol': escape(order?.orderSymbol ?? '$orderId'),
       'occasion_title': escape(_preview?['occasionTitle']?.toString() ?? ''),
       'participant_count': '$participantCount',
@@ -171,9 +200,9 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
       'offer_expires_at': escape(expiry),
       'offer_url': '#',
       'manage_waitlist_url': '#',
-      'offer_button': '<a href="#">${escape(WaitlistStrings.accept)}</a>',
+      'offer_button': '<a href="#">${previewLabel(count == 1 ? 'waitlist_offer_button_single' : 'waitlist_offer_button_multiple', WaitlistStrings.accept)}</a>',
       'manage_waitlist_button':
-          '<a href="#">${escape(WaitlistStrings.withdraw)}</a>',
+          '<a href="#">${previewLabel('waitlist_manage_button_label', WaitlistStrings.withdraw)}</a>',
     };
     String expand(String html) => html.replaceAllMapped(
         RegExp(r'\{\{\s*(\w+)\s*\}\}'), (m) => vars[m[1]] ?? m[0]!);
@@ -196,7 +225,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
             Map<String, dynamic>.from(_proposal!['capacity']));
     return AppAlertDialog(
       dismissible: !_busy,
-      onClose: () => Navigator.pop(context, _sent),
+      onClose: () => Navigator.pop(context, false),
       title: Text(WaitlistStrings.send),
       content: SizedBox(
           width: 600,
@@ -210,10 +239,11 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                   Text(_error!,
                       style: TextStyle(
                           color: Theme.of(context).colorScheme.error)),
-                if (_sent) Text(WaitlistStrings.queued),
-                if (!_sent && capacity != null) ...[
+                if (capacity != null) ...[
                   Text(WaitlistStrings.offerReviewExplanation),
+                  const SizedBox(height: 12),
                   WaitlistCapacitySummary(capacity: capacity),
+                  const SizedBox(height: 8),
                   if (!capacity.canSendOffers)
                     Text(
                         WaitlistStrings.text(capacity.blockedReason ?? 'full')),
@@ -234,51 +264,62 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                       onPressed: _busy
                           ? null
                           : () async {
+                              final pickerNow = DateTime.now().toUtc().toOccasionTime(_expiryTimeZone);
                               final date = await showDatePicker(
                                   context: context,
-                                  initialDate: _expiresAt!.toOccasionTime(),
-                                  firstDate: DateTime.now(),
-                                  lastDate: DateTime.now()
+                                  initialDate: _expiresAt!.toOccasionTime(_expiryTimeZone),
+                                  firstDate: pickerNow,
+                                  lastDate: pickerNow
                                       .add(const Duration(days: 3650)));
                               if (date == null || !context.mounted) return;
                               final time = await showTimePicker(
                                   context: context,
                                   initialTime: TimeOfDay.fromDateTime(
-                                      _expiresAt!.toOccasionTime()));
-                              if (time != null && mounted)
+                                      _expiresAt!.toOccasionTime(_expiryTimeZone)));
+                              if (time != null && mounted) {
                                 setState(() => _expiresAt = DateTime(
                                         date.year,
                                         date.month,
                                         date.day,
                                         time.hour,
                                         time.minute)
-                                    .toUtcFromOccasionTime());
+                                    .toUtcFromOccasionTime(_expiryTimeZone));
+                              }
                             },
                       child: Text(
-                          '${WaitlistStrings.expiresAt}: ${_expiresAt == null ? '' : DateFormat('d. M. yyyy HH:mm').format(_expiresAt!.toOccasionTime())}')),
+                          '${WaitlistStrings.expiresAt}: ${_expiresAt == null ? '' : DateFormat('d. M. yyyy HH:mm').format(_expiresAt!.toOccasionTime(_expiryTimeZone))}')),
                   const Divider(),
                   Text(WaitlistStrings.text('emailPreview')),
                   for (final e in _counts.entries
                       .where((e) => (int.tryParse(e.value.text) ?? 0) > 0))
-                    ExpansionTile(
-                      title: Text(_orders
-                              .where((o) => o.id == e.key)
-                              .firstOrNull
-                              ?.orderSymbol ??
-                          e.key.toString()),
-                      children: [
-                        HtmlWidget(_previewHtml(e.key, int.parse(e.value.text)),
-                            onTapUrl: (_) => true)
-                      ],
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(top: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_orders.where((o) => o.id == e.key).firstOrNull?.toBasicString() ?? '',
+                              style: Theme.of(context).textTheme.titleSmall),
+                          const Divider(height: 24),
+                          HtmlWidget(_previewHtml(e.key, int.parse(e.value.text)),
+                              onTapUrl: (_) => true),
+                        ],
+                      ),
                     ),
                 ],
               ]))),
       actions: [
-        if (!_sent && _proposal == null)
+        if (_proposal == null)
           TextButton(
               onPressed: _busy ? null : _load,
               child: Text(WaitlistStrings.refresh)),
-        if (!_sent && _proposal != null)
+        if (_proposal != null)
           FilledButton(
               onPressed: !_busy &&
                       capacity!.canSendOffers &&

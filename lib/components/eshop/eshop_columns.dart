@@ -686,7 +686,8 @@ class EshopColumns {
               OrderModel.statesToDataGridFormat(),
             ),
             renderer: (rendererContext) => _originalOrderStateRenderer(context,
-                rendererContext, OrderModel.singleDataGridStateToColor),
+                rendererContext, OrderModel.singleDataGridStateToColor,
+                label: OrderGridFilters.order(rendererContext.row)?.stateLabel),
             textAlign: TrinaColumnTextAlign.center,
             width: 140,
           ),
@@ -1020,7 +1021,7 @@ class EshopColumns {
                 renderer: (ctx) {
                   final val = ctx.cell.value?.toString() ?? "";
                   final canUpdate = RightsService.canUpdateOrders() &&
-                      OrderGridFilters.allows(ctx.row, 'paid');
+                      OrderGridFilters.orderCanReceivePayment(ctx.row);
                   return Row(
                     children: [
                       InkWell(
@@ -1399,10 +1400,10 @@ class EshopColumns {
   static Widget _originalOrderStateRenderer(
       BuildContext context,
       TrinaColumnRendererContext rendererContext,
-      Color Function(String) getBackground) {
+      Color Function(String) getBackground, {String? label}) {
     String value = rendererContext.cell.value;
     String firstPart = value.split(";")[0];
-    String textValue = OrderModel.statesDataGridToUpper(value.split(";").last);
+    String textValue = OrderModel.statesDataGridToUpper(label ?? value.split(";").last);
 
     return Container(
       color: getBackground(firstPart),

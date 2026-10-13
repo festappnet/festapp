@@ -305,9 +305,68 @@ test('one distinct accessible product notice sits outside all disabled groups', 
     assert.equal(host.querySelectorAll('.waitlist-product-notice').length,1);
     const note=host.querySelector('.waitlist-product-notice');
     assert.equal(note.getAttribute('role'),'note');
+    assert.equal((groups[0].closest('.form-field-card') || groups[0]).previousElementSibling,note);
+    assert.equal(host.querySelector('.form-registration-status').contains(note),false);
     for(const group of groups){assert.equal(group.getAttribute('aria-describedby'),note.id);assert.equal(group.contains(note),false);assert.ok(group.disabled);}
     assert.equal(host.querySelector('.form-registration-status h2'),null);
     assert.match(host.querySelector('.waitlist-mode-label').textContent,/režimu náhradníků/);
     assert.doesNotMatch(note.textContent,/zaplat/);
+    d.window.close();
+});
+
+test('waitlist copy follows the existing formal/informal form tone across registration, preview, result and management', async () => {
+    const d=dom(); const host=document.querySelector('main');const {FormPage}=await import('../../src/components/forms/form_page.js');
+    for(const tone of ['formal','informal']) for(const count of [1,2]) {
+        const model=new FormModel({registrationMode:'waitlist',data:{communication_tone:tone},fields});
+        const current=new FormSession(model);FormRenderer.render(host,current,model,false,{});renderWaitlistControls({host,currentSession:current},model);
+        assert.match(host.querySelector('.waitlist-intro').textContent,tone==='informal'?/pošleme ti/:/pošleme vám/);
+        assert.match(host.querySelector('.waitlist-product-notice').textContent,tone==='informal'?/doplníš/:/doplníte/);
+        current.state.tickets=Array.from({length:count},(_,i)=>({fields:[{name:`Name ${i}`,_subFieldId:2}]}));current._syncPayloadFromState();
+        host.innerHTML=OrderPreview._render(OrderPreview._prepareData(null,model,current.state,current.payload));
+        assert.match(host.textContent,tone==='informal'?/pošleme ti/:/pošleme vám/);
+        OrderResult.render(host,true,{},model,()=>{});
+        assert.equal(host.querySelector('.result-title').textContent,tone==='informal'?'Jsi v pořadníku náhradníků':'Jste v pořadníku náhradníků');
+        assert.doesNotMatch(host.querySelector('.result-subtitle').textContent,/Zde vid/);
+        const page=new FormPage(host);page.waitlistScope={orderId:1};page.applyTheme=()=>{};
+        page.renderWaitlistManagement({form:{data:{communication_tone:tone},fields},tickets:[{id:1,lifecycle:'waiting',answers:{fields:[]}}]});
+        assert.match(host.textContent,tone==='informal'?/Zde vidíš/:/Zde vidíte/);
+    }
+    d.window.close();
+});
+
+test('return from successful result refetches capacity and server registration mode before displaying the form',async t=>{
+    const d=dom(); const [{FormPage},{DbForms},{RouterService},{RightsService},{SeoService}]=await Promise.all([
+        import('../../src/components/forms/form_page.js'),import('../../src/components/forms/db_forms.js'),import('../../src/services/router_service.js'),import('../../src/services/rights_service.js'),import('../../src/services/seo_service.js')]);
+    t.mock.method(RouterService,'pushOverlayState',()=>{});
+    t.mock.method(RouterService,'goBackProgrammatically',()=>window.dispatchEvent(new window.PopStateEvent('popstate')));
+    t.mock.method(RightsService,'updateAppData',async()=>{});t.mock.method(RightsService,'canSeeReservations',()=>false);t.mock.method(SeoService,'updateMetaTags',()=>{});
+    let finish;let requests=0;t.mock.method(DbForms,'getFormByLink',()=>{requests++;return new Promise(resolve=>finish=resolve);});
+    const page=new FormPage('host');page.currentLink='test';page.applyTheme=()=>{};const rendered=[];page.renderForm=model=>{rendered.push(model);page.host.textContent=model.registrationMode;};
+    page.host.textContent='old regular form';page.showFullScreenResult(true,{},new FormModel({registrationMode:'regular',fields}));
+    document.querySelector('.btn-back-to-form').click();
+    assert.equal(requests,1);assert.equal(rendered.length,0);assert.doesNotMatch(page.host.textContent,/old regular/);
+    finish(new FormModel({registrationMode:'waitlist',capacity:{limit:12,occupiedPeople:12,remainingPublic:0},fields}));await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(rendered[0].registrationMode,'waitlist');assert.equal(rendered[0].capacity.occupiedPeople,12);assert.equal(document.querySelector('.fullscreen-result-overlay'),null);
+    d.window.close();
+});
+
+
+test('offer acceptance uses singular or selected-people label in form and shared preview', () => {
+    const d = dom();
+    for (const count of [1, 2]) {
+        const model = new FormModel({ registrationMode: 'regular', fields });
+        model.selectedTicketIds = Array.from({ length: count }, (_, i) => i + 1);
+        model.offerBundle = { pendingCount: count, expiresAt: '2030-01-01', tickets: model.selectedTicketIds.map(id => ({ id, lifecycle: 'offered', displayName: `Jméno ${id}` })), slots: model.selectedTicketIds.map(ticketId => ({ ticketId, outcome: 'pending' })) };
+        const current = new FormSession(model);
+        current.state.tickets = model.selectedTicketIds.map(ticketId => ({ ticketId, fields: [{ name: `Jméno ${ticketId}`, _subFieldId: 2 }] }));
+        current._syncPayloadFromState();
+        const host = document.querySelector('main');
+        FormRenderer.render(host, current, model, false, {});
+        renderWaitlistControls({ host, currentSession: current }, model);
+        const expected = count === 1 ? 'Potvrdit přihlášení' : 'Potvrdit vybrané osoby';
+        assert.equal(host.querySelector('.btn-submit').textContent, expected);
+        host.innerHTML = OrderPreview._render(OrderPreview._prepareData(null, model, current.state, current.payload));
+        assert.equal(host.querySelector('.btn-submit-order').textContent.trim(), expected);
+    }
     d.window.close();
 });
