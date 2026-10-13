@@ -59,7 +59,7 @@ export class OptionBuilderHelper {
         input.value = (opt.id !== undefined && opt.id !== null) ? opt.id : opt.title;
         input.id = `${field.id}_${(opt.id !== undefined && opt.id !== null) ? opt.id : opt.title}`;
         input.className = 'form-check-input';
-        input.disabled = opt.isAvailable === false;
+        input.disabled = opt.isAvailable === false || (formModel?.registrationMode === 'waitlist' && field.type === 'product_type');
 
         // Apply default selection from field.data.default_value (radio: string, checkbox: list of strings).
         // Matches by option title or id.
@@ -91,7 +91,7 @@ export class OptionBuilderHelper {
             const priceDisplay = formatPrice(opt.price, currency, 0, 'cs-CZ');
             labelContent = html`${labelContent}<span class="option-price">+ ${priceDisplay}</span>`;
         }
-        if (input.disabled) labelContent = html`${labelContent} (${WaitlistStrings.text('PRODUCT_CAPACITY_EXCEEDED')})`;
+        if (opt.isAvailable === false && formModel?.registrationMode !== 'waitlist') labelContent = html`${labelContent} (${WaitlistStrings.text('PRODUCT_CAPACITY_EXCEEDED')})`;
         optLabel.innerHTML = labelContent;
 
         // Content wrapper with label + optional deposit/description

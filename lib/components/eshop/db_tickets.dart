@@ -60,19 +60,31 @@ class DbTickets {
         occasionLink: occasionLink,
         includeOrderDetails: true,
         includeSpots: true);
+    return ticketsFromOrdersBundle(ordersBundle);
+  }
+
+  /// Assemble the same ticket rows returned by the orders RPC for the ticket grid.
+  static List<TicketModel> ticketsFromOrdersBundle(
+      ReservationsBundle ordersBundle) {
     List<TicketModel> toReturn = [];
     for (var o in ordersBundle.orders) {
       for (TicketModel t in o.relatedTickets ?? []) {
-        var tckst = o.data?[TbEshop.tickets.table];
-        t.totalPrice = tckst.isNotEmpty ? 0 : null;
-        for (var tt in tckst) {
-          if (tt[TbEshop.tickets.ticket_symbol] != t.ticketSymbol) {
-            continue;
-          }
-          for (var p in tt[TbEshop.products.table] ?? []) {
-            t.totalPrice = t.totalPrice! + (p[TbEshop.products.price] ?? 0);
-          }
-        }
+        final snapshots = o.data?[TbEshop.tickets.table] as List? ?? const [];
+        final snapshot = snapshots
+            .whereType<Map>()
+            .firstWhereOrNull((entry) => entry[TbEshop.tickets.id] == t.id);
+        // Waiting and withdrawn tickets have no purchased-product snapshot.
+        // Symbols can be NULL, so they cannot identify a ticket's price.
+        t.totalPrice = snapshot == null
+            ? null
+            : (snapshot[TbEshop.products.table] as List? ?? const [])
+                .fold<double>(
+                    0,
+                    (sum, product) =>
+                        sum +
+                        ((product[TbEshop.products.price] as num?)
+                                ?.toDouble() ??
+                            0));
       }
       toReturn.addAll(o.relatedTickets ?? []);
     }

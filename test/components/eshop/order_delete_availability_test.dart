@@ -32,7 +32,7 @@ class _OrderRow implements ITrinaRowModel {
 
 void main() {
   testWidgets(
-      'ordinary ordered/sent trash is clickable and deletion still requires confirmation',
+      'waiting and ordinary trash is clickable; deletion still requires confirmation',
       (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1;
@@ -101,16 +101,12 @@ void main() {
             find.widgetWithIcon(IconButton, Icons.delete_forever))
         .toList();
     expect(buttons, hasLength(7));
-    for (var i = 0; i < 4; i++) {
-      expect(buttons[i].onPressed, isNotNull,
-          reason: '${orders[i].state} ordinary order must be deletable');
-    }
-    for (var i = 4; i < 7; i++) {
-      expect(buttons[i].onPressed, isNull,
+    for (var i = 0; i < buttons.length; i++) {
+      expect(buttons[i].onPressed, i == 5 ? isNull : isNotNull,
           reason:
-              'Waiting, preparing and offer-history orders remain protected');
+              'Only preparing_payment is protected; waiting and offer-history orders are deletable');
     }
-    await tester.tap(find.byIcon(Icons.delete_forever).first);
+    await tester.tap(find.byIcon(Icons.delete_forever).at(4));
     await tester.pumpAndSettle();
     expect(grid.deletedRows, hasLength(1));
     expect(deleted, isEmpty);
@@ -121,6 +117,6 @@ void main() {
     expect(deleted, isEmpty);
     await tester.tap(find.widgetWithText(ElevatedButton, CommonStrings.delete));
     await tester.pumpAndSettle();
-    expect(deleted, [1]);
+    expect(deleted, [5]);
   });
 }

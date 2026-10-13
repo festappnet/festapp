@@ -86,6 +86,16 @@ class _OrdersContentState extends State<OrdersContent> {
     if (!mounted) return;
 
     var forms = bundle.forms;
+    bool waitlistEnabled() => forms.any((form) => form.waitlistEnabled);
+    void updateWaitlistColumn(SingleDataGridController<OrderModel> grid) {
+      final column = grid.columns
+          .firstWhere((column) => column.field == EshopColumns.ORDER_WAITLIST);
+      if (grid.isGridLoaded) {
+        grid.stateManager.hideColumn(column, !waitlistEnabled());
+      } else {
+        column.hide = !waitlistEnabled();
+      }
+    }
 
     // Check if any field across all forms is a non-ticket 'note' field.
     final hasOrderNoteField = forms.any((form) => (form.relatedFields).any(
@@ -181,10 +191,10 @@ class _OrdersContentState extends State<OrdersContent> {
             await DbOrders.getOrdersTabData(occasionLink: occasionLink!);
         bundle = newBundle;
         forms = newBundle.forms;
+        if (mounted && controller != null) updateWaitlistColumn(controller!);
         final actions = controller?.headerChildren;
         actions?.removeWhere((action) => identical(action, sendOffersAction));
-        if (RightsService.isEditorOrder() &&
-            forms.any((f) => f.waitlistEnabled)) {
+        if (RightsService.isEditorOrder() && waitlistEnabled()) {
           actions?.insert(0, sendOffersAction);
         }
         return newBundle.orders;
@@ -205,8 +215,7 @@ class _OrdersContentState extends State<OrdersContent> {
         isAddActionPossible: () => false,
       ),
       headerChildren: [
-        if (RightsService.isEditorOrder() &&
-            forms.any((f) => f.waitlistEnabled))
+        if (RightsService.isEditorOrder() && waitlistEnabled())
           sendOffersAction,
         DataGridAction(
           name: CommonStrings.cancel,
@@ -233,12 +242,14 @@ class _OrdersContentState extends State<OrdersContent> {
         ),
       ],
       columns: EshopColumns.generateColumns(context, columnIdentifiers, data: {
+        EshopColumns.ORDER_WAITLIST: refreshData,
         EshopColumns.ORDER_TRANSACTIONS: refreshData,
         EshopColumns.PAYMENT_INFO_PAID: refreshData,
         "unitId": unitId,
       }),
     );
 
+    updateWaitlistColumn(newController);
     if (mounted) {
       setState(() {
         controller = newController;

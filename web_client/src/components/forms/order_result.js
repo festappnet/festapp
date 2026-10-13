@@ -8,6 +8,7 @@ export class OrderResult {
     static render(container, success, resultData, formModel, onClose) {
         container._orderDeliveryObserver?.stop();
         // Prepare Data
+        const isWaitlist = formModel.registrationMode === 'waitlist';
         const tone = formModel.communicationTone; 
         // We need to know if tickets were involved. 
         // FormModel knows fields. If ticket field exists -> hasTickets = true.
@@ -18,9 +19,9 @@ export class OrderResult {
         let colorClass = 'success-color'; 
 
         if (success) {
-            title = PublicOrderStrings.successTitle(tone, hasTickets);
+            title = isWaitlist ? WaitlistStrings.registered : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
-            subtitle = PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+            subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus')} ${WaitlistStrings.text('managementExplanation')}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
             const prodTitle = (resultData.product && resultData.product.title) || "";
             title = PublicOrderStrings.productUnavailable(prodTitle);
@@ -42,6 +43,7 @@ export class OrderResult {
                 <div class="result-icon-wrapper ${colorClass}">
                     <i class="material-icons result-icon">${icon}</i>
                 </div>
+                <p class="result-occasion-title"></p>
                 <h2 class="result-title ${colorClass}"></h2>
                 <p class="result-subtitle"></p>
                 <p class="result-order-symbol"></p>
@@ -155,14 +157,15 @@ export class OrderResult {
             </style>
         `;
 
+        container.querySelector('.result-occasion-title').textContent = formModel.occasionTitle || '';
         container.querySelector('.result-title').textContent = title;
         container.querySelector('.result-subtitle').textContent = subtitle + (success && resultData?.conversion === 'split' ? ` ${WaitlistStrings.remaining}: ${resultData.waitlistSummary?.pendingPlaces ?? 0}.` : '');
         const orderSymbol = success ? resultData?.ticketOrder?.order?.order_symbol : null;
         if (typeof orderSymbol === 'string') {
-            container.querySelector('.result-order-symbol').textContent = `${OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;
+            container.querySelector('.result-order-symbol').textContent = `${isWaitlist ? WaitlistStrings.text('registrationSymbol') : OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;
         }
 
-        const paymentQr = success ? resultData?.payment_qr : null;
+        const paymentQr = success && !isWaitlist ? resultData?.payment_qr : null;
         const paymentHost = container.querySelector('.result-payment-details');
         if (paymentHost && paymentQr) {
             // Keep the confirmation outside the card; one disclosure reveals every payment option.
@@ -282,7 +285,7 @@ export class OrderResult {
             paymentHost.appendChild(more);
         }
 
-        if (success && resultData?.delivery_receipt) {
+        if (success && !isWaitlist && resultData?.delivery_receipt) {
             container._orderDeliveryObserver = observeOrderDelivery(resultData.delivery_receipt, state => {
                 if (!container.isConnected) { container._orderDeliveryObserver?.stop(); return; }
                 const email = resultData?.ticketOrder?.order?.data?.email;

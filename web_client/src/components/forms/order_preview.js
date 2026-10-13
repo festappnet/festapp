@@ -1,3 +1,6 @@
+import { formFieldTitle } from './form_field_labels.js';
+import { html as htmlText } from '../../utils/html.js';
+import { WaitlistStrings } from './waitlist_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { formatPrice } from '../../utils/formatters.js';
 import { FormStrings } from './form_strings.js';
@@ -25,9 +28,9 @@ if (typeof document !== 'undefined') {
 
 export class OrderPreview {
 
-    static show(form, formModel, priceData, onConfirm, onClose, precalculatedPayload = null) {
+    static show(form, formModel, priceData, onConfirm, onClose, precalculatedPayload = null, presentation = {}) {
         // 1. Calculate and Prepare Data
-        const data = OrderPreview._prepareData(form, formModel, priceData, precalculatedPayload);
+        const data = { ...OrderPreview._prepareData(form, formModel, priceData, precalculatedPayload), presentation };
         
         // 2. Render Overlay
         let overlay = document.getElementById('order-preview-overlay');
@@ -296,7 +299,7 @@ export class OrderPreview {
                           currency: totalPriceData.currency 
                      });
                      // result is now { value, price }
-                     personalInfo.push({ label: field.title, value: result.value, price: result.price });
+                     personalInfo.push({ label: formFieldTitle(field), value: result.value, price: result.price });
                  }
             });
         }
@@ -360,25 +363,30 @@ export class OrderPreview {
                                   currency: totalPriceData.currency,
                                   features: formModel.occasionFeatures,
                                });
-                               tData.rows.push({ label: subDef.title, value: result.value, price: result.price, metaSurcharge: result.metaSurcharge });
+                               if (formModel.registrationMode === 'waitlist' && !String(result.value ?? '').trim()) return;
+                               tData.rows.push({ label: formFieldTitle(subDef), value: result.value, price: result.price, metaSurcharge: result.metaSurcharge });
                            }
                       }
                  });
              }
-             tickets.push(tData);
+             if (formModel.registrationMode !== 'waitlist' || tData.rows.length) tickets.push(tData);
         });
 
 
         // Deposit logic: check if any selected ticket product has deposit data
-        const depositInfo = OrderPreview._getDepositInfo(payload, formModel, totalPriceData.currency);
+        const depositInfo = formModel.registrationMode === 'waitlist' ? null : OrderPreview._getDepositInfo(payload, formModel, totalPriceData.currency);
 
         // Visual-only meta surcharge sums per currency (e.g. on-site EUR doplatek).
         // Never added to totalPrice — surcharge doesn't go through the bank.
         const metaSurchargeSums = FormHelper.calculateMetaSurchargeSums(payload, formModel);
 
         return {
+            registrationMode: formModel.registrationMode,
+            occasionTitle: formModel.occasionTitle,
+            orderSymbol: formModel.offerBundle?.orderSymbol,
             personalInfo,
             tickets,
+            ticketCount: payloadTickets.length,
             totalPrice: totalPriceData.totalPrice,
             currency: totalPriceData.currency,
             hasTickets: FeatureService.isFeatureEnabled(FeatureService.FeatureConstants.ticket, formModel.occasionFeatures),
@@ -386,11 +394,6 @@ export class OrderPreview {
             deposit: depositInfo,
             metaSurchargeSums
         };
-    }
-
-    static _getAutoTitle(type) {
-        // ... existing ...
-        return ""; 
     }
 
     /**
@@ -456,7 +459,8 @@ export class OrderPreview {
 
     static _render(data) {
         // Determine labels
-        const itemLabel = data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
+        const isWaitlist = data.registrationMode === 'waitlist';
+        const itemLabel = isWaitlist ? WaitlistStrings.text((data.ticketCount ?? data.tickets.length) === 1 ? 'yourRegistration' : 'person') : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
 
         // Header
         let html = `
@@ -465,20 +469,30 @@ export class OrderPreview {
                     <div class="order-preview-handle"></div>
                 </div>
                 <div class="order-preview-header">
-                    <h2>${PublicOrderStrings.summary}</h2>
+                    <h2>${data.presentation?.title || (isWaitlist ? WaitlistStrings.title : PublicOrderStrings.summary)}</h2>
                     <button class="btn-close-preview"><i class="material-icons">close</i></button>
                 </div>
                 <div class="order-preview-body">
         `;
 
+        const occasionTitle = data.presentation?.occasionTitle || data.occasionTitle;
+        const orderSymbol = data.presentation?.orderSymbol || data.orderSymbol;
+        if (occasionTitle || orderSymbol) {
+            html += `<div class="waitlist-context">${occasionTitle ? htmlText`<strong>${occasionTitle}</strong>` : ''}${orderSymbol ? htmlText`<p>${WaitlistStrings.text('registrationSymbol')}: ${orderSymbol}</p>` : ''}</div>`;
+        }
+        if (isWaitlist) html += `<p class="waitlist-intro preview-section">${data.presentation?.explanation || WaitlistStrings.explanation}</p>`;
+
+        if (data.presentation?.people) {
+            html += `<div class="preview-section">${data.presentation.people.map(name => htmlText`${name}`).join('<br>')}</div>`;
+        }
         // Personal Info
         if (data.personalInfo.length > 0) {
             html += `<div class="preview-section">`;
             data.personalInfo.forEach((item, index) => {
-                const priceHtml = item.price ? `<span class="preview-price">+ ${item.price}</span>` : '';
+                const priceHtml = !isWaitlist && item.price ? `<span class="preview-price">+ ${item.price}</span>` : '';
                 html += `
                     <div class="preview-info-row">
-                        <span class="preview-label">${item.label}:</span>
+                        <span class="preview-label">${item.label ? htmlText`${item.label}:` : ''}</span>
                         <div class="preview-value-row">
                              <span class="preview-value">${item.value}</span>
                              ${priceHtml}
@@ -492,23 +506,26 @@ export class OrderPreview {
             html += `</div>`;
         }
 
+        if (isWaitlist && data.ticketCount > 1) {
+            html += `<p class="preview-registration-count">${WaitlistStrings.text('registrationCount')}: ${data.ticketCount}</p>`;
+        }
         // Tickets
         if (data.tickets.length > 0) {
              data.tickets.forEach((ticket) => {
                   html += `
                     <div class="ticket-card">
-                        <div class="ticket-header-title">${itemLabel}${data.tickets.length > 1 ? ' ' + ticket.index : ''}</div>
+                        <div class="ticket-header-title">${itemLabel}${(data.ticketCount ?? data.tickets.length) > 1 ? ' ' + ticket.index : ''}</div>
                   `;
                   
                   // Spot/Fields
                   ticket.rows.forEach((row, rIndex) => {
-                      const priceHtml = row.price ? `<span class="preview-price">+ ${row.price}</span>` : '';
-                      const metaHtml = row.metaSurcharge
+                      const priceHtml = !isWaitlist && row.price ? `<span class="preview-price">+ ${row.price}</span>` : '';
+                      const metaHtml = !isWaitlist && row.metaSurcharge
                           ? `<div class="preview-meta-surcharge">${String(row.metaSurcharge).replace(/\n/g, '<br>')}</div>`
                           : '';
                       html += `
                         <div class="preview-info-row">
-                             <span class="preview-label">${row.label}:</span>
+                             <span class="preview-label">${row.label ? htmlText`${row.label}:` : ''}</span>
                              <div class="preview-value-row">
                                   <span class="preview-value">${row.value}</span>
                                   ${priceHtml}
@@ -565,7 +582,7 @@ export class OrderPreview {
                </div>`
             : '';
 
-        html += `
+        if (!isWaitlist) html += `
              <div class="preview-total-price">
                  ${totalPriceString}
                  ${metaHtml}
@@ -581,7 +598,7 @@ export class OrderPreview {
         const tone = data.tone; 
         const hasTickets = data.hasTickets;
         
-        const submitLabel = PublicOrderStrings.getSubmitButton(hasTickets, tone);
+        const submitLabel = data.presentation?.submitLabel || (isWaitlist ? WaitlistStrings.register : PublicOrderStrings.getSubmitButton(hasTickets, tone));
 
         html += `
              <div class="preview-actions">

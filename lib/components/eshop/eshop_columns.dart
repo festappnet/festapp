@@ -479,12 +479,15 @@ class EshopColumns {
                 enableEditingMode: false,
                 width: 60,
                 renderer: (rendererContext) {
+                  final ticket = rendererContext.row
+                      .cells[TICKET_MODEL_REFERENCE]?.value as TicketModel?;
                   return IconButton(
                     icon: const Icon(Icons.download),
                     tooltip: OrdersStrings
                         .downloadTicket, // Localize tooltip if preferred
-                    onPressed: !canDownloadTicket(rendererContext
-                            .row.cells[TICKET_STATE]?.value as String?)
+                    onPressed: ticket?.ticketSymbol?.trim().isNotEmpty != true ||
+                            !canDownloadTicket(rendererContext
+                                .row.cells[TICKET_STATE]?.value as String?)
                         ? null
                         : () async {
                             final ticketId = rendererContext
@@ -651,7 +654,7 @@ class EshopColumns {
                 : null,
           ),
         ],
-        ORDER_WAITLIST: [
+        ORDER_WAITLIST: (Map<String, dynamic> data) => [
           TrinaColumn(
               title: WaitlistStrings.detail,
               field: ORDER_WAITLIST,
@@ -665,7 +668,10 @@ class EshopColumns {
                 return TextButton(
                     onPressed: () => showDialog(
                         context: context,
-                        builder: (_) => WaitlistOrderDetail(order: order!)),
+                        builder: (_) => WaitlistOrderDetail(
+                            order: order,
+                            onChanged: data[ORDER_WAITLIST]
+                                as Future<void> Function()?)),
                     child: Text(order!.waitlistSummary!.label));
               }),
         ],

@@ -11,15 +11,11 @@ import 'orders_strings.dart';
 class OrderGridFilters {
   static OrderModel? order(TrinaRow row) =>
       row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
-  // Ordinary orders can be deleted in every state by the unit roles that
-  // expose the delete column. Waiting conversions retain their offer history;
-  // the canonical delete RPC enforces the same boundary before deleting data.
+  // The canonical deletion command owns cleanup of ordinary and waiting orders.
+  // A payment conversion in progress cannot be removed through the grid.
   static bool orderCanBeDeleted(TrinaRow row) {
     final value = order(row);
-    return value != null &&
-        value.waitlistSummary == null &&
-        ![OrderModel.waitlistedState, 'preparing_payment']
-            .contains(value.state);
+    return value != null && value.state != 'preparing_payment';
   }
 
   static bool orderIsActive(TrinaRow row) =>
@@ -41,9 +37,13 @@ class OrderGridFilters {
       _orderState(row) != OrderModel.stornoState;
 
   static bool ticketIsNonCancelled(TrinaRow row) =>
-      ![OrderModel.stornoState, OrderModel.waitlistedState].contains(
-          row.cells[EshopColumns.TICKET_STATE]?.value?.toString().split(';').first) &&
-      ![OrderModel.stornoState, OrderModel.waitlistedState].contains(_orderState(row));
+      ![OrderModel.stornoState, OrderModel.waitlistedState].contains(row
+          .cells[EshopColumns.TICKET_STATE]?.value
+          ?.toString()
+          .split(';')
+          .first) &&
+      ![OrderModel.stornoState, OrderModel.waitlistedState]
+          .contains(_orderState(row));
 
   static Widget filterButton<T extends ITrinaRowModel>(
     BuildContext context,

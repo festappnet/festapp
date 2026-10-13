@@ -78,6 +78,8 @@
 
 .order-preview-header h2 {
     margin: 0;
+    padding-inline: 32px;
+    overflow-wrap: anywhere;
     font-size: 1.35rem; /* 18 * 1.2 */
     font-weight: bold;
     color: #000000; /* Force Black */
@@ -358,3 +360,32 @@ body.dark-mode .deposit-option span {
 .order-preview-overlay.closing .order-preview-content {
     animation: slideDown 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.0) forwards;
 }
+
+/* Registration context shares the form and checkout typography. */
+.form-registration-status { margin-block: 0 20px; }
+.form-occupancy { text-align: center; margin: 0 0 12px; font-size: .95rem; overflow-wrap: anywhere; }
+.waitlist-mode-label { display: block; margin-block-end: 4px; font-size: 1rem; }
+.form-registration-status .waitlist-intro { margin-inline: 0; margin-block-end: 12px; }
+.waitlist-intro { margin: 0 auto 16px; max-width: 65ch; line-height: 1.5; overflow-wrap: anywhere; }
+.waitlist-product-options { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.waitlist-product-notice { padding: 12px 16px; border-inline-start: 3px solid var(--primary-color); background: color-mix(in srgb, var(--primary-color) 7%, var(--card-bg, #fff)); border-radius: 4px; line-height: 1.5; color: var(--text-color); }
+.waitlist-product-options .form-check { cursor: default; }
+.waitlist-product-options .form-check-label { cursor: default; }
+
+.waitlist-management h2 { text-align: center; margin-block: 0 16px; }
+.waitlist-management > .waitlist-intro { text-align: center; }
+.waitlist-person-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px; margin-block: 12px; overflow-wrap: anywhere; }
+.waitlist-person-row strong { min-width: 0; flex: 1; }
+.waitlist-person-status { font-size: .95rem; }
+.waitlist-people { min-inline-size: 0; border: 0; padding: 0; text-align: start; }
+.waitlist-withdraw { margin-block-start: 16px; min-height: 44px; white-space: normal; }
+
+.waitlist-withdraw { border: 1px solid var(--primary-color); background: transparent; color: var(--primary-color); }
+.waitlist-withdraw:disabled { opacity: .55; cursor: default; }
+
+.waitlist-context { text-align: center; margin-block-end: 20px; overflow-wrap: anywhere; }
+.waitlist-context h1 { margin: 0 0 8px; font-size: 1.5rem; }
+.waitlist-context p { margin: 8px 0 0; }
+.waitlist-order-symbol { font-size: .95rem; }
+.waitlist-person-status { flex-basis: 100%; line-height: 1.5; }
+.result-occasion-title { margin: 0 0 12px; font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }

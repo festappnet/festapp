@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import '../models/form_model.dart';
 import '../waitlist_strings.dart';
 
@@ -19,13 +20,26 @@ class FormCapacitySettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final blueprint = form.blueprint != null;
-    final summary = blueprint
+    final settingsSummary = blueprint
         ? WaitlistStrings.blueprintCapacity
         : form.participantCapacity == null
             ? WaitlistStrings.unlimited
             : '${WaitlistStrings.capacity}: ${form.participantCapacity}\n'
                 '${(form.waitlistEnabled ? WaitlistStrings.waitlistOn : WaitlistStrings.waitlistOff)}';
+    final showOffers = !blueprint &&
+        form.participantCapacity != null &&
+        form.waitlistEnabled &&
+        (form.capacity?.offeredPlaces ?? 0) > 0;
+    final counts = form.capacity == null
+        ? null
+        : [
+            '${OrdersStrings.validTickets}: ${form.capacity!.occupiedPeople}',
+            if (showOffers)
+              '${WaitlistStrings.offeredPlacesCount}: ${form.capacity!.offeredPlaces}',
+          ].join('\n');
+    final summary = [settingsSummary, if (counts != null) counts].join('\n');
     return ListTile(
+      enabled: !blueprint,
       contentPadding: EdgeInsets.zero,
       title: Text(WaitlistStrings.settings,
           style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -117,7 +131,10 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                     title: Text(WaitlistStrings.limitCapacity),
                                     subtitle: Text(_blocked
                                         ? WaitlistStrings.activeEntries
-                                        : WaitlistStrings.capacityHelp),
+                                        : _limited
+                                            ? WaitlistStrings
+                                                .capacityHelpLimited
+                                            : WaitlistStrings.capacityHelp),
                                     value: _limited,
                                     onChanged: _blocked
                                         ? null
@@ -125,6 +142,14 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                             setState(() => _limited = value)),
                                 if (_limited) ...[
                                   const SizedBox(height: 16),
+                                  if (widget.form.capacity != null) ...[
+                                    Text(
+                                        '${OrdersStrings.validTickets}: ${widget.form.capacity!.occupiedPeople}'),
+                                    if (widget.form.capacity!.offeredPlaces > 0)
+                                      Text(
+                                          '${WaitlistStrings.offeredPlacesCount}: ${widget.form.capacity!.offeredPlaces}'),
+                                    const SizedBox(height: 12),
+                                  ],
                                   TextFormField(
                                       controller: _capacity,
                                       decoration: InputDecoration(
@@ -206,7 +231,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                   children: [
                     TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: Text(CommonStrings.cancel)),
+                        child: Text(CommonStrings.storno)),
                     FilledButton(
                         onPressed: _apply,
                         child: Text(WaitlistStrings.applySettings)),
