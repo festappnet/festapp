@@ -7,7 +7,7 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>OneSignal_app_groups_key</key>
-	<string>group.festapp.festapp.onesignal</string>
+	<string>group.festapp.festivalslunovrat</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
