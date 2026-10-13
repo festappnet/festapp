@@ -2771,9 +2771,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(
         tester
-            .widget<FilledButton>(find
-                .widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr())
-                .first)
+            .widget<ButtonStyleButton>(find.ancestor(
+                of: find.text('TicketLayout.addProduct'.tr()).first,
+                matching: find.byWidgetPredicate((w) => w is ButtonStyleButton)))
             .onPressed,
         isNull);
     expect(find.text('TicketLayout.draftProducts'.tr()), findsWidgets);
@@ -2813,8 +2813,7 @@ void main() {
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     unawaited(state.showMobilePanel(0));
     await tester.pumpAndSettle();
-    final add =
-        find.widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr()).first;
+    final add = find.text('TicketLayout.addProduct'.tr()).first;
     await tester.ensureVisible(add);
     await tester.tap(add);
     await tester.pumpAndSettle();
