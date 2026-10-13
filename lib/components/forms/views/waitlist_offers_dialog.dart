@@ -187,10 +187,16 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
         'waitlist_confirmation_heading',
         'waitlist_confirmation_explanation',
         'waitlist_offer_heading',
-        'waitlist_offer_instructions',
       ])
         if (toneSubstitutions is Map && toneSubstitutions[key] is String)
           key: escape(toneSubstitutions[key] as String),
+      'waitlist_offer_instructions': previewLabel(
+          participantCount == 1 && count == 1 &&
+                  toneSubstitutions is Map &&
+                  toneSubstitutions['waitlist_offer_instructions_single'] is String
+              ? 'waitlist_offer_instructions_single'
+              : 'waitlist_offer_instructions',
+          ''),
       'order_symbol': escape(order?.orderSymbol ?? '$orderId'),
       'occasion_title': escape(_preview?['occasionTitle']?.toString() ?? ''),
       'participant_count': '$participantCount',
@@ -206,7 +212,8 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     };
     String expand(String html) => html.replaceAllMapped(
         RegExp(r'\{\{\s*(\w+)\s*\}\}'), (m) => vars[m[1]] ?? m[0]!);
-    final body = expand(_preview?['template']?['html']?.toString() ?? '');
+    final body = expand(_preview?['instructionsTemplateHtml']?.toString() ??
+        _preview?['template']?['html']?.toString() ?? '');
     final wrapper = _preview?['wrapper']?['html']?.toString();
     final wrapped = wrapper == null
         ? body

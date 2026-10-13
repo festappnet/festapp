@@ -194,7 +194,7 @@ export async function renderWaitlistEmail(
   const button = (href: string, label: string) =>
     `<a href="${href}" rel="noreferrer noopener" referrerpolicy="no-referrer" style="display:inline-block;padding:12px 20px;background:#1565c0;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a>`;
   // Delivery and editor preview consume the same authoritative form-tone copy.
-  const toneKeys = ["waitlist_offer_button_single", "waitlist_offer_button_multiple", "waitlist_manage_button_label", "waitlist_confirmation_heading", "waitlist_confirmation_explanation", "waitlist_offer_heading", "waitlist_offer_instructions"];
+  const toneKeys = ["waitlist_offer_button_single", "waitlist_offer_button_multiple", "waitlist_manage_button_label", "waitlist_confirmation_heading", "waitlist_confirmation_explanation", "waitlist_offer_heading", "waitlist_offer_instructions", "waitlist_offer_instructions_single"];
   if (toneKeys.some((key) => typeof context.toneSubstitutions?.[key] !== "string")) {
     throw new Error("waitlist_email_tone_context_invalid");
   }
@@ -205,6 +205,7 @@ export async function renderWaitlistEmail(
     participant_count: offer
       ? context.participantCount!
       : source.participantCount,
+    waitlist_offer_instructions: escapeHtml(context.toneSubstitutions![offer && context.participantCount === 1 && context.offeredCount === 1 ? "waitlist_offer_instructions_single" : "waitlist_offer_instructions"]),
     participant_phrase: waitlistCountPhrase(offer ? context.participantCount! : source.participantCount, "person"),
     manage_waitlist_url: manageUrl,
     manage_waitlist_button: button(manageUrl, escapeHtml(context.toneSubstitutions!.waitlist_manage_button_label)),

@@ -75,12 +75,15 @@ void main() {
             'waitlist_offer_button_multiple': 'Potvrdit vybrané osoby',
             'waitlist_manage_button_label': 'Spravovat čekání',
             'waitlist_offer_heading': count == 2 ? 'Máme pro tebe nabídku' : 'Máme pro vás nabídku',
+            'waitlist_offer_instructions_single': 'Doplňte údaje a potvrďte přihlášení.',
             'waitlist_offer_instructions': count == 2 ? 'Objednávku pak potvrdíš.' : 'Objednávku pak potvrdíte.',
           },
+          'instructionsTemplateHtml':
+              '<h2>{{waitlist_offer_heading}}</h2><p>{{waitlist_offer_instructions}}</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasion_title}}</p>{{offer_button}}',
           'template': {
             'subject': 'Nabídka pro {{offered_places}}',
             'html':
-                '<h2>{{waitlist_offer_heading}}</h2><p>{{waitlist_offer_instructions}}</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasion_title}}</p>{{offer_button}}'
+                '<h2>{{waitlist_offer_heading}}</h2><p>Legacy expanded multi-person instructions.</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasion_title}}</p>{{offer_button}}'
           },
           'wrapper': {'html': '<main>{{content}}</main>'},
         },
@@ -113,7 +116,7 @@ void main() {
               ? '2 místa'
               : '5 míst';
       expect(html, contains(count == 2 ? 'Máme pro tebe nabídku' : 'Máme pro vás nabídku'));
-      expect(html, contains(count == 2 ? 'Objednávku pak potvrdíš.' : 'Objednávku pak potvrdíte.'));
+      expect(html, contains(count == 1 ? 'Doplňte údaje a potvrďte přihlášení.' : count == 2 ? 'Objednávku pak potvrdíš.' : 'Objednávku pak potvrdíte.'));
       expect(html, contains(count == 1 ? 'Potvrdit přihlášení' : 'Potvrdit vybrané osoby'));
       expect(html, contains(people));
       expect(html, contains(places));
@@ -124,6 +127,15 @@ void main() {
       expect(html, isNot(contains('Europe')));
       expect(html, isNot(contains('UTC')));
       expect(html, isNot(contains('{{')));
+      if (count == 2) {
+        await tester.enterText(find.byType(TextField), '1');
+        await tester.pumpAndSettle();
+        final partialHtml = tester.widget<HtmlWidget>(find.byType(HtmlWidget)).html;
+        expect(partialHtml, contains('Objednávku pak potvrdíš.'));
+        expect(partialHtml, isNot(contains('Doplňte údaje')));
+        expect(partialHtml, contains('Potvrdit přihlášení'));
+        expect(partialHtml, isNot(contains('Legacy expanded')));
+      }
       await tester
           .tap(find.widgetWithText(FilledButton, WaitlistStrings.offerPlace));
       await tester.pumpAndSettle();
@@ -132,7 +144,7 @@ void main() {
       expect(sent.single['formId'], 7);
       expect(sent.single['revision'], 77);
       expect(sent.single['recipients'], [
-        {'orderId': 5, 'count': count}
+        {'orderId': 5, 'count': count == 2 ? 1 : count}
       ]);
       expect(DateTime.parse(sent.single['expiresAt']),
           DateTime.parse('2026-03-29T01:30:00Z'));

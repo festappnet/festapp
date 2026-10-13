@@ -68,15 +68,28 @@ BEGIN
  -- contact data, products, or payment details after capability revocation.
  IF p_offer_id IS NOT NULL AND (w.expires_at<=clock_timestamp() OR NOT EXISTS(
   SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='pending')) THEN
-  RETURN jsonb_build_object('code',200,'registrationMode','offer','form',NULL,
+  RETURN jsonb_build_object('code',200,'registrationMode','offer',
+   'occasionTitle',(SELECT title FROM public.occasions WHERE id=(SELECT occasion FROM eshop.orders WHERE id=oid)),
+   'orderSymbol',(SELECT order_symbol FROM eshop.orders WHERE id=oid),
+   'timeZone',public.get_waitlist_form_timezone_internal(fid),
+   'communicationTone',public.get_effective_form_data(fid)->>'communication_tone',
+   'form',NULL,'formLink',(SELECT link FROM public.forms WHERE id=fid),
    'offerId',w.id,'pendingCount',0,'expiresAt',w.expires_at,'serverTime',clock_timestamp(),
-   'offerStatus',CASE WHEN w.expires_at<=clock_timestamp() THEN 'expired'
-    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome IN ('declined','cancelled')) THEN 'cancelled'
+   'offerStatus',CASE
+    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='declined') THEN 'declined'
+    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='cancelled') THEN 'cancelled'
+    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND (outcome='expired' OR outcome='pending' AND w.expires_at<=clock_timestamp())) THEN 'expired'
     ELSE 'accepted' END,'tickets','[]'::jsonb,'slots','[]'::jsonb);
+ END IF;
+ -- A revoked token can explain a terminal outcome above, never reopen live data.
+ IF p_token IS NOT NULL AND EXISTS(SELECT 1 FROM eshop.waitlist_capabilities
+  WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex') AND revoked_at IS NOT NULL) THEN
+  RAISE EXCEPTION 'INVALID_CAPABILITY';
  END IF;
  bundle:=public.get_form_bundle_internal(fid,true)::jsonb;
  bundle:=jsonb_set(bundle,'{data,registrationMode}',to_jsonb(CASE WHEN p_offer_id IS NOT NULL THEN 'offer'::text ELSE 'waitlist' END),true);
  RETURN jsonb_build_object('code',200,'form',bundle->'data','registrationMode',CASE WHEN p_offer_id IS NOT NULL THEN 'offer' ELSE 'waitlist' END,
+  'timeZone',public.get_waitlist_form_timezone_internal(fid),
   'orderSymbol',(SELECT order_symbol FROM eshop.orders WHERE id=oid),
   'occasionTitle',(SELECT occ.title FROM public.occasions occ JOIN eshop.orders source ON source.occasion=occ.id WHERE source.id=oid),
   'orderData',(SELECT data FROM eshop.orders WHERE id=oid),'pendingCount',(SELECT count(*) FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id AND outcome='pending' AND w.expires_at>clock_timestamp()),

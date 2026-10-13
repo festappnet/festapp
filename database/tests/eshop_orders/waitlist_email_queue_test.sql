@@ -99,6 +99,10 @@ BEGIN
  PERFORM assert_true(r#>>'{toneSubstitutions,waitlist_offer_instructions}' LIKE '%vybereš%potvrdíš%','actual informal offer wording');
 
  PERFORM assert_eq(r#>>'{toneSubstitutions,waitlist_offer_heading}','Máme pro tebe nabídku'::text,'actual informal default copy');
+ PERFORM assert_true(r#>>'{toneSubstitutions,waitlist_offer_instructions_single}' LIKE '%doplníš údaje%Přihlášení pak potvrdíš%','single-registration actual informal copy');
+ PERFORM assert_false(r#>>'{toneSubstitutions,waitlist_offer_instructions_single}' LIKE '%kdo přijde%','single registration needs no person selection');
+ PERFORM assert_true(public.get_waitlist_offer_email_preview(f)->>'instructionsTemplateHtml' LIKE '%{{waitlist_offer_instructions}}%','current preview retains only count-aware canonical instructions');
+ PERFORM assert_false(public.get_waitlist_offer_email_preview(f)->>'instructionsTemplateHtml' LIKE '%{{waitlist_offer_heading}}%','current preview other semantic copy is resolved');
  PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->'toneSubstitutions',r->'toneSubstitutions','preview uses identical authoritative tone copy');
  PERFORM assert_true(public.get_waitlist_offer_email_preview(f)#>>'{template,html}' LIKE '%Máme pro tebe nabídku%','legacy preview receives expanded informal heading');
  PERFORM assert_false(public.get_waitlist_offer_email_preview(f)#>>'{template,html}' LIKE '%{{waitlist_%','legacy preview has no new semantic placeholders');
@@ -111,10 +115,13 @@ BEGIN
  r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
  PERFORM assert_eq(r->>'timeZone','America/New_York'::text,'delivery organization timezone fallback');
  PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->>'timeZone',r->>'timeZone','preview organization timezone matches delivery');
+ PERFORM assert_eq(public.get_waitlist_offer_form(NULL,(w->>'id')::uuid,source)->>'timeZone',r->>'timeZone','active public offer organization timezone matches delivery');
  UPDATE public.occasions SET data=data||'{"timezone":"Asia/Tokyo"}'::jsonb WHERE id=(x->>'occasion')::bigint;
  r:=public.get_waitlist_email_render_context_v1(source,(w->>'id')::uuid,'regression@example.invalid');
  PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->>'timeZone','Asia/Tokyo'::text,'preview occasion timezone override');
  PERFORM assert_eq(public.get_waitlist_offer_email_preview(f)->>'timeZone',r->>'timeZone','preview occasion override matches delivery');
+ PERFORM assert_eq(public.get_waitlist_offer_form(NULL,(w->>'id')::uuid,source)->>'timeZone',r->>'timeZone','active public offer occasion timezone matches delivery');
+ PERFORM assert_false(has_function_privilege('anon','public.get_waitlist_form_timezone_internal(bigint)','EXECUTE'),'timezone helper is private');
 
 
  PERFORM assert_false(has_function_privilege('anon','public.get_waitlist_email_tone_substitutions_internal(bigint)','EXECUTE'),'presentation helper anon private');

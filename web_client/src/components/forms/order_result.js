@@ -37,6 +37,12 @@ export class OrderResult {
             colorClass = 'error-color';
         }
 
+        if (success && isWaitlist && ['declined', 'withdrawn', 'cancelled', 'expired', 'accepted'].includes(resultData?.waitlistOutcome)) {
+            title = WaitlistStrings.text(`${resultData.waitlistOutcome}Title`, tone);
+            subtitle = WaitlistStrings.text(`${resultData.waitlistOutcome}Explanation`, tone);
+            if (resultData.waitlistOutcome === 'expired' || resultData.waitlistOutcome === 'cancelled') icon = 'info';
+        }
+
         // Render HTML
         container.innerHTML = `
             <div class="result-container">

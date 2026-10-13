@@ -1,3 +1,17 @@
+-- Shared presentation metadata; no lifecycle or capability decisions.
+CREATE OR REPLACE FUNCTION public.get_waitlist_form_timezone_internal(p_form bigint)
+RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT coalesce(occasion_zone.name,unit_zone.name,organization_zone.name,'Europe/Prague')
+ FROM public.forms f JOIN public.occasions occ ON occ.id=f.occasion
+ LEFT JOIN public.units u ON u.id=occ.unit
+ LEFT JOIN public.organizations org ON org.id=occ.organization
+ LEFT JOIN pg_timezone_names occasion_zone ON occasion_zone.name=nullif(occ.data->>'timezone','')
+ LEFT JOIN pg_timezone_names unit_zone ON unit_zone.name=nullif(u.data->>'timezone','')
+ LEFT JOIN pg_timezone_names organization_zone ON organization_zone.name=nullif(org.data->>'timezone','')
+ WHERE f.id=p_form;
+$$;
+REVOKE ALL ON FUNCTION public.get_waitlist_form_timezone_internal(bigint) FROM PUBLIC,anon,authenticated;
+
 -- One presentation vocabulary for both gated delivery and authenticated preview.
 -- The existing effective-form resolver owns tone inheritance.
 CREATE OR REPLACE FUNCTION public.get_waitlist_email_tone_substitutions_internal(p_form bigint)
@@ -9,6 +23,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
   'waitlist_confirmation_heading',CASE WHEN informal THEN 'Jsi mezi náhradníky' ELSE 'Jste mezi náhradníky' END,
   'waitlist_confirmation_explanation',CASE WHEN informal THEN 'Zatím nic neplatíš. Jakmile se uvolní místo, pošleme ti nabídku. Čekání můžeš spravovat nebo ukončit přes tento odkaz:' ELSE 'Zatím nic neplatíte. Jakmile se uvolní místo, pošleme vám nabídku. Čekání můžete spravovat nebo ukončit přes tento odkaz:' END,
   'waitlist_offer_heading',CASE WHEN informal THEN 'Máme pro tebe nabídku' ELSE 'Máme pro vás nabídku' END,
+  'waitlist_offer_instructions_single',CASE WHEN informal THEN 'Po otevření nabídky doplníš údaje a vybereš produkty podle aktuální dostupnosti. Přihlášení pak potvrdíš.' ELSE 'Po otevření nabídky doplníte údaje a vyberete produkty podle aktuální dostupnosti. Přihlášení pak potvrdíte.' END,
   'waitlist_offer_instructions',CASE WHEN informal THEN 'Po otevření nabídky vybereš, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíš.' ELSE 'Po otevření nabídky vyberete, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíte.' END)
  FROM (SELECT coalesce(public.get_effective_form_data(p_form)->>'communication_tone','formal')='informal' informal) tone;
 $$;
@@ -35,16 +50,7 @@ BEGIN
   AND EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id AND outcome='pending'))) THEN
   RAISE EXCEPTION 'waitlist_email_source_invalid';
  END IF;
- SELECT name INTO v_timezone FROM pg_timezone_names WHERE name=nullif(occ.data->>'timezone','');
- IF v_timezone IS NULL THEN
-  SELECT zone.name INTO v_timezone FROM public.units u JOIN pg_timezone_names zone
-   ON zone.name=nullif(u.data->>'timezone','') WHERE u.id=occ.unit;
- END IF;
- IF v_timezone IS NULL THEN
-  SELECT name INTO v_timezone FROM pg_timezone_names WHERE name=nullif(org.data->>'timezone','');
- END IF;
- -- Same timezone key as occasions/units; TimeHelper's canonical default is Europe/Prague.
- v_timezone:=coalesce(v_timezone,'Europe/Prague');
+ v_timezone:=public.get_waitlist_form_timezone_internal(f.id);
  v_recipient:=coalesce(p_recipient,o.data->>'email');
  SELECT * INTO manage_message FROM public.email_messages m
  WHERE m.order_id=o.id AND m.message_kind='waitlist_confirmation'
