@@ -180,7 +180,12 @@ byly po ověření ukončeny; ostatní projekty a uživatelův browser zůstaly 
   `waitlist_personal_answer_projection_test.sql` PASS: legacy/modern shoda,
   alias/metadata absence v osobní projekci, scoped product a ignorování falešné ceny,
   full/partial konverze. Dotčené regular/free/deposit/history/Fakturoid sady PASS.
-  Finální JS waitlist 9, session 9 a build PASS; finální SQL prošlo atomickou aplikací.
+  Finální JS waitlist 10, session 9 a build PASS; finální SQL prošlo atomickou aplikací.
+- `per_ticket_personal_answer_isolation_test.sql` a skutečný klientský DOM test
+  ověřují dvě vstupenky s různými jmény, poznámkami, dvěma vlastními textovými
+  poli stejného typu a samostatnými produkty za 100/200 Kč. Úprava druhé osoby
+  nepřepisuje první. Per-person odpovědi i produkty zůstávají oddělené při běžném
+  prodeji, částečném přijetí a následném úplném přijetí nabídky; oba testy PASS.
 - Provider delivery byl pozastaven. Původní storno UI může po committed SQL hlásit
   delivery boundary error, protože čeká na provider acknowledgment; toto chování
   se neměnilo. Skutečné zákaznické e-maily se při QA nerozesílaly.

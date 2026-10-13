@@ -162,3 +162,63 @@ test('participant labels show canonical answers without legacy aliases or intern
     assert.equal(participantLabel({id: 'p', answers: {fields: [{107: 'Waiting', name: 'Waiting', _subFieldId: 107}, {108: 'One', surname: 'One', _subFieldId: '108'}]}}), 'Waiting · One');
     assert.equal(participantLabel({id: 'p', answers: {fields: [{name: 'Legacy', _subFieldId: 107}]}}), 'Legacy');
 });
+
+
+test('two tickets keep independent same-type custom answers, notes and products through rebuilds', async () => {
+    const { FormRenderer } = await import('../../src/components/forms/form_renderer.js');
+    const dom = new JSDOM('<main></main>', { url: 'https://example.test/form/test' });
+    globalThis.document = dom.window.document; globalThis.window = dom.window;
+    const model = new FormModel({ registrationMode: 'regular', fields: [
+        { id: 1, type: 'ticket', data: { max_tickets: 4 } },
+        { id: 107, type: 'name', is_ticket_field: true },
+        { id: 108, type: 'surname', is_ticket_field: true },
+        { id: 109, type: 'text', title: 'Diet', is_ticket_field: true },
+        { id: 110, type: 'text', title: 'Accessibility', is_ticket_field: true },
+        { id: 111, type: 'note', is_ticket_field: true },
+        { id: 112, type: 'product_type', is_ticket_field: true, product_type_data: { products: [
+            { id: 201, title: 'Standard', price: 100, currency_code: 'CZK', is_available: true },
+            { id: 202, title: 'Premium', price: 200, currency_code: 'CZK', is_available: true },
+        ] } },
+    ] });
+    const current = session(model);
+    const host = document.querySelector('main');
+    FormRenderer.render(host, current, model, false, { onInput: (event, form) => current.handleInput(event, form) });
+    const inputFor = (index, id) => host.querySelector(`input[data-index="${index}"][data-sub-id="${id}"]`);
+    const fill = (index, id, value) => {
+        const input = inputFor(index, id);
+        assert.ok(input, `rendered ticket ${index} field ${id}`);
+        input.value = value;
+        input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    };
+    const chooseProduct = (index, id) => {
+        const input = host.querySelector(`input[data-index="${index}"][data-sub-id="112"][value="${id}"]`);
+        assert.ok(input, `rendered product ${id} for ticket ${index}`);
+        input.checked = true;
+        input.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    };
+    const firstAnswers = { 107: 'Alex', 108: 'One', 109: 'Vegan', 110: 'Step-free', 111: 'Arrive early' };
+    for (const [id, value] of Object.entries(firstAnswers)) fill(0, id, value);
+    chooseProduct(0, 201);
+    const firstTicket = structuredClone(current.payload.ticket[0]);
+    const NativeEvent = globalThis.Event;
+    try {
+        globalThis.Event = dom.window.Event;
+        host.querySelector('.btn-add-ticket').click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+    } finally { globalThis.Event = NativeEvent; }
+    for (const [id, value] of Object.entries(firstAnswers)) assert.equal(inputFor(0, id).value, value);
+    assert.equal(host.querySelector('input[data-index="0"][value="201"]').checked, true);
+    for (const [id, value] of Object.entries({ 107: 'Robin', 108: 'Two', 109: 'No nuts', 110: 'Hearing loop', 111: 'Arrive late' })) fill(1, id, value);
+    chooseProduct(1, 202);
+    fill(1, 109, 'Gluten-free');
+    assert.equal(current.payload.ticket.length, 2);
+    assert.deepEqual(current.payload.ticket[0], firstTicket);
+    const answers = ticket => Object.assign({}, ...ticket.fields.map(field => Object.fromEntries(Object.entries(field).filter(([key]) => /^\d+$/.test(key)))));
+    assert.deepEqual(current.payload.ticket.map(answers), [firstAnswers,
+        { 107: 'Robin', 108: 'Two', 109: 'Gluten-free', 110: 'Hearing loop', 111: 'Arrive late' },
+    ]);
+    assert.deepEqual(current.payload.ticket.map(ticket => ticket.fields.find(field => field.product_type !== undefined).product_type), ['201', '202']);
+    assert.notEqual(current.payload.ticket[0].fields, current.payload.ticket[1].fields);
+    for (const [id, value] of Object.entries(firstAnswers)) assert.equal(inputFor(0, id).value, value);
+    dom.window.close();
+});
