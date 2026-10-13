@@ -20,18 +20,7 @@ class RetainedDraftGuard extends AutoRouteGuard {
         continue;
       final owner = draft._owner;
       if (owner == null) continue;
-      // Last occurrence wins when a stack replaces an existing object's route.
-      final candidates =
-          target.where((match) => match.name == owner.name).toList();
-      final destination = candidates.isEmpty ? null : candidates.last;
-      final currentParams = owner.inheritedPathParams.rawMap;
-      final targetParams = <String, dynamic>{
-        for (final match in target) ...match.params.rawMap
-      };
-      final sameOwner = destination != null &&
-          currentParams.entries
-              .every((entry) => targetParams[entry.key] == entry.value);
-      if (sameOwner) continue;
+      if (_preservesOwner(owner, target)) continue;
       if (!await draft._confirm()) {
         resolver.next(false);
         return;
@@ -47,41 +36,13 @@ class RetainedDraftGuard extends AutoRouteGuard {
     final routes = matches == null
         ? <RouteMatch>[]
         : [for (final route in matches) ..._flatten(route)];
-    final params = <String, dynamic>{
-      for (final route in routes) ...route.params.rawMap
-    };
-    final names = routes.map((route) => route.name).toSet();
     final approved = <_NavigationDraftBoundaryState>[];
     for (final draft in _drafts.toList()) {
       if (!draft.mounted || !draft.widget.isDirty() || draft._approved)
         continue;
       final owner = draft._owner;
       if (owner == null) continue;
-      final sameParams = owner.inheritedPathParams.rawMap.entries
-          .every((entry) => params[entry.key] == entry.value);
-      if (sameParams &&
-          names.contains(owner.name) &&
-          !names.contains('NavigationNotFoundRoute')) continue;
-      // Switching another retained top tab keeps this object's nested stack.
-      final objectNavigation = switch (owner.name) {
-        'FormDetailRoute' => 'FormsNavigationRoute',
-        'InventoryPoolDetailRoute' => 'InventoryPoolsNavigationRoute',
-        'BankAccountDetailRoute' => 'UnitBankAccountsNavigationRoute',
-        _ => null,
-      };
-      if (objectNavigation != null && !names.contains(objectNavigation)) {
-        final parent = _ancestors(owner)
-            .where((data) => const {
-                  'AdminRoute',
-                  'ReservationsRoute',
-                  'UnitAdminRoute'
-                }.contains(data.name))
-            .first;
-        if (!names.contains('NavigationNotFoundRoute') &&
-            names.contains(parent.name) &&
-            parent.inheritedPathParams.rawMap.entries
-                .every((entry) => params[entry.key] == entry.value)) continue;
-      }
+      if (_preservesOwner(owner, routes)) continue;
       if (!await draft._confirm()) {
         for (final previous in approved) {
           previous._approved = false;
@@ -92,6 +53,36 @@ class RetainedDraftGuard extends AutoRouteGuard {
       approved.add(draft);
     }
     return true;
+  }
+
+  /// Guard callbacks and URL preflight must agree about retained tab owners.
+  /// Another tab inside the same administration keeps this object's stack alive.
+  static bool _preservesOwner(RouteData owner, Iterable<RouteMatch> routes) {
+    final names = routes.map((route) => route.name).toSet();
+    if (names.contains('NavigationNotFoundRoute')) return false;
+    // Later matches override parameters from the existing stack breadcrumbs.
+    final params = <String, dynamic>{
+      for (final route in routes) ...route.params.rawMap
+    };
+    bool sameIdentity(RouteData route) =>
+        route.inheritedPathParams.rawMap.entries
+            .every((entry) => params[entry.key] == entry.value);
+    if (names.contains(owner.name) && sameIdentity(owner)) return true;
+    final objectNavigation = switch (owner.name) {
+      'FormDetailRoute' => 'FormsNavigationRoute',
+      'InventoryPoolDetailRoute' => 'InventoryPoolsNavigationRoute',
+      'BankAccountDetailRoute' => 'UnitBankAccountsNavigationRoute',
+      _ => null,
+    };
+    if (objectNavigation == null || names.contains(objectNavigation))
+      return false;
+    for (final parent in _ancestors(owner)) {
+      if (const {'AdminRoute', 'ReservationsRoute', 'UnitAdminRoute'}
+          .contains(parent.name)) {
+        return names.contains(parent.name) && sameIdentity(parent);
+      }
+    }
+    return false;
   }
 
   Future<void> leaveOwner(

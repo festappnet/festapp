@@ -409,6 +409,32 @@ void main() {
     expect(router.currentUrl, target);
     expect(find.text('RESPONSES CONTENT'), findsOneWidget);
   });
+  testWidgets(
+      'using orders retains an inactive form draft without discard prompts',
+      (tester) async {
+    final router = FixtureRouter(Access());
+    await mount(tester, router, '/occasion-a/reservations/forms/second/editor');
+    await tester.enterText(find.byKey(const Key('draft-field')), 'unsaved form');
+    router.dirty = true;
+    await tester.tap(find.text('Orders'));
+    await tester.pumpAndSettle();
+    expect(router.prompts, 0,
+        reason: 'Orders do not replace the retained form owner');
+    expect(router.currentUrl, '/occasion-a/reservations/orders/current');
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+    expect(router.prompts, 0);
+    await router.navigateAll(router.matcher.match(
+        '/occasion-a/reservations/orders/current?filter=paid',
+        includePrefixMatches: false)!);
+    await tester.pumpAndSettle();
+    expect(router.prompts, 0,
+        reason: 'An incoming orders URL also retains the inactive form');
+    await tester.tap(find.text('Forms'));
+    await tester.pumpAndSettle();
+    expect(find.text('unsaved form'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets('retained form subtabs preserve editor and cancelled leave',
       (tester) async {
     final router = FixtureRouter(Access());

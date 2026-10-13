@@ -74,7 +74,9 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
         _coordinator?.recordValue(_controller!);
         widget.onChanged(_controller!.html);
       },
-      isDirty: () => _active && _controller!.isDirty,
+      // Sanitizing loaded HTML is not a user edit. Match the field's own
+      // Save/Cancel controls instead of prompting for merely opening it.
+      isDirty: () => _active && _controller!.hasUserChanges,
       acceptSave: () {
         if (mounted) setState(() => _active = false);
         _controller!.removeListener(_draftChanged);

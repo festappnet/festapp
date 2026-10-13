@@ -201,8 +201,7 @@ class _OrdersContentState extends State<OrdersContent> {
           isUnitManager: RightsService.isUnitManager(),
           isUnitEditor: RightsService.isUnitEditor(),
         ),
-        canDeleteRow: (row) =>
-            OrderGridFilters.order(row)?.state == OrderModel.stornoState,
+        canDeleteRow: OrderGridFilters.orderCanBeDeleted,
         isAddActionPossible: () => false,
       ),
       headerChildren: [
