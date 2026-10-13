@@ -26,10 +26,12 @@ import 'package:fstapp/components/news/news_notification_audience_selector.dart'
 class NewsFormPage extends StatefulWidget {
   static const ROUTE = "newsForm";
   final Widget? editorOverride;
+  final String occasionLink;
   final Future<void> Function(NewsSubmission)? onSubmit;
 
   const NewsFormPage({
     super.key,
+    @PathParam('{occasionLink}') this.occasionLink = '',
     @visibleForTesting this.editorOverride,
     this.onSubmit,
   });
@@ -87,6 +89,11 @@ class _NewsFormPageState extends State<NewsFormPage> {
     }
     Navigator.pop(context);
   }
+
+  bool get _hasPublishableContent =>
+      !_controller.isEmpty &&
+      (_audience?.sendsNotification != true ||
+          HtmlHelper.htmlToSnippet(_controller.html).trim().isNotEmpty);
 
   Future<void> _sendPressed() async {
     if (_saving || _confirming || _publishOutcomeUnknown || _audience == null)
@@ -233,15 +240,19 @@ class _NewsFormPageState extends State<NewsFormPage> {
                             Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Text(HtmlStrings.unknownPublish)),
-                          _NewsFormActions(
-                            onCancel: _saving ? () {} : _stornoPressed,
-                            onPublish: _saving ||
-                                    _confirming ||
-                                    _publishOutcomeUnknown ||
-                                    _audience == null
-                                ? null
-                                : _sendPressed,
-                            publishLabel: _publishButtonText,
+                          ListenableBuilder(
+                            listenable: _controller,
+                            builder: (context, _) => _NewsFormActions(
+                              onCancel: _saving ? () {} : _stornoPressed,
+                              onPublish: _saving ||
+                                      _confirming ||
+                                      _publishOutcomeUnknown ||
+                                      _audience == null ||
+                                      !_hasPublishableContent
+                                  ? null
+                                  : _sendPressed,
+                              publishLabel: _publishButtonText,
+                            ),
                           ),
                         ],
                       ),

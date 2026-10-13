@@ -36,7 +36,30 @@ void main() {
     await tester.ensureVisible(find.text('FeatureNews.publishAndSendSelf'));
     await tester.tap(find.text('FeatureNews.publishAndSendSelf'));
     await tester.pump();
-    expect(find.text('FeatureNews.contentRequired'), findsOneWidget);
+    expect(
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+      isNull,
+    );
+    final controller =
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    controller.reset('<p>   </p>');
+    await tester.pump();
+    expect(
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+      isNull,
+    );
+    controller.reset('<p>A message</p>');
+    await tester.pump();
+    expect(
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+      isNotNull,
+    );
+    controller.reset('');
+    await tester.pump();
+    expect(
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+      isNull,
+    );
     expect(submissions, 0);
   });
   testWidgets('publish awaits the typed writer and closes only after success',
