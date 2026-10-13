@@ -518,21 +518,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       builder: (c, _) => Column(mainAxisSize: MainAxisSize.min, children: [
             Padding(
                 padding: const EdgeInsets.all(8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      minimumSize: const Size(0, 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
+                child: FilledButton.tonalIcon(
                     onPressed: widget.productEditing
                         ? () => pickProduct(onSelected: onSelected)
                         : null,
                     icon: const Icon(Icons.add),
-                    label: Text(TicketLayoutStrings.addProduct),
-                  ),
-                )),
+                    label: Text(TicketLayoutStrings.addProduct))),
             if (!widget.productEditing)
               Padding(
                   padding: const EdgeInsets.all(8),
@@ -592,78 +583,27 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (e?.binding != 'productType') return null;
     final type =
         resources.catalog.where((t) => t.id == e!.productTypeId).firstOrNull;
-    final theme = Theme.of(context);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      SizedBox(
-        width: double.infinity,
-        child: OutlinedButton(
-          key: const ValueKey('ticket-product-group'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: theme.colorScheme.onSurface,
-            padding: const EdgeInsets.all(12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: widget.productEditing && !e!.locked
+      ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(TicketLayoutStrings.productGroup),
+          subtitle: Text(type?.title ?? TicketLayoutStrings.missingProduct),
+          trailing: const Icon(Icons.edit),
+          onTap: widget.productEditing && !e!.locked
               ? () => pickProduct(element: e)
-              : null,
-          child: Row(children: [
-            Expanded(
-                child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(TicketLayoutStrings.productGroup,
-                    style: theme.textTheme.bodySmall),
-                const SizedBox(height: 4),
-                Text(type?.title ?? TicketLayoutStrings.missingProduct,
-                    style: theme.textTheme.titleMedium),
-              ],
-            )),
-            const SizedBox(width: 8),
-            Icon(e!.locked ? Icons.lock_outline : Icons.edit_outlined,
-                size: 20),
-          ]),
-        ),
-      ),
-      if (e.locked) Text(TicketLayoutStrings.locked),
+              : null),
+      if (e!.locked) Text(TicketLayoutStrings.locked),
       if (!widget.productEditing) Text(TicketLayoutStrings.draftProducts),
-      if (type != null && !type.eligible)
-        Text(TicketLayoutStrings.unreferencedProduct),
-      const SizedBox(height: 20),
       TicketProductLabelInput(
           key: ValueKey('label-${e.id}'), controller: controller, element: e),
-      const SizedBox(height: 16),
-      Container(
-        key: const ValueKey('ticket-product-example'),
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(TicketLayoutStrings.example, style: theme.textTheme.bodySmall),
-          const SizedBox(height: 8),
-          Text(
-              resources.previewData(controller.document, scenario)[e.id] ??
-                  TicketLayoutStrings.noExample,
-              style: theme.textTheme.bodyLarge),
-        ]),
-      ),
-      const SizedBox(height: 4),
-      Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: theme.colorScheme.onSurfaceVariant,
-              textStyle: theme.textTheme.bodySmall,
-              minimumSize: const Size(0, 48),
-            ),
-            onPressed: e.locked ? null : () => controller.removeProductField(e),
-            icon: const Icon(Icons.delete_outline, size: 18),
-            label: Text(TicketLayoutStrings.removeProduct)),
-      ),
-      const Divider(height: 16),
+      Text(
+          '${TicketLayoutStrings.example}: ${type?.example?['value'] ?? TicketLayoutStrings.noExample}'),
+      if (type != null && !type.eligible)
+        Text(TicketLayoutStrings.hiddenProduct),
+      TextButton.icon(
+          onPressed: e.locked ? null : () => controller.removeProductField(e),
+          icon: const Icon(Icons.delete_outline),
+          label: Text(TicketLayoutStrings.removeProduct)),
     ]);
   }
 
@@ -756,7 +696,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       isThreeLine: true,
                       title: Text(t.title),
                       subtitle: Text(
-                          '${t.example?['value'] ?? TicketLayoutStrings.noExample}\n${existing != null ? TicketLayoutStrings.alreadyAdded : t.offered ? TicketLayoutStrings.offeredProduct : TicketLayoutStrings.hiddenFormProduct} ${t.forms.map((f) => f['title']).whereType<String>().where((title) => title != t.title).toSet().join(', ')}'.trim()),
+                          '${t.example?['value'] ?? TicketLayoutStrings.noExample}\n${existing != null ? TicketLayoutStrings.alreadyAdded : t.offered ? TicketLayoutStrings.offeredProduct : TicketLayoutStrings.hiddenProduct} ${t.forms.map((f) => f['title']).whereType<String>().toSet().join(', ')}'),
                       onChanged: (_) => update(() => selected = t));
                 }).toList())),
               ]);

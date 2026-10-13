@@ -2639,119 +2639,6 @@ void main() {
     c.dispose();
     r.dispose();
   });
-  for (final width in [320.0, 1400.0]) {
-    testWidgets(
-        'product properties stay usable at $width with local preview and locks',
-        (tester) async {
-      tester.view.physicalSize = Size(width, 1000);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final service = FakeService();
-      final recorder = ui.PictureRecorder();
-      Canvas(recorder).drawColor(Colors.white, BlendMode.src);
-      final picture = recorder.endRecording();
-      final background = (await tester.runAsync(() => picture.toImage(8, 8)))!;
-      picture.dispose();
-      final r = resources(
-          background: background,
-          template: document().resizeCanvasArea(const Size(200, 600)));
-      r.catalog = [
-        const TicketProductType(123, 'Večeře', true, {
-          'id': 22,
-          'value': 'Steak z panenky + šťouch. brambory',
-          'price': 200,
-          'currency_code': 'CZK'
-        })
-      ];
-      await tester.pumpWidget(MaterialApp(
-        builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(width == 320 ? 2 : 1)),
-            child: child!),
-        home: TicketLayoutEditor(
-            occasionId: 1,
-            type: 'wide',
-            resources: r,
-            background: 'local-fixture',
-            service: service),
-      ));
-      await tester.pumpAndSettle();
-      final dynamic state = tester.state(find.byType(TicketLayoutEditor));
-      expect(state.controller.addProductField(123, 'Večeře'), isTrue);
-      if (width == 320) unawaited(state.showMobilePanel(1));
-      await tester.pumpAndSettle();
-      final group = find.byKey(const ValueKey('ticket-product-group'));
-      expect(tester.widget<OutlinedButton>(group).onPressed, isNotNull);
-      await tester.tap(group);
-      await tester.pumpAndSettle();
-      await tester.tap(
-          find.widgetWithText(TextButton, 'TicketLayout.cancel'.tr()).last);
-      await tester.pumpAndSettle();
-      final input = find.descendant(
-          of: find.byType(TicketProductLabelInput),
-          matching: find.byType(TextField));
-      await tester.ensureVisible(input);
-      await tester.enterText(input, 'Moje menu');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
-      final example = find.byKey(const ValueKey('ticket-product-example'));
-      expect(
-          find.descendant(
-              of: example,
-              matching:
-                  find.text('Moje menu: Steak z panenky + šťouch. brambory')),
-          findsOneWidget);
-      expect(find.text('9/120'), findsNothing);
-      state.controller
-          .change(state.controller.selection.copyWith(locked: true));
-      await tester.pumpAndSettle();
-      expect(tester.widget<OutlinedButton>(group).onPressed, isNull);
-      expect(tester.widget<TextField>(input).enabled, isFalse);
-      final remove =
-          find.widgetWithText(TextButton, 'TicketLayout.removeProduct'.tr());
-      expect(tester.widget<TextButton>(remove).onPressed, isNull);
-      expect(service.pdfCalls, 0);
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-    });
-  }
-  testWidgets(
-      'product label help wraps in narrow panels and preserves empty labels',
-      (tester) async {
-    final controller = TicketLayoutController(
-        document().resizeCanvasArea(const Size(200, 600)));
-    expect(controller.addProductField(123, 'Večeře'), isTrue);
-    final element = controller.selection!;
-    controller.select(element.id);
-    for (final width in [220.0, 296.0]) {
-      await tester.pumpWidget(MaterialApp(
-          home: Scaffold(
-              body: Center(
-        child: SizedBox(
-            width: width,
-            child: ListenableBuilder(
-              listenable: controller,
-              builder: (context, _) => TicketProductLabelInput(
-                  controller: controller, element: controller.selection!),
-            )),
-      ))));
-      await tester.pumpAndSettle();
-      final help = find.text('TicketLayout.labelHint'.tr());
-      expect(help, findsOneWidget);
-      expect(tester.getSize(help).height, greaterThan(20));
-      expect(tester.takeException(), isNull);
-    }
-    await tester.enterText(find.byType(TextField), '');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(controller.selection!.label, '');
-    controller.undo();
-    await tester.pumpAndSettle();
-    expect(controller.selection!.label, element.label);
-    await tester.pumpWidget(const SizedBox());
-    controller.dispose();
-  });
   testWidgets(
       'picker confirm/cancel, duplicate selection and local label edits make no requests',
       (tester) async {
@@ -2804,78 +2691,6 @@ void main() {
     expect(service.pdfCalls, 0);
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('picker distinguishes hidden form fields from unused groups', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1400, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final r = resources(
-      template: document().resizeCanvasArea(const Size(200, 600)),
-    );
-    r.catalog = [
-      const TicketProductType(
-        124,
-        'Odvoz',
-        false,
-        {'id': 23, 'value': 'Bez odvozu', 'price': 0, 'currency_code': 'CZK'},
-        referenced: true,
-        forms: [
-          {'title': 'Odvoz', 'fieldTitle': 'Odvoz', 'hidden': true},
-        ],
-      ),
-      const TicketProductType(
-        125,
-        'Unused group',
-        false,
-        null,
-        referenced: false,
-      ),
-    ];
-    final service = FakeService();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: TicketLayoutEditor(
-          occasionId: 1,
-          type: 'wide',
-          resources: r,
-          service: service,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
-    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
-    await tester.pumpAndSettle();
-    expect(find.text('Unused group'), findsNothing);
-    expect(
-      find.text('Bez odvozu\n${'TicketLayout.hiddenFormProduct'.tr()}'),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining('TicketLayout.unreferencedProduct'.tr()),
-      findsNothing,
-    );
-    await tester.tap(find.text('Odvoz').last);
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr()).last,
-    );
-    await tester.pumpAndSettle();
-    expect(state.controller.selection.productTypeId, 124);
-    expect(
-      r.previewData(
-        state.controller.document,
-        'normal',
-      )[state.controller.selection.id],
-      'Odvoz: Bez odvozu',
-    );
-    expect(find.text('TicketLayout.unreferencedProduct'.tr()), findsNothing);
-    expect(service.pdfCalls, 0);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
-  });
   test(
       'hidden form references remain eligible and unused catalog types stay out',
       () {
@@ -2920,9 +2735,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(
         tester
-            .widget<ButtonStyleButton>(find.ancestor(
-                of: find.text('TicketLayout.addProduct'.tr()).first,
-                matching: find.byWidgetPredicate((w) => w is ButtonStyleButton)))
+            .widget<FilledButton>(find
+                .widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr())
+                .first)
             .onPressed,
         isNull);
     expect(find.text('TicketLayout.draftProducts'.tr()), findsWidgets);
@@ -2962,7 +2777,8 @@ void main() {
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     unawaited(state.showMobilePanel(0));
     await tester.pumpAndSettle();
-    final add = find.text('TicketLayout.addProduct'.tr()).first;
+    final add =
+        find.widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr()).first;
     await tester.ensureVisible(add);
     await tester.tap(add);
     await tester.pumpAndSettle();

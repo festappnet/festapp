@@ -258,20 +258,14 @@ class ProductTypeEditorWidgets {
         },
       );
     }
-    final selected = DefaultValueHelper.readString(ptField) == key;
-    return Tooltip(
-      message: selected
-          ? FormStrings.defaultProductSelected
-          : FormStrings.setDefaultProduct,
-      child: Radio<String>(
-        value: key,
-        groupValue: DefaultValueHelper.readString(ptField),
-        toggleable: true,
-        onChanged: (value) {
-          DefaultValueHelper.write(ptField, value);
-          onChanged();
-        },
-      ),
+    return Radio<String>(
+      value: key,
+      groupValue: DefaultValueHelper.readString(ptField),
+      toggleable: true,
+      onChanged: (value) {
+        DefaultValueHelper.write(ptField, value);
+        onChanged();
+      },
     );
   }
 }
