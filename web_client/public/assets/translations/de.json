@@ -716,11 +716,17 @@
     "historyOfferSent": "Platz angeboten",
     "offerSending": "Das Angebot wird per E-Mail versendet.",
     "offersSending": "Die Angebote werden per E-Mail versendet.",
-    "manageWaiting": "Warteliste verwalten",
+    "manageWaiting": "Anmeldung ändern",
     "activeOffer": "Aktuelles Platzangebot",
     "openOfferFormHelp": "Das Formular öffnet sich in einem neuen Tab. Aktualisieren Sie danach diese Übersicht.",
     "offerHistory": "Angebotsverlauf",
     "emptyDetail": "In dieser Anmeldung warten keine Teilnehmer.",
+    "participantDeclinesScenario": "Der Teilnehmer hat den Platz abgelehnt",
+    "participantDeclinesConsequence": "Sie erfassen die Ablehnung des Teilnehmers. Die angebotenen Plätze werden freigegeben und die ausgewählten Anmeldungen warten nicht mehr aktiv auf ein weiteres Angebot.",
+    "withdrawScenario": "Anmeldung aus der Warteliste entfernen",
+    "withdrawConsequence": "Der Teilnehmer hat kein Interesse mehr oder Sie entfernen ihn als Veranstalter. Ausgewählte Anmeldungen werden storniert; angebotene Plätze werden freigegeben. Dies ist unwiderruflich.",
+    "managementHelp": "Angebot ablehnen oder Anmeldung entfernen",
+    "adminWithdraw": "Aus der Warteliste entfernen",
     "acceptOne": "Anmeldung bestätigen"
   },
   "EmailTemplates": {

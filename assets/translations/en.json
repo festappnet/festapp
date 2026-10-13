@@ -2685,11 +2685,17 @@
     "historyOfferSent": "Place offered",
     "offerSending": "We are sending the offer by email.",
     "offersSending": "We are sending the offers by email.",
-    "manageWaiting": "Manage waiting",
+    "manageWaiting": "Registration changes",
     "activeOffer": "Current place offer",
     "openOfferFormHelp": "The form opens in a new tab. Refresh this overview after completing it.",
     "offerHistory": "Offer history",
     "emptyDetail": "There are no waiting participants in this registration.",
+    "participantDeclinesScenario": "The participant declined the offered place",
+    "participantDeclinesConsequence": "Record the participant’s refusal. The offered places are released and selected registrations stop actively waiting for another offer.",
+    "withdrawScenario": "Remove the registration from the waiting list",
+    "withdrawConsequence": "The participant is no longer interested, or you are removing them as organizer. Selected registrations are cancelled; any offered places are released. This cannot be undone.",
+    "managementHelp": "Decline an offer or remove a registration",
+    "adminWithdraw": "Remove from waiting list",
     "acceptOne": "Confirm registration"
   }
 }
