@@ -93,18 +93,19 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
           WaitlistStrings.withdraw
         ),
       'decline' => (
-          WaitlistStrings.declineOfferTitle,
+          WaitlistStrings.text('recordDecline'),
           WaitlistStrings.declineOfferExplanation,
-          WaitlistStrings.decline
+          WaitlistStrings.text('recordDecline')
         ),
       'cancel' => (
-          WaitlistStrings.cancelOfferTitle,
+          WaitlistStrings.text('retractOffer'),
           WaitlistStrings.cancelOfferExplanation,
-          WaitlistStrings.cancel
+          WaitlistStrings.text('retractOffer')
         ),
       _ => throw ArgumentError.value(operation),
     };
-    if (!await DialogHelper.showConfirmationDialog(context, title, explanation,
+    if (!await DialogHelper.showConfirmationDialog(context, title,
+        '$explanation\n${WaitlistStrings.count}: ${_selected.length}',
         confirmButtonMessage: button)) return;
     if (!mounted) return;
     setState(() => _busy = true);
@@ -130,9 +131,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
 
   bool get _hasEligibleTickets =>
       (_detail?['tickets'] as List? ?? []).any(_isSelectable);
-  bool get _hasWaitingTickets =>
-      (_detail?['tickets'] as List? ?? []).any(
-          (ticket) => ticket['lifecycle'] == 'waiting');
+  bool get _hasWaitingTickets => (_detail?['tickets'] as List? ?? [])
+      .any((ticket) => ticket['lifecycle'] == 'waiting');
 
   bool get _canOffer =>
       !_busy &&
@@ -220,9 +220,13 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Text(title,
                             style: Theme.of(context).textTheme.titleMedium)),
-                  if ((_detail?['tickets'] as List? ?? []).where(_isSelectable).length > 1 &&
+                  if ((_detail?['tickets'] as List? ?? [])
+                              .where(_isSelectable)
+                              .length >
+                          1 &&
                       RightsService.isEditorOrder())
-                    Padding(padding: const EdgeInsets.only(bottom: 8),
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
                         child: Text(WaitlistStrings.text('detailSelection'))),
                   for (final entry
                       in (_detail?['tickets'] as List? ?? []).indexed)
@@ -258,9 +262,10 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Wrap(spacing: 8, runSpacing: 8, children: [
-                                if (_hasWaitingTickets) OutlinedButton(
-                                    onPressed: _canOffer ? _offer : null,
-                                    child: Text(WaitlistStrings.offerPlace)),
+                                if (_hasWaitingTickets)
+                                  OutlinedButton(
+                                      onPressed: _canOffer ? _offer : null,
+                                      child: Text(WaitlistStrings.offerPlace)),
                                 OutlinedButton(
                                     onPressed: !_busy &&
                                             _error == null &&
@@ -269,7 +274,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                         : null,
                                     child: Text(WaitlistStrings.withdraw)),
                               ]),
-                              if (!_busy && _hasWaitingTickets &&
+                              if (!_busy &&
+                                  _hasWaitingTickets &&
                                   _detail?['capacity']?['canSendOffers'] !=
                                       true)
                                 Padding(
@@ -286,70 +292,108 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                         style: Theme.of(context).textTheme.titleMedium),
                     for (final offer in _detail?['offers'] ?? [])
                       Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (DateTime.tryParse(
-                                        offer['expires_at']?.toString() ?? '')
-                                    case final DateTime expires)
-                                  Text(
-                                      '${WaitlistStrings.expiresAt}: ${DateFormat('d. M. yyyy HH:mm').format(expires.toOccasionTime())}'),
-                                for (final slot in offer['slots'])
-                                  Text(
-                                      '${_slotLabel(slot)} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !_offerIsPending(offer) ? 'expired' : slot['outcome'])}'),
-                                if (RightsService.isEditorOrder() &&
-                                    _offerIsPending(offer))
-                                  Wrap(spacing: 8, runSpacing: 8, children: [
-                                    FilledButton(
-                                        onPressed: _busy
-                                            ? null
-                                            : () async {
-                                                final bundle = await _commands
-                                                    .read(offerId: offer['id']);
-                                                if (bundle['form'] == null) {
-                                                  await _load();
-                                                  return;
-                                                }
-                                                if (!context.mounted) return;
-                                                await Navigator.of(context)
-                                                    .push(MaterialPageRoute(
-                                                        builder: (_) => FormPage(
-                                                            formLink: bundle[
-                                                                        'form']
-                                                                    ['link'] ??
-                                                                widget.order
-                                                                    .form?.link,
-                                                            offerId:
-                                                                offer['id'])));
-                                                await _load();
-                                              },
-                                        child: Text((offer['slots'] as List).where((slot) => slot['outcome'] == 'pending').length == 1
-                                            ? WaitlistStrings.text('acceptOne')
-                                            : WaitlistStrings.text('continueToConfirmation'))),
-                                    TextButton(
-                                        onPressed:
-                                            _busy || !_selectionBelongsTo(offer)
-                                                ? null
-                                                : () => _resolve(
-                                                    'decline', offer['id']),
-                                        child: Text(WaitlistStrings.decline)),
-                                    TextButton(
-                                        onPressed: _busy ||
-                                                !_selectionBelongsTo(offer)
-                                            ? null
-                                            : () =>
-                                                _resolve('cancel', offer['id']),
-                                        child: Text(WaitlistStrings.cancel)),
-                                  ]),
-                                if (RightsService.isEditorOrder() &&
-                                    _offerIsPending(offer) && !_busy &&
-                                    !_selectionBelongsTo(offer))
-                                  Padding(padding: const EdgeInsets.only(top: 8),
-                                    child: Text(WaitlistStrings.text('offerSelectionRequired'))),
-                              ]))),
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (DateTime.tryParse(
+                                            offer['expires_at']?.toString() ??
+                                                '')
+                                        case final DateTime expires)
+                                      Text(
+                                          '${WaitlistStrings.expiresAt}: ${DateFormat('d. M. yyyy HH:mm').format(expires.toOccasionTime())}'),
+                                    for (final slot in offer['slots'])
+                                      Text(
+                                          '${_slotLabel(slot)} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !_offerIsPending(offer) ? 'expired' : slot['outcome'])}'),
+                                    if (RightsService.isEditorOrder() &&
+                                        _offerIsPending(offer))
+                                      Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: [
+                                            FilledButton(
+                                                onPressed: _busy
+                                                    ? null
+                                                    : () async {
+                                                        await showDialog<bool>(
+                                                          context: context,
+                                                          barrierDismissible:
+                                                              false,
+                                                          builder:
+                                                              (dialogContext) =>
+                                                                  AppDialog
+                                                                      .fullscreen(
+                                                            dismissible: false,
+                                                            child: Navigator(
+                                                              onGenerateRoute:
+                                                                  (_) =>
+                                                                      MaterialPageRoute(
+                                                                builder: (_) =>
+                                                                    FormPage
+                                                                        .adminOffer(
+                                                                  formLink:
+                                                                      widget
+                                                                          .order
+                                                                          .form
+                                                                          ?.link,
+                                                                  offerId:
+                                                                      offer[
+                                                                          'id'],
+                                                                  onEmbeddedClose:
+                                                                      (changed) =>
+                                                                          Navigator.of(dialogContext)
+                                                                              .pop(changed),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        );
+                                                        if (!mounted) return;
+                                                        await _load();
+                                                        await _notifyParent();
+                                                      },
+                                                child: Text(WaitlistStrings.text(
+                                                    'completeRegistration'))),
+                                            TextButton(
+                                                onPressed: _busy ||
+                                                        !_selectionBelongsTo(
+                                                            offer)
+                                                    ? null
+                                                    : () => _resolve(
+                                                        'cancel', offer['id']),
+                                                child: Text(
+                                                    WaitlistStrings.text(
+                                                        'retractOffer'))),
+                                            TextButton(
+                                                onPressed: _busy ||
+                                                        !_selectionBelongsTo(
+                                                            offer)
+                                                    ? null
+                                                    : () => _resolve(
+                                                        'decline', offer['id']),
+                                                child: Text(
+                                                    WaitlistStrings.text(
+                                                        'recordDecline'))),
+                                          ]),
+                                    if (RightsService.isEditorOrder() &&
+                                        _offerIsPending(offer))
+                                      Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 8),
+                                          child: Text(WaitlistStrings.text(
+                                              'organizerOfferActionsHelp'))),
+                                    if (RightsService.isEditorOrder() &&
+                                        _offerIsPending(offer) &&
+                                        !_busy &&
+                                        !_selectionBelongsTo(offer))
+                                      Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 8),
+                                          child: Text(WaitlistStrings.text(
+                                              'offerSelectionRequired'))),
+                                  ]))),
                   ],
                   if ((_detail?['linkedOrders'] as List? ?? []).isNotEmpty) ...[
                     Text(WaitlistStrings.linkedOrders,

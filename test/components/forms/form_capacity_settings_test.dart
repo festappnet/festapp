@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/form_capacity_model.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/views/form_capacity_settings.dart';
+import 'package:fstapp/components/forms/views/waitlist_offers_dialog.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -137,21 +138,22 @@ void main() {
               isPromoted: false,
               features: [TicketFeature(code: 'ticket', isEnabled: tickets)]));
       final form = FormModel(
-          participantCapacity: 12,
+          participantCapacity: 11,
           waitlistEnabled: true,
           stats: FormStatsModel(total: 80),
           capacity: FormCapacityModel.fromJson(
-              {'occupiedPeople': 11, 'offeredPlaces': 1, 'limit': 12}));
+              {'occupiedPeople': 10, 'offeredPlaces': 1, 'limit': 11}));
       await tester.pumpWidget(MaterialApp(
           home: Scaffold(
               body: FormCapacitySettings(
                   form: form,
                   canEdit: false,
                   onChanged: () => fail('readonly draft changed')))));
-      expect(find.textContaining('Obsazenost: 11 z 12'), findsOneWidget);
+      expect(find.textContaining('Obsazenost: 11 z 11'), findsOneWidget);
       expect(find.textContaining('${WaitlistStrings.capacity}: 12'), findsNothing);
-      expect(find.byWidgetPredicate((widget) => widget is Text &&
-          (widget.semanticsLabel?.startsWith('${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}: 11 / 12') ?? false)), findsOneWidget);
+      expect(find.textContaining('${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}:'), findsNothing);
+      expect(form.capacity!.occupiedPeople, 10);
+      expect(find.byWidgetPredicate((widget) => widget is Text && widget.semanticsLabel != null), findsNothing);
       expect(
           find.textContaining('Místa v platných nabídkách: 1'), findsOneWidget);
       expect(tester.widget<ListTile>(find.byType(ListTile)).onTap, isNull);
@@ -182,6 +184,23 @@ void main() {
       }
     });
   }
+
+  testWidgets('admin occupancy includes server offer holds and their release', (tester) async {
+    for (final offered in [1, 0]) {
+      final capacity = FormCapacityModel.fromJson({
+        'enabled': true, 'occupiedPeople': 10, 'offeredPlaces': offered,
+        'limit': 11, 'remainingPublic': 0,
+      });
+      final form = FormModel(participantCapacity: 11, waitlistEnabled: true, capacity: capacity);
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Column(children: [
+        FormCapacitySettings(form: form, canEdit: false, onChanged: () {}),
+        WaitlistCapacitySummary(capacity: capacity),
+      ]))));
+      expect(find.textContaining('Obsazenost: ${10 + offered} z 11'), findsNWidgets(2));
+      expect(capacity.occupiedPeople, 10);
+      expect(capacity.remainingPublic, 0);
+    }
+  });
 
   testWidgets('visual review artifact', (tester) async {
     await open(

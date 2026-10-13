@@ -9,6 +9,9 @@ class FormCapacityModel {
   bool get showRemaining => data['showRemaining'] == true;
   int get occupiedPeople => (data['occupiedPeople'] as num?)?.toInt() ?? 0;
   int get offeredPlaces => (data['offeredPlaces'] as num?)?.toInt() ?? 0;
+
+  /// Display occupancy includes admissions and the server's active offer holds.
+  int get occupiedPlaces => occupiedPeople + offeredPlaces;
   int get waitingPeople => (data['waitingPeople'] as num?)?.toInt() ?? 0;
   int get offerablePlaces => (data['offerablePlaces'] as num?)?.toInt() ?? 0;
   int get revision => (data['revision'] as num?)?.toInt() ?? 0;
