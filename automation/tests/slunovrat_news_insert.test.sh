@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 r = Path(sys.argv[1])
 s = (r/'automation/tests/fixtures/slunovrat_news_insert.sql').read_text()
-for name in ['20261013093000_slunovrat_news_insert.sql','20261013094500_news_search_extensions_usage.sql']:
+for name in ['20261013093000_slunovrat_news_insert.sql','20261013094500_news_search_extensions_usage.sql','20261013100000_verify_news_search_schema_grant.sql']:
     s = s.replace('\\ir ../../../supabase/migrations/'+name, (r/'supabase/migrations'/name).read_text())
 print(s)
 PY
