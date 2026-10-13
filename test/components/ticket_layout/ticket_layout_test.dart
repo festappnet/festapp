@@ -2804,6 +2804,78 @@ void main() {
     expect(service.pdfCalls, 0);
     await tester.pumpWidget(const SizedBox());
   });
+  testWidgets('picker distinguishes hidden form fields from unused groups', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r = resources(
+      template: document().resizeCanvasArea(const Size(200, 600)),
+    );
+    r.catalog = [
+      const TicketProductType(
+        124,
+        'Odvoz',
+        false,
+        {'id': 23, 'value': 'Bez odvozu', 'price': 0, 'currency_code': 'CZK'},
+        referenced: true,
+        forms: [
+          {'title': 'Odvoz', 'fieldTitle': 'Odvoz', 'hidden': true},
+        ],
+      ),
+      const TicketProductType(
+        125,
+        'Unused group',
+        false,
+        null,
+        referenced: false,
+      ),
+    ];
+    final service = FakeService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TicketLayoutEditor(
+          occasionId: 1,
+          type: 'wide',
+          resources: r,
+          service: service,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Unused group'), findsNothing);
+    expect(
+      find.text('Bez odvozu\n${'TicketLayout.hiddenFormProduct'.tr()}'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('TicketLayout.unreferencedProduct'.tr()),
+      findsNothing,
+    );
+    await tester.tap(find.text('Odvoz').last);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr()).last,
+    );
+    await tester.pumpAndSettle();
+    expect(state.controller.selection.productTypeId, 124);
+    expect(
+      r.previewData(
+        state.controller.document,
+        'normal',
+      )[state.controller.selection.id],
+      'Odvoz: Bez odvozu',
+    );
+    expect(find.text('TicketLayout.unreferencedProduct'.tr()), findsNothing);
+    expect(service.pdfCalls, 0);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
   test(
       'hidden form references remain eligible and unused catalog types stay out',
       () {
