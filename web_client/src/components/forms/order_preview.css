@@ -408,8 +408,27 @@ body.dark-mode .deposit-option span {
 .waitlist-person-status { flex-basis: 100%; line-height: 1.5; }
 .result-occasion-title { margin: 0 0 12px; font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }
 
+.form-field-card:has(> .waitlist-product-options), .waitlist-product-options {
+    --waitlist-disabled-bg: color-mix(in srgb, var(--text-color) 8%, var(--background-color, #fff));
+    --waitlist-disabled-border: color-mix(in srgb, var(--text-color) 14%, var(--waitlist-disabled-bg));
+    --waitlist-disabled-text: color-mix(in srgb, var(--text-color) 80%, var(--waitlist-disabled-bg));
+}
+.form-field-card:has(> .waitlist-product-options) {
+    background: var(--waitlist-disabled-bg);
+    border: 1px solid var(--waitlist-disabled-border);
+    box-shadow: none;
+}
 .waitlist-product-options { pointer-events: none; filter: grayscale(1); }
-.waitlist-product-options, .waitlist-product-options * { color: color-mix(in srgb, var(--text-color) 72%, var(--card-bg, #fff)) !important; cursor: default !important; }
+.waitlist-product-options, .waitlist-product-options * { color: var(--waitlist-disabled-text) !important; cursor: default !important; }
+.waitlist-product-options[disabled] .form-check.option-card {
+    background: transparent;
+    border-color: var(--waitlist-disabled-border);
+    box-shadow: none;
+    filter: none;
+}
+.waitlist-product-options .option-price, .waitlist-product-options .surcharge-price { font-weight: 500; }
+.waitlist-product-options input { opacity: .55; }
+
 
 .waitlist-management .waitlist-context { text-align: start; margin-block-end: 24px; padding-block-end: 16px; border-bottom: 1px solid var(--divider-color, #ccc); }
 .waitlist-management .waitlist-context h1 { font-size: 1.5rem; line-height: 1.3; }
