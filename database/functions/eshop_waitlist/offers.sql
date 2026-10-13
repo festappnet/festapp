@@ -7,8 +7,8 @@ BEGIN
  WITH expired AS (UPDATE eshop.waitlist_offer_slots s SET outcome='expired',updated_at=p_at
  FROM eshop.waitlist_offers w WHERE w.id=s.offer_id AND w.form_id=p_form AND w.expires_at<=p_at AND s.outcome='pending'
  AND s.id IN(SELECT x.id FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers y ON y.id=x.offer_id WHERE y.form_id=p_form AND y.expires_at<=p_at AND x.outcome='pending' ORDER BY x.id LIMIT p_limit)
- RETURNING s.participant_id)
- UPDATE eshop.order_participants SET lifecycle='offer_expired',queue_at=p_at,updated_at=p_at WHERE id IN(SELECT participant_id FROM expired);
+ RETURNING s.ticket_id)
+ UPDATE eshop.tickets SET waitlist_queue_at=p_at,updated_at=p_at WHERE id IN(SELECT ticket_id FROM expired) AND state='waitlisted';
  GET DIAGNOSTICS n=ROW_COUNT;
  IF n>0 THEN
   UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id=p_form;
@@ -25,11 +25,12 @@ BEGIN
  PERFORM 1 FROM public.forms WHERE id=f.id FOR UPDATE;
  PERFORM public.expire_waitlist_form_internal(f.id);
  c:=public.get_form_capacity_snapshot_internal(f.id); available:=(c->>'offerablePlaces')::integer;
- SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',current_order_id,'count',offered,'waitingCount',total) ORDER BY first_queue,current_order_id),'[]') INTO proposals
- FROM (SELECT current_order_id,min(queue_at) first_queue,count(*) total,
+ SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',order_id,'count',offered,'waitingCount',total) ORDER BY first_queue,order_id),'[]') INTO proposals
+ FROM (SELECT order_id,min(waitlist_queue_at) first_queue,count(*) total,
   count(*) FILTER(WHERE position<=available) offered FROM
-  (SELECT p.*,row_number() OVER(ORDER BY queue_at,registered_at,id) position FROM eshop.order_participants p
-   WHERE form_id=f.id AND lifecycle='waiting') ranked GROUP BY current_order_id) grouped WHERE offered>0;
+  (SELECT p.*,o.id order_id,row_number() OVER(ORDER BY p.waitlist_queue_at,p.created_at,p.id) position FROM eshop.tickets p
+   JOIN LATERAL(SELECT DISTINCT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=p.id) x ON true
+   JOIN eshop.orders o ON o.id=x."order" WHERE o.form=f.id AND o.state='waitlisted' AND public.get_effective_waitlist_ticket_lifecycle_internal(p.id)='waiting' ) ranked GROUP BY order_id) grouped WHERE offered>0;
  RETURN jsonb_build_object('code',200,'formId',f.id,'revision',c->'revision','capacity',c,'recipients',proposals,
  'offerDurationSeconds',f.waitlist_offer_duration_seconds,'serverTime',clock_timestamp());
 END $$;

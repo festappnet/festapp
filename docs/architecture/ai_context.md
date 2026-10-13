@@ -132,3 +132,13 @@ BankSync is a shared bank-fact service for independent clients, including Festap
 Canonical SQL is in `database/functions/eshop_bank_sync/`; regenerate its scoped migration with `automation/assemble-bank-sync-migration.py`. Activation adopts historical movement identities under an account lock. Legacy bank import/token/email RPCs and the separate polling worker are retired by the guarded full-cutover migration; suspension never reinstates them. No persistent application triggers or second payment engine are introduced.
 
 BankAccountAdmin control uses `bank-sync-manage` with durable, fenced operation intents; encrypted token recovery uses `bank-sync-reconcile` and versioned protected control keys. Paid ticket intent creation is atomic with the SQL paid transition and immediately wakes the globally gated queue. Failed transition receipts abort payment recalculation, keeping the bank webhook retryable. See [implementation and production gates](../operations/banksync/IMPLEMENTATION-2026-10-04.md). See the [full cutover runbook](../operations/banksync/FULL-CUTOVER-2026-10-04.md) for the ordered account rollout and retirement proof. Unproven bank email identities remain quarantined observations until the required real-email evidence is established.
+
+## Form capacity and waitlist ownership
+
+`eshop.tickets` is the sole entity for an individual admission or waiting item.
+Capacity counts DISTINCT eligible tickets through existing order_product_ticket
+relationships; do not introduce a person ledger, shadow lifecycle or historical
+ticket backfill. Waiting tickets have no valid admission symbol, products or finance.
+Offers bind directly to ticket IDs, and acceptance reuses those IDs through the
+existing order finalizer. Offer status is derived from offer slots, not mirrored
+into an independent person state.

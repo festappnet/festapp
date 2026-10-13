@@ -29,6 +29,17 @@ void main() {
     );
   });
 
+  test('waiting ticket cannot be used or downloaded as an admission', () {
+    for (final state in [
+      OrderModel.waitlistedState,
+      '${OrderModel.waitlistedState};Waiting'
+    ]) {
+      expect(canToggleTicketUsage(state), isFalse);
+      expect(canDownloadTicket(state), isFalse);
+    }
+    expect(canDownloadTicket(OrderModel.sentState), isTrue);
+  });
+
   test('active and used ticket usage can be toggled', () {
     expect(canToggleTicketUsage(OrderModel.sentState), isTrue);
     expect(canToggleTicketUsage(OrderModel.usedState), isTrue);
@@ -62,11 +73,11 @@ void main() {
                   localizationsDelegates:
                       localizedContext.localizationDelegates,
                   home: Scaffold(body: Builder(builder: (context) {
-                  final columns = EshopColumns.generateColumns(
-                      context, [EshopColumns.TICKET_CONFIRM]);
-                  columns.single.width = 600;
+                    final columns = EshopColumns.generateColumns(
+                        context, [EshopColumns.TICKET_CONFIRM]);
+                    columns.single.width = 600;
                     return TrinaGrid(
-                    columns: columns,
+                      columns: columns,
                       rows: [ticket.toTrinaRow(context)],
                     );
                   })),

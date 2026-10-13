@@ -23,7 +23,7 @@ const successful = (result) => Number(result.data?.code ?? result.code) === 200;
 
 // Collect only FK descendants of the synthetic tenant and its bank account.
 // Replica mode is local to the cleanup transaction and permits deleting cycles
-// (orders/participants/tickets) without altering constraints or touching baseline rows.
+// (orders/tickets) without altering constraints or touching baseline rows.
 async function cleanup(client, fixture) {
   await client.query('BEGIN');
   try {
@@ -87,15 +87,15 @@ for (const scenario of ['withdraw displaced', 'withdraw unrelated', 'edit displa
       const source = Number((await control.query('SELECT pg_temp.register($1::jsonb,3) result', [fixture])).rows[0].result.order);
       await control.query('SELECT public.update_order_and_tickets_to_storno_221($1)', [regular.order.id]);
       const offer = (await control.query('SELECT pg_temp.offer($1::jsonb,$2,1) result', [fixture, source])).rows[0].result;
-      const originalSlot = (await control.query('SELECT id,participant_id FROM eshop.waitlist_offer_slots WHERE offer_id=$1', [offer.id])).rows[0];
-      const waiting = (await control.query("SELECT id FROM eshop.order_participants WHERE current_order_id=$1 AND lifecycle='waiting' ORDER BY id", [source])).rows;
+      const originalSlot = (await control.query('SELECT id,ticket_id FROM eshop.waitlist_offer_slots WHERE offer_id=$1', [offer.id])).rows[0];
+      const waiting = (await control.query("SELECT id FROM pg_temp.ticket_rows WHERE current_order_id=$1 AND lifecycle='waiting' ORDER BY id", [source])).rows;
       const selected = waiting[0].id;
       const remainder = waiting[1].id;
       await control.query("INSERT INTO eshop.external_services(unit,type,data) VALUES($1,'FAKTUROID','{}')", [fixture.unit]);
-      const details = (await control.query('SELECT pg_temp.checkout($1::jsonb,$2::uuid[]) result', [fixture, [selected]])).rows[0].result;
+      const details = (await control.query('SELECT pg_temp.checkout($1::jsonb,$2::bigint[]) result', [fixture, [selected]])).rows[0].result;
       const command = randomUUID();
       const accepted = (await control.query('SELECT public.execute_waitlist_command_client_sync_v1($1,$2::jsonb,$3::uuid,$4::uuid,$5::uuid) result',
-        ['accept', { offerId: offer.id, personIds: [selected], orderDetails: details }, command, randomUUID(), fixture.actor])).rows[0].result;
+        ['accept', { offerId: offer.id, ticketIds: [selected], orderDetails: details }, command, randomUUID(), fixture.actor])).rows[0].result;
       assert.ok(successful(accepted), JSON.stringify(accepted));
       const target = accepted.data.order.id;
       assert.equal((await control.query('SELECT state FROM eshop.orders WHERE id=$1', [target])).rows[0].state, 'preparing_payment');
@@ -103,24 +103,24 @@ for (const scenario of ['withdraw displaced', 'withdraw unrelated', 'edit displa
       try {
         assert.notEqual(writer.processID, control.processID, 'independent backend sessions');
         if (scenario === 'edit displaced') {
-          await writer.query("UPDATE eshop.order_participants SET answers='{\"edited\":true}',updated_at=clock_timestamp() WHERE id=$1", [originalSlot.participant_id]);
+          await writer.query("UPDATE eshop.tickets SET data='{\"edited\":true}',updated_at=clock_timestamp() WHERE id=$1", [originalSlot.ticket_id]);
         } else {
-          const person = scenario === 'withdraw displaced' ? originalSlot.participant_id : remainder;
+          const person = scenario === 'withdraw displaced' ? originalSlot.ticket_id : remainder;
           const withdrawal = (await writer.query('SELECT public.execute_waitlist_command_client_sync_v1($1,$2::jsonb,$3::uuid,$4::uuid,$5::uuid) result',
-            ['withdraw', { orderId: source, personIds: [person] }, randomUUID(), randomUUID(), fixture.actor])).rows[0].result;
+            ['withdraw', { orderId: source, ticketIds: [person] }, randomUUID(), randomUUID(), fixture.actor])).rows[0].result;
           assert.ok(successful(withdrawal), JSON.stringify(withdrawal));
         }
       } finally { await writer.end(); }
       await control.query('SELECT public.abort_fakturoid_ticket_order_v1($1,$2::uuid)', [target, command]);
-      const slot = (await control.query('SELECT participant_id,outcome FROM eshop.waitlist_offer_slots WHERE id=$1', [originalSlot.id])).rows[0];
-      assert.equal(slot.participant_id, originalSlot.participant_id, 'original binding restored');
+      const slot = (await control.query('SELECT ticket_id,outcome FROM eshop.waitlist_offer_slots WHERE id=$1', [originalSlot.id])).rows[0];
+      assert.equal(slot.ticket_id, originalSlot.ticket_id, 'original binding restored');
       assert.equal(slot.outcome, scenario === 'withdraw displaced' ? 'cancelled' : 'pending');
-      assert.equal((await control.query('SELECT lifecycle FROM eshop.order_participants WHERE id=$1', [selected])).rows[0].lifecycle, 'waiting');
+      assert.equal((await control.query('SELECT public.get_effective_waitlist_ticket_lifecycle_internal($1) lifecycle', [selected])).rows[0].lifecycle, 'waiting');
       if (scenario === 'edit displaced') {
-        assert.deepEqual((await control.query('SELECT answers FROM eshop.order_participants WHERE id=$1', [originalSlot.participant_id])).rows[0].answers, { edited: true });
+        assert.deepEqual((await control.query('SELECT data answers FROM eshop.tickets WHERE id=$1', [originalSlot.ticket_id])).rows[0].answers, { edited: true });
       } else {
-        const person = scenario === 'withdraw displaced' ? originalSlot.participant_id : remainder;
-        assert.equal((await control.query('SELECT lifecycle FROM eshop.order_participants WHERE id=$1', [person])).rows[0].lifecycle, 'withdrawn');
+        const person = scenario === 'withdraw displaced' ? originalSlot.ticket_id : remainder;
+        assert.equal((await control.query('SELECT public.get_effective_waitlist_ticket_lifecycle_internal($1) lifecycle', [person])).rows[0].lifecycle, 'withdrawn');
       }
     });
   });

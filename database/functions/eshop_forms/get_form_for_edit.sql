@@ -160,10 +160,10 @@ BEGIN
         OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(s.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
     ) OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM form_tickets))
       OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (SELECT 1 FROM form_tickets WHERE NULLIF(note, '') IS NOT NULL))
-      OR EXISTS(SELECT 1 FROM eshop.order_participants person CROSS JOIN LATERAL jsonb_array_elements(
-        CASE WHEN jsonb_typeof(person.answers->'fields')='array' THEN person.answers->'fields' ELSE '[]' END) answer
-        WHERE person.form_id=ff.form AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
-      OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_participants WHERE form_id=ff.form))
+      OR EXISTS(SELECT 1 FROM eshop.tickets person CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(person.data->'fields')='array' THEN person.data->'fields' ELSE '[]' END) answer
+        WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket=person.id AND q.form=ff.form) AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
+      OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket IS NOT NULL AND q.form=ff.form))
     THEN 'responses' ELSE (
       SELECT p->>'delete_blocked_reason' FROM public.form_fields member
       JOIN jsonb_array_elements(productsData) p ON (p->>'product_type')::bigint = member.product_type

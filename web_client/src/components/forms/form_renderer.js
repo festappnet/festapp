@@ -32,7 +32,9 @@ export class FormRenderer {
 
         // Append Fields (FormFieldBuilder still returns Nodes)
         formModel.visibleFields.forEach(field => {
-            const fieldComponent = FormFieldBuilder.createFormField(field, formModel, session);
+            const definition = session.state.fields.has(String(field.id))
+                ? { ...field, value: session.state.fields.get(String(field.id)) } : field;
+            const fieldComponent = FormFieldBuilder.createFormField(definition, formModel, session);
             fieldsContainer.appendChild(fieldComponent);
         });
         

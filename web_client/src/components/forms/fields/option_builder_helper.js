@@ -182,7 +182,7 @@ export class OptionBuilderHelper {
             return values.some(value => String(value) === String(opt.id ?? opt.title) || value === opt.title);
         }
         // Existing answer (field.value) takes precedence — defaults only apply to fresh forms.
-        if (inputType === 'radio' && field.value !== undefined && field.value !== null && field.value !== '') {
+        if (inputType === 'radio' && field.value !== undefined && field.value !== null) {
             return false;
         }
         const def = field && field.data && field.data.default_value;

@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION public.abort_waitlist_acceptance_internal(p_order bigint,p_command uuid)
 RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE a eshop.waitlist_acceptance_attempts; previous jsonb; s jsonb; p jsonb; expiry timestamptz; ticket_ids bigint[];
- original_person eshop.order_participants; restored_outcome text; original_id uuid;
+DECLARE a eshop.waitlist_acceptance_attempts; s jsonb; p jsonb; expiry timestamptz;
+ original_ticket eshop.tickets; restored_outcome text; original_id bigint;
 BEGIN
  SELECT * INTO a FROM eshop.waitlist_acceptance_attempts WHERE command_id=p_command AND target_order_id=p_order;
  IF a.command_id IS NULL THEN RETURN false; END IF;
@@ -10,53 +10,41 @@ BEGIN
  IF a.state='aborted' THEN RETURN true; END IF;
  IF a.state<>'preparing' THEN RAISE EXCEPTION 'Acceptance attempt already completed'; END IF;
  SELECT expires_at INTO expiry FROM eshop.waitlist_offers WHERE id=a.offer_id FOR UPDATE;
- SELECT array_agg(ticket_id) INTO ticket_ids FROM eshop.order_participants WHERE id=ANY(a.participant_ids);
  PERFORM public.cancel_order_email_intents(p_order);
- PERFORM public.internal_storno_tickets_221(ticket_ids);
- -- The failed ticket records remain historical; detach them from the reusable identity.
- DELETE FROM eshop.order_product_ticket WHERE "order"=a.target_order_id AND ticket=ANY(ticket_ids);
+ PERFORM public.internal_storno_tickets_221(a.ticket_ids);
+ DELETE FROM eshop.order_product_ticket WHERE "order"=a.target_order_id AND ticket=ANY(a.ticket_ids);
  IF a.conversion='in_place' THEN
-  UPDATE eshop.orders SET state='waitlisted',price=NULL,payment_info=NULL,data=a.previous_order_data->'data',updated_at=clock_timestamp()
-   WHERE id=a.target_order_id;
+  UPDATE eshop.orders SET state='waitlisted',price=NULL,payment_info=NULL,data=a.previous_order_data->'data',updated_at=clock_timestamp() WHERE id=a.target_order_id;
  ELSE
   UPDATE eshop.orders SET state='storno',price=0,payment_info=NULL,updated_at=clock_timestamp() WHERE id=a.target_order_id;
  END IF;
- -- Selected people are fenced by the preparing target. Displaced offered people
- -- remain in the source and may legitimately withdraw or receive another offer.
- -- Restore their offer lifecycle below without overwriting their current answers.
- FOR p IN SELECT * FROM jsonb_array_elements(a.previous_participants) LOOP
-  IF NOT (p->>'id')::uuid=ANY(a.participant_ids) THEN CONTINUE; END IF;
-  UPDATE eshop.order_participants SET current_order_id=(p->>'current_order_id')::bigint,
-   lifecycle=p->>'lifecycle',answers=p->'answers',ticket_id=(p->>'ticket_id')::bigint,
-   queue_at=(p->>'queue_at')::timestamptz,updated_at=clock_timestamp() WHERE id=(p->>'id')::uuid;
+ -- Only the selected tickets are fenced by the preparing target. Never restore
+ -- unselected/displaced answers or resurrect a concurrently withdrawn remainder.
+ FOR p IN SELECT * FROM jsonb_array_elements(a.previous_tickets) LOOP
+  IF NOT (p->>'id')::bigint=ANY(a.ticket_ids) THEN CONTINUE; END IF;
+  UPDATE eshop.tickets SET state=p->>'state',ticket_symbol=p->>'ticket_symbol',data=p->'data',note=p->>'note',
+   note_hidden=p->>'note_hidden',waitlist_queue_at=(p->>'waitlist_queue_at')::timestamptz,updated_at=clock_timestamp() WHERE id=(p->>'id')::bigint;
  END LOOP;
- -- Release all consumed bindings first: full acceptance can permute participant
- -- IDs between slots, and immediate pending uniqueness must hold throughout.
+ INSERT INTO eshop.order_product_ticket SELECT * FROM jsonb_populate_recordset(NULL::eshop.order_product_ticket,a.previous_links);
  UPDATE eshop.waitlist_offer_slots SET outcome='accepted' WHERE id=ANY(a.slot_ids);
  FOR s IN SELECT * FROM jsonb_array_elements(a.previous_slots) LOOP
-  original_id:=(s->>'participant_id')::uuid;
-  SELECT * INTO STRICT original_person FROM eshop.order_participants WHERE id=original_id FOR UPDATE;
+  original_id:=(s->>'ticket_id')::bigint;
+  SELECT * INTO STRICT original_ticket FROM eshop.tickets WHERE id=original_id FOR UPDATE;
   restored_outcome:=CASE
-   WHEN original_person.lifecycle IN ('withdrawn','cancelled') OR original_person.current_order_id<>a.source_order_id
-     OR EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots other WHERE other.participant_id=original_id
-       AND other.outcome='pending' AND NOT other.id=ANY(a.slot_ids)) THEN 'cancelled'
-   WHEN original_person.lifecycle='offer_declined' THEN 'declined'
-   WHEN original_person.lifecycle='offer_cancelled' THEN 'cancelled'
-   WHEN expiry<=clock_timestamp() OR original_person.lifecycle='offer_expired' THEN 'expired'
-   ELSE 'pending' END;
-  UPDATE eshop.waitlist_offer_slots SET participant_id=original_id,
-   outcome=restored_outcome,resulting_order_id=NULL,updated_at=clock_timestamp()
-  WHERE id=(s->>'id')::uuid;
-  IF restored_outcome IN ('pending','expired') AND original_person.lifecycle IN ('waiting','offered','offer_expired') THEN
-   UPDATE eshop.order_participants SET lifecycle=CASE WHEN restored_outcome='pending' THEN 'offered' ELSE 'offer_expired' END,
-    queue_at=CASE WHEN restored_outcome='pending' THEN queue_at ELSE clock_timestamp() END,updated_at=clock_timestamp()
-   WHERE id=original_id;
+   WHEN original_ticket.state<>'waitlisted' OR NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x.ticket=original_id AND x."order"=a.source_order_id)
+    OR EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots other WHERE other.ticket_id=original_id AND other.outcome='pending' AND NOT other.id=ANY(a.slot_ids)) THEN 'cancelled'
+   WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots other JOIN eshop.waitlist_offers ow ON ow.id=other.offer_id
+     WHERE other.ticket_id=original_id AND other.outcome IN ('declined','cancelled')
+     AND ow.created_at>(SELECT created_at FROM eshop.waitlist_offers WHERE id=a.offer_id)) THEN 'cancelled'
+   WHEN expiry<=clock_timestamp() THEN 'expired' ELSE 'pending' END;
+  UPDATE eshop.waitlist_offer_slots SET ticket_id=original_id,outcome=restored_outcome,resulting_order_id=NULL,updated_at=clock_timestamp() WHERE id=(s->>'id')::uuid;
+  IF restored_outcome='expired' AND original_ticket.state='waitlisted' THEN
+   UPDATE eshop.tickets SET waitlist_queue_at=clock_timestamp(),updated_at=clock_timestamp() WHERE id=original_id;
   END IF;
  END LOOP;
  UPDATE eshop.waitlist_acceptance_attempts SET state='aborted',updated_at=clock_timestamp() WHERE command_id=p_command;
  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id=(SELECT form FROM eshop.orders WHERE id=a.source_order_id);
- INSERT INTO eshop.orders_history("order",state,data) VALUES(a.source_order_id,'waitlisted',
-  jsonb_build_object('action','acceptance_aborted','commandId',p_command,'targetOrderId',a.target_order_id));
+ INSERT INTO eshop.orders_history("order",state,data) VALUES(a.source_order_id,'waitlisted',jsonb_build_object('action','acceptance_aborted','commandId',p_command,'targetOrderId',a.target_order_id));
  RETURN true;
 END $$;
 CREATE OR REPLACE FUNCTION public.expire_waitlist_offers(p_batch_size integer DEFAULT 100)

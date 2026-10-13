@@ -35,7 +35,9 @@ export class StandardInputHandler extends InputHandler {
         }
 
         // UPDATE STATE
-        if (val) {
+        if (['select_one', 'select_many'].includes(field.type)) {
+            session.state.fields.set(String(fieldId), val ?? (field.type === 'select_many' ? [] : ''));
+        } else if (val) {
             session.state.fields.set(String(fieldId), val);
         } else {
             session.state.fields.delete(String(fieldId));

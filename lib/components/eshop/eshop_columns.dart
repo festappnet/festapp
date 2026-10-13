@@ -40,8 +40,13 @@ import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'views/add_cash_payment_dialog.dart';
 
-bool canToggleTicketUsage(String? formattedState) =>
-    formattedState?.split(';').first != OrderModel.stornoState;
+bool canToggleTicketUsage(String? formattedState) => ![
+      OrderModel.stornoState,
+      OrderModel.waitlistedState
+    ].contains(formattedState?.split(';').first);
+
+bool canDownloadTicket(String? formattedState) =>
+    formattedState?.split(';').first != OrderModel.waitlistedState;
 
 class EshopColumns {
   // Column identifier constants
@@ -478,52 +483,57 @@ class EshopColumns {
                     icon: const Icon(Icons.download),
                     tooltip: OrdersStrings
                         .downloadTicket, // Localize tooltip if preferred
-                    onPressed: () async {
-                      final ticketId =
-                          rendererContext.row.cells[TICKET_ID]!.value as int;
-                      final ticketSymbol =
-                          rendererContext.row.cells[TICKET_SYMBOL]?.value ??
-                              ticketId.toString();
+                    onPressed: !canDownloadTicket(rendererContext
+                            .row.cells[TICKET_STATE]?.value as String?)
+                        ? null
+                        : () async {
+                            final ticketId = rendererContext
+                                .row.cells[TICKET_ID]!.value as int;
+                            final ticketSymbol = rendererContext
+                                    .row.cells[TICKET_SYMBOL]?.value ??
+                                ticketId.toString();
 
-                      // 1. Extract Customer and Spot info for the title
-                      final customerName = rendererContext
-                              .row.cells[ORDER_DATA]?.value
-                              ?.toString() ??
-                          "";
-                      final spotName = rendererContext
-                              .row.cells[TICKET_SPOT]?.value
-                              ?.toString() ??
-                          "";
+                            // 1. Extract Customer and Spot info for the title
+                            final customerName = rendererContext
+                                    .row.cells[ORDER_DATA]?.value
+                                    ?.toString() ??
+                                "";
+                            final spotName = rendererContext
+                                    .row.cells[TICKET_SPOT]?.value
+                                    ?.toString() ??
+                                "";
 
-                      // 2. Determine the dialog title based on available data
-                      String dialogTitle = OrdersStrings.generatingPdf;
-                      if (customerName.isNotEmpty && spotName.isNotEmpty) {
-                        dialogTitle = OrdersStrings.generatingPdfForWithSpot(
-                            customerName, spotName);
-                      } else if (customerName.isNotEmpty) {
-                        dialogTitle =
-                            OrdersStrings.generatingPdfFor(customerName);
-                      }
+                            // 2. Determine the dialog title based on available data
+                            String dialogTitle = OrdersStrings.generatingPdf;
+                            if (customerName.isNotEmpty &&
+                                spotName.isNotEmpty) {
+                              dialogTitle =
+                                  OrdersStrings.generatingPdfForWithSpot(
+                                      customerName, spotName);
+                            } else if (customerName.isNotEmpty) {
+                              dialogTitle =
+                                  OrdersStrings.generatingPdfFor(customerName);
+                            }
 
-                      // 3. Show dialog
-                      final pdfBytes = await DialogHelper
-                          .showFutureProgressDialog<Uint8List?>(
-                        context: context,
-                        title: dialogTitle,
-                        futureCallback: () =>
-                            DbTickets.downloadTicketPdf(ticketId),
-                      );
+                            // 3. Show dialog
+                            final pdfBytes = await DialogHelper
+                                .showFutureProgressDialog<Uint8List?>(
+                              context: context,
+                              title: dialogTitle,
+                              futureCallback: () =>
+                                  DbTickets.downloadTicketPdf(ticketId),
+                            );
 
-                      if (pdfBytes != null) {
-                        await FileSaver.instance.saveFile(
-                          name: "ticket_$ticketSymbol",
-                          bytes: pdfBytes,
-                          mimeType: MimeType.pdf,
-                        );
-                      } else {
-                        // Error handled in DialogHelper/DbTickets
-                      }
-                    },
+                            if (pdfBytes != null) {
+                              await FileSaver.instance.saveFile(
+                                name: "ticket_$ticketSymbol",
+                                bytes: pdfBytes,
+                                mimeType: MimeType.pdf,
+                              );
+                            } else {
+                              // Error handled in DialogHelper/DbTickets
+                            }
+                          },
                   );
                 },
               ),

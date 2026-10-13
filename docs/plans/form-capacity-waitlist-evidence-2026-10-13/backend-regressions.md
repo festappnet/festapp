@@ -1,3 +1,6 @@
+> Historical evidence of the pre-correction build, not current ticket-only validation.
+> Obsolete participant-ledger smoke scripts were removed; use canonical database/tests.
+
 # Backend waitlist regression evidence - 2026-10-13
 
 Target: dedicated disposable PostgreSQL localhost:56922; no reset, production access, provider calls, commit or push.

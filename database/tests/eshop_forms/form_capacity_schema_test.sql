@@ -20,10 +20,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  RETURN jsonb_build_object('organization',org,'unit',un,'occasion',oc,'form',f,'key',fk,'type',pt,'product',prod,'actor',actor,'link',suffix);
 END $$;
-CREATE FUNCTION pg_temp.checkout(x jsonb,persons uuid[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+CREATE FUNCTION pg_temp.checkout(x jsonb,tickets bigint[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('form',x->'key','email','regression@example.invalid','ticket',
- CASE WHEN persons IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
- ELSE (SELECT jsonb_agg(jsonb_build_object('participantId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(persons) id) END);
+ CASE WHEN tickets IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
+ ELSE (SELECT jsonb_agg(jsonb_build_object('ticketId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(tickets) id) END);
 $$;
 CREATE FUNCTION pg_temp.delivery(code text,token text,oid bigint DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_build_object('orderId',oid,'recipient','regression@example.invalid','templateCode',code,
@@ -32,7 +32,7 @@ $$;
 CREATE FUNCTION pg_temp.register(x jsonb,n integer,token text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE r jsonb; payload jsonb;
 BEGIN
- payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','people',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
+ payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
  r:=public.execute_waitlist_command_client_sync_v1('register',payload,gen_random_uuid(),gen_random_uuid(),NULL,jsonb_build_array(pg_temp.delivery('waitlist_confirmation',coalesce(token,encode(extensions.gen_random_bytes(32),'hex')))));
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Register failed %',r; END IF;
  RETURN jsonb_build_object('order',(r#>>'{data,order,id}')::bigint,'response',r,'payload',payload);
@@ -46,15 +46,26 @@ BEGIN
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Offer failed %',r; END IF;
  RETURN jsonb_build_object('id',r#>>'{data,offers,0,offerId}','response',r);
 END $$;
-CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,persons uuid[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
- SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','personIds',to_jsonb(persons),'token',token,'orderDetails',pg_temp.checkout(x,persons)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+CREATE FUNCTION pg_temp.accept(x jsonb,w jsonb,tickets bigint[],command uuid DEFAULT gen_random_uuid(),token text DEFAULT NULL,actor uuid DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
+ SELECT public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',w->'id','ticketIds',to_jsonb(tickets),'token',token,'orderDetails',pg_temp.checkout(x,tickets)),command,'ac000000-0000-0000-0000-000000000001'::uuid,coalesce(actor,(x->>'actor')::uuid));
+$$;
+-- Read-only test convenience view: every identity, answer and owner comes from
+-- existing tickets/OPT/orders. Lifecycle is the public server projection.
+CREATE VIEW pg_temp.ticket_rows AS
+ SELECT t.*,o.id current_order_id,o.form form_id,coalesce(o.source_waitlist_order_id,o.id) origin_order_id,
+ t.data answers,t.waitlist_queue_at queue_at,t.id ticket_id,
+ public.get_effective_waitlist_ticket_lifecycle_internal(t.id) lifecycle
+ FROM eshop.tickets t JOIN (SELECT DISTINCT "order",ticket FROM eshop.order_product_ticket) link ON link.ticket=t.id
+ JOIN eshop.orders o ON o.id=link."order";
+CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql AS $$
+ SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(NULL); f bigint:=(x->>'form')::bigint; n text; r jsonb; o bigint; bad boolean; bp bigint; copied bigint; second bigint;
 BEGIN
  PERFORM assert_true((SELECT participant_capacity IS NULL AND NOT waitlist_enabled AND show_remaining_capacity FROM forms WHERE id=f),'unlimited defaults');
  PERFORM assert_eq(public.get_form_registration_mode_internal(f),'regular'::text,'unlimited regular mode');
- FOREACH n IN ARRAY ARRAY['order_participants','waitlist_offers','waitlist_offer_slots','waitlist_capabilities','waitlist_acceptance_attempts','form_participant_backfill_issues'] LOOP
+ FOREACH n IN ARRAY ARRAY['waitlist_offers','waitlist_offer_slots','waitlist_capabilities','waitlist_acceptance_attempts'] LOOP
   PERFORM assert_true((SELECT relrowsecurity FROM pg_class WHERE oid=('eshop.'||n)::regclass),'RLS enabled '||n);
   PERFORM assert_false(has_table_privilege('anon','eshop.'||n,'SELECT'),'anon table read '||n);
   PERFORM assert_false(has_table_privilege('authenticated','eshop.'||n,'INSERT,UPDATE,DELETE'),'authenticated writes '||n);
@@ -80,12 +91,18 @@ BEGIN
  r:=public.update_form_internal_v1(jsonb_build_object('id',f,'occasion',x->'occasion','link',x->'link','participant_capacity',NULL,'waitlist_enabled',false));
  PERFORM assert_eq(r->>'code','200'::text,'explicit NULL removes inactive limit');
  PERFORM assert_true((SELECT participant_capacity IS NULL FROM forms WHERE id=f),'NULL stored');
+ PERFORM assert_eq(to_regclass('eshop.order_participants'),NULL::regclass,'removed duplicate participant ledger');
+ PERFORM assert_eq(to_regclass('eshop.form_participant_backfill_issues'),NULL::regclass,'removed historical person backfill');
+ PERFORM assert_eq(to_regprocedure('public.normalize_form_participant_answers_internal(bigint,jsonb)'),NULL::regprocedure,'old person normalizer absent');
+ PERFORM assert_eq(to_regprocedure('public.get_effective_waitlist_participant_lifecycle_internal(uuid)'),NULL::regprocedure,'old UUID-person projection absent');
+ PERFORM assert_true((SELECT data_type='bigint' FROM information_schema.columns WHERE table_schema='eshop' AND table_name='waitlist_offer_slots' AND column_name='ticket_id'),'offer binds actual BIGINT ticket');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='eshop' AND table_name='waitlist_offer_slots' AND column_name='participant_id'),'no parallel person slot binding');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='eshop' AND table_name='tickets' AND column_name IN('lifecycle','origin_order_id','current_order_id','form_id')),'tickets have no duplicate state or owner columns');
  o:=public.allocate_ticket_order_identity_internal(f);
- INSERT INTO forms(occasion,link) VALUES((x->>'occasion')::bigint,gen_random_uuid()::text) RETURNING id INTO second;
- BEGIN INSERT INTO eshop.order_participants(current_order_id,origin_order_id,form_id,lifecycle) VALUES(o,o,second,'waiting'); RAISE EXCEPTION 'cross-form ledger accepted'; EXCEPTION WHEN foreign_key_violation THEN NULL; END;
  BEGIN UPDATE eshop.orders SET state='waitlisted',price=0 WHERE id=o; RAISE EXCEPTION 'waitlist zero finance accepted'; EXCEPTION WHEN check_violation THEN NULL; END;
- INSERT INTO eshop.form_participant_backfill_issues(order_id,form_id,reason) VALUES(o,f,'ambiguous regression person');
- BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":3}'); RAISE EXCEPTION 'ambiguous activation accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%PARTICIPANT_BACKFILL_REQUIRED%' THEN RAISE; END IF; END;
- RAISE NOTICE 'PASS schema/defaults/CHECK/ACL/RLS/partial settings/ambiguity';
+ -- A preexisting order without a ticket does not invent occupants or require a
+ -- migration/backfill before a bounded form can be enabled.
+ PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":3}');
+ RAISE NOTICE 'PASS schema/defaults/CHECK/ACL/RLS/partial settings/ticket-only schema/no backfill';
 END $$;
 ROLLBACK;

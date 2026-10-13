@@ -9,10 +9,11 @@ docs/architecture/ai_context.md a celý autoritativní plán:
 
 [form-capacity-waitlist-plan-2026-10-13.md](form-capacity-waitlist-plan-2026-10-13.md)
 
-Implementuj jeho vlny v závislostním pořadí, verification **standard**. Náhradník
-je existující typ záznamu eshop.orders v novém stavu, s vlastní evidencí osob a
-nabídek. Úplné přijetí zachová ID/symbol/pořadí, částečné vytvoří propojenou běžnou
-objednávku a zmenší původní. Nabídka drží jen kapacitu osob; vybrané produkty se
+Implementuj jeho vlny v závislostním pořadí, verification **standard**. Náhradnická objednávka je eshop.orders ve stavu waitlisted. Jednotlivé položky
+jsou výhradně eshop.tickets ve stavu waitlisted, bez platnosti ke vstupu, produktu
+a financí. Žádná samostatná evidence osob, shadow lifecycle nebo ticket backfill.
+Obsazenost se dynamicky počítá DISTINCT z existujících platných tickets. Úplné přijetí zachová ID/symbol/pořadí, částečné vytvoří propojenou běžnou
+objednávku a zmenší původní. Nabídka drží jen kapacitu vstupenek; vybrané produkty se
 obsadí atomicky teprve potvrzením objednávky, i pokud není zaplacená. Všechny
 kapacitní a stavové přechody vlastní SQL, ne klient.
 

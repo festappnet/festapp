@@ -1,5 +1,5 @@
 import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
-import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, participantLabel } from './waitlist_form.js';
+import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
 import { FormModel } from './form_models.js';
 
@@ -198,7 +198,7 @@ export class FormPage extends Component {
             if (!bundle.form || !bundle.pendingCount) { this.renderWaitlistManagement(bundle); return; }
             const updated = new FormModel(bundle.form); updated.offerBundle = bundle;
             updated.offerDraft = { fields: [...this.currentSession.state.fields], tickets: this.currentSession.state.tickets };
-            updated.selectedPeople = model.selectedPeople.filter(id => bundle.participants.some(p => p.id === id && !['admitted', 'withdrawn', 'cancelled'].includes(p.lifecycle))).slice(0, bundle.pendingCount);
+            updated.selectedTicketIds = model.selectedTicketIds.filter(id => bundle.tickets.some(p => p.id === id && !['admitted', 'withdrawn', 'cancelled'].includes(p.lifecycle))).slice(0, bundle.pendingCount);
             this.renderForm(updated, false);
         } catch { /* Keep the editable draft on a network failure. */ }
     }
@@ -248,12 +248,12 @@ export class FormPage extends Component {
         title.textContent = bundle.offerStatus ? WaitlistStrings.text(bundle.offerStatus) : (this.waitlistScope.offerId ? WaitlistStrings.expired : WaitlistStrings.title);
         this.host.appendChild(title);
         const selected = new Set();
-        for (const person of bundle.participants) {
+        for (const person of bundle.tickets) {
             const label = document.createElement('label'); label.style.cssText = 'display:block;padding:12px';
             const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
             checkbox.disabled = ['admitted', 'cancelled', 'withdrawn'].includes(person.lifecycle);
             checkbox.onchange = () => checkbox.checked ? selected.add(person.id) : selected.delete(person.id);
-            label.append(checkbox, document.createTextNode(` ${participantLabel(person)} ${WaitlistStrings.text(person.lifecycle)}`));
+            label.append(checkbox, document.createTextNode(` ${ticketLabel(person)} ${WaitlistStrings.text(person.lifecycle)}`));
             this.host.appendChild(label);
         }
         if (!this.waitlistScope.offerId) {
@@ -263,10 +263,10 @@ export class FormPage extends Component {
         }
     }
 
-    async resolveWaitlist(operation, personIds) {
-        if (!personIds.length || !window.confirm(WaitlistStrings.confirm)) return;
+    async resolveWaitlist(operation, ticketIds) {
+        if (!ticketIds.length || !window.confirm(WaitlistStrings.confirm)) return;
         try {
-            await this.waitlistCommands.command(operation, { ...this.waitlistScope, personIds });
+            await this.waitlistCommands.command(operation, { ...this.waitlistScope, ticketIds });
             const link = this.currentLink; this.currentLink = null; await this.init(link);
         } catch (e) {
             const error = document.createElement('p'); error.setAttribute('role', 'alert');
@@ -547,7 +547,7 @@ export class FormPage extends Component {
         if (this.currentSession.state.tickets.length > this.currentSession.maxTickets) {
             const error = document.createElement('p'); error.setAttribute('role', 'alert'); error.textContent = WaitlistStrings.text('FORM_CAPACITY_EXCEEDED'); form.prepend(error); return;
         }
-        if (formModel.offerBundle && !formModel.selectedPeople?.length) {
+        if (formModel.offerBundle && !formModel.selectedTicketIds?.length) {
             const message = document.createElement('p'); message.setAttribute('role', 'alert'); message.textContent = WaitlistStrings.selectPeople; form.prepend(message); return;
         }
         const isValid = FormValidator.validateAndShowErrors(form, formModel, this.currentSession);
@@ -653,7 +653,7 @@ export class FormPage extends Component {
 
         // 4. Submit via Network
         const request = formModel.offerBundle
-            ? this.waitlistCommands.accept(this.waitlistScope, formModel.selectedPeople, {
+            ? this.waitlistCommands.accept(this.waitlistScope, formModel.selectedTicketIds, {
                 ...payload, ticket: payload.ticket.map(t => ({ ...t, fields: t.fields.map(f => {
                     const def = this.currentSession._getTicketSubDef(f._subFieldId);
                     return def && def.type !== 'product_type' ? { ...f, [def.id]: f[def.type] } : f;

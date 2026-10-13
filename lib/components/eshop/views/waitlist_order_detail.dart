@@ -16,7 +16,7 @@ class WaitlistOrderDetail extends StatefulWidget {
 
 class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   final _commands = WaitlistCommands();
-  final _selected = <String>{};
+  final _selected = <int>{};
   Map<String, dynamic>? _detail;
   String? _error;
   bool _busy = true;
@@ -51,7 +51,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       await _commands.command(operation, {
         'orderId': widget.order.id,
         if (offerId != null) 'offerId': offerId,
-        'personIds': _selected.toList()
+        'ticketIds': _selected.toList()
       });
       await _load();
     } catch (_) {
@@ -66,7 +66,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   bool _selectionBelongsTo(dynamic offer) =>
       _selected.isNotEmpty &&
       _selected.every((id) => (offer['slots'] as List)
-          .any((s) => s['participant_id'] == id && s['outcome'] == 'pending'));
+          .any((s) => s['ticketId'] == id && s['outcome'] == 'pending'));
 
   bool _offerIsPending(dynamic offer) {
     final now = DateTime.tryParse(
@@ -91,7 +91,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                     children: [
                   if (_busy) const LinearProgressIndicator(),
                   if (_error != null) Text(_error!),
-                  for (final p in _detail?['participants'] ?? [])
+                  for (final p in _detail?['tickets'] ?? [])
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
                       value: _selected.contains(p['id']),
@@ -133,7 +133,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                   '${WaitlistStrings.expiresAt}: ${DateTime.tryParse(offer['expires_at'])?.toLocal()}'),
                               for (final slot in offer['slots'])
                                 Text(
-                                    '${slot['participant_id']} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !_offerIsPending(offer) ? 'expired' : slot['outcome'])}'),
+                                    '${slot['ticketId']} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !_offerIsPending(offer) ? 'expired' : slot['outcome'])}'),
                               if (RightsService.isEditorOrder() &&
                                   _offerIsPending(offer))
                                 Wrap(spacing: 8, children: [

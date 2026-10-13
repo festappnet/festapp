@@ -62,8 +62,8 @@ class _FormPageState extends State<FormPage> {
   String? _offerId;
   int? _waitlistOrderId;
   String? _waitlistToken;
-  final Set<String> _selectedPeople = {};
-  final Map<String, FormTicketModel> _personDrafts = {};
+  final Set<int> _selectedTicketIds = {};
+  final Map<int, FormTicketModel> _ticketDrafts = {};
   String? _waitlistMessage;
   FormModel? _changedCapacityForm;
   bool _isLoading = false;
@@ -347,7 +347,7 @@ class _FormPageState extends State<FormPage> {
         final payload = <String, dynamic>{
           'form': form!.key,
           'fields': data['fields'],
-          'people': [
+          'tickets': [
             for (final person in (data['ticket'] as List? ?? []))
               {
                 'fields': [
@@ -453,7 +453,7 @@ class _FormPageState extends State<FormPage> {
               final result = await _waitlist.accept(
                   offerId: _offerId!,
                   token: _waitlistToken,
-                  personIds: _selectedPeople.toList(),
+                  ticketIds: _selectedTicketIds.toList(),
                   orderDetails: data);
               return FunctionResponse(status: 200, data: {
                 ...result,
@@ -955,19 +955,19 @@ class _FormPageState extends State<FormPage> {
   void _populateOfferPeople() {
     final ticket = formHolder!.getTicket();
     if (ticket == null) return;
-    ticket.fixedParticipants = true;
+    ticket.fixedTickets = true;
     ticket.maxTickets = (_offerBundle!['pendingCount'] as num?)?.toInt() ?? 0;
     for (final t in ticket.tickets) {
       for (final field in t.ticketValues) {
         if (t.ticketKey.currentState != null)
           field.defaultValue = field.getValue(t.ticketKey);
       }
-      if (t.participantId != null) _personDrafts[t.participantId!] = t;
+      if (t.ticketId != null) _ticketDrafts[t.ticketId!] = t;
     }
-    final existing = _personDrafts;
+    final existing = _ticketDrafts;
     ticket.tickets = [
-      for (final person in _offerBundle!['participants'] as List)
-        if (_selectedPeople.contains(person['id']))
+      for (final person in _offerBundle!['tickets'] as List)
+        if (_selectedTicketIds.contains(person['id']))
           existing[person['id']] ?? _personTicket(person),
     ];
     final values = <String, dynamic>{};
@@ -991,15 +991,16 @@ class _FormPageState extends State<FormPage> {
         field.defaultValue = answers[field.id.toString()];
     }
     return FormTicketModel(
-        participantId: person['id'],
+        ticketId: person['id'],
         ticketValues: fields,
         ticketKey: GlobalKey<FormBuilderState>());
   }
 
   Widget _buildWaitlistPeople({bool manage = false}) {
     final bundle = _offerBundle!;
-    final canDecline = _selectedPeople.every((id) => (bundle['slots'] as List)
-        .any((s) => s['participantId'] == id && s['outcome'] == 'pending'));
+    final canDecline = _selectedTicketIds.every((id) =>
+        (bundle['slots'] as List)
+            .any((s) => s['ticketId'] == id && s['outcome'] == 'pending'));
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(
           manage && _offerId != null
@@ -1010,42 +1011,42 @@ class _FormPageState extends State<FormPage> {
         Text(
             '${WaitlistStrings.remaining}: ${bundle['pendingCount']} · ${WaitlistStrings.expiresAt}: ${DateTime.tryParse(bundle['expiresAt'] ?? '')?.toLocal() ?? ''}'),
       if (!manage) Text(WaitlistStrings.productAvailability),
-      for (final person in bundle['participants'] as List)
+      for (final person in bundle['tickets'] as List)
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           title: Text((person['answers']?['fields'] as List? ?? [])
               .expand((f) => (f as Map).values)
               .join(' · ')),
           subtitle: Text(WaitlistStrings.text(person['lifecycle'])),
-          value: _selectedPeople.contains(person['id']),
+          value: _selectedTicketIds.contains(person['id']),
           onChanged: (['admitted', 'cancelled', 'withdrawn']
                       .contains(person['lifecycle']) ||
                   (!manage &&
                       person['lifecycle'] == 'offered' &&
                       !(bundle['slots'] as List).any((s) =>
-                          s['participantId'] == person['id'] &&
+                          s['ticketId'] == person['id'] &&
                           s['outcome'] == 'pending')))
               ? null
               : (checked) {
                   if (checked == true &&
                       !manage &&
-                      _selectedPeople.length >= (bundle['pendingCount'] as num))
-                    return;
+                      _selectedTicketIds.length >=
+                          (bundle['pendingCount'] as num)) return;
                   setState(() {
                     if (checked == true) {
-                      _selectedPeople.add(person['id']);
+                      _selectedTicketIds.add(person['id']);
                     } else {
-                      _selectedPeople.remove(person['id']);
+                      _selectedTicketIds.remove(person['id']);
                     }
                     if (!manage) _populateOfferPeople();
                   });
                 },
         ),
-      if (_selectedPeople.isEmpty) Text(WaitlistStrings.selectPeople),
+      if (_selectedTicketIds.isEmpty) Text(WaitlistStrings.selectPeople),
       if (!manage && !canDecline) Text(WaitlistStrings.text('declineAssigned')),
       if (!manage || _offerId == null)
         TextButton(
-          onPressed: _selectedPeople.isEmpty || (!manage && !canDecline)
+          onPressed: _selectedTicketIds.isEmpty || (!manage && !canDecline)
               ? null
               : () => _resolveWaitlist(manage ? 'withdraw' : 'decline'),
           child:
@@ -1064,7 +1065,7 @@ class _FormPageState extends State<FormPage> {
         if (_offerId != null) 'offerId': _offerId,
         if (_waitlistOrderId != null) 'orderId': _waitlistOrderId,
         if (_waitlistToken != null) 'token': _waitlistToken,
-        'personIds': _selectedPeople.toList()
+        'ticketIds': _selectedTicketIds.toList()
       });
       await loadData();
     } catch (e) {
@@ -1134,11 +1135,11 @@ class _FormPageState extends State<FormPage> {
 
       formHolder = FormHolder.fromFormFieldModel(form!);
       if (_offerBundle != null) {
-        _selectedPeople.clear();
-        _personDrafts.clear();
+        _selectedTicketIds.clear();
+        _ticketDrafts.clear();
         for (final slot in _offerBundle!['slots'] as List) {
           if (slot['outcome'] == 'pending')
-            _selectedPeople.add(slot['participantId']);
+            _selectedTicketIds.add(slot['ticketId']);
         }
         _populateOfferPeople();
       }

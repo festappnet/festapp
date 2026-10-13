@@ -195,9 +195,7 @@ export class FormDataReader {
                                 ticketObj.fields.push(FormDataReader._createSubFieldObj(sub, val));
                             } else {
                                 // Multi-value but single field entry (e.g. checkbox list without prices)
-                                let fObj = {};
-                                fObj[sub.type] = val;
-                                ticketObj.fields.push(fObj);
+                                ticketObj.fields.push(FormDataReader._createSubFieldObj(sub, val));
                             }
                         }
                     }
@@ -237,7 +235,7 @@ export class FormDataReader {
         
         const opt = FormDataReader._findOption(sub, val);
         if (opt) {
-            const isProduct = sub.type === 'product_type' || (opt.price !== undefined && opt.price !== null && opt.price !== "" && !isNaN(Number(opt.price)));
+            const isProduct = sub.type === 'product_type';
             
             if (isProduct) {
                 fObj['product_type'] = val;

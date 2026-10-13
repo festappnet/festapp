@@ -43,8 +43,6 @@ BEGIN
     OR EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE target_order_id=delete_order_internal_v1.order_id
       OR source_order_id=delete_order_internal_v1.order_id) THEN
     RAISE EXCEPTION 'ORDER_HAS_WAITLIST_HISTORY'; END IF;
-  DELETE FROM eshop.order_participants WHERE current_order_id=order_id;
-  DELETE FROM eshop.form_participant_backfill_issues issue WHERE issue.order_id=delete_order_internal_v1.order_id;
   UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id IN(SELECT form FROM eshop.orders WHERE id=order_id);
   PERFORM public.lock_activity_aggregate_internal_v1(order_oc);
   IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)

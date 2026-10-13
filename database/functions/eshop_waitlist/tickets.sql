@@ -35,20 +35,20 @@ END $$;
 REVOKE ALL ON FUNCTION public.allocate_ticket_order_identity_internal(bigint),public.lock_order_capacity_scope_internal(bigint[]),
  public.lock_ticket_order_products_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated;
 
--- One transport normalization for ordinary, offered and waiting people. Older
+-- One transport normalization for ordinary, offered and waiting tickets. Older
 -- clients identify ticket fields by their exact _subFieldId and typed key;
 -- current clients additionally send the stable numeric field ID.
-CREATE OR REPLACE FUNCTION public.normalize_form_participant_answers_internal(p_form bigint,p_people jsonb)
+CREATE OR REPLACE FUNCTION public.normalize_form_ticket_answers_internal(p_form bigint,p_tickets jsonb)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE people jsonb:='[]'; person jsonb; answer jsonb; fields jsonb; field_id bigint; numeric_keys text[];
- definition public.form_fields; value jsonb; seen bigint[];
+DECLARE tickets jsonb:='[]'; ticket jsonb; answer jsonb; fields jsonb; field_id bigint; numeric_keys text[];
+ definition public.form_fields; value jsonb; seen bigint[]; product_choices text[]; product_choice text;
 BEGIN
- IF jsonb_typeof(p_people) IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'Invalid participant answers'; END IF;
- FOR person IN SELECT * FROM jsonb_array_elements(p_people) LOOP
-  fields:='[]'; seen:='{}';
-  IF person ? 'fields' AND jsonb_typeof(person->'fields') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'Invalid participant fields'; END IF;
-  FOR answer IN SELECT * FROM jsonb_array_elements(coalesce(person->'fields','[]')) LOOP
-   IF jsonb_typeof(answer) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'Invalid participant field'; END IF;
+ IF jsonb_typeof(p_tickets) IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'Invalid ticket answers'; END IF;
+ FOR ticket IN SELECT * FROM jsonb_array_elements(p_tickets) LOOP
+  fields:='[]'; seen:='{}'; product_choices:='{}';
+  IF ticket ? 'fields' AND jsonb_typeof(ticket->'fields') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'Invalid ticket fields'; END IF;
+  FOR answer IN SELECT * FROM jsonb_array_elements(coalesce(ticket->'fields','[]')) LOOP
+   IF jsonb_typeof(answer) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'Invalid ticket field'; END IF;
    SELECT coalesce(array_agg(key),'{}') INTO numeric_keys FROM jsonb_object_keys(answer) key WHERE key ~ '^[0-9]+$';
    IF cardinality(numeric_keys)>1 THEN RAISE EXCEPTION 'FORM_FIELD_AMBIGUOUS'; END IF;
    field_id:=NULL;
@@ -63,43 +63,53 @@ BEGIN
    IF field_id IS NOT NULL THEN
     SELECT * INTO definition FROM public.form_fields WHERE id=field_id AND form=p_form AND is_ticket_field AND NOT is_hidden;
     IF NOT FOUND THEN RAISE EXCEPTION 'FORM_FIELD_SCOPE_MISMATCH'; END IF;
-    IF field_id=ANY(seen) THEN RAISE EXCEPTION 'FORM_FIELD_AMBIGUOUS'; END IF;
-    seen:=seen||field_id;
     IF NOT answer ? field_id::text AND NOT answer ? definition.type THEN RAISE EXCEPTION 'FORM_FIELD_TYPE_MISMATCH'; END IF;
     IF answer ? field_id::text AND answer ? definition.type AND answer->(field_id::text) IS DISTINCT FROM answer->definition.type THEN
      RAISE EXCEPTION 'FORM_FIELD_VALUE_CONFLICT'; END IF;
     -- A typed name cannot stand in for another field type with the same ID.
     IF EXISTS(SELECT 1 FROM jsonb_object_keys(answer) key WHERE key<>field_id::text AND key<>definition.type
-     AND key NOT IN ('_subFieldId','currency_code') AND NOT (definition.type='product_type' AND key='price')) THEN
+     AND key NOT IN ('_subFieldId','currency_code','price')) THEN
       RAISE EXCEPTION 'FORM_FIELD_TYPE_MISMATCH'; END IF;
     value:=coalesce(answer->(field_id::text),answer->definition.type);
+    IF field_id=ANY(seen) AND NOT (definition.type='product_type' AND coalesce(definition.data->>'selection_type','')='select_many') THEN
+     RAISE EXCEPTION 'FORM_FIELD_AMBIGUOUS'; END IF;
+    seen:=seen||field_id;
     IF definition.type='product_type' THEN
+     product_choice:=field_id::text||':'||((value#>>'{}')::bigint)::text;
+     IF product_choice=ANY(product_choices) THEN RAISE EXCEPTION 'FORM_FIELD_AMBIGUOUS'; END IF;
+     product_choices:=product_choices||product_choice;
      IF NOT EXISTS(SELECT 1 FROM eshop.products product WHERE product.id=(value#>>'{}')::bigint
        AND product.product_type=definition.product_type) THEN RAISE EXCEPTION 'PRODUCT_SCOPE_MISMATCH'; END IF;
-     -- Existing product selections carry a UI price hint. Discard it here;
-     -- the shared finalizer obtains the authoritative price from the product.
-     answer:=answer-'price';
     END IF;
+    -- Existing product and personal-choice transports carry UI price hints.
+    -- They never determine payment; the finalizer prices actual products only.
+    answer:=answer-'price';
     answer:=answer||jsonb_build_object(field_id::text,value,definition.type,value,'_subFieldId',field_id);
    END IF;
    fields:=fields||jsonb_build_array(answer);
   END LOOP;
-  people:=people||jsonb_build_array(jsonb_set(person,'{fields}',fields,true));
+  tickets:=tickets||jsonb_build_array(jsonb_set(ticket,'{fields}',fields,true));
  END LOOP;
- RETURN people;
+ RETURN tickets;
 END $$;
-REVOKE ALL ON FUNCTION public.normalize_form_participant_answers_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.normalize_form_ticket_answers_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated;
 
--- Domain answers contain stable personal field IDs only. Transport aliases,
--- product choices and client metadata remain outside the participant ledger.
-CREATE OR REPLACE FUNCTION public.extract_participant_answers_internal(p_form bigint,p_person jsonb)
+-- Domain answers contain stable ticketal field IDs only. Transport aliases,
+-- product choices and client metadata remain outside the ticket ledger.
+CREATE OR REPLACE FUNCTION public.extract_ticket_answers_internal(p_form bigint,p_ticket jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('fields',coalesce(jsonb_agg(jsonb_build_object(answer.key,answer.value)
    ORDER BY definition."order" NULLS LAST,definition.id),'[]'))
- FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_person->'fields')='array' THEN p_person->'fields' ELSE '[]' END) field
+ FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_ticket->'fields')='array' THEN p_ticket->'fields' ELSE '[]' END) field
  CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(field)='object' THEN field ELSE '{}' END) answer
  JOIN public.form_fields definition ON definition.id::text=answer.key
  WHERE definition.form=p_form AND definition.is_ticket_field AND NOT definition.is_hidden
   AND definition.type NOT IN ('product_type','spot','ticket','html');
 $$;
-REVOKE ALL ON FUNCTION public.extract_participant_answers_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.extract_ticket_answers_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_order_tickets_internal(p_order bigint)
+RETURNS SETOF eshop.tickets LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT t.* FROM eshop.tickets t WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x.ticket=t.id AND x."order"=p_order);
+$$;
+REVOKE ALL ON FUNCTION public.get_order_tickets_internal(bigint) FROM PUBLIC,anon,authenticated;

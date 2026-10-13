@@ -31,9 +31,9 @@ export class WaitlistCommands {
     async command(operation, payload) {
         return this._invoke('waitlist-commands', { operation, payload });
     }
-    async accept(scope, personIds, orderDetails) {
+    async accept(scope, ticketIds, orderDetails) {
         return this._invoke('send-ticket-order', {
-            waitlistAcceptance: { ...scope, personIds }, orderDetails,
+            waitlistAcceptance: { ...scope, ticketIds }, orderDetails,
         });
     }
     async _invoke(endpoint, body) {
@@ -53,7 +53,7 @@ export class WaitlistCommands {
 
 export function waitlistRegistrationPayload(session) {
     const model = session.formModel;
-    const payload = { form: model.key, lang: LocalizationService.currentLocale, fields: session.payload.fields, people: session.state.tickets.map(t => ({
+    const payload = { form: model.key, lang: LocalizationService.currentLocale, fields: session.payload.fields, tickets: session.state.tickets.map(t => ({
         fields: (t.fields || []).map(f => {
             const def = session._getTicketSubDef(f._subFieldId);
             return { [f._subFieldId]: f[def?.type] ?? f[f._subFieldId] };

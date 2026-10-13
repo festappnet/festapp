@@ -5,7 +5,8 @@ Revize po dokončení původní lokální realizace: 2026-10-13.
 Ověřování budoucí implementace: **standard** (osobní odkazy, oprávnění, platební údaje).
 Navazuje na [kapacitu a náhradníky](form-capacity-waitlist-plan-2026-10-13.md)
 a její [rozpracovanou realizaci](form-capacity-waitlist-implementation-2026-10-13.md).
-Tento dokument vlastní follow-up; nemění implementovaný lifecycle kapacity.
+Tento dokument vlastní follow-up; nemění lifecycle kapacity. Platí aktuální
+korekce původního plánu: žádná evidence osob, jediným zdrojem jsou eshop.tickets.
 
 ## Skutečný stav původní realizace
 
@@ -65,7 +66,7 @@ samostatný write kontrakt, oprávnění a pravidla vratek a kapacity.
   využívá operaci withdraw a vyžaduje `waitlisted`. Samotný existující odkaz tedy
   nedává trvalý přístup k platbě po konverzi.
 - Tentýž soubor: `get_waitlist_order_detail` je administrátorský detail, obsahuje
-  participants a linkedOrders. Jeho obecná data se nesmějí převzít do veřejného DTO.
+  tickets a linkedOrders. Jeho obecná data se nesmějí převzít do veřejného DTO.
 - `web_client/src/components/forms/waitlist_commands.js`: fragment
   `#waitlist?token=...&order_id=...` nebo `offer_id=...`, read RPC a receipted writes.
   `web_client/src/components/forms/form_page.js` a
@@ -80,8 +81,8 @@ samostatný write kontrakt, oprávnění a pravidla vratek a kapacity.
 - `recalculate_order_payment_status.sql`: práh `paid` je
   `COALESCE(deposit_amount, order.price)`. Záloha tedy může přepnout order do paid
   před plnou úhradou. Projekce nesmí z tohoto stavu udělat „vše zaplaceno“.
-- `schema.sql`: participants mají origin_order_id, current_order_id a ticket_id;
-  accepted slots mají resulting_order_id. `accept_offer.sql` při split nastavuje
+- `schema.sql`: jedinou evidencí jsou eshop.tickets; jejich vazba na objednávku
+  je order_product_ticket. Accepted slots mají ticket_id a resulting_order_id. `accept_offer.sql` při split nastavuje
   source_waitlist_order_id a při full ponechá původní ID. To jsou skutečné vazby,
   nepoužívat odhady podle pořadí jmen či produktových řádků.
 - `supabase/functions/_shared/orderOverview.ts` je HTML souhrn pro e-mail,
@@ -148,14 +149,14 @@ root scope tokenu; endpoint nevyhledává cizí root podle dodaného child ID.
 | `serverTime`, `accessExpiresAt` | Čas snapshotu a expirace konkrétního přístupu |
 | `people` | Stabilní id, veřejné jméno, effectiveLifecycle, currentOrderId; origin_order_id=root |
 | `offers` | id, effectiveStatus, pendingPlaces, expiresAt; žádný token ani ciphertext |
-| `orders` | Každá výsledná běžná objednávka právě jednou: id, symbol, state, personIds, veřejné položky, total, currency |
+| `orders` | Každá výsledná běžná objednávka právě jednou: id, symbol, state, ticketIds, veřejné položky, total, currency |
 | `orders[].payment` | nullable pro chybějící platbu; amount, received, returned, totalOutstanding, depositAmount, depositDeadline, finalDeadline, status, dueNow, dueAt, reference, publicAccount, instructionsAvailable |
 | `orders[].tickets` | distinct ticket id, personId pokud je prokazatelný, bezpečný label, rawState, displayStatus, usageStatus |
 | `actions` | Jen zákaznické možnosti, nikdy admin allowedActions; view token má pouze refresh a navigaci |
 
 Položky objednávky číst přes order_product_ticket, cenu použít uloženou objednanou,
 nikoli aktuální cenu produktu v katalogu. Ticket více produktů nesmí být víckrát
-v seznamu. Ticket symbol/QR do read DTO této vlny nepřidávat. Vazbu participant/ticket
+v seznamu. Ticket symbol/QR do read DTO této vlny nepřidávat. Vazbu ticket/order
 číst přes ticket_id; chybějící vazbu neodvozovat z pořadí. U nesouladu tenant/form/
 occasion vazeb odmítnout dotčené čtení bezpečnou chybou, ne rozšířit scope.
 
@@ -203,7 +204,7 @@ aby mohl zobrazit následnou platbu. Na aktivní nabídce a v jejím potvrzení 
 dostupný odkaz na přehled, doručený současně přes existující e-mailovou frontu.
 
 Nový read endpoint, pracovně `get_customer_order_overview`, vlastní SQL projekci
-nad orders, participants, offer slots, payment_info a tickets. Použije explicitní
+nad orders, offer slots, payment_info a tickets. Použije explicitní
 allowlist veřejných polí, ne to_jsonb celé objednávky, raw order.data ani admin DTO.
 Zahrne symbol, veřejné položky/osoby, stav objednávky, nabídky a jejich povolené
 akce, samostatnou platbu a tickets každé propojené objednávky, serverTime.

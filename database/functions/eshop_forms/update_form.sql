@@ -223,10 +223,10 @@ BEGIN
             OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (
               SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id = opt.ticket
               WHERE opt."order" = o.id AND NULLIF(t.note, '') IS NOT NULL))
-          )) OR EXISTS(SELECT 1 FROM eshop.order_participants person CROSS JOIN LATERAL jsonb_array_elements(
-            CASE WHEN jsonb_typeof(person.answers->'fields')='array' THEN person.answers->'fields' ELSE '[]' END) answer
-            WHERE person.form_id=ff.form AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
-           OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_participants ledger WHERE ledger.form_id=ff.form)) THEN 'responses'
+          )) OR EXISTS(SELECT 1 FROM eshop.tickets person CROSS JOIN LATERAL jsonb_array_elements(
+            CASE WHEN jsonb_typeof(person.data->'fields')='array' THEN person.data->'fields' ELSE '[]' END) answer
+            WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket=person.id AND q.form=ff.form) AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
+           OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket IS NOT NULL AND q.form=ff.form)) THEN 'responses'
         ELSE (
           SELECT reason FROM public.form_fields member
           JOIN eshop.products p ON p.product_type = member.product_type

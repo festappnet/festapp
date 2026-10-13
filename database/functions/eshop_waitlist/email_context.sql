@@ -11,13 +11,13 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='Order editor required'; END IF;
  contexts:='[]';
  IF p_operation='register' THEN contexts:=jsonb_build_array(jsonb_build_object('recipient',p_payload->>'email','organization',occ.organization,
-  'occasion',occ.id,'unit',occ.unit,'occasionTitle',occ.title,'participantCount',jsonb_array_length(p_payload->'people'),'formLink',f.link));
+  'occasion',occ.id,'unit',occ.unit,'occasionTitle',occ.title,'participantCount',jsonb_array_length(p_payload->'tickets'),'formLink',f.link));
  ELSE
   FOR r IN SELECT * FROM jsonb_array_elements(p_payload->'recipients') LOOP
    SELECT * INTO STRICT o FROM eshop.orders WHERE id=(r->>'orderId')::bigint AND form=fid;
    contexts:=contexts||jsonb_build_array(jsonb_build_object('orderId',o.id,'recipient',o.data->>'email','organization',occ.organization,
    'occasion',occ.id,'unit',occ.unit,'occasionTitle',occ.title,'orderSymbol',o.order_symbol,
-   'participantCount',(SELECT count(*) FROM eshop.order_participants WHERE current_order_id=o.id),
+   'participantCount',(SELECT count(*) FROM public.get_order_tickets_internal(o.id)),
    'offeredCount',(r->>'count')::integer,'formLink',f.link,'expiresAt',p_payload->>'expiresAt'));
   END LOOP;
  END IF;

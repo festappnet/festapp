@@ -1,13 +1,13 @@
-CREATE OR REPLACE FUNCTION public.get_effective_waitlist_participant_lifecycle_internal(p_person uuid)
+CREATE OR REPLACE FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(p_ticket bigint)
 RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT CASE WHEN person.lifecycle='offered' AND EXISTS(
-  SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
-  WHERE s.participant_id=person.id AND s.outcome='pending' AND w.expires_at<=clock_timestamp())
- THEN 'offer_expired' ELSE person.lifecycle END
- FROM eshop.order_participants person WHERE person.id=p_person;
+ SELECT CASE WHEN t.state='storno' THEN CASE WHEN t.ticket_symbol IS NULL THEN 'withdrawn' ELSE 'cancelled' END
+ WHEN t.state IS DISTINCT FROM 'waitlisted' THEN 'admitted'
+ WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id AND s.outcome='pending' AND w.expires_at>clock_timestamp()) THEN 'offered'
+ ELSE coalesce((SELECT CASE s.outcome WHEN 'expired' THEN 'offer_expired' WHEN 'declined' THEN 'offer_declined' WHEN 'cancelled' THEN 'offer_cancelled' WHEN 'pending' THEN 'offer_expired' ELSE 'waiting' END
+ FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id ORDER BY w.created_at DESC,s.updated_at DESC,s.id DESC LIMIT 1),'waiting') END
+ FROM eshop.tickets t WHERE t.id=p_ticket;
 $$;
-REVOKE ALL ON FUNCTION public.get_effective_waitlist_participant_lifecycle_internal(uuid)
- FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(bigint) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION public.check_waitlist_scope_internal(p_order bigint,p_offer uuid,p_token text,p_actor uuid,p_operation text)
 RETURNS bigint LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; c eshop.waitlist_capabilities; occ public.occasions;
@@ -30,10 +30,10 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.get_waitlist_summary_internal(p_order bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH effective AS (SELECT public.get_effective_waitlist_participant_lifecycle_internal(person.id) lifecycle
- FROM eshop.order_participants person WHERE current_order_id=p_order), p AS (SELECT lifecycle,count(*) n FROM effective GROUP BY lifecycle),
+ WITH effective AS (SELECT public.get_effective_waitlist_ticket_lifecycle_internal(person.id) lifecycle
+ FROM public.get_order_tickets_internal(p_order) person), p AS (SELECT lifecycle,count(*) n FROM effective GROUP BY lifecycle),
  s AS (SELECT count(*) n,min(w.expires_at) expiry FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers w ON w.id=x.offer_id
- JOIN eshop.order_participants person ON person.id=x.participant_id WHERE person.current_order_id=p_order AND x.outcome='pending' AND w.expires_at>clock_timestamp())
+ JOIN public.get_order_tickets_internal(p_order) person ON person.id=x.ticket_id WHERE true AND x.outcome='pending' AND w.expires_at>clock_timestamp())
  SELECT jsonb_build_object('counts',coalesce((SELECT jsonb_object_agg(lifecycle,n) FROM p),'{}'),
  'pendingPlaces',s.n,'earliestExpiry',s.expiry,'isActive',CASE WHEN o.state='waitlisted' THEN
   coalesce((SELECT n>0 FROM p WHERE lifecycle='waiting'),false) OR s.n>0 ELSE o.state IS DISTINCT FROM 'storno' END,
@@ -59,16 +59,16 @@ BEGIN
    'offerId',w.id,'pendingCount',0,'expiresAt',w.expires_at,'serverTime',clock_timestamp(),
    'offerStatus',CASE WHEN w.expires_at<=clock_timestamp() THEN 'expired'
     WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome IN ('declined','cancelled')) THEN 'cancelled'
-    ELSE 'accepted' END,'participants','[]'::jsonb,'slots','[]'::jsonb);
+    ELSE 'accepted' END,'tickets','[]'::jsonb,'slots','[]'::jsonb);
  END IF;
  bundle:=public.get_form_bundle_internal(fid,true)::jsonb;
  bundle:=jsonb_set(bundle,'{data,registrationMode}',to_jsonb(CASE WHEN p_offer_id IS NOT NULL THEN 'offer'::text ELSE 'waitlist' END),true);
  RETURN jsonb_build_object('code',200,'form',bundle->'data','registrationMode',CASE WHEN p_offer_id IS NOT NULL THEN 'offer' ELSE 'waitlist' END,
   'orderData',(SELECT data FROM eshop.orders WHERE id=oid),'pendingCount',(SELECT count(*) FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id AND outcome='pending' AND w.expires_at>clock_timestamp()),
   'orderId',oid,'offerId',p_offer_id,'serverTime',clock_timestamp(),'expiresAt',w.expires_at,
-  'participants',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'answers',public.extract_participant_answers_internal(fid,answers),'lifecycle',public.get_effective_waitlist_participant_lifecycle_internal(id)) ORDER BY registered_at,id),'[]')
-   FROM eshop.order_participants WHERE current_order_id=oid),
-  'slots',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'participantId',participant_id,'outcome',CASE WHEN outcome='pending' AND w.expires_at<=clock_timestamp() THEN 'expired' ELSE outcome END)),'[]')
+  'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'answers',public.extract_ticket_answers_internal(fid,data),'lifecycle',public.get_effective_waitlist_ticket_lifecycle_internal(id)) ORDER BY created_at,id),'[]')
+   FROM public.get_order_tickets_internal(oid)),
+  'slots',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'ticketId',ticket_id,'outcome',CASE WHEN outcome='pending' AND w.expires_at<=clock_timestamp() THEN 'expired' ELSE outcome END)),'[]')
    FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id),'waitlistSummary',public.get_waitlist_summary_internal(oid));
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
@@ -84,9 +84,9 @@ BEGIN
  IF NOT public.get_is_editor_order_view_on_occasion(o.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Order viewer required'; END IF;
  RETURN jsonb_build_object('orderId',o.id,'sourceOrderId',o.source_waitlist_order_id,'waitlistSummary',public.get_waitlist_summary_internal(o.id),
  'capacity',public.get_form_capacity_snapshot_internal(o.form),
- 'participants',(SELECT coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('answers',public.extract_participant_answers_internal(o.form,p.answers),
-  'lifecycle',public.get_effective_waitlist_participant_lifecycle_internal(p.id)) ORDER BY registered_at,id),'[]') FROM eshop.order_participants p WHERE current_order_id=o.id),
- 'offers',(SELECT coalesce(jsonb_agg(to_jsonb(w)||jsonb_build_object('slots',(SELECT coalesce(jsonb_agg(to_jsonb(s)),'[]') FROM eshop.waitlist_offer_slots s WHERE offer_id=w.id)) ORDER BY created_at),'[]')
+ 'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'answers',public.extract_ticket_answers_internal(o.form,p.data),
+  'lifecycle',public.get_effective_waitlist_ticket_lifecycle_internal(p.id)) ORDER BY created_at,id),'[]') FROM public.get_order_tickets_internal(o.id) p),
+ 'offers',(SELECT coalesce(jsonb_agg(to_jsonb(w)||jsonb_build_object('slots',(SELECT coalesce(jsonb_agg((to_jsonb(s)-'ticket_id')||jsonb_build_object('ticketId',s.ticket_id)),'[]') FROM eshop.waitlist_offer_slots s WHERE offer_id=w.id)) ORDER BY created_at),'[]')
  FROM eshop.waitlist_offers w WHERE order_id=o.id),
  'linkedOrders',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'orderSymbol',order_symbol,'state',state)),'[]') FROM eshop.orders WHERE source_waitlist_order_id=o.id));
 END $$;

@@ -36,7 +36,8 @@ BEGIN
         JOIN eshop.order_product_ticket opt ON t.id = opt.ticket
         JOIN eshop.orders o ON opt."order" = o.id
         WHERE o.occasion = occasion_id_val
-          AND t.state != 'storno'
+          AND t.state IS DISTINCT FROM 'storno' AND t.state IS DISTINCT FROM 'waitlisted'
+          AND t.ticket_symbol IS NOT NULL AND o.state IS DISTINCT FROM 'waitlisted'
         ORDER BY t.id
     ) t;
 
