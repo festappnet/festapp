@@ -653,7 +653,7 @@
     "OFFER_EXPIRED": "Platnosť tejto ponuky vypršala.",
     "OFFER_CHANGED": "Ponuka sa zmenila. Obnovte ju a znovu potvrďte.",
     "OFFER_SLOT_ALREADY_RESOLVED": "Tieto miesta ponuky už boli vybavené.",
-    "CAPACITY_BELOW_COMMITTED": "Kapacita nemôže byť nižšia ako počet obsadených a rezervovaných miest.",
+    "CAPACITY_BELOW_COMMITTED": "Kapacita nemôže byť nižšia ako počet prijatých prihlášok a platných ponúk.",
     "WAITLIST_HAS_ACTIVE_ENTRIES": "Aktívne čakajúce prihlášky alebo ponuky túto zmenu blokujú.",
     "BLUEPRINT_CONFLICT": "Plánik nemožno kombinovať s kapacitou prihlášok ani náhradníkmi.",
     "PRODUCT_CAPACITY_EXCEEDED": "Vybraný produkt už nie je dostupný v požadovanom množstve. Vyberte iný produkt.",
@@ -755,8 +755,8 @@
     "adminWithdrawHelp": "Ak sa účastník nezúčastní, vyraďte jeho prihlášku. Čakanie sa skončí a prípadné ponúknuté miesto sa uvoľní.",
     "acceptOne": "Potvrdiť prihlásenie",
     "limitTickets": "Obmedziť počet vstupeniek",
-    "capacityRegistrations": "Maximálny počet prihlášok v tomto formulári",
-    "capacityTickets": "Maximálny počet vstupeniek v tomto formulári"
+    "capacityRegistrations": "Počet prihlášok",
+    "capacityTickets": "Počet vstupeniek"
   },
   "EmailTemplates": {
     "subs": {
