@@ -19,7 +19,7 @@ class WaitlistCapacitySummary extends StatelessWidget {
       ? const SizedBox.shrink()
       : Wrap(spacing: 16, runSpacing: 4, children: [
           Text(WaitlistStrings.text('occupancy')
-              .replaceAll('{occupied}', '${capacity.occupiedPeople}')
+              .replaceAll('{occupied}', '${capacity.occupiedPlaces}')
               .replaceAll('{capacity}', '${capacity.limit ?? ''}')),
           Text('${WaitlistStrings.text('waiting')}: ${capacity.waitingPeople}'),
           if (capacity.offeredPlaces > 0)

@@ -23,7 +23,7 @@ class FormCapacitySettings extends StatelessWidget {
     final snapshot = form.capacity;
     final occupancy = !blueprint && snapshot?.limit != null
         ? WaitlistStrings.text('occupancy')
-            .replaceAll('{occupied}', '${snapshot!.occupiedPeople}')
+            .replaceAll('{occupied}', '${snapshot!.occupiedPlaces}')
             .replaceAll('{capacity}', '${snapshot.limit}')
         : null;
     final settingsSummary = blueprint
@@ -51,9 +51,7 @@ class FormCapacitySettings extends StatelessWidget {
       title: Text(WaitlistStrings.settings,
           style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle:
-          Padding(padding: const EdgeInsets.only(top: 4), child: Text(summary,
-              semanticsLabel: occupancy == null ? null : summary.replaceFirst(
-                  occupancy, '${OrdersStrings.validTickets}: ${snapshot!.occupiedPeople} / ${snapshot.limit}'))),
+          Padding(padding: const EdgeInsets.only(top: 4), child: Text(summary)),
       trailing: canEdit && !blueprint ? const Icon(Icons.chevron_right) : null,
       onTap: canEdit && !blueprint
           ? () async {

@@ -4,6 +4,8 @@ import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_ticket_model.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'dart:async';
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -46,11 +48,20 @@ class FormPage extends StatefulWidget {
   String? formLink;
   final String? offerId;
   final int? waitlistOrderId;
+  final bool embedded;
+  final ValueChanged<bool>? onEmbeddedClose;
   FormPage(
+      {super.key, @pathParam this.formLink, this.offerId, this.waitlistOrderId})
+      : embedded = false,
+        onEmbeddedClose = null;
+
+  FormPage.adminOffer(
       {super.key,
-      @pathParam this.formLink,
-      this.offerId,
-      this.waitlistOrderId});
+      this.formLink,
+      required this.offerId,
+      required this.onEmbeddedClose})
+      : embedded = true,
+        waitlistOrderId = null;
 
   @override
   _FormPageState createState() => _FormPageState();
@@ -67,6 +78,7 @@ class _FormPageState extends State<FormPage> {
   String? _waitlistMessage;
   FormModel? _changedCapacityForm;
   bool _isLoading = false;
+  bool _embeddedSelectionChanged = false;
   bool _formNotAvailable = false;
 
   Map<String, dynamic>? formResult;
@@ -101,11 +113,16 @@ class _FormPageState extends State<FormPage> {
     // we don't re-trigger the data load, but we do re-subscribe the listener.
     if (_dependenciesInitialized) {
       _popStateSubscription?.cancel();
-      _popStateSubscription = RouterService.onPopState.listen(_handlePopState);
+      if (!widget.embedded) {
+        _popStateSubscription =
+            RouterService.onPopState.listen(_handlePopState);
+      }
       return;
     }
 
-    if (widget.formLink == null && context.routeData.hasPendingChildren) {
+    if (!widget.embedded &&
+        widget.formLink == null &&
+        context.routeData.hasPendingChildren) {
       widget.formLink =
           context.routeData.pendingChildren[0].params.getString("formLink");
     }
@@ -117,7 +134,9 @@ class _FormPageState extends State<FormPage> {
 
     // Add the popstate listener from RouterService
     _popStateSubscription?.cancel(); // Cancel any old one
-    _popStateSubscription = RouterService.onPopState.listen(_handlePopState);
+    if (!widget.embedded) {
+      _popStateSubscription = RouterService.onPopState.listen(_handlePopState);
+    }
 
     _dependenciesInitialized = true; // Mark as initialized
   }
@@ -169,7 +188,7 @@ class _FormPageState extends State<FormPage> {
     if (_isSeatReservationVisible) return _seatReservationCompleter!.future;
 
     // Push a new history state via RouterService
-    RouterService.pushOverlayState('seat-reservation');
+    if (!widget.embedded) RouterService.pushOverlayState('seat-reservation');
 
     formSession!.startSeatSelection();
     // No need to updateSeats(seats) here as we are just opening it,
@@ -193,7 +212,7 @@ class _FormPageState extends State<FormPage> {
 
     if (seats != null) {
       _isClosingProgrammatically = true;
-      RouterService.goBackProgrammatically();
+      if (!widget.embedded) RouterService.goBackProgrammatically();
     }
 
     setState(() {
@@ -222,7 +241,7 @@ class _FormPageState extends State<FormPage> {
     if (!_isOrderPreviewVisible) return;
 
     _isClosingProgrammatically = true;
-    RouterService.goBackProgrammatically();
+    if (!widget.embedded) RouterService.goBackProgrammatically();
 
     setState(() {
       _isOrderPreviewVisible = false;
@@ -381,7 +400,7 @@ class _FormPageState extends State<FormPage> {
       return;
     }
     if (valid) {
-      RouterService.pushOverlayState('order-preview');
+      if (!widget.embedded) RouterService.pushOverlayState('order-preview');
       setState(() {
         _isOrderPreviewVisible = true;
       });
@@ -441,11 +460,14 @@ class _FormPageState extends State<FormPage> {
     }
     formResult = data;
 
-    showGeneralDialog(
+    var completed = false;
+    final completion = showGeneralDialog(
       context: context,
+      useRootNavigator: !widget.embedded,
       barrierDismissible: false, // Disable dismissing by tapping outside
       barrierLabel: "FinishOrderDialog",
       pageBuilder: (context, anim1, anim2) => FinishOrderScreen(
+        successBackLabel: widget.embedded ? CommonStrings.back : null,
         occasionTitle: form!.occasionModel?.title ?? form!.title,
         orderFutureFunction: () async {
           if (_offerId != null) {
@@ -473,6 +495,10 @@ class _FormPageState extends State<FormPage> {
           return response;
         },
         onOrderConfirmed: () async {
+          if (widget.embedded) {
+            completed = true;
+            return;
+          }
           // Reset session tickets?
           // `_formKey.currentState?.reset()` resets the form fields.
           // TicketHolder might need manual reset or re-loadData will handle it.
@@ -482,8 +508,9 @@ class _FormPageState extends State<FormPage> {
           formSession!.recalculateTotals();
         },
         onSuccess: () async {
+          if (widget.embedded) return;
           Navigator.of(context).pop(); // Close the OrderPreview BottomSheet
-          _scrollToTop();
+          if (!widget.embedded) _scrollToTop();
         },
         tone: form!.data?[FormHelper.metaCommunicationTone],
         hasTickets: FeatureService.isFeatureEnabled(FeatureConstants.ticket,
@@ -500,6 +527,15 @@ class _FormPageState extends State<FormPage> {
       },
     );
 
+    if (widget.embedded) await completion;
+    if (!mounted) return;
+    if (widget.embedded && completed) {
+      // Finish has completed its pop before removing the local preview route.
+      _isOrderPreviewVisible = false;
+      Navigator.of(context).pop();
+      widget.onEmbeddedClose?.call(true);
+      return;
+    }
     setState(() {
       _isLoading = false;
     });
@@ -620,6 +656,43 @@ class _FormPageState extends State<FormPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.embedded) return _buildContent(context);
+    return AppDialogDismissal(
+      onClose: _closeEmbedded,
+      enabled: !_isLoading,
+      child: PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) {
+          if (!didPop) _closeEmbedded();
+        },
+        child: Scaffold(
+          appBar: AppDialogAppBar(
+            title: Text(WaitlistStrings.text('completeRegistration')),
+            onClose: _isLoading ? null : _closeEmbedded,
+            closeEnabled: !_isLoading,
+          ),
+          body: _buildContent(context),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _closeEmbedded() async {
+    if (_isLoading) return;
+    final dirty = _embeddedSelectionChanged ||
+        _formKey.currentState?.isDirty == true ||
+        (formHolder?.getTicket()?.tickets.any(
+                (ticket) => ticket.ticketKey.currentState?.isDirty == true) ??
+            false);
+    if (dirty &&
+        !await DialogHelper.showConfirmationDialog(
+            context,
+            CommonStrings.discardChanges,
+            CommonStrings.discardChangesConfirmation)) return;
+    if (mounted) widget.onEmbeddedClose?.call(false);
+  }
+
+  Widget _buildContent(BuildContext context) {
     // Check time limits
     bool isClosed = false;
     bool isBeforeStart = false;
@@ -636,7 +709,9 @@ class _FormPageState extends State<FormPage> {
       }
     }
 
-    dynamic previewParam = context.routeData.queryParams.get('preview', false);
+    dynamic previewParam = widget.embedded
+        ? false
+        : context.routeData.queryParams.get('preview', false);
     bool isPreviewParam = previewParam.toString().toLowerCase() == 'true';
     bool canPreview = RightsService.isEditorOrderView();
     // Only allow preview if specifically requested AND user is editor
@@ -672,7 +747,7 @@ class _FormPageState extends State<FormPage> {
         child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(children: [
-              if (form?.header != null)
+              if (!widget.embedded && form?.header != null)
                 HtmlView(html: form!.header!, isSelectable: true),
               Text(WaitlistStrings.full),
             ])),
@@ -738,7 +813,8 @@ class _FormPageState extends State<FormPage> {
                                   return AutofillGroup(
                                     child: Column(
                                       children: [
-                                        if (form!.header != null)
+                                        if (!widget.embedded &&
+                                            form!.header != null)
                                           Column(
                                             children: [
                                               HtmlView(
@@ -825,7 +901,7 @@ class _FormPageState extends State<FormPage> {
         floatingActionButton: Padding(
           padding: EdgeInsets.only(bottom: 24),
           child: Visibility(
-            visible: RightsService.canSeeReservations(),
+            visible: !widget.embedded && RightsService.canSeeReservations(),
             child: FloatingActionButton(
               backgroundColor: theme.primaryColor,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -1034,8 +1110,10 @@ class _FormPageState extends State<FormPage> {
                           (bundle['pendingCount'] as num)) return;
                   setState(() {
                     if (checked == true) {
+                      _embeddedSelectionChanged = true;
                       _selectedTicketIds.add(person['id']);
                     } else {
+                      _embeddedSelectionChanged = true;
                       _selectedTicketIds.remove(person['id']);
                     }
                     if (!manage) _populateOfferPeople();
@@ -1097,7 +1175,7 @@ class _FormPageState extends State<FormPage> {
     try {
       _offerId ??= widget.offerId;
       _waitlistOrderId ??= widget.waitlistOrderId;
-      final fragment = context.routeData.fragment;
+      final fragment = widget.embedded ? '' : context.routeData.fragment;
       if (fragment.startsWith('waitlist?')) {
         final params = Uri.splitQueryString(fragment.substring(9));
         _waitlistToken ??= params['token'];
@@ -1130,7 +1208,7 @@ class _FormPageState extends State<FormPage> {
         return;
       }
 
-      if (widget.formLink != null)
+      if (!widget.embedded && widget.formLink != null)
         await RightsService.updateAppData(formLink: widget.formLink);
 
       formHolder = FormHolder.fromFormFieldModel(form!);

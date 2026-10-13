@@ -151,7 +151,7 @@ void main() {
         .tap(find.widgetWithText(OutlinedButton, WaitlistStrings.withdraw));
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.withdrawTitle), findsOneWidget);
-    expect(find.text(WaitlistStrings.withdrawExplanation), findsOneWidget);
+    expect(find.textContaining(WaitlistStrings.withdrawExplanation), findsOneWidget);
     expect(find.text(WaitlistStrings.title), findsNothing);
     expect(mutations, isEmpty);
     await tester
@@ -215,7 +215,7 @@ void main() {
     await tester
         .tap(find.widgetWithText(OutlinedButton, WaitlistStrings.withdraw));
     await tester.pumpAndSettle();
-    expect(find.text(WaitlistStrings.withdrawExplanation), findsOneWidget);
+    expect(find.textContaining(WaitlistStrings.withdrawExplanation), findsOneWidget);
     await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
     await tester.pumpAndSettle();
     expect(mutations, 0);
@@ -353,8 +353,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(WaitlistStrings.full),findsNothing);
       expect(find.text(WaitlistStrings.offerPlace),findsNothing);
-      expect(find.widgetWithText(FilledButton, count==1 ? WaitlistStrings.text('acceptOne') : WaitlistStrings.text('continueToConfirmation')),findsOneWidget);
-      final decline=find.widgetWithText(TextButton,WaitlistStrings.decline);
+      expect(find.widgetWithText(FilledButton, WaitlistStrings.text('completeRegistration')),findsOneWidget);
+      final decline=find.widgetWithText(TextButton,WaitlistStrings.text('recordDecline'));
       if(count==2) {
         expect(tester.widget<TextButton>(decline).onPressed,isNull);
         expect(find.text(WaitlistStrings.text('offerSelectionRequired')),findsOneWidget);
@@ -364,9 +364,9 @@ void main() {
       expect(tester.widget<TextButton>(decline).onPressed,isNotNull);
       await tester.tap(decline);
       await tester.pumpAndSettle();
-      expect(find.text(WaitlistStrings.declineOfferExplanation),findsOneWidget);
+      expect(find.textContaining(WaitlistStrings.declineOfferExplanation),findsOneWidget);
       expect(sent,isEmpty);
-      await tester.tap(find.widgetWithText(ElevatedButton,WaitlistStrings.decline));
+      await tester.tap(find.widgetWithText(ElevatedButton,WaitlistStrings.text('recordDecline')));
       await tester.pumpAndSettle();
       expect(sent.single['ticketIds'],[1]);
       expect(sent.single['offerId'],'offer-one');
