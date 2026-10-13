@@ -99,6 +99,17 @@ void main() {
     controller.stateManager.changeCellValue(row.cells['value']!, 'Changed');
     await tester.pumpAndSettle();
     enabled(true);
+    controller.stateManager.setCurrentCell(row.cells['value'], 0);
+    controller.stateManager.setKeepFocus(true);
+    controller.stateManager.setRowChecked(row, true);
+    await tester.pumpAndSettle();
+    final marker = find.byKey(ValueKey('grid-row-change-${row.key}'));
+    expect(marker, findsWidgets);
+    for (final box in tester.widgetList<DecoratedBox>(marker)) {
+      final border = (box.decoration as BoxDecoration).border! as Border;
+      expect(border.left.color, Colors.amber);
+      expect(box.position, DecorationPosition.foreground);
+    }
     await controller.reloadData();
     await tester.pumpAndSettle();
     enabled(false);

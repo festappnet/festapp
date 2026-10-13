@@ -23,6 +23,7 @@ import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/add_new_event_dialog.dart';
 import 'package:fstapp/components/schedule/event_edit_page.dart';
@@ -86,6 +87,7 @@ class _SchedulePageState extends State<SchedulePage>
   final ScrollController _scrollController = ScrollController();
   List<TimeBlockItem> _dots = [];
   List<EventModel> _events = [];
+  bool _hasLoadedEvents = false;
   bool _hasOwnedCompanions = false;
   static final Map<int, String?> _eventDescriptions = {};
 
@@ -139,7 +141,13 @@ class _SchedulePageState extends State<SchedulePage>
   }
 
   Future<void> _reloadProjectedEvents() async {
+    // Context bootstrap temporarily clears its projection. That is loading,
+    // not an empty programme, and must not overwrite an existing calendar.
+    final token = ClientSyncRuntime.mutationContextToken;
+    final catalog = await ClientSyncRuntime.readPublic(ClientSyncComponent.programCatalog);
+    if (catalog == null) return;
     final events = await OfflineDataService.getAllEvents();
+    if (!ClientSyncRuntime.isCurrentMutationContext(token)) return;
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
       await OfflineDataService.updateEventsWithMySchedule(events);
@@ -151,6 +159,7 @@ class _SchedulePageState extends State<SchedulePage>
         .toList();
     if (!mounted) return;
     setState(() {
+      _hasLoadedEvents = true;
       _events = events;
       _dots = dots;
       for (final event in events) {
@@ -226,6 +235,7 @@ class _SchedulePageState extends State<SchedulePage>
     if (_events.isEmpty) {
       final offline = await OfflineDataService.getAllEvents();
       _events = offline;
+      _hasLoadedEvents = offline.isNotEmpty;
       for (var e in _events) {
         if (e.id != null) _eventDescriptions[e.id!] = e.description;
       }
@@ -264,6 +274,7 @@ class _SchedulePageState extends State<SchedulePage>
     }
 
     _events = fast;
+    _hasLoadedEvents = true;
     if (!AuthService.isLoggedIn()) {
       final saved = await OfflineDataService.getMyScheduleData();
       for (var e in _events) {
@@ -290,6 +301,7 @@ class _SchedulePageState extends State<SchedulePage>
       if (e.id != null) _eventDescriptions[e.id!] = e.description;
     }
     _events = full;
+    _hasLoadedEvents = true;
 
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
@@ -387,7 +399,7 @@ class _SchedulePageState extends State<SchedulePage>
       context,
       AppConfig.daySplitHour,
     );
-    if (datedEvents.isEmpty) {
+    if (datedEvents.isEmpty && _hasLoadedEvents) {
       final dt = TimeHelper.now();
       datedEvents.add(TimeBlockGroup(
         title: dt.weekdayToString(context),

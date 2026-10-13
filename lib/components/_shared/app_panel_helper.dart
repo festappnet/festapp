@@ -262,13 +262,8 @@ class AppPanelHelper {
       borderRadius: BorderRadius.circular(6),
       child: Material(
         color: Colors.transparent,
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          InkWell(
-            hoverColor: hoverColor,
-            onTap: currentAction.onSelect,
-            child: visiblePart,
-          ),
-          PopupMenuButton<_ActionMenuItem>(
+        child: PopupMenuButton<_ActionMenuItem>(
+            position: PopupMenuPosition.under,
             tooltip: CommonStrings.moreOptions,
             color: theme.brightness == Brightness.dark
                 ? const Color(0xFF2D2D2D)
@@ -291,12 +286,18 @@ class AppPanelHelper {
                       ]),
                     ))
                 .toList(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Icon(Icons.arrow_drop_down, color: iconColor, size: 22),
-            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              InkWell(
+                hoverColor: hoverColor,
+                onTap: currentAction.onSelect,
+                child: visiblePart,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                child: Icon(Icons.arrow_drop_down, color: iconColor, size: 22),
+              ),
+            ]),
           ),
-        ]),
       ),
     );
   }

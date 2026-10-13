@@ -54,7 +54,9 @@ class RoutedDayTabs extends StatelessWidget {
       this.initialIndex = 0,
       this.parameter = 'day'});
   @override
-  Widget build(BuildContext context) => DefaultTabController(
+  Widget build(BuildContext context) => days.isEmpty
+      ? const Center(child: CircularProgressIndicator())
+      : DefaultTabController(
       length: days.length,
       initialIndex: initialIndex.clamp(0, days.length - 1),
       child: RoutedDayBinding(days: days, parameter: parameter, child: child));

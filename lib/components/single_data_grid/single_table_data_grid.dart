@@ -121,6 +121,15 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
         : grid;
   }
 
+  Color? _pendingRowColor(TrinaRow row) {
+    bool contains(Iterable<TrinaRow> rows) => rows.any((item) => item.key == row.key);
+    if (contains(widget.controller.deletedRows)) return Colors.redAccent;
+    if (contains(widget.controller.updatedRows) || contains(widget.controller.newRows)) {
+      return Colors.amber;
+    }
+    return null;
+  }
+
   Widget _buildDataGrid(BuildContext context) {
     if (isLoading) {
       return Center(child: CircularProgressIndicator());
@@ -179,24 +188,25 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
             isDataGridLoading = false;
             setState(() {});
           },
-          rowColorCallback: (rowContext) {
-            var row = widget.controller.deletedRows.firstWhereOrNull(
-                (element) => element.key == rowContext.row.key);
-            if (row != null) {
-              return Colors.redAccent.withOpacity(0.3);
-            }
-            row = widget.controller.updatedRows.firstWhereOrNull(
-                (element) => element.key == rowContext.row.key);
-            if (row != null) {
-              return Colors.orangeAccent.withOpacity(0.3);
-            }
-            row = widget.controller.newRows.firstWhereOrNull(
-                (element) => element.key == rowContext.row.key);
-            if (row != null) {
-              return Colors.orangeAccent.withOpacity(0.3);
-            }
-            return Colors.transparent;
-          },
+          rowColorCallback: (rowContext) =>
+              _pendingRowColor(rowContext.row)?.withAlpha(77) ?? Colors.transparent,
+          rowWrapper: (context, rowWidget, row, manager) => ListenableBuilder(
+            listenable: manager,
+            child: rowWidget,
+            builder: (context, child) {
+              final color = _pendingRowColor(row) ?? Colors.transparent;
+              // Paint above selection backgrounds so unsaved edits stay visible.
+              return DecoratedBox(
+                key: ValueKey('grid-row-change-${row.key}'),
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(border: Border(
+                  left: BorderSide(color: color, width: 3),
+                  bottom: BorderSide(color: color, width: 1),
+                )),
+                child: child,
+              );
+            },
+          ),
           createHeader: (stateManager) => SingleDataGridHeader(
             stateManager: stateManager,
             controller: widget.controller,
