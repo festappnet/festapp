@@ -127,6 +127,8 @@ test('single management entry needs no checkbox, multi-entry selects IDs and nev
     page.host.querySelectorAll('input')[1].click(); page.host.querySelector('button').click();
     assert.deepEqual(calls.pop(), ['withdraw', [9000]]);
     page.renderWaitlistManagement({ tickets: [{ ...first, lifecycle: 'withdrawn' }] });
+    assert.equal(page.host.querySelector('.result-title').textContent, 'Vyřazeno z náhradníků');
+    assert.match(page.host.querySelector('.result-subtitle').textContent, /Vyřazené přihlášky/);
     assert.equal(page.host.querySelector('button'), null);
     assert.equal(ticketLabel({ id: 7777 }), 'Vaše přihláška');
     d.window.close();
