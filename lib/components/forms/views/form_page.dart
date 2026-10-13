@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import 'package:fstapp/services/time_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/waitlist_commands.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
@@ -838,7 +840,7 @@ class _FormPageState extends State<FormPage> {
                                                         : WaitlistStrings
                                                             .refresh)),
                                           ]),
-                                        if (form!.isWaitlist)
+                                        if (_offerBundle == null && form!.isWaitlist)
                                           Text(
                                               '${WaitlistStrings.title}. ${WaitlistStrings.explanation}'),
                                         if (_offerBundle != null)
@@ -1074,6 +1076,9 @@ class _FormPageState extends State<FormPage> {
 
   Widget _buildWaitlistPeople({bool manage = false}) {
     final bundle = _offerBundle!;
+    final expires = DateTime.tryParse(bundle['expiresAt'] ?? '');
+    final expiryLabel = expires == null ? '' : DateFormat('d. M. yyyy HH:mm')
+        .format(expires.toOccasionTime(bundle['timeZone'] as String?));
     final canDecline = _selectedTicketIds.every((id) =>
         (bundle['slots'] as List)
             .any((s) => s['ticketId'] == id && s['outcome'] == 'pending'));
@@ -1084,8 +1089,10 @@ class _FormPageState extends State<FormPage> {
               : WaitlistStrings.selectPeople,
           style: Theme.of(context).textTheme.titleLarge),
       if (_offerId != null)
-        Text(
-            '${WaitlistStrings.remaining}: ${bundle['pendingCount']} · ${WaitlistStrings.expiresAt}: ${DateTime.tryParse(bundle['expiresAt'] ?? '')?.toLocal() ?? ''}'),
+        Wrap(spacing: 16, runSpacing: 4, children: [
+          Text('${WaitlistStrings.text('offeredPlaces')}: ${bundle['pendingCount']}'),
+          if (expiryLabel.isNotEmpty) Text('${WaitlistStrings.expiresAt}: $expiryLabel'),
+        ]),
       if (!manage) Text(WaitlistStrings.productAvailability),
       for (final person in bundle['tickets'] as List)
         CheckboxListTile(

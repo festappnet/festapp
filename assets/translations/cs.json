@@ -2566,6 +2566,7 @@
     "productAvailability": "Produkty se vybírají podle aktuální dostupnosti. Nabídka drží pouze místa pro osoby.",
     "selectPeople": "Vyberte přijímané osoby",
     "remaining": "Zbývající místa",
+    "offeredPlaces": "Nabídnutá místa",
     "confirm": "Potvrdit",
     "stale": "Dostupnost se změnila. Obnovte návrh a znovu jej potvrďte.",
     "queued": "Ve frontě",
