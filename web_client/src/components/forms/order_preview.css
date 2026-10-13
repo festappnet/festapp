@@ -78,6 +78,8 @@
 
 .order-preview-header h2 {
     margin: 0;
+    padding-inline: 32px;
+    overflow-wrap: anywhere;
     font-size: 1.35rem; /* 18 * 1.2 */
     font-weight: bold;
     color: #000000; /* Force Black */
@@ -358,3 +360,24 @@ body.dark-mode .deposit-option span {
 .order-preview-overlay.closing .order-preview-content {
     animation: slideDown 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.0) forwards;
 }
+
+/* Registration context shares the form and checkout typography. */
+.form-registration-status { margin-block: 0 24px; text-align: center; }
+.form-occupancy { display: inline-block; max-width: 100%; box-sizing: border-box; margin: 0 0 16px; padding: 8px 16px; border: 1px solid var(--divider-color, #ccc); border-radius: 24px; font-weight: 600; overflow-wrap: anywhere; }
+.form-registration-status h2 { margin: 0 0 8px; font-size: 1.25rem; }
+.waitlist-intro { margin: 0 auto 16px; max-width: 65ch; line-height: 1.5; overflow-wrap: anywhere; }
+.waitlist-product-options { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.waitlist-product-reason { margin: 0 0 12px; line-height: 1.5; color: var(--text-color); }
+.waitlist-product-options .form-check { cursor: default; }
+.waitlist-product-options .form-check-label { cursor: default; }
+
+.waitlist-management h2 { text-align: center; margin-block: 0 16px; }
+.waitlist-management > .waitlist-intro { text-align: center; }
+.waitlist-person-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px; margin-block: 12px; overflow-wrap: anywhere; }
+.waitlist-person-row strong { min-width: 0; flex: 1; }
+.waitlist-person-status { font-size: .95rem; }
+.waitlist-people { min-inline-size: 0; border: 0; padding: 0; text-align: start; }
+.waitlist-withdraw { margin-block-start: 16px; min-height: 44px; white-space: normal; }
+
+.waitlist-withdraw { border: 1px solid var(--primary-color); background: transparent; color: var(--primary-color); }
+.waitlist-withdraw:disabled { opacity: .55; cursor: default; }

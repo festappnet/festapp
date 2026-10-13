@@ -4,11 +4,15 @@ import { CheckBoxFieldBuilder } from './check_box_field_builder.js';
 import { TicketFieldBuilder } from './ticket_field_builder.js';
 import { DateFieldBuilder } from './date_field_builder.js';
 import { IdDocumentFieldBuilder } from './id_document_field_builder.js';
+import { WaitlistStrings } from '../waitlist_strings.js';
 import { FormStrings } from '../form_strings.js';
 
 export class FormFieldBuilder {
 
     static createFormField(field, formModel, session) {
+        const waitingProduct = formModel.registrationMode === 'waitlist' &&
+            (['product_type', 'spot'].includes(field.type) || field.productTypeId || field.data?.product_dependent);
+        if (waitingProduct) field = { ...field, isRequired: false, value: null, data: { ...field.data, default_value: null } };
         // Auto-Title Logic
         if (!field.title || field.title.trim() === '') {
             field.title = FormFieldBuilder.getAutoTitle(field.type);
@@ -82,6 +86,24 @@ export class FormFieldBuilder {
 
         if (!fieldComponent) return document.createElement('div');
 
+        if (waitingProduct) {
+            const disabled = document.createElement('fieldset');
+            disabled.disabled = true;
+            disabled.className = 'waitlist-product-options';
+            const reason = document.createElement('p');
+            reason.id = `waitlist-product-${field.id}`;
+            reason.className = 'waitlist-product-reason';
+            reason.textContent = WaitlistStrings.text('productsAfterOffer');
+            disabled.setAttribute('aria-describedby', reason.id);
+            fieldComponent.querySelectorAll('input,select,textarea,button').forEach(input => {
+                input.disabled = true;
+                input.required = false;
+                if ('checked' in input) input.checked = false;
+            });
+            fieldComponent.querySelectorAll('.btn-clear-selection').forEach(button => button.remove());
+            disabled.append(reason, fieldComponent);
+            fieldComponent = disabled;
+        }
         const isCard = FormFieldBuilder.isCardDesign(formModel, field);
         
         if (isCard) {

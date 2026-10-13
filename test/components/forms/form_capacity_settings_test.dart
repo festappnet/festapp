@@ -12,6 +12,10 @@ import 'package:fstapp/components/forms/models/form_capacity_model.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/views/form_capacity_settings.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/theme_config.dart';
 
 void main() {
@@ -56,7 +60,7 @@ void main() {
     final before = jsonEncode(form.toEditedJson());
     await open(tester, form);
     await tester.enterText(find.byType(TextFormField).first, '120');
-    await tester.tap(find.text(CommonStrings.cancel));
+    await tester.tap(find.text(CommonStrings.storno));
     await tester.pumpAndSettle();
     expect(jsonEncode(form.toEditedJson()), before);
     await tester.tap(find.text(WaitlistStrings.settings));
@@ -116,6 +120,41 @@ void main() {
       await tester.ensureVisible(find.text(WaitlistStrings.durationHours));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final tickets in [false, true]) {
+    testWidgets(
+        'readonly capacity shows server counts with ticket mode $tickets',
+        (tester) async {
+      final previous = RightsService.occasionLinkModelNotifier.value;
+      addTearDown(
+          () => RightsService.occasionLinkModelNotifier.value = previous);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [TicketFeature(code: 'ticket', isEnabled: tickets)]));
+      final form = FormModel(
+          participantCapacity: 12,
+          waitlistEnabled: true,
+          stats: FormStatsModel(total: 80),
+          capacity: FormCapacityModel.fromJson(
+              {'occupiedPeople': 11, 'offeredPlaces': 1}));
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: FormCapacitySettings(
+                  form: form,
+                  canEdit: false,
+                  onChanged: () => fail('readonly draft changed')))));
+      expect(
+          find.textContaining(
+              '${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}: 11'),
+          findsOneWidget);
+      expect(
+          find.textContaining('Místa v platných nabídkách: 1'), findsOneWidget);
+      expect(tester.widget<ListTile>(find.byType(ListTile)).onTap, isNull);
     });
   }
 

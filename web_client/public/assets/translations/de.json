@@ -593,13 +593,13 @@
     "positiveNumber": "Geben Sie eine positive Zahl ein",
     "activeEntries": "Aktiv wartende Personen oder Angebote verhindern diese Änderung.",
     "title": "Für die Warteliste anmelden",
-    "explanation": "Ein Wartelistenplatz garantiert keine Teilnahme. Zahlung und Produktauswahl sind noch nicht erforderlich.",
+    "explanation": "Ein Eintrag auf der Warteliste garantiert keine Teilnahme. Wird ein Platz frei, senden wir Ihnen ein Angebot per E-Mail. Produkte wählen und bezahlen Sie erst bei dessen Annahme.",
     "full": "Die Kapazität ist ausgeschöpft",
     "registered": "Sie stehen auf der Warteliste",
     "register": "Zur Warteliste anmelden",
     "accept": "Ausgewählte Personen bestätigen",
     "decline": "Ausgewählte Plätze ablehnen",
-    "withdraw": "Warten für ausgewählte Personen beenden",
+    "withdraw": "Warteliste verlassen",
     "send": "Angebote senden",
     "expired": "Dieses Angebot ist abgelaufen",
     "productAvailability": "Produkte werden nach aktueller Verfügbarkeit ausgewählt. Das Angebot reserviert nur Personenplätze.",
@@ -648,7 +648,13 @@
     "WAITLIST_COMMAND_FAILED": "Die Anfrage konnte nicht abgeschlossen werden. Versuchen Sie es erneut.",
     "regularToWaitlist": "Die Verfügbarkeit hat sich geändert. Mit der Wartelistenanmeldung fortfahren?",
     "declineAssigned": "Nur aktuell angebotene Plätze können abgelehnt werden. Für die Aufnahme können Sie andere Personen auswählen.",
-    "orderState": "Warteliste"
+    "orderState": "Warteliste",
+    "occupancy": "Belegung: {occupied} von {capacity}",
+    "productsAfterOffer": "Produkte können Sie erst bei Annahme eines Platzangebots auswählen und bezahlen.",
+    "managementExplanation": "Hier sehen Sie Ihren Wartestatus. Sobald wir Ihnen einen Platz anbieten, erhalten Sie eine E-Mail mit einem Bestätigungslink.",
+    "withdrawSelection": "Wählen Sie die Personen aus, die Sie von der Warteliste entfernen möchten.",
+    "withdrawConfirmation": "Die ausgewählten Personen verlassen die Warteliste. Für eine Teilnahme müssen sie sich erneut anmelden.",
+    "declineConfirmation": "Sie lehnen die angebotenen Plätze für die ausgewählten Personen ab. Diese Plätze werden für andere Personen auf der Warteliste freigegeben."
   },
   "EmailTemplates": {
     "subs": {
