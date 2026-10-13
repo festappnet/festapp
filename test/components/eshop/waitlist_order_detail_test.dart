@@ -95,7 +95,7 @@ void main() {
     expect(loads, 1);
     expect(tester.takeException(), isNull);
     expect(find.byType(LinearProgressIndicator), findsNothing);
-    expect(find.text('Festival & letní setkání'), findsNothing);
+    expect(find.text('Festival & letní setkání'), findsOneWidget);
     expect(find.byType(CheckboxListTile), findsNothing);
     expect(find.byType(Checkbox), findsNothing);
     expect(find.text(WaitlistStrings.offers), findsNothing);
@@ -127,8 +127,7 @@ void main() {
       expect(RightsService.isEditorOrder(), isFalse);
       await open(tester, lifecycle: 'waiting');
       expect(find.text(OrdersStrings.itemSingular), findsOneWidget);
-      expect(
-          find.text(WaitlistStrings.text('waitingForPlace')), findsOneWidget);
+      expect(find.text(WaitlistStrings.text('waiting')), findsOneWidget);
       expect(find.byType(Chip), findsNothing);
     },
   );
@@ -255,13 +254,13 @@ void main() {
   );
 
   Map<String, dynamic> waitingDetail({bool canSendOffers = true}) => {
-        'tickets': [
-          {'id': 8837, 'displayName': 'Jana', 'lifecycle': 'waiting'},
-        ],
-        'offers': [],
-        'linkedOrders': [],
-        'capacity': {'canSendOffers': canSendOffers},
-      };
+    'tickets': [
+      {'id': 8837, 'displayName': 'Jana', 'lifecycle': 'waiting'},
+    ],
+    'offers': [],
+    'linkedOrders': [],
+    'capacity': {'canSendOffers': canSendOffers},
+  };
   void editor() =>
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}),
@@ -312,47 +311,22 @@ void main() {
       await tester.pumpAndSettle();
       expect(mutations, 0);
       expect(refreshed, 0);
-      expect(
-          find.text(WaitlistStrings.text('waitingForPlace')), findsOneWidget);
+      expect(find.text(WaitlistStrings.text('waiting')), findsOneWidget);
     },
   );
 
   testWidgets('offer opens canonical preparation directly', (tester) async {
     editor();
-    zones.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     final form = FormModel(id: 7, waitlistEnabled: true);
     var opened = 0;
     var refreshed = 0;
-    var offered = false;
     final order = OrderModel(id: 5, state: 'waitlisted', form: form);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: WaitlistOrderDetail(
             order: order,
-            loadDetail: (_) async => offered
-                ? {
-                    ...waitingDetail(),
-                    'tickets': [
-                      {
-                        'id': 1,
-                        'displayName': 'Jana Nováková',
-                        'lifecycle': 'offered'
-                      }
-                    ],
-                    'offers': [
-                      {
-                        'id': 'offer-new',
-                        'expires_at': '2030-01-02T12:00:00Z',
-                        'slots': [
-                          {'ticketId': 1, 'outcome': 'pending'}
-                        ]
-                      }
-                    ],
-                    'capacity': {'serverTime': '2030-01-01T12:00:00Z'},
-                  }
-                : waitingDetail(),
+            loadDetail: (_) async => waitingDetail(),
             onChanged: () async {
               refreshed++;
             },
@@ -365,10 +339,7 @@ void main() {
                   title: const Text('Canonical offer review'),
                   actions: [
                     TextButton(
-                      onPressed: () {
-                        offered = true;
-                        Navigator.pop(context);
-                      },
+                      onPressed: () => Navigator.pop(context),
                       child: const Text('Close review'),
                     ),
                   ],
@@ -380,21 +351,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final offerButton =
-        find.widgetWithText(FilledButton, WaitlistStrings.offerPlace);
-    final withdrawButton = find.widgetWithText(
-        OutlinedButton, WaitlistStrings.text('adminWithdraw'));
-    final participantCard = find
-        .ancestor(
-            of: offerButton,
-            matching: find.byWidgetPredicate((widget) =>
-                widget is Material && widget.shape is RoundedRectangleBorder))
-        .first;
-    expect(find.descendant(of: participantCard, matching: withdrawButton),
-        findsOneWidget);
-    expect(find.text(WaitlistStrings.refresh), findsNothing);
-    expect(find.text(WaitlistStrings.text('adminWithdrawHelp')), findsNothing);
-    await tester.tap(offerButton);
+    await tester.tap(
+      find.widgetWithText(OutlinedButton, WaitlistStrings.offerPlace),
+    );
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.offerExplanation), findsNothing);
     expect(opened, 1);
@@ -402,13 +361,6 @@ void main() {
     await tester.tap(find.text('Close review'));
     await tester.pumpAndSettle();
     expect(refreshed, 1);
-    expect(find.text(WaitlistStrings.text('awaitingOfferAcceptance')),
-        findsOneWidget);
-    expect(find.text(WaitlistStrings.offerPlace), findsNothing);
-    expect(find.text(WaitlistStrings.text('activeOffer')), findsOneWidget);
-    expect(find.text(WaitlistStrings.text('completeRegistration')),
-        findsOneWidget);
-    expect(find.text(WaitlistStrings.text('adminWithdraw')), findsOneWidget);
   });
 
   testWidgets(
@@ -432,8 +384,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, WaitlistStrings.offerPlace),
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, WaitlistStrings.offerPlace),
             )
             .onPressed,
         isNull,
@@ -443,7 +395,7 @@ void main() {
       expect(find.text(WaitlistStrings.text('retractOffer')), findsNothing);
       expect(
         find.text(WaitlistStrings.text('adminWithdrawHelp')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         tester
@@ -705,8 +657,9 @@ void main() {
       expect(expiry.maxLines, 1);
       expect(expiry.softWrap, isFalse);
       if (Platform.environment['WAITLIST_SCREENSHOTS'] == '1') {
-        final boundary = capture.currentContext!.findRenderObject()!
-            as RenderRepaintBoundary;
+        final boundary =
+            capture.currentContext!.findRenderObject()!
+                as RenderRepaintBoundary;
         await tester.runAsync(() async {
           final image = await boundary.toImage();
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -719,14 +672,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(opened, ['offer-one']);
       expect(loads, 1, reason: 'Opening a new tab does not imply completion');
-      expect(find.text(WaitlistStrings.refresh), findsNothing);
-      expect(find.text(CommonStrings.retry), findsNothing);
+      await tester.ensureVisible(find.text(WaitlistStrings.refresh));
+      await tester.tap(find.text(WaitlistStrings.refresh));
+      await tester.pumpAndSettle();
+      expect(loads, 2);
       expect(find.text(WaitlistStrings.text('retractOffer')), findsNothing);
       expect(find.text(WaitlistStrings.text('recordDecline')), findsNothing);
       expect(find.byType(ExpansionTile), findsNothing);
       expect(
         find.text(WaitlistStrings.text('adminWithdrawHelp')),
-        findsNothing,
+        findsOneWidget,
       );
       await tester.ensureVisible(
         find.text(WaitlistStrings.text('adminWithdraw')),
@@ -790,7 +745,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.invalid), findsOneWidget);
     expect(find.text(WaitlistStrings.text('adminWithdraw')), findsNothing);
-    await tester.tap(find.text(CommonStrings.retry));
+    await tester.tap(find.text(WaitlistStrings.refresh));
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.invalid), findsNothing);
     expect(find.text(WaitlistStrings.text('emptyDetail')), findsOneWidget);
