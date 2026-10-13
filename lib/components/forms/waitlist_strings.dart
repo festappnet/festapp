@@ -1,4 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
+import '../features/feature_constants.dart';
+import '../features/feature_service.dart';
 
 class WaitlistStrings {
   static String get offerReviewExplanation => text('offerReviewExplanation');
@@ -17,6 +19,7 @@ class WaitlistStrings {
   static String text(String key) => 'Waitlist.$key'.tr();
   static String get formOpenWaitlistMessage => text('formOpenWaitlistMessage');
   static String get limitCapacity => text('limitCapacity');
+  static String get limitTickets => text('limitTickets');
   static String get capacityHelp => text('capacityHelp');
   static String get capacityHelpLimited => text('capacityHelpLimited');
   static String get offeredPlacesCount => text('offeredPlacesCount');
@@ -28,7 +31,10 @@ class WaitlistStrings {
   static String get saveWithForm => text('saveWithForm');
   static String get applySettings => text('applySettings');
   static String get settings => text('settings');
-  static String get capacity => text('capacity');
+  static String get capacity =>
+      text(FeatureService.isFeatureEnabled(FeatureConstants.ticket)
+          ? 'capacityTickets'
+          : 'capacityRegistrations');
   static String get unlimited => text('unlimited');
   static String get enabled => text('enabled');
   static String get showRemaining => text('showRemaining');

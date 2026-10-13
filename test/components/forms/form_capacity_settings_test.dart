@@ -55,6 +55,32 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  for (final tickets in [false, true]) {
+    testWidgets('capacity labels match ticket feature $tickets',
+        (tester) async {
+      final previous = RightsService.occasionLinkModelNotifier.value;
+      addTearDown(
+          () => RightsService.occasionLinkModelNotifier.value = previous);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        occasion: OccasionModel(
+            isOpen: true,
+            isHidden: false,
+            isPromoted: false,
+            features: [TicketFeature(code: 'ticket', isEnabled: tickets)]),
+      );
+      await open(tester, FormModel(participantCapacity: 10));
+      expect(
+          find.text(tickets
+              ? WaitlistStrings.limitTickets
+              : WaitlistStrings.limitCapacity),
+          findsOneWidget);
+      expect(
+          find.text(WaitlistStrings.text(
+              tickets ? 'capacityTickets' : 'capacityRegistrations')),
+          findsOneWidget);
+    });
+  }
+
   testWidgets('cancel leaves draft untouched; apply updates serialized draft',
       (tester) async {
     final form = FormModel(participantCapacity: 100, data: {});
@@ -150,10 +176,17 @@ void main() {
                   canEdit: false,
                   onChanged: () => fail('readonly draft changed')))));
       expect(find.textContaining('Obsazenost: 11 z 11'), findsOneWidget);
-      expect(find.textContaining('${WaitlistStrings.capacity}: 12'), findsNothing);
-      expect(find.textContaining('${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}:'), findsNothing);
+      expect(
+          find.textContaining('${WaitlistStrings.capacity}: 12'), findsNothing);
+      expect(
+          find.textContaining(
+              '${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}:'),
+          findsNothing);
       expect(form.capacity!.occupiedPeople, 10);
-      expect(find.byWidgetPredicate((widget) => widget is Text && widget.semanticsLabel != null), findsNothing);
+      expect(
+          find.byWidgetPredicate(
+              (widget) => widget is Text && widget.semanticsLabel != null),
+          findsNothing);
       expect(
           find.textContaining('Místa v platných nabídkách: 1'), findsOneWidget);
       expect(tester.widget<ListTile>(find.byType(ListTile)).onTap, isNull);
@@ -161,8 +194,7 @@ void main() {
   }
 
   for (final mode in ['blueprint', 'disabled', 'enabled']) {
-    testWidgets('zero offer counts stay hidden ($mode)',
-        (tester) async {
+    testWidgets('zero offer counts stay hidden ($mode)', (tester) async {
       final blueprint = mode == 'blueprint';
       final form = FormModel(
           blueprint: blueprint ? 5 : null,
@@ -175,28 +207,39 @@ void main() {
               body: FormCapacitySettings(
                   form: form, canEdit: true, onChanged: () {}))));
       expect(find.textContaining(': 11'), findsOneWidget);
-      expect(find.textContaining(WaitlistStrings.offeredPlacesCount), findsNothing);
-      expect(tester.widget<ListTile>(find.byType(ListTile)).enabled, !blueprint);
+      expect(find.textContaining(WaitlistStrings.offeredPlacesCount),
+          findsNothing);
+      expect(
+          tester.widget<ListTile>(find.byType(ListTile)).enabled, !blueprint);
       if (!blueprint) {
         await tester.tap(find.text(WaitlistStrings.settings));
         await tester.pumpAndSettle();
-        expect(find.textContaining(WaitlistStrings.offeredPlacesCount), findsNothing);
+        expect(find.textContaining(WaitlistStrings.offeredPlacesCount),
+            findsNothing);
       }
     });
   }
 
-  testWidgets('admin occupancy includes server offer holds and their release', (tester) async {
+  testWidgets('admin occupancy includes server offer holds and their release',
+      (tester) async {
     for (final offered in [1, 0]) {
       final capacity = FormCapacityModel.fromJson({
-        'enabled': true, 'occupiedPeople': 10, 'offeredPlaces': offered,
-        'limit': 11, 'remainingPublic': 0,
+        'enabled': true,
+        'occupiedPeople': 10,
+        'offeredPlaces': offered,
+        'limit': 11,
+        'remainingPublic': 0,
       });
-      final form = FormModel(participantCapacity: 11, waitlistEnabled: true, capacity: capacity);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Column(children: [
+      final form = FormModel(
+          participantCapacity: 11, waitlistEnabled: true, capacity: capacity);
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: Column(children: [
         FormCapacitySettings(form: form, canEdit: false, onChanged: () {}),
         WaitlistCapacitySummary(capacity: capacity),
       ]))));
-      expect(find.textContaining('Obsazenost: ${10 + offered} z 11'), findsNWidgets(2));
+      expect(find.textContaining('Obsazenost: ${10 + offered} z 11'),
+          findsNWidgets(2));
       expect(capacity.occupiedPeople, 10);
       expect(capacity.remainingPublic, 0);
     }

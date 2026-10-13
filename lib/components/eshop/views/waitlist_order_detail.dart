@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../services/time_helper.dart';
+import '../../_shared/common_strings.dart';
 import '../../../data_services/rights_service.dart';
 import '../../../services/dialog_helper.dart';
 import '../../forms/waitlist_commands.dart';
@@ -28,7 +29,7 @@ class WaitlistOrderDetail extends StatefulWidget {
   final Future<void> Function(String offerId)? openOfferForm;
   final Future<Map<String, dynamic>> Function(int)? loadDetail;
   final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
-  executeCommand;
+      executeCommand;
   final Future<void> Function()? onChanged;
   final Widget Function(FormModel, List<OrderModel>)? offerDialogBuilder;
   @override
@@ -65,9 +66,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
           }
           _selected.clear();
           _error = null;
-          final eligible = (detail['tickets'] as List? ?? [])
-              .where(_isSelectable)
-              .toList();
+          final eligible =
+              (detail['tickets'] as List? ?? []).where(_isSelectable).toList();
           if (eligible.length == 1) {
             _selected.add(eligible.single['id'] as int);
           }
@@ -133,8 +133,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   bool get _hasEligibleTickets =>
       (_detail?['tickets'] as List? ?? []).any(_isSelectable);
   bool get _hasWaitingTickets => (_detail?['tickets'] as List? ?? []).any(
-    (ticket) => ticket['lifecycle'] == 'waiting',
-  );
+        (ticket) => ticket['lifecycle'] == 'waiting',
+      );
 
   bool get _canOffer =>
       !_busy &&
@@ -165,12 +165,12 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   }
 
   bool _isSelectable(dynamic ticket) => const {
-    'waiting',
-    'offered',
-    'offer_expired',
-    'offer_declined',
-    'offer_cancelled',
-  }.contains(ticket['lifecycle']);
+        'waiting',
+        'offered',
+        'offer_expired',
+        'offer_declined',
+        'offer_cancelled',
+      }.contains(ticket['lifecycle']);
 
   String _ticketLabel(dynamic ticket, int index) {
     final name = ticket['displayName']?.toString().trim();
@@ -180,6 +180,14 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
         ? OrdersStrings.itemSingular
         : '${OrdersStrings.itemSingular} ${index + 1}';
   }
+
+  String _ticketStatus(dynamic ticket) => WaitlistStrings.text(
+        switch (ticket['lifecycle'] as String) {
+          'waiting' => 'waitingForPlace',
+          'offered' => 'awaitingOfferAcceptance',
+          final String lifecycle => lifecycle,
+        },
+      );
 
   String _slotLabel(dynamic slot) {
     final tickets = _detail?['tickets'] as List? ?? [];
@@ -237,32 +245,27 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   }
 
   Widget _withdrawalAction() => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          WaitlistStrings.text('adminWithdrawHelp'),
-          style: Theme.of(context).textTheme.bodyMedium,
+        padding: const EdgeInsets.only(top: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            OutlinedButton(
+              onPressed: !_busy && _error == null && _selected.isNotEmpty
+                  ? _withdraw
+                  : null,
+              child: Text(WaitlistStrings.text('adminWithdraw')),
+            ),
+            if (_selected.isEmpty && !_busy && _error == null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  WaitlistStrings.text('withdrawSelection'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: OutlinedButton(
-            onPressed: !_busy && _error == null && _selected.isNotEmpty
-                ? _withdraw
-                : null,
-            child: Text(WaitlistStrings.text('adminWithdraw')),
-          ),
-        ),
-        if (_selected.isEmpty && !_busy && _error == null)
-          Text(
-            WaitlistStrings.text('withdrawSelection'),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-      ],
-    ),
-  );
+      );
 
   Widget _offerContext(dynamic offer, {required bool active}) {
     final theme = Theme.of(context);
@@ -310,9 +313,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
           if (active && RightsService.isEditorOrder()) ...[
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: _busy || _error != null
-                  ? null
-                  : () => _openOffer(offer),
+              onPressed:
+                  _busy || _error != null ? null : () => _openOffer(offer),
               icon: const Icon(Icons.open_in_new, size: 18),
               label: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -397,17 +399,17 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                               value: _selected.contains(entry.$2['id']),
                               title: Text(_ticketLabel(entry.$2, entry.$1)),
                               subtitle: Text(
-                                WaitlistStrings.text(entry.$2['lifecycle']),
+                                _ticketStatus(entry.$2),
                               ),
                               onChanged: _busy || _error != null
                                   ? null
                                   : (value) => setState(() {
-                                      if (value == true) {
-                                        _selected.add(entry.$2['id']);
-                                      } else {
-                                        _selected.remove(entry.$2['id']);
-                                      }
-                                    }),
+                                        if (value == true) {
+                                          _selected.add(entry.$2['id']);
+                                        } else {
+                                          _selected.remove(entry.$2['id']);
+                                        }
+                                      }),
                             )
                           else
                             Padding(
@@ -423,7 +425,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    WaitlistStrings.text(entry.$2['lifecycle']),
+                                    _ticketStatus(entry.$2),
                                     style: theme.textTheme.bodyMedium,
                                   ),
                                 ],
@@ -434,7 +436,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                           _offerContext(offer, active: true),
                         if (canManage && _hasWaitingTickets) ...[
                           const SizedBox(height: 16),
-                          OutlinedButton(
+                          FilledButton(
                             onPressed: _canOffer ? _offer : null,
                             child: Text(WaitlistStrings.offerPlace),
                           ),
@@ -452,24 +454,24 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                               ),
                             ),
                         ],
+                        if (canManage) _withdrawalAction(),
                       ],
                     ),
                   ),
                 ),
-              const SizedBox(height: 8),
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  TextButton.icon(
-                    onPressed: _busy ? null : _refresh,
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: Text(WaitlistStrings.refresh),
-                  ),
-                ],
-              ),
-              if (canManage) _withdrawalAction(),
+              if (_error != null)
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    TextButton.icon(
+                      onPressed: _busy ? null : _refresh,
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: Text(CommonStrings.retry),
+                    ),
+                  ],
+                ),
               if (history.isNotEmpty)
                 ExpansionTile(
                   tilePadding: EdgeInsets.zero,
