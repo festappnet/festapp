@@ -11,6 +11,17 @@ import 'orders_strings.dart';
 class OrderGridFilters {
   static OrderModel? order(TrinaRow row) =>
       row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
+  // Ordinary orders can be deleted in every state by the unit roles that
+  // expose the delete column. Waiting conversions retain their offer history;
+  // the canonical delete RPC enforces the same boundary before deleting data.
+  static bool orderCanBeDeleted(TrinaRow row) {
+    final value = order(row);
+    return value != null &&
+        value.waitlistSummary == null &&
+        ![OrderModel.waitlistedState, 'preparing_payment']
+            .contains(value.state);
+  }
+
   static bool orderIsActive(TrinaRow row) =>
       order(row)?.isActive ?? orderIsNonCancelled(row);
   static bool allows(TrinaRow row, String action) =>
