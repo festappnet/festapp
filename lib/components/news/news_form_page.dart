@@ -238,20 +238,20 @@ class _NewsFormPageState extends State<NewsFormPage> {
                             Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Text(HtmlStrings.unknownPublish)),
-                      ListenableBuilder(
-                        listenable: _controller,
-                        builder: (context, _) => _NewsFormActions(
-                          onCancel: _saving ? () {} : _stornoPressed,
-                          onPublish: _saving ||
-                                  _confirming ||
-                                  _publishOutcomeUnknown ||
-                                  _audience == null ||
-                                  !_hasPublishableContent
-                              ? null
-                              : _sendPressed,
-                          publishLabel: _publishButtonText,
-                        ),
-                      ),
+                          ListenableBuilder(
+                            listenable: _controller,
+                            builder: (context, _) => _NewsFormActions(
+                              onCancel: _saving ? () {} : _stornoPressed,
+                              onPublish: _saving ||
+                                      _confirming ||
+                                      _publishOutcomeUnknown ||
+                                      _audience == null ||
+                                      !_hasPublishableContent
+                                  ? null
+                                  : _sendPressed,
+                              publishLabel: _publishButtonText,
+                            ),
+                          ),
                         ],
                       ),
                     ),
