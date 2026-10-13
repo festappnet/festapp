@@ -258,7 +258,10 @@ Deno.test("offer expiry uses configured timezone through both DST boundaries", (
   assert.match(waitlistExpiryText("2026-10-25T00:30:00Z", "Europe/Prague"), /02:30/);
   assert.match(waitlistExpiryText("2026-10-25T01:30:00Z", "Europe/Prague"), /02:30/);
   assert.match(waitlistExpiryText("2026-10-14T12:00:00Z", "America/New_York"), /08:00/);
-  assert.match(afterSpring, /Europe\/Prague/);
+  assert.doesNotMatch(afterSpring, /Europe|UTC|GMT/);
+  const utcDate = waitlistExpiryText("2026-10-14T12:00:00Z", "UTC");
+  assert.match(utcDate, /12:00/);
+  assert.doesNotMatch(utcDate, /UTC|GMT/);
   assert.throws(() => waitlistExpiryText("2026-10-14T12:00:00Z", "not/a-zone"));
 });
 
@@ -277,6 +280,7 @@ Deno.test("semantic phrases render alongside unchanged custom numeric placeholde
     const result = await renderWaitlistEmail(f.row, f.dependencies);
     assert.equal(result.prepared.subject, waitlistCountPhrase(count, "place"));
     assert.match(result.prepared.html, new RegExp(`${waitlistCountPhrase(count, "person")}\\|${count}\\|${count}\\|`));
-    assert.match(result.prepared.html, /14:00 \(Europe\/Prague\)/);
+    assert.match(result.prepared.html, /14:00/);
+    assert.doesNotMatch(result.prepared.html, /Europe\/Prague|UTC/);
   }
 });
