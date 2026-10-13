@@ -27,6 +27,25 @@ Future<void> mount(WidgetTester tester, FixtureRouter router, String path,
   await tester.pumpAndSettle();
 }
 
+class _LoadingCalendarRouter extends RootStackRouter {
+  final ValueNotifier<List<DateTime>> days;
+  _LoadingCalendarRouter(this.days);
+  @override
+  List<AutoRoute> get routes => [AutoRoute(
+    path: '/calendar',
+    page: PageInfo('LoadingCalendar', builder: (_) => ValueListenableBuilder<List<DateTime>>(
+      valueListenable: days,
+      builder: (context, value, _) => RoutedDayTabs(
+        days: value,
+        child: Builder(builder: (context) => AnimatedBuilder(
+          animation: DefaultTabController.of(context),
+          builder: (context, _) => Text('DAY ${DefaultTabController.of(context).index}'),
+        )),
+      ),
+    )),
+  )];
+}
+
 class _ActivityProbe extends StatefulWidget {
   final ValueChanged<bool> changed;
   const _ActivityProbe(this.changed);
@@ -76,6 +95,26 @@ class _EarlyCompletionCalendarRouter extends FixtureRouter {
 }
 
 void main() {
+  testWidgets('loading calendar preserves the requested URL until real days arrive', (tester) async {
+    final days = ValueNotifier<List<DateTime>>([]);
+    final router = _LoadingCalendarRouter(days);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config(
+      deepLinkBuilder: (_) => const DeepLink.path('/calendar?day=2026-11-14'),
+    )));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(tester.takeException(), isNull);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(Uri.parse(router.currentUrl).queryParameters['day'], '2026-11-14');
+    days.value = [DateTime(2026, 11, 11), DateTime(2026, 11, 14)];
+    await tester.pumpAndSettle();
+    expect(find.text('DAY 1'), findsOneWidget);
+    expect(Uri.parse(router.currentUrl).queryParameters['day'], '2026-11-14');
+    await tester.pumpWidget(const SizedBox.shrink());
+    router.dispose();
+    days.dispose();
+  });
+
   testWidgets('clicking Orders from history returns to current orders',
       (tester) async {
     final router = FixtureRouter(Access());
