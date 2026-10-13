@@ -13,6 +13,7 @@ import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/styles/styles_config.dart';
+import 'package:fstapp/widgets/info_tooltip_button.dart';
 
 class EmailTemplateSettingsPage extends StatefulWidget {
   final EmailTemplateModel template;
@@ -296,7 +297,22 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                         },
                         child: Text(EmailTemplatesStrings.resetToDefault),
                       )
-                    : null,
+                    : Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              EmailTemplatesStrings.defaultTemplateInUse,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          InfoTooltipButton(
+                            message: EmailTemplatesStrings.defaultTemplateInfo,
+                            semanticLabel:
+                                EmailTemplatesStrings.defaultTemplateInfo,
+                            color: ThemeConfig.blackColor(context),
+                          ),
+                        ],
+                      ),
               ),
             ),
             TextButton(

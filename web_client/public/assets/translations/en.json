@@ -853,6 +853,8 @@
       "imageUploaded": "Image uploaded",
       "uploadFailed": "Failed to upload image",
       "resetToDefault": "Reset to Default",
+      "defaultTemplateInUse": "Using the default template",
+      "defaultTemplateInfo": "No custom template is saved here. The template is inherited in this order: event, unit, organization, then the system default. Saving creates a custom template for this level.",
       "resetConfirmTitle": "Reset Template",
       "resetConfirmContent": "Are you sure you want to reset this template to default? Custom content will be lost.",
       "statusLabel": "Status: ",

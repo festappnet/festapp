@@ -104,6 +104,10 @@ class EmailTemplatesStrings {
       'EmailTemplates.settings.uploadFailed'.tr();
   static String get resetToDefault =>
       'EmailTemplates.settings.resetToDefault'.tr();
+  static String get defaultTemplateInUse =>
+      'EmailTemplates.settings.defaultTemplateInUse'.tr();
+  static String get defaultTemplateInfo =>
+      'EmailTemplates.settings.defaultTemplateInfo'.tr();
   static String get resetConfirmTitle =>
       'EmailTemplates.settings.resetConfirmTitle'.tr();
   static String get resetConfirmContent =>

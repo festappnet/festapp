@@ -47,6 +47,17 @@ BEGIN
     END IF;
   END IF;
 
+  -- An occasion override is identified by occasion + code. Ancestors are
+  -- metadata, not identity; the partial unique index also fences concurrent saves.
+  IF v_occ IS NOT NULL THEN
+    INSERT INTO public.email_templates (html, occasion, subject, organization, code, unit, title)
+    VALUES (p_data->>'html', v_occ, p_data->>'subject', v_org, v_code, v_unit, p_data->>'title')
+    ON CONFLICT (occasion, code) WHERE occasion IS NOT NULL
+    DO UPDATE SET html=EXCLUDED.html, subject=EXCLUDED.subject, title=EXCLUDED.title,
+                  unit=EXCLUDED.unit, organization=EXCLUDED.organization;
+    RETURN;
+  END IF;
+
   -- Try to find an existing email template matching the given context and code.
   SELECT id
     INTO v_existing_id

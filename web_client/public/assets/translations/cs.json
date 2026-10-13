@@ -853,6 +853,8 @@
       "imageUploaded": "Obrázek nahrán",
       "uploadFailed": "Nahrání obrázku selhalo",
       "resetToDefault": "Obnovit výchozí",
+      "defaultTemplateInUse": "Používá se výchozí šablona",
+      "defaultTemplateInfo": "Zde není uložena vlastní šablona. Používá se šablona z vyšší úrovně: přednost má událost, potom pořadatel, organizace a nakonec systémová výchozí šablona. Uložením vytvoříte vlastní šablonu pro tuto úroveň.",
       "resetConfirmTitle": "Obnovit šablonu",
       "resetConfirmContent": "Opravdu chcete obnovit tuto šablonu do výchozího stavu? Vlastní obsah bude ztracen.",
       "statusLabel": "Stav: ",
