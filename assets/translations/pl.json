@@ -134,6 +134,15 @@
     "orderLabel": "Zamówienie"
   },
   "FeatureFormSettings": {
+    "helperReminderEnabled": "Domyślne wysyłanie przypomnień o płatności. Każdy formularz może mieć własne ustawienie.",
+    "helperDeadlineDuration": "Domyślna liczba dni na opłacenie nowego zamówienia. Puste pole oznacza 7 dni.",
+    "nonNegativeDays": "Wpisz zero lub dodatnią liczbę dni.",
+    "inheritDays": "Domyślna liczba dni dla wydarzenia: {}. Pozostaw puste, aby użyć tej wartości.",
+    "inheritReminder": "Domyślne dla wydarzenia ({})",
+    "remindersOff": "Wyłączone",
+    "remindersOn": "Włączone",
+    "occasionPaymentDefaultsHelp": "Ustawienia domyślne dla wszystkich formularzy tego wydarzenia. Poszczególne formularze mogą je zastąpić.",
+    "formPaymentDefaultsHelp": "Formularz dziedziczy ustawienia płatności i przypomnień z funkcji Formularz tego wydarzenia. Własne wartości dotyczą tylko tego formularza.",
     "labelShowPaymentQr": "Pokaż kod QR płatności po zamówieniu",
     "helperShowPaymentQr": "Po złożeniu zamówienia pokazuje kod QR płatności i dane bezpośrednio na ekranie potwierdzenia."
   },

@@ -493,6 +493,10 @@ BEGIN
           SET state      = 'ordered'
           WHERE id = order_id;
 
+          -- NULL inherits the occasion default; zero is an explicit immediate deadline.
+          form_deadline_duration := coalesce(form_deadline_duration,
+            (SELECT (feature->>'deadline_duration_seconds')::bigint
+             FROM jsonb_array_elements(occasion_features) feature WHERE feature->>'code'='form'),604800);
           -- Calculate deadline if deadline duration is provided
           IF form_deadline_duration IS NOT NULL THEN
               deadline := now + make_interval(secs => form_deadline_duration);
@@ -511,8 +515,6 @@ BEGIN
                 v_occ_start_time TIMESTAMPTZ;
                 v_deposit_deadline_days INT;
                 v_deposit_deadline TEXT;
-                v_reminder_interval BIGINT;
-                v_reminder_is_enabled BOOLEAN;
                 v_deposit_deadline_ts TIMESTAMPTZ;
                 v_deposit_feature JSONB;
             BEGIN
@@ -537,26 +539,8 @@ BEGIN
                     SET deposit_deadline = v_deposit_deadline_ts
                     WHERE id = payment_info_id;
 
-                    -- Only queue reminder if deadline is in the future
-                    IF v_deposit_deadline_ts > NOW() THEN
-                        -- Get reminder interval from occasion form feature
-                        SELECT elem->>'reminder_interval_seconds'
-                        INTO v_reminder_interval
-                        FROM jsonb_array_elements(occasion_features) elem
-                        WHERE elem->>'code' = 'form';
-
-                        -- Check if reminder is enabled on the form feature
-                        SELECT (elem->>'reminder_is_enabled')::boolean
-                        INTO v_reminder_is_enabled
-                        FROM jsonb_array_elements(occasion_features) elem
-                        WHERE elem->>'code' = 'form';
-
-                        IF COALESCE(v_reminder_is_enabled, FALSE) AND v_reminder_interval IS NOT NULL THEN
-                            PERFORM public.enqueue_order_email('TICKET_ORDER_REMINDER',
-                                jsonb_build_object('order_id',order_id,'is_deposit_reminder',true),organization_id,occasion_id,unit_id,
-                                v_deposit_deadline_ts-make_interval(secs=>v_reminder_interval));
-                        END IF;
-                    END IF;
+                    -- One queue boundary resolves form and occasion reminder settings.
+                    PERFORM public.queue_payment_reminders(occasion_id,0);
                 END IF;
                 -- Note: if deposit_deadline = 'on_site', deposit_deadline stays NULL → means "Na místě"
             END;

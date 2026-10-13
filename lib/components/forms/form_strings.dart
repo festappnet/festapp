@@ -2,6 +2,20 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get formPaymentDefaultsHelp =>
+      'FeatureFormSettings.formPaymentDefaultsHelp'.tr();
+  static String get occasionPaymentDefaultsHelp =>
+      'FeatureFormSettings.occasionPaymentDefaultsHelp'.tr();
+  static String get remindersOn => 'FeatureFormSettings.remindersOn'.tr();
+  static String get remindersOff => 'FeatureFormSettings.remindersOff'.tr();
+  static String get nonNegativeDays =>
+      'FeatureFormSettings.nonNegativeDays'.tr();
+  static String inheritReminder(bool enabled) =>
+      'FeatureFormSettings.inheritReminder'
+          .tr(args: [enabled ? remindersOn : remindersOff]);
+  static String inheritDays(num days) => 'FeatureFormSettings.inheritDays'
+      .tr(args: [days % 1 == 0 ? days.toInt().toString() : days.toString()]);
+
   static String deletionReason(String? reason) =>
       'FormsFeature.deleteBlocked.${reason ?? 'unknown'}'.tr();
 
@@ -313,8 +327,7 @@ class FormStrings {
       'FormsFeature.defaultSelectionHintMulti'.tr();
   static String get defaultProductSelected =>
       'FormsFeature.defaultProductSelected'.tr();
-  static String get setDefaultProduct =>
-      'FormsFeature.setDefaultProduct'.tr();
+  static String get setDefaultProduct => 'FormsFeature.setDefaultProduct'.tr();
   static String get clearDefaultSelection =>
       'FormsFeature.clearDefaultSelection'.tr();
 

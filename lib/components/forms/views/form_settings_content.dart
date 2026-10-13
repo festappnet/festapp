@@ -33,6 +33,7 @@ import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 class FormSettingsContent extends StatefulWidget {
   final String? formLink;
   final Future<FormEditBundle?> Function(String)? loadBundle;
+  final Future<void> Function(FormModel)? saveForm;
   final VoidCallback? onActionCompleted;
   final VoidCallback? onDataUpdated;
   const FormSettingsContent(
@@ -40,7 +41,8 @@ class FormSettingsContent extends StatefulWidget {
       this.formLink,
       this.onActionCompleted,
       this.onDataUpdated,
-      this.loadBundle});
+      this.loadBundle,
+      this.saveForm});
 
   @override
   State<FormSettingsContent> createState() => _FormSettingsContentState();
@@ -54,7 +56,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         _linkController.text,
         _deadlineDaysController.text,
         _startingNumberController.text,
-        _isReminderEnabled,
+        _reminderMode,
+        _reminderDaysController.text,
         _variableSymbolType,
         _paymentMessageType,
         _communicationTone,
@@ -74,7 +77,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       TextEditingController();
   final ValueNotifier<String> _linkNotifier = ValueNotifier<String>("");
 
-  bool _isReminderEnabled = false;
+  String _reminderMode = 'inherit';
+  final _reminderDaysController = TextEditingController();
   late FormFeature _formFeature;
   String? _linkError;
   bool _isLoading = true;
@@ -98,6 +102,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _titleController,
       _linkController,
       _deadlineDaysController,
+      _reminderDaysController,
       _startingNumberController
     ]) {
       controller.addListener(_changed);
@@ -124,6 +129,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
     _deadlineDaysController.dispose();
+    _reminderDaysController.dispose();
     _startingNumberController.dispose();
     _linkNotifier.dispose();
     super.dispose();
@@ -149,8 +155,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _linkNotifier.value = _linkController.text;
       _linkController.removeListener(_updateLinkPreview);
       _linkController.addListener(_updateLinkPreview);
-      _isReminderEnabled =
-          _form!.data?[FormModel.metaIsReminderEnabled] as bool? ?? false;
+      final reminderOverride =
+          _form!.data?[FormModel.metaIsReminderEnabled] as bool?;
+      _reminderMode = reminderOverride == null
+          ? 'inherit'
+          : (reminderOverride ? 'enabled' : 'disabled');
+      final reminderSeconds =
+          _form!.data?[FormModel.metaReminderIntervalSeconds] as int?;
+      _reminderDaysController.text =
+          reminderSeconds == null ? '' : (reminderSeconds / 86400).toString();
 
       final vsData =
           _form!.data?[FormModel.metaVariableSymbol] as Map<String, dynamic>?;
@@ -173,7 +186,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           : 'inherit';
 
       if (_form!.deadlineDurationSeconds != null &&
-          _form!.deadlineDurationSeconds! > 0) {
+          _form!.deadlineDurationSeconds! >= 0) {
         final days = (_form!.deadlineDurationSeconds! / (24 * 3600)).round();
         _deadlineDaysController.text = days.toString();
       } else {
@@ -206,12 +219,31 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       return;
     }
     if (_form == null) return;
+    final reminderDays =
+        double.tryParse(_reminderDaysController.text.replaceAll(',', '.'));
+    if (_reminderDaysController.text.isNotEmpty &&
+        (reminderDays == null || !reminderDays.isFinite || reminderDays < 0)) {
+      ToastHelper.Show(currentContext, FormStrings.nonNegativeDays,
+          severity: ToastSeverity.NotOk);
+      return;
+    }
 
     final trimmedTitle = _titleController.text.trim();
     _form!.title = trimmedTitle.isEmpty ? null : trimmedTitle;
     _form!.link = _linkController.text.trim();
     _form!.data ??= {};
-    _form!.data![FormModel.metaIsReminderEnabled] = _isReminderEnabled;
+    if (_reminderMode == 'inherit') {
+      _form!.data!.remove(FormModel.metaIsReminderEnabled);
+    } else {
+      _form!.data![FormModel.metaIsReminderEnabled] =
+          _reminderMode == 'enabled';
+    }
+    if (reminderDays == null) {
+      _form!.data!.remove(FormModel.metaReminderIntervalSeconds);
+    } else {
+      _form!.data![FormModel.metaReminderIntervalSeconds] =
+          (reminderDays * 86400).round();
+    }
 
     if (_variableSymbolType == 'sequence') {
       final startingNumber = int.tryParse(_startingNumberController.text);
@@ -236,14 +268,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
 
     final days = int.tryParse(_deadlineDaysController.text);
-    if (days != null && days > 0) {
+    if (days != null && days >= 0) {
       _form!.deadlineDurationSeconds = days * 24 * 60 * 60;
     } else {
       _form!.deadlineDurationSeconds = null;
     }
 
     try {
-      await DbForms.updateForm(_form!);
+      await (widget.saveForm ?? DbForms.updateForm)(_form!);
       if (!mounted) return;
       ToastHelper.Show(
           currentContext, "${CommonStrings.saved}: ${_form?.title ?? ""}",
@@ -502,8 +534,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       isDirty: () => _hasChanges, child: _buildContent(context));
 
   Widget _buildContent(BuildContext context) {
-    final bool isReminderFeatureEnabled =
-        _formFeature.isEnabled && (_formFeature.reminderIsEnabled ?? false);
+    final defaultReminders = _formFeature.reminderIsEnabled ?? true;
+    final remindersEnabled = _reminderMode == 'inherit'
+        ? defaultReminders
+        : _reminderMode == 'enabled';
 
     return Scaffold(
       body: Builder(
@@ -531,22 +565,65 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           .textTheme
                                           .headlineSmall),
                                   const SizedBox(height: 24),
-                                  SwitchListTile(
-                                    title:
-                                        Text(FormStrings.labelEnableReminders),
-                                    subtitle: Text(!isReminderFeatureEnabled
-                                        ? FormStrings.subtitleRemindersDisabled
-                                        : FormStrings.subtitleEnableReminders),
-                                    value: _isReminderEnabled,
-                                    onChanged: isReminderFeatureEnabled
-                                        ? (value) {
-                                            setState(() {
-                                              _isReminderEnabled = value;
-                                            });
-                                          }
-                                        : null,
-                                    contentPadding: EdgeInsets.zero,
+                                  Text(FormStrings.formPaymentDefaultsHelp),
+                                  const SizedBox(height: 16),
+                                  DropdownButtonFormField<String>(
+                                    value: _reminderMode,
+                                    isExpanded: true,
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          FormStrings.labelEnableReminders,
+                                      border: const OutlineInputBorder(),
+                                    ),
+                                    items: [
+                                      DropdownMenuItem(
+                                          value: 'inherit',
+                                          child: Text(
+                                              FormStrings.inheritReminder(
+                                                  defaultReminders))),
+                                      DropdownMenuItem(
+                                          value: 'enabled',
+                                          child: Text(FormStrings.remindersOn)),
+                                      DropdownMenuItem(
+                                          value: 'disabled',
+                                          child:
+                                              Text(FormStrings.remindersOff)),
+                                    ],
+                                    onChanged: (value) =>
+                                        setState(() => _reminderMode = value!),
                                   ),
+                                  if (remindersEnabled) ...[
+                                    const SizedBox(height: 24),
+                                    TextFormField(
+                                      controller: _reminderDaysController,
+                                      decoration: InputDecoration(
+                                        labelText:
+                                            FormStrings.labelReminderInterval,
+                                        border: const OutlineInputBorder(),
+                                        helperText: FormStrings.inheritDays(
+                                            (_formFeature
+                                                        .reminderIntervalSeconds ??
+                                                    86400) /
+                                                86400),
+                                        helperMaxLines: 4,
+                                      ),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              decimal: true),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return null;
+                                        }
+                                        final days = double.tryParse(
+                                            value.replaceAll(',', '.'));
+                                        return days == null ||
+                                                !days.isFinite ||
+                                                days < 0
+                                            ? FormStrings.nonNegativeDays
+                                            : null;
+                                      },
+                                    ),
+                                  ],
                                   const SizedBox(height: 24),
                                   TextFormField(
                                     controller: _titleController,
@@ -586,8 +663,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     decoration: InputDecoration(
                                       labelText: FormStrings.labelDeadlineDays,
                                       border: const OutlineInputBorder(),
-                                      helperText:
-                                          FormStrings.helperDeadlineDays,
+                                      helperText: FormStrings.inheritDays(
+                                          (_formFeature
+                                                      .deadlineDurationSeconds ??
+                                                  604800) /
+                                              86400),
                                       helperMaxLines: 5,
                                     ),
                                     keyboardType: TextInputType.number,
