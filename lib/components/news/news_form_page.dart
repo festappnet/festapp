@@ -26,10 +26,12 @@ import 'package:fstapp/components/news/news_notification_audience_selector.dart'
 class NewsFormPage extends StatefulWidget {
   static const ROUTE = "newsForm";
   final Widget? editorOverride;
+  final String occasionLink;
   final Future<void> Function(NewsSubmission)? onSubmit;
 
   const NewsFormPage({
     super.key,
+    @PathParam('{occasionLink}') this.occasionLink = '',
     @visibleForTesting this.editorOverride,
     this.onSubmit,
   });
