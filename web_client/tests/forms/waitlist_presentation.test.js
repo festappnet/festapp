@@ -394,12 +394,16 @@ test('offer acceptance uses singular or selected-people label in form and shared
 
 test('offer facts localize expiry, single acceptance needs no selector and multi selection preserves drafts', () => {
     const d=dom(); const host=document.querySelector('main');
-    const model=new FormModel({registrationMode:'offer',fields});
+    const model=new FormModel({registrationMode:'offer',fields,capacity:{showRemaining:true,limit:11,occupiedPeople:10,offeredPlaces:1,remainingPublic:0}});
     model.offerBundle={pendingCount:1, expiresAt:'2026-10-14T19:52:28Z',timeZone:'Europe/Prague',slots:[{ticketId:10,outcome:'pending'}],tickets:[{id:10,lifecycle:'offered',displayName:'Junák',answers:{fields:[]}}]};
     let current=new FormSession(model); prepareOfferSession(current,model);
     const page={host,currentSession:current,renderForm:()=>{},resolveWaitlist:()=>{}};
     FormRenderer.render(host,current,model,false,{});renderWaitlistControls(page,model);
     assert.match(host.querySelector('.waitlist-offer-facts').textContent,/14.*10.*2026.*21:52/);
+    assert.equal(host.querySelector('.form-occupancy'),null);
+    assert.equal(host.querySelector('.waitlist-mode-label'),null);
+    assert.match(host.querySelector('.waitlist-offer-facts').textContent,/Nabídnutá místa1/);
+    assert.doesNotMatch(host.querySelector('.form-registration-status').textContent,/Obsazenost|Zbývající místa|Zařazení mezi náhradníky/);
     assert.equal(host.querySelector('.waitlist-people legend'),null);
     assert.equal(host.querySelector('.waitlist-people input'),null);
     assert.equal(host.querySelector('.waitlist-person-row strong').textContent,'Junák');

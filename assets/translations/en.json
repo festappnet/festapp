@@ -2565,6 +2565,7 @@
     "productAvailability": "Products are selected subject to current availability. The offer reserves places for people only.",
     "selectPeople": "Select people to admit",
     "remaining": "Remaining places",
+    "offeredPlaces": "Offered places",
     "confirm": "Confirm",
     "stale": "Availability has changed. Refresh the proposal and confirm again.",
     "queued": "Queued",

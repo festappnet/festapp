@@ -619,6 +619,7 @@
     "productAvailability": "Produkte werden nach aktueller Verfügbarkeit ausgewählt. Das Angebot reserviert nur Personenplätze.",
     "selectPeople": "Aufzunehmende Personen auswählen",
     "remaining": "Verbleibende Plätze",
+    "offeredPlaces": "Angebotene Plätze",
     "confirm": "Bestätigen",
     "stale": "Die Verfügbarkeit hat sich geändert. Aktualisieren Sie den Vorschlag und bestätigen Sie erneut.",
     "queued": "In der Warteschlange",
