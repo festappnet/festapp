@@ -433,6 +433,8 @@
   },
   "FormsFeature": {
     "showDepositDescription": "Show deposit / surcharge note on products",
+    "defaultProductSelected": "Default option for customers. Click to clear the default.",
+    "setDefaultProduct": "Click to make this product the default option for customers.",
     "defaultSelectionHintSingle": "Click the radio next to an option to set it as default.",
     "defaultSelectionHintMulti": "Tick the checkboxes next to options to pre-select them by default.",
     "clearDefaultSelection": "Clear default",
@@ -2422,7 +2424,7 @@
     "finishCanvasFirst": "To move elements, click Done first.",
     "manageProducts": "Manage forms and products",
     "layoutLimit": "Layout exceeds 32 KiB. Shorten labels or remove fields.",
-    "addProduct": "Add product field",
+    "addProduct": "Add product",
     "productGroup": "Product group",
     "productLabel": "Printed label",
     "labelHint": "An empty label prints only the product name",

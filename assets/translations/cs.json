@@ -433,6 +433,8 @@
   },
   "FormsFeature": {
     "showDepositDescription": "Zobrazit popisek zálohy / doplatku u produktů",
+    "defaultProductSelected": "Výchozí volba pro zákazníka. Kliknutím předvolení zrušíte.",
+    "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka.",
     "defaultSelectionHintSingle": "Klikni na radio vedle volby pro nastavení jako výchozí.",
     "defaultSelectionHintMulti": "Zaškrtni checkboxy vedle voleb pro předvolení.",
     "clearDefaultSelection": "Zrušit výchozí volbu",
@@ -2423,7 +2425,7 @@
     "finishCanvasFirst": "Pro přesunutí prvků nejprve klikněte na Hotovo.",
     "manageProducts": "Správa formulářů a produktů",
     "layoutLimit": "Rozložení překročilo limit 32 KiB. Zkraťte popisky nebo odeberte pole.",
-    "addProduct": "Přidat produktové pole",
+    "addProduct": "Přidat produkt",
     "productGroup": "Skupina produktů",
     "productLabel": "Popisek na vstupence",
     "labelHint": "Prázdný popisek zobrazí jen název produktu",

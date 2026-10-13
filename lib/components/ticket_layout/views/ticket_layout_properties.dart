@@ -83,8 +83,9 @@ class TicketLayoutProperties extends StatelessWidget {
                   if (overflow)
                     Text(TicketLayoutStrings.overflow,
                         style: const TextStyle(color: Colors.orange)),
-                  Text(TicketLayoutStrings.binding(e.binding),
-                      style: Theme.of(context).textTheme.titleMedium),
+                  if (productControl == null)
+                    Text(TicketLayoutStrings.binding(e.binding),
+                        style: Theme.of(context).textTheme.titleMedium),
                   if (productControl != null) productControl!,
                   if (text) ...[
                     if (fontControl != null) fontControl!,
@@ -460,18 +461,28 @@ class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
   }
 
   @override
-  Widget build(BuildContext context) => TextField(
-      controller: text,
-      focusNode: focus,
-      enabled: !widget.element.locked,
-      maxLength: 120,
-      decoration: InputDecoration(
-          labelText: TicketLayoutStrings.productLabel,
-          helperText: TicketLayoutStrings.labelHint),
-      onChanged: (value) {
-        widget.controller.beginGesture();
-        widget.controller.change(widget.element.copyWith(label: value.trim()));
-      },
-      onSubmitted: (_) => focus.unfocus(),
-      onTapOutside: (_) => focus.unfocus());
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+              controller: text,
+              style: Theme.of(context).textTheme.bodyLarge,
+              focusNode: focus,
+              enabled: !widget.element.locked,
+              maxLength: 120,
+              decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.all(12),
+                  labelText: TicketLayoutStrings.productLabel),
+              onChanged: (value) {
+                widget.controller.beginGesture();
+                widget.controller
+                    .change(widget.element.copyWith(label: value.trim()));
+              },
+              onSubmitted: (_) => focus.unfocus(),
+              onTapOutside: (_) => focus.unfocus()),
+          Text(TicketLayoutStrings.labelHint,
+              style: Theme.of(context).textTheme.bodySmall),
+        ],
+      );
 }

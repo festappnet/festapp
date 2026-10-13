@@ -9,6 +9,7 @@ import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/deposit_feature.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/forms/widgets_editor/ticket_product_editor_row.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/widgets_editor/product_type_editor.dart';
 import 'package:fstapp/components/forms/widgets_editor/default_value_helper.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
@@ -47,7 +48,10 @@ void main() {
           ? find.descendant(of: find.byKey(ObjectKey(product)), matching: find.byType(Checkbox))
           : find.byType(Radio<String>);
       expect(selector, findsOneWidget);
-      if (!many) expect(tester.widget<Radio<String>>(selector).onChanged, isNotNull);
+      if (!many) {
+        expect(tester.widget<Radio<String>>(selector).onChanged, isNotNull);
+        expect(find.byTooltip(FormStrings.setDefaultProduct), findsOneWidget);
+      }
       await tester.tap(selector);
       await tester.pump();
       expect(changes, 1);
@@ -56,11 +60,13 @@ void main() {
         expect(tester.widget<Checkbox>(selector).value, isTrue);
       } else {
         expect(tester.widget<Radio<String>>(selector).groupValue, '10');
+        expect(find.byTooltip(FormStrings.defaultProductSelected), findsOneWidget);
       }
       await tester.tap(selector);
       await tester.pump();
       expect(changes, 2);
       expect(DefaultValueHelper.read(field), isNull);
+      if (!many) expect(find.byTooltip(FormStrings.setDefaultProduct), findsOneWidget);
       expect(tester.widget<Container>(find.byKey(ObjectKey(product))).decoration, isNull);
       Finder input(String label) => find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == label);
       final name = find.descendant(of: find.byType(TicketProductEditorRow), matching: input('Název'));

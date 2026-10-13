@@ -518,12 +518,21 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       builder: (c, _) => Column(mainAxisSize: MainAxisSize.min, children: [
             Padding(
                 padding: const EdgeInsets.all(8),
-                child: FilledButton.tonalIcon(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      alignment: Alignment.centerLeft,
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
                     onPressed: widget.productEditing
                         ? () => pickProduct(onSelected: onSelected)
                         : null,
                     icon: const Icon(Icons.add),
-                    label: Text(TicketLayoutStrings.addProduct))),
+                    label: Text(TicketLayoutStrings.addProduct),
+                  ),
+                )),
             if (!widget.productEditing)
               Padding(
                   padding: const EdgeInsets.all(8),
@@ -584,20 +593,30 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     final type =
         resources.catalog.where((t) => t.id == e!.productTypeId).firstOrNull;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(TicketLayoutStrings.productGroup),
-          subtitle: Text(type?.title ?? TicketLayoutStrings.missingProduct),
-          trailing: const Icon(Icons.edit),
-          onTap: widget.productEditing && !e!.locked
-              ? () => pickProduct(element: e)
-              : null),
+      Text(TicketLayoutStrings.productGroup,
+          style: Theme.of(context).textTheme.labelMedium),
+      Row(children: [
+        Expanded(
+            child: Text(type?.title ?? TicketLayoutStrings.missingProduct,
+                style: Theme.of(context).textTheme.titleMedium)),
+        IconButton(
+            tooltip: TicketLayoutStrings.edit,
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            onPressed: widget.productEditing && !e!.locked
+                ? () => pickProduct(element: e)
+                : null),
+      ]),
       if (e!.locked) Text(TicketLayoutStrings.locked),
       if (!widget.productEditing) Text(TicketLayoutStrings.draftProducts),
+      const SizedBox(height: 8),
       TicketProductLabelInput(
           key: ValueKey('label-${e.id}'), controller: controller, element: e),
-      Text(
-          '${TicketLayoutStrings.example}: ${type?.example?['value'] ?? TicketLayoutStrings.noExample}'),
+      const SizedBox(height: 12),
+      Text(TicketLayoutStrings.example,
+          style: Theme.of(context).textTheme.labelMedium),
+      const SizedBox(height: 4),
+      Text(resources.previewData(controller.document, scenario)[e.id] ??
+          TicketLayoutStrings.noExample),
       if (type != null && !type.eligible)
         Text(TicketLayoutStrings.hiddenProduct),
       TextButton.icon(

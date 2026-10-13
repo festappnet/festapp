@@ -2640,6 +2640,42 @@ void main() {
     r.dispose();
   });
   testWidgets(
+      'product label help wraps in narrow panels and preserves empty labels',
+      (tester) async {
+    final controller = TicketLayoutController(
+        document().resizeCanvasArea(const Size(200, 600)));
+    expect(controller.addProductField(123, 'Večeře'), isTrue);
+    final element = controller.selection!;
+    controller.select(element.id);
+    for (final width in [220.0, 296.0]) {
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: Center(
+        child: SizedBox(
+            width: width,
+            child: ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) => TicketProductLabelInput(
+                  controller: controller, element: controller.selection!),
+            )),
+      ))));
+      await tester.pumpAndSettle();
+      final help = find.text('TicketLayout.labelHint'.tr());
+      expect(help, findsOneWidget);
+      expect(tester.getSize(help).height, greaterThan(20));
+      expect(tester.takeException(), isNull);
+    }
+    await tester.enterText(find.byType(TextField), '');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(controller.selection!.label, '');
+    controller.undo();
+    await tester.pumpAndSettle();
+    expect(controller.selection!.label, element.label);
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+  testWidgets(
       'picker confirm/cancel, duplicate selection and local label edits make no requests',
       (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
