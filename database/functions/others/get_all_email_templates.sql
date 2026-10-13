@@ -75,18 +75,11 @@ BEGIN
   END IF;
 
   -- 5. Retrieve email templates
-  SELECT jsonb_agg(result)
+  SELECT jsonb_agg(public.get_resolved_email_template(result.code,
+    jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org)) ORDER BY result.code)
     INTO email_data
   FROM (
-    SELECT DISTINCT ON (et.code)
-           et.id,
-           et.html,
-           et.occasion,
-           et.subject,
-           et.organization,
-           et.code,
-           et.unit,
-           et.title
+    SELECT DISTINCT et.code
     FROM public.email_templates et
     WHERE
       -- A. Filter based on context (Scope)
@@ -103,15 +96,6 @@ BEGIN
         et.code NOT IN ('SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
                         'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE')
       )
-    ORDER BY et.code,
-             CASE
-               WHEN (v_occ IS NOT NULL AND et.occasion = v_occ) THEN 1
-               WHEN (v_unit IS NOT NULL AND et.unit = v_unit AND et.occasion IS NULL) THEN 2
-               WHEN (v_org IS NOT NULL  AND et.organization = v_org AND et.unit IS NULL AND et.occasion IS NULL) THEN 3
-               WHEN (et.organization IS NULL AND et.unit IS NULL AND et.occasion IS NULL) THEN 4
-               ELSE 5
-             END,
-             et.id
   ) result;
 
   IF email_data IS NULL THEN

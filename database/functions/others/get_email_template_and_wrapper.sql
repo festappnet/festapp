@@ -10,44 +10,34 @@ DECLARE
   v_occ bigint;
   v_unit bigint;
   v_org bigint;
+  v_actual_unit bigint;
+  v_actual_org bigint;
 BEGIN
   -- Extract context values. The ->> operator handles missing keys by returning SQL NULL.
   v_occ := (p_context->>'occasion')::bigint;
   v_unit := (p_context->>'unit')::bigint;
   v_org  := (p_context->>'organization')::bigint;
 
-  -- Retrieve the most specific email template.
-  WITH candidates AS (
-    SELECT
-      et.id,
-      et.html,
-      et.occasion,
-      et.subject,
-      et.organization,
-      et.code,
-      et.unit
-    FROM public.email_templates et
-    WHERE et.code = p_code
-      -- This pattern finds all potential matches. A template is a valid candidate if,
-      -- for each parameter, its value either matches the context or is NULL (generic fallback).
-      -- If a context variable (e.g. v_unit) is NULL, it acts as a wildcard for that parameter.
-      AND (v_occ IS NULL OR et.occasion IS NOT DISTINCT FROM v_occ OR et.occasion IS NULL)
-      AND (v_unit IS NULL OR et.unit IS NOT DISTINCT FROM v_unit OR et.unit IS NULL)
-      AND (v_org IS NULL OR et.organization IS NOT DISTINCT FROM v_org OR et.organization IS NULL)
-  )
-  SELECT to_jsonb(t)
-  INTO email_template
-  FROM (
-    SELECT * FROM candidates
-    ORDER BY
-      -- Ranks candidates by specificity. A direct match (value 0) is better than a generic fallback (value 1).
-      -- `IS NOT DISTINCT FROM` is used for NULL-safe equality comparison.
-      CASE WHEN occasion IS NOT DISTINCT FROM v_occ THEN 0 ELSE 1 END,
-      CASE WHEN unit IS NOT DISTINCT FROM v_unit THEN 0 ELSE 1 END,
-      CASE WHEN organization IS NOT DISTINCT FROM v_org THEN 0 ELSE 1 END,
-      id -- Stable tie-breaker
-    LIMIT 1
-  ) t;
+  -- Resolve ancestors even for an occasion-only context. Missing IDs must never
+  -- become wildcards that select another occasion's template or wrapper.
+  IF v_occ IS NOT NULL THEN
+    SELECT unit, organization INTO v_actual_unit, v_actual_org FROM public.occasions WHERE id=v_occ;
+    IF NOT FOUND OR (v_unit IS NOT NULL AND v_unit IS DISTINCT FROM v_actual_unit)
+       OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE EXCEPTION 'Invalid email template hierarchy';
+    END IF;
+    v_unit := v_actual_unit;
+    v_org := v_actual_org;
+  ELSIF v_unit IS NOT NULL THEN
+    SELECT organization INTO v_actual_org FROM public.units WHERE id=v_unit;
+    IF NOT FOUND OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE EXCEPTION 'Invalid email template hierarchy';
+    END IF;
+    v_org := v_actual_org;
+  END IF;
+
+  email_template := public.get_resolved_email_template(p_code, jsonb_build_object(
+    'occasion',v_occ,'unit',v_unit,'organization',v_org));
 
   -- Retrieve the most specific email wrapper using the same logic.
   SELECT to_jsonb(t)
@@ -61,9 +51,12 @@ BEGIN
       ew.html,
       ew.created_at
     FROM public.email_wrappers ew
-    WHERE (v_occ IS NULL OR ew.occasion IS NOT DISTINCT FROM v_occ OR ew.occasion IS NULL)
-      AND (v_unit IS NULL OR ew.unit IS NOT DISTINCT FROM v_unit OR ew.unit IS NULL)
-      AND (v_org IS NULL OR ew.organization IS NOT DISTINCT FROM v_org OR ew.organization IS NULL)
+    WHERE (
+      (v_occ IS NOT NULL AND ew.occasion=v_occ)
+      OR (v_unit IS NOT NULL AND ew.unit=v_unit AND ew.occasion IS NULL)
+      OR (v_org IS NOT NULL AND ew.organization=v_org AND ew.unit IS NULL AND ew.occasion IS NULL)
+      OR (ew.organization IS NULL AND ew.unit IS NULL AND ew.occasion IS NULL)
+    )
     ORDER BY
          CASE WHEN ew.occasion IS NOT DISTINCT FROM v_occ THEN 0 ELSE 1 END,
          CASE WHEN ew.unit IS NOT DISTINCT FROM v_unit THEN 0 ELSE 1 END,
