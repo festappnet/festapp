@@ -58,8 +58,8 @@ BEGIN
     IF t ? 'flowStep' AND (jsonb_typeof(t->'flowStep') IS DISTINCT FROM 'number' OR (t->>'flowStep')::numeric NOT BETWEEN 1 AND 842) THEN RAISE EXCEPTION 'Invalid ticket flow spacing'; END IF;
     IF t ? 'flow' THEN
       IF jsonb_typeof(t->'flow') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'Invalid ticket flow'; END IF;
-      IF EXISTS(SELECT 1 FROM jsonb_array_elements_text(t->'flow') v WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t->'elements') e WHERE e->>'id'=v AND e->>'binding' NOT IN ('qr','logo')))
-        OR (SELECT count(*)<>count(DISTINCT v) FROM jsonb_array_elements_text(t->'flow') v)
+      IF EXISTS(SELECT 1 FROM jsonb_array_elements_text(t->'flow') AS flow_item(value) WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t->'elements') AS flow_element(value) WHERE flow_element.value->>'id'=flow_item.value AND flow_element.value->>'binding' NOT IN ('qr','logo')))
+        OR (SELECT count(*)<>count(DISTINCT flow_item.value) FROM jsonb_array_elements_text(t->'flow') AS flow_item(value))
       THEN RAISE EXCEPTION 'Invalid ticket flow'; END IF;
     END IF;
     IF t ? 'qrAppearance' THEN
