@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:fstapp/components/eshop/views/order_state_display.dart';
 import 'package:easy_localization/easy_localization.dart' as easy;
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,6 +77,35 @@ void main() {
       })))));
       await tester.pumpAndSettle();
       expect(find.text(scenario == 'offered' ? 'NABÍDNUTO' : 'ODESLÁNO'), findsOneWidget);
+    }
+  });
+
+  testWidgets('history status uses immutable action and affected count, never current order', (tester) async {
+    final history = OrderHistoryModel(state:'waitlisted', orderModel:OrderModel(state:'paid'), data:{'action':'waitlist_withdraw','ticketIds':[1]});
+    await tester.pumpWidget(MaterialApp(home: Builder(builder:(context) {
+      final cell=history.toTrinaRow(context).cells[EshopColumns.HISTORY_STATE]!.value;
+      expect(cell,'waitlisted;Náhradníci → history:withdrawn;Čekání ukončeno (1)');
+      return const SizedBox();
+    })));
+    history.data={'action':'offer_sent','count':2};
+    expect(history.waitlistHistoryState,'waitlisted;Náhradníci → waitlisted;Nabídnuto (2)');
+    expect(history.state,'waitlisted');
+  });
+
+  testWidgets('history arrow renders lifecycle colors and full target tooltip at 280px', (tester) async {
+    for (final action in ['waitlist_withdraw', 'offer_sent', 'waitlist_accept']) {
+      final history = OrderHistoryModel(state: 'paid', data: {'action': action, 'ticketIds': [1], 'count': 1});
+      final formatted = history.waitlistHistoryState!;
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Center(child: SizedBox(width:280,
+        child:EshopColumns.buildOrderStateRenderer(formatted, OrderStateDisplay.historyBackground))))));
+      expect(find.byIcon(Icons.arrow_forward),findsOneWidget);
+      final tags = tester.widgetList<Container>(find.byType(Container)).where((w) => w.decoration is BoxDecoration).toList();
+      expect((tags.first.decoration as BoxDecoration).color,OrderModel.singleDataGridStateToColor('waitlisted'));
+      final expectedColor = action == 'offer_sent' ? OrderModel.singleDataGridStateToColor('waitlisted') : action == 'waitlist_accept' ? OrderModel.singleDataGridStateToColor('paid') : Colors.grey.shade500.withValues(alpha:0.6);
+      expect((tags.last.decoration as BoxDecoration).color,expectedColor);
+      final target = OrderModel.statesDataGridToUpper(formatted.split(';').last);
+      expect(find.byTooltip(target), findsOneWidget);
+      expect(tester.takeException(), isNull);
     }
   });
 

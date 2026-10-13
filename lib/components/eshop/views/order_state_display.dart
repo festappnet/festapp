@@ -32,6 +32,17 @@ class OrderStateDisplay extends StatelessWidget {
     this.enableWrapping = false, // NEW: Defaulted to false
   });
 
+  /// Presentation keys belong only to immutable history, never order states.
+  static Color historyBackground(String key) {
+    if (key == 'history:admitted') {
+      return OrderModel.singleDataGridStateToColor(OrderModel.orderedState);
+    }
+    if (key.startsWith('history:')) {
+      return Colors.grey.shade500.withValues(alpha: 0.6);
+    }
+    return OrderModel.singleDataGridStateToColor(key);
+  }
+
   /// A helper method to calculate the optimal width for the state tags.
   static double calculateOptimalWidth({
     required BuildContext context,
@@ -75,8 +86,11 @@ class OrderStateDisplay extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Center(
-          child: Text(text,
-              textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+          child: Tooltip(
+            message: text,
+            child: Text(text, maxLines: 1,
+                textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+          ),
         ),
       ),
     );

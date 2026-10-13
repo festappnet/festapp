@@ -130,21 +130,22 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
 
   bool get _hasEligibleTickets =>
       (_detail?['tickets'] as List? ?? []).any(_isSelectable);
+  bool get _hasWaitingTickets =>
+      (_detail?['tickets'] as List? ?? []).any(
+          (ticket) => ticket['lifecycle'] == 'waiting');
+
   bool get _canOffer =>
       !_busy &&
       _error == null &&
-      _hasEligibleTickets &&
+      _hasWaitingTickets &&
       RightsService.isEditorOrder() &&
       widget.order.isWaitlisted &&
+      (widget.order.allowedActions == null || widget.order.allows('offer')) &&
       widget.order.form?.waitlistEnabled == true &&
       _detail?['capacity']?['canSendOffers'] == true;
 
   Future<void> _offer() async {
     if (!_canOffer) return;
-    if (!await DialogHelper.showConfirmationDialog(
-        context, WaitlistStrings.offerTitle, WaitlistStrings.offerExplanation,
-        confirmButtonMessage: WaitlistStrings.offerContinue)) return;
-    if (!mounted) return;
     final form = widget.order.form!;
     await showDialog(
         context: context,
@@ -219,6 +220,10 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Text(title,
                             style: Theme.of(context).textTheme.titleMedium)),
+                  if ((_detail?['tickets'] as List? ?? []).where(_isSelectable).length > 1 &&
+                      RightsService.isEditorOrder())
+                    Padding(padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(WaitlistStrings.text('detailSelection'))),
                   for (final entry
                       in (_detail?['tickets'] as List? ?? []).indexed)
                     Card(
@@ -253,7 +258,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Wrap(spacing: 8, runSpacing: 8, children: [
-                                OutlinedButton(
+                                if (_hasWaitingTickets) OutlinedButton(
                                     onPressed: _canOffer ? _offer : null,
                                     child: Text(WaitlistStrings.offerPlace)),
                                 OutlinedButton(
@@ -264,7 +269,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                         : null,
                                     child: Text(WaitlistStrings.withdraw)),
                               ]),
-                              if (!_busy &&
+                              if (!_busy && _hasWaitingTickets &&
                                   _detail?['capacity']?['canSendOffers'] !=
                                       true)
                                 Padding(
@@ -279,12 +284,11 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                   if ((_detail?['offers'] as List? ?? []).isNotEmpty) ...[
                     Text(WaitlistStrings.offers,
                         style: Theme.of(context).textTheme.titleMedium),
-                    if ((_detail?['offers'] as List? ?? [])
-                        .any(_offerIsPending))
-                      Text(WaitlistStrings.text('selectionExplanation')),
                     for (final offer in _detail?['offers'] ?? [])
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                      Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -298,8 +302,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                       '${_slotLabel(slot)} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !_offerIsPending(offer) ? 'expired' : slot['outcome'])}'),
                                 if (RightsService.isEditorOrder() &&
                                     _offerIsPending(offer))
-                                  Wrap(spacing: 8, children: [
-                                    TextButton(
+                                  Wrap(spacing: 8, runSpacing: 8, children: [
+                                    FilledButton(
                                         onPressed: _busy
                                             ? null
                                             : () async {
@@ -322,7 +326,9 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                                                 offer['id'])));
                                                 await _load();
                                               },
-                                        child: Text(WaitlistStrings.accept)),
+                                        child: Text((offer['slots'] as List).where((slot) => slot['outcome'] == 'pending').length == 1
+                                            ? WaitlistStrings.text('acceptOne')
+                                            : WaitlistStrings.text('continueToConfirmation'))),
                                     TextButton(
                                         onPressed:
                                             _busy || !_selectionBelongsTo(offer)
@@ -338,7 +344,12 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                                 _resolve('cancel', offer['id']),
                                         child: Text(WaitlistStrings.cancel)),
                                   ]),
-                              ])),
+                                if (RightsService.isEditorOrder() &&
+                                    _offerIsPending(offer) && !_busy &&
+                                    !_selectionBelongsTo(offer))
+                                  Padding(padding: const EdgeInsets.only(top: 8),
+                                    child: Text(WaitlistStrings.text('offerSelectionRequired'))),
+                              ]))),
                   ],
                   if ((_detail?['linkedOrders'] as List? ?? []).isNotEmpty) ...[
                     Text(WaitlistStrings.linkedOrders,

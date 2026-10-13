@@ -187,7 +187,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
                   alignment: Alignment.centerLeft,
                   child: OrderStateDisplay(
                     formattedState: stateCellFormat,
-                    getBackground: OrderModel.singleDataGridStateToColor,
+                    getBackground: OrderStateDisplay.historyBackground,
                     stateTagWidth: _optimalTagWidth,
                     enableWrapping: true,
                   ),

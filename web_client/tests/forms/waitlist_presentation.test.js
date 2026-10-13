@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 import { FormModel } from '../../src/components/forms/form_models.js';
 import { FormSession } from '../../src/components/forms/form_session.js';
 import { FormRenderer } from '../../src/components/forms/form_renderer.js';
-import { renderWaitlistControls, ticketLabel } from '../../src/components/forms/waitlist_form.js';
+import { renderWaitlistControls, prepareOfferSession, ticketLabel } from '../../src/components/forms/waitlist_form.js';
 import { waitlistRegistrationPayload } from '../../src/components/forms/waitlist_commands.js';
 import { OrderResult } from '../../src/components/forms/order_result.js';
 import { LocalizationService } from '../../src/services/localization_service.js';
@@ -294,7 +294,7 @@ test('empty waitlist cards disappear while multiple meaningful own answers and c
 
 test('one distinct accessible product notice sits outside all disabled groups', () => {
     const d=dom(); const host=document.querySelector('main');
-    const model=new FormModel({registrationMode:'waitlist',fields:[...fields,
+    const model=new FormModel({registrationMode:'waitlist',data:{design:{is_card_design:true}},fields:[...fields,
         {...fields[2],id:6,title:'Strava'},
     ]});
     const current=new FormSession(model);
@@ -305,7 +305,10 @@ test('one distinct accessible product notice sits outside all disabled groups', 
     assert.equal(host.querySelectorAll('.waitlist-product-notice').length,1);
     const note=host.querySelector('.waitlist-product-notice');
     assert.equal(note.getAttribute('role'),'note');
-    assert.equal((groups[0].closest('.form-field-card') || groups[0]).previousElementSibling,note);
+    assert.equal(note.closest('.form-field-card'), null);
+    current._emitStateChanged();
+    assert.equal(host.querySelectorAll('.waitlist-product-notice').length,1);
+    assert.equal(note.nextElementSibling.contains(groups[0]),true);
     assert.equal(host.querySelector('.form-registration-status').contains(note),false);
     for(const group of groups){assert.equal(group.getAttribute('aria-describedby'),note.id);assert.equal(group.contains(note),false);assert.ok(group.disabled);}
     assert.equal(host.querySelector('.form-registration-status h2'),null);
@@ -329,7 +332,7 @@ test('waitlist copy follows the existing formal/informal form tone across regist
         assert.doesNotMatch(host.querySelector('.result-subtitle').textContent,/Zde vid/);
         const page=new FormPage(host);page.waitlistScope={orderId:1};page.applyTheme=()=>{};
         page.renderWaitlistManagement({form:{data:{communication_tone:tone},fields},tickets:[{id:1,lifecycle:'waiting',answers:{fields:[]}}]});
-        assert.match(host.textContent,tone==='informal'?/Zde vidíš/:/Zde vidíte/);
+        assert.match(host.textContent,tone==='informal'?/pošleme ti/:/pošleme vám/);
     }
     d.window.close();
 });
@@ -368,5 +371,61 @@ test('offer acceptance uses singular or selected-people label in form and shared
         host.innerHTML = OrderPreview._render(OrderPreview._prepareData(null, model, current.state, current.payload));
         assert.equal(host.querySelector('.btn-submit-order').textContent.trim(), expected);
     }
+    d.window.close();
+});
+
+
+test('offer facts localize expiry, single acceptance needs no selector and multi selection preserves drafts', () => {
+    const d=dom(); const host=document.querySelector('main');
+    const model=new FormModel({registrationMode:'offer',fields});
+    model.offerBundle={pendingCount:1, expiresAt:'2026-10-14T19:52:28Z',timeZone:'Europe/Prague',slots:[{ticketId:10,outcome:'pending'}],tickets:[{id:10,lifecycle:'offered',displayName:'Junák',answers:{fields:[]}}]};
+    let current=new FormSession(model); prepareOfferSession(current,model);
+    const page={host,currentSession:current,renderForm:()=>{},resolveWaitlist:()=>{}};
+    FormRenderer.render(host,current,model,false,{});renderWaitlistControls(page,model);
+    assert.match(host.querySelector('.waitlist-offer-facts').textContent,/14.*10.*2026.*21:52/);
+    assert.equal(host.querySelector('.waitlist-people legend'),null);
+    assert.equal(host.querySelector('.waitlist-people input'),null);
+    assert.equal(host.querySelector('.waitlist-person-row strong').textContent,'Junák');
+    assert.deepEqual(model.selectedTicketIds,[10]);
+    assert.equal(host.querySelector('.waitlist-decline').textContent,'Odmítnout nabídku');
+    model.offerBundle.pendingCount=2;
+    model.offerBundle.tickets.push({id:11,lifecycle:'waiting',displayName:'Robin',answers:{fields:[]}});
+    current=new FormSession(model);prepareOfferSession(current,model);page.currentSession=current;
+    FormRenderer.render(host,current,model,false,{});renderWaitlistControls(page,model);
+    assert.ok(host.querySelector('.waitlist-people legend'));
+    host.querySelectorAll('.waitlist-people input')[1].click();
+    assert.deepEqual(model.selectedTicketIds,[10,11]);
+    assert.ok(model.ticketDrafts.has(10));
+    d.window.close();
+});
+
+test('terminal outcomes reuse order result without waiting promise and preserve context', async () => {
+    const d=dom();const {FormPage}=await import('../../src/components/forms/form_page.js');
+    const page=new FormPage('host');page.waitlistScope={offerId:'done'};
+    for(const offerStatus of ['declined','cancelled','expired','accepted']) {
+        page.renderWaitlistManagement({offerStatus,form:null,occasionTitle:'Setkání',orderSymbol:'ABC123',communicationTone:'informal',tickets:[]});
+        assert.ok(page.host.querySelector('.result-container'));
+        assert.equal(page.host.querySelector('.result-occasion-title').textContent,'Setkání');
+        assert.match(page.host.querySelector('.result-order-symbol').textContent,/ABC123/);
+        assert.doesNotMatch(page.host.querySelector('.result-subtitle').textContent,/Až.*nabídn|Waitlist\./);
+    }
+    d.window.close();
+});
+
+
+test('terminal back action removes capability and fetches fresh normal form capacity', async t => {
+    const d=dom();const [{FormPage},{DbForms},{RightsService},{SeoService}]=await Promise.all([
+        import('../../src/components/forms/form_page.js'),import('../../src/components/forms/db_forms.js'),import('../../src/services/rights_service.js'),import('../../src/services/seo_service.js')]);
+    window.history.replaceState(null,'','/form/test?lang=cs#waitlist?token='+ 'a'.repeat(64)+'&offer_id=11111111-1111-1111-1111-111111111111');
+    t.mock.method(RightsService,'updateAppData',async()=>{});t.mock.method(RightsService,'canSeeReservations',()=>false);t.mock.method(SeoService,'updateMetaTags',()=>{});
+    let requests=0;t.mock.method(DbForms,'getFormByLink',async link=>{assert.equal(link,'test');requests++;return new FormModel({registrationMode:'waitlist',capacity:{limit:12,occupiedPeople:12,remainingPublic:0},fields});});
+    const page=new FormPage('host');page.currentLink='test';page.waitlistScope={offerId:'old'};page.applyTheme=()=>{};
+    let rendered;page.renderForm=model=>rendered=model;
+    page.renderWaitlistManagement({offerStatus:'declined',form:null,formLink:'test',communicationTone:'informal',occasionTitle:'Setkání',orderSymbol:'ABC123',tickets:[]});
+    assert.equal(page.host.querySelector('.result-occasion-title').textContent,'Setkání');
+    assert.match(page.host.querySelector('.result-order-symbol').textContent,/ABC123/);
+    page.host.querySelector('.btn-back-to-form').click();await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(requests,1);assert.equal(rendered.capacity.occupiedPeople,12);
+    assert.equal(page.waitlistScope,null);assert.equal(window.location.hash,'');assert.equal(window.location.search,'?lang=cs');
     d.window.close();
 });

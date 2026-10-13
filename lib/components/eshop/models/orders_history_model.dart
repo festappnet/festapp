@@ -562,6 +562,32 @@ class OrderHistoryModel extends ITrinaRowModel {
     );
   }
 
+  String? get waitlistHistoryState {
+    final lifecycle = const {
+      'offer_sent': 'offered',
+      'waitlist_withdraw': 'withdrawn',
+      'waitlist_decline': 'declined',
+      'waitlist_cancel': 'offer_cancelled',
+      'waitlist_accept': 'admitted',
+    }[data?['action']];
+    if (lifecycle == null) return null;
+    final affected = data?['ticketIds'] is List
+        ? (data!['ticketIds'] as List).length
+        : data?['count'];
+    final label = WaitlistStrings.text(lifecycle);
+    // The count describes the affected tickets, not the whole order lifecycle.
+    final target = affected is num && affected > 0 ? '$label ($affected)' : label;
+    final targetKey = lifecycle == 'offered'
+        ? OrderModel.waitlistedState
+        : lifecycle == 'admitted' && const {
+            OrderModel.orderedState, OrderModel.paidState,
+            OrderModel.sentState, OrderModel.usedState,
+          }.contains(state)
+            ? state!
+            : 'history:$lifecycle';
+    return '${OrderModel.waitlistedState};${OrderModel.stateToLocale(OrderModel.waitlistedState)} → $targetKey;$target';
+  }
+
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     String priceText;
@@ -580,7 +606,9 @@ class OrderHistoryModel extends ITrinaRowModel {
     }
 
     String stateCellFormat;
-    if (previousHistoryRecord != null &&
+    if (waitlistHistoryState != null) {
+      stateCellFormat = waitlistHistoryState!;
+    } else if (previousHistoryRecord != null &&
         state != previousHistoryRecord!.state) {
       final fromStateKey = previousHistoryRecord!.state ?? "";
       final toStateKey = state ?? "";

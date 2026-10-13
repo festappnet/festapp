@@ -221,9 +221,30 @@ export class FormPage extends Component {
         message.appendChild(button); this.host.prepend(message);
     }
 
+    renderWaitlistOutcome(outcome, bundle) {
+        const model = new FormModel({ ...bundle?.form, data: { ...bundle?.form?.data, communication_tone: bundle?.form?.data?.communication_tone || bundle?.communicationTone } });
+        model.registrationMode = 'waitlist';
+        model.occasionTitle = bundle?.occasionTitle || model.occasionTitle;
+        const link = bundle?.form?.link || bundle?.formLink || this.currentLink;
+        OrderResult.render(this.host, true, {
+            waitlistOutcome: outcome,
+            ticketOrder: { order: { order_symbol: bundle?.orderSymbol } },
+        }, model, () => {
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState(null, '', url.pathname + url.search);
+            this.waitlistScope = null; this.waitlistBundle = null;
+            this.currentLink = null; this.init(link);
+        });
+        if (!link) this.host.querySelector('.btn-back-to-form')?.remove();
+    }
+
     renderWaitlistManagement(bundle) {
         this.waitlistBundle = bundle;
         const tone = bundle.form ? new FormModel(bundle.form).communicationTone : null;
+        const terminal = ['declined', 'cancelled', 'expired', 'accepted'].includes(bundle.offerStatus) ? bundle.offerStatus
+            : (bundle.tickets?.length && bundle.tickets.every(person => ['withdrawn', 'cancelled'].includes(person.lifecycle)) ? 'withdrawn' : null);
+        if (terminal) { this.renderWaitlistOutcome(terminal, bundle); return; }
         this.host.replaceChildren();
         if (bundle.form) this.applyTheme(new FormModel(bundle.form));
         const content = document.createElement('section');
@@ -276,7 +297,7 @@ export class FormPage extends Component {
         const tone = bundle?.form ? new FormModel(bundle.form).communicationTone : null;
         const title = operation === 'withdraw'
             ? (ticketIds.length === 1 ? WaitlistStrings.text('withdrawInterest') : WaitlistStrings.withdraw)
-            : WaitlistStrings.decline;
+            : WaitlistStrings.text(ticketIds.length === 1 ? 'declineOne' : 'decline', tone);
         const model = new FormModel({ registrationMode: 'waitlist', fields: [] });
         OrderPreview.show(null, model, { totalPrice: 0, currency: 'CZK' }, async overlay => {
             const button = overlay.querySelector('.btn-submit-order');
@@ -285,7 +306,7 @@ export class FormPage extends Component {
             try {
                 await this.waitlistCommands.command(operation, { ...this.waitlistScope, ticketIds });
                 RouterService.goBackProgrammatically();
-                const link = this.currentLink; this.currentLink = null; await this.init(link);
+                this.renderWaitlistOutcome(operation === 'decline' ? 'declined' : 'withdrawn', bundle);
             } catch (e) {
                 button.disabled = false;
                 overlay.querySelector('[role="alert"]')?.remove();
@@ -296,7 +317,7 @@ export class FormPage extends Component {
         }, null, { fields: [], ticket: [] }, {
             title, submitLabel: title,
             occasionTitle: bundle?.occasionTitle, orderSymbol: bundle?.orderSymbol,
-            explanation: WaitlistStrings.text(operation === 'withdraw' ? (ticketIds.length === 1 ? 'withdrawConfirmationOne' : 'withdrawConfirmation') : 'declineConfirmation', tone),
+            explanation: WaitlistStrings.text(operation === 'withdraw' ? (ticketIds.length === 1 ? 'withdrawConfirmationOne' : 'withdrawConfirmation') : (ticketIds.length === 1 ? 'declineConfirmationOne' : 'declineConfirmation'), tone),
             people: (bundle?.tickets || []).flatMap((person, index) => ticketIds.includes(person.id) ? [ticketLabel(person, index, bundle.form, bundle.tickets.length)] : []),
         });
     }

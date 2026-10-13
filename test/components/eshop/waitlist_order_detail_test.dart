@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:timezone/data/latest.dart' as zones;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:easy_localization/src/localization.dart';
 import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
@@ -222,7 +224,7 @@ void main() {
   });
 
   testWidgets(
-      'offer prepares canonical form dialog after explaining email and expiry',
+      'offer opens canonical preparation directly',
       (tester) async {
     editor();
     final form = FormModel(id: 7, waitlistEnabled: true);
@@ -256,12 +258,7 @@ void main() {
     await tester
         .tap(find.widgetWithText(OutlinedButton, WaitlistStrings.offerPlace));
     await tester.pumpAndSettle();
-    expect(find.text(WaitlistStrings.offerTitle), findsOneWidget);
-    expect(find.text(WaitlistStrings.offerExplanation), findsOneWidget);
-    expect(opened, 0);
-    await tester.tap(
-        find.widgetWithText(ElevatedButton, WaitlistStrings.offerContinue));
-    await tester.pumpAndSettle();
+    expect(find.text(WaitlistStrings.offerExplanation), findsNothing);
     expect(opened, 1);
     expect(find.text('Canonical offer review'), findsOneWidget);
     await tester.tap(find.text('Close review'));
@@ -334,4 +331,46 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, WaitlistStrings.withdraw),
         findsNothing);
   });
+  for (final count in [1, 2]) {
+    testWidgets('offered $count selection enables only scoped offer actions', (tester) async {
+      editor();
+      zones.initializeTimeZones();
+      tz.setLocalLocation(tz.getLocation('Europe/Prague'));
+      tester.view.physicalSize = const Size(1000, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final sent = <Map<String,dynamic>>[];
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: WaitlistOrderDetail(
+        order: OrderModel(id: 5, state: 'waitlisted', form: FormModel(id: 7, waitlistEnabled: true)),
+        loadDetail: (_) async => {
+          'tickets': [for (var i=1;i<=count;i++) {'id':i,'displayName':'Junák $i','lifecycle':'offered'}],
+          'offers': [{'id':'offer-one','expires_at':'2030-01-02T12:00:00Z','slots':[for(var i=1;i<=count;i++) {'ticketId':i,'outcome':'pending'}]}],
+          'capacity': {'canSendOffers':false,'serverTime':'2030-01-01T12:00:00Z'},
+        },
+        executeCommand: (operation,payload) async {sent.add({'operation':operation,...payload}); return {'code':200};},
+      ))));
+      await tester.pumpAndSettle();
+      expect(find.text(WaitlistStrings.full),findsNothing);
+      expect(find.text(WaitlistStrings.offerPlace),findsNothing);
+      expect(find.widgetWithText(FilledButton, count==1 ? WaitlistStrings.text('acceptOne') : WaitlistStrings.text('continueToConfirmation')),findsOneWidget);
+      final decline=find.widgetWithText(TextButton,WaitlistStrings.decline);
+      if(count==2) {
+        expect(tester.widget<TextButton>(decline).onPressed,isNull);
+        expect(find.text(WaitlistStrings.text('offerSelectionRequired')),findsOneWidget);
+        await tester.tap(find.byType(CheckboxListTile).first);
+        await tester.pumpAndSettle();
+      } else {expect(find.byType(Checkbox),findsNothing);}
+      expect(tester.widget<TextButton>(decline).onPressed,isNotNull);
+      await tester.tap(decline);
+      await tester.pumpAndSettle();
+      expect(find.text(WaitlistStrings.declineOfferExplanation),findsOneWidget);
+      expect(sent,isEmpty);
+      await tester.tap(find.widgetWithText(ElevatedButton,WaitlistStrings.decline));
+      await tester.pumpAndSettle();
+      expect(sent.single['ticketIds'],[1]);
+      expect(sent.single['offerId'],'offer-one');
+    });
+  }
+
 }

@@ -98,6 +98,9 @@ export class FormFieldBuilder {
             disabled.appendChild(fieldComponent);
             fieldComponent = disabled;
         }
+        // Waiting ticket fields already contain their own cards. Keep the
+        // product explanation outside those cards instead of nesting them.
+        if (formModel.registrationMode === 'waitlist' && field.type === 'ticket') return fieldComponent;
         const isCard = FormFieldBuilder.isCardDesign(formModel, field);
         
         if (isCard) {
