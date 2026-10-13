@@ -521,7 +521,7 @@
       "manageWaitlistUrl": "Особисте посилання для керування очікуванням",
       "manageWaitlistButton": "Кнопка керування очікуванням (HTML)",
       "offeredCount": "Кількість запропонованих місць",
-      "offerExpiresAt": "Пропозиція діє до (UTC)",
+      "offerExpiresAt": "Пропозиція діє до",
       "offerUrl": "Особисте посилання на пропозицію",
       "offerButton": "Кнопка відкриття пропозиції (HTML)"
     },

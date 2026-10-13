@@ -668,7 +668,7 @@
       "manageWaitlistUrl": "Persönlicher Wartelistenlink",
       "manageWaitlistButton": "Wartelistenverwaltung (HTML-Schaltfläche)",
       "offeredCount": "Anzahl angebotener Plätze",
-      "offerExpiresAt": "Angebot gültig bis (UTC)",
+      "offerExpiresAt": "Angebot gültig bis",
       "offerUrl": "Persönlicher Angebotslink",
       "offerButton": "Angebot öffnen (HTML-Schaltfläche)"
     },
