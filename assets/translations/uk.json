@@ -45,6 +45,8 @@
       "feedback_overdue": "Provider feedback is overdue"
     },
     "kind": {
+      "waitlist_confirmation": "Підтвердження списку очікування",
+      "waitlist_offer": "Пропозиція місць зі списку очікування",
       "order_confirmation": "Order confirmation",
       "order_payment_notice": "Order payment notice",
       "order_tickets": "Order tickets",
@@ -926,15 +928,20 @@
     "acceptedTitle": "Прийняття підтверджено",
     "acceptedExplanation": "Прийняття пропозиції завершено.",
     "continueToConfirmation": "Перейти до підтвердження",
-    "detailSelection": "Виберіть відповідних учасників, щоб завершити очікування, відхилити або скасувати пропозицію.",
-    "completeRegistration": "Доповнити та підтвердити заявку",
-    "retractOffer": "Відкликати пропозицію",
+    "detailSelection": "Виберіть заявки для керування очікуванням.",
+    "completeRegistration": "Заповнити заявку за учасника",
+    "retractOffer": "Скасувати пропозицію місця",
     "recordDecline": "Зафіксувати відмову учасника",
     "organizerOfferActionsHelp": "Відкликання пропозиції звільняє вибрані місця. Зафіксуйте відмову, якщо учасник від них відмовився.",
-    "offerSelectionRequired": "Щоб відхилити або скасувати, виберіть лише учасників цієї пропозиції.",
+    "offerSelectionRequired": "Для керування пропозицією виберіть заявки з однієї пропозиції.",
     "historyOfferSent": "Місце запропоновано",
     "offerSending": "Надсилаємо пропозицію електронною поштою.",
     "offersSending": "Надсилаємо пропозиції електронною поштою.",
+    "manageWaiting": "Керування очікуванням",
+    "activeOffer": "Поточна пропозиція місця",
+    "openOfferFormHelp": "Форма відкриється в новій вкладці. Після завершення оновіть цей огляд.",
+    "offerHistory": "Історія пропозицій",
+    "emptyDetail": "У цій заявці немає учасників, які очікують.",
     "acceptOne": "Підтвердити реєстрацію"
   }
 }

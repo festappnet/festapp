@@ -32,6 +32,8 @@
       "feedback_overdue": "Chybí zpětná vazba poskytovatele"
     },
     "kind": {
+      "waitlist_confirmation": "Potvrzení náhradníka",
+      "waitlist_offer": "Nabídka míst náhradníkovi",
       "order_confirmation": "Potvrzení objednávky",
       "order_payment_notice": "Potvrzení úhrady",
       "order_tickets": "Vstupenky",
@@ -2657,15 +2659,20 @@
     "acceptedTitle": "Přijetí potvrzeno",
     "acceptedExplanation": "Přijetí nabídky je dokončeno.",
     "continueToConfirmation": "Pokračovat k potvrzení",
-    "detailSelection": "Pro ukončení čekání, odmítnutí nebo zrušení nabídky označte příslušné osoby.",
-    "completeRegistration": "Doplnit a potvrdit přihlášku",
-    "retractOffer": "Stáhnout nabídku",
+    "detailSelection": "Pro správu čekání označte příslušné přihlášky.",
+    "completeRegistration": "Vyplnit přihlášku za účastníka",
+    "retractOffer": "Zrušit nabídku místa",
     "recordDecline": "Zaznamenat odmítnutí účastníkem",
     "organizerOfferActionsHelp": "Stažením nabídky uvolníte vybraná místa. Odmítnutí zaznamenejte, pokud je odmítl účastník.",
-    "offerSelectionRequired": "Pro odmítnutí nebo zrušení vyberte pouze osoby z této nabídky.",
+    "offerSelectionRequired": "Pro správu nabídky vyberte přihlášky z jedné nabídky.",
     "historyOfferSent": "Místo nabídnuto",
     "offerSending": "Nabídku odesíláme e-mailem.",
     "offersSending": "Nabídky odesíláme e-mailem.",
+    "manageWaiting": "Správa čekání",
+    "activeOffer": "Aktuální nabídka místa",
+    "openOfferFormHelp": "Formulář se otevře na nové kartě. Po dokončení obnovte tento přehled.",
+    "offerHistory": "Historie nabídek",
+    "emptyDetail": "V této přihlášce nejsou žádné čekající osoby.",
     "acceptOne": "Potvrdit přihlášení"
   }
 }
