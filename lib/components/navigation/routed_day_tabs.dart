@@ -90,9 +90,9 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
     final scope = context.findAncestorWidgetOfExactType<RouterScope>();
     final root = scope?.controller.root;
     if (_root != root) {
-      _root?.removeListener(_sync);
+      _root?.navigationHistory.removeListener(_sync);
       _root = root;
-      _root?.addListener(_sync);
+      _root?.navigationHistory.addListener(_sync);
     }
     _route = context.findAncestorWidgetOfExactType<RouteDataScope>()?.routeData;
     _bind();
@@ -154,10 +154,11 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
 
   Future<void> _writeDay(String value, int revision) async {
     try {
+      // navigate() may complete before NavigationHistory commits the URL.
+      // Only the committed history notification may acknowledge this intent.
       await DayRouteSelection.write(_root!, widget.parameter, value);
     } catch (error) {
       AppLogger.error('Calendar navigation failed: $error');
-    } finally {
       if (mounted && revision == _writeRevision) {
         _pendingDay = null;
         _dayBeforeWrite = null;
@@ -168,7 +169,7 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
 
   @override
   void dispose() {
-    _root?.removeListener(_sync);
+    _root?.navigationHistory.removeListener(_sync);
     _controller?.removeListener(_changed);
     super.dispose();
   }

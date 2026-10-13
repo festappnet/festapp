@@ -58,6 +58,23 @@ class _DelayedCalendarRouter extends FixtureRouter {
   }
 }
 
+class _EarlyCompletionCalendarRouter extends FixtureRouter {
+  _EarlyCompletionCalendarRouter() : super(Access());
+  bool holdNext = false;
+  PageRouteInfo? pendingRoute;
+  @override
+  Future<dynamic> navigate(PageRouteInfo route,
+      {OnNavigationFailure? onFailure}) async {
+    if (holdNext) {
+      pendingRoute = route;
+      return null;
+    }
+    return super.navigate(route, onFailure: onFailure);
+  }
+
+  Future<dynamic> commitPending() => super.navigate(pendingRoute!);
+}
+
 void main() {
   testWidgets('clicking Orders from history returns to current orders',
       (tester) async {
@@ -456,6 +473,26 @@ void main() {
         DefaultTabController.of(tester.element(find.byType(TabBar))).index, 1);
     expect(Uri.parse(router.currentUrl).queryParameters['day'], '2026-10-10');
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    router.dispose();
+  });
+  testWidgets(
+      'a completed navigation future must not restore the old uncommitted URL',
+      (tester) async {
+    final router = _EarlyCompletionCalendarRouter();
+    await mount(tester, router, '/calendar?day=2026-10-10');
+    router.holdNext = true;
+    await tester.tap(find.text('3 October'));
+    await tester.pumpAndSettle();
+    final selected =
+        DefaultTabController.of(tester.element(find.byType(TabBar))).index;
+    await router.commitPending();
+    await tester.pumpAndSettle();
+    expect(selected, 0,
+        reason: 'router future completion precedes browser history commit');
+    expect(Uri.parse(router.currentUrl).queryParameters['day'], '2026-10-03');
+    expect(
+        DefaultTabController.of(tester.element(find.byType(TabBar))).index, 0);
     await tester.pumpWidget(const SizedBox.shrink());
     router.dispose();
   });
