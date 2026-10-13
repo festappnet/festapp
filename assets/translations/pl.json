@@ -596,6 +596,8 @@
     "productType": "Grupa produktów"
   },
   "Waitlist": {
+    "capacityHelpLimited": "Po osiągnięciu limitu kolejne osoby mogą dołączyć do listy rezerwowej, jeśli jest włączona.",
+    "offeredPlacesCount": "Miejsca w ważnych ofertach",
     "settings": "Pojemność i lista rezerwowa",
     "capacity": "Pojemność (osoby)",
     "unlimited": "Bez limitu",
@@ -605,13 +607,13 @@
     "positiveNumber": "Wpisz liczbę dodatnią",
     "activeEntries": "Aktywne osoby oczekujące lub oferty blokują tę zmianę.",
     "title": "Zapis na listę rezerwową",
-    "explanation": "Zapis na listę rezerwową nie gwarantuje udziału. Na razie nie płacisz ani nie wybierasz produktów.",
+    "explanation": "Zapis na listę rezerwową nie gwarantuje udziału. Jeśli zwolni się miejsce, wyślemy ofertę e-mailem. Produkty wybierzesz i opłacisz przy jej przyjęciu.",
     "full": "Brak wolnych miejsc",
     "registered": "Jesteś na liście rezerwowej",
     "register": "Zapisz na listę rezerwową",
     "accept": "Potwierdź wybrane osoby",
     "decline": "Odrzuć wybrane miejsca",
-    "withdraw": "Zakończ oczekiwanie wybranych osób",
+    "withdraw": "Zakończ oczekiwanie",
     "send": "Wyślij oferty",
     "expired": "Ta oferta wygasła",
     "productAvailability": "Produkty wybierasz według aktualnej dostępności. Oferta rezerwuje tylko miejsca dla osób.",
@@ -669,7 +671,13 @@
     "durationHelp": "Czas na przyjęcie wysłanej oferty przez osoby z listy rezerwowej.",
     "blueprintCapacity": "Liczbę miejsc określa plan sali. Lista rezerwowa nie jest dostępna dla planów sali.",
     "saveWithForm": "Zmiany zostaną zapisane razem z formularzem przyciskiem Zapisz.",
-    "applySettings": "Zastosuj ustawienia"
+    "applySettings": "Zastosuj ustawienia",
+    "occupancy": "Zajęte miejsca: {occupied} z {capacity}",
+    "productsAfterOffer": "Produkty wybierzesz i opłacisz dopiero przy przyjęciu oferty miejsca.",
+    "managementExplanation": "Tutaj sprawdzisz status oczekiwania. Gdy zaproponujemy miejsce, wyślemy e-mail z linkiem do potwierdzenia.",
+    "withdrawSelection": "Wybierz osoby, które chcesz usunąć z listy rezerwowej.",
+    "withdrawConfirmation": "Wybrane osoby opuszczą listę rezerwową. Aby wziąć udział, będą musiały zapisać się ponownie.",
+    "declineConfirmation": "Odrzucisz oferowane miejsca dla wybranych osób. Miejsca te zostaną udostępnione innym osobom z listy rezerwowej."
   },
   "EmailTemplates": {
     "subs": {

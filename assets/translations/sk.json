@@ -595,6 +595,8 @@
     "productType": "Skupina produktov"
   },
   "Waitlist": {
+    "capacityHelpLimited": "Po naplnení kapacity sa ďalší záujemcovia môžu prihlásiť len ako náhradníci, ak ich povolíte.",
+    "offeredPlacesCount": "Miesta v platných ponukách",
     "settings": "Kapacita a náhradníci",
     "capacity": "Kapacita (osoby)",
     "unlimited": "Bez obmedzenia",
@@ -604,13 +606,13 @@
     "positiveNumber": "Zadajte kladné číslo",
     "activeEntries": "Aktívne čakajúce osoby alebo ponuky túto zmenu blokujú.",
     "title": "Prihlásenie medzi náhradníkov",
-    "explanation": "Zaradenie medzi náhradníkov nezaručuje účasť. Zatiaľ nič neplatíte ani nevyberáte produkty.",
+    "explanation": "Zaradenie medzi náhradníkov nezaručuje účasť. Ak sa uvoľní miesto, pošleme vám e-mailom ponuku. Produkty si vyberiete a zaplatíte až pri jej prijatí.",
     "full": "Kapacita je naplnená",
-    "registered": "Ste zaradení medzi náhradníkov",
+    "registered": "Ste v poradovníku náhradníkov",
     "register": "Prihlásiť medzi náhradníkov",
     "accept": "Potvrdiť vybrané osoby",
     "decline": "Odmietnuť vybrané miesta",
-    "withdraw": "Ukončiť čakanie vybraných osôb",
+    "withdraw": "Ukončiť čakanie",
     "send": "Poslať ponuky",
     "expired": "Platnosť tejto ponuky vypršala",
     "productAvailability": "Produkty sa vyberajú podľa aktuálnej dostupnosti. Ponuka drží iba miesta pre osoby.",
@@ -668,7 +670,13 @@
     "durationHelp": "Ako dlho majú náhradníci na prijatie odoslanej ponuky.",
     "blueprintCapacity": "Kapacitu určuje počet miest v plániku. Náhradníci nie sú pre plánik dostupní.",
     "saveWithForm": "Zmeny sa uložia spolu s formulárom tlačidlom Uložiť.",
-    "applySettings": "Použiť nastavenia"
+    "applySettings": "Použiť nastavenia",
+    "occupancy": "Obsadenosť: {occupied} z {capacity}",
+    "productsAfterOffer": "Produkty si vyberiete a zaplatíte až po prijatí ponuky miesta.",
+    "managementExplanation": "Tu vidíte stav svojho čakania. Keď vám ponúkneme miesto, pošleme vám e-mail s odkazom na potvrdenie.",
+    "withdrawSelection": "Vyberte osoby, ktorých čakanie chcete ukončiť.",
+    "withdrawConfirmation": "Vybraným osobám ukončíte čakanie. Pre prípadnú ďalšiu účasť sa budú musieť znova prihlásiť.",
+    "declineConfirmation": "Odmietnete ponúknuté miesta pre vybrané osoby. Tieto miesta sa uvoľnia ďalším náhradníkom."
   },
   "EmailTemplates": {
     "subs": {

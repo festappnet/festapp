@@ -4,6 +4,8 @@ class WaitlistStrings {
   static String text(String key) => 'Waitlist.$key'.tr();
   static String get limitCapacity => text('limitCapacity');
   static String get capacityHelp => text('capacityHelp');
+  static String get capacityHelpLimited => text('capacityHelpLimited');
+  static String get offeredPlacesCount => text('offeredPlacesCount');
   static String get waitlistOn => text('waitlistOn');
   static String get waitlistOff => text('waitlistOff');
   static String get waitlistHelp => text('waitlistHelp');

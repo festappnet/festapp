@@ -180,6 +180,8 @@ export class FormModel {
         }
 
         if (this.registrationMode === 'waitlist') {
+            // Presentation retains product choices; the session only sees personal fields.
+            this.displayFields = this.visibleFields.map(f => ({ ...f, subFields: f.subFields?.slice() }));
             const personal = f => !['product_type', 'spot'].includes(f.type) && !f.productTypeId && !f.data?.product_dependent;
             this.relatedFields = this.relatedFields.filter(personal);
             if (ticketField?.subFields) ticketField.subFields = ticketField.subFields.filter(personal);

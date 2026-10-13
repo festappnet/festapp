@@ -2542,6 +2542,8 @@
     "deleteConfirm": "Delete this draft?"
   },
   "Waitlist": {
+    "capacityHelpLimited": "Once capacity is reached, further applicants can join the waiting list if enabled.",
+    "offeredPlacesCount": "Places in active offers",
     "settings": "Capacity and waitlist",
     "capacity": "Capacity (people)",
     "unlimited": "Unlimited",
@@ -2551,13 +2553,13 @@
     "positiveNumber": "Enter a positive number",
     "activeEntries": "Active waiting people or offers prevent this change.",
     "title": "Join the waitlist",
-    "explanation": "Joining the waitlist does not guarantee attendance. No payment or product selection is required.",
+    "explanation": "Joining the waitlist does not guarantee admission. If a place becomes available, we will email you an offer. You choose and pay for products when accepting that offer.",
     "full": "Capacity is full",
-    "registered": "You have joined the waitlist",
+    "registered": "You are on the waitlist",
     "register": "Join the waitlist",
     "accept": "Confirm selected people",
     "decline": "Decline selected places",
-    "withdraw": "Stop waiting for selected people",
+    "withdraw": "Leave the waitlist",
     "send": "Send offers",
     "expired": "This offer has expired",
     "productAvailability": "Products are selected subject to current availability. The offer reserves places for people only.",
@@ -2615,6 +2617,12 @@
     "durationHelp": "How long waitlisted people have to accept an offer you send.",
     "blueprintCapacity": "Capacity is determined by the seat map. Waitlisting is not available for seat maps.",
     "saveWithForm": "Changes are saved with the form using Save.",
-    "applySettings": "Apply settings"
+    "applySettings": "Apply settings",
+    "occupancy": "Occupancy: {occupied} of {capacity}",
+    "productsAfterOffer": "You can choose and pay for products when you accept a place offer.",
+    "managementExplanation": "You can see your waiting status here. When we offer you a place, we will email you a link to confirm it.",
+    "withdrawSelection": "Select the people you want to remove from the waitlist.",
+    "withdrawConfirmation": "The selected people will leave the waitlist. They will need to register again if they want to attend.",
+    "declineConfirmation": "You will decline the offered places for the selected people. These places will be released to other people on the waitlist."
   }
 }

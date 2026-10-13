@@ -1,3 +1,5 @@
+import { html as htmlText } from '../../utils/html.js';
+import { WaitlistStrings } from './waitlist_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { formatPrice } from '../../utils/formatters.js';
 import { FormStrings } from './form_strings.js';
@@ -25,9 +27,9 @@ if (typeof document !== 'undefined') {
 
 export class OrderPreview {
 
-    static show(form, formModel, priceData, onConfirm, onClose, precalculatedPayload = null) {
+    static show(form, formModel, priceData, onConfirm, onClose, precalculatedPayload = null, presentation = {}) {
         // 1. Calculate and Prepare Data
-        const data = OrderPreview._prepareData(form, formModel, priceData, precalculatedPayload);
+        const data = { ...OrderPreview._prepareData(form, formModel, priceData, precalculatedPayload), presentation };
         
         // 2. Render Overlay
         let overlay = document.getElementById('order-preview-overlay');
@@ -370,13 +372,14 @@ export class OrderPreview {
 
 
         // Deposit logic: check if any selected ticket product has deposit data
-        const depositInfo = OrderPreview._getDepositInfo(payload, formModel, totalPriceData.currency);
+        const depositInfo = formModel.registrationMode === 'waitlist' ? null : OrderPreview._getDepositInfo(payload, formModel, totalPriceData.currency);
 
         // Visual-only meta surcharge sums per currency (e.g. on-site EUR doplatek).
         // Never added to totalPrice — surcharge doesn't go through the bank.
         const metaSurchargeSums = FormHelper.calculateMetaSurchargeSums(payload, formModel);
 
         return {
+            registrationMode: formModel.registrationMode,
             personalInfo,
             tickets,
             totalPrice: totalPriceData.totalPrice,
@@ -456,7 +459,8 @@ export class OrderPreview {
 
     static _render(data) {
         // Determine labels
-        const itemLabel = data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
+        const isWaitlist = data.registrationMode === 'waitlist';
+        const itemLabel = isWaitlist ? WaitlistStrings.text('person') : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
 
         // Header
         let html = `
@@ -465,17 +469,22 @@ export class OrderPreview {
                     <div class="order-preview-handle"></div>
                 </div>
                 <div class="order-preview-header">
-                    <h2>${PublicOrderStrings.summary}</h2>
+                    <h2>${data.presentation?.title || (isWaitlist ? WaitlistStrings.title : PublicOrderStrings.summary)}</h2>
                     <button class="btn-close-preview"><i class="material-icons">close</i></button>
                 </div>
                 <div class="order-preview-body">
         `;
 
+        if (isWaitlist) html += `<p class="waitlist-intro preview-section">${data.presentation?.explanation || WaitlistStrings.explanation}</p>`;
+
+        if (data.presentation?.people) {
+            html += `<div class="preview-section">${data.presentation.people.map(name => htmlText`${name}`).join('<br>')}</div>`;
+        }
         // Personal Info
         if (data.personalInfo.length > 0) {
             html += `<div class="preview-section">`;
             data.personalInfo.forEach((item, index) => {
-                const priceHtml = item.price ? `<span class="preview-price">+ ${item.price}</span>` : '';
+                const priceHtml = !isWaitlist && item.price ? `<span class="preview-price">+ ${item.price}</span>` : '';
                 html += `
                     <div class="preview-info-row">
                         <span class="preview-label">${item.label}:</span>
@@ -502,8 +511,8 @@ export class OrderPreview {
                   
                   // Spot/Fields
                   ticket.rows.forEach((row, rIndex) => {
-                      const priceHtml = row.price ? `<span class="preview-price">+ ${row.price}</span>` : '';
-                      const metaHtml = row.metaSurcharge
+                      const priceHtml = !isWaitlist && row.price ? `<span class="preview-price">+ ${row.price}</span>` : '';
+                      const metaHtml = !isWaitlist && row.metaSurcharge
                           ? `<div class="preview-meta-surcharge">${String(row.metaSurcharge).replace(/\n/g, '<br>')}</div>`
                           : '';
                       html += `
@@ -565,7 +574,7 @@ export class OrderPreview {
                </div>`
             : '';
 
-        html += `
+        if (!isWaitlist) html += `
              <div class="preview-total-price">
                  ${totalPriceString}
                  ${metaHtml}
@@ -581,7 +590,7 @@ export class OrderPreview {
         const tone = data.tone; 
         const hasTickets = data.hasTickets;
         
-        const submitLabel = PublicOrderStrings.getSubmitButton(hasTickets, tone);
+        const submitLabel = data.presentation?.submitLabel || (isWaitlist ? WaitlistStrings.register : PublicOrderStrings.getSubmitButton(hasTickets, tone));
 
         html += `
              <div class="preview-actions">

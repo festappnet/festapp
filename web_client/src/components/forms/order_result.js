@@ -8,6 +8,7 @@ export class OrderResult {
     static render(container, success, resultData, formModel, onClose) {
         container._orderDeliveryObserver?.stop();
         // Prepare Data
+        const isWaitlist = formModel.registrationMode === 'waitlist';
         const tone = formModel.communicationTone; 
         // We need to know if tickets were involved. 
         // FormModel knows fields. If ticket field exists -> hasTickets = true.
@@ -18,9 +19,9 @@ export class OrderResult {
         let colorClass = 'success-color'; 
 
         if (success) {
-            title = PublicOrderStrings.successTitle(tone, hasTickets);
+            title = isWaitlist ? WaitlistStrings.registered : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
-            subtitle = PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+            subtitle = isWaitlist ? WaitlistStrings.explanation : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
             const prodTitle = (resultData.product && resultData.product.title) || "";
             title = PublicOrderStrings.productUnavailable(prodTitle);
@@ -162,7 +163,7 @@ export class OrderResult {
             container.querySelector('.result-order-symbol').textContent = `${OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;
         }
 
-        const paymentQr = success ? resultData?.payment_qr : null;
+        const paymentQr = success && !isWaitlist ? resultData?.payment_qr : null;
         const paymentHost = container.querySelector('.result-payment-details');
         if (paymentHost && paymentQr) {
             // Keep the confirmation outside the card; one disclosure reveals every payment option.
@@ -282,7 +283,7 @@ export class OrderResult {
             paymentHost.appendChild(more);
         }
 
-        if (success && resultData?.delivery_receipt) {
+        if (success && !isWaitlist && resultData?.delivery_receipt) {
             container._orderDeliveryObserver = observeOrderDelivery(resultData.delivery_receipt, state => {
                 if (!container.isConnected) { container._orderDeliveryObserver?.stop(); return; }
                 const email = resultData?.ticketOrder?.order?.data?.email;

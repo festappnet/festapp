@@ -212,7 +212,6 @@ export class FormPage extends Component {
         const button = document.createElement('button'); button.type = 'button';
         button.textContent = latest.registrationMode === 'waitlist' ? WaitlistStrings.text('regularToWaitlist') : WaitlistStrings.refresh;
         button.onclick = () => {
-            if (latest.registrationMode === 'waitlist' && !window.confirm(WaitlistStrings.explanation)) return;
             if (FormAvailabilityService.renderStatus(this.host, latest, FormAvailabilityService.getStatus(latest))) return;
             this.renderForm(latest, false);
             for (const [id, value] of current.state.fields) this.currentSession.state.fields.set(id, value);
@@ -222,56 +221,78 @@ export class FormPage extends Component {
         message.appendChild(button); this.host.prepend(message);
     }
 
-    async submitWaitlistRegistration(model) {
-        const button = this.host.querySelector('.btn-submit');
-        if (button.disabled) return;
-        button.disabled = true;
-        try {
-            const data = await this.waitlistCommands.command('register', waitlistRegistrationPayload(this.currentSession));
-            this.cleanup({ preserveEditButton: true });
-            this.host.replaceChildren();
-            const result = document.createElement('p');
-            result.setAttribute('role', 'status');
-            result.textContent = `${WaitlistStrings.registered} ${data.order?.order_symbol || ''}. ${WaitlistStrings.explanation} ${WaitlistStrings.queued}`;
-            this.host.appendChild(result);
-        } catch (e) {
-            button.disabled = false;
-            const error = document.createElement('p'); error.setAttribute('role', 'alert');
-            error.textContent = WaitlistStrings.text(e.message);
-            this.host.appendChild(error);
-        }
-    }
-
     renderWaitlistManagement(bundle) {
+        this.waitlistBundle = bundle;
         this.host.replaceChildren();
+        if (bundle.form) this.applyTheme(new FormModel(bundle.form));
+        const content = document.createElement('section');
+        content.className = 'form-wrapper waitlist-management';
         const title = document.createElement('h2');
         title.textContent = bundle.offerStatus ? WaitlistStrings.text(bundle.offerStatus) : (this.waitlistScope.offerId ? WaitlistStrings.expired : WaitlistStrings.title);
-        this.host.appendChild(title);
-        const selected = new Set();
-        for (const person of bundle.tickets) {
-            const label = document.createElement('label'); label.style.cssText = 'display:block;padding:12px';
-            const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
-            checkbox.disabled = ['admitted', 'cancelled', 'withdrawn'].includes(person.lifecycle);
-            checkbox.onchange = () => checkbox.checked ? selected.add(person.id) : selected.delete(person.id);
-            label.append(checkbox, document.createTextNode(` ${ticketLabel(person)} ${WaitlistStrings.text(person.lifecycle)}`));
-            this.host.appendChild(label);
+        const intro = document.createElement('p');
+        intro.className = 'waitlist-intro';
+        intro.textContent = WaitlistStrings.text('managementExplanation');
+        content.append(title, intro);
+        this.host.appendChild(content);
+        const eligible = bundle.tickets.filter(person => !['admitted', 'cancelled', 'withdrawn'].includes(person.lifecycle));
+        const selected = new Set(eligible.length === 1 ? [eligible[0].id] : []);
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'btn btn-outline-secondary waitlist-withdraw';
+        button.textContent = WaitlistStrings.withdraw;
+        button.disabled = !selected.size;
+        for (const [index, person] of bundle.tickets.entries()) {
+            const label = document.createElement('label'); label.className = 'waitlist-person-row form-field-card';
+            if (eligible.length > 1 && eligible.includes(person) && !this.waitlistScope.offerId) {
+                const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
+                checkbox.className = 'form-check-input';
+                checkbox.onchange = () => {
+                    checkbox.checked ? selected.add(person.id) : selected.delete(person.id);
+                    button.disabled = !selected.size;
+                };
+                label.appendChild(checkbox);
+            }
+            const name = document.createElement('strong');
+            name.textContent = ticketLabel(person, index);
+            const status = document.createElement('span'); status.className = 'waitlist-person-status';
+            status.textContent = WaitlistStrings.text(person.lifecycle);
+            label.append(name, status); content.appendChild(label);
         }
-        if (!this.waitlistScope.offerId) {
-            const button = document.createElement('button'); button.textContent = WaitlistStrings.withdraw;
+        if (!this.waitlistScope.offerId && eligible.length) {
+            if (eligible.length > 1) {
+                const hint = document.createElement('p'); hint.textContent = WaitlistStrings.text('withdrawSelection');
+                content.appendChild(hint);
+            }
             button.onclick = () => this.resolveWaitlist('withdraw', [...selected]);
-            this.host.appendChild(button);
+            content.appendChild(button);
         }
     }
 
     async resolveWaitlist(operation, ticketIds) {
-        if (!ticketIds.length || !window.confirm(WaitlistStrings.confirm)) return;
-        try {
-            await this.waitlistCommands.command(operation, { ...this.waitlistScope, ticketIds });
-            const link = this.currentLink; this.currentLink = null; await this.init(link);
-        } catch (e) {
-            const error = document.createElement('p'); error.setAttribute('role', 'alert');
-            error.textContent = WaitlistStrings.text(e.message); this.host.appendChild(error);
-        }
+        if (!ticketIds.length) return;
+        const { OrderPreview } = await import('./order_preview.js');
+        const bundle = this.waitlistBundle;
+        const title = operation === 'withdraw' ? WaitlistStrings.withdraw : WaitlistStrings.decline;
+        const model = new FormModel({ registrationMode: 'waitlist', fields: [] });
+        OrderPreview.show(null, model, { totalPrice: 0, currency: 'CZK' }, async overlay => {
+            const button = overlay.querySelector('.btn-submit-order');
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                await this.waitlistCommands.command(operation, { ...this.waitlistScope, ticketIds });
+                RouterService.goBackProgrammatically();
+                const link = this.currentLink; this.currentLink = null; await this.init(link);
+            } catch (e) {
+                button.disabled = false;
+                overlay.querySelector('[role="alert"]')?.remove();
+                const error = document.createElement('p'); error.setAttribute('role', 'alert');
+                error.textContent = WaitlistStrings.text(e.message);
+                overlay.querySelector('.order-preview-body').appendChild(error);
+            }
+        }, null, { fields: [], ticket: [] }, {
+            title, submitLabel: title,
+            explanation: WaitlistStrings.text(operation === 'withdraw' ? 'withdrawConfirmation' : 'declineConfirmation'),
+            people: (bundle?.tickets || []).flatMap((person, index) => ticketIds.includes(person.id) ? [ticketLabel(person, index)] : []),
+        });
     }
 
     renderEditButton(link) {
@@ -343,6 +364,7 @@ export class FormPage extends Component {
     }
 
     renderForm(formModel, showPreview) {
+        if (formModel.offerBundle) this.waitlistBundle = formModel.offerBundle;
         this.currentPriceWidget?.destroy();
         this.currentPriceWidget = null;
         // Initialize Session
@@ -553,9 +575,7 @@ export class FormPage extends Component {
         const isValid = FormValidator.validateAndShowErrors(form, formModel, this.currentSession);
         
         if (isValid) {
-            if (formModel.registrationMode === 'waitlist') {
-                if (window.confirm(WaitlistStrings.explanation)) this.submitWaitlistRegistration(formModel);
-            } else this.handlePreview(form, formModel);
+            this.handlePreview(form, formModel);
         }
     }
 
@@ -652,7 +672,10 @@ export class FormPage extends Component {
         }
 
         // 4. Submit via Network
-        const request = formModel.offerBundle
+        const request = formModel.registrationMode === 'waitlist'
+            ? this.waitlistCommands.command('register', waitlistRegistrationPayload(this.currentSession))
+                .then(data => ({ success: true, data: { ...data, ticketOrder: { order: data.order } } }))
+            : formModel.offerBundle
             ? this.waitlistCommands.accept(this.waitlistScope, formModel.selectedTicketIds, {
                 ...payload, ticket: payload.ticket.map(t => ({ ...t, fields: t.fields.map(f => {
                     const def = this.currentSession._getTicketSubDef(f._subFieldId);
