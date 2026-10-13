@@ -18,7 +18,10 @@ SET search_path = public, extensions AS $$
             RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
         END IF;
 
-        PERFORM public.check_order_is_mutable(order_id);
+        PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
+        IF (SELECT state FROM eshop.orders WHERE id=order_id)<>'waitlisted' THEN
+          PERFORM public.check_order_is_mutable(order_id);
+        END IF;
 
         -- Proceed to update note_hidden if the user is authorized
         UPDATE eshop.orders

@@ -1,5 +1,5 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
@@ -132,7 +132,8 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
     _confirmingCancel = true;
     final discard = await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => AppAlertDialog(
+            onClose: () => Navigator.pop(context, false),
             title: Text(HtmlStrings.discardDraft),
             actions: [
               TextButton(
@@ -170,7 +171,8 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
         final small = MediaQuery.sizeOf(context).width < 650;
         final content = SafeArea(
           child: Scaffold(
-            appBar: AppBar(
+            appBar: AppDialogAppBar(
+              onClose: _requestCancel,
               title: Text(widget.title ?? CommonStrings.edit),
               actions: [
                 if (_fullPage)
@@ -191,12 +193,6 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                     icon: const Icon(Icons.open_in_full),
                   ),
               ],
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () async {
-                  if (await _canClose() && context.mounted) _finish(false);
-                },
-              ),
             ),
             body: _fullPage
                 ? Padding(
@@ -251,10 +247,9 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
             ),
           ),
         );
-        return CallbackShortcuts(
-          bindings: {
-            const SingleActivator(LogicalKeyboardKey.escape): _requestCancel,
-          },
+        return AppDialogDismissal(
+          onClose: _requestCancel,
+          autofocus: !_fullPage,
           child: PopScope(
             canPop: !widget.ownsController || !widget.controller.isDirty,
             onPopInvokedWithResult: (didPop, _) async {
@@ -264,8 +259,10 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
             child: _fullPage
                 ? content
                 : small
-                    ? Dialog.fullscreen(child: content)
-                    : Dialog(
+                    ? AppDialog.fullscreen(
+                        onClose: _requestCancel, child: content)
+                    : AppDialog(
+                        onClose: _requestCancel,
                         clipBehavior: Clip.antiAlias,
                         child: SizedBox(
                           width: 1000,

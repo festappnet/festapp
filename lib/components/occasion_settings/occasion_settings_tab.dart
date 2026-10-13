@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import '../ticket_layout/ticket_layout_saver.dart';
 import 'dart:async';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
@@ -281,7 +282,8 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       if (mounted && layoutConflict) {
         final reload = await showDialog<bool>(
             context: context,
-            builder: (c) => AlertDialog(
+            builder: (c) => AppAlertDialog(
+                    onClose: () => Navigator.pop(c, false),
                     content: Text(TicketLayoutStrings.conflict),
                     actions: [
                       TextButton(
@@ -340,9 +342,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   Future<void> _confirmDelete() async {
     bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
         insetPadding: const EdgeInsets.all(16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
         title: Text(OccasionSettingsStrings.deleteEvent),
         content: Text(OccasionSettingsStrings.deleteEventConfirmation),
         actions: [

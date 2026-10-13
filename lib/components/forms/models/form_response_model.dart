@@ -88,8 +88,11 @@ class FormResponseModel extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     Map<String, TrinaCell> cells = {
+      EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: order),
+      EshopColumns.ORDER_WAITLIST:
+          TrinaCell(value: order?.waitlistSummary?.label ?? ''),
       EshopColumns.ORDER_ID: TrinaCell(value: id),
-      EshopColumns.ORDER_SYMBOL: TrinaCell(value: order!.toBasicString()),
+      EshopColumns.ORDER_SYMBOL: TrinaCell(value: order!.orderSymbol ?? ""),
       EshopColumns.ORDER_STATE:
           TrinaCell(value: OrderModel.formatState(order!.state!)),
       EshopColumns.TICKET_PRODUCTS: TrinaCell(

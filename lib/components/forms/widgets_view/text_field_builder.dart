@@ -69,7 +69,8 @@ class TextFieldBuilder extends StatelessWidget {
 
     return FormBuilderField<String?>(
       name: fieldHolder.id.toString(),
-      initialValue: isPhone ? '+420' : null,
+      initialValue:
+          fieldHolder.defaultValue?.toString() ?? (isPhone ? '+420' : null),
       validator: validators.isNotEmpty
           ? FormBuilderValidators.compose(validators)
           : null,
@@ -115,6 +116,8 @@ class TextFieldBuilder extends StatelessWidget {
 
     return FormBuilderField<String?>(
       name: fieldHolder.id.toString(),
+      initialValue:
+          fieldHolder.defaultValue?.toString() ?? (isPhone ? '+420' : null),
       validator: FormBuilderValidators.compose(validators),
       autovalidateMode: isPhone
           ? AutovalidateMode.onUnfocus
@@ -383,10 +386,9 @@ class _CardTextFieldState extends State<_CardTextField> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                    if (widget.isPhone && _showPrefixes)
-                      _PhonePrefixHelpers(
-                        prefixes:
-                            widget.formHolder.phonePrefixes,
+                  if (widget.isPhone && _showPrefixes)
+                    _PhonePrefixHelpers(
+                      prefixes: widget.formHolder.phonePrefixes,
                       onPrefixSelected: (prefix) {
                         // Keep focus to prevent onUnfocus validation
                         _focusNode.requestFocus();
@@ -457,13 +459,11 @@ class _PhonePrefixHelpers extends StatefulWidget {
 }
 
 class _PhonePrefixHelpersState extends State<_PhonePrefixHelpers> {
-
   @override
   Widget build(BuildContext context) {
     // Default to +420, +421 if empty
-    final prefixes = widget.prefixes.isNotEmpty
-        ? widget.prefixes
-        : ['+420', '+421'];
+    final prefixes =
+        widget.prefixes.isNotEmpty ? widget.prefixes : ['+420', '+421'];
 
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),

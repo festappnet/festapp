@@ -294,7 +294,8 @@ BEGIN
 
   -- 7a. Forms – adjust the blueprint foreign key via mapping and update the link to be unique.
   FOR rec IN
-    SELECT id, data, key, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, title
+    SELECT id, data, key, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, title,
+      participant_capacity, waitlist_enabled, show_remaining_capacity, waitlist_offer_duration_seconds
     FROM public.forms
     WHERE occasion = oc
   LOOP
@@ -303,7 +304,7 @@ BEGIN
       WHERE t.old_id = rec.blueprint;
 
     INSERT INTO public.forms
-      (created_at, data, key, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, updated_at, title)
+      (created_at, data, key, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, updated_at, title, participant_capacity, waitlist_enabled, show_remaining_capacity, waitlist_offer_duration_seconds)
     VALUES (now(), rec.data, uuid_generate_v4(), new_occ, rec.type,
             CASE WHEN v_source_unit = v_target_unit OR EXISTS (
               SELECT 1 FROM eshop.unit_bank_accounts uba
@@ -315,7 +316,7 @@ BEGIN
                 WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)
               THEN false ELSE rec.is_open END,
             replace(uuid_generate_v4()::text, '-', ''),
-            COALESCE(new_bp_id, rec.blueprint), rec.header, rec.header_off, now(), rec.title)
+            COALESCE(new_bp_id, rec.blueprint), rec.header, rec.header_off, now(), rec.title, rec.participant_capacity, rec.waitlist_enabled, rec.show_remaining_capacity, rec.waitlist_offer_duration_seconds)
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_forms (old_id, new_id)

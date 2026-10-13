@@ -1,6 +1,25 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class EmailTemplatesStrings {
+  static String get subParticipantCount =>
+      'EmailTemplates.subs.participantCount'.tr();
+  static String get subManageWaitlistUrl =>
+      'EmailTemplates.subs.manageWaitlistUrl'.tr();
+  static String get subManageWaitlistButton =>
+      'EmailTemplates.subs.manageWaitlistButton'.tr();
+  static String get subOfferedCount => 'EmailTemplates.subs.offeredCount'.tr();
+  static String get subOfferExpiresAt =>
+      'EmailTemplates.subs.offerExpiresAt'.tr();
+  static String get subOfferUrl => 'EmailTemplates.subs.offerUrl'.tr();
+  static String get subOfferButton => 'EmailTemplates.subs.offerButton'.tr();
+  static String get usageWaitlistConfirmationTitle =>
+      'EmailTemplates.usage.waitlistConfirmation_title'.tr();
+  static String get usageWaitlistConfirmationDescription =>
+      'EmailTemplates.usage.waitlistConfirmation_description'.tr();
+  static String get usageWaitlistOfferTitle =>
+      'EmailTemplates.usage.waitlistOffer_title'.tr();
+  static String get usageWaitlistOfferDescription =>
+      'EmailTemplates.usage.waitlistOffer_description'.tr();
   // --- Substitution Descriptions ---
   static String get subPlatformLinks =>
       'EmailTemplates.subs.platformLinks'.tr();

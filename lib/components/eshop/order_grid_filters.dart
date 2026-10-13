@@ -9,24 +9,30 @@ import 'models/orders_history_model.dart';
 import 'orders_strings.dart';
 
 class OrderGridFilters {
-  static bool orderIsNonCancelled(TrinaRow row) {
+  static OrderModel? order(TrinaRow row) =>
+      row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
+  static bool orderIsActive(TrinaRow row) =>
+      order(row)?.isActive ?? orderIsNonCancelled(row);
+  static bool allows(TrinaRow row, String action) =>
+      order(row)?.allows(action) ?? false;
+
+  static String? _orderState(TrinaRow row) {
     final order =
         row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
     final history = row.cells[EshopColumns.HISTORY_MODEL_REFERENCE]?.value
         as OrderHistoryModel?;
-    final state = order?.state ??
+    return order?.state ??
         history?.orderModel?.state ??
         row.cells[EshopColumns.ORDER_STATE]?.value?.toString().split(';').first;
-    return state != OrderModel.stornoState;
   }
 
+  static bool orderIsNonCancelled(TrinaRow row) =>
+      _orderState(row) != OrderModel.stornoState;
+
   static bool ticketIsNonCancelled(TrinaRow row) =>
-      row.cells[EshopColumns.TICKET_STATE]?.value
-              ?.toString()
-              .split(';')
-              .first !=
-          OrderModel.stornoState &&
-      orderIsNonCancelled(row);
+      ![OrderModel.stornoState, OrderModel.waitlistedState].contains(
+          row.cells[EshopColumns.TICKET_STATE]?.value?.toString().split(';').first) &&
+      ![OrderModel.stornoState, OrderModel.waitlistedState].contains(_orderState(row));
 
   static Widget filterButton<T extends ITrinaRowModel>(
     BuildContext context,

@@ -20,6 +20,7 @@ BEGIN
         RAISE EXCEPTION 'User is not editor.';
     END IF;
 
+    PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
     -- Use the same parent lock order as ticket cancellation.
     PERFORM 1 FROM eshop.orders WHERE id=order_id FOR UPDATE;
 

@@ -8,6 +8,8 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Cache-Control": "no-store",
+  "Referrer-Policy": "no-referrer",
 };
 
 Deno.serve(async (req) => {
@@ -19,9 +21,16 @@ Deno.serve(async (req) => {
     const {
       orderDetails: directOrderDetails,
       replacement,
+      waitlistAcceptance,
       commandId: requestedCommandId,
       clientId: requestedClientId,
     } = await req.json();
+    if (waitlistAcceptance && (!requestedCommandId || !requestedClientId)) {
+      return new Response(
+        JSON.stringify({ error: "Missing command identity" }),
+        { status: 400, headers: corsHeaders },
+      );
+    }
     const identity = resolveTicketOrderCommandIdentity(
       requestedCommandId,
       requestedClientId,
@@ -37,7 +46,7 @@ Deno.serve(async (req) => {
       );
     }
     const { commandId, clientId } = identity;
-    if (!directOrderDetails && !replacement) {
+    if (!directOrderDetails && !replacement && !waitlistAcceptance) {
       return new Response(JSON.stringify({ error: "Missing order payload" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
@@ -53,10 +62,36 @@ Deno.serve(async (req) => {
         },
       );
     }
-    const rpcName = replacement
+    const rpcName = waitlistAcceptance
+      ? "execute_waitlist_command_client_sync_v1"
+      : replacement
       ? "replace_blueprint_order_client_sync_v1"
       : "create_ticket_order_client_sync_v1";
-    const rpcParameters = replacement
+    let acceptanceActor: string | null = null;
+    if (
+      waitlistAcceptance && authorizationHeader &&
+      authorizationHeader !== `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`
+    ) {
+      const { data, error } = await createUserClient(authorizationHeader).auth
+        .getUser();
+      if (error || !data.user) {
+        return new Response(
+          JSON.stringify({ error: "Invalid authorization" }),
+          { status: 401, headers: corsHeaders },
+        );
+      }
+      acceptanceActor = data.user.id;
+    }
+    const rpcParameters = waitlistAcceptance
+      ? {
+        p_operation: "accept",
+        p_payload: { ...waitlistAcceptance, orderDetails: directOrderDetails },
+        p_command_id: commandId,
+        p_client_id: clientId,
+        p_actor: acceptanceActor,
+        p_deliveries: [],
+      }
+      : replacement
       ? {
         p_spot_ids: replacement.spotIds,
         p_input_data: replacement.inputData,
@@ -68,8 +103,16 @@ Deno.serve(async (req) => {
         p_client_id: clientId,
       };
     let ticketOrderResponse: any;
+    let acceptanceEnvelope: any;
+    const acceptanceFailure = (message: string) => ({
+      ...acceptanceEnvelope,
+      status: "rejected",
+      code: 503,
+      data: { code: 503, errorCode: "PAYMENT_PREPARATION_FAILED", message },
+      sync: { replacements: [] },
+    });
 
-    if (authorizationHeader) {
+    if (authorizationHeader && !waitlistAcceptance) {
       console.info("Creating ticket order via user-scoped authorization");
       const userClient = createUserClient(authorizationHeader);
 
@@ -89,6 +132,16 @@ Deno.serve(async (req) => {
         rpcName,
         rpcParameters,
       );
+      if (waitlistAcceptance && !error) acceptanceEnvelope = data;
+      if (waitlistAcceptance && error) {
+        return new Response(
+          JSON.stringify({ error: "waitlist_command_failed" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
       ticketOrderResponse = error
         ? { code: 500, message: error.message }
         : data?.data ?? data;
@@ -112,17 +165,26 @@ Deno.serve(async (req) => {
 
     if (ticketOrder.code !== 200) {
       console.error("Ticket order error:", ticketOrder);
-      return new Response(JSON.stringify(ticketOrder), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      return new Response(
+        JSON.stringify(waitlistAcceptance ? acceptanceEnvelope : ticketOrder),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        },
+      );
     }
 
-    ticketOrder.order = await withOrderIdentity(ticketOrder.order, async (params) => {
-      const { data, error } = await supabaseAdmin.rpc("read_order_identity", params);
-      if (error) throw error;
-      return data;
-    });
+    ticketOrder.order = await withOrderIdentity(
+      ticketOrder.order,
+      async (params) => {
+        const { data, error } = await supabaseAdmin.rpc(
+          "read_order_identity",
+          params,
+        );
+        if (error) throw error;
+        return data;
+      },
+    );
     const order = ticketOrder.order;
     if (Number(order?.payment_info?.amount) > 0) {
       const { data: services, error: servicesError } = await supabaseAdmin.rpc(
@@ -140,12 +202,16 @@ Deno.serve(async (req) => {
           { p_order_id: order.id },
         );
         if (stateError) throw stateError;
-        if (orderState === "storno") {
+        if (["storno", "waitlisted"].includes(orderState)) {
           return new Response(
-            JSON.stringify({
-              code: 503,
-              message: "Fakturoid could not complete this order",
-            }),
+            JSON.stringify(
+              waitlistAcceptance
+                ? acceptanceFailure("Fakturoid could not complete this order")
+                : {
+                  code: 503,
+                  message: "Fakturoid could not complete this order",
+                },
+            ),
             {
               headers: { ...corsHeaders, "Content-Type": "application/json" },
               status: 200,
@@ -175,10 +241,14 @@ Deno.serve(async (req) => {
             );
             if (abortError) throw abortError;
             return new Response(
-              JSON.stringify({
-                code: 503,
-                message: "Fakturoid could not complete this order",
-              }),
+              JSON.stringify(
+                waitlistAcceptance
+                  ? acceptanceFailure("Fakturoid could not complete this order")
+                  : {
+                    code: 503,
+                    message: "Fakturoid could not complete this order",
+                  },
+              ),
               {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
                 status: 200,
@@ -238,13 +308,25 @@ Deno.serve(async (req) => {
       if (!error && data === true) deliveryReceipt = capability;
     } catch { /* success and QR remain authoritative */ }
     return new Response(
-      JSON.stringify({
-        ticketOrder,
-        payment_qr: paymentQr,
-        code: 200,
-        delivery: "queued",
-        ...(deliveryReceipt ? { delivery_receipt: deliveryReceipt } : {}),
-      }),
+      JSON.stringify(
+        waitlistAcceptance
+          ? {
+            ...acceptanceEnvelope,
+            data: {
+              ...ticketOrder,
+              payment_qr: paymentQr,
+              delivery: "queued",
+              ...(deliveryReceipt ? { delivery_receipt: deliveryReceipt } : {}),
+            },
+          }
+          : {
+            ticketOrder,
+            payment_qr: paymentQr,
+            code: 200,
+            delivery: "queued",
+            ...(deliveryReceipt ? { delivery_receipt: deliveryReceipt } : {}),
+          },
+      ),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

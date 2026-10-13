@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -233,7 +234,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     final text = TextEditingController();
     final value = await showDialog<String>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AppAlertDialog(
+                onClose: () => Navigator.pop(context),
                 title: Text(HtmlStrings.link),
                 content: TextField(
                     controller: text,
@@ -266,7 +268,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     final text = TextEditingController();
     final value = await showDialog<String>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AppAlertDialog(
+                onClose: () => Navigator.pop(context),
                 title: Text(HtmlStrings.imageUrl),
                 content: TextField(
                     controller: text,

@@ -71,6 +71,7 @@ class OrdersTb {
   String get occasion => "occasion";
   String get order_symbol => "order_symbol";
   String get order_sequence => "order_sequence";
+  String get source_waitlist_order_id => "source_waitlist_order_id";
   String get payment_info => "payment_info";
   String get currency_code => "currency_code";
   String get data_form => "form";

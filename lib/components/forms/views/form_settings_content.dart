@@ -1,4 +1,6 @@
+import '../waitlist_strings.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
@@ -264,7 +266,17 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       }
     } catch (e) {
       if (!mounted) return;
-      final errorMessage = e.toString().replaceFirst("Exception: ", "");
+      var errorMessage = e.toString().replaceFirst("Exception: ", "");
+      for (final code in [
+        'CAPACITY_BELOW_COMMITTED',
+        'WAITLIST_HAS_ACTIVE_ENTRIES',
+        'BLUEPRINT_CONFLICT'
+      ]) {
+        if (errorMessage.contains(code)) {
+          errorMessage = WaitlistStrings.text(code);
+          break;
+        }
+      }
       if (errorMessage.toLowerCase().contains("link")) {
         setState(() => _linkError = errorMessage);
       } else {
@@ -294,9 +306,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _confirmDelete(BuildContext currentContext) async {
     bool? confirm = await showDialog<bool>(
       context: currentContext,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
         insetPadding: const EdgeInsets.all(16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
         title: Text(FormStrings.deleteFormTitle),
         content: Text(FormStrings.deleteFormContent),
         actions: [
@@ -406,8 +418,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                         recognizer: _bankSettingsLink,
                       ),
                       TextSpan(
-                          text: guidance.substring(
-                              linkStart + settingsLabel.length)),
+                          text: guidance
+                              .substring(linkStart + settingsLabel.length)),
                     ]
                   : [TextSpan(text: guidance)],
             ),

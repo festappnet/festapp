@@ -15,7 +15,7 @@ BEGIN
     SET state = 'sent', updated_at = now()
     WHERE id = ANY(ticket_ids)
       AND id IN (SELECT ticket FROM eshop.order_product_ticket WHERE "order" = order_id)
-      AND state != 'used';
+      AND state IN ('ordered','paid','sent');
 
     -- Check if any rows were updated in the orders table
     IF NOT FOUND THEN

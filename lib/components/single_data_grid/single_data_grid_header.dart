@@ -1,3 +1,4 @@
+import 'data_grid_action_confirmation.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'dart:ui';
 
@@ -181,7 +182,8 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
               animation: widget.stateManager,
               builder: (context, child) {
                 final displayedRowCount = widget.stateManager.rows.length;
-                if (displayedRowCount > 0 || controller.additionalRowPredicate != null) {
+                if (displayedRowCount > 0 ||
+                    controller.additionalRowPredicate != null) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(
@@ -257,10 +259,11 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     );
 
     if (deleteList.isNotEmpty) {
-      var result = await DialogHelper.showConfirmationDialog(
-        context,
-        CommonStrings.confirmRemoval,
-        "${DataGridStrings.items}:\n ${deleteList.map((value) => value.toBasicString()).toList().join(",\n")}\n?",
+      var result = await DataGridActionConfirmation.show(
+        context: context,
+        title: CommonStrings.confirmRemoval,
+        items: deleteList,
+        confirmButtonText: CommonStrings.delete,
       );
       if (!result) {
         return;

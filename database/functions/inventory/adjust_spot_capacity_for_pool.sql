@@ -15,6 +15,8 @@ DECLARE
     v_pool_occasion_id BIGINT;
     v_total_pool_capacity BIGINT;
 BEGIN
+    PERFORM 1 FROM public.inventory_pools WHERE id=p_inventory_pool_id FOR UPDATE;
+    PERFORM 1 FROM public.inventory_contexts WHERE inventory_pool=p_inventory_pool_id ORDER BY id FOR UPDATE;
     -- Step 0: Validate input and get occasion ID.
     SELECT occasion INTO v_pool_occasion_id FROM public.inventory_pools WHERE id = p_inventory_pool_id;
     IF NOT FOUND THEN
@@ -59,7 +61,7 @@ BEGIN
                 v_spots_to_delete := v_total_spots_count - v_resource.capacity;
                 SELECT array_agg(id) INTO v_deletable_spot_ids FROM (
                     SELECT id FROM eshop.spots
-                    WHERE inventory_context = v_context.id AND resource = v_resource.id AND order_product_ticket IS NULL
+                    WHERE inventory_context = v_context.id AND resource = v_resource.id AND order_product_ticket IS NULL AND (secret IS NULL OR secret_expiration_time<=clock_timestamp())
                     ORDER BY created_at DESC
                     LIMIT v_spots_to_delete
                 ) AS sub;
@@ -104,7 +106,7 @@ BEGIN
             v_spots_to_delete := v_total_spots_count - v_total_pool_capacity;
             SELECT array_agg(id) INTO v_deletable_spot_ids FROM (
                 SELECT id FROM eshop.spots
-                WHERE inventory_context = v_context.id AND resource IS NULL AND order_product_ticket IS NULL
+                WHERE inventory_context = v_context.id AND resource IS NULL AND order_product_ticket IS NULL AND (secret IS NULL OR secret_expiration_time<=clock_timestamp())
                 ORDER BY created_at DESC
                 LIMIT v_spots_to_delete
             ) AS sub;

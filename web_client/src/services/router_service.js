@@ -104,7 +104,13 @@ export class RouterService {
     }
     
     static pushOverlayState(hash) {
-        window.history.pushState({}, '', `${window.location.pathname}#${hash}`);
+        // Personal capabilities must survive reload while an overlay is open.
+        // The browser owns the fragment; keep only the overlay name in state.
+        if (window.location.hash.startsWith('#waitlist?')) {
+            window.history.pushState({ overlay: hash }, '', window.location.href);
+        } else {
+            window.history.pushState({}, '', `${window.location.pathname}#${hash}`);
+        }
     }
     
     static goBackProgrammatically() {
@@ -308,7 +314,7 @@ export class RouterService {
              const hasPreview = window.location.search && window.location.search.includes('preview=true');
              const hasSearch = window.location.search && (window.location.search.includes('?q=') || window.location.search.includes('&q='));
 
-             if (!hasPreview && !hasSearch && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
+             if (!hasPreview && !hasSearch && !window.location.hash.startsWith('#waitlist?') && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
                   window.history.replaceState(null, '', path);
                   RouterService._lastPath = path; // Sync tracker
              }
@@ -389,6 +395,16 @@ export class RouterService {
     static _lastPath = window.location.pathname;
 
     static initPopStateListener() {
+        window.addEventListener('hashchange', (event) => {
+            const previous = new URL(event.oldURL);
+            const current = new URL(event.newURL);
+            if (current.pathname.startsWith(RouterService.FORM_PATH_PREFIX) &&
+                previous.hash !== current.hash &&
+                (previous.hash.startsWith('#waitlist?') || current.hash.startsWith('#waitlist?'))) {
+                // A different personal capability is a fresh form session.
+                window.location.reload();
+            }
+        });
         window.addEventListener('popstate', async (event) => {
             const path = window.location.pathname;
             

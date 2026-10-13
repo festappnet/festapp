@@ -31,6 +31,7 @@ class UnitStrings {
   static String get createCopyConfirm => 'Unit.createCopyConfirm'
       .tr(); // "Do you want to create copy of this event?"
   static String get copyTargetUnit => 'Unit.copyTargetUnit'.tr();
+  static String get changeCopyTargetUnit => 'Unit.changeCopyTargetUnit'.tr();
   static String get copyTargetHint => 'Unit.copyTargetHint'.tr();
   static String get createCopySuccess =>
       'Unit.createCopySuccess'.tr(); // "Event copy created successfully."

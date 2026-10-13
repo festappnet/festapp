@@ -1,3 +1,7 @@
+import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
+import 'models/ticket_model.dart';
+import '../forms/waitlist_strings.dart';
+import 'views/waitlist_order_detail.dart';
 import 'order_symbol_cell.dart';
 import 'order_grid_filters.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
@@ -36,8 +40,13 @@ import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'views/add_cash_payment_dialog.dart';
 
-bool canToggleTicketUsage(String? formattedState) =>
-    formattedState?.split(';').first != OrderModel.stornoState;
+bool canToggleTicketUsage(String? formattedState) => ![
+      OrderModel.stornoState,
+      OrderModel.waitlistedState
+    ].contains(formattedState?.split(';').first);
+
+bool canDownloadTicket(String? formattedState) =>
+    formattedState?.split(';').first != OrderModel.waitlistedState;
 
 class EshopColumns {
   // Column identifier constants
@@ -52,6 +61,7 @@ class EshopColumns {
   static const String TICKET_PRODUCTS_EXTENDED = "ticketProductsExtended";
   static const String TICKET_PRODUCTS_EDIT = "ticketProductsEdit";
   static const String TICKET_CONFIRM = "confirmTicket";
+  static const String TICKET_MODEL_REFERENCE = "ticketModelReference";
 
   static const String TICKET_CREATED_AT = "ticketCreatedAt";
   static const String TICKET_LAST_CHANGE = "ticketLastChangedAt";
@@ -59,6 +69,7 @@ class EshopColumns {
 
   static const String ORDER_ID = "orderId";
   static const String ORDER_PRICE = "orderPrice";
+  static const String ORDER_WAITLIST = "orderWaitlist";
   static const String ORDER_STATE = "orderState";
   static const String ORDER_MODEL_REFERENCE = "orderModelReference";
 
@@ -472,52 +483,57 @@ class EshopColumns {
                     icon: const Icon(Icons.download),
                     tooltip: OrdersStrings
                         .downloadTicket, // Localize tooltip if preferred
-                    onPressed: () async {
-                      final ticketId =
-                          rendererContext.row.cells[TICKET_ID]!.value as int;
-                      final ticketSymbol =
-                          rendererContext.row.cells[TICKET_SYMBOL]?.value ??
-                              ticketId.toString();
+                    onPressed: !canDownloadTicket(rendererContext
+                            .row.cells[TICKET_STATE]?.value as String?)
+                        ? null
+                        : () async {
+                            final ticketId = rendererContext
+                                .row.cells[TICKET_ID]!.value as int;
+                            final ticketSymbol = rendererContext
+                                    .row.cells[TICKET_SYMBOL]?.value ??
+                                ticketId.toString();
 
-                      // 1. Extract Customer and Spot info for the title
-                      final customerName = rendererContext
-                              .row.cells[ORDER_DATA]?.value
-                              ?.toString() ??
-                          "";
-                      final spotName = rendererContext
-                              .row.cells[TICKET_SPOT]?.value
-                              ?.toString() ??
-                          "";
+                            // 1. Extract Customer and Spot info for the title
+                            final customerName = rendererContext
+                                    .row.cells[ORDER_DATA]?.value
+                                    ?.toString() ??
+                                "";
+                            final spotName = rendererContext
+                                    .row.cells[TICKET_SPOT]?.value
+                                    ?.toString() ??
+                                "";
 
-                      // 2. Determine the dialog title based on available data
-                      String dialogTitle = OrdersStrings.generatingPdf;
-                      if (customerName.isNotEmpty && spotName.isNotEmpty) {
-                        dialogTitle = OrdersStrings.generatingPdfForWithSpot(
-                            customerName, spotName);
-                      } else if (customerName.isNotEmpty) {
-                        dialogTitle =
-                            OrdersStrings.generatingPdfFor(customerName);
-                      }
+                            // 2. Determine the dialog title based on available data
+                            String dialogTitle = OrdersStrings.generatingPdf;
+                            if (customerName.isNotEmpty &&
+                                spotName.isNotEmpty) {
+                              dialogTitle =
+                                  OrdersStrings.generatingPdfForWithSpot(
+                                      customerName, spotName);
+                            } else if (customerName.isNotEmpty) {
+                              dialogTitle =
+                                  OrdersStrings.generatingPdfFor(customerName);
+                            }
 
-                      // 3. Show dialog
-                      final pdfBytes = await DialogHelper
-                          .showFutureProgressDialog<Uint8List?>(
-                        context: context,
-                        title: dialogTitle,
-                        futureCallback: () =>
-                            DbTickets.downloadTicketPdf(ticketId),
-                      );
+                            // 3. Show dialog
+                            final pdfBytes = await DialogHelper
+                                .showFutureProgressDialog<Uint8List?>(
+                              context: context,
+                              title: dialogTitle,
+                              futureCallback: () =>
+                                  DbTickets.downloadTicketPdf(ticketId),
+                            );
 
-                      if (pdfBytes != null) {
-                        await FileSaver.instance.saveFile(
-                          name: "ticket_$ticketSymbol",
-                          bytes: pdfBytes,
-                          mimeType: MimeType.pdf,
-                        );
-                      } else {
-                        // Error handled in DialogHelper/DbTickets
-                      }
-                    },
+                            if (pdfBytes != null) {
+                              await FileSaver.instance.saveFile(
+                                name: "ticket_$ticketSymbol",
+                                bytes: pdfBytes,
+                                mimeType: MimeType.pdf,
+                              );
+                            } else {
+                              // Error handled in DialogHelper/DbTickets
+                            }
+                          },
                   );
                 },
               ),
@@ -634,6 +650,24 @@ class EshopColumns {
                   }
                 : null,
           ),
+        ],
+        ORDER_WAITLIST: [
+          TrinaColumn(
+              title: WaitlistStrings.detail,
+              field: ORDER_WAITLIST,
+              type: TrinaColumnType.text(),
+              readOnly: true,
+              width: 260,
+              renderer: (ctx) {
+                final order = OrderGridFilters.order(ctx.row);
+                if (order?.waitlistSummary == null)
+                  return const SizedBox.shrink();
+                return TextButton(
+                    onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) => WaitlistOrderDetail(order: order!)),
+                    child: Text(order!.waitlistSummary!.label));
+              }),
         ],
         ORDER_STATE: [
           TrinaColumn(
@@ -900,12 +934,17 @@ class EshopColumns {
                                     .cells[TICKET_SYMBOL]?.value as String? ??
                                 ticketId.toString();
 
-                            // Using the ticket symbol directly as the confirmation message body for simplicity.
-                            var confirm =
-                                await DialogHelper.showConfirmationDialog(
-                              context,
-                              actionLabel,
-                              ticketSymbol,
+                            var confirm = await DataGridActionConfirmation.show<
+                                TicketModel>(
+                              context: context,
+                              title: actionLabel,
+                              confirmButtonText: actionLabel,
+                              itemsLabel: OrdersStrings.itemsPlural,
+                              items: [
+                                TicketModel.fromPlutoJson(
+                                    rendererContext.row.toJson())
+                              ],
+                              groupBy: (ticket) => ticket.relatedOrder,
                             );
 
                             if (confirm == true) {
@@ -975,7 +1014,7 @@ class EshopColumns {
                 renderer: (ctx) {
                   final val = ctx.cell.value?.toString() ?? "";
                   final canUpdate = RightsService.canUpdateOrders() &&
-                      OrderGridFilters.orderIsNonCancelled(ctx.row);
+                      OrderGridFilters.allows(ctx.row, 'paid');
                   return Row(
                     children: [
                       InkWell(
@@ -1365,8 +1404,12 @@ class EshopColumns {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              textValue,
+            Flexible(
+              child: Tooltip(
+                message: textValue,
+                child: Text(textValue,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
             ),
             if (firstPart == OrderModel.expiredState)
               Padding(

@@ -655,10 +655,17 @@ class FormRoute extends _i71.PageRouteInfo<FormRouteArgs> {
   FormRoute({
     _i72.Key? key,
     String? formLink,
+    String? offerId,
+    int? waitlistOrderId,
     List<_i71.PageRouteInfo>? children,
   }) : super(
           FormRoute.name,
-          args: FormRouteArgs(key: key, formLink: formLink),
+          args: FormRouteArgs(
+            key: key,
+            formLink: formLink,
+            offerId: offerId,
+            waitlistOrderId: waitlistOrderId,
+          ),
           rawPathParams: {'formLink': formLink},
           initialChildren: children,
         );
@@ -672,32 +679,53 @@ class FormRoute extends _i71.PageRouteInfo<FormRouteArgs> {
       final args = data.argsAs<FormRouteArgs>(
         orElse: () => FormRouteArgs(formLink: pathParams.optString('formLink')),
       );
-      return _i14.FormPage(key: args.key, formLink: args.formLink);
+      return _i14.FormPage(
+        key: args.key,
+        formLink: args.formLink,
+        offerId: args.offerId,
+        waitlistOrderId: args.waitlistOrderId,
+      );
     },
   );
 }
 
 class FormRouteArgs {
-  const FormRouteArgs({this.key, this.formLink});
+  const FormRouteArgs({
+    this.key,
+    this.formLink,
+    this.offerId,
+    this.waitlistOrderId,
+  });
 
   final _i72.Key? key;
 
   final String? formLink;
 
+  final String? offerId;
+
+  final int? waitlistOrderId;
+
   @override
   String toString() {
-    return 'FormRouteArgs{key: $key, formLink: $formLink}';
+    return 'FormRouteArgs{key: $key, formLink: $formLink, offerId: $offerId, waitlistOrderId: $waitlistOrderId}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! FormRouteArgs) return false;
-    return key == other.key && formLink == other.formLink;
+    return key == other.key &&
+        formLink == other.formLink &&
+        offerId == other.offerId &&
+        waitlistOrderId == other.waitlistOrderId;
   }
 
   @override
-  int get hashCode => key.hashCode ^ formLink.hashCode;
+  int get hashCode =>
+      key.hashCode ^
+      formLink.hashCode ^
+      offerId.hashCode ^
+      waitlistOrderId.hashCode;
 }
 
 /// generated route for

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/schedule/event_model.dart';
@@ -71,7 +72,8 @@ class AddNewEventDialog {
                       !endDate!.isBefore(startDate!);
                 }
 
-                return AlertDialog(
+                return AppAlertDialog(
+                  onClose: () => Navigator.of(context).pop(),
                   title: Text(OccasionHomeStrings.addToSchedule),
                   content: Form(
                     key: formKey,

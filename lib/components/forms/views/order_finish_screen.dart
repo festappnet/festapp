@@ -1,3 +1,4 @@
+import '../waitlist_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/theme_config.dart';
@@ -212,7 +213,9 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
       subtitle = PublicOrderStrings.chooseDifferentVariant(widget.tone);
     } else {
       title = PublicOrderStrings.orderFailed;
-      subtitle = PublicOrderStrings.orderError((code ?? 0).toString());
+      subtitle = _orderData?['errorCode'] != null
+          ? WaitlistStrings.text(_orderData!['errorCode'])
+          : PublicOrderStrings.orderError((code ?? 0).toString());
     }
     return SingleChildScrollView(
       child: Column(
@@ -266,6 +269,9 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
               child: SelectableText(
                   '${OrdersStrings.gridOrderSymbol}: ${_orderData!['ticketOrder']['order']['order_symbol']}'),
             ),
+          if (_isSuccess && _orderData?['conversion'] == 'split')
+            Text(
+                '${WaitlistStrings.remaining}: ${_orderData?['waitlistSummary']?['pendingPlaces'] ?? 0}. ${WaitlistStrings.explanation}'),
           if (_isSuccess) _buildPaymentQr(),
           const SizedBox(height: 24),
           OutlinedButton(

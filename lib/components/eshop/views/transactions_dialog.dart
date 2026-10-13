@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
@@ -158,7 +159,10 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
   Widget build(BuildContext context) {
     final dialogHeight = MediaQuery.of(context).size.height * 0.6;
 
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () {
+        Navigator.of(context).pop();
+      },
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -167,13 +171,6 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
               OrdersStrings.transactionsForOrder(widget.orderSymbol ?? ""),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-          IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            tooltip: CommonStrings.close,
           ),
         ],
       ),

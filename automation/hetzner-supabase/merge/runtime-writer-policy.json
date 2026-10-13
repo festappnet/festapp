@@ -39,7 +39,10 @@
     },
     "exchange-sign-in-code": {
       "trigger": "client-http",
-      "effects": ["database-rpc", "auth-session-create"],
+      "effects": [
+        "database-rpc",
+        "auth-session-create"
+      ],
       "mutates_authority": true
     },
     "exchange-login-qr": {
@@ -247,6 +250,15 @@
       "effects": [
         "database-rpc",
         "banksync-tenant-control"
+      ],
+      "mutates_authority": true
+    },
+    "waitlist-commands": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-read",
+        "canonical-email-enqueue"
       ],
       "mutates_authority": true
     }

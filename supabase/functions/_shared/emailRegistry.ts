@@ -1,4 +1,6 @@
 export const emailRegistry = {
+  waitlist_confirmation: { code: "waitlist_confirmation", sensitive: true },
+  waitlist_offer: { code: "waitlist_offer", sensitive: true },
   order_confirmation: { code: "TICKET_ORDER_CONFIRMATION", sensitive: false },
   order_payment_notice: { code: "TICKET_ORDER_PAYMENT_DONE", sensitive: false },
   order_tickets: { code: "TICKET_ORDER_PAYMENT_DONE", sensitive: false },

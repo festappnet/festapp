@@ -24,30 +24,34 @@ void main() {
 
     test('returns matching FormOptionModel when default matches option title',
         () {
-      final resolved = RadioFieldBuilder.resolveDefault(holderWith('No'), options);
+      final resolved =
+          RadioFieldBuilder.resolveDefault(holderWith('No'), options);
       expect(resolved, isNotNull);
       expect(resolved!.title, 'No');
     });
 
     test('returns null when default points to a deleted option', () {
-      final resolved = RadioFieldBuilder.resolveDefault(
-          holderWith('Gone'), options);
+      final resolved =
+          RadioFieldBuilder.resolveDefault(holderWith('Gone'), options);
       expect(resolved, isNull);
     });
 
     test('returns null when default is empty string', () {
-      final resolved = RadioFieldBuilder.resolveDefault(holderWith(''), options);
+      final resolved =
+          RadioFieldBuilder.resolveDefault(holderWith(''), options);
       expect(resolved, isNull);
     });
 
     test('returns null when default is missing', () {
-      final resolved = RadioFieldBuilder.resolveDefault(holderWith(null), options);
+      final resolved =
+          RadioFieldBuilder.resolveDefault(holderWith(null), options);
       expect(resolved, isNull);
     });
 
-    test('returns null when default is wrong type (list instead of string)', () {
-      final resolved = RadioFieldBuilder.resolveDefault(
-          holderWith(['No']), options);
+    test('returns null when default is wrong type (list instead of string)',
+        () {
+      final resolved =
+          RadioFieldBuilder.resolveDefault(holderWith(['No']), options);
       expect(resolved, isNull);
     });
   });
@@ -69,8 +73,8 @@ void main() {
         );
 
     test('returns matching options when all defaults exist', () {
-      final resolved = CheckboxFieldBuilder.resolveDefaults(
-          holderWith(['A', 'C']), options);
+      final resolved =
+          CheckboxFieldBuilder.resolveDefaults(holderWith(['A', 'C']), options);
       expect(resolved.map((o) => o.title).toList()..sort(), ['A', 'C']);
     });
 
@@ -81,16 +85,17 @@ void main() {
     });
 
     test('returns empty list when default is missing', () {
-      final resolved = CheckboxFieldBuilder.resolveDefaults(
-          holderWith(null), options);
+      final resolved =
+          CheckboxFieldBuilder.resolveDefaults(holderWith(null), options);
       expect(resolved, isEmpty);
     });
 
-    test('returns empty list when default is wrong type (string instead of list)',
-        () {
-      final resolved = CheckboxFieldBuilder.resolveDefaults(
-          holderWith('A'), options);
-      expect(resolved, isEmpty);
+    test('restores serialized single or multiple saved answers', () {
+      final resolved =
+          CheckboxFieldBuilder.resolveDefaults(holderWith('A | C'), options);
+      expect(resolved.map((o) => o.title), ['A', 'C']);
+      expect(CheckboxFieldBuilder.resolveDefaults(holderWith(''), options),
+          isEmpty);
     });
 
     test('returns empty list when default list is empty', () {

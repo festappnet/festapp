@@ -62,7 +62,10 @@ export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={
   const products=await dependencies.products(occasion.id);
   resources.catalog=indexProductCatalog(products,occasion.id);
   validateProductReferences(template,resources.catalog);
-  return async(t:any)=>generateTicketPdf(normalizeTicketData(t,occasion,order,resources.catalog,template),resources,template);
+  return async(t:any)=>{
+    if(t.state==='waitlisted')throw new Error('Waiting tickets cannot be issued for admission');
+    return generateTicketPdf(normalizeTicketData(t,occasion,order,resources.catalog,template),resources,template);
+  };
 }
 export async function generateTicketPdf(data:RenderData,r:Resources,t:Template,type:'wide'|'named'=t.page.width===595.28?'wide':'named',sample=false) {
   return await drawLayoutTicket(data,r,t,type,sample);

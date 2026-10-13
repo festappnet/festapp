@@ -56,9 +56,11 @@ test('every Edge Function and Worker entrypoint has a fail-closed cutover classi
   const report = evaluateRuntimeWriterPolicy(policy);
   assert.equal(report.status, 'pass');
   assert.deepEqual(report.blockers, []);
-  assert.equal(report.edge_functions, 30);
+  assert.equal(report.edge_functions, 32);
   assert.equal(report.worker_entrypoints, 5);
-  assert.equal(report.mutating_surfaces, 25);
+  assert.equal(policy.edge_functions['waitlist-commands'].mutates_authority, true);
+  assert.ok(policy.edge_functions['waitlist-commands'].effects.includes('canonical-email-enqueue'));
+  assert.equal(report.mutating_surfaces, 27);
   for (const name of ['bank-sync-webhook', 'bank-sync-manage', 'bank-sync-reconcile']) {
     assert.equal(policy.edge_functions[name].mutates_authority, true);
   }

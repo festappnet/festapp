@@ -24,6 +24,7 @@ export class FormOptionModel {
         this.name = data[FormOptionModel.metaOptionsName] || null;
         this.id = data[FormOptionModel.metaOptionsId] || null;
         this.price = data[FormOptionModel.metaOptionsPrice] || 0;
+        this.isAvailable = data.is_dynamically_available !== false && (!(Number(data.maximum) > 0) || Number(data.ordered_count || 0) < Number(data.maximum));
         this.currency = data[FormOptionModel.metaCurrency];
         this.data = data[FormOptionModel.metaData] || null;
     }
@@ -37,6 +38,9 @@ export class FormFieldModel {
     static metaOptions = "options";
 
     constructor(data = {}) {
+        this.capacity = data.capacity || null;
+        this.registrationMode = data.registrationMode || null;
+        this.waitlistEnabled = data.waitlist_enabled === true;
         this.id = data.id;
         this.createdAt = data.created_at ? new Date(data.created_at) : null;
         this.title = data.title;
@@ -75,6 +79,9 @@ export class FormFieldModel {
 
             const products = this.productTypeData.products || [];
              this.options = products.map(p => new FormOptionModel({
+                 is_dynamically_available: p.is_dynamically_available,
+                 maximum: p.maximum,
+                 ordered_count: p.ordered_count,
                  [FormOptionModel.metaValue]: p.title,
                  [FormOptionModel.metaDescription]: p.description,
                  [FormOptionModel.metaOptionsId]: p.id,
@@ -107,6 +114,9 @@ export class FormModel {
     static metaCommunicationTone = "communication_tone";
 
     constructor(data = {}) {
+        this.capacity = data.capacity || null;
+        this.registrationMode = data.registrationMode || null;
+        this.waitlistEnabled = data.waitlist_enabled === true;
         this.id = data.id;
         this.createdAt = data.created_at ? new Date(data.created_at) : null;
         this.title = data.title;
@@ -169,6 +179,11 @@ export class FormModel {
             ticketField.subFields = ticketField.subFields.filter(usesRegularChoice);
         }
 
+        if (this.registrationMode === 'waitlist') {
+            const personal = f => !['product_type', 'spot'].includes(f.type) && !f.productTypeId && !f.data?.product_dependent;
+            this.relatedFields = this.relatedFields.filter(personal);
+            if (ticketField?.subFields) ticketField.subFields = ticketField.subFields.filter(personal);
+        }
         this.stats = data.stats ? new FormStatsModel(data.stats) : null;
         
         // Capture Features for FeatureService

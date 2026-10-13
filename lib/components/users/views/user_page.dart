@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/users/widgets/google_account_link_setting.dart';
 import 'dart:async';
 
@@ -635,7 +636,8 @@ class _UserPageState extends State<UserPage> {
   Future<void> _requestAccountDeletion() async {
     final confirmed = await showDialog<bool>(
           context: context,
-          builder: (dialogContext) => AlertDialog(
+          builder: (dialogContext) => AppAlertDialog(
+            onClose: () => Navigator.pop(dialogContext, false),
             title: Text(UserStrings.deleteAccount),
             content: Text(
               '${UserStrings.deleteAccountScope}\n\n${UserStrings.deleteAccountConfirm}',

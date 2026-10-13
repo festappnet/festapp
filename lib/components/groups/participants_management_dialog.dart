@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/groups/group_participant_model.dart';
@@ -146,7 +147,7 @@ class _ParticipantsManagementDialogState
     final int topSectionFlex = 1;
     final int bottomSectionFlex = isDesktop ? 2 : 1;
 
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(GroupsStrings.dialogTitle(widget.group.title, count)),
       content: SizedBox(
         width: StylesConfig.formMaxWidthMid,

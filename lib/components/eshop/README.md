@@ -86,3 +86,24 @@ Products refresh on tab return, application resume and each minute while a plan
 is due. Shared administration grids also refresh on tab return, preserving drafts,
 filters, sorting, scroll and user column widths. An in-flight refresh rechecks
 drafts before replacing rows. Report refreshes on return as a read-only snapshot.
+
+## Waitlist identity and acceptance
+
+`state='waitlisted'` is an existing order identity with NULL price/payment_info
+and no sale product or inventory allocation. Its waiting tickets have no valid
+admission symbol. Offer slots refer directly to `eshop.tickets.id`; offer status
+is derived from those slots. There is no person ledger. Use SQL `isActive`/`allowedActions` for
+order UI; waitlisting does not authorize ordinary paid, send or cancel actions.
+
+Full acceptance preserves order ID, symbol and sequence. Partial acceptance
+moves the same ticket IDs into a new regular order linked by
+`source_waitlist_order_id`; every separate partial confirmation has its own
+order. Both regular creation and acceptance use the same private finalizer.
+SQL owns form/product/pool locking, allocations, history, command receipts,
+Client Sync changes and email intents in one transaction.
+
+Fakturoid acceptance journals its selected tickets/slots while preparation is
+pending. Complete and abort use that journal; a failed prepare restores only
+that attempt, including still-valid offer slots, without overwriting the rest
+of a group. Actual user cancellation never returns an valid ticket to the
+waitlist. Waitlisted tickets are excluded from admissions/revenues.

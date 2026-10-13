@@ -223,7 +223,10 @@ BEGIN
             OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (
               SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id = opt.ticket
               WHERE opt."order" = o.id AND NULLIF(t.note, '') IS NOT NULL))
-          )) THEN 'responses'
+          )) OR EXISTS(SELECT 1 FROM eshop.tickets person CROSS JOIN LATERAL jsonb_array_elements(
+            CASE WHEN jsonb_typeof(person.data->'fields')='array' THEN person.data->'fields' ELSE '[]' END) answer
+            WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket=person.id AND q.form=ff.form) AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
+           OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket IS NOT NULL AND q.form=ff.form)) THEN 'responses'
         ELSE (
           SELECT reason FROM public.form_fields member
           JOIN eshop.products p ON p.product_type = member.product_type
@@ -610,8 +613,14 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Update the main form record with all validated fields
         ----------------------------------------------------------------------------
+        PERFORM public.check_form_capacity_settings_internal(form_id,input_data);
         UPDATE public.forms
            SET
+               participant_capacity = CASE WHEN input_data ? 'participant_capacity' THEN (input_data->>'participant_capacity')::integer ELSE participant_capacity END,
+               waitlist_enabled = CASE WHEN input_data ? 'waitlist_enabled' THEN (input_data->>'waitlist_enabled')::boolean ELSE waitlist_enabled END,
+               show_remaining_capacity = CASE WHEN input_data ? 'show_remaining_capacity' THEN (input_data->>'show_remaining_capacity')::boolean ELSE show_remaining_capacity END,
+               waitlist_offer_duration_seconds = CASE WHEN input_data ? 'waitlist_offer_duration_seconds' THEN (input_data->>'waitlist_offer_duration_seconds')::integer ELSE waitlist_offer_duration_seconds END,
+               capacity_revision = capacity_revision+1,
                title = input_data->>'title',
                data = input_data->'data',
                header = input_data->>'header',

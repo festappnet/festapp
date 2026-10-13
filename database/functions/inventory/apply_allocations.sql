@@ -14,6 +14,7 @@ DECLARE
     v_occasion_features JSONB;
     v_is_blueprint_enabled BOOLEAN;
 BEGIN
+    PERFORM public.lock_ticket_order_products_internal(p_order_id);
     -- Initial check for the order's state.
     SELECT state, occasion INTO v_order_state, v_occasion_id
     FROM eshop.orders
@@ -91,6 +92,12 @@ BEGIN
             CONTINUE;
         END IF;
 
+        IF EXISTS(SELECT 1 FROM public.inventory_contexts ic JOIN public.inventory_pools ip ON ip.id=ic.inventory_pool
+          WHERE ic.id=v_item_to_allocate.inventory_context_id AND ip.sellable_capacity IS NOT NULL AND
+          (SELECT count(*) FROM eshop.spots s WHERE s.inventory_context=ic.id AND (s.order_product_ticket IS NOT NULL OR
+            (s.secret IS NOT NULL AND s.secret_expiration_time>clock_timestamp())))+v_spots_to_claim>ip.sellable_capacity) THEN
+          RAISE EXCEPTION '%',jsonb_build_object('code',1017,'errorCode','PRODUCT_CAPACITY_EXCEEDED','productId',v_item_to_allocate.product_id)::text;
+        END IF;
         -- This loop runs precisely the number of times needed to claim the required spots.
         FOR i IN 1..v_spots_to_claim LOOP
             v_available_spot_id := NULL;
@@ -100,7 +107,8 @@ BEGIN
                 SELECT s.id
                 FROM eshop.spots s
                 WHERE s.inventory_context = v_item_to_allocate.inventory_context_id
-                  AND s.order_product_ticket IS NULL -- The only condition for availability
+                  AND s.order_product_ticket IS NULL
+                  AND (s.secret IS NULL OR s.secret_expiration_time IS NULL OR s.secret_expiration_time<=clock_timestamp())
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
             )

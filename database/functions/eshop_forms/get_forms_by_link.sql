@@ -32,7 +32,9 @@ BEGIN
     -- The order statistics are nested within a 'stats' JSON object.
     SELECT jsonb_agg(
         jsonb_build_object(
-            'id', f.id,
+            'id', f.id,'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+            'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+            'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
             'created_at', f.created_at,
             'title', f.title,
             'data', f.data,

@@ -74,6 +74,8 @@ BEGIN
     VALUES (last_pt_id, 'Test Product', 100, 'CZK') RETURNING id INTO last_product_id;
 
 
+    INSERT INTO public.form_fields(form,product_type,type) VALUES(last_form_id,last_pt_id,'product_type');
+
     -- 2. Test get_form_for_edit (Should only see Standard Account)
     -- Act
     SELECT get_form_for_edit('test-form-link') INTO result_json;

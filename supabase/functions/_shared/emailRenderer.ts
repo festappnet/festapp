@@ -9,6 +9,7 @@ import { getTicketOrderUpdateTemplate } from "../send-email/getTicketOrderUpdate
 import { getTicketOrderStornoTemplate } from "../send-email/getTicketOrderStornoTemplate.ts";
 import { safeClickTracking } from "./emailTracking.ts";
 import { emailRpc } from "./emailQueueClient.ts";
+import { renderWaitlistEmail } from "./waitlistEmailRenderer.ts";
 export type EmailRow = {
   message_id: string;
   message_kind: string;
@@ -26,6 +27,9 @@ export type EmailRow = {
 export async function renderQueuedEmail(
   row: EmailRow,
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
+  if (["waitlist_confirmation", "waitlist_offer"].includes(row.message_kind)) {
+    return await renderWaitlistEmail(row);
+  }
   if (row.message_kind === "custom" && row.code === "NEW_USER_FIRST_LOGIN") {
     return { prepared: firstLoginEmail(row.recipient, row.data, Deno.env.get("DEFAULT_EMAIL") ?? ""), postAction: { tracking_policy: "disabled" } };
   }

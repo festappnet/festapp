@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
@@ -383,7 +384,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     if (!mounted) return;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
         constraints: const BoxConstraints(maxWidth: 560),
         scrollable: true,
         title: Text(title ?? BankAccountStrings.errorTitle),
@@ -455,7 +456,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     if (!silent) {
       bool? confirm = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AppAlertDialog(
           title: Text(BankAccountStrings.regenerateToken),
           content: Text(BankAccountStrings.regenerateTokenConfirmation),
           actions: [
@@ -501,7 +502,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     final controller = TextEditingController();
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
         title: Text(BankAccountStrings.addCurrency),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -659,7 +660,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     );
 
     if (widget.isDialog) {
-      return Dialog(
+      return AppDialog(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
           child: content,
@@ -685,22 +686,9 @@ class _BankAccountDialogHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const SizedBox(width: 48),
-            Expanded(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            IconButton(
-              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-              onPressed: onClose,
-              icon: const Icon(Icons.close),
-            ),
-          ],
+        child: AppDialogHeader(
+          title: Text(title, style: Theme.of(context).textTheme.titleLarge),
+          onClose: onClose,
         ),
       );
 }
@@ -764,7 +752,8 @@ class _RoutedBankAccountDialogState extends State<RoutedBankAccountDialog> {
                     semanticsLabel: MaterialLocalizations.of(context)
                         .modalBarrierDismissLabel,
                   ),
-                  Dialog(
+                  AppDialog(
+                    onClose: widget.onClose,
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
                         maxWidth: 600,

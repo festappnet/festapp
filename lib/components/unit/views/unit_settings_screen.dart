@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -205,7 +206,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   Future<void> _deleteUnit() async {
     bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
         title: Text(UnitSettingsStrings.deleteUnit),
         content: Text(UnitSettingsStrings.deleteUnitConfirmation),
         actions: [

@@ -69,6 +69,9 @@ DECLARE
   v_impacts jsonb;
 BEGIN
   PERFORM public.require_client_sync_service_role_v1();
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order_id]);
+  IF EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE target_order_id=p_order_id AND command_id=p_command_id AND state='aborted') THEN
+    RAISE EXCEPTION 'Acceptance attempt aborted'; END IF;
   SELECT o.state,trim(o.currency_code),o.payment_info,o.occasion,pi.variable_symbol
   INTO v_state,v_currency,v_payment_id,v_occasion,v_existing_vs
   FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info
@@ -101,6 +104,8 @@ BEGIN
   ELSE
     RAISE check_violation USING MESSAGE='unsupported Fakturoid order currency';
   END IF;
+  UPDATE eshop.waitlist_acceptance_attempts SET state='completed',updated_at=clock_timestamp()
+   WHERE target_order_id=p_order_id AND command_id=p_command_id AND state='preparing';
   UPDATE eshop.orders SET state='ordered',updated_at=now() WHERE id=p_order_id;
   UPDATE public.email_messages SET target_time=now(),workflow_state='pending',
     data=jsonb_set(data-'fakturoid_pending','{ticket_order,order,payment_info,variable_symbol}',to_jsonb(p_variable_symbol))
@@ -138,6 +143,8 @@ DECLARE
   v_hash text;
 BEGIN
   PERFORM public.require_client_sync_service_role_v1();
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order_id]);
+  IF EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE command_id=p_command_id AND target_order_id=p_order_id AND state='aborted') THEN RETURN; END IF;
   SELECT o.state,o.occasion INTO v_state,v_occasion
   FROM eshop.orders o WHERE o.id=p_order_id FOR UPDATE;
   IF v_state='storno' THEN RETURN; END IF;
@@ -160,7 +167,10 @@ BEGIN
   PERFORM public.begin_anonymous_client_mutation_v1(v_abort_command,
     'inventory.order.fakturoid_abort',v_occasion,extensions.gen_random_uuid(),v_hash);
   UPDATE public.email_messages SET workflow_state='cancelled',last_error='fakturoid_aborted' WHERE id=v_queue_id;
-  PERFORM public.update_order_and_tickets_to_storno_221(p_order_id);
+  IF NOT public.abort_waitlist_acceptance_internal(p_order_id,p_command_id) THEN
+    UPDATE eshop.orders SET state='ordered' WHERE id=p_order_id;
+    PERFORM public.update_order_and_tickets_to_storno_221(p_order_id);
+  END IF;
   PERFORM public.complete_profile_inventory_membership_mutation_v1(
     v_abort_command,v_occasion,'inventory.order.fakturoid_abort',
     jsonb_build_array(jsonb_build_object('entityType','order',

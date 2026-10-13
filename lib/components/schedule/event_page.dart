@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -1601,7 +1602,8 @@ class _EventPageState extends State<EventPage> {
     // Allowed for cancelled events
     return showDialog<String>(
         context: context,
-        builder: (BuildContext context) => AlertDialog(
+        builder: (BuildContext context) => AppAlertDialog(
+              onClose: () => RouterService.goBack(context),
               title: Text(ScheduleStrings.signOutParticipant),
               content: Text(ScheduleStrings.signOutParticipantConfirm(
                 participant: participant.toString(),

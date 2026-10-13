@@ -245,6 +245,24 @@
       "behaviorTests": [
         "supabase/functions/bank-sync-webhook/handler_test.ts"
       ]
+    },
+    "waitlist-commands": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/waitlistEmail_test.ts"
+      ]
+    },
+    "exchange-sign-in-code": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/exchange-sign-in-code/exchange_test.ts"
+      ]
     }
   },
   "excluded": {

@@ -37,8 +37,12 @@ class CheckboxFieldBuilder {
   static List<FormOptionModel> resolveDefaults(
       FieldHolder fieldHolder, List<FormOptionModel> options) {
     final raw = fieldHolder.defaultValue;
-    if (raw is! List) return const [];
-    final keys = raw.whereType<String>().toSet();
+    final values = raw is String
+        ? (raw.isEmpty ? <String>[] : raw.split(' | '))
+        : raw is List
+            ? raw
+            : const [];
+    final keys = values.whereType<String>().toSet();
     return options
         .where((o) => keys.contains(o.title) || keys.contains(o.id))
         .toList();
@@ -220,10 +224,11 @@ class _BasicCheckboxFieldWidgetState extends State<_BasicCheckboxFieldWidget> {
               children: [
                 Expanded(child: Text(effectiveTitle, style: style)),
                 const SizedBox(width: 8),
-                Text(priceText, style: style.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDisabled ? null : Theme.of(context).primaryColor,
-                )),
+                Text(priceText,
+                    style: style.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDisabled ? null : Theme.of(context).primaryColor,
+                    )),
               ],
             )
           : Text(effectiveTitle, style: style);
@@ -242,7 +247,10 @@ class _BasicCheckboxFieldWidgetState extends State<_BasicCheckboxFieldWidget> {
             const SizedBox(height: 2),
             Text(depositText,
                 style: style.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
                     fontSize: 13,
                     fontWeight: FontWeight.w500)),
           ],

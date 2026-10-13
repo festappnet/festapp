@@ -63,7 +63,7 @@ export class RadioFieldBuilder {
             clearBtn.style.display = 'none';
 
             container.setAttribute('name', field.id);
-            container.name = field.id;
+            container.name = String(field.id);
             container.value = null;
 
             container.dispatchEvent(new Event('input', { bubbles: true }));

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -141,8 +142,8 @@ class ExceptionHandler {
       final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
       return AppError(
         code: jsonMap['code'] ?? 'N/A',
-        message: jsonMap['message'] as String? ??
-            CommonStrings.unknownDatabaseError,
+        message:
+            jsonMap['message'] as String? ?? CommonStrings.unknownDatabaseError,
         rawJson: jsonString,
       );
     } catch (e) {
@@ -157,7 +158,7 @@ class ExceptionHandler {
       builder: (ctx) {
         final theme = Theme.of(ctx);
         final scheme = theme.colorScheme;
-        return AlertDialog(
+        return AppAlertDialog(
           backgroundColor: scheme.surface,
           title: Text(
             CommonStrings.errorWithCode(code: appError.code.toString()),

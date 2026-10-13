@@ -14,6 +14,7 @@ DECLARE
   v_actual_unit bigint;
   v_actual_org bigint;
   is_app_supported boolean := false;
+  show_waitlist_templates boolean := false;
 BEGIN
   -- 1. Extract context values from the JSON parameter
   v_occ  := CASE
@@ -74,6 +75,18 @@ BEGIN
     WHERE id = v_effective_org;
   END IF;
 
+  -- The catalog follows the requested scope; stored templates and queue rendering
+  -- remain available independently of whether the feature is currently enabled.
+  SELECT EXISTS (
+    SELECT 1 FROM public.forms f
+    JOIN public.occasions o ON o.id = f.occasion
+    WHERE o.organization = v_effective_org
+      AND (v_occ IS NULL OR o.id = v_occ)
+      AND (v_unit IS NULL OR o.unit = v_unit)
+      AND f.participant_capacity > 0
+      AND f.waitlist_enabled IS TRUE
+  ) INTO show_waitlist_templates;
+
   -- 5. Retrieve email templates
   SELECT jsonb_agg(public.get_resolved_email_template(result.code,
     jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org)) ORDER BY result.code)
@@ -96,6 +109,8 @@ BEGIN
         et.code NOT IN ('SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
                         'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE')
       )
+      AND (show_waitlist_templates OR et.code NOT IN
+        ('waitlist_confirmation', 'waitlist_offer'))
   ) result;
 
   IF email_data IS NULL THEN

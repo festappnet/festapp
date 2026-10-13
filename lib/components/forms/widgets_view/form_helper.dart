@@ -345,12 +345,19 @@ class FormHelper {
         for (int i = 0; i < ticket.tickets.length; i++) {
           final ticketKey = ticket.tickets[i].ticketKey;
           if (ticketKey.currentState == null) continue;
-          Map<String, dynamic> ticketData = {};
+          Map<String, dynamic> ticketData = {
+            if (ticket.tickets[i].ticketId != null)
+              'ticketId': ticket.tickets[i].ticketId,
+          };
           for (var subFieldHolder in ticket.fields) {
             if (ticketData[metaFields] == null) {
               ticketData[metaFields] = [];
             }
             var value = getFieldData(ticketKey, subFieldHolder);
+            if (subFieldHolder.fieldType == fieldTypeProductType &&
+                (value == null || value == '')) {
+              continue;
+            }
 
             if (subFieldHolder.fieldType == fieldTypeProductType &&
                 subFieldHolder is OptionsFieldProductHolder &&
@@ -363,7 +370,11 @@ class FormHelper {
                 }
               }
             } else {
-              ticketData[metaFields].add({subFieldHolder.fieldType: value});
+              ticketData[metaFields].add({
+                subFieldHolder.fieldType: value,
+                if (subFieldHolder.fieldType != fieldTypeProductType)
+                  subFieldHolder.id.toString(): value,
+              });
             }
           }
           if (ticket.tickets[i].seat != null) {

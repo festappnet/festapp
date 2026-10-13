@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
@@ -67,7 +68,8 @@ class _TicketSearchDialogState extends State<TicketSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(FeaturesStrings.selectTicket),
       content: SizedBox(
         width: 300,

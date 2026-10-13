@@ -1,3 +1,5 @@
+import 'waitlist_summary_model.dart';
+import '../../forms/waitlist_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
@@ -28,7 +30,29 @@ class OrderModel extends ITrinaRowModel {
   DateTime? updatedAt;
   double? price;
   String? state;
-  bool get canEdit => state != stornoState;
+  WaitlistSummaryModel? waitlistSummary;
+  bool? active;
+  Set<String>? allowedActions;
+  bool get isWaitlisted => state == waitlistedState;
+  bool get isActive =>
+      active ??
+      waitlistSummary?.isActive ??
+      (!isWaitlisted && state != stornoState);
+  bool allows(String action) {
+    final actions = allowedActions ?? waitlistSummary?.allowedActions;
+    if (actions != null) return actions.contains(action);
+    if (isWaitlisted || state == stornoState || state == 'preparing_payment')
+      return action == 'view';
+    return switch (action) {
+      'view' || 'note' || 'edit' || 'cancel' => true,
+      'paid' => state == orderedState,
+      'send' => [orderedState, paidState, sentState, usedState, expiredState]
+          .contains(state),
+      _ => false,
+    };
+  }
+
+  bool get canEdit => allows('edit');
   Map<String, dynamic>? data;
   int? occasion;
   int? paymentInfo;
@@ -48,6 +72,7 @@ class OrderModel extends ITrinaRowModel {
   // Parsed from the 'data' JSON field
   List<OrderDataTicketModel>? dataTickets;
 
+  static const String waitlistedState = "waitlisted";
   static const String expiredState = "expired";
   static const String orderedState = "ordered";
   static const String paidState = "paid";
@@ -55,6 +80,7 @@ class OrderModel extends ITrinaRowModel {
   static const String usedState = "used";
   static const String stornoState = "storno";
   static const orderStates = [
+    waitlistedState,
     expiredState,
     orderedState,
     paidState,
@@ -66,6 +92,8 @@ class OrderModel extends ITrinaRowModel {
   static String stateToLocale(String? state) {
     if (state == null || state.isEmpty) return OrdersStrings.stateNotSet;
     switch (state) {
+      case waitlistedState:
+        return WaitlistStrings.text('orderState');
       case orderedState:
       case expiredState:
         return OrdersStrings.stateOrdered;
@@ -139,6 +167,9 @@ class OrderModel extends ITrinaRowModel {
   }
 
   OrderModel({
+    this.waitlistSummary,
+    this.active,
+    this.allowedActions,
     this.id,
     this.orderSymbol,
     this.orderSequence,
@@ -173,6 +204,13 @@ class OrderModel extends ITrinaRowModel {
     }
 
     return OrderModel(
+      waitlistSummary: json['waitlistSummary'] is Map<String, dynamic>
+          ? WaitlistSummaryModel.fromJson(json['waitlistSummary'])
+          : null,
+      active: json['isActive'],
+      allowedActions: json['allowedActions'] is List
+          ? Set<String>.from(json['allowedActions'])
+          : null,
       id: json[TbEshop.orders.id],
       orderSymbol: json[TbEshop.orders.order_symbol] as String?,
       orderSequence: (json[TbEshop.orders.order_sequence] as num?)?.toInt(),
@@ -218,10 +256,18 @@ class OrderModel extends ITrinaRowModel {
         id: json[EshopColumns.ORDER_ID] == -1
             ? null
             : json[EshopColumns.ORDER_ID],
+        orderSymbol: json[EshopColumns.ORDER_SYMBOL] as String?,
+        data: {
+          'name': json[EshopColumns.ORDER_DATA] as String?,
+          'email': json[EshopColumns.ORDER_EMAIL] as String?,
+        },
         noteHidden: json[EshopColumns.ORDER_NOTE_HIDDEN]);
   }
 
   Map<String, dynamic> toJson() => {
+        'waitlistSummary': waitlistSummary?.toJson(),
+        'isActive': isActive,
+        'allowedActions': allowedActions?.toList(),
         TbEshop.orders.id: id,
         TbEshop.orders.created_at: createdAt?.toIso8601String(),
         TbEshop.orders.updated_at: updatedAt?.toIso8601String(),
@@ -237,6 +283,8 @@ class OrderModel extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     return TrinaRow(cells: {
+      EshopColumns.ORDER_WAITLIST:
+          TrinaCell(value: waitlistSummary?.label ?? ''),
       EshopColumns.ORDER_ID: TrinaCell(value: id ?? 0),
       EshopColumns.ORDER_SEQUENCE: TrinaCell(value: orderSequence),
       EshopColumns.ORDER_SYMBOL: TrinaCell(value: orderSymbol ?? ""),
@@ -297,7 +345,7 @@ class OrderModel extends ITrinaRowModel {
       EshopColumns.ORDER_TRANSACTIONS: TrinaCell(value: ""),
       EshopColumns.ORDER_FORM: TrinaCell(value: form?.toString() ?? ""),
       EshopColumns.PAYMENT_INFO_REMINDER_SENT:
-          TrinaCell(value: paymentInfoModel!.isReminderSent.toString()),
+          TrinaCell(value: paymentInfoModel?.isReminderSent.toString() ?? ''),
       EshopColumns.ORDER_CONTRACT_DOWNLOAD: TrinaCell(value: ""),
       EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: this),
     });
@@ -314,7 +362,16 @@ class OrderModel extends ITrinaRowModel {
   }
 
   @override
-  String toBasicString() => orderSymbol ?? "";
+  String toBasicString() {
+    final symbol = orderSymbol?.trim() ?? '';
+    final customer = toCustomerData().trim();
+    final email = (data?['email'] as String?)?.trim() ?? '';
+    return [
+      if (symbol.isNotEmpty) symbol else if (id != null) '#$id',
+      if (customer.isNotEmpty) customer,
+      if (email.isNotEmpty && email != customer) email,
+    ].join(' - ');
+  }
 
   String toCustomerData() {
     final name = data?['name'] as String?;

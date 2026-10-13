@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -88,8 +89,7 @@ class ExclusiveEventsCell extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(right: 4),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: ThemeConfig.grey200(context),
                   borderRadius: BorderRadius.circular(12),
@@ -105,8 +105,7 @@ class ExclusiveEventsCell extends StatelessWidget {
         if (rest > 0)
           Text(
             "+$rest",
-            style: TextStyle(
-                fontSize: 12, color: ThemeConfig.grey700(context)),
+            style: TextStyle(fontSize: 12, color: ThemeConfig.grey700(context)),
           ),
       ],
     );
@@ -169,7 +168,8 @@ class _EventPickerDialogState extends State<_EventPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text("${CommonStrings.events} (${_selected.length})"),
       content: SizedBox(
         width: 460,

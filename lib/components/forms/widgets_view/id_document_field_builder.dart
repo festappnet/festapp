@@ -68,6 +68,9 @@ class _IdDocumentFieldBuilderState extends State<IdDocumentFieldBuilder> {
 
     Widget idNumberField = FormBuilderTextField(
       name: idNumberFieldName,
+      initialValue: widget.fieldHolder.defaultValue is Map
+          ? widget.fieldHolder.defaultValue['id_document_number']?.toString()
+          : null,
       focusNode: _idNumberFocusNode,
       decoration: InputDecoration(
         label: FormFieldBuilders.buildTitleWidget(
@@ -91,6 +94,12 @@ class _IdDocumentFieldBuilderState extends State<IdDocumentFieldBuilder> {
     if (widget.fieldHolder.showExpiryDate) {
       expiryDateField = FormBuilderDateTimePicker(
         name: expiryDateFieldName,
+        initialValue: widget.fieldHolder.defaultValue is Map
+            ? DateTime.tryParse(widget
+                    .fieldHolder.defaultValue['id_document_expiry_date']
+                    ?.toString() ??
+                '')
+            : null,
         inputType: InputType.date,
         format: dateFormat,
         fieldHintText: dateFormat.pattern,

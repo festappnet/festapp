@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
@@ -11,6 +12,7 @@ import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/db_units.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/router_service.dart';
@@ -255,10 +257,12 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     }
     final units = {for (final unit in destinations) unit.id!: unit};
     var selectedUnitId = widget.unit.id!;
+    var changingTargetUnit = false;
     final target = await showDialog<UnitModel>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
+        builder: (dialogContext, setDialogState) => AppAlertDialog(
+          onClose: () => Navigator.of(dialogContext).pop(),
           title: Text(UnitStrings.createCopy),
           content: SizedBox(
             width: 380,
@@ -269,23 +273,39 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 children: [
                   Text(UnitStrings.createCopyConfirm),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int>(
-                    initialValue: selectedUnitId,
-                    isExpanded: true,
-                    decoration:
-                        InputDecoration(labelText: UnitStrings.copyTargetUnit),
-                    items: units.values
-                        .map((unit) => DropdownMenuItem(
-                              value: unit.id!,
-                              child: Text(unit.title ?? unit.id.toString()),
-                            ))
-                        .toList(),
-                    onChanged: (id) {
-                      if (id != null) setDialogState(() => selectedUnitId = id);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Text(UnitStrings.copyTargetHint),
+                  if (!changingTargetUnit) ...[
+                    Text(UnitStrings.copyTargetUnit,
+                        style: Theme.of(dialogContext).textTheme.labelMedium),
+                    Text(widget.unit.title ?? selectedUnitId.toString(),
+                        style: Theme.of(dialogContext).textTheme.titleMedium),
+                    if (units.length > 1)
+                      TextButton(
+                        onPressed: () =>
+                            setDialogState(() => changingTargetUnit = true),
+                        child: Text(UnitStrings.changeCopyTargetUnit),
+                      ),
+                  ] else
+                    DropdownButtonFormField<int>(
+                      initialValue: selectedUnitId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                          labelText: UnitStrings.copyTargetUnit),
+                      items: units.values
+                          .map((unit) => DropdownMenuItem(
+                                value: unit.id!,
+                                child: Text(unit.title ?? unit.id.toString()),
+                              ))
+                          .toList(),
+                      onChanged: (id) {
+                        if (id != null) {
+                          setDialogState(() => selectedUnitId = id);
+                        }
+                      },
+                    ),
+                  if (selectedUnitId != sourceUnitId) ...[
+                    const SizedBox(height: 12),
+                    Text(UnitStrings.copyTargetHint),
+                  ],
                 ],
               ),
             ),
@@ -293,7 +313,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(CommonStrings.cancel),
+              child: Text(CommonStrings.storno),
             ),
             FilledButton(
               onPressed: () =>

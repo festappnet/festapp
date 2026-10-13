@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:collection/collection.dart';
@@ -402,7 +403,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     final String? choice = await showDialog<String>(
       context: context,
       barrierDismissible: true, // Allow dismissing by tapping the background
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AppAlertDialog(
         title: Text(ActivitiesComponentStrings.dialogTitleUpdateConflict),
         content: Text(message),
         actions: <Widget>[
@@ -835,7 +836,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     final isDark = ActivityConstants.isDarkMode(context);
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AppAlertDialog(
         backgroundColor: isDark ? Colors.grey[800] : Colors.white,
         titleTextStyle: TextStyle(color: isDark ? Colors.white : Colors.black),
         contentTextStyle:
@@ -1027,7 +1028,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       context: context,
       builder: (ctx) {
         final isDark = ActivityConstants.isDarkMode(ctx);
-        return AlertDialog(
+        return AppAlertDialog(
           title: Text(ActivitiesComponentStrings.dialogTitleVersionHistory),
           backgroundColor: isDark ? Colors.grey[800] : Colors.white,
           titleTextStyle:

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../forms/form_strings.dart';
@@ -49,6 +50,7 @@ class FontFamilyPicker extends StatefulWidget {
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        shape: appDialogShape,
         useSafeArea: true,
         isDismissible: false,
         enableDrag: false,
@@ -275,77 +277,74 @@ class _FontChoicesState extends State<_FontChoices> {
     final media = MediaQuery.of(context);
     final height =
         ((media.size.height - media.viewInsets.bottom) * .85).clamp(0.0, 560.0);
-    return PopScope(
-        canPop: !busy,
-        child: Padding(
-            padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-            child: SizedBox(
-                height: height,
-                child: Column(children: [
-                  Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
-                      child: Row(children: [
-                        Expanded(
-                            child: Text(widget.title ?? FormStrings.moreFonts,
-                                style: Theme.of(context).textTheme.titleLarge)),
-                        IconButton(
-                            tooltip: MaterialLocalizations.of(context)
-                                .closeButtonTooltip,
-                            onPressed:
-                                busy ? null : () => Navigator.pop(context),
-                            icon: const Icon(Icons.close)),
+    return AppDialogDismissal(
+        enabled: !busy,
+        child: PopScope(
+            canPop: !busy,
+            child: Padding(
+                padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+                child: SizedBox(
+                    height: height,
+                    child: Column(children: [
+                      Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+                          child: AppDialogHeader(
+                            title: Text(widget.title ?? FormStrings.moreFonts),
+                            closeEnabled: !busy,
+                          )),
+                      Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: TextField(
+                              controller: search,
+                              enabled: !busy,
+                              textInputAction: TextInputAction.done,
+                              decoration: InputDecoration(
+                                  labelText: FormStrings.customFontNameLabel,
+                                  hintText: 'Roboto Slab',
+                                  border: const OutlineInputBorder(),
+                                  prefixIcon: const Icon(Icons.search),
+                                  errorText: error),
+                              onChanged: (_) => setState(() => error = null),
+                              onSubmitted: submit)),
+                      Expanded(
+                          child: CustomScrollView(slivers: [
+                        if (query.isEmpty)
+                          SliverToBoxAdapter(
+                              child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                                  child: Text(FormStrings.fontSearchHint,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium))),
+                        if (query.isEmpty)
+                          SliverToBoxAdapter(
+                              child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 8),
+                                  child: HtmlView(
+                                      html:
+                                          '<a href="https://fonts.google.com/">${FormStrings.browseGoogleFonts}</a>',
+                                      isSelectable: false))),
+                        SliverList.builder(
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final family = options[index];
+                              return ListTile(
+                                  title: Text(_displayFont(family)),
+                                  selected: widget.value == family,
+                                  trailing: busy && loading == family
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2))
+                                      : widget.value == family
+                                          ? const Icon(Icons.check, size: 20)
+                                          : null,
+                                  onTap: busy ? null : () => choose(family));
+                            }),
                       ])),
-                  Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: TextField(
-                          controller: search,
-                          enabled: !busy,
-                          textInputAction: TextInputAction.done,
-                          decoration: InputDecoration(
-                              labelText: FormStrings.customFontNameLabel,
-                              hintText: 'Roboto Slab',
-                              border: const OutlineInputBorder(),
-                              prefixIcon: const Icon(Icons.search),
-                              errorText: error),
-                          onChanged: (_) => setState(() => error = null),
-                          onSubmitted: submit)),
-                  Expanded(
-                      child: CustomScrollView(slivers: [
-                    if (query.isEmpty)
-                      SliverToBoxAdapter(
-                          child: Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                              child: Text(FormStrings.fontSearchHint,
-                                  style:
-                                      Theme.of(context).textTheme.bodyMedium))),
-                    if (query.isEmpty)
-                      SliverToBoxAdapter(
-                          child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 8),
-                              child: HtmlView(
-                                  html:
-                                      '<a href="https://fonts.google.com/">${FormStrings.browseGoogleFonts}</a>',
-                                  isSelectable: false))),
-                    SliverList.builder(
-                        itemCount: options.length,
-                        itemBuilder: (context, index) {
-                          final family = options[index];
-                          return ListTile(
-                              title: Text(_displayFont(family)),
-                              selected: widget.value == family,
-                              trailing: busy && loading == family
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2))
-                                  : widget.value == family
-                                      ? const Icon(Icons.check, size: 20)
-                                      : null,
-                              onTap: busy ? null : () => choose(family));
-                        }),
-                  ])),
-                ]))));
+                    ])))));
   }
 }

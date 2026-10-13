@@ -19,6 +19,7 @@ BEGIN
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
     FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=ANY(p_tickets)));
   -- Lock in the same order as the bulk mutation, then capture only actual changes.
   PERFORM o.id FROM eshop.orders o WHERE o.id IN (
     SELECT opt."order" FROM eshop.order_product_ticket opt

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/cleaning/cleaning_status.dart';
 import 'package:fstapp/components/cleaning/cleaning_strings.dart';
@@ -49,7 +50,7 @@ class _CleaningReportDialogState extends State<CleaningReportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(CleaningStrings.reportDialogTitle(widget.placeTitle)),
       content: SingleChildScrollView(
         child: Column(

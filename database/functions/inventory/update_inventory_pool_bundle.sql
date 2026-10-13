@@ -43,6 +43,12 @@ BEGIN
             now()
         ) RETURNING id INTO v_pool_id;
     ELSE
+        PERFORM 1 FROM public.inventory_pools WHERE id=v_pool_id AND occasion=v_occasion_id FOR UPDATE;
+        IF NOT FOUND THEN RAISE EXCEPTION 'Inventory pool scope mismatch'; END IF;
+        PERFORM 1 FROM public.inventory_contexts WHERE inventory_pool=v_pool_id ORDER BY id FOR UPDATE;
+        IF (v_pool_data->>'sellable_capacity')::bigint < (SELECT count(*) FROM eshop.spots s JOIN public.inventory_contexts ic ON ic.id=s.inventory_context
+          WHERE ic.inventory_pool=v_pool_id AND (s.order_product_ticket IS NOT NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>clock_timestamp()))) THEN
+          RAISE EXCEPTION 'INVENTORY_CAPACITY_BELOW_COMMITTED'; END IF;
         -- Update the existing pool
         UPDATE public.inventory_pools
         SET

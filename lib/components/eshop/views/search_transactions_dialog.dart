@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/models/transaction_model.dart';
@@ -133,7 +134,8 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
   void _selectTransaction(TransactionModel transaction) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
         title: Text(CommonStrings.confirm),
         content: Text(OrdersStrings.addTransactionConfirmation),
         actions: [
@@ -165,7 +167,8 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(OrdersStrings.searchUnpairedTransactions),
       content: SizedBox(
         width: 400,
@@ -189,7 +192,9 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
               child: _isLoading
                   ? Center(child: CircularProgressIndicator())
                   : _filteredTransactions.isEmpty
-                      ? Center(child: Text(OrdersStrings.noUnpairedTransactionsFound))
+                      ? Center(
+                          child:
+                              Text(OrdersStrings.noUnpairedTransactionsFound))
                       : SelectionArea(
                           child: ListView.builder(
                             itemCount: _filteredTransactions.length,
@@ -238,14 +243,16 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
                                                 children: [
                                                   Icon(Icons.payments,
                                                       size: 18,
-                                                      color: ThemeConfig.grey700(
-                                                          context)),
+                                                      color:
+                                                          ThemeConfig.grey700(
+                                                              context)),
                                                   SizedBox(width: 8),
                                                   Text(
                                                     OrdersStrings
                                                         .transactionTypeCash,
                                                     style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       fontSize: 15,
                                                     ),
                                                   ),
@@ -262,7 +269,8 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
                                                         context),
                                                     fontSize: 14,
                                                   ),
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                           ],
@@ -277,13 +285,14 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
                                               color:
                                                   ThemeConfig.grey800(context)),
                                         ),
-                                        if (transaction.formattedBankAccount.isNotEmpty)
+                                        if (transaction
+                                            .formattedBankAccount.isNotEmpty)
                                           Text(
                                             transaction.formattedBankAccount,
                                             style: TextStyle(
                                                 fontSize: 12,
-                                                color:
-                                                    ThemeConfig.grey600(context)),
+                                                color: ThemeConfig.grey600(
+                                                    context)),
                                           ),
                                         if (transaction.vs != null &&
                                             transaction.vs!.isNotEmpty)
@@ -291,19 +300,19 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
                                             '${OrdersStrings.variableSymbol}: ${transaction.vs!}',
                                             style: TextStyle(
                                                 fontSize: 12,
-                                                color:
-                                                    ThemeConfig.grey600(context)),
+                                                color: ThemeConfig.grey600(
+                                                    context)),
                                           ),
                                         if (transaction.messageForRecipient !=
                                                 null &&
-                                            transaction
-                                                .messageForRecipient!.isNotEmpty)
+                                            transaction.messageForRecipient!
+                                                .isNotEmpty)
                                           Text(
                                             '${OrdersStrings.message}: ${transaction.messageForRecipient!}',
                                             style: TextStyle(
                                                 fontSize: 12,
-                                                color:
-                                                    ThemeConfig.grey600(context)),
+                                                color: ThemeConfig.grey600(
+                                                    context)),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -319,12 +328,7 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(CommonStrings.close),
-        ),
-      ],
+      actions: [],
     );
   }
 }

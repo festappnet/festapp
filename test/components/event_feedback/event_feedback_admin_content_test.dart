@@ -90,7 +90,7 @@ void main() {
     expect(deletedIds, isEmpty);
     expect(find.byType(AlertDialog), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Common.ok'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Common.delete'));
     await tester.pumpAndSettle();
 
     expect(deletedIds, [41]);

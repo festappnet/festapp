@@ -127,3 +127,14 @@ describe('Fixes Validation', () => {
         assert.strictEqual(Object.keys(errors).length, 0);
     });
 });
+
+
+test('multi-choice validation counts a stable answer once and isolates same-type field IDs', () => {
+    const ticket = {fields: [
+        {107: 'A | B', select_many: 'A | B', _subFieldId: 107},
+        {108: ['C', 'D'], select_many: ['C', 'D'], _subFieldId: 108},
+    ]};
+    assert.deepStrictEqual(FormValidator.getTicketFieldValues(ticket, {id: 107, type: 'select_many'}), ['A', 'B']);
+    assert.deepStrictEqual(FormValidator.getTicketFieldValues(ticket, {id: 108, type: 'select_many'}), ['C', 'D']);
+    assert.deepStrictEqual(FormValidator.getTicketFieldValues({fields: [{107: []}]}, {id: 107, type: 'select_many'}), []);
+});

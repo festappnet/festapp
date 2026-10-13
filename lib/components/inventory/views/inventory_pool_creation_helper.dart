@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/db_inventory_pools.dart';
@@ -25,7 +26,9 @@ class InventoryPoolCreationHelper {
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
+            return AppAlertDialog(
+              onClose:
+                  isCreating ? null : () => Navigator.of(dialogContext).pop(),
               title: Text(InventoryStrings.creationDialogTitle),
               content: Form(
                 key: formKey,

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,7 @@ class EditorSnapshot {
 Future<bool> confirmDiscardChanges(BuildContext context) async =>
     await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => AppAlertDialog(
         title: Text(CommonStrings.discardChanges),
         content: Text(CommonStrings.discardChangesConfirmation),
         actions: [

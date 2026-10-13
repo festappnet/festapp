@@ -15,6 +15,20 @@ import 'package:fstapp/components/single_data_grid/single_data_grid_controller.d
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 
 void main() {
+  test('valid tickets exclude waiting rows and waiting orders without hiding active waiting orders', () {
+    TrinaRow row(String ticketState, String orderState) => TrinaRow(cells: {
+      EshopColumns.TICKET_STATE: TrinaCell(value: '$ticketState;Label'),
+      EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: OrderModel(id: 1, state: orderState)),
+    });
+    final waiting = row(OrderModel.waitlistedState, OrderModel.waitlistedState);
+    expect(OrderGridFilters.orderIsNonCancelled(waiting), isTrue);
+    expect(OrderGridFilters.ticketIsNonCancelled(waiting), isFalse);
+    expect(OrderGridFilters.ticketIsNonCancelled(row(OrderModel.waitlistedState, OrderModel.orderedState)), isFalse);
+    expect(OrderGridFilters.ticketIsNonCancelled(row(OrderModel.orderedState, OrderModel.waitlistedState)), isFalse);
+    expect(OrderGridFilters.ticketIsNonCancelled(row(OrderModel.orderedState, OrderModel.orderedState)), isTrue);
+    expect(OrderGridFilters.ticketIsNonCancelled(row(OrderModel.stornoState, OrderModel.orderedState)), isFalse);
+  });
+
   test('canonical sequence is readonly; legacy DTO remains readable', () {
     final order = OrderModel.fromCanonicalJson({
       'id': 5,

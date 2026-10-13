@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/models/product_model.dart';
@@ -203,18 +204,15 @@ class _ProductsDialogState extends State<ProductsDialog> {
 
     // Combine order symbol and customer name for the title
     final dialogTitle =
-        "${_bundle?.order.toBasicString() ?? ""} $customerName".trim();
+        "${_bundle?.order.orderSymbol ?? ""} $customerName".trim();
 
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(false),
       insetPadding: const EdgeInsets.all(16),
       titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       title: Row(
         children: [
           Expanded(child: SelectableText(dialogTitle)),
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pop(false),
-          )
         ],
       ),
       content: _loading

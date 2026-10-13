@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/html/html_helper.dart';
@@ -29,7 +30,7 @@ class NewsSendConfirmationDialog extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final message = HtmlHelper.htmlToSnippet(htmlContent, maxLen: 220);
 
-    return AlertDialog(
+    return AppAlertDialog(
       icon: Icon(
         Icons.notifications_active_outlined,
       ),

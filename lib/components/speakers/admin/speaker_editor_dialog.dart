@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -48,7 +49,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   late final TextEditingController _nameController;
   late final TextEditingController _subtitleController;
@@ -103,8 +104,9 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
   }
 
   Future<void> _save() async {
-    await ExceptionHandler.guardVoid(context, futureFunction: () =>
-      _htmlSave.save(() => _performHtmlSave(), context: context));
+    await ExceptionHandler.guardVoid(context,
+        futureFunction: () =>
+            _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
@@ -115,7 +117,8 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       return;
     }
 
-    _description = await _htmlSave.prepare(_description ?? '', HtmlMediaOwner.occasion(_occasionId));
+    _description = await _htmlSave.prepare(
+        _description ?? '', HtmlMediaOwner.occasion(_occasionId));
     final subtitle = _subtitleController.text.trim();
     final model = widget.speaker
       ..title = name
@@ -257,10 +260,13 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
     }
   }
 
-
   Widget _buildHtmlParent(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () async {
+        if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted)
+          Navigator.of(context).pop(_changed);
+      },
       title: Text(_isExisting
           ? SpeakersStrings.editSpeaker
           : SpeakersStrings.addSpeaker),
@@ -327,9 +333,11 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
               ),
               const SizedBox(height: 16),
               Text(SpeakersStrings.bio, style: theme.textTheme.labelMedium),
-              EditableHtmlField(html: _description, coordinator: _htmlSave,
-                owner: HtmlMediaOwner.occasion(_occasionId),
-                onChanged: (html) => setState(() => _description = html)),
+              EditableHtmlField(
+                  html: _description,
+                  coordinator: _htmlSave,
+                  owner: HtmlMediaOwner.occasion(_occasionId),
+                  onChanged: (html) => setState(() => _description = html)),
               const SizedBox(height: 16),
               // Counseling competence areas only matter when counseling is on (R5).
               if (FeatureService.isCounselingEnabled()) ...[
@@ -371,7 +379,10 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () async { if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted) Navigator.of(context).pop(_changed); },
+          onPressed: () async {
+            if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted)
+              Navigator.of(context).pop(_changed);
+          },
           child: Text(CommonStrings.storno),
         ),
         FilledButton(

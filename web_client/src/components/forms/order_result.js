@@ -1,3 +1,4 @@
+import { WaitlistStrings } from './waitlist_strings.js';
 import { observeOrderDelivery } from './order_delivery_status.js';
 import { OrdersStrings } from '../eshop/orders_strings.js';
 import { PublicOrderStrings } from './public_order_strings.js';
@@ -30,7 +31,7 @@ export class OrderResult {
             // Generic Error
             const code = (resultData && resultData.code) || 0;
             title = PublicOrderStrings.orderFailed;
-            subtitle = PublicOrderStrings.orderError(code);
+            subtitle = resultData?.errorCode ? WaitlistStrings.text(resultData.errorCode) : PublicOrderStrings.orderError(code);
             icon = 'error';
             colorClass = 'error-color';
         }
@@ -155,7 +156,7 @@ export class OrderResult {
         `;
 
         container.querySelector('.result-title').textContent = title;
-        container.querySelector('.result-subtitle').textContent = subtitle;
+        container.querySelector('.result-subtitle').textContent = subtitle + (success && resultData?.conversion === 'split' ? ` ${WaitlistStrings.remaining}: ${resultData.waitlistSummary?.pendingPlaces ?? 0}.` : '');
         const orderSymbol = success ? resultData?.ticketOrder?.order?.order_symbol : null;
         if (typeof orderSymbol === 'string') {
             container.querySelector('.result-order-symbol').textContent = `${OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;

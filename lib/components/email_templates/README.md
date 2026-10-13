@@ -36,3 +36,21 @@ does not prove mailbox delivery. See
 - `update_email_template` -- persists single template changes
 - `update_entity_email_banner` -- updates banner + regenerates wrapper HTML
 - `get_email_template_and_wrapper` -- resolves template + wrapper for sending
+
+## Waitlist messages
+
+`waitlist_confirmation` and `waitlist_offer` use this same inherited resolver,
+wrapper and editor. SQL creates their intents atomically with registration or
+offer slots in `public.email_messages`. The producer encrypts the capability
+source; the queue renderer resolves the committed order symbol and trusted
+organization `DEFAULT_URL`. Raw tokens never enter order data, Client Sync,
+delivery status or history. Links carry them in URL fragments, with tracking
+disabled and referrer/cache protection.
+
+Confirmation has no payment information. Offer templates explain that products
+are chosen according to availability during explicit acceptance. Their renderer
+uses current pending places; the existing send gate invalidates a cached snapshot
+after partial acceptance and sends only after re-rendering. Expired or cancelled
+offers fail the canonical intent-validity gate before any provider call.
+An editor preview resolves the same template/wrapper without issuing tokens or
+creating offers. Acceptance uses the ordinary order confirmation/ticket flow.

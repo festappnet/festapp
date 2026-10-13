@@ -65,7 +65,7 @@ BEGIN
             ON o.id = t.occasion
         LEFT JOIN eshop.blueprints b
             ON b.occasion = o.id
-        WHERE opt."order" = order_id
+        WHERE opt."order" = order_id AND t.state IS DISTINCT FROM 'waitlisted' AND t.ticket_symbol IS NOT NULL
         ORDER BY t.id
     ) ticket_detail;
 

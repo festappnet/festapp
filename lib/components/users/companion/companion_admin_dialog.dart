@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/users/companion/db_companions.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
@@ -116,8 +117,7 @@ class _CompanionAdminDialogState extends State<CompanionAdminDialog> {
     }).toList(growable: false);
     return ValueListenableBuilder<bool>(
       valueListenable: ConnectivityService.isOfflineNotifier,
-      builder: (context, isOffline, _) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context, isOffline, _) => AppAlertDialog(
         title: Text(UserStrings.manageCompanions),
         content: SizedBox(
           width: 680,

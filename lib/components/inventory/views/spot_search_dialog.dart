@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/inventory/models/spot_management_models_and_constants.dart';
 import 'package:fstapp/components/eshop/models/spot_model.dart';
@@ -136,7 +137,8 @@ class _SpotSearchDialogState extends State<SpotSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(InventoryStrings.searchDialogTitle(
           widget.rendererContext.column.title)),
       contentPadding: const EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 0),

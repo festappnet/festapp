@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
@@ -139,7 +140,7 @@ class _TicketSettingsState extends State<TicketSettings> {
         final result = await showDialog<TicketLayoutResult>(
             context: context,
             useSafeArea: false,
-            builder: (c) => Dialog.fullscreen(
+            builder: (c) => AppDialog.fullscreen(
                 child: TicketLayoutEditor(
                     routeRouter: routeRouter,
                     productEditing: widget.productEditing,

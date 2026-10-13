@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -248,9 +249,7 @@ class _ReceptionPageState extends State<ReceptionPage> {
   Future<void> _cancel(String user) async {
     final ok = await showDialog<bool>(
             context: context,
-            builder: (c) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+            builder: (c) => AppAlertDialog(
                     title: Text(ReceptionStrings.cancel),
                     content: Text(ReceptionStrings.cancelWarning),
                     actions: [

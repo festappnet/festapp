@@ -1,5 +1,6 @@
 // file: lib/helpers/import_dialog_helper.dart
 
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -92,7 +93,7 @@ class ImportDialogHelper {
     return await showDialog<ImportSource>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return AppAlertDialog(
           title: Text(CommonStrings.import),
           content: Text(FeaturesStrings.chooseSourcePrompt),
           actions: actions,

@@ -15,7 +15,8 @@ BEGIN
     SELECT id
     INTO v_occasion_id
     FROM public.occasions
-    WHERE link = occasion_link;
+    WHERE link = occasion_link
+      AND organization=(SELECT organization FROM public.user_info WHERE id=auth.uid());
 
     -- Step 2: If no occasion is found, return a 404 'Not Found' error.
     -- This handles cases where the occasion_link does not exist.
@@ -28,7 +29,8 @@ BEGIN
 
     -- Step 3: Verify if the user has editor rights for this occasion.
     -- This assumes a function `get_is_editor_view_on_occasion` exists to check permissions.
-    IF NOT get_is_editor_view_on_occasion(v_occasion_id) THEN
+    IF NOT public.get_is_editor_view_on_occasion(v_occasion_id)
+       AND NOT public.get_is_editor_order_view_on_occasion(v_occasion_id) THEN
         RETURN jsonb_build_object(
             'code', 403,
             'message', 'User is not authorized to view forms for this occasion.'
@@ -39,7 +41,9 @@ BEGIN
     -- For each form, a subquery aggregates its related form_fields.
     SELECT jsonb_agg(
         jsonb_build_object(
-            'id', f.id,
+            'id', f.id,'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+                'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+                'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
             'title', f.title,
             'data', f.data,
             'key', f.key,
