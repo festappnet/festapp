@@ -32,6 +32,14 @@ DECLARE
     user_units_json jsonb;
     current_user_id UUID := auth.uid();
 BEGIN
+    -- A direct unit link must stay inside the requested tenant.
+    IF unit_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM public.units u
+        WHERE u.id = unit_id AND u.organization = org_id
+    ) THEN
+        RETURN jsonb_build_object('code', 404, 'message', 'Unit not found');
+    END IF;
+
     -- Log the request details in log_app_config table
     INSERT INTO public.log_app_config (organization, platform)
     VALUES (org_id, platform_info);
@@ -287,7 +295,7 @@ BEGIN
     SELECT json_agg(jsonb_build_object('id', u.id, 'title', u.title) ORDER BY u.title)
     INTO user_units_json
     FROM public.units u
-    WHERE (
+    WHERE u.organization = org_id AND (
         EXISTS (
             SELECT 1 
             FROM public.unit_users uu 
