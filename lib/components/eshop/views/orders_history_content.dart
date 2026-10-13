@@ -110,7 +110,7 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
       idColumn: EshopColumns.HISTORY_ID,
       actionsExtended: DataGridActionsController(
         isAddActionPossible: () => false,
-        canDeleteRow: OrderGridFilters.orderIsNonCancelled,
+        canDeleteRow: OrderGridFilters.historyCanBeDeleted,
       ),
       columns: EshopColumns.generateColumns(context, [
         EshopColumns.HISTORY_ID,
