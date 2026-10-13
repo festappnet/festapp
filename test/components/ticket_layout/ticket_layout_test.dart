@@ -2639,6 +2639,83 @@ void main() {
     c.dispose();
     r.dispose();
   });
+  for (final width in [320.0, 1400.0]) {
+    testWidgets(
+        'product properties stay usable at $width with local preview and locks',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final service = FakeService();
+      final recorder = ui.PictureRecorder();
+      Canvas(recorder).drawColor(Colors.white, BlendMode.src);
+      final picture = recorder.endRecording();
+      final background = (await tester.runAsync(() => picture.toImage(8, 8)))!;
+      picture.dispose();
+      final r = resources(
+          background: background,
+          template: document().resizeCanvasArea(const Size(200, 600)));
+      r.catalog = [
+        const TicketProductType(123, 'Večeře', true, {
+          'id': 22,
+          'value': 'Steak z panenky + šťouch. brambory',
+          'price': 200,
+          'currency_code': 'CZK'
+        })
+      ];
+      await tester.pumpWidget(MaterialApp(
+        builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(width == 320 ? 2 : 1)),
+            child: child!),
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'wide',
+            resources: r,
+            background: 'local-fixture',
+            service: service),
+      ));
+      await tester.pumpAndSettle();
+      final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+      expect(state.controller.addProductField(123, 'Večeře'), isTrue);
+      if (width == 320) unawaited(state.showMobilePanel(1));
+      await tester.pumpAndSettle();
+      final group = find.byKey(const ValueKey('ticket-product-group'));
+      expect(tester.widget<OutlinedButton>(group).onPressed, isNotNull);
+      await tester.tap(group);
+      await tester.pumpAndSettle();
+      await tester.tap(
+          find.widgetWithText(TextButton, 'TicketLayout.cancel'.tr()).last);
+      await tester.pumpAndSettle();
+      final input = find.descendant(
+          of: find.byType(TicketProductLabelInput),
+          matching: find.byType(TextField));
+      await tester.ensureVisible(input);
+      await tester.enterText(input, 'Moje menu');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      final example = find.byKey(const ValueKey('ticket-product-example'));
+      expect(
+          find.descendant(
+              of: example,
+              matching:
+                  find.text('Moje menu: Steak z panenky + šťouch. brambory')),
+          findsOneWidget);
+      expect(find.text('9/120'), findsNothing);
+      state.controller
+          .change(state.controller.selection.copyWith(locked: true));
+      await tester.pumpAndSettle();
+      expect(tester.widget<OutlinedButton>(group).onPressed, isNull);
+      expect(tester.widget<TextField>(input).enabled, isFalse);
+      final remove =
+          find.widgetWithText(TextButton, 'TicketLayout.removeProduct'.tr());
+      expect(tester.widget<TextButton>(remove).onPressed, isNull);
+      expect(service.pdfCalls, 0);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   testWidgets(
       'product label help wraps in narrow panels and preserves empty labels',
       (tester) async {

@@ -2428,7 +2428,7 @@
     "productGroup": "Product group",
     "productLabel": "Printed label",
     "labelHint": "An empty label prints only the product name",
-    "example": "Example",
+    "example": "Ticket preview",
     "noExample": "No available example",
     "removeProduct": "Remove field",
     "searchProducts": "Search groups",
