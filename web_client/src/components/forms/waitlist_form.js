@@ -70,12 +70,22 @@ export function renderWaitlistControls(page, model) {
     const message = document.createElement('p');
     message.className = 'waitlist-intro';
     if (model.registrationMode === 'waitlist') {
-        const heading = document.createElement('h2');
-        heading.textContent = S.title;
+        section.classList.add('is-waitlist');
+        const heading = document.createElement('strong');
+        heading.className = 'waitlist-mode-label';
+        heading.textContent = S.text('registrationModeLabel');
         section.appendChild(heading);
         message.textContent = S.explanation;
     }
     section.appendChild(message);
+    if (model.registrationMode === 'waitlist' && form.querySelector('.waitlist-product-options')) {
+        const reason = document.createElement('aside');
+        reason.id = 'waitlist-product-reason';
+        reason.className = 'waitlist-product-notice';
+        reason.setAttribute('role', 'note');
+        reason.textContent = S.text('productsAfterOffer');
+        section.appendChild(reason);
+    }
     form.prepend(section);
     const b = model.offerBundle;
     if (!b) return;

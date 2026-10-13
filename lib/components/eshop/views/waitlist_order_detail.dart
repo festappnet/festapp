@@ -7,13 +7,26 @@ import '../../../services/dialog_helper.dart';
 import '../../forms/waitlist_commands.dart';
 import '../../forms/waitlist_strings.dart';
 import '../../forms/views/form_page.dart';
+import '../../forms/models/form_model.dart';
+import '../../forms/views/waitlist_offers_dialog.dart';
+import '../models/waitlist_summary_model.dart';
 import '../models/order_model.dart';
 import '../orders_strings.dart';
 
 class WaitlistOrderDetail extends StatefulWidget {
-  const WaitlistOrderDetail({super.key, required this.order, this.loadDetail});
+  const WaitlistOrderDetail(
+      {super.key,
+      required this.order,
+      this.loadDetail,
+      this.executeCommand,
+      this.onChanged,
+      this.offerDialogBuilder});
   final OrderModel order;
   final Future<Map<String, dynamic>> Function(int)? loadDetail;
+  final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
+      executeCommand;
+  final Future<void> Function()? onChanged;
+  final Widget Function(FormModel, List<OrderModel>)? offerDialogBuilder;
   @override
   State<WaitlistOrderDetail> createState() => _WaitlistOrderDetailState();
 }
@@ -37,6 +50,13 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       if (mounted) {
         setState(() {
           _detail = detail;
+          if (detail['waitlistSummary'] case final Map summary) {
+            final parsed = WaitlistSummaryModel.fromJson(
+                Map<String, dynamic>.from(summary));
+            widget.order.waitlistSummary = parsed;
+            widget.order.active = parsed.isActive;
+            widget.order.allowedActions = parsed.allowedActions;
+          }
           _selected.clear();
           _error = null;
           final eligible =
@@ -53,27 +73,90 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
     }
   }
 
+  Future<void> _notifyParent() async {
+    try {
+      await widget.onChanged?.call();
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = WaitlistStrings.refreshAfterMutation);
+    }
+  }
+
   Future<void> _resolve(String operation, [String? offerId]) async {
-    if (!RightsService.isEditorOrder() || _selected.isEmpty) return;
-    if (!await DialogHelper.showConfirmationDialog(
-        context, WaitlistStrings.title, WaitlistStrings.confirm)) return;
+    if (!RightsService.isEditorOrder() || _selected.isEmpty || _busy) return;
+    final (title, explanation, button) = switch (operation) {
+      'withdraw' => (
+          _selected.length == 1
+              ? WaitlistStrings.withdrawTitle
+              : WaitlistStrings.withdrawSelectedTitle,
+          WaitlistStrings.withdrawExplanation,
+          WaitlistStrings.withdraw
+        ),
+      'decline' => (
+          WaitlistStrings.declineOfferTitle,
+          WaitlistStrings.declineOfferExplanation,
+          WaitlistStrings.decline
+        ),
+      'cancel' => (
+          WaitlistStrings.cancelOfferTitle,
+          WaitlistStrings.cancelOfferExplanation,
+          WaitlistStrings.cancel
+        ),
+      _ => throw ArgumentError.value(operation),
+    };
+    if (!await DialogHelper.showConfirmationDialog(context, title, explanation,
+        confirmButtonMessage: button)) return;
     if (!mounted) return;
     setState(() => _busy = true);
     try {
-      await _commands.command(operation, {
+      await (widget.executeCommand ?? _commands.command)(operation, {
         'orderId': widget.order.id,
         if (offerId != null) 'offerId': offerId,
         'ticketIds': _selected.toList()
       });
-      await _load();
     } catch (_) {
-      if (mounted) {
+      if (mounted)
         setState(() {
           _error = WaitlistStrings.stale;
           _busy = false;
         });
-      }
+      return;
     }
+    // The mutation succeeded. Refresh failures must not turn it into a failed command.
+    _selected.clear();
+    await _load();
+    await _notifyParent();
+  }
+
+  bool get _hasEligibleTickets =>
+      (_detail?['tickets'] as List? ?? []).any(_isSelectable);
+  bool get _canOffer =>
+      !_busy &&
+      _error == null &&
+      _hasEligibleTickets &&
+      RightsService.isEditorOrder() &&
+      widget.order.isWaitlisted &&
+      widget.order.form?.waitlistEnabled == true &&
+      _detail?['capacity']?['canSendOffers'] == true;
+
+  Future<void> _offer() async {
+    if (!_canOffer) return;
+    if (!await DialogHelper.showConfirmationDialog(
+        context, WaitlistStrings.offerTitle, WaitlistStrings.offerExplanation,
+        confirmButtonMessage: WaitlistStrings.offerContinue)) return;
+    if (!mounted) return;
+    final form = widget.order.form!;
+    await showDialog(
+        context: context,
+        builder: (_) =>
+            widget.offerDialogBuilder?.call(form, [widget.order]) ??
+            WaitlistOffersDialog(
+                form: form,
+                orders: [widget.order],
+                targetOrderId: widget.order.id));
+    if (!mounted) return;
+    await _load();
+    await _notifyParent();
   }
 
   bool _selectionBelongsTo(dynamic offer) =>
@@ -161,15 +244,38 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                                 title: Text(_ticketLabel(entry.$2, entry.$1)),
                                 subtitle: Text(WaitlistStrings.text(
                                     entry.$2['lifecycle'])))),
-                  if (!_busy &&
-                      _selected.isNotEmpty &&
-                      RightsService.isEditorOrder() &&
-                      widget.order.isWaitlisted)
+                  if (RightsService.isEditorOrder() &&
+                      widget.order.isWaitlisted &&
+                      _hasEligibleTickets)
                     Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: OutlinedButton(
-                            onPressed: () => _resolve('withdraw'),
-                            child: Text(WaitlistStrings.withdraw))),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(spacing: 8, runSpacing: 8, children: [
+                                OutlinedButton(
+                                    onPressed: _canOffer ? _offer : null,
+                                    child: Text(WaitlistStrings.offerPlace)),
+                                OutlinedButton(
+                                    onPressed: !_busy &&
+                                            _error == null &&
+                                            _selected.isNotEmpty
+                                        ? () => _resolve('withdraw')
+                                        : null,
+                                    child: Text(WaitlistStrings.withdraw)),
+                              ]),
+                              if (!_busy &&
+                                  _detail?['capacity']?['canSendOffers'] !=
+                                      true)
+                                Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(_detail?['capacity']
+                                                ?['blockedReason'] ==
+                                            'WAITLIST_NOT_AVAILABLE'
+                                        ? WaitlistStrings.text(
+                                            'WAITLIST_NOT_AVAILABLE')
+                                        : WaitlistStrings.full)),
+                            ])),
                   if ((_detail?['offers'] as List? ?? []).isNotEmpty) ...[
                     Text(WaitlistStrings.offers,
                         style: Theme.of(context).textTheme.titleMedium),

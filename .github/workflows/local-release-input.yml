@@ -1,0 +1,30 @@
+name: Provision encrypted local release input
+on:
+  workflow_dispatch:
+    inputs:
+      recipient_public_key_base64:
+        description: Base64 RSA public key of the release workstation
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  seal:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Seal the existing vstupenky.online input
+        env:
+          RELEASE_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_FESTAPPTICKETS }}
+          RECIPIENT_PUBLIC_KEY_BASE64: ${{ inputs.recipient_public_key_base64 }}
+        run: node automation/release/seal_local_release_manifest.mjs "$RUNNER_TEMP/sealed-release-input.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: festapptickets-local-release-input
+          path: ${{ runner.temp }}/sealed-release-input.json
+          retention-days: 1
+          if-no-files-found: error

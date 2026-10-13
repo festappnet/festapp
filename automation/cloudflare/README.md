@@ -16,6 +16,14 @@ project contains both its `pages.dev` hostname and configured custom domain.
 It cannot create or attach a project/domain; first activation still requires
 the scoped API-token path.
 
+Canonical-backend builds also require `FESTAPP_RELEASE_MANIFEST` pointing to
+the existing private tenant release manifest. For `festapptickets`, the manual
+`local-release-input.yml` workflow can seal the existing GitHub release secret
+to a workstation RSA public key (at least 3072 bits). It neither builds nor
+deploys. The encrypted artifact expires after one day; keep the decrypted
+local input outside the repository with mode 600 and use it for direct builds.
+This copies the approved input unchanged, including its recorded canary proof.
+
 Pushing a `prod/*` branch does not start a production build. The GitHub
 `Deploy` workflow is a manual fallback and must be explicitly dispatched for
 the exact production branch; this prevents intermediate overlay commits from

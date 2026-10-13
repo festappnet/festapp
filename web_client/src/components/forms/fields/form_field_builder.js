@@ -4,7 +4,7 @@ import { CheckBoxFieldBuilder } from './check_box_field_builder.js';
 import { TicketFieldBuilder } from './ticket_field_builder.js';
 import { DateFieldBuilder } from './date_field_builder.js';
 import { IdDocumentFieldBuilder } from './id_document_field_builder.js';
-import { WaitlistStrings } from '../waitlist_strings.js';
+import { formFieldTitle } from '../form_field_labels.js';
 import { FormStrings } from '../form_strings.js';
 
 export class FormFieldBuilder {
@@ -14,9 +14,7 @@ export class FormFieldBuilder {
             (['product_type', 'spot'].includes(field.type) || field.productTypeId || field.data?.product_dependent);
         if (waitingProduct) field = { ...field, isRequired: false, value: null, data: { ...field.data, default_value: null } };
         // Auto-Title Logic
-        if (!field.title || field.title.trim() === '') {
-            field.title = FormFieldBuilder.getAutoTitle(field.type);
-        }
+        field.title = formFieldTitle(field);
 
         let fieldComponent = null;
 
@@ -90,18 +88,14 @@ export class FormFieldBuilder {
             const disabled = document.createElement('fieldset');
             disabled.disabled = true;
             disabled.className = 'waitlist-product-options';
-            const reason = document.createElement('p');
-            reason.id = `waitlist-product-${field.id}`;
-            reason.className = 'waitlist-product-reason';
-            reason.textContent = WaitlistStrings.text('productsAfterOffer');
-            disabled.setAttribute('aria-describedby', reason.id);
+            disabled.setAttribute('aria-describedby', 'waitlist-product-reason');
             fieldComponent.querySelectorAll('input,select,textarea,button').forEach(input => {
                 input.disabled = true;
                 input.required = false;
                 if ('checked' in input) input.checked = false;
             });
             fieldComponent.querySelectorAll('.btn-clear-selection').forEach(button => button.remove());
-            disabled.append(reason, fieldComponent);
+            disabled.appendChild(fieldComponent);
             fieldComponent = disabled;
         }
         const isCard = FormFieldBuilder.isCardDesign(formModel, field);
@@ -114,25 +108,6 @@ export class FormFieldBuilder {
         }
         
         return fieldComponent;
-    }
-
-    static getAutoTitle(type) {
-        switch (type) {
-            case 'name': return FormStrings.fieldName;
-            case 'surname': return FormStrings.fieldSurname;
-            case 'email': return FormStrings.fieldEmail;
-            case 'phone': return FormStrings.fieldPhone;
-            case 'city': return FormStrings.fieldCity;
-            case 'birth_year': return FormStrings.fieldBirthYear;
-            case 'birth_date': return FormStrings.fieldBirthDate;
-            case 'note': return FormStrings.fieldNote;
-            case 'address': return FormStrings.fieldAddress;
-            case 'nationality': return FormStrings.fieldNationality;
-            case 'sex': return FormStrings.sexLabel;
-
-            case 'id_document': return FormStrings.fieldIdDocument;
-            default: return '';
-        }
     }
 
     static isCardDesign(formModel, field) {

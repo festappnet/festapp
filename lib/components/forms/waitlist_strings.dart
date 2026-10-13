@@ -1,6 +1,19 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class WaitlistStrings {
+  static String get offerReviewExplanation => text('offerReviewExplanation');
+  static String get offerPlace => text('offerPlace');
+  static String get offerTitle => text('offerTitle');
+  static String get offerExplanation => text('offerExplanation');
+  static String get offerContinue => text('offerContinue');
+  static String get withdrawTitle => text('withdrawTitle');
+  static String get withdrawSelectedTitle => text('withdrawSelectedTitle');
+  static String get withdrawExplanation => text('withdrawExplanation');
+  static String get declineOfferTitle => text('declineOfferTitle');
+  static String get declineOfferExplanation => text('declineOfferExplanation');
+  static String get cancelOfferTitle => text('cancelOfferTitle');
+  static String get cancelOfferExplanation => text('cancelOfferExplanation');
+  static String get refreshAfterMutation => text('refreshAfterMutation');
   static String text(String key) => 'Waitlist.$key'.tr();
   static String get formOpenWaitlistMessage => text('formOpenWaitlistMessage');
   static String get limitCapacity => text('limitCapacity');

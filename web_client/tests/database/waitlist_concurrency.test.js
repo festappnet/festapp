@@ -245,3 +245,50 @@ for (const deletionFirst of [true, false]) {
     });
   });
 }
+
+test('tokenless admin withdrawal updates both canonical detail and order grid reads', { skip: !enabled }, async () => {
+  const actor = randomUUID();
+  try {
+    await withFixture(1, async (control, fixture) => {
+      await control.query('INSERT INTO auth.users(id,email) VALUES($1,$2)', [actor, `${actor}@example.invalid`]);
+      await control.query('INSERT INTO user_info(id,email_readonly,organization) VALUES($1,$2,$3)', [actor, `${actor}@example.invalid`, fixture.organization]);
+      await control.query('INSERT INTO occasion_users(occasion,"user",is_editor_order,is_editor_order_view) VALUES($1,$2,true,true)', [fixture.occasion, actor]);
+      fixture.actor = actor;
+      const filled = (await control.query('SELECT public.create_ticket_order_internal_v1(pg_temp.checkout($1::jsonb)) result', [fixture])).rows[0].result;
+      assert.ok(successful(filled));
+      const source = Number((await control.query('SELECT pg_temp.register($1::jsonb,2) result', [fixture])).rows[0].result.order);
+      const tickets = (await control.query('SELECT pg_temp.ticket_ids($1) ids', [source])).rows[0].ids.map(Number);
+      await control.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [fixture.actor]);
+      const read = async () => {
+        const detail = (await control.query('SELECT public.get_waitlist_order_detail($1) result', [source])).rows[0].result;
+        const bundle = (await control.query('SELECT public.get_orders($1::text,NULL::text,NULL::jsonb) result', [fixture.link])).rows[0].result;
+        return [detail, bundle.data.orders.find((order) => Number(order.id) === source)];
+      };
+      assert.equal((await read())[0].waitlistSummary.counts.waiting, 2);
+      const rejected = (await control.query('SELECT public.execute_waitlist_command_client_sync_v1($1,$2::jsonb,$3::uuid,$4::uuid,$5::uuid) result',
+        ['withdraw', { orderId: source, ticketIds: [-1] }, randomUUID(), randomUUID(), fixture.actor])).rows[0].result;
+      assert.equal(rejected.code, 409);
+      assert.equal(rejected.status, 'rejected');
+      assert.equal(rejected.data.errorCode, 'INVALID_CAPABILITY');
+      assert.equal((await read())[0].waitlistSummary.counts.waiting, 2, 'Rejected command must not silently resolve tickets');
+      for (const [index, id] of tickets.entries()) {
+        const command = randomUUID();
+        const payload = { orderId: source, ticketIds: [id] }; // No public capability token.
+        const result = (await control.query('SELECT public.execute_waitlist_command_client_sync_v1($1,$2::jsonb,$3::uuid,$4::uuid,$5::uuid) result',
+          ['withdraw', payload, command, randomUUID(), fixture.actor])).rows[0].result;
+        assert.equal(result.code, 200);
+        assert.equal(result.status, 'applied');
+        assert.equal(result.data.waitlistSummary.counts.withdrawn, index + 1);
+        for (const row of await read()) {
+          assert.equal(row.waitlistSummary.counts.withdrawn, index + 1);
+          assert.equal(row.waitlistSummary.counts.waiting ?? 0, tickets.length - index - 1);
+          assert.equal(row.waitlistSummary.isActive, index + 1 < tickets.length);
+        }
+      }
+    });
+  } finally {
+    const cleanupActor = await connect();
+    try { await cleanupActor.query('DELETE FROM auth.users WHERE id=$1', [actor]); }
+    finally { await cleanupActor.end(); }
+  }
+});
