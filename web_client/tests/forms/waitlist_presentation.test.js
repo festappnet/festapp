@@ -40,7 +40,7 @@ test('occupancy uses admitted count even when waiting priority reduces public av
         FormRenderer.render(host, current, model, false, {});
         renderWaitlistControls({ host, currentSession: current }, model);
         assert.equal(host.querySelector('.form-occupancy').textContent, 'Obsazenost: 11 z 12');
-        assert.equal(host.querySelector('form').firstElementChild.className, 'form-registration-status');
+        assert.ok(host.querySelector('form').firstElementChild.classList.contains('form-registration-status'));
         if (registrationMode === 'waitlist') assert.match(host.querySelector('.waitlist-intro').textContent, /e-mailem nabídku/);
     }
     d.window.close();
@@ -53,7 +53,9 @@ test('waiting products keep labeled disabled choices, no default, no required va
     FormRenderer.render(host, current, model, false, {});
     const product = host.querySelector('.waitlist-product-options');
     assert.ok(product); assert.match(product.textContent, /Ubytování/); assert.match(product.textContent, /Pokoj/);
-    assert.match(product.textContent, /a zaplatíte až/);
+    renderWaitlistControls({host, currentSession: current}, model);
+    assert.match(host.querySelector('.waitlist-product-notice').textContent, /Podrobnosti přihlášky a produkty doplníte/);
+    assert.equal(product.querySelector('.waitlist-product-notice'), null);
     const input = product.querySelector('input');
     assert.ok(input.disabled); assert.equal(input.checked, false); assert.equal(input.required, false);
     assert.equal(product.disabled, true);
@@ -247,5 +249,65 @@ test('waiting success and shared preview show occasion and enrollment context wi
     assert.equal(host.querySelector('.result-occasion-title').textContent, 'Víkend setkání');
     assert.equal(host.querySelector('.result-order-symbol').textContent, 'Symbol přihlášky: ABC123');
     assert.match(host.querySelector('.result-subtitle').textContent, /místo ještě není potvrzené/);
+    d.window.close();
+});
+
+test('shared preview resolves empty standard labels for both modes and keeps custom labels', () => {
+    const d = dom(); const host = document.querySelector('main');
+    for (const registrationMode of ['regular', 'waitlist']) {
+        const model = new FormModel({ registrationMode, fields: [
+            {id:1,type:'ticket'}, {id:2,type:'surname',title:null,is_ticket_field:true},
+            {id:3,type:'name',title:'   ',is_ticket_field:true},
+            {id:4,type:'email',title:''}, {id:5,type:'phone',title:'Váš telefon'},
+        ] });
+        const payload = {fields:[{4:'alex@example.invalid'},{5:'123'}],ticket:[{fields:[
+            {_subFieldId:2,surname:'Novotný'}, {_subFieldId:3,name:'Alex'},
+        ]}]};
+        const prepared = OrderPreview._prepareData(null, model, {totalPrice:0,currency:'CZK'}, payload);
+        host.innerHTML = OrderPreview._render(prepared);
+        assert.deepEqual([...host.querySelectorAll('.preview-label')].map(el=>el.textContent), ['E-mail:', 'Váš telefon:', 'Příjmení:', 'Jméno:']);
+        assert.doesNotMatch(host.textContent, /null:|undefined:/);
+    }
+    d.window.close();
+});
+
+test('empty waitlist cards disappear while multiple meaningful own answers and count remain', () => {
+    const d = dom(); const host = document.querySelector('main');
+    const model = new FormModel({registrationMode:'waitlist',fields:[
+        {id:1,type:'ticket'}, {id:2,type:'name',is_ticket_field:true},
+        {id:3,type:'text',title:'Diet',is_ticket_field:true}, {id:4,type:'text',title:'Access',is_ticket_field:true},
+    ]});
+    const price={totalPrice:0,currency:'CZK'};
+    const render=ticket=>{host.innerHTML=OrderPreview._render(OrderPreview._prepareData(null,model,price,{fields:[],ticket}));};
+    render([{fields:[]}]);
+    assert.equal(host.querySelector('.ticket-card'),null);
+    assert.equal(host.querySelector('.preview-registration-count'),null);
+    render([{fields:[]},{fields:[{_subFieldId:2,name:'Robin'},{_subFieldId:3,text:'Vegan'},{_subFieldId:4,text:'Step-free'}]}]);
+    assert.equal(host.querySelectorAll('.ticket-card').length,1);
+    assert.equal(host.querySelector('.ticket-header-title').textContent,'Osoba 2');
+    assert.equal(host.querySelector('.preview-registration-count').textContent,'Počet přihlášek: 2');
+    assert.match(host.textContent,/Robin/);assert.match(host.textContent,/Vegan/);assert.match(host.textContent,/Step-free/);
+    model.registrationMode='regular';render([{fields:[]}]);
+    assert.equal(host.querySelectorAll('.ticket-card').length,1);
+    d.window.close();
+});
+
+test('one distinct accessible product notice sits outside all disabled groups', () => {
+    const d=dom(); const host=document.querySelector('main');
+    const model=new FormModel({registrationMode:'waitlist',fields:[...fields,
+        {...fields[2],id:6,title:'Strava'},
+    ]});
+    const current=new FormSession(model);
+    FormRenderer.render(host,current,model,false,{});
+    renderWaitlistControls({host,currentSession:current},model);
+    const groups=[...host.querySelectorAll('.waitlist-product-options')];
+    assert.equal(groups.length,2);
+    assert.equal(host.querySelectorAll('.waitlist-product-notice').length,1);
+    const note=host.querySelector('.waitlist-product-notice');
+    assert.equal(note.getAttribute('role'),'note');
+    for(const group of groups){assert.equal(group.getAttribute('aria-describedby'),note.id);assert.equal(group.contains(note),false);assert.ok(group.disabled);}
+    assert.equal(host.querySelector('.form-registration-status h2'),null);
+    assert.match(host.querySelector('.waitlist-mode-label').textContent,/režimu náhradníků/);
+    assert.doesNotMatch(note.textContent,/zaplat/);
     d.window.close();
 });
