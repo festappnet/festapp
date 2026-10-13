@@ -201,7 +201,54 @@ class EmailTemplateModel {
   );
 
   /// Mapping of template codes to their available substitutions.
+  static List<EmailTemplateSub> get waitlistSubs => [
+        EmailTemplateSub(
+            code: 'order_symbol',
+            description: OrdersStrings.gridOrderSymbol,
+            defaultValue: '7G4K9M2R6A'),
+        EmailTemplateSub(
+            code: 'occasion_title',
+            description: EmailTemplatesStrings.subOccasionTitle,
+            defaultValue: 'Festival'),
+        EmailTemplateSub(
+            code: 'participant_count',
+            description: EmailTemplatesStrings.subParticipantCount,
+            defaultValue: '4'),
+        EmailTemplateSub(
+            code: 'manage_waitlist_url',
+            description: EmailTemplatesStrings.subManageWaitlistUrl,
+            defaultValue:
+                'https://example.invalid/form/example#waitlist?order_id=1&token=preview'),
+        EmailTemplateSub(
+            code: 'manage_waitlist_button',
+            description: EmailTemplatesStrings.subManageWaitlistButton,
+            defaultValue:
+                '<a href="https://example.invalid/form/example">Manage waiting</a>'),
+      ];
+
   static final Map<String, List<EmailTemplateSub>> substitutionDefinitions = {
+    'waitlist_confirmation': waitlistSubs,
+    'waitlist_offer': [
+      ...waitlistSubs,
+      EmailTemplateSub(
+          code: 'offered_count',
+          description: EmailTemplatesStrings.subOfferedCount,
+          defaultValue: '2'),
+      EmailTemplateSub(
+          code: 'offer_expires_at',
+          description: EmailTemplatesStrings.subOfferExpiresAt,
+          defaultValue: '2026-10-14T12:00:00Z'),
+      EmailTemplateSub(
+          code: 'offer_url',
+          description: EmailTemplatesStrings.subOfferUrl,
+          defaultValue:
+              'https://example.invalid/form/example#waitlist?offer_id=preview&token=preview'),
+      EmailTemplateSub(
+          code: 'offer_button',
+          description: EmailTemplatesStrings.subOfferButton,
+          defaultValue:
+              '<a href="https://example.invalid/form/example">Open offer</a>'),
+    ],
     'RESET_PASSWORD': [
       appNameSub,
       appPlatformLinksSub,
@@ -272,6 +319,19 @@ class EmailTemplateModel {
   /// - 'subs': A list of [EmailTemplateSub] objects for available substitutions.
   Map<String, dynamic> getUsageDetails() {
     switch (code) {
+      case 'waitlist_confirmation':
+        return {
+          'title': EmailTemplatesStrings.usageWaitlistConfirmationTitle,
+          'description':
+              EmailTemplatesStrings.usageWaitlistConfirmationDescription,
+          'subs': substitutionDefinitions['waitlist_confirmation'] ?? [],
+        };
+      case 'waitlist_offer':
+        return {
+          'title': EmailTemplatesStrings.usageWaitlistOfferTitle,
+          'description': EmailTemplatesStrings.usageWaitlistOfferDescription,
+          'subs': substitutionDefinitions['waitlist_offer'] ?? [],
+        };
       case 'RESET_PASSWORD':
         return {
           'title': EmailTemplatesStrings.usageResetPasswordTitle,

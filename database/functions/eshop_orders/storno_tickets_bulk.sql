@@ -18,6 +18,7 @@ DECLARE
     v_removed_price NUMERIC(10, 2);
     v_current_price NUMERIC(10, 2);
 BEGIN
+    PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=ANY(p_ticket_ids)));
     -- 1. Identify all unique orders involved in this batch AND their occasion
     -- We need the occasion ID to perform the security check
     FOR v_order_id, v_occasion_id IN
@@ -34,6 +35,13 @@ BEGIN
             RAISE EXCEPTION 'Permission denied to storno tickets for order % on occasion %', v_order_id, v_occasion_id;
         END IF;
 
+        -- Already-cancelled tickets are an idempotent no-op after authorization.
+        -- They must not invoke the edit guard or create a second cancellation intent.
+        IF NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id=opt.ticket
+          WHERE opt."order"=v_order_id AND t.id=ANY(p_ticket_ids) AND t.state IS DISTINCT FROM 'storno') THEN
+          CONTINUE;
+        END IF;
+        PERFORM public.check_order_is_mutable(v_order_id);
         -- Serialize cancellations on the same order before counting survivors.
         PERFORM 1 FROM eshop.orders WHERE id = v_order_id FOR UPDATE;
 

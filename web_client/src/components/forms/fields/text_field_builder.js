@@ -49,6 +49,7 @@ export class TextFieldBuilder {
         const actualContainer = container.firstElementChild;
         
         const input = actualContainer.querySelector('input');
+        if (field.value !== undefined && field.value !== null) input.value = String(field.value);
         
         if (field.type === 'phone') {
             TextFieldBuilder._attachPhoneLogic(input, actualContainer, formModel);

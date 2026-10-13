@@ -33,6 +33,19 @@ BEGIN
       OR public.get_is_editor_on_unit(unit_id)) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager or editor required';
   END IF;
+  -- The queue send gate locks global capacity before an order. Deletion must
+  -- acquire that outer lock before the form/order helper to avoid inversion.
+  PERFORM 1 FROM public.email_capacity FOR UPDATE;
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
+  IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=order_id AND state IN ('waitlisted','preparing_payment'))
+    OR EXISTS(SELECT 1 FROM eshop.waitlist_offers offer WHERE offer.order_id=delete_order_internal_v1.order_id)
+    OR EXISTS(SELECT 1 FROM eshop.orders WHERE source_waitlist_order_id=delete_order_internal_v1.order_id)
+    OR EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE target_order_id=delete_order_internal_v1.order_id
+      OR source_order_id=delete_order_internal_v1.order_id) THEN
+    RAISE EXCEPTION 'ORDER_HAS_WAITLIST_HISTORY'; END IF;
+  DELETE FROM eshop.order_participants WHERE current_order_id=order_id;
+  DELETE FROM eshop.form_participant_backfill_issues issue WHERE issue.order_id=delete_order_internal_v1.order_id;
+  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id IN(SELECT form FROM eshop.orders WHERE id=order_id);
   PERFORM public.lock_activity_aggregate_internal_v1(order_oc);
   IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
       OR public.get_is_editor_on_unit(unit_id)) THEN
@@ -168,6 +181,8 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.order.delete',v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+  PERFORM 1 FROM public.email_capacity FOR UPDATE;
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
   PERFORM public.lock_activity_aggregate_internal_v1(v_occasion);
   IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager or editor required'; END IF;

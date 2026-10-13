@@ -7,6 +7,7 @@ DECLARE
   v_trigger_count integer;
   v_before bigint;
   v_after bigint;
+  v_role text;
 BEGIN
   SELECT array_agg(expected.name) INTO v_missing
   FROM unnest(ARRAY[
@@ -242,8 +243,32 @@ BEGIN
   PERFORM assert_true(NOT EXISTS (
     SELECT 1 FROM public.client_sync_component_sources s
     CROSS JOIN LATERAL unnest(s.canonical_writers) writer(name)
-    WHERE writer.name ~ '(^|\.)(mutate|dispatch|execute)(_|$)'),
+    WHERE writer.name ~ '(^|\.)(mutate|dispatch|execute)(_|$)'
+      AND writer.name<>'execute_waitlist_command_client_sync_v1'),
     'component registry contains no generic mutation dispatcher');
+  -- This existing finite waitlist-domain facade is service-only. Its operation
+  -- selector cannot choose another domain, arbitrary SQL or a relation name.
+  PERFORM assert_true(NOT has_function_privilege('anon',
+      'public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)','EXECUTE')
+    AND NOT has_function_privilege('authenticated',
+      'public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)','EXECUTE')
+    AND has_function_privilege('service_role',
+      'public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)','EXECUTE'),
+    'bounded waitlist facade cannot bypass its trusted actor/capability transport');
+  v_role:=current_setting('request.jwt.claim.role',true);
+  PERFORM set_config('request.jwt.claim.role','service_role',true);
+  SELECT count(*) INTO v_before FROM public.client_mutation_receipts;
+  BEGIN
+    PERFORM public.execute_waitlist_command_client_sync_v1('dispatch',
+      '{"relation":"public.user_info","operation":"update"}',gen_random_uuid(),gen_random_uuid());
+    RAISE EXCEPTION 'waitlist accepted an operation outside its domain';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM<>'Invalid waitlist command' THEN RAISE; END IF;
+  END;
+  SELECT count(*) INTO v_after FROM public.client_mutation_receipts;
+  PERFORM assert_eq(v_after,v_before,'out-of-domain waitlist call writes no command receipt');
+  PERFORM set_config('request.jwt.claim.role',coalesce(v_role,''),true);
+
   PERFORM assert_true(NOT EXISTS (
     SELECT 1 FROM public.client_sync_component_sources s
     WHERE s.disposition='boundary'),
@@ -320,8 +345,15 @@ BEGIN
   PERFORM assert_true(EXISTS (
     SELECT 1 FROM pg_proc p
     WHERE p.oid='public.update_ticket_products_internal_v1(bigint,jsonb)'::regprocedure
-      AND p.proconfig @> ARRAY['search_path=public, eshop, extensions']),
+      AND p.proconfig @> ARRAY['search_path=public, extensions']),
     'ticket product implementation resolves its permission helper on a trusted path');
+  PERFORM assert_true(EXISTS (
+    SELECT 1 FROM pg_proc p
+    WHERE p.oid='public.update_ticket_products_wsv2(bigint,jsonb)'::regprocedure
+      AND p.proconfig @> ARRAY['search_path=public, extensions']
+      AND p.prosrc LIKE '%public.get_is_editor_order_on_occasion(%'),
+    'ticket product domain writer uses the documented trusted path and explicit public permission helper');
+
   PERFORM assert_true(EXISTS (
     SELECT 1 FROM pg_proc p
     WHERE p.oid='public.update_occasion_internal_v1(jsonb)'::regprocedure

@@ -81,7 +81,13 @@ String initialRouteForUri(Uri uri) {
   final path = uri.path == '/' && AppConfig.forceOccasionLink != null
       ? '/${AppConfig.forceOccasionLink}'
       : uri.path;
-  return '$path${uri.hasQuery ? '?${uri.query}' : ''}';
+  // Personal form capabilities belong in the fragment. Reconstructing only
+  // path/query would replace the browser URL before FormPage can read its scope.
+  final personalFragment = path.startsWith('/form/') &&
+          uri.fragment.startsWith('waitlist?')
+      ? '#${uri.fragment}'
+      : '';
+  return '$path${uri.hasQuery ? '?${uri.query}' : ''}$personalFragment';
 }
 
 bool isUnitAdminStartupRoute(Uri uri) {

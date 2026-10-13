@@ -50,7 +50,7 @@ BEGIN
     SELECT t.* FROM eshop.tickets t JOIN scope s ON s.id=t.occasion
     WHERE EXISTS (SELECT 1 FROM eshop.order_product_ticket i WHERE i.ticket=t.id)
   ), valid_orders AS MATERIALIZED (
-    SELECT * FROM orders_scope WHERE state IS DISTINCT FROM 'storno'
+    SELECT * FROM orders_scope WHERE state IS DISTINCT FROM 'storno' AND state IS DISTINCT FROM 'waitlisted'
   ), valid_tickets AS MATERIALIZED (
     SELECT t.* FROM ticket_scope t
     WHERE t.state IS DISTINCT FROM 'storno' AND EXISTS (
@@ -75,7 +75,7 @@ BEGIN
     JOIN eshop.products p ON p.id=i.product LEFT JOIN eshop.product_types pt ON pt.id=p.product_type
     WHERE o.state IN ('paid','sent','used') GROUP BY p.id,pt.id
   ), warnings AS (
-    SELECT 'missing_order_price' AS code,count(*) AS count FROM orders_scope WHERE price IS NULL HAVING count(*)>0
+    SELECT 'missing_order_price' AS code,count(*) AS count FROM orders_scope WHERE price IS NULL AND state IS DISTINCT FROM 'waitlisted' HAVING count(*)>0
     UNION ALL SELECT 'transaction_currency_mismatch',count(*) FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info WHERE t.currency<>p.currency_code HAVING count(*)>0
     UNION ALL SELECT 'negative_other_received',count(*) FROM money WHERE received-manual<0 HAVING count(*)>0
   )

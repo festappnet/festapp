@@ -1,7 +1,9 @@
 # Kapacita formuláře a náhradnické objednávky
 
 Datum: 2026-10-13
-Stav: Autoritativní plán pro implementaci; aplikace dosud nezměněna.
+Stav: Autoritativní návrh; vlny 1-6 lokálně implementovány podle
+[implementační evidence](form-capacity-waitlist-implementation-2026-10-13.md).
+Produkční rollout neproveden.
 Ověřování implementace: **standard** (souběh, osobní odkazy, platby, migrace).
 Podklad: dohoda s uživatelem a cílené čtení pracovního stromu nad HEAD `eb2304724`.
 
@@ -12,6 +14,11 @@ souboru zkontrolovat jeho aktuální diff. Plán nenahrazuje AGENTS.md, CLAUDE.m
 docs/architecture/ai_context.md ani CONTRIBUTING.md.
 
 ## 1. Výsledek a rozsah
+
+Navazující zadání z 2026-10-13: [osobní přehled objednávky, platby a využití
+vstupenek](order-overview-waitlist-follow-up-plan-2026-10-13.md). Jde o samostatný
+follow-up na lokálně implementovanou realizaci, bez zákaznického storna; jeho rozsah a read
+oprávnění vlastní odkazovaný plán.
 
 Editor nastaví maximální počet lidí ve formuláři. Po naplnění kapacity může
 formulář přijímat náhradníky. Editor jim ručně potvrzeným odesláním nabídne volná

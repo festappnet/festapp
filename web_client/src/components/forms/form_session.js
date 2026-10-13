@@ -46,6 +46,10 @@ export class FormSession extends EventTarget {
         }
 
 
+        if (formModel.registrationMode === 'regular' && Number.isInteger(formModel.capacity?.remainingPublic)) {
+            this.maxTickets = Math.min(this.maxTickets, formModel.capacity.remainingPublic);
+        }
+        if (formModel.offerBundle) this.maxTickets = Math.min(this.maxTickets, formModel.offerBundle.pendingCount);
         // UI State for persistence across re-renders (not part of payload)
         this.uiState = new Map();
         
@@ -215,6 +219,7 @@ export class FormSession extends EventTarget {
                      // Filter by Currency
                      const currency = this.state.currency;
                      const validOptions = options.filter(o => {
+                         if (o.isAvailable === false || o.is_dynamically_available === false) return false;
                          const c = o.currency || o.currencyCode || o.currency_code;
                          return !c || c === currency;
                      });
@@ -482,7 +487,13 @@ export class FormSession extends EventTarget {
             });
 
             const ticketObj = {
-                fields: processedFields,
+                ...(t.participantId ? { participantId: t.participantId } : {}),
+                fields: processedFields.map(field => {
+                    const definition = this._getTicketSubDef(field._subFieldId);
+                    if (!definition || ['product_type', 'spot'].includes(definition.type)) return field;
+                    const value = field[definition.type] ?? field[definition.id];
+                    return value === undefined ? field : { ...field, [definition.id]: value };
+                }),
                 _ticketIndex: i
             };
             
@@ -702,7 +713,7 @@ export class FormSession extends EventTarget {
     initialize(form) {
         // 1. Hydrate Tickets (One-time from DOM)
         const initialTickets = FormDataReader.getTicketDataFromDom(form, this.formModel);
-        if (initialTickets.length > 0) {
+        if (initialTickets.length > 0 && !this.formModel.offerBundle) {
             this.state.tickets = initialTickets;
         }
 

@@ -1,5 +1,9 @@
 # Implementace kapacity formuláře a náhradníků
 
+Navazující [přehled objednávky](order-overview-waitlist-follow-up-plan-2026-10-13.md)
+má samostatný execution prompt a neblokuje dokončení tohoto zadání. Při návrhu
+osobních odkazů zachovej oddělení offer/manage a budoucího read scope.
+
 Pracuj v `/Users/miakh/source/festapp`. Nejdříve přečti AGENTS.md, CLAUDE.md,
 docs/architecture/ai_context.md a celý autoritativní plán:
 

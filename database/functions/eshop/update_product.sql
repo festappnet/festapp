@@ -1,6 +1,5 @@
-DROP FUNCTION IF EXISTS public.update_product(JSONB);
 
-CREATE OR REPLACE FUNCTION public.update_product(p_input JSONB)
+CREATE OR REPLACE FUNCTION public.update_product_internal_v1(p_input JSONB)
 RETURNS BIGINT LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -65,6 +64,9 @@ BEGIN
     IF p_input ? 'product_type' AND NULLIF(p_input->>'product_type','')::bigint IS DISTINCT FROM (SELECT product_type FROM eshop.products WHERE id=v_product_id)
       AND EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE product=v_product_id)
     THEN RAISE EXCEPTION 'Purchased product type cannot change'; END IF;
+    IF nullif(p_input->>'maximum','')::integer>0 AND
+      nullif(p_input->>'maximum','')::integer<(SELECT count(*) FROM eshop.order_product_ticket WHERE product=v_product_id) THEN
+      RAISE EXCEPTION 'PRODUCT_CAPACITY_BELOW_COMMITTED'; END IF;
     UPDATE eshop.products p
     SET
       occasion      = COALESCE(NULLIF(p_input->>'occasion', '')::BIGINT, p.occasion),
@@ -165,3 +167,11 @@ BEGIN
   END IF;
 END;
 $$;
+REVOKE ALL ON FUNCTION public.update_product_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;
+CREATE OR REPLACE FUNCTION public.update_product(p_input jsonb)
+RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN (public.update_product_client_sync_v1(p_input,extensions.gen_random_uuid())->'data'->>'productId')::bigint;
+END $$;
+REVOKE ALL ON FUNCTION public.update_product(jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_product(jsonb) TO authenticated;

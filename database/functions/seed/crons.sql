@@ -21,6 +21,7 @@ BEGIN
       body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)),
       timeout_milliseconds:=360000)$$,p_project_url));
 
+  PERFORM cron.schedule('festapp_canonical_waitlist_expiry','*/1 * * * *','SELECT public.expire_waitlist_offers(100)');
   PERFORM cron.schedule('festapp_canonical_process_email_queue','*/1 * * * *','SELECT public.recover_email_delivery()');
 END;
 $func$;

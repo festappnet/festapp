@@ -39,3 +39,13 @@ header combines selection with `isEnabled` permissions. Selection considers the
 original row list, matching bulk operations even when filters hide checked rows.
 Whole-grid operations keep the default `false`. Actions needing exactly one row
 retain their more specific `isEnabled` predicate.
+
+# Action confirmations
+
+Use `DataGridActionConfirmation.show` for actions that confirm a selection.
+It renders model `toBasicString()` labels, the selected count, and the existing
+action explanation. Set `confirmButtonText` to the action being confirmed.
+Optional `groupBy` returns the parent model; groups use its type and ID rather
+than display text. Ticket actions group by `relatedOrder` and list only selected
+tickets. Keep the confirmed selection as the upper bound for the mutation:
+selection changes may remove items, but must never add unconfirmed items.

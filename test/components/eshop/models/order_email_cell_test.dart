@@ -28,6 +28,11 @@ void main() {
             order.toTrinaRow(context).cells[EshopColumns.ORDER_SYMBOL]!.value,
             '7G4K9M2R6A');
         expect(order.toJson().containsKey('order_symbol'), isFalse);
+        final restored =
+            OrderModel.fromPlutoJson(order.toTrinaRow(context).toJson());
+        expect(restored.id, 6500);
+        expect(restored.toBasicString(),
+            ['7G4K9M2R6A', if (email != null) email].join(' - '));
         final history = OrderHistoryModel.fromOrderModel(order);
         expect(history.orderId, 6500);
         expect(
@@ -49,7 +54,7 @@ void main() {
                 .cells[EshopColumns.ORDER_SYMBOL]!
                 .value,
             '7G4K9M2R6A');
-        expect(OrderModel.fromJson({'id': 6500}).toBasicString(), '');
+        expect(OrderModel.fromJson({'id': 6500}).toBasicString(), '#6500');
         expect(
             OrderModel.fromJson({'id': 6500, 'order_symbol': '7G4K9M2R6A'})
                 .toBasicString(),
@@ -57,5 +62,19 @@ void main() {
       }
       return const SizedBox.shrink();
     })));
+  });
+
+  test('deletion identifies customer and keeps the edited note', () {
+    final order = OrderModel.fromPlutoJson({
+      EshopColumns.ORDER_ID: 6500,
+      EshopColumns.ORDER_SYMBOL: '7G4K9M2R6A',
+      EshopColumns.ORDER_DATA: 'Jana Nováková',
+      EshopColumns.ORDER_EMAIL: 'jana@example.org',
+      EshopColumns.ORDER_NOTE_HIDDEN: 'Edited note',
+    });
+    expect(
+        order.toBasicString(), '7G4K9M2R6A - Jana Nováková - jana@example.org');
+    expect(order.noteHidden, 'Edited note');
+    expect(OrderModel(id: 6500).toBasicString(), '#6500');
   });
 }

@@ -1,0 +1,94 @@
+CREATE OR REPLACE FUNCTION public.get_effective_waitlist_participant_lifecycle_internal(p_person uuid)
+RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT CASE WHEN person.lifecycle='offered' AND EXISTS(
+  SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
+  WHERE s.participant_id=person.id AND s.outcome='pending' AND w.expires_at<=clock_timestamp())
+ THEN 'offer_expired' ELSE person.lifecycle END
+ FROM eshop.order_participants person WHERE person.id=p_person;
+$$;
+REVOKE ALL ON FUNCTION public.get_effective_waitlist_participant_lifecycle_internal(uuid)
+ FROM PUBLIC,anon,authenticated;
+CREATE OR REPLACE FUNCTION public.check_waitlist_scope_internal(p_order bigint,p_offer uuid,p_token text,p_actor uuid,p_operation text)
+RETURNS bigint LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE o eshop.orders; c eshop.waitlist_capabilities; occ public.occasions;
+BEGIN
+ SELECT * INTO o FROM eshop.orders WHERE id=p_order; SELECT * INTO occ FROM public.occasions WHERE id=o.occasion;
+ IF o.id IS NULL OR o.form IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
+ IF p_actor IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=o.occasion AND "user"=p_actor AND is_editor_order) THEN
+  IF p_offer IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE id=p_offer AND order_id=p_order AND form_id=o.form) THEN
+   RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF; RETURN o.form;
+ END IF;
+ IF p_operation IN ('send','cancel','proposal') OR p_token IS NULL OR length(p_token)<>64 THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
+ SELECT * INTO c FROM eshop.waitlist_capabilities WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex')
+ AND organization_id=occ.organization AND form_id=o.form AND order_id=o.id AND (revoked_at IS NULL OR p_operation='read')
+ AND ((p_operation='withdraw' AND kind='manage' AND o.state='waitlisted') OR
+ (p_operation IN ('read','accept','decline') AND kind='offer' AND offer_id=p_offer));
+ IF c.token_hash IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
+ -- Expired offer links may read their own terminal state; writers recheck time under locks.
+ IF p_operation<>'read' AND c.expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'OFFER_EXPIRED'; END IF;
+ RETURN o.form;
+END $$;
+CREATE OR REPLACE FUNCTION public.get_waitlist_summary_internal(p_order bigint)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ WITH effective AS (SELECT public.get_effective_waitlist_participant_lifecycle_internal(person.id) lifecycle
+ FROM eshop.order_participants person WHERE current_order_id=p_order), p AS (SELECT lifecycle,count(*) n FROM effective GROUP BY lifecycle),
+ s AS (SELECT count(*) n,min(w.expires_at) expiry FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers w ON w.id=x.offer_id
+ JOIN eshop.order_participants person ON person.id=x.participant_id WHERE person.current_order_id=p_order AND x.outcome='pending' AND w.expires_at>clock_timestamp())
+ SELECT jsonb_build_object('counts',coalesce((SELECT jsonb_object_agg(lifecycle,n) FROM p),'{}'),
+ 'pendingPlaces',s.n,'earliestExpiry',s.expiry,'isActive',CASE WHEN o.state='waitlisted' THEN
+  coalesce((SELECT n>0 FROM p WHERE lifecycle='waiting'),false) OR s.n>0 ELSE o.state IS DISTINCT FROM 'storno' END,
+ 'allowedActions',CASE WHEN o.state='waitlisted' THEN jsonb_build_array('view','note','offer','withdraw')
+ WHEN o.state IN ('storno','preparing_payment') THEN jsonb_build_array('view')
+ WHEN o.state='ordered' THEN jsonb_build_array('view','note','edit','cancel','paid')
+ ELSE jsonb_build_array('view','note','edit','cancel','send') END)
+ FROM eshop.orders o CROSS JOIN s WHERE o.id=p_order;
+$$;
+CREATE OR REPLACE FUNCTION public.get_waitlist_offer_form(p_token text DEFAULT NULL,p_offer_id uuid DEFAULT NULL,p_order_id bigint DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE oid bigint; fid bigint; bundle jsonb; w eshop.waitlist_offers;
+BEGIN
+ PERFORM set_config('response.headers','[{"Cache-Control":"no-store"},{"Referrer-Policy":"no-referrer"}]',true);
+ SELECT * INTO w FROM eshop.waitlist_offers WHERE id=p_offer_id;
+ oid:=coalesce(w.order_id,p_order_id);
+ fid:=public.check_waitlist_scope_internal(oid,p_offer_id,p_token,auth.uid(),CASE WHEN p_offer_id IS NULL THEN 'withdraw' ELSE 'read' END);
+ -- Terminal links explain their own outcome without exposing form answers,
+ -- contact data, products, or payment details after capability revocation.
+ IF p_offer_id IS NOT NULL AND (w.expires_at<=clock_timestamp() OR NOT EXISTS(
+  SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='pending')) THEN
+  RETURN jsonb_build_object('code',200,'registrationMode','offer','form',NULL,
+   'offerId',w.id,'pendingCount',0,'expiresAt',w.expires_at,'serverTime',clock_timestamp(),
+   'offerStatus',CASE WHEN w.expires_at<=clock_timestamp() THEN 'expired'
+    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome IN ('declined','cancelled')) THEN 'cancelled'
+    ELSE 'accepted' END,'participants','[]'::jsonb,'slots','[]'::jsonb);
+ END IF;
+ bundle:=public.get_form_bundle_internal(fid,true)::jsonb;
+ bundle:=jsonb_set(bundle,'{data,registrationMode}',to_jsonb(CASE WHEN p_offer_id IS NOT NULL THEN 'offer'::text ELSE 'waitlist' END),true);
+ RETURN jsonb_build_object('code',200,'form',bundle->'data','registrationMode',CASE WHEN p_offer_id IS NOT NULL THEN 'offer' ELSE 'waitlist' END,
+  'orderData',(SELECT data FROM eshop.orders WHERE id=oid),'pendingCount',(SELECT count(*) FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id AND outcome='pending' AND w.expires_at>clock_timestamp()),
+  'orderId',oid,'offerId',p_offer_id,'serverTime',clock_timestamp(),'expiresAt',w.expires_at,
+  'participants',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'answers',public.extract_participant_answers_internal(fid,answers),'lifecycle',public.get_effective_waitlist_participant_lifecycle_internal(id)) ORDER BY registered_at,id),'[]')
+   FROM eshop.order_participants WHERE current_order_id=oid),
+  'slots',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'participantId',participant_id,'outcome',CASE WHEN outcome='pending' AND w.expires_at<=clock_timestamp() THEN 'expired' ELSE outcome END)),'[]')
+   FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id),'waitlistSummary',public.get_waitlist_summary_internal(oid));
+EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
+END $$;
+REVOKE ALL ON FUNCTION public.check_waitlist_scope_internal(bigint,uuid,text,uuid,text),public.get_waitlist_summary_internal(bigint) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) TO anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.get_waitlist_order_detail(p_order_id bigint)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE o eshop.orders;
+BEGIN
+ SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order_id;
+ IF NOT public.get_is_editor_order_view_on_occasion(o.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Order viewer required'; END IF;
+ RETURN jsonb_build_object('orderId',o.id,'sourceOrderId',o.source_waitlist_order_id,'waitlistSummary',public.get_waitlist_summary_internal(o.id),
+ 'capacity',public.get_form_capacity_snapshot_internal(o.form),
+ 'participants',(SELECT coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('answers',public.extract_participant_answers_internal(o.form,p.answers),
+  'lifecycle',public.get_effective_waitlist_participant_lifecycle_internal(p.id)) ORDER BY registered_at,id),'[]') FROM eshop.order_participants p WHERE current_order_id=o.id),
+ 'offers',(SELECT coalesce(jsonb_agg(to_jsonb(w)||jsonb_build_object('slots',(SELECT coalesce(jsonb_agg(to_jsonb(s)),'[]') FROM eshop.waitlist_offer_slots s WHERE offer_id=w.id)) ORDER BY created_at),'[]')
+ FROM eshop.waitlist_offers w WHERE order_id=o.id),
+ 'linkedOrders',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'orderSymbol',order_symbol,'state',state)),'[]') FROM eshop.orders WHERE source_waitlist_order_id=o.id));
+END $$;
+REVOKE ALL ON FUNCTION public.get_waitlist_order_detail(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_waitlist_order_detail(bigint) TO authenticated;

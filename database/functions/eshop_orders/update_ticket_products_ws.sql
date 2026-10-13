@@ -31,6 +31,7 @@ DECLARE
   v_new_deadline      timestamptz;
   v_current_products_for_compare jsonb;
 BEGIN
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=p_ticket_id));
   /* 0) Lookup & permission */
   SELECT opt."order", o.occasion, o.payment_info, o.currency_code, o.data, o.state, occ.features
     INTO v_order_id, v_occasion_id, v_payment_info_id, v_currency_code, v_old_data, v_state, v_occasion_features
@@ -44,7 +45,7 @@ BEGIN
     RAISE EXCEPTION '%', jsonb_build_object('code', 404, 'message', 'Ticket not linked to any order')::text;
   END IF;
 
-  IF NOT get_is_editor_order_on_occasion(v_occasion_id) THEN
+  IF NOT public.get_is_editor_order_on_occasion(v_occasion_id) THEN
     RAISE EXCEPTION '%', jsonb_build_object('code', 403, 'message', 'Not authorized')::text;
   END IF;
 
@@ -59,6 +60,12 @@ BEGIN
     RAISE EXCEPTION '%', jsonb_build_object('code', 400, 'message', 'Product prices cannot be negative.')::text;
   END IF;
 
+  PERFORM public.lock_ticket_order_products_internal(v_order_id,jsonb_build_object('ticket',jsonb_build_array(jsonb_build_object('fields',
+    (SELECT coalesce(jsonb_agg(jsonb_build_object('product_type',x->'id')),'[]') FROM jsonb_array_elements(p_products) x)))));
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_products) x JOIN eshop.products p ON p.id=(x->>'id')::bigint
+    WHERE p.maximum>0 AND (SELECT count(*) FROM eshop.order_product_ticket WHERE product=p.id)+
+      CASE WHEN EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE ticket=p_ticket_id AND product=p.id) THEN 0 ELSE 1 END>p.maximum) THEN
+    RAISE EXCEPTION 'PRODUCT_CAPACITY_EXCEEDED'; END IF;
   /* get old products for the ticket */
   SELECT jsonb_path_query_first(v_old_data, '$.tickets[*] ? (@.id == $tid).products', jsonb_build_object('tid', p_ticket_id))
   INTO v_old_products;
@@ -240,7 +247,7 @@ BEGIN
     PERFORM public.set_payment_deadline(v_payment_info_id, NULL);
   END IF;
 
-  PERFORM apply_allocations(v_order_id);
+  PERFORM public.apply_allocations(v_order_id);
   PERFORM public.enqueue_paid_order_tickets(v_order_id);
 
   /* 6) append history */

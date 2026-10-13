@@ -88,6 +88,8 @@ class _BirthDateFieldBuilderState extends State<BirthDateFieldBuilder> {
           controller: _dateController,
           focusNode: _focusNode,
           name: widget.fieldHolder.id.toString(),
+          initialValue: DateTime.tryParse(
+              widget.fieldHolder.defaultValue?.toString() ?? ''),
           inputType: InputType.date,
           initialDatePickerMode: DatePickerMode.year,
           format: dateFormat,

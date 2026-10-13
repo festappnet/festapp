@@ -1,3 +1,4 @@
+import { WaitlistStrings } from '../waitlist_strings.js';
 import { html, sanitizeHtml } from '../../../utils/html.js';
 import { formatPrice } from '../../../utils/formatters.js';
 import { FormStrings } from '../form_strings.js';
@@ -58,10 +59,11 @@ export class OptionBuilderHelper {
         input.value = (opt.id !== undefined && opt.id !== null) ? opt.id : opt.title;
         input.id = `${field.id}_${(opt.id !== undefined && opt.id !== null) ? opt.id : opt.title}`;
         input.className = 'form-check-input';
+        input.disabled = opt.isAvailable === false;
 
         // Apply default selection from field.data.default_value (radio: string, checkbox: list of strings).
         // Matches by option title or id.
-        if (OptionBuilderHelper.shouldPreselect(field, opt, inputType)) {
+        if (!input.disabled && OptionBuilderHelper.shouldPreselect(field, opt, inputType)) {
             input.checked = true;
         }
 
@@ -89,6 +91,7 @@ export class OptionBuilderHelper {
             const priceDisplay = formatPrice(opt.price, currency, 0, 'cs-CZ');
             labelContent = html`${labelContent}<span class="option-price">+ ${priceDisplay}</span>`;
         }
+        if (input.disabled) labelContent = html`${labelContent} (${WaitlistStrings.text('PRODUCT_CAPACITY_EXCEEDED')})`;
         optLabel.innerHTML = labelContent;
 
         // Content wrapper with label + optional deposit/description

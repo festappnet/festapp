@@ -52,7 +52,7 @@ export class DbOrders {
         if (responseCode === 200) {
             return { success: true, data: data };
         } else {
-             return { success: false, code: responseCode, message: data?.message || "Unknown error", product: data?.product };
+             return { success: false, code: responseCode, errorCode: data?.errorCode, message: data?.message || "Unknown error", product: data?.product };
         }
     }
 }

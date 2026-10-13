@@ -1,3 +1,4 @@
+import 'form_capacity_model.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -31,6 +32,13 @@ class FormStatsModel {
 }
 
 class FormModel {
+  int? participantCapacity;
+  bool waitlistEnabled;
+  bool showRemainingCapacity;
+  int? waitlistOfferDurationSeconds;
+  FormCapacityModel? capacity;
+  String? registrationMode;
+  bool get isWaitlist => registrationMode == 'waitlist';
   int? id;
   DateTime? createdAt;
   String? title;
@@ -95,6 +103,12 @@ class FormModel {
   static const String metaSchedule = "schedule";
 
   FormModel({
+    this.participantCapacity,
+    this.waitlistEnabled = false,
+    this.showRemainingCapacity = true,
+    this.waitlistOfferDurationSeconds,
+    this.capacity,
+    this.registrationMode,
     this.id,
     this.createdAt,
     this.title,
@@ -133,6 +147,14 @@ class FormModel {
     }
 
     return FormModel(
+      participantCapacity: json['participant_capacity'],
+      waitlistEnabled: json['waitlist_enabled'] == true,
+      showRemainingCapacity: json['show_remaining_capacity'] != false,
+      waitlistOfferDurationSeconds: json['waitlist_offer_duration_seconds'],
+      capacity: json['capacity'] is Map<String, dynamic>
+          ? FormCapacityModel.fromJson(json['capacity'])
+          : null,
+      registrationMode: json['registrationMode'],
       id: json[Tb.forms.id],
       createdAt: json[Tb.forms.created_at] != null
           ? DateTime.parse(json[Tb.forms.created_at])
@@ -190,6 +212,10 @@ class FormModel {
   }
 
   Map<String, dynamic> toJson() => {
+        'participant_capacity': participantCapacity,
+        'waitlist_enabled': waitlistEnabled,
+        'show_remaining_capacity': showRemainingCapacity,
+        'waitlist_offer_duration_seconds': waitlistOfferDurationSeconds,
         Tb.forms.id: id,
         Tb.forms.created_at: createdAt?.toIso8601String(),
         Tb.forms.title: title,
@@ -212,6 +238,10 @@ class FormModel {
   Map<String, dynamic> toEditedJson() => {
         'deleted_field_ids': deletedFieldIds.toList(),
         'deleted_product_ids': deletedProductIds.toList(),
+        'participant_capacity': participantCapacity,
+        'waitlist_enabled': waitlistEnabled,
+        'show_remaining_capacity': showRemainingCapacity,
+        'waitlist_offer_duration_seconds': waitlistOfferDurationSeconds,
         Tb.forms.id: id,
         Tb.forms.created_at: createdAt?.toIso8601String(),
         Tb.forms.title: title,

@@ -15,7 +15,8 @@ export class FormNetwork {
                 resultData = result.data || {};
             } else {
                 resultData = { 
-                    code: result.code, 
+                    code: result.code,
+                    errorCode: result.errorCode,
                     message: result.message, 
                     product: result.product 
                 };

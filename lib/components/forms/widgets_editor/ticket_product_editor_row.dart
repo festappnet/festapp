@@ -202,6 +202,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
           controller: _titleController,
           decoration: InputDecoration(
             labelText: CommonStrings.title,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
             border: const UnderlineInputBorder(),
             suffixIcon:
                 !HtmlHelper.isHtmlEmptyOrNull(widget.product.description)
@@ -297,7 +298,6 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
               ),
               decoration: InputDecoration(
                 labelText: label,
-                isDense: true,
                 floatingLabelBehavior: FloatingLabelBehavior.always,
                 border: const UnderlineInputBorder(),
                 errorText: error,

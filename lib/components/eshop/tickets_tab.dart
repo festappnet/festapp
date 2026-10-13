@@ -1,3 +1,4 @@
+import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -175,13 +176,24 @@ class _TicketsTabState extends State<TicketsTab> {
       return;
     }
 
-    var confirm = await DialogHelper.showConfirmationDialog(
-      context,
-      CommonStrings.cancel,
-      "${OrdersStrings.cancelItemsConfirmationText} (${selectedTickets.length})",
+    var confirm = await DataGridActionConfirmation.show<TicketModel>(
+      context: context,
+      title: CommonStrings.cancel,
+      message: OrdersStrings.cancelItemsConfirmationText,
+      items: selectedTickets,
+      itemsLabel: OrdersStrings.itemsPlural,
+      confirmButtonText: CommonStrings.cancel,
+      groupBy: (ticket) => ticket.relatedOrder,
     );
 
     if (confirm && mounted) {
+      final checkedIds =
+          _getCheckedTickets(singleDataGrid).map((ticket) => ticket.id).toSet();
+      final confirmedIds = selectedTickets
+          .where((ticket) => checkedIds.contains(ticket.id))
+          .map((ticket) => ticket.id!)
+          .toList();
+      if (confirmedIds.isEmpty) return;
       TicketCancellationOutcome? outcome;
       final success = await DialogHelper.showProgressDialogAsync(
         context,
@@ -190,9 +202,7 @@ class _TicketsTabState extends State<TicketsTab> {
         futures: [
           () async {
             outcome = await DbTickets.stornoTickets(
-              _getCheckedTickets(singleDataGrid)
-                  .map((ticket) => ticket.id!)
-                  .toList(),
+              confirmedIds,
             );
           },
         ],

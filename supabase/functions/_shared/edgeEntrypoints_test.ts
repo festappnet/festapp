@@ -58,6 +58,7 @@ const optionEntrypoints = [
   "confirm-account-deletion",
   "download-ticket",
   "exchange-login-qr",
+  "exchange-sign-in-code",
   "fetch-http-data",
   "fetch-transactions",
   "generate-order-agreement",
@@ -69,6 +70,7 @@ const optionEntrypoints = [
   "send-reset-password-link",
   "send-sign-in-code",
   "send-ticket-order",
+  "waitlist-commands",
   "send-tickets",
 ];
 
@@ -229,3 +231,66 @@ for (const name of ["bank-sync-manage", "bank-sync-reconcile"]) {
     assertEquals(response.status, 401);
   });
 }
+
+Deno.test("waitlist-commands rejects malformed command before privileged reads", async () => {
+  const handler = await loadHandler("waitlist-commands");
+  const response = await handler(new Request("https://edge-test.invalid", { method: "POST", body: "{}" }));
+  assertEquals(response.status, 400);
+  assertEquals(await response.json(), { code: 400, error: "invalid_waitlist_command" });
+  assertEquals(response.headers.get("Cache-Control"), "no-store");
+  assertEquals(response.headers.get("Referrer-Policy"), "no-referrer");
+});
+
+for (const operation of ["send", "cancel"]) {
+  Deno.test(`waitlist-commands requires an editor identity for ${operation}`, async () => {
+    const handler = await loadHandler("waitlist-commands");
+    const response = await handler(new Request("https://edge-test.invalid", {
+      method: "POST", body: JSON.stringify({ operation, payload: {},
+        commandId: "cc000000-0000-0000-0000-000000000001", clientId: "cc000000-0000-0000-0000-000000000002" }),
+    }));
+    assertEquals(response.status, 401);
+    assertEquals(await response.json(), { code: 401, error: "unauthorized" });
+  });
+}
+
+Deno.test("waitlist-commands rejects GET without consuming an offer", async () => {
+  const handler = await loadHandler("waitlist-commands");
+  const response = await handler(new Request("https://edge-test.invalid", { method: "GET" }));
+  assertEquals(response.status, 405);
+  assertEquals(await response.json(), { error: "method_not_allowed" });
+});
+
+Deno.test("exchange-sign-in-code rejects GET before privileged work", async () => {
+  const response = await (await loadHandler("exchange-sign-in-code"))(new Request("https://edge-test.invalid"));
+  assertEquals(response.status, 405);
+  assertEquals(await response.json(), {});
+  assertEquals(response.headers.get("Cache-Control"), "no-store");
+});
+
+Deno.test("exchange-sign-in-code bounds payload before privileged work", async () => {
+  const response = await (await loadHandler("exchange-sign-in-code"))(new Request("https://edge-test.invalid", {
+    method: "POST", body: "x".repeat(1025),
+  }));
+  assertEquals(response.status, 400);
+  assertEquals(await response.json(), {});
+});
+
+Deno.test("exchange-sign-in-code hides invalid proof and account existence", async () => {
+  const handler = await loadHandler("exchange-sign-in-code");
+  // This entrypoint resolves its clients at request time, after loadHandler has
+  // restored process environment. Keep synthetic inputs scoped to this call.
+  const keys = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"] as const;
+  const previous = keys.map((key) => Deno.env.get(key));
+  try {
+    keys.forEach((key) => Deno.env.set(key, testEnvironment[key]));
+    const response = await handler(new Request("https://edge-test.invalid", { method: "POST", body: "{}" }));
+    assertEquals(response.status, 200);
+    assertEquals(await response.json(), {});
+    assertEquals(response.headers.get("Cache-Control"), "no-store");
+  } finally {
+    keys.forEach((key, index) => {
+      if (previous[index] === undefined) Deno.env.delete(key);
+      else Deno.env.set(key, previous[index]!);
+    });
+  }
+});

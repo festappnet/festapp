@@ -1,3 +1,8 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/components/forms/waitlist_commands.dart';
+import 'package:fstapp/components/forms/waitlist_strings.dart';
+import 'package:fstapp/components/forms/models/holder_models/form_ticket_model.dart';
+import 'package:fstapp/services/dialog_helper.dart';
 import 'dart:async';
 import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -39,13 +44,28 @@ class FormPage extends StatefulWidget {
   static const ROUTE = "form";
 
   String? formLink;
-  FormPage({super.key, @pathParam this.formLink});
+  final String? offerId;
+  final int? waitlistOrderId;
+  FormPage(
+      {super.key,
+      @pathParam this.formLink,
+      this.offerId,
+      this.waitlistOrderId});
 
   @override
   _FormPageState createState() => _FormPageState();
 }
 
 class _FormPageState extends State<FormPage> {
+  final _waitlist = WaitlistCommands();
+  Map<String, dynamic>? _offerBundle;
+  String? _offerId;
+  int? _waitlistOrderId;
+  String? _waitlistToken;
+  final Set<String> _selectedPeople = {};
+  final Map<String, FormTicketModel> _personDrafts = {};
+  String? _waitlistMessage;
+  FormModel? _changedCapacityForm;
   bool _isLoading = false;
   bool _formNotAvailable = false;
 
@@ -68,6 +88,7 @@ class _FormPageState extends State<FormPage> {
   @override
   void dispose() {
     _popStateSubscription?.cancel();
+    formSession?.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -307,8 +328,58 @@ class _FormPageState extends State<FormPage> {
 
   Future<void> _showOrderPreview(BuildContext scrollContext) async {
     TextInput.finishAutofillContext();
+    final ticket = formHolder?.getTicket();
+    if (ticket != null &&
+        (ticket.tickets.isEmpty || ticket.tickets.length > ticket.maxTickets)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(WaitlistStrings.text('FORM_CAPACITY_EXCEEDED'))));
+      return;
+    }
     var valid = await FormHelper.saveValidateAndScroll(formHolder!);
     setState(() {});
+    if (valid && form!.isWaitlist && _offerBundle == null) {
+      final confirmed = await DialogHelper.showConfirmationDialog(
+          context, WaitlistStrings.title, WaitlistStrings.explanation);
+      if (!confirmed || !mounted) return;
+      setState(() => _isLoading = true);
+      try {
+        final data = FormHelper.getDataFromForm(formHolder!);
+        final payload = <String, dynamic>{
+          'form': form!.key,
+          'fields': data['fields'],
+          'people': [
+            for (final person in (data['ticket'] as List? ?? []))
+              {
+                'fields': [
+                  for (final field in person['fields'])
+                    {
+                      for (final entry in (field as Map).entries)
+                        if (int.tryParse(entry.key.toString()) != null)
+                          entry.key.toString(): entry.value
+                    },
+                ]
+              },
+          ]
+        };
+        for (final field in formHolder!.fields) {
+          if (['email', 'name', 'surname', 'phone'].contains(field.fieldType))
+            payload[field.fieldType] = field.getValue(_formKey);
+        }
+        final result = await _waitlist.command('register', payload);
+        if (mounted)
+          setState(() {
+            _waitlistMessage =
+                '${WaitlistStrings.registered} ${result['order']?['order_symbol'] ?? ''}. ${WaitlistStrings.explanation} ${WaitlistStrings.queued}';
+          });
+      } catch (e) {
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${WaitlistStrings.stale} ($e)')));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+      return;
+    }
     if (valid) {
       RouterService.pushOverlayState('order-preview');
       setState(() {
@@ -377,7 +448,29 @@ class _FormPageState extends State<FormPage> {
       pageBuilder: (context, anim1, anim2) => FinishOrderScreen(
         occasionTitle: form!.occasionModel?.title ?? form!.title,
         orderFutureFunction: () async {
-          return await DbOrders.sendTicketOrder(data);
+          if (_offerId != null) {
+            try {
+              final result = await _waitlist.accept(
+                  offerId: _offerId!,
+                  token: _waitlistToken,
+                  personIds: _selectedPeople.toList(),
+                  orderDetails: data);
+              return FunctionResponse(status: 200, data: {
+                ...result,
+                'ticketOrder': {'order': result['order']}
+              });
+            } on WaitlistCommandException catch (e) {
+              return FunctionResponse(status: 200, data: e.data);
+            }
+          }
+          final response = await DbOrders.sendTicketOrder(data);
+          if (response.data is Map &&
+              response.data['errorCode'] == 'FORM_CAPACITY_EXCEEDED' &&
+              widget.formLink != null) {
+            final latest = await DbForms.getFormFromLink(widget.formLink!);
+            if (mounted) setState(() => _changedCapacityForm = latest);
+          }
+          return response;
         },
         onOrderConfirmed: () async {
           // Reset session tickets?
@@ -531,7 +624,7 @@ class _FormPageState extends State<FormPage> {
     bool isClosed = false;
     bool isBeforeStart = false;
 
-    if (form != null) {
+    if (form != null && _offerBundle == null) {
       final now = DateTime.now();
       if (form!.startTime != null && now.isBefore(form!.startTime!)) {
         isClosed = true;
@@ -555,6 +648,36 @@ class _FormPageState extends State<FormPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    if (_waitlistMessage != null)
+      return Scaffold(
+          body: Center(
+              child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(_waitlistMessage!))));
+    if (_offerBundle != null &&
+        (_offerId == null ||
+            (_offerBundle!['pendingCount'] as num? ?? 0) == 0)) {
+      return Scaffold(
+          body: SingleChildScrollView(
+              child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: _buildWaitlistPeople(manage: true))));
+    }
+    if (form?.registrationMode == 'full') {
+      return Scaffold(
+          body: Center(
+              child: SingleChildScrollView(
+                  child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
+        child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(children: [
+              if (form?.header != null)
+                HtmlView(html: form!.header!, isSelectable: true),
+              Text(WaitlistStrings.full),
+            ])),
+      ))));
+    }
     if (_formNotAvailable || (isClosed && !showPreview && !showCountdown)) {
       return Scaffold(body: _buildFormNotAvailableMessage());
     }
@@ -624,19 +747,51 @@ class _FormPageState extends State<FormPage> {
                                               const SizedBox(height: 16),
                                             ],
                                           ),
+                                        if (_changedCapacityForm != null)
+                                          Column(children: [
+                                            Text(WaitlistStrings.text(
+                                                'FORM_CAPACITY_EXCEEDED')),
+                                            TextButton(
+                                                onPressed:
+                                                    _applyChangedCapacity,
+                                                child: Text(
+                                                    _changedCapacityForm!
+                                                            .isWaitlist
+                                                        ? WaitlistStrings.text(
+                                                            'regularToWaitlist')
+                                                        : WaitlistStrings
+                                                            .refresh)),
+                                          ]),
+                                        if (form!.isWaitlist)
+                                          Text(
+                                              '${WaitlistStrings.title}. ${WaitlistStrings.explanation}'),
+                                        if (_offerBundle != null)
+                                          _buildWaitlistPeople(),
+                                        if (_offerBundle == null &&
+                                            form!.capacity?.showRemaining ==
+                                                true &&
+                                            form!.capacity?.remainingPublic !=
+                                                null)
+                                          Text(
+                                              '${WaitlistStrings.remaining}: ${form!.capacity!.remainingPublic}'),
                                         ...FormHelper.getAllFormFields(
                                             context, _formKey, formHolder!),
                                         const SizedBox(height: 32),
                                         ButtonsHelper.primaryButton(
                                           context: context,
                                           onPressed: (_isLoading ||
-                                                  (formSession?.totalProducts ??
-                                                          0) ==
-                                                      0)
+                                                  (!form!.isWaitlist &&
+                                                      (formSession?.totalProducts ??
+                                                              0) ==
+                                                          0))
                                               ? null
                                               : () => _showOrderPreview(
                                                   scrollContext),
-                                          label: FormStrings.buttonContinue,
+                                          label: form!.isWaitlist
+                                              ? WaitlistStrings.register
+                                              : (_offerId != null
+                                                  ? WaitlistStrings.accept
+                                                  : FormStrings.buttonContinue),
                                           isLoading: _isLoading,
                                           height: 50.0,
                                           width: 250.0,
@@ -656,7 +811,7 @@ class _FormPageState extends State<FormPage> {
               ),
             ),
             _buildSeatReservationOverlay(),
-            _buildPriceAndTicketInfo(),
+            if (form?.isWaitlist != true) _buildPriceAndTicketInfo(),
           ],
         ),
       );
@@ -753,13 +908,183 @@ class _FormPageState extends State<FormPage> {
     };
   }
 
+  Future<void> _applyChangedCapacity() async {
+    final latest = _changedCapacityForm;
+    if (latest == null || formHolder == null) return;
+    if (latest.isWaitlist &&
+        !await DialogHelper.showConfirmationDialog(
+            context, WaitlistStrings.title, WaitlistStrings.explanation))
+      return;
+    if (!mounted) return;
+    final previous = FormHelper.getDataFromForm(formHolder!);
+    final oldController = formHolder!.controller;
+    final holder = FormHolder.fromFormFieldModel(latest)
+      ..controller = oldController;
+    for (final field in holder.fields) {
+      for (final answer in previous['fields'] ?? []) {
+        if ((answer as Map).containsKey('${field.id}'))
+          field.defaultValue = answer['${field.id}'];
+      }
+    }
+    final people = previous['ticket'] as List? ?? [];
+    holder.getTicket()?.tickets = people.map((p) {
+      final fields = FormHolder.fromFormFieldModel(latest).getTicket()!.fields;
+      for (final field in fields) {
+        for (final answer in p['fields'] ?? []) {
+          if ((answer as Map).containsKey('${field.id}'))
+            field.defaultValue = answer['${field.id}'];
+        }
+      }
+      return FormTicketModel(
+          ticketValues: fields, ticketKey: GlobalKey<FormBuilderState>());
+    }).toList();
+    formSession?.dispose();
+    setState(() {
+      form = latest;
+      formHolder = holder;
+      _changedCapacityForm = null;
+      formSession =
+          FormSession(form: latest, formHolder: holder, formKey: _formKey);
+      formSession!.addListener(() {
+        if (mounted) setState(() {});
+      });
+      holder.controller!.updateTotalPrice = formSession!.recalculateTotals;
+    });
+  }
+
+  void _populateOfferPeople() {
+    final ticket = formHolder!.getTicket();
+    if (ticket == null) return;
+    ticket.fixedParticipants = true;
+    ticket.maxTickets = (_offerBundle!['pendingCount'] as num?)?.toInt() ?? 0;
+    for (final t in ticket.tickets) {
+      for (final field in t.ticketValues) {
+        if (t.ticketKey.currentState != null)
+          field.defaultValue = field.getValue(t.ticketKey);
+      }
+      if (t.participantId != null) _personDrafts[t.participantId!] = t;
+    }
+    final existing = _personDrafts;
+    ticket.tickets = [
+      for (final person in _offerBundle!['participants'] as List)
+        if (_selectedPeople.contains(person['id']))
+          existing[person['id']] ?? _personTicket(person),
+    ];
+    final values = <String, dynamic>{};
+    for (final field in _offerBundle!['orderData']?['fields'] ?? []) {
+      values.addAll(Map<String, dynamic>.from(field));
+    }
+    for (final field in formHolder!.fields) {
+      if (values.containsKey(field.id.toString()))
+        field.defaultValue = values[field.id.toString()];
+    }
+  }
+
+  FormTicketModel _personTicket(dynamic person) {
+    final fields = FormHolder.fromFormFieldModel(form!).getTicket()!.fields;
+    final answers = <String, dynamic>{};
+    for (final field in person['answers']?['fields'] ?? []) {
+      answers.addAll(Map<String, dynamic>.from(field));
+    }
+    for (final field in fields) {
+      if (answers.containsKey(field.id.toString()))
+        field.defaultValue = answers[field.id.toString()];
+    }
+    return FormTicketModel(
+        participantId: person['id'],
+        ticketValues: fields,
+        ticketKey: GlobalKey<FormBuilderState>());
+  }
+
+  Widget _buildWaitlistPeople({bool manage = false}) {
+    final bundle = _offerBundle!;
+    final canDecline = _selectedPeople.every((id) => (bundle['slots'] as List)
+        .any((s) => s['participantId'] == id && s['outcome'] == 'pending'));
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(
+          manage && _offerId != null
+              ? WaitlistStrings.expired
+              : WaitlistStrings.selectPeople,
+          style: Theme.of(context).textTheme.titleLarge),
+      if (_offerId != null)
+        Text(
+            '${WaitlistStrings.remaining}: ${bundle['pendingCount']} · ${WaitlistStrings.expiresAt}: ${DateTime.tryParse(bundle['expiresAt'] ?? '')?.toLocal() ?? ''}'),
+      if (!manage) Text(WaitlistStrings.productAvailability),
+      for (final person in bundle['participants'] as List)
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text((person['answers']?['fields'] as List? ?? [])
+              .expand((f) => (f as Map).values)
+              .join(' · ')),
+          subtitle: Text(WaitlistStrings.text(person['lifecycle'])),
+          value: _selectedPeople.contains(person['id']),
+          onChanged: (['admitted', 'cancelled', 'withdrawn']
+                      .contains(person['lifecycle']) ||
+                  (!manage &&
+                      person['lifecycle'] == 'offered' &&
+                      !(bundle['slots'] as List).any((s) =>
+                          s['participantId'] == person['id'] &&
+                          s['outcome'] == 'pending')))
+              ? null
+              : (checked) {
+                  if (checked == true &&
+                      !manage &&
+                      _selectedPeople.length >= (bundle['pendingCount'] as num))
+                    return;
+                  setState(() {
+                    if (checked == true) {
+                      _selectedPeople.add(person['id']);
+                    } else {
+                      _selectedPeople.remove(person['id']);
+                    }
+                    if (!manage) _populateOfferPeople();
+                  });
+                },
+        ),
+      if (_selectedPeople.isEmpty) Text(WaitlistStrings.selectPeople),
+      if (!manage && !canDecline) Text(WaitlistStrings.text('declineAssigned')),
+      if (!manage || _offerId == null)
+        TextButton(
+          onPressed: _selectedPeople.isEmpty || (!manage && !canDecline)
+              ? null
+              : () => _resolveWaitlist(manage ? 'withdraw' : 'decline'),
+          child:
+              Text(manage ? WaitlistStrings.withdraw : WaitlistStrings.decline),
+        ),
+    ]);
+  }
+
+  Future<void> _resolveWaitlist(String operation) async {
+    final confirmed = await DialogHelper.showConfirmationDialog(
+        context, WaitlistStrings.title, WaitlistStrings.confirm);
+    if (!confirmed || !mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      await _waitlist.command(operation, {
+        if (_offerId != null) 'offerId': _offerId,
+        if (_waitlistOrderId != null) 'orderId': _waitlistOrderId,
+        if (_waitlistToken != null) 'token': _waitlistToken,
+        'personIds': _selectedPeople.toList()
+      });
+      await loadData();
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${WaitlistStrings.stale} ($e)')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> loadData() async {
     setState(() {
       _isLoading = true;
       _formNotAvailable = false; // Reset the message flag
     });
 
-    if (widget.formLink == null) {
+    if (widget.formLink == null &&
+        widget.offerId == null &&
+        widget.waitlistOrderId == null) {
       setState(() {
         _isLoading = false;
         _formNotAvailable = true; // Show message if formLink is null
@@ -769,7 +1094,33 @@ class _FormPageState extends State<FormPage> {
     //var key = UuidConverter.base62ToUuid(widget.id!);
 
     try {
-      form = await DbForms.getFormFromLink(widget.formLink!);
+      _offerId ??= widget.offerId;
+      _waitlistOrderId ??= widget.waitlistOrderId;
+      final fragment = context.routeData.fragment;
+      if (fragment.startsWith('waitlist?')) {
+        final params = Uri.splitQueryString(fragment.substring(9));
+        _waitlistToken ??= params['token'];
+        _offerId ??= params['offer_id'];
+        _waitlistOrderId ??= int.tryParse(params['order_id'] ?? '');
+      }
+      if (_offerId != null || _waitlistOrderId != null) {
+        _offerBundle = await _waitlist.read(
+            token: _waitlistToken,
+            offerId: _offerId,
+            orderId: _waitlistOrderId);
+        if (_offerBundle!['form'] == null) {
+          if (mounted)
+            setState(() {
+              _waitlistMessage = WaitlistStrings.text(
+                  _offerBundle!['offerStatus'] ?? 'invalid');
+              _isLoading = false;
+            });
+          return;
+        }
+        form = FormModel.fromJson(
+            Map<String, dynamic>.from(_offerBundle!['form']));
+      } else
+        form = await DbForms.getFormFromLink(widget.formLink!);
       if (form == null) {
         setState(() {
           _isLoading = false;
@@ -778,10 +1129,21 @@ class _FormPageState extends State<FormPage> {
         return;
       }
 
-      await RightsService.updateAppData(formLink: widget.formLink);
+      if (widget.formLink != null)
+        await RightsService.updateAppData(formLink: widget.formLink);
 
       formHolder = FormHolder.fromFormFieldModel(form!);
+      if (_offerBundle != null) {
+        _selectedPeople.clear();
+        _personDrafts.clear();
+        for (final slot in _offerBundle!['slots'] as List) {
+          if (slot['outcome'] == 'pending')
+            _selectedPeople.add(slot['participantId']);
+        }
+        _populateOfferPeople();
+      }
 
+      formSession?.dispose();
       formSession = FormSession(
         form: form!,
         formHolder: formHolder!,
