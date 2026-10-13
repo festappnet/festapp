@@ -242,7 +242,6 @@ class _OrdersContentState extends State<OrdersContent> {
         ),
       ],
       columns: EshopColumns.generateColumns(context, columnIdentifiers, data: {
-        EshopColumns.ORDER_WAITLIST: refreshData,
         EshopColumns.ORDER_TRANSACTIONS: refreshData,
         EshopColumns.PAYMENT_INFO_PAID: refreshData,
         "unitId": unitId,

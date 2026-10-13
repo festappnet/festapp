@@ -1,4 +1,3 @@
-import { formFieldTitle } from './form_field_labels.js';
 import { html as htmlText } from '../../utils/html.js';
 import { WaitlistStrings } from './waitlist_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
@@ -299,7 +298,7 @@ export class OrderPreview {
                           currency: totalPriceData.currency 
                      });
                      // result is now { value, price }
-                     personalInfo.push({ label: formFieldTitle(field), value: result.value, price: result.price });
+                     personalInfo.push({ label: field.title, value: result.value, price: result.price });
                  }
             });
         }
@@ -363,13 +362,12 @@ export class OrderPreview {
                                   currency: totalPriceData.currency,
                                   features: formModel.occasionFeatures,
                                });
-                               if (formModel.registrationMode === 'waitlist' && !String(result.value ?? '').trim()) return;
-                               tData.rows.push({ label: formFieldTitle(subDef), value: result.value, price: result.price, metaSurcharge: result.metaSurcharge });
+                               tData.rows.push({ label: subDef.title, value: result.value, price: result.price, metaSurcharge: result.metaSurcharge });
                            }
                       }
                  });
              }
-             if (formModel.registrationMode !== 'waitlist' || tData.rows.length) tickets.push(tData);
+             tickets.push(tData);
         });
 
 
@@ -382,11 +380,8 @@ export class OrderPreview {
 
         return {
             registrationMode: formModel.registrationMode,
-            occasionTitle: formModel.occasionTitle,
-            orderSymbol: formModel.offerBundle?.orderSymbol,
             personalInfo,
             tickets,
-            ticketCount: payloadTickets.length,
             totalPrice: totalPriceData.totalPrice,
             currency: totalPriceData.currency,
             hasTickets: FeatureService.isFeatureEnabled(FeatureService.FeatureConstants.ticket, formModel.occasionFeatures),
@@ -394,6 +389,11 @@ export class OrderPreview {
             deposit: depositInfo,
             metaSurchargeSums
         };
+    }
+
+    static _getAutoTitle(type) {
+        // ... existing ...
+        return ""; 
     }
 
     /**
@@ -460,7 +460,7 @@ export class OrderPreview {
     static _render(data) {
         // Determine labels
         const isWaitlist = data.registrationMode === 'waitlist';
-        const itemLabel = isWaitlist ? WaitlistStrings.text((data.ticketCount ?? data.tickets.length) === 1 ? 'yourRegistration' : 'person') : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
+        const itemLabel = isWaitlist ? WaitlistStrings.text('person') : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
 
         // Header
         let html = `
@@ -475,11 +475,6 @@ export class OrderPreview {
                 <div class="order-preview-body">
         `;
 
-        const occasionTitle = data.presentation?.occasionTitle || data.occasionTitle;
-        const orderSymbol = data.presentation?.orderSymbol || data.orderSymbol;
-        if (occasionTitle || orderSymbol) {
-            html += `<div class="waitlist-context">${occasionTitle ? htmlText`<strong>${occasionTitle}</strong>` : ''}${orderSymbol ? htmlText`<p>${WaitlistStrings.text('registrationSymbol')}: ${orderSymbol}</p>` : ''}</div>`;
-        }
         if (isWaitlist) html += `<p class="waitlist-intro preview-section">${data.presentation?.explanation || WaitlistStrings.explanation}</p>`;
 
         if (data.presentation?.people) {
@@ -492,7 +487,7 @@ export class OrderPreview {
                 const priceHtml = !isWaitlist && item.price ? `<span class="preview-price">+ ${item.price}</span>` : '';
                 html += `
                     <div class="preview-info-row">
-                        <span class="preview-label">${item.label ? htmlText`${item.label}:` : ''}</span>
+                        <span class="preview-label">${item.label}:</span>
                         <div class="preview-value-row">
                              <span class="preview-value">${item.value}</span>
                              ${priceHtml}
@@ -506,15 +501,12 @@ export class OrderPreview {
             html += `</div>`;
         }
 
-        if (isWaitlist && data.ticketCount > 1) {
-            html += `<p class="preview-registration-count">${WaitlistStrings.text('registrationCount')}: ${data.ticketCount}</p>`;
-        }
         // Tickets
         if (data.tickets.length > 0) {
              data.tickets.forEach((ticket) => {
                   html += `
                     <div class="ticket-card">
-                        <div class="ticket-header-title">${itemLabel}${(data.ticketCount ?? data.tickets.length) > 1 ? ' ' + ticket.index : ''}</div>
+                        <div class="ticket-header-title">${itemLabel}${data.tickets.length > 1 ? ' ' + ticket.index : ''}</div>
                   `;
                   
                   // Spot/Fields
@@ -525,7 +517,7 @@ export class OrderPreview {
                           : '';
                       html += `
                         <div class="preview-info-row">
-                             <span class="preview-label">${row.label ? htmlText`${row.label}:` : ''}</span>
+                             <span class="preview-label">${row.label}:</span>
                              <div class="preview-value-row">
                                   <span class="preview-value">${row.value}</span>
                                   ${priceHtml}
