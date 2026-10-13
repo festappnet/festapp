@@ -2686,17 +2686,12 @@
     "historyOfferSent": "Místo nabídnuto",
     "offerSending": "Nabídku odesíláme e-mailem.",
     "offersSending": "Nabídky odesíláme e-mailem.",
-    "manageWaiting": "Změna přihlášky",
     "activeOffer": "Aktuální nabídka místa",
     "openOfferFormHelp": "Formulář se otevře na nové kartě. Po dokončení obnovte tento přehled.",
     "offerHistory": "Historie nabídek",
     "emptyDetail": "V této přihlášce nejsou žádné čekající osoby.",
-    "participantDeclinesScenario": "Účastník nabídnuté místo odmítl",
-    "participantDeclinesConsequence": "Zaznamenáte odmítnutí účastníkem. Nabídnutá místa se uvolní a vybrané přihlášky už aktivně nečekají na další nabídku.",
-    "withdrawScenario": "Přihlášku chcete vyřadit z pořadníku",
-    "withdrawConsequence": "Účastník už nemá zájem nebo ho vyřazujete jako pořadatel. Vybrané přihlášky stornujete; případná nabídnutá místa se uvolní. Nelze vrátit.",
-    "managementHelp": "Odmítnutí nabídky nebo vyřazení z pořadníku",
     "adminWithdraw": "Vyřadit z náhradníků",
+    "adminWithdrawHelp": "Pokud se účastník nezúčastní, vyřaďte jeho přihlášku. Čekání skončí a případné nabídnuté místo se uvolní.",
     "acceptOne": "Potvrdit přihlášení"
   }
 }
