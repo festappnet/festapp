@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/schedule_feature.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 
 class ThemeConfig {
   static bool isDarkMode(BuildContext context) =>
@@ -29,6 +30,10 @@ class ThemeConfig {
       colorScheme: scheme,
       primaryColor: primary,
       scaffoldBackgroundColor: dark ? dddBackground : lllBackground,
+      dialogTheme: const DialogThemeData(shape: appDialogShape, elevation: 16),
+      datePickerTheme: const DatePickerThemeData(shape: appDialogShape),
+      timePickerTheme: const TimePickerThemeData(shape: appDialogShape),
+      bottomSheetTheme: const BottomSheetThemeData(shape: appDialogShape),
       appBarTheme: AppBarTheme(
         backgroundColor: chrome,
         foregroundColor: onChrome,

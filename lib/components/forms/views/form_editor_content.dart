@@ -1,4 +1,7 @@
+import '../waitlist_strings.dart';
+import 'form_capacity_settings.dart';
 import 'dart:async';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';
@@ -193,7 +196,22 @@ class _FormEditorContentState extends State<FormEditorContent>
       widget.onDataUpdated?.call();
     } catch (e) {
       if (!mounted) return;
-      ToastHelper.Show(context, FormStrings.saveError(e),
+      String? capacityError;
+      for (final code in [
+        'CAPACITY_BELOW_COMMITTED',
+        'WAITLIST_HAS_ACTIVE_ENTRIES',
+        'BLUEPRINT_CONFLICT',
+      ]) {
+        if (e.toString().contains(code)) {
+          capacityError = code;
+          break;
+        }
+      }
+      ToastHelper.Show(
+          context,
+          capacityError == null
+              ? FormStrings.saveError(e)
+              : WaitlistStrings.text(capacityError),
           severity: ToastSeverity.NotOk);
     }
   }
@@ -269,6 +287,15 @@ class _FormEditorContentState extends State<FormEditorContent>
             ),
             const SizedBox(height: 16),
             if (_canSeeReservations) ...[
+              FormCapacitySettings(
+                form: form,
+                canEdit: _canEdit,
+                onChanged: () {
+                  setState(() {});
+                  _draftChanged();
+                },
+              ),
+              const Divider(height: 24),
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
@@ -660,11 +687,9 @@ class _FormEditorContentState extends State<FormEditorContent>
           ));
         }
 
-        return AlertDialog(
+        return AppAlertDialog(
           title: Text(FormStrings.addFieldTitle),
           contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
           content: SizedBox(
             width: 280,
             child: ListView(

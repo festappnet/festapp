@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
@@ -55,7 +56,7 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
     if (!mounted) return;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
         title: const Text('Error'),
         content: SelectableText(message),
         actions: [
@@ -100,7 +101,7 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
         await showDialog(
           context: context,
           builder: (context) => StatefulBuilder(
-            builder: (context, setState) => AlertDialog(
+            builder: (context, setState) => AppAlertDialog(
               title: Text(
                   '${BankAccountStrings.addUser}: ${chosenUser.name ?? chosenUser.email}'),
               content: Column(
@@ -110,8 +111,7 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
                       BankAccountStrings.addUserExplanation,
-                      style:
-                          const TextStyle(fontSize: 14, color: Colors.grey),
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                   ),
                   CheckboxListTile(
@@ -130,8 +130,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         BankAccountStrings.adminInfoText,
-                        style: const TextStyle(
-                            fontSize: 14, color: Colors.grey),
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ),
                 ],
@@ -166,7 +166,7 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setState) => AppAlertDialog(
           title: Text(
               '${BankAccountStrings.editRole}: ${user.name ?? user.email}'),
           content: Column(
@@ -182,8 +182,7 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
                     BankAccountStrings.checkAdminInfo,
-                    style:
-                        const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ),
             ],
@@ -228,8 +227,7 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
         setState(() => _isLoadingUsers = false);
         return;
       }
-      await DbBankAccounts.removeBankAccountUser(
-          widget.accountId, user.email!);
+      await DbBankAccounts.removeBankAccountUser(widget.accountId, user.email!);
       await _loadUsers();
     } catch (e) {
       _showError("${BankAccountStrings.errorRemovingUser}: $e");
@@ -278,13 +276,11 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
                         decoration: BoxDecoration(
                           color: Colors.orange.shade100,
                           borderRadius: BorderRadius.circular(12),
-                          border:
-                              Border.all(color: Colors.orange.shade300),
+                          border: Border.all(color: Colors.orange.shade300),
                         ),
                         child: Text(BankAccountStrings.isAdminLabel,
                             style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.orange.shade900)),
+                                fontSize: 12, color: Colors.orange.shade900)),
                       ),
                     if (AppConfig.showBankSupportRole && user.isSupport)
                       Container(
@@ -293,13 +289,11 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
                         decoration: BoxDecoration(
                           color: Colors.blue.shade100,
                           borderRadius: BorderRadius.circular(12),
-                          border:
-                              Border.all(color: Colors.blue.shade300),
+                          border: Border.all(color: Colors.blue.shade300),
                         ),
                         child: Text(BankAccountStrings.isSupportLabel,
                             style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue.shade900)),
+                                fontSize: 12, color: Colors.blue.shade900)),
                       ),
                   ],
                 ),

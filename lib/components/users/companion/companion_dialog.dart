@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/users/companion/companion_model.dart';
@@ -77,9 +78,7 @@ class _CompanionManagementDialogState extends State<CompanionManagementDialog> {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
       valueListenable: ConnectivityService.isOfflineNotifier,
-      builder: (context, isOffline, _) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context, isOffline, _) => AppAlertDialog(
             title: Text(CommonStrings.companions),
             content: SizedBox(
               width: 520,
@@ -177,9 +176,7 @@ class _CompanionAttendanceDialogState extends State<CompanionAttendanceDialog> {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
       valueListenable: ConnectivityService.isOfflineNotifier,
-      builder: (context, isOffline, _) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context, isOffline, _) => AppAlertDialog(
             title: Text(CommonStrings.companions),
             content: SizedBox(
               width: 480,

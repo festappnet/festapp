@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -2340,7 +2341,8 @@ class _MapPageState extends State<MapPage>
   Future<void> _showImportDialog() async {
     await showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => AppAlertDialog(
+        onClose: () => Navigator.of(dialogContext).pop(),
         title: Text(MapStrings.importRoute),
         content: SizedBox(
           width: 420,

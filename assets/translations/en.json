@@ -2599,6 +2599,15 @@
     "WAITLIST_COMMAND_FAILED": "The request could not be completed. Try again.",
     "regularToWaitlist": "Availability has changed. Continue with waitlist registration?",
     "declineAssigned": "Only currently offered places can be declined. You may choose other people for acceptance.",
-    "orderState": "Waitlist"
+    "orderState": "Waitlist",
+    "limitCapacity": "Limit the number of people",
+    "capacityHelp": "Without a limit, everyone can register.",
+    "waitlistOn": "Waitlist enabled",
+    "waitlistOff": "Registration closes when capacity is reached",
+    "waitlistHelp": "Once capacity is reached, people can join the waitlist. You send offers of available places manually.",
+    "durationHelp": "How long waitlisted people have to accept an offer you send.",
+    "blueprintCapacity": "Capacity is determined by the seat map. Waitlisting is not available for seat maps.",
+    "saveWithForm": "Changes are saved with the form using Save.",
+    "applySettings": "Apply settings"
   }
 }

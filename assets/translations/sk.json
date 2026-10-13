@@ -650,7 +650,16 @@
     "WAITLIST_COMMAND_FAILED": "Požiadavku sa nepodarilo dokončiť. Skúste to znovu.",
     "regularToWaitlist": "Dostupnosť sa zmenila. Prejsť k prihláseniu náhradníkov?",
     "declineAssigned": "Odmietnuť možno aktuálne ponúknuté miesta. Na prijatie môžete vybrať iné osoby.",
-    "orderState": "Náhradníci"
+    "orderState": "Náhradníci",
+    "limitCapacity": "Obmedziť počet osôb",
+    "capacityHelp": "Bez obmedzenia sa môžu prihlasovať všetci záujemcovia.",
+    "waitlistOn": "Náhradníci povolení",
+    "waitlistOff": "Po naplnení kapacity sa prihlasovanie uzavrie",
+    "waitlistHelp": "Po naplnení kapacity sa záujemcovia môžu prihlásiť medzi náhradníkov. Ponuky uvoľnených miest odosielate ručne.",
+    "durationHelp": "Ako dlho majú náhradníci na prijatie odoslanej ponuky.",
+    "blueprintCapacity": "Kapacitu určuje počet miest v plániku. Náhradníci nie sú pre plánik dostupní.",
+    "saveWithForm": "Zmeny sa uložia spolu s formulárom tlačidlom Uložiť.",
+    "applySettings": "Použiť nastavenia"
   },
   "EmailTemplates": {
     "subs": {

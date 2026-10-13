@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/product_inventory_context_model.dart';
@@ -6,7 +7,6 @@ import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/services/utilities_all.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
 
 class InventoryInclusionRenderer extends StatefulWidget {
   final TrinaColumnRendererContext rendererContext;
@@ -53,7 +53,8 @@ class _InventoryInclusionRendererState
     await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
+        return AppAlertDialog(
+          onClose: () => Navigator.of(dialogContext).pop(),
           // MODIFIED LINE: Added the product title to the dialog title
           title: Text(InventoryStrings.inclusionManageTitle(
               widget.product.title ?? "")),
@@ -66,12 +67,7 @@ class _InventoryInclusionRendererState
               availableContexts: widget.availableContexts,
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(CommonStrings.close),
-            ),
-          ],
+          actions: [],
         );
       },
     );

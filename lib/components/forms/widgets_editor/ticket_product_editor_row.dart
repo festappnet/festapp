@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/models/product_model.dart';
@@ -133,7 +134,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
           final result = await showDialog<String>(
             context: context,
             builder: (context) {
-              return SimpleDialog(
+              return AppSimpleDialog(
                 title: Text(CommonStrings.currency),
                 children: widget.availableCurrencies.map((currency) {
                   return SimpleDialogOption(
@@ -206,11 +207,11 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
             border: const UnderlineInputBorder(),
             suffixIcon:
                 !HtmlHelper.isHtmlEmptyOrNull(widget.product.description)
-                ? DescriptionTooltip(
-                    description: widget.product.description!,
-                    child: const Icon(Icons.description, size: 20),
-                  )
-                : null,
+                    ? DescriptionTooltip(
+                        description: widget.product.description!,
+                        child: const Icon(Icons.description, size: 20),
+                      )
+                    : null,
           ),
         ),
         const SizedBox(height: 6),
@@ -284,31 +285,32 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       Widget currency, {
       bool signed = false,
       String? error,
-    }) => Padding(
-      padding: EdgeInsets.zero,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.numberWithOptions(
-                decimal: true,
-                signed: signed,
+    }) =>
+        Padding(
+          padding: EdgeInsets.zero,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: signed,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: label,
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    border: const UnderlineInputBorder(),
+                    errorText: error,
+                  ),
+                ),
               ),
-              decoration: InputDecoration(
-                labelText: label,
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-                border: const UnderlineInputBorder(),
-                errorText: error,
-              ),
-            ),
+              const SizedBox(width: 8),
+              currency,
+            ],
           ),
-          const SizedBox(width: 8),
-          currency,
-        ],
-      ),
-    );
+        );
     final price = amountField(
       _priceController,
       CommonStrings.price,
@@ -317,25 +319,24 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
     final extra = !hasDeposit
         ? null
         : _isVirtualMode
-        ? amountField(
-            _metaSurchargeController,
-            OrdersStrings.gridSurcharge,
-            buildSurchargeCurrencyField(),
-            signed: true,
-          )
-        : amountField(
-            _depositController,
-            OrdersStrings.gridDeposit,
-            Text(selectedCurrency),
-            error: _depositError,
-          );
+            ? amountField(
+                _metaSurchargeController,
+                OrdersStrings.gridSurcharge,
+                buildSurchargeCurrencyField(),
+                signed: true,
+              )
+            : amountField(
+                _depositController,
+                OrdersStrings.gridDeposit,
+                Text(selectedCurrency),
+                error: _depositError,
+              );
 
     return Opacity(
       opacity: (widget.product.isHidden ?? false) ? .5 : 1,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact =
-              constraints.maxWidth < 480 ||
+          final compact = constraints.maxWidth < 480 ||
               MediaQuery.textScalerOf(context).scale(1) > 1.4;
           if (hasDeposit && constraints.maxWidth >= 720 && !compact) {
             return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
@@ -9,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../models/orders_history_model.dart';
 import '../orders_strings.dart';
 import 'order_state_display.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
 
 class OrderHistoryDialog extends StatefulWidget {
   final int orderId;
@@ -110,7 +110,8 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: SelectableText(
           "${OrdersStrings.gridHistory} $_orderSymbol - $_customerName"),
       content: SizedBox(
@@ -132,12 +133,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
                     ),
                   ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(CommonStrings.close),
-        ),
-      ],
+      actions: [],
     );
   }
 

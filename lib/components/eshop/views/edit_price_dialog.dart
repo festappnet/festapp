@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -51,8 +52,7 @@ class _EditPriceDialogState extends State<EditPriceDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppDialog(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 450),
         child: Padding(
@@ -61,9 +61,9 @@ class _EditPriceDialogState extends State<EditPriceDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                OrdersStrings.editPriceTitle,
-                style: Theme.of(context).textTheme.titleLarge,
+              AppDialogHeader(
+                title: Text(OrdersStrings.editPriceTitle,
+                    style: Theme.of(context).textTheme.titleLarge),
               ),
               const SizedBox(height: 20),
               SingleChildScrollView(

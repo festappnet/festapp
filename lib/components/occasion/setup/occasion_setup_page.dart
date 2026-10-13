@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -669,7 +670,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (current['formDraft'] != null) {
       final replace = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AppAlertDialog(
           title: const Text('Nahradit formulář v konceptu?'),
           content:
               const Text('Dosavadní úpravy formuláře se při výměně zahodí.'),

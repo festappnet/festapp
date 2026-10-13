@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:math';
 import 'package:fstapp/app_config.dart';
 import 'package:collection/collection.dart';
@@ -338,9 +339,7 @@ class TicketEditorWidgets {
     return showDialog<dynamic>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+        return AppDialog(
           child: ConstrainedBox(
             constraints:
                 const BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
@@ -350,9 +349,9 @@ class TicketEditorWidgets {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    FormStrings.addProductTypeTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  AppDialogHeader(
+                    title: Text(FormStrings.addProductTypeTitle,
+                        style: Theme.of(context).textTheme.titleLarge),
                   ),
                   const SizedBox(height: 16),
                   Flexible(

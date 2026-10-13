@@ -36,10 +36,26 @@ export type WaitlistRenderContext = {
   participantCount?: number;
   offeredCount?: number;
   expiresAt?: string;
+  timeZone?: string;
   manageEnvelope?: Record<string, string>;
   manageContentHash?: string;
   manageTokenHash?: string;
 };
+
+/** Complete Czech phrases keep custom numeric substitutions backward compatible. */
+export function waitlistCountPhrase(count: number, noun: "person" | "place"): string {
+  const forms = noun === "person" ? ["osobu", "osoby", "osob"] : ["místo", "místa", "míst"];
+  return `${count} ${forms[count === 1 ? 0 : count >= 2 && count <= 4 ? 1 : 2]}`;
+}
+
+export function waitlistExpiryText(expiresAt: string, timeZone: string): string {
+  const date = new Date(expiresAt);
+  if (!Number.isFinite(date.getTime()) || !timeZone) throw new Error("waitlist_email_timezone_invalid");
+  return `${new Intl.DateTimeFormat("cs-CZ", {
+    timeZone, day: "numeric", month: "numeric", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(date)} (${timeZone})`;
+}
 
 function escapeHtml(value: unknown): string {
   return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;")
@@ -181,14 +197,16 @@ export async function renderWaitlistEmail(
     participant_count: offer
       ? context.participantCount!
       : source.participantCount,
+    participant_phrase: waitlistCountPhrase(offer ? context.participantCount! : source.participantCount, "person"),
     manage_waitlist_url: manageUrl,
     manage_waitlist_button: button(manageUrl, "Spravovat čekání"),
     ...(offer
       ? {
         offered_count: context.offeredCount!,
-        offer_expires_at: escapeHtml(source.expiresAt!),
+        offered_places: waitlistCountPhrase(context.offeredCount!, "place"),
+        offer_expires_at: escapeHtml(waitlistExpiryText(source.expiresAt!, context.timeZone!)),
         offer_url: url,
-        offer_button: button(url, "Otevřít nabídku míst"),
+        offer_button: button(url, "Otevřít nabídku"),
       }
       : {}),
   };

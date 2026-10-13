@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -135,17 +136,14 @@ class _BlueprintCreateOrderDialogState
     final theme = Theme.of(context);
     final groupedConflicts = groupBy(_conflicts, (c) => c[_kOrderId]);
 
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
+      dismissible: !(_isSubmitting),
       insetPadding: const EdgeInsets.all(16),
       titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       title: Row(
         children: [
           Expanded(child: Text(BlueprintStrings.legendCreateOrder)),
-          IconButton(
-            icon: const Icon(Icons.close),
-            // Prevent closing while submitting
-            onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          )
         ],
       ),
       content: _loading

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -346,7 +347,8 @@ class ScheduleContentState extends State<ScheduleContent> {
   ) {
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => AppAlertDialog(
+        onClose: () => Navigator.of(dialogContext).pop(),
         title: Text(ScheduleStrings.suspiciousReason),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
@@ -394,12 +396,7 @@ class ScheduleContentState extends State<ScheduleContent> {
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(CommonStrings.close),
-          ),
-        ],
+        actions: [],
       ),
     );
   }
@@ -622,7 +619,8 @@ class ScheduleContentState extends State<ScheduleContent> {
                 onTap: () {
                   showDialog(
                     context: context,
-                    builder: (_) => AlertDialog(
+                    builder: (_) => AppAlertDialog(
+                      onClose: () => Navigator.of(context).pop(),
                       insetPadding: const EdgeInsets.symmetric(
                         horizontal: 40.0,
                         vertical: 24.0,
@@ -659,12 +657,7 @@ class ScheduleContentState extends State<ScheduleContent> {
                           },
                         ),
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text(CommonStrings.close),
-                        ),
-                      ],
+                      actions: [],
                     ),
                   );
                 },

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
@@ -260,7 +261,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     final target = await showDialog<UnitModel>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
+        builder: (dialogContext, setDialogState) => AppAlertDialog(
+          onClose: () => Navigator.of(dialogContext).pop(),
           title: Text(UnitStrings.createCopy),
           content: SizedBox(
             width: 380,

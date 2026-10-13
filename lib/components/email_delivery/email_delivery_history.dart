@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/views/order_state_display.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -190,7 +191,7 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
     if (!mounted || result is! Map) return;
     await showDialog<void>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (_) => AppAlertDialog(
               title: Text(EmailDeliveryStrings.history),
               content: SizedBox(
                   width: 400,
@@ -227,6 +228,14 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
       width: widget.embedded ? double.infinity : 900,
       height: widget.embedded ? double.infinity : 480,
       child: Column(children: [
+        if (!widget.embedded)
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: AppDialogHeader(
+              title: Text(EmailDeliveryStrings.history,
+                  style: Theme.of(context).textTheme.titleLarge),
+            ),
+          ),
         if (!widget.ordersOnly &&
             widget.organizationId != null &&
             widget.occasionId != null &&
@@ -262,6 +271,6 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
                 key: ObjectKey(_controller))),
       ]),
     );
-    return widget.embedded ? content : Dialog(child: content);
+    return widget.embedded ? content : AppDialog(child: content);
   }
 }
