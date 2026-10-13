@@ -1,7 +1,5 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
-import 'package:intl/intl.dart';
-import '../../../services/time_helper.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import '../../eshop/db_orders.dart';
 import 'package:flutter/material.dart';
@@ -28,26 +26,15 @@ class WaitlistCapacitySummary extends StatelessWidget {
 
 class WaitlistOffersDialog extends StatefulWidget {
   const WaitlistOffersDialog(
-      {super.key,
-      required this.form,
-      this.orders = const [],
-      this.targetOrderId,
-      this.loadProposal,
-      this.loadPreview,
-      this.executeCommand});
+      {super.key, required this.form, this.orders = const []});
   final FormModel form;
   final List<OrderModel> orders;
-  final int? targetOrderId;
-  final Future<Map<String, dynamic>> Function(int)? loadProposal;
-  final Future<Map<String, dynamic>> Function(int)? loadPreview;
-  final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
-      executeCommand;
   @override
   State<WaitlistOffersDialog> createState() => _WaitlistOffersDialogState();
 }
 
 class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
-  late final _commands = WaitlistCommands();
+  final _commands = WaitlistCommands();
   final _counts = <int, TextEditingController>{};
   Map<String, dynamic>? _proposal;
   Map<String, dynamic>? _preview;
@@ -74,8 +61,8 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     setState(() => _busy = true);
     try {
       final results = await Future.wait([
-        (widget.loadProposal ?? _commands.proposal)(widget.form.id!),
-        (widget.loadPreview ?? _commands.preview)(widget.form.id!),
+        _commands.proposal(widget.form.id!),
+        _commands.preview(widget.form.id!),
         if (widget.form.link != null)
           DbOrders.getAllOrdersBundle(formLink: widget.form.link),
       ]);
@@ -89,15 +76,11 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
         c.dispose();
       }
       _counts.clear();
-      for (final order in _orders.where((o) =>
-          o.isWaitlisted &&
-          o.formId == widget.form.id &&
-          (widget.targetOrderId == null || o.id == widget.targetOrderId))) {
+      for (final order in _orders
+          .where((o) => o.isWaitlisted && o.formId == widget.form.id)) {
         _counts[order.id!] = TextEditingController(text: '0');
       }
       for (final row in proposal['recipients'] as List) {
-        if (widget.targetOrderId != null &&
-            row['orderId'] != widget.targetOrderId) continue;
         (_counts[row['orderId']] ??= TextEditingController()).text =
             row['count'].toString();
       }
@@ -119,7 +102,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
       _error = null;
     });
     try {
-      await (widget.executeCommand ?? _commands.command)('send', {
+      await _commands.command('send', {
         'formId': widget.form.id,
         'revision': _proposal!['revision'],
         'recipients': [
@@ -145,30 +128,13 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
   String _previewHtml(int orderId, int count) {
     final order = _orders.where((o) => o.id == orderId).firstOrNull;
     final escape = const HtmlEscape().convert;
-    final participantCount =
-        order?.waitlistSummary?.counts.values.fold<int>(0, (a, b) => a + b) ??
-            count;
-    final participantWord = participantCount == 1
-        ? 'osobu'
-        : participantCount >= 2 && participantCount <= 4
-            ? 'osoby'
-            : 'osob';
-    final placeWord = count == 1
-        ? 'místo'
-        : count >= 2 && count <= 4
-            ? 'místa'
-            : 'míst';
-    final expiry = _expiresAt == null
-        ? ''
-        : DateFormat('d. M. yyyy HH:mm').format(_expiresAt!.toOccasionTime());
     final vars = <String, String>{
       'order_symbol': escape(order?.orderSymbol ?? '$orderId'),
       'occasion_title': escape(_preview?['occasionTitle']?.toString() ?? ''),
-      'participant_count': '$participantCount',
-      'participant_phrase': '$participantCount $participantWord',
+      'participant_count':
+          '${order?.waitlistSummary?.counts.values.fold<int>(0, (a, b) => a + b) ?? count}',
       'offered_count': '$count',
-      'offered_places': '$count $placeWord',
-      'offer_expires_at': escape(expiry),
+      'offer_expires_at': escape(_expiresAt?.toUtc().toIso8601String() ?? ''),
       'offer_url': '#',
       'manage_waitlist_url': '#',
       'offer_button': '<a href="#">${escape(WaitlistStrings.accept)}</a>',
@@ -196,7 +162,6 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
             Map<String, dynamic>.from(_proposal!['capacity']));
     return AppAlertDialog(
       dismissible: !_busy,
-      onClose: () => Navigator.pop(context, _sent),
       title: Text(WaitlistStrings.send),
       content: SizedBox(
           width: 600,
@@ -212,7 +177,6 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                           color: Theme.of(context).colorScheme.error)),
                 if (_sent) Text(WaitlistStrings.queued),
                 if (!_sent && capacity != null) ...[
-                  Text(WaitlistStrings.offerReviewExplanation),
                   WaitlistCapacitySummary(capacity: capacity),
                   if (!capacity.canSendOffers)
                     Text(
@@ -225,7 +189,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                               labelText:
-                                  '${_orders.where((o) => o.id == row.key).firstOrNull?.toBasicString() ?? row.key} · ${WaitlistStrings.count}'),
+                                  '${_orders.where((o) => o.id == row.key).firstOrNull?.orderSymbol ?? row.key} · ${WaitlistStrings.count}'),
                           onChanged: (_) => setState(() {}),
                         )),
                   Text(
@@ -236,7 +200,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                           : () async {
                               final date = await showDatePicker(
                                   context: context,
-                                  initialDate: _expiresAt!.toOccasionTime(),
+                                  initialDate: _expiresAt!.toLocal(),
                                   firstDate: DateTime.now(),
                                   lastDate: DateTime.now()
                                       .add(const Duration(days: 3650)));
@@ -244,18 +208,17 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                               final time = await showTimePicker(
                                   context: context,
                                   initialTime: TimeOfDay.fromDateTime(
-                                      _expiresAt!.toOccasionTime()));
+                                      _expiresAt!.toLocal()));
                               if (time != null && mounted)
                                 setState(() => _expiresAt = DateTime(
-                                        date.year,
-                                        date.month,
-                                        date.day,
-                                        time.hour,
-                                        time.minute)
-                                    .toUtcFromOccasionTime());
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    time.hour,
+                                    time.minute));
                             },
                       child: Text(
-                          '${WaitlistStrings.expiresAt}: ${_expiresAt == null ? '' : DateFormat('d. M. yyyy HH:mm').format(_expiresAt!.toOccasionTime())}')),
+                          '${WaitlistStrings.expiresAt}: ${_expiresAt?.toLocal()}')),
                   const Divider(),
                   Text(WaitlistStrings.text('emailPreview')),
                   for (final e in _counts.entries
@@ -288,9 +251,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                           .every((c) => (int.tryParse(c.text) ?? -1) >= 0)
                   ? _send
                   : null,
-              child: Text(widget.targetOrderId == null
-                  ? WaitlistStrings.send
-                  : WaitlistStrings.offerPlace)),
+              child: Text(WaitlistStrings.send)),
       ],
     );
   }

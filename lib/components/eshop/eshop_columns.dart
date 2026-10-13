@@ -654,7 +654,7 @@ class EshopColumns {
                 : null,
           ),
         ],
-        ORDER_WAITLIST: (Map<String, dynamic> data) => [
+        ORDER_WAITLIST: [
           TrinaColumn(
               title: WaitlistStrings.detail,
               field: ORDER_WAITLIST,
@@ -668,10 +668,7 @@ class EshopColumns {
                 return TextButton(
                     onPressed: () => showDialog(
                         context: context,
-                        builder: (_) => WaitlistOrderDetail(
-                            order: order,
-                            onChanged: data[ORDER_WAITLIST]
-                                as Future<void> Function()?)),
+                        builder: (_) => WaitlistOrderDetail(order: order!)),
                     child: Text(order!.waitlistSummary!.label));
               }),
         ],
