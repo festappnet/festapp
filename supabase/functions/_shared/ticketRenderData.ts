@@ -26,7 +26,8 @@ export function indexProductCatalog(raw:any,occasionId:number):ProductCatalog {
     products.set(p.id,p);if(!p.is_hidden)type.hasVisibleProducts=true;
     const value=productValue(p);
     const currency=/^[A-Z]{3}$/.test(p.currency_code)?p.currency_code:null;
-    if(!p.is_hidden&&value&&!type.example)type.example={id:p.id,value,price:Number.isFinite(p.price)&&p.price>=0?p.price:null,currency_code:currency,currency_symbol:currency?new Intl.NumberFormat('cs-CZ',{style:'currency',currency,minimumFractionDigits:0,maximumFractionDigits:0}).formatToParts(0).find(part=>part.type==='currency')!.value:null};
+    const positivePrice=Number.isFinite(p.price)&&p.price>0;
+    if(!p.is_hidden&&value&&(!type.example||(positivePrice&&!(type.example.price!=null&&type.example.price>0))))type.example={id:p.id,value,price:Number.isFinite(p.price)&&p.price>=0?p.price:null,currency_code:currency,currency_symbol:currency?new Intl.NumberFormat('cs-CZ',{style:'currency',currency,minimumFractionDigits:0,maximumFractionDigits:0}).formatToParts(0).find(part=>part.type==='currency')!.value:null};
   }
   return {types,products};
 }

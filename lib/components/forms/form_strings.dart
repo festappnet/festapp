@@ -311,6 +311,10 @@ class FormStrings {
       'FormsFeature.defaultSelectionHintSingle'.tr();
   static String get defaultSelectionHintMulti =>
       'FormsFeature.defaultSelectionHintMulti'.tr();
+  static String get defaultProductSelected =>
+      'FormsFeature.defaultProductSelected'.tr();
+  static String get setDefaultProduct =>
+      'FormsFeature.setDefaultProduct'.tr();
   static String get clearDefaultSelection =>
       'FormsFeature.clearDefaultSelection'.tr();
 

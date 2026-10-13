@@ -49,3 +49,27 @@ Deno.test('currency symbols and prices match the shared canvas contract fixture'
   assertEquals(sampleData('normal',{id:7},catalog,productTemplate()).price,item.expected);
  }
 });
+
+Deno.test('catalog examples prefer visible positive prices with stable order and id fallback',()=>{
+ const products=[
+  {id:1,product_type:1,title:'Bez večeře',price:0,order:0},
+  {id:2,product_type:1,title:'Hidden paid',price:100,is_hidden:true,order:0},
+  {id:6,product_type:1,title:'Later paid',price:200,order:2},
+  {id:5,product_type:1,title:'Higher id',price:300,order:1},
+  {id:4,product_type:1,title:'Večeře',price:100,order:1},
+  {id:3,product_type:1,title:'Infinite',price:Infinity,order:0},
+  {id:10,product_type:2,title:'Free later',price:0,order:2},
+  {id:9,product_type:2,title:'Free first',price:0,order:1},
+  {id:8,product_type:2,title:'Unknown later',price:NaN,order:2},
+  {id:11,product_type:3,title:'Unknown',price:NaN,order:0},
+  {id:12,product_type:3,title:'Negative',price:-1,order:1},
+  {id:13,product_type:4,title:'Hidden only',price:10,is_hidden:true},
+  {id:14,product_type:1,title:' ',price:10,order:-1},
+ ].map(p=>({...p,currency_code:'CZK'}));
+ const raw={product_types:[1,2,3,4].map(id=>({id,occasion:7,title:String(id)})),products};
+ for(const ordered of [products,[...products].reverse()]) {
+  const catalog=indexProductCatalog({...raw,products:ordered},7);
+  assertEquals([...catalog.types.values()].map(t=>t.example?.id??null),[4,9,11,null]);
+  assertEquals(catalog.types.get(3)?.example?.price,null);
+ }
+});
