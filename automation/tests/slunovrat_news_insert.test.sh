@@ -10,7 +10,8 @@ from pathlib import Path
 import sys
 r = Path(sys.argv[1])
 s = (r/'automation/tests/fixtures/slunovrat_news_insert.sql').read_text()
-print(s.replace('\\ir ../../../supabase/migrations/20261013093000_slunovrat_news_insert.sql',
-    (r/'supabase/migrations/20261013093000_slunovrat_news_insert.sql').read_text()))
+for name in ['20261013093000_slunovrat_news_insert.sql','20261013094500_news_search_extensions_usage.sql']:
+    s = s.replace('\\ir ../../../supabase/migrations/'+name, (r/'supabase/migrations'/name).read_text())
+print(s)
 PY
 printf '%s\n' 'Slunovrat news insert: editor accepted; other tenant, spoofed author, explicit ID and non-editor denied.'
