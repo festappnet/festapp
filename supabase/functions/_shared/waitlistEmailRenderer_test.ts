@@ -73,6 +73,7 @@ async function fixture(offer = false) {
       waitlist_confirmation_heading: "Jste mezi náhradníky",
       waitlist_confirmation_explanation: "Zatím nic neplatíte. Jakmile se uvolní místo, pošleme vám nabídku. Čekání můžete spravovat nebo ukončit přes tento odkaz:",
       waitlist_offer_heading: "Máme pro vás nabídku",
+      waitlist_offer_instructions_single: "Po otevření nabídky doplníte údaje a vyberete produkty podle aktuální dostupnosti. Přihlášení pak potvrdíte.",
       waitlist_offer_instructions: "Po otevření nabídky vyberete, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíte.",
     },
     manageEnvelope: manageSealed,
@@ -302,7 +303,8 @@ Deno.test("semantic phrases render alongside unchanged custom numeric placeholde
 for (const informal of [false, true]) {
   for (const count of [1, 2]) {
     for (const offer of [false, true]) {
-      Deno.test(`encrypted queued ${offer ? "offer" : "confirmation"} ${informal ? "informal" : "formal"} for ${count}`, async () => {
+     for (const offeredCount of offer && count === 2 ? [1, 2] : [count]) {
+      Deno.test(`encrypted queued ${offer ? "offer" : "confirmation"} ${informal ? "informal" : "formal"} for ${count}, offered ${offeredCount}`, async () => {
         const previousKey = Deno.env.get("EMAIL_PAYLOAD_KEY");
         Deno.env.set("EMAIL_PAYLOAD_KEY", btoa(String.fromCharCode(...new Uint8Array(32).fill(7))));
         try {
@@ -320,12 +322,13 @@ for (const informal of [false, true]) {
             waitlist_confirmation_heading: "Jsi mezi náhradníky",
             waitlist_confirmation_explanation: "Zatím nic neplatíš. Jakmile se uvolní místo, pošleme ti nabídku. Čekání můžeš spravovat nebo ukončit přes tento odkaz:",
             waitlist_offer_heading: "Máme pro tebe nabídku",
+            waitlist_offer_instructions_single: "Po otevření nabídky doplníš údaje a vybereš produkty podle aktuální dostupnosti. Přihlášení pak potvrdíš.",
             waitlist_offer_instructions: "Po otevření nabídky vybereš, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíš.",
           };
           f.context.timeZone = "UTC"; // Even this configured zone has no visible suffix.
           if (offer) {
-            f.selected.offeredCount = count;
-            f.context.offeredCount = count;
+            f.selected.offeredCount = offeredCount;
+            f.context.offeredCount = offeredCount;
           }
           f.row.data.content_hash = await sha256Text(JSON.stringify(f.selected));
           f.row.data.waitlistEnvelope = await sealEmail(f.selected);
@@ -339,17 +342,23 @@ for (const informal of [false, true]) {
             })),
           });
           assert.match(result.prepared.html, /data-wrapper="inherited"/);
-          assert.ok(result.prepared.html.includes(waitlistCountPhrase(count, offer ? "place" : "person")));
+          assert.ok(result.prepared.html.includes(waitlistCountPhrase(offer ? offeredCount : count, offer ? "place" : "person")));
           assert.match(result.prepared.html, /COMMITTED123/);
           assert.doesNotMatch(result.prepared.html, /\{\{|\bUTC\b/);
           if (offer) {
-            assert.ok(result.prepared.html.includes(count === 1 ? "Potvrdit přihlášení" : "Potvrdit vybrané osoby"));
+            assert.ok(result.prepared.html.includes(offeredCount === 1 ? "Potvrdit přihlášení" : "Potvrdit vybrané osoby"));
             assert.doesNotMatch(result.prepared.html, /Otevřít nabídku|Spravovat čekání/);
             const dateChunk = result.prepared.html.match(/<span style="white-space:nowrap">([^<]+)<\/span>/)?.[1];
             assert.ok(dateChunk && dateChunk.includes("\u00a0"));
             assert.doesNotMatch(dateChunk!, /[ \t\n\r]/);
             assert.ok(result.prepared.html.includes(informal ? "Máme pro tebe nabídku" : "Máme pro vás nabídku"));
-            assert.ok(result.prepared.html.includes(informal ? "vybereš" : "vyberete"));
+            if (count === 1 && offeredCount === 1) {
+              assert.ok(result.prepared.html.includes(informal ? "doplníš údaje" : "doplníte údaje"));
+              assert.ok(result.prepared.html.includes(informal ? "Přihlášení pak potvrdíš" : "Přihlášení pak potvrdíte"));
+              assert.doesNotMatch(result.prepared.html, /kdo přijde/);
+            } else {
+              assert.ok(result.prepared.html.includes(informal ? "vybereš, kdo přijde" : "vyberete, kdo přijde"));
+            }
             assert.ok(result.prepared.html.includes(informal ? "potvrdíš" : "potvrdíte"));
             assert.doesNotMatch(result.prepared.html, informal ? /pro vás|vyberete|potvrdíte/ : /pro tebe|vybereš|potvrdíš/);
           } else {
@@ -365,6 +374,7 @@ for (const informal of [false, true]) {
           else Deno.env.set("EMAIL_PAYLOAD_KEY", previousKey);
         }
       });
+     }
     }
   }
 }

@@ -1,3 +1,4 @@
+import { LocalizationService } from '../../services/localization_service.js';
 import { WaitlistStrings as S } from './waitlist_strings.js';
 
 export function ticketLabel(person, index = 0, form = null, total = 1) {
@@ -79,10 +80,10 @@ export function renderWaitlistControls(page, model) {
         message.textContent = S.text('explanation', tone);
     }
     section.appendChild(message);
-    form.prepend(section);
+    if (section.textContent || model.offerBundle) form.prepend(section);
     const placeProductNotice = () => {
         const group = form.querySelector('.waitlist-product-options');
-        if (!group) return;
+        if (!group) { form.querySelector('#waitlist-product-reason')?.remove(); return; }
         const reason = form.querySelector('#waitlist-product-reason') || document.createElement('aside');
         reason.id = 'waitlist-product-reason';
         reason.className = 'waitlist-product-notice';
@@ -97,17 +98,30 @@ export function renderWaitlistControls(page, model) {
     }
     const b = model.offerBundle;
     if (!b) return;
-    message.textContent = `${S.remaining}: ${b.pendingCount} · ${S.expiresAt}: ${new Date(b.expiresAt).toLocaleString()}. ${S.productAvailability}`;
+    section.classList.add('is-offer');
+    const facts = document.createElement('dl');
+    facts.className = 'waitlist-offer-facts';
+    for (const [label, value] of [
+        [S.remaining, b.pendingCount],
+        [S.expiresAt, new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short', ...(b.timeZone ? { timeZone: b.timeZone } : {}) }).format(new Date(b.expiresAt))],
+    ]) {
+        const fact = document.createElement('div');
+        const term = document.createElement('dt'); term.textContent = label;
+        const detail = document.createElement('dd'); detail.textContent = value;
+        fact.append(term, detail); facts.appendChild(fact);
+    }
+    section.insertBefore(facts, message);
+    message.textContent = S.text('productAvailability', tone);
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'waitlist-people';
     const legend = document.createElement('legend');
     legend.textContent = S.text('selectPeople', tone);
-    fieldset.appendChild(legend);
-    section.appendChild(fieldset);
     const eligiblePeople = b.tickets.filter(person => !['admitted', 'withdrawn', 'cancelled'].includes(person.lifecycle));
+    if (eligiblePeople.length > 1) fieldset.appendChild(legend);
+    section.appendChild(fieldset);
     for (const [index, person] of b.tickets.entries()) {
         if (['admitted', 'withdrawn', 'cancelled'].includes(person.lifecycle)) continue;
-        const label = document.createElement('label');
+        const label = document.createElement(eligiblePeople.length === 1 ? 'div' : 'label');
         label.className = 'waitlist-person-row';
         const input = document.createElement('input');
         input.type = 'checkbox';
@@ -116,7 +130,10 @@ export function renderWaitlistControls(page, model) {
         input.checked = model.selectedTicketIds.includes(person.id);
         input.disabled = person.lifecycle === 'offered' && !b.slots.some(s => s.ticketId === person.id && s.outcome === 'pending');
         const name = ticketLabel(person, index, model, b.tickets.length);
-        label.append(input, document.createTextNode(` ${name} ${S.text(person.lifecycle)}`));
+        const personName = document.createElement('strong'); personName.textContent = name;
+        const status = document.createElement('span'); status.className = 'waitlist-person-status'; status.textContent = S.text(person.lifecycle);
+        if (eligiblePeople.length > 1) label.appendChild(input);
+        label.append(personName, status);
         input.onchange = () => {
             if (input.checked && model.selectedTicketIds.length >= session.maxTickets) {
                 input.checked = false;
@@ -134,7 +151,7 @@ export function renderWaitlistControls(page, model) {
     form.querySelector('.btn-submit').textContent = S.text(model.selectedTicketIds.length === 1 ? 'acceptOne' : 'accept', tone);
     form.querySelectorAll('.btn-add-ticket,.btn-remove-ticket').forEach(el => el.hidden = true);
     const decline = document.createElement('button');
-    decline.type = 'button'; decline.className = 'btn btn-secondary'; decline.textContent = S.decline;
+    decline.type = 'button'; decline.className = 'btn waitlist-decline'; decline.textContent = S.text(model.selectedTicketIds.length === 1 ? 'declineOne' : 'decline', tone);
     decline.disabled = !model.selectedTicketIds.length || !model.selectedTicketIds.every(id => b.slots.some(s => s.ticketId === id && s.outcome === 'pending'));
     decline.onclick = () => page.resolveWaitlist('decline', model.selectedTicketIds);
     if (decline.disabled && model.selectedTicketIds.length) {

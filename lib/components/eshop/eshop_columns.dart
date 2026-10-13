@@ -1359,7 +1359,7 @@ class EshopColumns {
             type: TrinaColumnType.text(),
             renderer: (rendererContext) => buildOrderStateRenderer(
                 rendererContext.cell.value,
-                OrderModel.singleDataGridStateToColor),
+                OrderStateDisplay.historyBackground),
             textAlign: TrinaColumnTextAlign.center,
             width: 280,
           ),
