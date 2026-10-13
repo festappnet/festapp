@@ -1,14 +1,13 @@
 # Work item: complete image delivery cost cutover
 
 Opened: 2026-08-24
-Updated: 2026-09-23
+Updated: 2026-10-07
 Status: blocked
 Verification: release
 
-> Revalidation required (2026-09-10): the fixed point and queued Windows
-> commands below predate later `0.20.x` releases. Do not resume command `1028`
-> or execute P3/P4 from this snapshot until current store, client, Worker, R2
-> and traffic state has been read back without mutation.
+> Current production readback: [2026-10-07 evidence](../../image-delivery-readback-2026-10-07.md).
+> Old release identities and Windows commands below are historical receipts.
+> They do not authorize or define a new build, store release or routing change.
 
 ## Authoritative sources
 
@@ -19,7 +18,17 @@ Verification: release
 This work item tracks live operational state only. The linked plan remains
 authoritative for architecture, security, migration and validation.
 
-## Outcome
+## Scope clarification - 2026-10-07
+
+The Supabase data/backend switch is completed, as recorded in
+[the backend closure](../completed/canonical-self-hosted-cutover-2026-09-02.md).
+This remaining work item concerns direct public R2 delivery, installed-client
+adoption and legacy image-control contraction. It does not request another
+backend migration. The source still declares all four image Worker hosts;
+the subsequent read-only production verification confirms that P3/P4 remain
+unfinished. See the linked current readback for routing, bucket and client evidence.
+
+## Target outcome
 
 - `img.festapp.net` and `a.img.festapp.net` serve public images directly from
   their project-specific R2 buckets through Cloudflare CDN without public-view
@@ -31,7 +40,7 @@ authoritative for architecture, security, migration and validation.
 - Every temporary legacy control route, alias, fallback, binding and secret is
   removed after installed-client adoption.
 
-## Fixed point
+## Historical fixed point - August 2026
 
 - Canonical branch: `prod/csmostrava2026`.
 - Image-cutover source SHA: `cbb3fa7425b7c33b2cab1bba4e2ffe8765f5b6cc`.
@@ -68,56 +77,54 @@ authoritative for architecture, security, migration and validation.
   inspection and a local signed build for the exact current source were queued
   as command `1028`; Play mutation is explicitly forbidden.
 
-## Next action
+## Current result and next action
 
-Read back current CSM store versions, installed-client compatibility, image
-Worker/R2 routing and traffic before defining a new release candidate. The
-recorded `0.19.91+441` target and command `1028` are superseded: the current
-`origin/prod/csmostrava2026` config declares `0.20.14+498` on 2026-09-23.
-Do not replay any old Windows command or deploy P3/P4 from this snapshot.
-The user has included all active tenants in the investigation while deferring
-new mobile app publication.
+[Production verification on October 7](../../image-delivery-readback-2026-10-07.md)
+confirms all four image hosts still belong to the image Worker and all three
+public R2 buckets have no custom domain. The Worker is active infrastructure,
+not a deletion candidate. Its latest deployed version is
+`63e8aab7-74fa-48e3-9d59-18bafaa9258c` from October 2.
+
+All 11 active web tenants have canonical activation and their deployed Flutter
+bundles contain the dedicated control origin. CSM source is `0.20.135+619`
+(`e9d49e409b013757b67e3adaf03de141c02046a6`); its web manifest is
+`0.20.134+618`. Native store versions and installed-client adoption have not
+been verified. Old target `0.19.91+441` and commands 1025-1028 must not be replayed.
+
+Two concrete prerequisites were found:
+
+1. Reconcile Slunovrat's deployed `projectId=slunovrat` with the running
+   Worker's registry, which contains only `default`, `a`, `akhweb`. Establish
+   the intended backend/bucket mapping before changing any tenant or Worker.
+2. Classify 99 default-bucket and five a-bucket objects outside the registry's
+   public prefixes. All three public buckets have zero `private/` objects,
+   but the 104 other objects are not proven public or safe to delete.
+
+The 30-day sampled analytics query observes no exact upload/delete or presign
+traffic on public hosts; private requests returning 401 continue through
+October 6. Rejected attempts do not prove old app usage, and sampled analytics
+cannot prove exhaustive zero traffic. Obtain current native/client evidence
+before accepting an adoption or minimum-version gate.
+
+The subsequent [Slunovrat administration recovery](../completed/slunovrat-administration-recovery-2026-10-07.md)
+deployed web version `0.20.135+619` and repaired the forced occasion context.
+It also granted the explicitly authorized administration roles to the existing
+organization-19 account. That repair did not change `projectId=slunovrat`,
+the Worker registry or public R2 routing; the image-specific prerequisites
+above remain open.
 
 ## Remaining order
 
-1. Establish the current release source and produce an independently inspected
-   Android AAB on Windows only if the refreshed plan still requires it.
-2. Produce the iOS archive from that same source through
-   the established Apple release workflow; do not substitute build `439`.
-3. Present and obtain exact artifact-specific production authorizations for
-   Google Play and App Store, release both clients, and read back store state.
-4. Deploy and verify the web client carrying the canonical image contract.
-5. Prove zero legacy control traffic for the authoritative window or enforce an
-   approved minimum Android/iOS version.
-6. Execute P3: reconfirm public-bucket safety, attach both public hostnames
-   directly to R2, apply cache/header/CORS/Smart Tiered Cache configuration and
-   prove zero public Worker invocation delta.
-7. Execute P4: remove public Worker routing, `legacySupabaseUrl`, private
-   fallback, migration-only code and unused bindings/secrets/tests/docs.
-8. Record a seven-day/full-cycle cost and health observation, update evidence,
-   and close this work item.
-
-## Current blocker
-
-The old control-channel observation (`health=200`, cursor `1024`, no result for
-commands `1025` through `1028`) is historical and has not been rechecked.
-Current store versions and installed-client adoption are unverified. This work
-item targets CSM and shared image infrastructure;
-the exact host/branch rollout set must be recorded before route mutations.
-
-On 2026-09-23, all 11 active tenant configurations and their public activation
-documents report `backend=canonical`, generation 1. Wrangler reports no custom
-R2 domain on `festapp-images`, `festapp-images-a` or `festapp-images-akhweb`;
-the Worker configuration still routes `img.festapp.net`,
-`a.img.festapp.net`, `akh.img.festapp.net` and `image-api.festapp.net` to the
-image Worker. The 2026-09-23 Cloudflare GraphQL
-`httpRequestsAdaptiveGroups` readback for the prior 30 days observed no
-`/upload`, `/delete` or `/presign/` requests on the three public image hosts.
-It did observe `/private/` requests returning `401` as recently as
-2026-09-22 (`a.img.festapp.net`: 31 observed requests that day). The adaptive
-dataset does not identify the caller and cannot prove exhaustive zero traffic.
-The remaining attempts keep the P3/P4 adoption gate open under the current
-plan. No new app, route or R2 domain was published in this investigation.
+1. Resolve the project-contract mismatch and public-object classification.
+2. Verify current native release identity and client compatibility. Prepare
+   new artifacts only if the actual current state requires a release.
+3. Establish the authoritative adoption window or approved minimum version.
+4. Prepare exact P3 host scope, pre-state and rollback; attach public R2 domains
+   and verify headers, CORS, cache, images and zero public Worker invocation delta.
+5. Execute P4 after verified P3/adoption, removing obsolete public routes,
+   aliases, fallback source and unused bindings/secrets.
+6. Record the required seven-day/full-cycle cost and health observation before
+   closing this work item.
 
 ## Authority gates
 
@@ -164,3 +171,4 @@ plan. No new app, route or R2 domain was published in this investigation.
 | 2026-09-23 | Repository-only revalidation | `origin/prod/csmostrava2026` config declares `0.20.14+498` | old command and version are superseded; no store, Worker or traffic mutation |
 | 2026-09-23 | Active-tenant and R2 readback | 11/11 public activation documents canonical generation 1; three named R2 buckets have no custom domain; image Worker retains all four host routes | P3/P4 still pending; no app or infrastructure mutation |
 | 2026-09-23 | 30-day Cloudflare HTTP analytics | `httpRequestsAdaptiveGroups`, three public image hosts, exact legacy control paths | no observed upload/delete/presign; `/private/` 401 attempts through 2026-09-22, so zero-legacy gate remains open; no route mutation |
+| 2026-10-07 | Read-only current production verification | [Current evidence](../../image-delivery-readback-2026-10-07.md) | P3 absent; 11 web origins verified; 104 non-registry objects and Slunovrat project mismatch require resolution; no production mutation |

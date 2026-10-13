@@ -47,6 +47,29 @@ void main() {
         fetch: fetch,
       );
 
+  test('explicit loopback debug override never reads production activation',
+      () async {
+    const override = String.fromEnvironment('FESTAPP_SUPABASE_URL');
+    final host = Uri.tryParse(override)?.host;
+    if (host != '127.0.0.1' && host != 'localhost') return;
+    var touchedProduction = false;
+    final resolved = await BackendActivationService(
+      read: (_) async {
+        touchedProduction = true;
+        return 'canonical:1';
+      },
+      write: (_, __) async =>
+          throw StateError('Must not write a production marker'),
+      fetch: (_) async {
+        touchedProduction = true;
+        return canonicalBytes;
+      },
+    ).resolve();
+    expect(touchedProduction, isFalse);
+    expect(resolved.supabaseUrl, override);
+    expect(resolved.isCanonical, isFalse);
+  });
+
   test('defaults to the legacy writer when activation is unavailable',
       () async {
     final resolved = await service(

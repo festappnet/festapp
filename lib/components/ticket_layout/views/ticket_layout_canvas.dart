@@ -203,19 +203,15 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   }
 
   void _hover(PointerHoverEvent event) {
-    final selected = widget.controller.document
-        .positionedElements(widget.data)
-        .where((e) => e.id == widget.controller.selected)
-        .firstOrNull;
+    final selectedBounds = widget.controller.selectionBounds;
     final point = widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
     final handle = panning ||
             widget.editBackground ||
             widget.editCanvas ||
-            selected == null ||
-            selected.locked
+            selectedBounds == null
         ? null
-        : _handleAt(selected.box, point);
+        : _handleAt(selectedBounds, point);
     if (handle != _hoverHandle) setState(() => _hoverHandle = handle);
   }
 
@@ -292,13 +288,9 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       setState(() => _editing = event.pointer);
       return;
     }
-    final selected = widget.controller.document
-        .positionedElements(widget.data)
-        .where((e) => e.id == widget.controller.selected)
-        .firstOrNull;
-    _resizeHandle = selected == null || selected.locked
-        ? null
-        : _handleAt(selected.box, point);
+    final selectedBounds = widget.controller.selectionBounds;
+    _resizeHandle =
+        selectedBounds == null ? null : _handleAt(selectedBounds, point);
     final hit = widget.controller.document
         .positionedElements(widget.data)
         .reversed
@@ -650,7 +642,7 @@ class TicketLayoutPainter extends CustomPainter {
         if (resources.logo != null) _image(canvas, resources.logo!, e.box);
         continue;
       }
-      final text = data[e.binding];
+      final text = data[e.id];
       if (text == null) continue;
       TicketTextFit fit;
       try {
@@ -851,6 +843,25 @@ class TicketLayoutPainter extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1 / zoom);
     }
+    if (!editCanvas && !editBackground && controller.selectedIds.length > 1) {
+      final bounds = controller.selectionBounds;
+      if (bounds != null) {
+        canvas.drawRect(
+            bounds,
+            Paint()
+              ..color = Colors.blue
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5 / zoom);
+        for (final handle in TicketResizeHandle.values) {
+          canvas.drawRect(
+              Rect.fromCenter(
+                  center: handle.position(bounds),
+                  width: 10 / zoom,
+                  height: 10 / zoom),
+              Paint()..color = Colors.blue);
+        }
+      }
+    }
     for (final selected in doc.positionedElements(data).where((e) =>
         !editCanvas &&
         !editBackground &&
@@ -871,7 +882,7 @@ class TicketLayoutPainter extends CustomPainter {
         }
       }
       if (!selected.visible ||
-          data[selected.binding] == null &&
+          data[selected.id] == null &&
               selected.binding != 'qr' &&
               selected.binding != 'logo') {
         final p = TextPainter(

@@ -1,20 +1,19 @@
 import { drawLayoutTicket, prepareTicketBackground, type PreparedTicketBackground } from './generateTicket.ts';
-import { importTicketTemplate } from './ticketTemplateImport.ts';
+import { preset } from './ticketLayout.ts';
 import { validateLayout, pdfBox, type Template, type TicketLayout } from './ticketLayout.ts';
-import { normalizeTicketData, type RenderData } from './ticketRenderData.ts';
+import { normalizeTicketData, type RenderData, type ProductCatalog, indexProductCatalog, validateProductReferences } from './ticketRenderData.ts';
 import { type FontMetrics } from './ticketText.ts';
 import { fetchPublicImage, UnsafeTargetError } from '../fetch-http-data/safeFetch.ts';
-import {futuraId,legacyFontIds,legacyNamedFontId,type TicketFont} from './ticketFonts.ts';
+import {futuraId,type TicketFont} from './ticketFonts.ts';
 import {resolveTicketFont,parseRegisteredTicketLayout} from './ticketFontStorage.ts';
 import {effectiveFontId,layoutFontIds} from './ticketLayout.ts';
-export interface Resources { fonts?:Record<string,TicketFont>;registeredIds?:ReadonlySet<string>;font:Uint8Array;metrics:FontMetrics;background?:Uint8Array;preparedBackground?:PreparedTicketBackground;missingBackground?:boolean;logo?:Uint8Array;productTypeMap?:any }
-export async function loadLayoutResources(occasion:any,featureOverride?:any,options:{allowMissingBackground?:boolean;legacyFontProtocol?:boolean}={},readImage=fetchPublicImage):Promise<Resources> {
+export interface Resources { fonts?:Record<string,TicketFont>;registeredIds?:ReadonlySet<string>;font:Uint8Array;metrics:FontMetrics;background?:Uint8Array;preparedBackground?:PreparedTicketBackground;missingBackground?:boolean;logo?:Uint8Array;catalog?:ProductCatalog }
+export async function loadLayoutResources(occasion:any,featureOverride?:any,options:{allowMissingBackground?:boolean}={},readImage=fetchPublicImage):Promise<Resources> {
   const feature=featureOverride??occasion.features?.find((f:any)=>f.code==='ticket');
   const type=feature?.ticket_type==='named'?'named':'wide';
   const template=feature?.layout?.templates?.[type];
-  const defaultId=template?effectiveFontId(template):type==='named'?legacyNamedFontId(occasion.data?.font):feature?.background?legacyFontIds.robotoSlab:futuraId;
+  const defaultId=template?effectiveFontId(template):futuraId;
   const ids=new Set<string>([defaultId]);
-  if(options.legacyFontProtocol)for(const id of Object.values(legacyFontIds))ids.add(id);
   if(options.allowMissingBackground)ids.add(futuraId); // concurrently rendered preset gallery
   for(const e of template?.elements??[])if(e.visible&&!['qr','logo'].includes(e.binding))ids.add(effectiveFontId(template,e));
   const fonts:Record<string,TicketFont>={};await Promise.all([...ids].map(async id=>{fonts[id]=await resolveTicketFont(id);}));
@@ -42,7 +41,11 @@ export function activeTemplate(occasion:any,registeredIds?:ReadonlySet<string>):
   return (f.layout as TicketLayout).templates[f.ticket_type==='named'?'named':'wide'];
 }
 export async function resolveTicketTemplate(occasion:any,resources:Resources):Promise<Template> {
-  return activeTemplate(occasion,resources.registeredIds) ?? await importTicketTemplate(occasion,resources);
+  const active=activeTemplate(occasion,resources.registeredIds);
+  if(active)return active;
+  const feature=occasion.features?.find((f:any)=>f.code==='ticket');
+  if(!feature?.layout&&feature?.background)throw new Error('ticket_layout_migration_required');
+  return preset(feature?.ticket_type==='named'?'named':'wide');
 }
 export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={}, dependencies = {
   load: loadLayoutResources,
@@ -57,10 +60,9 @@ export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={
   if(resources.background)resources.preparedBackground=await prepareTicketBackground(resources.background);
   const template=await resolveTicketTemplate(occasion,resources);
   const products=await dependencies.products(occasion.id);
-  const types=new Map((products?.product_types??[]).map((p:any)=>[p.id,p.type]));
-  resources.productTypeMap={};
-  for(const product of products?.products??[]) {const type=String(types.get(product.product_type));(resources.productTypeMap[type]??={})[product.id]=product;}
-  return async(t:any)=>generateTicketPdf(normalizeTicketData(t,occasion,order,resources.productTypeMap),resources,template);
+  resources.catalog=indexProductCatalog(products,occasion.id);
+  validateProductReferences(template,resources.catalog);
+  return async(t:any)=>generateTicketPdf(normalizeTicketData(t,occasion,order,resources.catalog,template),resources,template);
 }
 export async function generateTicketPdf(data:RenderData,r:Resources,t:Template,type:'wide'|'named'=t.page.width===595.28?'wide':'named',sample=false) {
   return await drawLayoutTicket(data,r,t,type,sample);

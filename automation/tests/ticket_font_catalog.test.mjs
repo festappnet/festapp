@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {generate,extractVariants} from '../generate_ticket_font_catalog.mjs';
 test('deterministic catalog maps display families, locks version and matches all outputs',()=>{
   const outputs=generate(process.cwd());for(const [file,content] of outputs)assert.equal(readFileSync(file,'utf8'),content);
-  const fonts=JSON.parse(outputs.get('assets/fonts/ticket-font-catalog.json')).fonts;
+  const fonts=JSON.parse(outputs.get('supabase/functions/_shared/ticket-assets/font-catalog.json')).fonts;
   for(const name of ['Roboto Slab','Russo One','Roboto','Futura PT'])assert.ok(fonts.find(f=>f.family===name));
   assert.ok(fonts.every(f=>f.id.endsWith(f.sha256)));
 });

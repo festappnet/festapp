@@ -32,6 +32,11 @@ fi
 
 # Source the config (DOMAIN)
 source "$CONFIG_FILE"
+MAX_TICKETS_PER_ORDER="${MAX_TICKETS_PER_ORDER:-20}"
+[[ "$MAX_TICKETS_PER_ORDER" =~ ^[1-9][0-9]{0,3}$ ]] || {
+    echo "Error: MAX_TICKETS_PER_ORDER must be a positive integer up to 9999"
+    exit 1
+}
 
 for required_key in DOMAIN APP_NAME APP_TITLE_SHORT APP_DESCRIPTION VERSION FLUTTER_VERSION \
     ANDROID_APPLICATION_ID IOS_BUNDLE_ID IOS_DEVELOPMENT_TEAM \
@@ -483,6 +488,7 @@ echo "✔ Updated CNAME"
 APP_CONFIG="$PROJECT_ROOT/web_client/src/app_config.js"
 if [ -f "$APP_CONFIG" ]; then
     echo "Updating $APP_CONFIG..."
+    sed_inplace "s|static maxTicketsPerOrder = .*;|static maxTicketsPerOrder = $MAX_TICKETS_PER_ORDER;|g" "$APP_CONFIG"
 
     sed_inplace "s|static appName = '.*';|static appName = '$APP_NAME';|g" "$APP_CONFIG"
     sed_inplace "s|static appTitleShort = '.*';|static appTitleShort = '$APP_TITLE_SHORT';|g" "$APP_CONFIG"
@@ -593,6 +599,9 @@ fi
 
 # 5. Update lib/app_config.dart (Flutter App)
 FLUTTER_CONFIG="$PROJECT_ROOT/lib/app_config.dart"
+if [ -f "$FLUTTER_CONFIG" ]; then
+    sed_inplace "s|static const int maxTicketsPerOrder = .*;|static const int maxTicketsPerOrder = $MAX_TICKETS_PER_ORDER;|g" "$FLUTTER_CONFIG"
+fi
 if [ -f "$FLUTTER_CONFIG" ]; then
     echo "Updating $FLUTTER_CONFIG..."
 

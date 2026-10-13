@@ -38,7 +38,7 @@ export function generate(root) {
   const seed='-- Generated. Append-only: never delete historical IDs.\nINSERT INTO public.ticket_font_assets(id,metadata) VALUES\n'+fonts.map(f=>`('${f.id}','${JSON.stringify(f).replaceAll("'","''")}'::jsonb)`).join(',\n')+'\nON CONFLICT(id) DO NOTHING;\n';
   const legacyFiles={futura:'font.ttf',robotoSlab:'roboto-slab.ttf',roboto:'roboto.ttf',russoOne:'russo-one.ttf'};
   const dart='// Generated from the immutable font catalog.\nconst legacyTicketFontIds = <String, String>{\n'+Object.entries(legacyFiles).map(([key,file])=>`  '${key}':\n      '${fonts.find(f=>f.file===file).id}',`).join('\n')+'\n};\n';
-  return new Map([['lib/components/fonts/ticket_font_ids.dart',dart],['supabase/functions/_shared/ticket-assets/font-catalog.json',json],['assets/fonts/ticket-font-catalog.json',json],['database/seeds/ticket_font_assets.sql',seed]]);
+  return new Map([['lib/components/fonts/ticket_font_ids.dart',dart],['supabase/functions/_shared/ticket-assets/font-catalog.json',json],['database/seeds/ticket_font_assets.sql',seed]]);
 }
 if(process.argv[1]===fileURLToPath(import.meta.url)){
   const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');

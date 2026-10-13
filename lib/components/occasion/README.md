@@ -24,8 +24,17 @@ services, and lifecycle (Duplication/Deletion).
 
 **Hybrid Logic**:
 
-1. **SQL**: Calls `duplicate_occasion` RPC to copy the database row and related
-   tables.
+1. **SQL**: Calls `duplicate_occasion_client_sync_v1` (or the
+   `duplicate_occasion` facade) to copy the database row and related tables.
+   The optional target Unit defaults to the source. The caller must manage
+   both Units within the same Organization (tenant). `get_occasion_copy_units`
+   supplies authorized destinations for the confirmation dialog.
+   Email overrides retain their content and title with the target ancestry;
+   inherited templates and wrappers resolve through the target Unit. Places
+   and information also move to the target. A form's bank account is retained
+   across Units only if linked to the target; otherwise the account is cleared
+   and that form is closed for review. Receipts and catalog updates belong to
+   the target Unit, and the creator receives occasion administration rights.
 2. **Dart**: `DbOccasions.duplicateOccasion` then handles **Image Copying**.
    - It manually fetches the ticket background and occasion image.
    - Calls `DbImages.createCopyOfImage` (which likely involves storage bucket

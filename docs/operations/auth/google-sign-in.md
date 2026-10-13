@@ -3,7 +3,19 @@
 Implementation: `docs/plans/google-sign-in-plan-2026-10-01.md`.
 Local validation and console evidence: `docs/plans/google-sign-in-reference-2026-10-01/`.
 
-## Current state
+## Scope and evidence
+
+This guide retains the initial setup snapshot below. Server installation and
+selected web rollout were subsequently recorded in the
+[FestApp rollout](google-sign-in-live-rollout-2026-10-02.md) and
+[vstupenky rollout](vstupenky-google-rollout-2026-10-02.md), with
+[context fixes](google-login-context-fixes-2026-10-02.md) and
+[organization setting](organization-google-login-setting-2026-10-02.md).
+Those dated receipts supersede the initial "not installed" statement for their
+named scope; they do not prove current native or other-tenant readiness. Select
+and verify the intended tenant/client before applying any provisioning step.
+
+## Initial console/setup snapshot (before server rollout)
 
 Google Cloud project `festapp-d23ef`, brand FestApp, External audience, publishing
 status **In production**. The dedicated Web application OAuth client is recorded
@@ -20,7 +32,7 @@ Do not print, commit or include that file in build output. They have **not** bee
 installed on the server. Google Console configuration is not an application deploy
 or proof of a live end-to-end login.
 
-## Explicit rollout steps
+## Provisioning procedure (original rollout scope)
 
 1. Rehearse migration `20261001150000_google_auth_broker.sql` on the canonical
    backend. Apply through the existing approved migration path. It creates RLS

@@ -37,7 +37,8 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
   void _initializeController() {
     if (occasionLink == null) return;
 
-    final newController = SingleDataGridController<OrderHistoryModel>(
+    late final SingleDataGridController<OrderHistoryModel> newController;
+    newController = SingleDataGridController<OrderHistoryModel>(
       context: context,
       loadData: () async {
         final bundle = await DbOrders.getAllOrdersBundle(
@@ -45,6 +46,15 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
           includeOrdersHistory: true,
           includeOrderDetails: true,
         );
+
+        final formColumn = newController.columns
+            .firstWhere((column) => column.field == EshopColumns.ORDER_FORM);
+        final hideFormColumn = bundle.forms.length <= 1;
+        if (newController.isGridLoaded) {
+          newController.stateManager.hideColumn(formColumn, hideFormColumn);
+        } else {
+          formColumn.hide = hideFormColumn;
+        }
 
         final List<OrderHistoryModel> allHistoryItems = [];
 

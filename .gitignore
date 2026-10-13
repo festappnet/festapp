@@ -202,3 +202,6 @@ workers/*/node_modules/
 
 # Serena MCP (local code-navigation cache/config)
 .serena/
+
+# Local operational evidence and backups
+.codex-artifacts/

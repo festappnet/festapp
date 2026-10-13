@@ -136,6 +136,30 @@ void main() {
     ]);
   });
 
+  test('occasion copy sends the selected target unit', () async {
+    final commands = SupabaseOccasionCommands.withTransport(
+      ClientCommandTransport((name, params) async {
+        expect(name, 'duplicate_occasion_client_sync_v1');
+        expect(params['p_occasion'], 7);
+        expect(params['p_target_unit'], 23);
+        return {
+          'status': 'applied',
+          'code': 200,
+          'data': {'occasionId': 12},
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-13T10:00:00Z',
+          },
+          'sync': {'replacements': <Object>[]},
+        };
+      }, maxAttempts: 1),
+    );
+    expect(await commands.duplicate(7, targetUnitId: 23), 12);
+  });
+
   test('occasion create uses the unit-scoped canonical command', () async {
     late String functionName;
     final commands = SupabaseOccasionCommands.withTransport(

@@ -9,6 +9,7 @@ import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/deposit_feature.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/forms/widgets_editor/ticket_product_editor_row.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/widgets_editor/product_type_editor.dart';
 import 'package:fstapp/components/forms/widgets_editor/default_value_helper.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
@@ -31,7 +32,7 @@ void main() {
     ));
   }
   for (final many in [false, true]) {
-    testWidgets('stored default is disabled and simple product stays compact: many=$many', (tester) async {
+    testWidgets('product default can be selected and cleared while product stays compact: many=$many', (tester) async {
       occasion(deposit: false);
       tester.view.physicalSize = const Size(1200, 900);
       tester.view.devicePixelRatio = 1;
@@ -40,19 +41,32 @@ void main() {
       final product = ProductModel(id: 10, title: 'Režijní náklady akce', price: 100, currencyCode: 'CZK');
       final field = FormFieldModel(id: 3, productType: ProductTypeModel(title: 'Poplatek', products: [product]),
           data: {FormHelper.metaSelectionType: many ? FormHelper.metaSelectionTypeMany : 'single'});
-      DefaultValueHelper.write(field, many ? ['10'] : '10');
       var changes = 0;
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child:
         ProductTypeEditor(form: FormModel(occasionId: 1, relatedFields: [field]), ptField: field, refresh: () => changes++)))));
       final selector = many
-          ? find.byWidgetPredicate((w) => w is Checkbox && w.onChanged == null && w.value == true)
+          ? find.descendant(of: find.byKey(ObjectKey(product)), matching: find.byType(Checkbox))
           : find.byType(Radio<String>);
       expect(selector, findsOneWidget);
-      if (!many) expect(tester.widget<Radio<String>>(selector).onChanged, isNull);
+      if (!many) {
+        expect(tester.widget<Radio<String>>(selector).onChanged, isNotNull);
+        expect(find.byTooltip(FormStrings.setDefaultProduct), findsOneWidget);
+      }
       await tester.tap(selector);
       await tester.pump();
-      expect(changes, 0);
+      expect(changes, 1);
       expect(many ? DefaultValueHelper.readList(field).single : DefaultValueHelper.readString(field), '10');
+      if (many) {
+        expect(tester.widget<Checkbox>(selector).value, isTrue);
+      } else {
+        expect(tester.widget<Radio<String>>(selector).groupValue, '10');
+        expect(find.byTooltip(FormStrings.defaultProductSelected), findsOneWidget);
+      }
+      await tester.tap(selector);
+      await tester.pump();
+      expect(changes, 2);
+      expect(DefaultValueHelper.read(field), isNull);
+      if (!many) expect(find.byTooltip(FormStrings.setDefaultProduct), findsOneWidget);
       expect(tester.widget<Container>(find.byKey(ObjectKey(product))).decoration, isNull);
       Finder input(String label) => find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == label);
       final name = find.descendant(of: find.byType(TicketProductEditorRow), matching: input('Název'));

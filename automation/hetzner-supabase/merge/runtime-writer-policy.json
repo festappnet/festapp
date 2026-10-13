@@ -263,15 +263,6 @@
       ],
       "mutates_authority": true
     },
-    "self-hosted-preactivation-guard": {
-      "entrypoint": "workers/self-hosted-preactivation-guard/src/index.mjs",
-      "deployment_contract": "workers/self-hosted-preactivation-guard/wrangler.toml",
-      "trigger": "canonical-function-route",
-      "effects": [
-        "fail-closed-http-response"
-      ],
-      "mutates_authority": false
-    },
     "self-hosted-monitor": {
       "entrypoint": "workers/self-hosted-monitor/src/index.mjs",
       "deployment_contract": "workers/self-hosted-monitor/wrangler.toml",
@@ -330,7 +321,7 @@
     }
   },
   "activation_requirements": [
-    "pre-activation Function guard remains active until the reviewed canonical Function bundle is promoted and internally verified, then its exact route is removed before external Function canaries",
+    "The reviewed canonical Function bundle and matching writer policy must preserve production exclusions, exact proof-route authentication and worker-scoped credentials; verify internally before external release canaries",
     "AWS SNS topic uses SignatureVersion 2 and a signed canonical endpoint canary passes",
     "festapp_notify_webhook_token_v1 in target Vault matches NOTIFY_WEBHOOK_TOKEN and setup_triggers installs only the canonical HTTPS endpoint",
     "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin",

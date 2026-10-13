@@ -1,13 +1,38 @@
-# Festapp self-hosted Supabase migration
+# Festapp canonical self-hosted Supabase tooling
 
-This directory contains reproducible, secret-free automation for the migration
-described in `docs/plans/festapp-self-hosted-supabase-hetzner-plan-2026-08-27.md`.
+This directory owns runtime, release, backup, rehearsal and historical merge
+tooling. The canonical production endpoint is `https://api.festapp.net` following
+the 2026-09-10 switch. See the
+[completed cutover](../../docs/operations/work-items/completed/canonical-self-hosted-cutover-2026-09-02.md)
+and [retained legacy resources](../../docs/operations/work-items/completed/legacy-supabase-decommission-2026-09-23.md).
+Former cloud sources are frozen retention/reconciliation targets, not routine
+migration or write targets.
+The [2026-10-07 cleanup receipt](../../docs/operations/work-items/completed/preactivation-and-migration-tool-cleanup-2026-10-07.md)
+records removal of the absent preactivation Worker and unused standalone migration
+tools. Remaining backup, restore and referenced rehearsal tooling is retained.
+
+## Current runtime boundary
+
+Resolve each tenant from its published activation and canonical organization,
+as described in [AI context](../../docs/architecture/ai_context.md). Author SQL
+in the repository and apply it through the canonical release path. Edge releases
+use `runtime/build-production-function-bundle.sh` and
+`runtime/install-production-function-bundle.sh`; staging a bundle does not
+restart the runtime or activate clients. Follow
+[Edge deployment](../../docs/backend/edge_functions.md#deployment) and the
+[protected backend-access skill](../../.agents/skills/festapp-backend-access/SKILL.md).
+
+The migration was designed in
+`docs/plans/festapp-self-hosted-supabase-hetzner-plan-2026-08-27.md`.
+The Wave 0 tools below remain for reproducibility and specifically authorized
+reconciliation. Their original gates do not describe an unfinished production
+cutover and do not authorize querying or reopening former sources.
 
 Production exports, identity mappings, access tokens, database credentials and
 raw inventory results must never be stored here. Real runs require an output
 directory outside the repository.
 
-## Current implemented boundary
+## Historical Wave 0 inventory boundary
 
 The Wave 0 inventory foundation and its fail-closed decision gate are
 implemented. Provider history, collision scans, all-writer classification and
@@ -94,5 +119,6 @@ root `.env.local`. The scripts never print it. Source aliases are pinned to the
 two approved project refs and cannot be redirected with `.env.local` project
 metadata.
 
-Do not provision infrastructure or implement a production importer until the
-Wave 0 gate in the merge runbook is approved.
+For a separately authorized replay or reconciliation of this historical workflow,
+retain its original Wave 0 gates. Do not use these commands to resume the completed
+cutover or to apply routine production changes to retained cloud sources.

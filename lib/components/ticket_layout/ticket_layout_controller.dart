@@ -25,10 +25,15 @@ enum TicketResizeHandle {
 
 class TicketLayoutController extends ChangeNotifier {
   TicketLayoutController(this.document,
-      {this.artworkKey, this.prepareDocument, this.geometryData})
+      {this.artworkKey,
+      this.prepareDocument,
+      this.geometryData,
+      this.canStoreDocument})
       : initial = document,
         initialArtworkKey = artworkKey;
   final TicketTemplate Function(TicketTemplate)? prepareDocument;
+  final bool Function(TicketTemplate)? canStoreDocument;
+  String? productAddError;
   final Map<String, String?> Function()? geometryData;
   TicketTemplate positionedDocument(TicketTemplate value) =>
       geometryData == null ? value : value.fixedPositions(geometryData!());
@@ -43,6 +48,15 @@ class TicketLayoutController extends ChangeNotifier {
   Rect? selectionRect;
   List<TicketElement> get selections =>
       document.elements.where((e) => selectedIds.contains(e.id)).toList();
+  Rect? get selectionBounds {
+    final moving = positionedDocument(document)
+        .elements
+        .where((e) => selectedIds.contains(e.id) && !e.locked);
+    return moving.isEmpty
+        ? null
+        : moving.map((e) => e.box).reduce((a, b) => a.expandToInclude(b));
+  }
+
   double? guideX, guideY;
   final Set<String> canvasBlockers = {}, canvasHidden = {};
   Offset canvasOrigin = Offset.zero;
@@ -80,12 +94,14 @@ class TicketLayoutController extends ChangeNotifier {
   TicketElement? get selection =>
       document.elements.where((e) => e.id == selected).firstOrNull;
   void select(String? id, {bool additive = false}) {
+    if (_gesture != null) endGesture();
     if (!additive) selectedIds.clear();
     if (id != null && !selectedIds.add(id)) selectedIds.remove(id);
     notifyListeners();
   }
 
   void selectAll(Iterable<String> ids) {
+    if (_gesture != null) endGesture();
     selectedIds
       ..clear()
       ..addAll(ids);
@@ -305,6 +321,90 @@ class TicketLayoutController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool addProductField(int typeId, String title) {
+    productAddError = 'space';
+    endGesture();
+    final existing =
+        document.elements.where((e) => e.productTypeId == typeId).firstOrNull;
+    if (existing != null) {
+      select(existing.id);
+      return true;
+    }
+    if (document.elements.length >= 32) {
+      productAddError = 'elements';
+      return false;
+    }
+    final base = positionedDocument(document);
+    final style = base.elements
+        .where((e) => !['qr', 'logo'].contains(e.binding))
+        .firstOrNull;
+    final preferredWidth = math.min(180.0, base.area.width - 20);
+    const height = 24.0;
+    // Narrow templates can have useful side space beside their logo or QR.
+    // Prefer the full text box, then try narrower boxes before reporting no room.
+    for (double width = preferredWidth; width >= 60; width -= 30) {
+      for (double y = 10; y + height <= base.area.height; y += 10) {
+        for (double x = 10; x + width <= base.area.width; x += 10) {
+          final box = Rect.fromLTWH(x, y, width, height);
+          if (base.elements.any((e) => e.visible && e.box.overlaps(box)))
+            continue;
+          var id = 'product-$typeId';
+          var suffix = 1;
+          while (base.elements.any((e) => e.id == id)) {
+            id = 'product-$typeId-${suffix++}';
+          }
+          final e = TicketElement(
+              id: id,
+              binding: 'productType',
+              productTypeId: typeId,
+              label: automaticProductLabel(title),
+              box: box,
+              fontSize: style?.fontSize.clamp(6, 18) ?? 12,
+              fontId: style?.fontId,
+              color: style?.color ?? '2A2A2A');
+          final next = base.withElements([...base.elements, e]);
+          if (ticketLayoutByteSize({
+                'schemaVersion': 3,
+                'templates': {'wide': next.toJson()}
+              }) >
+              32768) {
+            productAddError = 'size';
+            return false;
+          }
+          if (canStoreDocument?.call(next) == false) {
+            productAddError = 'size';
+            return false;
+          }
+          replace(next);
+          select(id);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void changeProductType(
+      TicketElement e, int typeId, String title, String oldTitle) {
+    if (e.locked ||
+        document.elements
+            .any((other) => other.id != e.id && other.productTypeId == typeId))
+      return;
+    endGesture();
+    change(e.copyWith(
+        productTypeId: typeId,
+        label: e.label == automaticProductLabel(oldTitle)
+            ? automaticProductLabel(title)
+            : e.label));
+  }
+
+  void removeProductField(TicketElement e) {
+    if (e.locked || e.binding != 'productType') return;
+    endGesture();
+    replace(document.withElements(
+        document.elements.where((other) => other.id != e.id).toList()));
+  }
+
   void change(TicketElement e) => _changeOn(document, e);
 
   void _changeOn(TicketTemplate base, TicketElement e) {
@@ -376,6 +476,11 @@ class TicketLayoutController extends ChangeNotifier {
       double zoom = 1,
       bool snap = false,
       double? gridStep}) {
+    if (selectedIds.length > 1) {
+      _resizeGroup(delta,
+          handle: handle, zoom: zoom, snap: snap, gridStep: gridStep);
+      return;
+    }
     final selectedElement = selection;
     if (selectedElement == null || selectedElement.locked) return;
     final base = positionedDocument(_gesture ?? document);
@@ -448,6 +553,90 @@ class TicketLayoutController extends ChangeNotifier {
             fontSize: stretch
                 ? e.fontSize
                 : (e.fontSize * ratio).clamp(e.minFontSize, 72)));
+  }
+
+  void _resizeGroup(Offset delta,
+      {required TicketResizeHandle handle,
+      required double zoom,
+      required bool snap,
+      double? gridStep}) {
+    final base = positionedDocument(_gesture ?? document);
+    final moving = base.elements
+        .where((e) => selectedIds.contains(e.id) && !e.locked)
+        .toList();
+    if (moving.isEmpty) return;
+    final bounds =
+        moving.map((e) => e.box).reduce((a, b) => a.expandToInclude(b));
+    final anchor = handle.anchor(bounds);
+    if (_gesture != null) _dragOffset += delta;
+    final drag = _gesture == null ? delta : _dragOffset;
+    final area = base.area.size;
+    final maxWidth = handle.x < 0
+        ? anchor.dx
+        : handle.x > 0
+            ? area.width - anchor.dx
+            : 2 * math.min(anchor.dx, area.width - anchor.dx);
+    final maxHeight = handle.y < 0
+        ? anchor.dy
+        : handle.y > 0
+            ? area.height - anchor.dy
+            : 2 * math.min(anchor.dy, area.height - anchor.dy);
+    var lower = 0.0;
+    var upper = math.min(maxWidth / bounds.width, maxHeight / bounds.height);
+    for (final e in moving) {
+      final minimum = e.binding == 'qr' ? 60.0 : 12.0;
+      lower = math.max(lower, minimum / math.min(e.box.width, e.box.height));
+      if (!['qr', 'logo'].contains(e.binding)) {
+        lower = math.max(lower, e.minFontSize / e.fontSize);
+        upper = math.min(upper, 72 / e.fontSize);
+      }
+    }
+    if (lower > upper) return;
+    var ratio = (1 +
+            (drag.dx * handle.x + drag.dy * handle.y) /
+                (bounds.width * handle.x.abs() +
+                    bounds.height * handle.y.abs()))
+        .clamp(lower, upper);
+    final width = bounds.width * ratio, height = bounds.height * ratio;
+    final nextBounds = Rect.fromLTWH(anchor.dx - (1 - handle.x) * width / 2,
+        anchor.dy - (1 - handle.y) * height / 2, width, height);
+    guideX = guideY = null;
+    if (snap) {
+      final result = snapTicketBox(
+          nextBounds,
+          area,
+          base.elements
+              .where((e) => e.visible && !selectedIds.contains(e.id))
+              .map((e) => e.box),
+          zoom: zoom,
+          gridStep: gridStep,
+          anchor: anchor,
+          resizeDirection: Offset(handle.x, handle.y),
+          minRatio: lower / ratio,
+          maxRatio: upper / ratio);
+      ratio = result.box.width / bounds.width;
+      guideX = result.x;
+      guideY = result.y;
+    }
+    double fixed(double v) => (v * 1024).floor() / 1024;
+    var next = base;
+    for (final e in moving) {
+      final topLeft = anchor + (e.box.topLeft - anchor) * ratio;
+      final width = fixed(e.box.width * ratio);
+      final height = e.binding == 'qr' ? width : fixed(e.box.height * ratio);
+      next = next.replace(e.copyWith(
+          box: Rect.fromLTWH(
+              fixed(topLeft.dx), fixed(topLeft.dy), width, height),
+          fontSize: ['qr', 'logo'].contains(e.binding)
+              ? e.fontSize
+              : (e.fontSize * ratio).clamp(e.minFontSize, 72)));
+    }
+    if (_gesture == null) {
+      _undo.add(_snapshot);
+      _redo.clear();
+    }
+    document = _prepare(next);
+    notifyListeners();
   }
 
   void transformBackground(Size image, Offset delta,
@@ -588,6 +777,7 @@ class TicketLayoutController extends ChangeNotifier {
     final previous = _undo.removeLast();
     document = previous.document;
     artworkKey = previous.artworkKey;
+    selectedIds.removeWhere((id) => !document.elements.any((e) => e.id == id));
     notifyListeners();
   }
 
@@ -599,6 +789,12 @@ class TicketLayoutController extends ChangeNotifier {
     final next = _redo.removeLast();
     document = next.document;
     artworkKey = next.artworkKey;
+    selectedIds.removeWhere((id) => !document.elements.any((e) => e.id == id));
     notifyListeners();
   }
+}
+
+String automaticProductLabel(String title) {
+  final normalized = title.trim().replaceFirst(RegExp(r"[:：]\s*$"), "").trim();
+  return String.fromCharCodes(normalized.runes.take(120)).trim();
 }

@@ -1,46 +1,58 @@
+// Offline-only migration regressions; the importer is not in the Edge graph.
+import {assertEquals,assertRejects,assert} from 'jsr:@std/assert@1';
+import {convert,candidates} from '../../../automation/tickets/product-type-cutover/convert.ts';
+import {preset as legacyPreset} from '../../../automation/tickets/product-type-cutover/legacy-layout.ts';
 import {fontMetrics} from './ticketFonts.ts';
-import {assert,assertEquals,assertRejects,assertThrows} from 'jsr:@std/assert@1';
-import {generateTicketPdf,prepareTicketRenderer,resolveTicketTemplate} from './ticketGeneration.ts';
-import {importTicketTemplate} from './ticketTemplateImport.ts';
-import {positionedElements,parseLayout,preset} from './ticketLayout.ts';
-import {sampleData} from './ticketRenderData.ts';
-import {PDFDocument} from 'npm:pdf-lib';
-const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/roboto-slab.ttf');
-const resources={font,metrics:fontMetrics(font),background:await Deno.readFile('test/fixtures/ticket_layout/historical/forest.jpg')};
-const occasion={id:27,features:[{code:'ticket',ticket_type:'wide',background:'https://img.festapp.net/forest.jpg',darkColor:'FFFFFF',lightColor:'000000'}]};
-Deno.test('existing wide ticket imports its physical geometry, original font, inverted QR and compact rows',async()=>{
- const t=await importTicketTemplate(occasion,resources);
- assertEquals(t.font,'robotoSlab');assertEquals(t.qrAppearance,{background:'000000',opacity:192/255,margin:1.6});
- assertEquals(t.page,{width:595.28,height:841.89});
- const doc=await PDFDocument.create();const image=await doc.embedJpg(resources.background);const scale=535.752/image.width;
- const q=t.elements.find(e=>e.binding==='qr')!;assert(Math.abs(q.box.width-240*scale)<.001);
- assert(Math.abs(q.box.y-(t.ticketArea.height-380*scale))<.001);
- const d=sampleData();const positioned=positionedElements(t,d);const food=positioned.find(e=>e.binding==='food')!,price=positioned.find(e=>e.binding==='price')!;
- assertEquals(Math.round((price.box.y-food.box.y)/scale),50);
- const pdf=await generateTicketPdf(d,resources,t);assertEquals((await PDFDocument.load(pdf.bytes)).getPage(0).getSize(),t.page);
+import {resolveTicketTemplate} from './ticketGeneration.ts';
+const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');
+const resources={font,metrics:fontMetrics(font)};
+const row=(types:any[])=>({id:7,features:[{code:'ticket',ticket_type:'wide',layout:{schemaVersion:1,templates:{wide:legacyPreset('wide'),named:legacyPreset('named')}}}],product_types:types});
+Deno.test('migration uses form reference and historical usage, not unused catalog candidates',async()=>{
+ const input=row([{id:123,type:'food',form_references:1,ordered_count:0},{id:999,type:'food',form_references:0,ordered_count:0},{id:124,type:'taxi',form_references:1,ordered_count:3}]);
+ assertEquals(candidates(input),[123]);
+ const result=await convert(input);assertEquals(result.schemaVersion,3);
+ const old=input.features[0].layout.templates.wide.elements.find(e=>e.binding==='food')!;
+ const field=result.templates.wide.elements.find((e:any)=>e.binding==='productType');assertEquals(field.box,old.box);assertEquals(field.id,old.id);assertEquals(field.productTypeId,123);assertEquals(field.label,'Večeře');
+ assertEquals(result.templates.wide.elements.filter((e:any)=>e.binding==='productType').length,1);
+ const hidden=await convert(row([{id:123,type:'food',form_references:0,ordered_count:10}]));assertEquals(hidden.templates.wide.elements.find((e:any)=>e.binding==='productType').productTypeId,123);
+ await assertRejects(()=>convert(row([{id:123,type:'food',form_references:1},{id:124,type:'food',ordered_count:1}])));
 });
-Deno.test('both named fonts import without losing original baseline or page geometry',async()=>{
- for(const name of ['roboto','russoOne']){
- const f=await Deno.readFile('supabase/functions/_shared/ticket-assets/'+({roboto:'roboto.ttf',russoOne:'russo-one.ttf'} as Record<string,string>)[name]);const t=await importTicketTemplate({features:[{code:'ticket',ticket_type:'named'}],data:name==='russoOne'?{font:'https://fonts.cdnfonts.com/s/15876/RussoOne-Regular.woff'}:{}},{font:f,metrics:fontMetrics(f)});
- assertEquals(t.font,name);assertEquals(t.page,{width:212.5,height:387.5});parseLayout({schemaVersion:1,templates:{named:t}});
- const title=t.elements.find(e=>e.binding==='occasionTitle')!;assertEquals(title.box.y+title.style.fontSize*fontMetrics(f).ascent,87.5);
+Deno.test('unused field is removed and runtime cannot implicitly import artwork',async()=>{
+ const input=row([]),old=input.features[0].layout.templates.wide.elements;
+ const result=await convert(input);
+ assert(!result.templates.wide.elements.some((e:any)=>e.binding==='productType'));
+ for(const e of result.templates.wide.elements)assertEquals(e.box,old.find(o=>o.id===e.id)!.box);
+ await assertRejects(()=>resolveTicketTemplate({features:[{code:'ticket',background:'https://img.festapp.net/legacy.jpg'}]},resources));
+});
+Deno.test('named-only historical tickets do not invent ambiguous food fields in an absent slot',async()=>{
+ const input={id:7,features:[{code:'ticket',ticket_type:'named'}],product_types:[{id:123,type:'food',form_references:1},{id:124,type:'food',form_references:1}]};
+ const result=await convert(input,async()=>resources);
+ for(const template of Object.values(result.templates) as import('./ticketLayout.ts').Template[])assert(!template.elements.some(e=>e.binding==='productType'));
+});
+Deno.test('implicit bitmap conversion preserves compact geometry and pinned historical font',async()=>{
+ const {importTicketTemplate}=await import('../../../automation/tickets/product-type-cutover/legacy-import.ts');
+ const {positionedElements}=await import('../../../automation/tickets/product-type-cutover/legacy-layout.ts');
+ const {legacyFontIds}=await import('./ticketFonts.ts');
+ const bitmap=await Deno.readFile('test/fixtures/ticket_layout/historical/forest.jpg');
+ const oldFont=await Deno.readFile('supabase/functions/_shared/ticket-assets/roboto-slab.ttf');
+ const r={font:oldFont,metrics:fontMetrics(oldFont),background:bitmap};
+ const source={id:7,features:[{code:'ticket',ticket_type:'wide',background:'https://img.festapp.net/fixture.jpg'}],product_types:[]};
+ const old=await importTicketTemplate(source,r);
+ const converted=await convert(source,async()=>r);
+ const expected=positionedElements(old,{spotGroup:'present',food:null,note:'present',price:'present'}).filter(e=>e.binding!=='food');
+ assertEquals(converted.templates.wide.elements.map((e:any)=>e.box),expected.map(e=>e.box));
+ assertEquals(converted.templates.wide.fontId,legacyFontIds.robotoSlab);
+ assertEquals(converted.templates.wide.qrAppearance,old.qrAppearance);
+ const {positionedElements:positionCanonical}=await import('./ticketLayout.ts');
+ for(const data of [{spotGroup:'present',food:null,note:'present',price:'present'},{spotGroup:'present',food:null,note:null,price:'present'},{spotGroup:null,food:null,note:null,price:'present'}]) {
+   const before=positionedElements(old,data).filter(e=>e.binding!=='food');
+   const after=positionCanonical(converted.templates.wide,data);
+   assertEquals(after.length,before.length);
+   for(let i=0;i<after.length;i++) {
+     for(const key of ['x','y','width','height'] as const) {
+       assert(Math.abs(after[i].box[key]-before[i].box[key])<1e-9,`geometry changed: ${i}.${key}`);
+     }
+   }
  }
-});
-Deno.test('saved edits win; preview and download use the same imported document and batch resources once',async()=>{
- const saved=preset('wide');const edited={...occasion,features:[{...occasion.features[0],layout:{schemaVersion:1,templates:{wide:saved}}}]};
- assertEquals(await resolveTicketTemplate(edited,resources),saved);
- let loads=0,products=0;
- const render=await prepareTicketRenderer(occasion,{}, {},{load:async()=>{loads++;return resources;},products:async()=>{products++;return {products:[],product_types:[]};}});
- const t={ticket_symbol:'X3829W6R7W',price:200};
- for(let i=0;i<2;i++)assert((await render(t)).bytes.length>1000);
- assertEquals([loads,products],[1,1]);
-});
-Deno.test('unsupported arbitrary historical fonts fail explicitly instead of silently substituting',async()=>{
- const {loadLayoutResources}=await import('./ticketGeneration.ts');
- await assertRejects(()=>loadLayoutResources({features:[{code:'ticket',ticket_type:'named'}],data:{font:'https://example.com/unknown.woff'}}));
-});
 
-Deno.test('appearance contract rejects unknown fonts and malformed QR or flow',()=>{
- const t=preset('wide');
- for(const appearance of [{font:'unknown'},{qrAppearance:null},{qrAppearance:{background:'FFFFFF',opacity:2,margin:4}},{flow:['qr']},{flowStep:0},{border:1}])assertThrows(()=>parseLayout({schemaVersion:1,templates:{wide:{...t,...appearance}}}));
 });

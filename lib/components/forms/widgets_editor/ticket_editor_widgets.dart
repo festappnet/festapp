@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:fstapp/app_config.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,7 +38,7 @@ class TicketEditorWidgets {
     } else if (rawValue is String) {
       currentValue = int.tryParse(rawValue) ?? 1;
     }
-    return (currentValue < 1) ? 1 : currentValue;
+    return currentValue.clamp(1, AppConfig.maxTicketsPerOrder);
   }
 
   static Widget buildTicketEditorReadOnly(
@@ -193,6 +194,8 @@ class TicketEditorWidgets {
   /// Builds the editor for the "max_tickets" setting
   static Widget _buildMaxTicketsEditor(
       BuildContext context, FormFieldModel ticketField, VoidCallback refresh) {
+    final cappedLimit = _getMaxTickets(ticketField);
+    ticketField.data![FormHelper.maxTickets] = cappedLimit;
     bool showDeposit =
         ticketField.data?[TicketHolder.metaShowDepositDescription] ?? true;
     return Padding(
@@ -204,18 +207,29 @@ class TicketEditorWidgets {
               initialValue: _getMaxTickets(ticketField).toString(),
               decoration: InputDecoration(
                 labelText: FormStrings.labelMaxTicketsPerOrder,
-                helperText: FormStrings.helperMaxTicketsPerOrder,
+                helperText:
+                    '${FormStrings.helperMaxTicketsPerOrder} (1-${AppConfig.maxTicketsPerOrder})',
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final number = int.tryParse(newValue.text);
+                  return number != null && number > AppConfig.maxTicketsPerOrder
+                      ? oldValue
+                      : newValue;
+                })
+              ],
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return FormStrings.validationMaxTicketsInvalid;
                 }
                 final number = int.tryParse(value);
-                if (number == null || number < 1) {
+                if (number == null ||
+                    number < 1 ||
+                    number > AppConfig.maxTicketsPerOrder) {
                   return FormStrings.validationMaxTicketsInvalid;
                 }
                 return null; // Valid
@@ -223,7 +237,9 @@ class TicketEditorWidgets {
               onChanged: (value) {
                 final number = int.tryParse(value);
                 ticketField.data ??= {};
-                if (number != null && number >= 1) {
+                if (number != null &&
+                    number >= 1 &&
+                    number <= AppConfig.maxTicketsPerOrder) {
                   ticketField.data![FormHelper.maxTickets] = number;
                 } else {
                   // If user clears the field or enters 0, default back to 1

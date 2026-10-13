@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'dart:convert';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:auto_route/auto_route.dart';
@@ -82,6 +83,22 @@ class _BlueprintTabState extends State<BlueprintTab> {
   // State for Create New Order feature
   final Set<BlueprintSeat> _selectedSeatsForOrder = {};
   bool _initialLoadStarted = false;
+  Map<String, dynamic> _prototypeData(BlueprintModel plan) => {
+        ...plan.toJson(),
+        BlueprintModel.metaSpots: (plan.objects ?? [])
+            .where((o) => o.type == BlueprintModel.metaSpotType)
+            .map((o) => o.toJson())
+            .toList(),
+        'products': (plan.products ?? [])
+            .map((p) => {
+                  ...p.toJson(),
+                  ProductModel.metaTypeField: p.productTypeString,
+                  ProductModel.metaProductTypeTitleStringField:
+                      p.productTypeTitleString,
+                })
+            .toList(),
+      };
+
   bool get _isPrototype => widget.prototypeBlueprint != null;
   bool get _canEdit => _isPrototype || RightsService.canEditOccasion();
 
@@ -719,7 +736,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
       if (_isPrototype) {
         widget.onPrototypeSave?.call(blueprint!);
-        _prototypeBaseline = jsonEncode(blueprint);
+        _prototypeBaseline = jsonEncode(_prototypeData(blueprint!));
       } else {
         await DbForms.updateBlueprint(blueprint!);
       }
@@ -735,8 +752,8 @@ class _BlueprintTabState extends State<BlueprintTab> {
   Future<void> loadData() async {
     _resetAllSelections(); // Ensure clean state
     blueprint = _isPrototype
-        ? BlueprintModel.fromJson(jsonDecode(
-                _prototypeBaseline ??= jsonEncode(widget.prototypeBlueprint))
+        ? BlueprintModel.fromJson(jsonDecode(_prototypeBaseline ??=
+                jsonEncode(_prototypeData(widget.prototypeBlueprint!)))
             as Map<String, dynamic>)
         : await DbForms.getBlueprintForEdit(occasionLink!);
     if (blueprint != null) {

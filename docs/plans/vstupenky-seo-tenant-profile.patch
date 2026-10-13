@@ -1,0 +1,21 @@
+--- a/automation/project.conf
++++ b/automation/project.conf
+@@ -15,9 +15,9 @@
+
+
+ # Application Configuration
+-APP_NAME="Festapp"
+-APP_TITLE_SHORT="Festapp"
+-APP_DESCRIPTION="Platforma pro správu akcí, programu a vstupenek."
++APP_NAME="vstupenky.online"
++APP_TITLE_SHORT="vstupenky.online"
++APP_DESCRIPTION="Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě."
+ IOS_BUNDLE_NAME="Festapp"
+ VERSION=0.20.148+632
+ FLUTTER_VERSION=3.47.2
+@@ -93,3 +93,5 @@
+ FONT_FAMILY_BASE=Futura
+ FONT_FILES=
+ FORM_FONT_SCALE=1.2
++
++WEB_PAGE_TITLE="vstupenky.online - prodej vstupenek a registrace na akce"

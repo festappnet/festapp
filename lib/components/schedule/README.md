@@ -5,6 +5,19 @@ Attendee-facing festival program. NOT volunteer tasks (that's `lib/components/ac
 - **Activities** writes to `activities` table (admin editor)
 - **Schedule** reads from `events` table (populated/synced from activities)
 
+## Program design ownership
+
+`AppRouter.getSchedulePage()` selects all three supported designs:
+
+- Basic: `ScheduleBasicPage` -> `ScheduleTabView` -> `ScheduleTimeline`.
+- Advanced: `SchedulePage` -> `AdvancedTimelineView` and `DayList`.
+- Light: `ScheduleLightPage` -> `LightTimelineView`.
+
+My Program also uses `DayList` or `ScheduleTimeline`. These renderers are live
+application paths; keep them when removing unrelated preview wrappers.
+`ScheduleNavigationPage` is defined in `schedule_navigation_screen.dart`, the
+source referenced by the generated router.
+
 ## Sign In/Out Error Codes (CRITICAL)
 
 `sign_user_to_event` RPC enforces all business rules server-side. Error codes:

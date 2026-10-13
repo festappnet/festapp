@@ -5,6 +5,8 @@ import 'package:fstapp/components/app_management/language_model.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 
 class AppConfig {
+  static const int maxTicketsPerOrder = 20;
+  static const bool occasionSetupEnabled = bool.fromEnvironment('FESTAPP_OCCASION_SETUP');
   static const String supabaseUrl = 'https://kjdpmixlnhntmxjedpxh.supabase.co';
   static const String anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqZHBtaXhsbmhudG14amVkcHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDE5NDI5NzEsImV4cCI6MjAxNzUxODk3MX0.06nTXCL-i1GxLckfEyCNlVVwt62QTzKUezqmsYSR_MI';
   static const String effectiveSupabaseUrl = String.fromEnvironment(

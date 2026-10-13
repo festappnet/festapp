@@ -43,7 +43,7 @@ export class FormPage extends Component {
         this._previewModulePromise = null;
     }
 
-    cleanup() {
+    cleanup({ preserveEditButton = false } = {}) {
         if (this.currentPriceWidget) {
             this.currentPriceWidget.destroy();
             this.currentPriceWidget = null;
@@ -55,7 +55,7 @@ export class FormPage extends Component {
         if (widget) widget.remove();
         
         // Remove FAB if exists
-        if (this._fabBtn) {
+        if (this._fabBtn && !preserveEditButton) {
             this._fabBtn.remove();
             this._fabBtn = null;
         }
@@ -197,7 +197,7 @@ export class FormPage extends Component {
         btn.style.display = 'flex';
         btn.style.alignItems = 'center';
         btn.style.justifyContent = 'center';
-        btn.style.zIndex = '3000';
+        btn.style.zIndex = '3001'; // Keep editor access above the order result.
 
         btn.onclick = async () => {
              // Prioritize context.occasion.link (backend canonical link)
@@ -546,7 +546,7 @@ export class FormPage extends Component {
              
              if (result.success) {
                  // Clean up old widgets first
-                 this.cleanup(); 
+                 this.cleanup({ preserveEditButton: true });
 
                  // Reset Form
                  if (this.host) {
@@ -654,7 +654,7 @@ export class FormPage extends Component {
             
             if (success) {
                     // Clean up old widget instance first
-                    this.cleanup(); 
+                    this.cleanup({ preserveEditButton: true });
                     
                     // Reset Form State BEHIND the overlay
                     if (this.host) {

@@ -2473,5 +2473,22 @@
     "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague.",
     "onlyValid": "Pouze platné",
     "includingCancelled": "Včetně stornovaných"
+  },
+  "OccasionSetup": {
+    "drafts": "Rozpracované koncepty",
+    "untitled": "Nová událost",
+    "resume": "Pokračovat",
+    "basics": "Základ",
+    "review": "Souhrn",
+    "saving": "Ukládání…",
+    "saved": "Uloženo",
+    "saveFailed": "Koncept se nepodařilo uložit nebo načíst.",
+    "conflict": "Koncept změnil jiný editor. Vaše rozepsané změny zůstávají zde.",
+    "retry": "Zkusit znovu",
+    "reload": "Načíst novější koncept",
+    "reloadConfirm": "Načíst uloženou verzi? Vaše neuložené změny se zahodí.",
+    "leave": "Uložit a vrátit se do seznamu",
+    "incomplete": "Koncept zůstává soukromý. Nastavení funkcí, formuláře a plánku přidáme v dalších krocích.",
+    "deleteConfirm": "Opravdu smazat tento rozpracovaný koncept?"
   }
 }

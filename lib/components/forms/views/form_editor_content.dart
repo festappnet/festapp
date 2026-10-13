@@ -30,15 +30,18 @@ class FormEditorContent extends StatefulWidget {
   final VoidCallback? onDataUpdated;
   final FormEditBundle? prototypeBundle;
   final ValueChanged<FormEditBundle>? onPrototypeSave;
+  final bool embedded;
   const FormEditorContent(
       {super.key, required this.formLink, this.onDataUpdated, this.loadBundle})
       : prototypeBundle = null,
-        onPrototypeSave = null;
+        onPrototypeSave = null,
+        embedded = false;
 
   const FormEditorContent.prototype({
     super.key,
     required FormEditBundle bundle,
     required this.onPrototypeSave,
+    this.embedded = false,
   })  : loadBundle = null,
         formLink = '',
         onDataUpdated = null,
@@ -66,7 +69,11 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   void _draftChanged() => scheduleMicrotask(() {
-        if (mounted) _draftRevision.value++;
+        if (!mounted) return;
+        _draftRevision.value++;
+        if (widget.embedded && _bundle != null) {
+          widget.onPrototypeSave?.call(_bundle!);
+        }
       });
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
@@ -96,7 +103,7 @@ class _FormEditorContentState extends State<FormEditorContent>
   void dispose() {
     _draftRevision.dispose();
     _htmlSave.dispose();
-    if (_prototype && !_prototypeSaved && _bundle != null) {
+    if (_prototype && !widget.embedded && !_prototypeSaved && _bundle != null) {
       widget.onPrototypeSave?.call(_bundle!);
     }
     _scrollController.dispose();
@@ -173,7 +180,7 @@ class _FormEditorContentState extends State<FormEditorContent>
       if (_prototype) {
         _prototypeSaved = true;
         widget.onPrototypeSave?.call(_bundle!);
-        if (mounted) Navigator.of(context).pop();
+        if (mounted && !widget.embedded) Navigator.of(context).pop();
         return;
       }
       await prepareFormHtml(form, _htmlSave);
@@ -688,6 +695,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     setState(() {
       form.relatedFields = List.from(form.relatedFields)..add(newField);
     });
+    _draftChanged();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -713,6 +721,33 @@ class _FormEditorContentState extends State<FormEditorContent>
                           child: Text(CommonStrings.retry)),
                     ])
                   : const CircularProgressIndicator()));
+    }
+
+    if (widget.embedded) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(FormStrings.dragToReorder,
+              style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 16),
+          Form(
+            onChanged: _draftChanged,
+            child: FormFieldsGenerator(
+                key: ObjectKey(_bundle),
+                bundle: _bundle!,
+                onChanged: _draftChanged),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: _canEdit ? _addNewField : null,
+              icon: const Icon(Icons.add),
+              label: Text(FormStrings.addFieldTitle),
+            ),
+          ),
+        ],
+      );
     }
 
     return Scaffold(

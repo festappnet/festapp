@@ -1,10 +1,16 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_strings.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/material.dart';
 import 'package:fstapp/components/unit/app_landing.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/db_units.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/router_service.dart';
@@ -29,6 +35,50 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   List<OccasionModel> _allOccasions = [];
   List<OccasionModel> _filteredOccasions = [];
   bool _isLoading = true;
+  List<OccasionSetupDraft> _drafts = [];
+  String? _draftError;
+  bool get _canEditDrafts =>
+      AppConfig.occasionSetupEnabled &&
+      (widget.unit.unitUser?.isEditor == true ||
+          widget.unit.unitUser?.isManager == true ||
+          (RightsService.currentUnit()?.id == widget.unit.id &&
+              (RightsService.isUnitEditor() || RightsService.isUnitManager())));
+
+  List<OccasionSetupDraft> get _filteredDrafts {
+    final query =
+        Utilities.removeDiacritics(_searchController.text.toLowerCase());
+    return _drafts
+        .where((d) => Utilities.removeDiacritics(
+                (d.title.isEmpty ? OccasionSetupStrings.untitled : d.title)
+                    .toLowerCase())
+            .contains(query))
+        .toList();
+  }
+
+  Future<void> _loadDrafts() async {
+    if (!_canEditDrafts) return;
+    final unitId = widget.unit.id!;
+    try {
+      final drafts =
+          await OccasionSetupDrafts(Supabase.instance.client).list(unitId);
+      if (mounted && widget.unit.id == unitId && _canEditDrafts) {
+        setState(() {
+          _drafts = drafts;
+          _draftError = null;
+        });
+      }
+    } catch (_) {
+      if (mounted && widget.unit.id == unitId && _canEditDrafts) {
+        setState(() => _draftError = OccasionSetupStrings.saveFailed);
+      }
+    }
+  }
+
+  Future<void> _resumeDraft(OccasionSetupDraft draft) async {
+    await OccasionSetupPage.open(context, draft);
+    if (mounted) await _loadDrafts();
+  }
+
   AppLanding? _landing;
   bool _landingFailed = false;
   bool _savingLanding = false;
@@ -85,6 +135,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   void initState() {
     super.initState();
     _initializeOccasions();
+    _loadDrafts();
     _loadLanding();
     _searchController.addListener(_filterOccasions);
     _searchFocusNode.addListener(_onSearchFocusChange);
@@ -93,6 +144,12 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   @override
   void didUpdateWidget(covariant OccasionsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.unit.id != oldWidget.unit.id ||
+        widget.unit.unitUser != oldWidget.unit.unitUser) {
+      _drafts = [];
+      _draftError = null;
+      _loadDrafts();
+    }
     if (widget.unit.id != oldWidget.unit.id) {
       _landing = null;
       _landingFailed = false;
@@ -173,6 +230,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     if (newOccasion != null && mounted) {
       await _loadOccasions();
     }
+    if (mounted) await _loadDrafts();
   }
 
   Future<void> _handleView(OccasionModel occasion) async {
@@ -186,9 +244,75 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
-    final conf = await DialogHelper.showConfirmationDialog(
-        context, UnitStrings.createCopy, UnitStrings.createCopyConfirm);
-    if (conf == true && mounted) {
+    final sourceUnitId = widget.unit.id;
+    final destinations = await ExceptionHandler.guard(context,
+        futureFunction: () => DbUnits.getOccasionCopyUnits(occasion.id!));
+    if (!mounted ||
+        widget.unit.id != sourceUnitId ||
+        destinations == null ||
+        destinations.isEmpty) {
+      return;
+    }
+    final units = {for (final unit in destinations) unit.id!: unit};
+    var selectedUnitId = widget.unit.id!;
+    final target = await showDialog<UnitModel>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(UnitStrings.createCopy),
+          content: SizedBox(
+            width: 380,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(UnitStrings.createCopyConfirm),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    initialValue: selectedUnitId,
+                    isExpanded: true,
+                    decoration:
+                        InputDecoration(labelText: UnitStrings.copyTargetUnit),
+                    items: units.values
+                        .map((unit) => DropdownMenuItem(
+                              value: unit.id!,
+                              child: Text(unit.title ?? unit.id.toString()),
+                            ))
+                        .toList(),
+                    onChanged: (id) {
+                      if (id != null) setDialogState(() => selectedUnitId = id);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(UnitStrings.copyTargetHint),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(CommonStrings.cancel),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(units[selectedUnitId]),
+              child: Text(UnitStrings.createCopy),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (target == null || !mounted) return;
+    if (AppConfig.occasionSetupEnabled) {
+      await OccasionCreationHelper.createNewOccasion(
+          context, target, _allOccasions,
+          source: occasion);
+      if (mounted) await _loadDrafts();
+      return;
+    }
+    if (mounted) {
       bool mediaCopied = false;
       final created = await DialogHelper.showProgressDialogAsync(
         context,
@@ -197,7 +321,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         isBasic: true,
         futures: [
           () async {
-            mediaCopied = await DbOccasions.duplicateOccasion(occasion.id!);
+            mediaCopied = await DbOccasions.duplicateOccasion(occasion.id!,
+                targetUnitId: target.id);
           },
         ],
       );
@@ -212,7 +337,11 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
               ? UnitStrings.createCopySuccess
               : UnitStrings.createCopyMediaFailed);
       try {
-        await _loadOccasions();
+        if (target.id == widget.unit.id) {
+          await _loadOccasions();
+        } else {
+          await RouterService.navigateToUnitAdmin(context, target);
+        }
       } catch (e) {
         if (!mounted) return;
         ToastHelper.Show(context, UnitStrings.loadEventFailed);
@@ -241,12 +370,38 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
             : RefreshIndicator(
                 onRefresh: () async {
                   await _loadOccasions();
+                  await _loadDrafts();
                   if (!_savingLanding) await _loadLanding();
                 },
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
+                    if (_canEditDrafts && _draftError != null)
+                      SliverToBoxAdapter(
+                          child: TextButton(
+                              onPressed: _loadDrafts,
+                              child: Text(
+                                  '${_draftError!} - ${OccasionSetupStrings.retry}'))),
+                    if (_canEditDrafts && _drafts.isNotEmpty) ...[
+                      _buildSectionHeader(context, OccasionSetupStrings.drafts),
+                      SliverToBoxAdapter(
+                          child: Column(children: [
+                        for (final draft in _filteredDrafts)
+                          ListTile(
+                              leading: const Icon(Icons.edit_note),
+                              title: Text(draft.title.isEmpty
+                                  ? OccasionSetupStrings.untitled
+                                  : draft.title),
+                              subtitle: Text(
+                                  '${OccasionSetupStrings.drafts} · ${draft.progress} %'),
+                              trailing: TextButton(
+                                  onPressed: () => _resumeDraft(draft),
+                                  child: Text(OccasionSetupStrings.resume)),
+                              onTap: () => _resumeDraft(draft)),
+                      ])),
+                    ],
                     if (_filteredOccasions.isEmpty &&
+                        _filteredDrafts.isEmpty &&
                         _searchController.text.isNotEmpty)
                       SliverFillRemaining(
                           child: Center(child: Text(UnitStrings.noEventsFound)))

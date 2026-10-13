@@ -103,8 +103,13 @@ describe('LoginModal Conditional Registration', () => {
         }
     });
 
-    it('opens registration directly and switches both ways inside the same modal', () => {
+    it('opens registration directly and switches both ways inside the same modal', async () => {
         RightsService._context = { organization: { IS_REGISTRATION_ENABLED: true } };
+        const { LocalizationService } = await import('../../src/services/localization_service.js');
+        LocalizationService.translations = { FeatureUser: {
+            signupLegalNotice: 'By clicking {button}, you agree to {terms} and acknowledge {privacy}.',
+            signupTerms: 'terms of use', signupPrivacy: 'privacy policy',
+        } };
         const modal = new LoginModal();
         modal.currentView = 'register';
         modal.googleEnabled = true;
@@ -113,6 +118,18 @@ describe('LoginModal Conditional Registration', () => {
 
         assert.ok(modal.authContainer.querySelector('#register-form'));
         assert.ok(modal.authContainer.querySelector('#google-start'));
+        const legalInfo = modal.authContainer.querySelector('.auth-registration-info');
+        assert.doesNotMatch(legalInfo.textContent, /Michael Bujnovský/);
+        assert.match(legalInfo.textContent, /agree to terms of use and acknowledge privacy policy/);
+        assert.equal(legalInfo.previousElementSibling.type, 'submit');
+        assert.deepEqual([...legalInfo.querySelectorAll('a')].map(link => link.href), [
+            'https://vstupenky.online/terms/',
+            'https://vstupenky.online/privacy/',
+        ]);
+        for (const link of legalInfo.querySelectorAll('a')) {
+            assert.equal(link.target, '_blank');
+            assert.equal(link.rel, 'noopener noreferrer');
+        }
         for (const [id, autocomplete] of [
             ['email', 'email'], ['firstName', 'given-name'], ['lastName', 'family-name'],
         ]) {

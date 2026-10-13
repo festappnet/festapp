@@ -42,10 +42,6 @@ class Main {
                  return; 
             }
             
-            // Not a form page, show the home app
-            const app = document.getElementById('app');
-            if (app) app.style.display = 'flex';
-            
             // 3. Init UI Components
             // UserHeader is now a web component and auto-inits via tag in HTML
             const unitPage = new UnitPage('events-grid');
@@ -53,7 +49,11 @@ class Main {
             FeedbackFab.init('feedback-fab');
     
             // 4. Initial Fetch
-            unitPage.loadOccasions(AppConfig.organization);
+            await unitPage.loadOccasions(AppConfig.organization);
+
+            // Reveal the home only after cards replace the server-rendered SEO list.
+            const app = document.getElementById('app');
+            if (app) app.style.display = 'flex';
             
             // Init PopState forভাগে logic
             RouterService.initPopStateListener();

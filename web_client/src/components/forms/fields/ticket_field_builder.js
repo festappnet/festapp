@@ -159,6 +159,10 @@ export class TicketFieldBuilder {
                                  input.checked = false;
                              }
                          } else if (input.type === 'checkbox') {
+                             if (fieldEntry?.product_type !== undefined) {
+                                 newVal = ticketData.fields.filter(f => String(f._subFieldId) === String(subId))
+                                     .map(f => f.product_type).join(' | ');
+                             }
                              // Checkbox Logic (Multiselect support)
                              // Session value might be "101 | 102"
                              let isChecked = false;
@@ -306,7 +310,10 @@ export class TicketFieldBuilder {
                                 if (val === undefined && fieldEntry.text !== undefined) val = fieldEntry.text;
 
                                 if (val !== undefined) {
-                                    scopedDef.value = val;
+                                    scopedDef.value = subDef.type === 'product_type' && subDef.data?.selection_type === 'select_many'
+                                        ? ticketData.fields.filter(f => String(f._subFieldId) === String(subDef.id))
+                                            .map(f => f.product_type).join(' | ')
+                                        : val;
                                 }
                             }
                         }
@@ -455,6 +462,10 @@ export class TicketFieldBuilder {
                              }
                              if (!shouldBeChecked) input.checked = false; // Explicit Uncheck Fix
                         } else if (input.type === 'checkbox') {
+                             if (fieldEntry?.product_type !== undefined) {
+                                 val = ticketData.fields.filter(f => String(f._subFieldId) === String(subId))
+                                     .map(f => f.product_type).join(' | ');
+                             }
                              // Checkbox Logic (Multiselect support)
                              // Session value might be "101 | 102"
                              let isChecked = false;

@@ -174,6 +174,10 @@ export class OptionBuilderHelper {
     }
 
     static shouldPreselect(field, opt, inputType) {
+        if (inputType === 'checkbox' && field.value !== undefined && field.value !== null) {
+            const values = Array.isArray(field.value) ? field.value : String(field.value).split(' | ');
+            return values.some(value => String(value) === String(opt.id ?? opt.title) || value === opt.title);
+        }
         // Existing answer (field.value) takes precedence — defaults only apply to fresh forms.
         if (inputType === 'radio' && field.value !== undefined && field.value !== null && field.value !== '') {
             return false;

@@ -1,5 +1,4 @@
 {
-  "font": "robotoSlab",
   "page": {
     "width": 595.28,
     "height": 841.89
@@ -82,7 +81,7 @@
     },
     {
       "id": "food",
-      "binding": "food",
+      "binding": "productType",
       "visible": true,
       "locked": false,
       "box": {
@@ -97,7 +96,9 @@
         "maxLines": 1,
         "color": "FFFFFF",
         "align": "left"
-      }
+      },
+      "productTypeId": 123,
+      "label": "Večeře"
     },
     {
       "id": "note",
@@ -137,5 +138,6 @@
         "align": "left"
       }
     }
-  ]
+  ],
+  "fontId": "builtin:roboto-slab-static:b93b5ad2eada842f450bff812f180ac517c82916c9d0dda446322e8d275b4f09"
 }

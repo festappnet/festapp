@@ -188,10 +188,13 @@ class DbOccasions {
   }
 
   /// Returns false only when the event exists but its media could not be copied.
-  static Future<bool> duplicateOccasion(int oc) async {
+  static Future<bool> duplicateOccasion(int oc, {int? targetUnitId}) async {
     final ocId = ClientSyncRuntime.isV1Selected
-        ? await _commands.duplicate(oc)
-        : await _supabase.rpc("duplicate_occasion", params: {"oc": oc}) as int;
+        ? await _commands.duplicate(oc, targetUnitId: targetUnitId)
+        : await _supabase.rpc("duplicate_occasion", params: {
+            'oc': oc,
+            if (targetUnitId != null) 'p_target_unit': targetUnitId,
+          }) as int;
 
     try {
       final occasion = await getOccasion(ocId);

@@ -1,14 +1,16 @@
 # Průvodce založením události
 
 Datum: 2026-09-25\
-Stav: fáze 0 — Flutter simulace k posouzení; produkční implementace zatím nezačala\
+Stav: integrovaný lokální Wizard (2026-10-05): celý původní tok, reálné starší předlohy, databázové koncepty; produkční finalizace zatím není implementovaná\
 Ověřování: standard (oprávnění, platební konfigurace, veřejné formuláře a nová SQL operace)
 
 ## Výsledek
 
 Správce jednotky založí novou událost v jednom přehledném průvodci. Vyplní základní údaje, zvolí funkce, nastaví registraci/prodej, přidá nebo převezme formulář a blueprint a vybere, které části starší události chce převzít. Od prvního kroku vzniká trvale uložený **draft**: po odchodu je zřetelně označený v administrativním seznamu událostí a pokračuje se přesně tam, kde uživatel skončil. Progress line ukazuje dokončené části; 100 % nastane až po všech potřebných nastaveních a finální kontrole. Ani 100% draft není automaticky veřejný. Nedojde k přenosu objednávek, registrací, rezervací, účastníků ani starých platebních či časově omezených stavů.
 
-**Pořadí práce:** nejdřív projít a vyhodnotit Flutter simulaci `lib/components/occasion/prototype/occasion_setup_demo.dart`, upravit podle připomínek obrazovky a rozhodnutí v tomto plánu, teprve potom začít produkční serverové a Flutter vlny. Simulace používá `ThemeConfig`, Flutter Material a demonstrační režim skutečného `BlueprintTab`. Drafty ukládá pouze do úložiště tohoto prohlížeče; nevolá Supabase a nic nezveřejňuje. Starý statický HTML náhled je nahrazen. Po rozhodnutí se pravidla UX zapíší do plánu; demonstrační kód se nepřejímá jako produkční persistence.
+**Aktualizace 2026-10-05:** Uživatel požádal celý dříve rozpracovaný Wizard přímo v aplikaci, včetně skutečných starších událostí z `vstupenky.online`. Celý původní Flutter tok byl přesunut ze samostatného prototypu do `lib/components/occasion/setup/occasion_setup_page.dart`; oba vstupy založení i lokální akce kopie při `FESTAPP_OCCASION_SETUP=true` používají tuto stránku. Formulář a plánek používají skutečné editory s modelem konceptu. Všechny kroky a jejich podrobnosti se ukládají do revizovaného databázového draftu, včetně závěrečné kontroly. Serverový manifest předloh vrací konfiguraci bez odpovědí, objednávek a rezervací. Lokální prostředí obsahuje šest skutečných konfigurací z organizace 3, získaných výhradně čtením kanonického backendu. Produkční finalizace a rollout jsou nadále další vlny; finální tlačítko pouze ukládá dokončený koncept. Lokální spouštění a omezení: `docs/development/occasion-setup-local.md`.
+
+**Původní pořadí práce:** nejdřív projít a vyhodnotit Flutter simulaci `lib/components/occasion/prototype/occasion_setup_demo.dart`, upravit podle připomínek obrazovky a rozhodnutí v tomto plánu, teprve potom začít produkční serverové a Flutter vlny. Simulace používá `ThemeConfig`, Flutter Material a demonstrační režim skutečného `BlueprintTab`. Drafty ukládá pouze do úložiště tohoto prohlížeče; nevolá Supabase a nic nezveřejňuje. Starý statický HTML náhled je nahrazen. Po rozhodnutí se pravidla UX zapíší do plánu; demonstrační kód se nepřejímá jako produkční persistence.
 
 ## Rozsah
 

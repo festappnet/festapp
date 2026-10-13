@@ -205,3 +205,13 @@ client adoption blocked on canonical release source
 - Expected cost: no new product cost.
 - Validation: topology guard and absence searches, then 7-day/full-cycle Worker,
   R2 Class B and unique-transformation metrics against the recorded baseline.
+
+
+## Current readback - 2026-10-07
+
+The [read-only production report](../operations/image-delivery-readback-2026-10-07.md)
+supersedes historical runtime/client assumptions above. Public domains still
+map to the Worker, R2 custom domains are absent, 104 objects outside the
+registry's public prefixes require classification, and the deployed Slunovrat
+client selects an unregistered project. All 11 web bundles contain the control
+origin; native adoption remains unverified. P3/P4 are not complete.

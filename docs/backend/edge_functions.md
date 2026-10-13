@@ -2,7 +2,7 @@
 
 ## Reception QR authentication
 
-`exchange-login-qr` is the only anonymous authentication exception. It accepts
+`exchange-login-qr` is a bounded anonymous proof endpoint. It accepts
 only `POST {"payload":"festapp-login:v1:<occasion>:<opaque-token>"}` and is
 deployed with JWT verification disabled. It hashes the token, asks a
 service-role-only RPC to verify the active credential, membership and enabled
@@ -41,7 +41,7 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `request-account-deletion` | Creates an opaque deletion request and sends its confirmation link to the resolved delivery address. |
 | `send-app-links` | Sends CSM application links and records their delivery state idempotently. |
 | `send-email` | Enqueues transactional order email; legacy `processQueue` only wakes the canonical worker. Template codes: `TICKET_ORDER_STORNO`, `TICKET_ORDER_UPDATE`, `TICKET_ORDER_REMINDER`. Strategy Pattern for data gathering. |
-| `send-custom-email` | Editor-initiated custom email. Validates editor role, then sends with provided template/substitutions. |
+| `send-custom-email` | Validates editor role, renders/encrypts a snapshot, enqueues and awaits canonical provider acceptance. |
 | `send-sign-in-code` | Resets password and sends sign-in code through the delivery resolver (`email_delivery`, otherwise `email_readonly`). Used by admins/editors to invite users. |
 | `process-email-queue` | The only SES sender; drains all message kinds through the global SQL gate. |
 | `auth-email-hook` | Verifies signed GoTrue callbacks and persists encrypted Auth email intents in the same queue. |
@@ -52,9 +52,21 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `preview-ticket-layout` | Unit-editor JWT only; resolves local editor resources or explicitly generates a synthetic PDF through the existing ticket functions, without writes. |
 | `download-ticket` | Returns a single ticket PDF as Base64 JSON for in-app download. |
 | `fetch-transactions` | Occasion-editor adapter that requests a pull from BankSync; no direct bank access. |
-| `instance-install` | Runs SQL scripts from GitHub for setup/migrations (tables, functions, policies, seeds). |
+| `instance-install` | Operator-only bootstrap SQL tool; explicitly excluded from canonical production. |
 | `fetch-http-data` | Authenticated occasion-editor image fetch. Rejects private/local DNS and redirect targets, non-images and responses over 10 MiB. |
 | `generate-order-agreement` | Generates the tenant-configured PDF order agreement using `pdf-lib`; tenant identity is supplied through the canonical configuration boundary. |
+| `google-auth-start` | Begins an exact-client/origin Google OIDC attempt; anonymous proof boundary. |
+| `google-auth-callback` | Verifies Google signature/nonce and exchanges the attempt for a one-use handoff. |
+| `google-auth-complete` | Validates handoff/continuation and issues the existing-user session. |
+| `bank-sync-manage` | Authorized account control through durable fenced intents. |
+| `bank-sync-reconcile` | Machine-authenticated recovery of incomplete bank control operations. |
+| `bank-sync-webhook` | Raw-body HMAC v2 verification followed by atomic inbox/identity/ledger/matcher receipt. |
+| `email-provider-events` | Exact-topic SNS v2 provider feedback and durable redacted journal. |
+| `email-confirmation-status` | Bounded expiring opaque-capability lookup for confirmation status. |
+
+The inventory follows
+[`runtime-writer-policy.json`](../../automation/hetzner-supabase/merge/runtime-writer-policy.json).
+`instance-install` is listed for exclusion visibility, not as a deployable route.
 
 ## Test coverage contract
 
@@ -100,17 +112,44 @@ Path 2: User Token + Editor Check
 
 `send-custom-email` validates the user token via `getSupabaseUser`, then explicitly checks editor role via `isUserEditor`/`isUserEditorOrder` using the admin client (no RLS).
 
-### Webhook-triggered (No Auth)
+### Provider and system boundaries
 
-`notify` is triggered by authenticated DB webhooks. Bank callbacks enter only through the HMAC-verified `bank-sync-webhook`.
+`notify` verifies the DB webhook bearer secret. Bank callbacks require raw-body
+HMAC v2 in `bank-sync-webhook`; GoTrue hooks require their signed callback;
+provider feedback requires exact-topic SNS v2 verification. The QR and three
+Google routes accept anonymous proof requests under their specific contracts.
+`email-confirmation-status` uses a bounded opaque capability. None of these
+boundaries is a blanket permission to disable authentication on another route.
 
 ## Deployment
 
-```bash
-supabase functions deploy <function-name> --no-verify-jwt --project-ref <ref>
-```
+Canonical production uses the reviewed self-hosted Function bundle, not
+`supabase functions deploy` to a cloud project.
 
-This command is not a blanket production allowlist. Canonical
+1. Prepare checked-in source and policy on clean synchronized `main`. The
+   builder `automation/hetzner-supabase/runtime/build-production-function-bundle.sh`
+   requires `FESTAPP_FUNCTION_BUNDLE_ACK=build-reviewed-production-function-bundle`
+   and an absolute `FESTAPP_FUNCTION_BUNDLE_OUTPUT_DIR` outside the repository.
+   It records source/policy/archive digests and excludes operator-only handlers.
+2. Transfer the reviewed bundle and matching policy through the protected
+   project backend-access channel. The
+   [backend-access skill](../../.agents/skills/festapp-backend-access/SKILL.md)
+   describes the persisted tunnel and canonical target verification.
+3. The approved host installer
+   `automation/hetzner-supabase/runtime/install-production-function-bundle.sh`
+   verifies the manifest, digests, policy, host and directory set, preserves and
+   patches the pinned router, and stages the replacement. **Installation does
+   not restart the runtime or activate clients.** Runtime restart/promotion,
+   internal verification and external canaries remain separate release steps.
+
+See [self-hosted tooling](../../automation/hetzner-supabase/README.md) and the
+[current backend rules](../architecture/ai_context.md). Cloud CLI deployment
+may serve an explicitly selected development project; it does not update the
+canonical host. Exact router proof-route exceptions and per-function credential
+isolation must survive every bundle replacement.
+
+## Canonical outbound email
+
 Machine-invoked functions (`process-email-queue` and `bank-sync-reconcile`) use `requestSecret` auth generated by `generate_request_secret` with a TTL. `send-email` retains its old `processQueue` request as a thin authenticated wake adapter.
 
 All outbound application email goes through `public.email_messages`: registration, sign-in, password reset, signed GoTrue Auth hooks, tickets, order notices, custom editor messages and account deletion. Producers create durable intents; only `process-email-queue` receives SES credentials and sends. `claim_email` and `begin_email_send` enforce the same global account capacity, quota, priority, pause, outage circuit and one-shot send fence for every message kind. Security messages have higher priority, not a budget bypass.
@@ -121,7 +160,9 @@ Keep bank-provided dates separate from detection and delivery timestamps: bank s
 
 ## CORS Pattern
 
-Most functions share this pattern (exception: `notify`, which has no CORS handling):
+Many browser-facing functions use this shared CORS pattern. Google proof routes
+use exact registered origins; provider/system handlers have their own transport
+contracts. Check the entrypoint before copying these headers:
 
 ```typescript
 const corsHeaders = {
@@ -131,7 +172,7 @@ const corsHeaders = {
 ```
 
 - `OPTIONS` preflight returns `200` immediately.
-- Every response (success or error) includes CORS headers.
+- Browser-facing responses include the headers required by their origin contract.
 - `AuthError` instances return their status code; all others return `500`.
 # Account deletion
 

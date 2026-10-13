@@ -1,0 +1,1530 @@
+{
+  "observed_date": "2026-10-13",
+  "tenant": "festapptickets",
+  "organization": 3,
+  "generation": 1,
+  "backend": "canonical",
+  "identity": {
+    "kind": "identity",
+    "title": "vstupenky.online",
+    "database": "festapp_rehearsal_20260909220601",
+    "organization": 3
+  },
+  "tenant_summary": {
+    "kind": "tenant_summary",
+    "layouts": 15,
+    "occasions": 77,
+    "ticket_features": 73
+  },
+  "layout_schemas": {
+    "None": 58,
+    "1": 11,
+    "2": 4
+  },
+  "ticket_enabled": 21,
+  "food_taxi": [
+    {
+      "occasion_id": 13,
+      "occasion_link": "skautskyples2025",
+      "product_type_id": 1,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 1,
+          "field_id": 16,
+          "form_open": true,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 247,
+      "visible_product_count": 1
+    },
+    {
+      "occasion_id": 13,
+      "occasion_link": "skautskyples2025",
+      "product_type_id": 2,
+      "type": "taxi",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 1,
+          "field_id": 17,
+          "form_open": true,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Odvoz",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 246,
+      "visible_product_count": 12
+    },
+    {
+      "occasion_id": 19,
+      "occasion_link": "plesvetrkovice2025",
+      "product_type_id": 4,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 2,
+          "field_id": 51,
+          "form_open": false,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 270,
+      "visible_product_count": 1
+    },
+    {
+      "occasion_id": 25,
+      "occasion_link": "sportovni_ples_vetrkovice",
+      "product_type_id": 8,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": true,
+          "form_id": 4,
+          "field_id": 52,
+          "form_open": false,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 263,
+      "visible_product_count": 1
+    },
+    {
+      "occasion_id": 82,
+      "occasion_link": "skautskyples2026",
+      "product_type_id": 104,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 59,
+          "field_id": 536,
+          "form_open": false,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 233,
+      "visible_product_count": 1
+    },
+    {
+      "occasion_id": 82,
+      "occasion_link": "skautskyples2026",
+      "product_type_id": 105,
+      "type": "taxi",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 59,
+          "field_id": 537,
+          "form_open": false,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Odvoz",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 199,
+      "visible_product_count": 12
+    },
+    {
+      "occasion_id": 97,
+      "occasion_link": "plesvetrkovice2025-copy-cc1b705c",
+      "product_type_id": 119,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 71,
+          "field_id": 606,
+          "form_open": true,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 253,
+      "visible_product_count": 4
+    },
+    {
+      "occasion_id": 111,
+      "occasion_link": "sportovni_ples_vetrkovice-copy-a9392312",
+      "product_type_id": 135,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 84,
+          "field_id": 691,
+          "form_open": true,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 182,
+      "visible_product_count": 4
+    },
+    {
+      "occasion_id": 11438,
+      "occasion_link": "skautsky_tabor2026",
+      "product_type_id": 388,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 188,
+          "field_id": 1389,
+          "form_open": false,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 0,
+      "visible_product_count": 2
+    },
+    {
+      "occasion_id": 11438,
+      "occasion_link": "skautsky_tabor2026",
+      "product_type_id": 389,
+      "type": "taxi",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 188,
+          "field_id": 1390,
+          "form_open": false,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Odvoz",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 0,
+      "visible_product_count": 2
+    },
+    {
+      "occasion_id": 32316,
+      "occasion_link": "skautskyples2026-copy-ae6d7140",
+      "product_type_id": 651,
+      "type": "food",
+      "fields": [
+        {
+          "hidden": false,
+          "form_id": 464,
+          "field_id": 1878,
+          "form_open": true,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Večeře",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 27,
+      "visible_product_count": 5
+    },
+    {
+      "occasion_id": 32316,
+      "occasion_link": "skautskyples2026-copy-ae6d7140",
+      "product_type_id": 653,
+      "type": "taxi",
+      "fields": [
+        {
+          "hidden": true,
+          "form_id": 464,
+          "field_id": 1879,
+          "form_open": true,
+          "field_type": "product_type",
+          "form_title": null,
+          "field_title": "Odvoz",
+          "ticket_field": true,
+          "same_occasion": true
+        }
+      ],
+      "ordered_count": 2,
+      "visible_product_count": 12
+    }
+  ],
+  "saved_layouts": [
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 81,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "PlesAKH2025",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 2,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 82,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "show_hidden_note",
+        "ticket_type"
+      ],
+      "occasion_link": "skautskyples2026",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": true,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 83,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "ples2026-test",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 92,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "farni-ples-2026-cernobily",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 97,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "plesvetrkovice2025-copy-cc1b705c",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": true,
+      "schema": 2,
+      "templates": {
+        "wide": {
+          "flow": null,
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": false,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": false,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": false,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": false,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 99,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "show_hidden_note",
+        "ticket_type"
+      ],
+      "occasion_link": "myfestival2025",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": true,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 100,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "PlesAKH2025-copy-5e56d192",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 101,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "ples2026",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 111,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "show_hidden_note",
+        "ticket_type"
+      ],
+      "occasion_link": "sportovni_ples_vetrkovice-copy-a9392312",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 9245,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "show_hidden_note",
+        "ticket_type"
+      ],
+      "occasion_link": "farni2026",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 9246,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "posezeni2026",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 2,
+      "templates": {
+        "wide": {
+          "flow": null,
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 32316,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "show_hidden_note",
+        "ticket_type"
+      ],
+      "occasion_link": "skautskyples2026-copy-ae6d7140",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "named": {
+          "flow": null,
+          "elements": [
+            {
+              "id": "logo",
+              "label": null,
+              "binding": "logo",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "occasionTitle",
+              "label": null,
+              "binding": "occasionTitle",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "occasionDatePlace",
+              "label": null,
+              "binding": "occasionDatePlace",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "orderName",
+              "label": null,
+              "binding": "orderName",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "footer",
+              "label": null,
+              "binding": "footer",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 934571,
+      "ticket_type": "named",
+      "feature_keys": [
+        "background",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "ticket_type"
+      ],
+      "occasion_link": "av2025",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 2,
+      "templates": {
+        "wide": {
+          "flow": null,
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 1072585,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "show_hidden_note",
+        "ticket_type"
+      ],
+      "occasion_link": "PlesAKH2025-copy-ad8a55ba",
+      "ticket_enabled": true
+    },
+    {
+      "kind": "ticket_configuration",
+      "hidden": false,
+      "schema": 1,
+      "templates": {
+        "wide": {
+          "flow": [
+            "spotGroup",
+            "food",
+            "note",
+            "price"
+          ],
+          "elements": [
+            {
+              "id": "qr",
+              "label": null,
+              "binding": "qr",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "ticketSymbol",
+              "label": null,
+              "binding": "ticketSymbol",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "spotGroup",
+              "label": null,
+              "binding": "spotGroup",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "food",
+              "label": null,
+              "binding": "food",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "note",
+              "label": null,
+              "binding": "note",
+              "visible": true,
+              "productTypeId": null
+            },
+            {
+              "id": "price",
+              "label": null,
+              "binding": "price",
+              "visible": true,
+              "productTypeId": null
+            }
+          ]
+        }
+      },
+      "occasion_id": 1072589,
+      "ticket_type": "wide",
+      "feature_keys": [
+        "background",
+        "can_scan_manually",
+        "code",
+        "darkColor",
+        "is_enabled",
+        "layout",
+        "lightColor",
+        "show_hidden_note",
+        "ticket_type"
+      ],
+      "occasion_link": "farni-ples-2026-cernobily-copy-31b8fc58",
+      "ticket_enabled": true
+    }
+  ],
+  "shared_renderer_summary": [
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        1,
+        null
+      ],
+      "organization": 1,
+      "ticket_features": 7,
+      "implicit_layouts": 6
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        1,
+        2,
+        null
+      ],
+      "organization": 3,
+      "ticket_features": 73,
+      "implicit_layouts": 58
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 4,
+      "ticket_features": 1,
+      "implicit_layouts": 1
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 5,
+      "ticket_features": 3,
+      "implicit_layouts": 3
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 6,
+      "ticket_features": 4,
+      "implicit_layouts": 4
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 7,
+      "ticket_features": 33,
+      "implicit_layouts": 33
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 8,
+      "ticket_features": 1,
+      "implicit_layouts": 1
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 9,
+      "ticket_features": 1,
+      "implicit_layouts": 1
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 10,
+      "ticket_features": 1,
+      "implicit_layouts": 1
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 11,
+      "ticket_features": 2,
+      "implicit_layouts": 2
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 12,
+      "ticket_features": 1,
+      "implicit_layouts": 1
+    },
+    {
+      "kind": "shared_renderer_summary",
+      "schemas": [
+        null
+      ],
+      "organization": 19,
+      "ticket_features": 6,
+      "implicit_layouts": 6
+    }
+  ],
+  "integrity": [
+    {
+      "kind": "integrity",
+      "orphan_ticket_products": 669,
+      "cross_occasion_form_fields": 0,
+      "cross_occasion_ticket_products": 0
+    },
+    {
+      "kind": "live_rpc",
+      "name": "get_products_and_types",
+      "food_selector": false,
+      "has_short_title": true,
+      "has_title_short": false
+    },
+    {
+      "kind": "live_rpc",
+      "name": "get_tickets_with_details",
+      "food_selector": false,
+      "has_short_title": false,
+      "has_title_short": false
+    },
+    {
+      "kind": "live_rpc",
+      "name": "validate_ticket_layout",
+      "food_selector": true,
+      "has_short_title": false,
+      "has_title_short": false
+    },
+    {
+      "kind": "missing_product_detail",
+      "rows": 669,
+      "null_product": true,
+      "ticket_state": "storno"
+    }
+  ],
+  "ui_revision": {
+    "method": "targeted repository code review; no rendered implementation exists",
+    "callers": [
+      "lib/components/features/feature_form.dart",
+      "lib/components/occasion/setup/occasion_setup_page.dart"
+    ],
+    "setup_draft_relation": "absent in verified canonical runtime",
+    "setup_draft_query_result": "ERROR: relation public.occasion_setup_drafts does not exist; no rows read; read-only transaction",
+    "missing_design_details_resolved": [
+      "safe new element placement",
+      "dynamic preview data after document changes",
+      "grouped label undo",
+      "mobile properties selection",
+      "gallery replacement disclosure",
+      "source preview versus draft catalog context",
+      "supported schema guard in TicketSettings"
+    ]
+  }
+}

@@ -18,6 +18,7 @@ import 'ticket_layout_canvas.dart';
 class TicketSettings extends StatefulWidget {
   final TicketFeature feature;
   final int occasionId;
+  final bool productEditing, borrowResourcesOnly;
   final Future<void> Function(TicketFeature)? onSave;
   final TicketLayoutService service;
   TicketSettings(
@@ -25,6 +26,8 @@ class TicketSettings extends StatefulWidget {
       required this.feature,
       required this.occasionId,
       this.onSave,
+      this.productEditing = true,
+      this.borrowResourcesOnly = false,
       TicketLayoutService? service})
       : service = service ?? TicketLayoutService();
   @override
@@ -46,7 +49,7 @@ class _TicketSettingsState extends State<TicketSettings> {
   String get type => widget.feature.ticketType == 'named' ? 'named' : 'wide';
   bool get unsupported =>
       widget.feature.layout != null &&
-      ![1, 2].contains(widget.feature.layout!['schemaVersion']);
+      widget.feature.layout!['schemaVersion'] != 3;
   @override
   void initState() {
     super.initState();
@@ -66,7 +69,8 @@ class _TicketSettingsState extends State<TicketSettings> {
     if (unsupported) return;
     await ExceptionHandler.guard(context, futureFunction: () async {
       final next = await service.resolve(widget.occasionId, type,
-          widget.feature.layout, widget.feature.ticketBackground);
+          widget.feature.layout, widget.feature.ticketBackground,
+          borrowResourcesOnly: widget.borrowResourcesOnly);
       if (!mounted || request != generation) {
         next.dispose();
         return;
@@ -110,7 +114,8 @@ class _TicketSettingsState extends State<TicketSettings> {
     try {
       await ExceptionHandler.guard(context, futureFunction: () async {
         final r = await service.resolve(widget.occasionId, type,
-            widget.feature.layout, widget.feature.ticketBackground);
+            widget.feature.layout, widget.feature.ticketBackground,
+            borrowResourcesOnly: widget.borrowResourcesOnly);
         if (!mounted) {
           r.dispose();
           return;
@@ -137,6 +142,7 @@ class _TicketSettingsState extends State<TicketSettings> {
             builder: (c) => Dialog.fullscreen(
                 child: TicketLayoutEditor(
                     routeRouter: routeRouter,
+                    productEditing: widget.productEditing,
                     showTemplatePicker: showTemplatePicker,
                     onSave: widget.onSave == null
                         ? null
@@ -145,8 +151,8 @@ class _TicketSettingsState extends State<TicketSettings> {
                                 TicketFeature.fromJson(widget.feature.toJson());
                             draft.ticketType = type;
                             draft.ticketBackground = result.background;
-                            draft.layout = upgradeTicketLayout({
-                              'schemaVersion': 1,
+                            draft.layout = ticketLayoutDocument({
+                              'schemaVersion': 3,
                               'templates': {
                                 ...?(widget.feature.layout?['templates']
                                     as Map?),
@@ -167,8 +173,8 @@ class _TicketSettingsState extends State<TicketSettings> {
         if (result != null) {
           _refresh(() {
             widget.feature.ticketType = type;
-            widget.feature.layout = upgradeTicketLayout({
-              'schemaVersion': 1,
+            widget.feature.layout = ticketLayoutDocument({
+              'schemaVersion': 3,
               'templates': {
                 ...?(widget.feature.layout?['templates'] as Map?),
                 type: result.template.toJson()
@@ -222,8 +228,11 @@ class _TicketSettingsState extends State<TicketSettings> {
                   alignment: Alignment.center,
                   child: CustomPaint(
                       size: thumbnail!.template.area.size,
-                      painter: TicketLayoutPainter(thumbnailController!,
-                          thumbnail!, thumbnail!.scenarios['normal']!,
+                      painter: TicketLayoutPainter(
+                          thumbnailController!,
+                          thumbnail!,
+                          thumbnail!.previewData(
+                              thumbnailController!.document, 'normal'),
                           cropToTicket: true)))),
         const SizedBox(height: 8),
         if (widget.feature.conflictDraft != null)

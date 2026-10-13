@@ -18,9 +18,17 @@ Banner upload auto-regenerates wrapper HTML via `update_entity_email_banner` RPC
 
 ## Sending Emails
 
-Delivery handled by `send-custom-email` Edge Function, NOT Dart. Debug delivery issues there.
+`send-custom-email` validates the editor, resolves content through
+`get_email_template_and_wrapper`, substitutes `{{var}}` values, encrypts the
+rendered snapshot and enqueues it in `public.email_messages`. Its
+`enqueueAndAwaitEmail` adapter waits for canonical provider acceptance.
 
-`get_email_template_and_wrapper` resolves both template and wrapper at send time. Payload uses `{{var}}` style substitution.
+Only `process-email-queue` sends through SES after the global SQL quota/rate/pause
+and fenced-send gates. Diagnose rendering/authorization at the producer, queue
+state and worker wakeups at the canonical queue, and delivery/bounce/complaint
+receipts at `email-provider-events`. An accepted or compatibility `sent` response
+does not prove mailbox delivery. See
+[the SES queue guide](../../../docs/setup/aws_ses.md).
 
 ## SQL RPCs
 

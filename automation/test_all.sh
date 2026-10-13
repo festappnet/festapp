@@ -284,6 +284,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
 
     echo "Running canonical PWA storage and recovery contract tests..."
     node --test \
+      "$SCRIPT_DIR/tests/image_service_preflight.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_manifest.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_reconcile.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_storage_bridge.test.mjs" \

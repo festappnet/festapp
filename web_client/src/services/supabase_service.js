@@ -50,6 +50,8 @@ export class SupabaseService {
     }
 
     static async _initialize() {
+        // The signed backend manifest is still verified when persistent storage
+        // is blocked; only the activation marker then lives for this page.
         SupabaseService._backend = await new BackendActivationService({ storage: browserStorage }).resolve();
         AppConfig.organization = SupabaseService._backend.organizationId;
         const client = SupabaseService.getClient();

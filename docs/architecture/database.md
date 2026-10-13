@@ -26,8 +26,10 @@ writes use only `create_companion_client_sync_v1`,
 `unassign_existing_companion_client_sync_v1`. Admin unassignment removes only
 the relation; account deletion is restricted to self-created companions.
 
-This directory contains the source code for the PostgreSQL database schema,
-logic, and security policies.
+The repository's `database/` directory contains the canonical PostgreSQL schema,
+logic and security sources. Active forward migrations are in
+`supabase/migrations/`. Production changes target the canonical self-hosted
+backend only; see [backend authority](ai_context.md).
 
 ## Structure
 
@@ -86,9 +88,10 @@ SQL functions organized by domain:
 | `activities/` | Volunteer shift management | Task CRUD, assignment logic |
 | `cleaning/` | Cleaning reports | Status, report and resolution commands |
 | `cron/` | Scheduled jobs | Automated cleanup, notifications |
-| `emails/` | Email operations | Template rendering, logging |
+| `emails/` | Canonical email queue | Durable intents, global send gates, receipts, feedback and recovery |
 | `eshop/` | Product management | `update_product`, product queries |
-| `eshop_bank_accounts/` | Payment pairing | Bank account sync, matching |
+| `eshop_bank_accounts/` | Bank account administration | Permissions, account details and unit links |
+| `eshop_bank_sync/` | BankSync consumer | Account mappings, fenced control intents and atomic signed-delivery ingestion |
 | `eshop_forms/` | Form-order bridge | `create_form`, `get_form_by_link`, form CRUD |
 | `eshop_orders/` | Order lifecycle | `scan_ticket`, `get_orders`, status transitions |
 | `eshop_transactions/` | Transactions | `add_transaction_to_payment_info_ws` |

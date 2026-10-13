@@ -115,6 +115,7 @@ SET search_path = public, extensions
              RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
          END IF;
          processed_features := public.merge_ticket_layout_features(old_features, processed_features, input_data->'ticket_layout_change');
+         PERFORM public.validate_ticket_layout_references(occ_id, f->'layout') FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
 
          -- Determine the final unit, allowing it to be updated.
          final_unit := COALESCE((input_data->>'unit')::BIGINT, final_unit);
@@ -202,6 +203,7 @@ SET search_path = public, extensions
          occ_id := updated_occ.id;
      END IF;
 
+     PERFORM public.validate_ticket_layout_references(occ_id, f->'layout') FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
      --
      -- Post-update/insert feature handling
      --

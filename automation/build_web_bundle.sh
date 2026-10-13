@@ -13,6 +13,10 @@ BUILD_WEB_DIR="$PROJECT_ROOT/build/web"
 WEB_CLIENT_DIST_DIR="$PROJECT_ROOT/web_client/dist"
 cd "$PROJECT_ROOT"
 
+# Every production build must reach the image service using this tenant's
+# actual domain and project, before compiling another unusable application.
+node automation/verify_image_service.mjs
+
 # Generated output must never retain content-hashed files from another tenant.
 rm -rf -- "$BUILD_WEB_DIR" "$WEB_CLIENT_DIST_DIR"
 
@@ -60,7 +64,14 @@ else
 fi
 
 "${FLUTTER_CMD[@]}" precache --web
-"${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run
+FESTAPP_SETUP_BUILD_ARGS=()
+FESTAPP_SETUP_ENABLED="$(sed -n 's/^OCCASION_SETUP_ENABLED=//p' automation/project.conf)"
+case "$FESTAPP_SETUP_ENABLED" in
+    true) FESTAPP_SETUP_BUILD_ARGS+=(--dart-define=FESTAPP_OCCASION_SETUP=true) ;;
+    false|'') ;;
+    *) echo "OCCASION_SETUP_ENABLED must be true or false." >&2; exit 1 ;;
+esac
+"${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
 bash automation/emit_version_manifest.sh build/web
 
 if [ "$TARGET" = cloudflare ]; then

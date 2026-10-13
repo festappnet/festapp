@@ -2,14 +2,22 @@
 
 Public image bytes and authenticated image operations are separate contracts.
 
-| Plane | Host | Owner |
-|---|---|---|
-| Default public data | `img.festapp.net` | public-only R2 bucket `festapp-images` after P3 |
-| Project A public data | `a.img.festapp.net` | public-only R2 bucket `festapp-images-a` after P3 |
-| AKH public data | `akh.img.festapp.net` | R2 bucket `festapp-images-akhweb` |
-| Authenticated control | `image-api.festapp.net` | `festapp-image-worker` |
+## Checked-in routing and pending target
 
-The control request selects `projectId=default|a|akhweb`. The Worker registry owns the
+| Plane | Host | Checked-in route | Conditional target |
+|---|---|---|---|
+| Default public data | `img.festapp.net` | `festapp-image-worker` -> R2 `festapp-images` | Direct public R2 domain after P3 |
+| Project A public data | `a.img.festapp.net` | `festapp-image-worker` -> R2 `festapp-images-a` | Direct public R2 domain after P3 |
+| AKH public data | `akh.img.festapp.net` | `festapp-image-worker` -> R2 `festapp-images-akhweb` | No direct-domain completion claimed |
+| Authenticated control | `image-api.festapp.net` | `festapp-image-worker` | Worker control plane |
+
+`workers/image-worker/wrangler.toml` still declares all four Worker hosts.
+The [open cutover item](../operations/work-items/open/image-delivery-cost-cutover-2026-08-24.md)
+records the 2026-09-23 readback: public hosts remain on Worker and R2 custom
+domains are absent. P3/P4 remain blocked by adoption/legacy-traffic gates.
+This is checked-in routing plus dated evidence, not a fresh live readback.
+
+The control request selects `projectId=default|a|akhweb|slunovrat`. The Worker registry owns the
 Supabase origins, anon keys, public/private bucket bindings, bucket names and
 public hostnames. Client-supplied credentials never select authority. During the
 measured P1-P4 adoption window only, an exact registered `supabaseUrl` can alias
@@ -27,12 +35,22 @@ AKH project's authenticated-only `get_can_manage_images()` RPC, accepts only
 `images/`, `blog/` and `content/` keys, and deliberately skips Festapp's
 `images`-table persistence RPCs. Private routes fail closed for this project.
 
+Slunovrat uses its explicit canonical `https://api.festapp.net` configuration,
+the Festapp public bucket `festapp-images` and `img.festapp.net` for new assets.
+Existing canonical Storage URLs are unchanged. Its public uploads retain the
+owner-scoped `check_upload_permission` and `add_image_record` RPCs; private
+operations are disabled. Both `slunovrat.festapp.net` and
+`app.festivalslunovrat.cz` are exact allowed control origins. See the
+[2026-10-12 recovery evidence](../operations/slunovrat-image-upload-recovery-2026-10-12.md).
+
 ## Required bindings and secrets
 
 - R2: `IMAGES_BUCKET`, `IMAGES_BUCKET_A`, `IMAGES_BUCKET_AKHWEB`, `IMAGES_PRIVATE_BUCKET`,
   `IMAGES_PRIVATE_BUCKET_A`.
 - Registry: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_URL_A`,
   `SUPABASE_ANON_KEY_A`, `SUPABASE_URL_AKHWEB`, `SUPABASE_ANON_KEY_AKHWEB`.
+- Slunovrat public canonical configuration: `SUPABASE_URL_SLUNOVRAT`,
+  `SUPABASE_ANON_KEY_SLUNOVRAT` (the public anon key, not a service-role key).
 - Signing: `CF_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` scoped to
   the two private buckets.
 - Purge: `CF_ZONE_ID` and `CF_CACHE_PURGE_TOKEN`, with Cache Purge permission
