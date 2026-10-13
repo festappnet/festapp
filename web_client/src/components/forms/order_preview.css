@@ -362,15 +362,31 @@ body.dark-mode .deposit-option span {
 }
 
 /* Registration context shares the form and checkout typography. */
-.form-registration-status { margin-block: 24px 20px; padding: 16px; border-inline-start: 3px solid var(--primary-color); background: color-mix(in srgb, var(--primary-color) 7%, var(--card-bg, #fff)); border-radius: 4px; text-align: start; line-height: 1.5; }
-.form-occupancy { text-align: start; margin: 0 0 8px; font-size: 1rem; overflow-wrap: anywhere; }
-.waitlist-mode-label { display: block; margin-block-end: 4px; font-size: 1rem; }
+.form-registration-status {
+    margin-block: 24px 20px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--primary-color) 28%, transparent);
+    background: color-mix(in srgb, var(--primary-color) 6%, var(--background-color, #fff));
+    border-radius: var(--radius-md, 15px);
+    text-align: start;
+    line-height: 1.5;
+}
+.form-occupancy { text-align: start; margin: 0 0 8px; font-size: 1rem; color: color-mix(in srgb, var(--text-color) 85%, var(--background-color, #fff)); overflow-wrap: anywhere; }
+.waitlist-mode-label { display: block; margin-block-end: 8px; font-size: 1.0625rem; line-height: 1.4; }
 .form-registration-status .waitlist-intro { margin: 0; }
 .form-registration-status > :last-child { margin-block-end: 0; }
 .form-registration-status .waitlist-intro:empty { display: none; }
 .waitlist-intro { margin: 0 auto 16px; max-width: 65ch; line-height: 1.5; overflow-wrap: anywhere; }
 .waitlist-product-options { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
-.waitlist-product-notice { padding: 12px 16px; border-inline-start: 3px solid var(--primary-color); background: color-mix(in srgb, var(--primary-color) 7%, var(--card-bg, #fff)); border-radius: 4px; line-height: 1.5; color: var(--text-color); }
+.waitlist-product-notice {
+    margin-block: 8px 12px;
+    padding: 8px 16px;
+    font-size: 1rem;
+    font-style: italic;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--text-color) 85%, var(--background-color, #fff));
+    overflow-wrap: anywhere;
+}
 .waitlist-product-options .form-check { cursor: default; }
 .waitlist-product-options .form-check-label { cursor: default; }
 
@@ -392,9 +408,8 @@ body.dark-mode .deposit-option span {
 .waitlist-person-status { flex-basis: 100%; line-height: 1.5; }
 .result-occasion-title { margin: 0 0 12px; font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }
 
-.waitlist-product-notice { margin-block: 0 16px; }
-.waitlist-product-options { pointer-events: none; filter: grayscale(1); opacity: .65; }
-.waitlist-product-options, .waitlist-product-options * { color: var(--text-disabled, #6b6b6b) !important; cursor: default !important; }
+.waitlist-product-options { pointer-events: none; filter: grayscale(1); }
+.waitlist-product-options, .waitlist-product-options * { color: color-mix(in srgb, var(--text-color) 72%, var(--card-bg, #fff)) !important; cursor: default !important; }
 
 .waitlist-management .waitlist-context { text-align: start; margin-block-end: 24px; padding-block-end: 16px; border-bottom: 1px solid var(--divider-color, #ccc); }
 .waitlist-management .waitlist-context h1 { font-size: 1.5rem; line-height: 1.3; }
