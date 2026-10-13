@@ -28,6 +28,7 @@ INSERT INTO public.organizations VALUES(19,'Slunovrat'),(1,'Other');
 INSERT INTO public.occasions VALUES(101,19),(102,1);
 \ir ../../../supabase/migrations/20261013093000_slunovrat_news_insert.sql
 \ir ../../../supabase/migrations/20261013094500_news_search_extensions_usage.sql
+\ir ../../../supabase/migrations/20261013100000_verify_news_search_schema_grant.sql
 BEGIN;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
