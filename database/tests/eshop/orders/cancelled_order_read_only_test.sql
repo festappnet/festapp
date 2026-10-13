@@ -59,7 +59,6 @@ BEGIN
   format('SELECT public.update_order_responses(%s,''{}'')',oid),
   format('SELECT public.update_order_and_tickets_to_sent(%s,ARRAY[%s]::bigint[])',oid,tid),
   format('SELECT public.update_order_and_tickets_to_storno_221(%s)',oid),
-  format('SELECT public.delete_order_221(%s)',oid),
   format('SELECT public.delete_order_history(%s)',hid),
   format('SELECT public.set_payment_deadline(%s,now())',pi),
   format('SELECT public.update_payment_info_variable_symbol(%s,123)',pi),

@@ -91,6 +91,16 @@ class FormFieldBuilders {
 
   static Widget buildTicketField(
       BuildContext context, FormHolder formHolder, TicketHolder ticket) {
+    // Initial values register during the first frame without firing onChanged.
+    // Recalculate once the new ticket forms have registered all their fields.
+    if (ticket.tickets.any((t) => t.ticketKey.currentState == null) ||
+        (ticket.tickets.isEmpty && !ticket.hasSpot)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (formHolder.controller?.globalKey.currentState != null) {
+          formHolder.controller?.updateTotalPrice?.call();
+        }
+      });
+    }
     if (ticket.fields.none((f) => f.fieldType == FormHelper.fieldTypeSpot)) {
       if (ticket.tickets.isEmpty) {
         ticket.tickets.add(FormTicketModel(

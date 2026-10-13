@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION duplicate_occasion(oc bigint)
+CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint)
 RETURNS bigint
 SECURITY DEFINER
 SET search_path = public, extensions
@@ -14,10 +14,20 @@ DECLARE
   new_pt_id       bigint;
   new_product_id  bigint;
   new_form_id     bigint;
+  v_source_unit bigint;
+  v_target_unit bigint;
+  v_organization bigint;
 BEGIN
-    -- [SECURITY FIX] Check permissions first
-    -- Only managers of the unit can duplicate occasions
-    PERFORM public.check_is_manager_on_unit((SELECT unit FROM public.occasions WHERE id = oc));
+  SELECT unit, organization INTO v_source_unit, v_organization
+  FROM public.occasions WHERE id = oc;
+  v_target_unit := COALESCE(p_target_unit, v_source_unit);
+  IF auth.uid() IS NULL OR v_source_unit IS NULL OR v_target_unit IS NULL
+     OR NOT public.get_is_manager_on_unit(v_source_unit)
+     OR NOT public.get_is_manager_on_unit(v_target_unit)
+     OR NOT EXISTS (SELECT 1 FROM public.units
+       WHERE id = v_target_unit AND organization = v_organization) THEN
+    RAISE insufficient_privilege USING MESSAGE = 'source and target unit manager required within one organization';
+  END IF;
 
   ------------------------------------------------------------------
   -- 1. Duplicate the main occasion record.
@@ -27,7 +37,7 @@ BEGIN
     (created_at, updated_at, data, is_hidden, is_open, is_promoted, start_time, end_time, link, title, organization, services, unit, features, occasion_hidden, description)
   SELECT now(), now(), data, is_hidden, is_open, is_promoted, start_time, end_time,
          link || '-copy-' || substring(md5(random()::text) from 1 for 8) AS link,
-         title || ' (Copy)', organization, services, unit, features, occasion_hidden, description
+         title || ' (Copy)', v_organization, services, v_target_unit, features, occasion_hidden, description
   FROM public.occasions
   WHERE id = oc
   RETURNING id INTO new_occ;
@@ -41,6 +51,7 @@ BEGIN
   CREATE TEMP TABLE tmp_events (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_exclusive_groups (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_blueprints (old_id bigint, new_id bigint) ON COMMIT DROP;
+  PERFORM 1 FROM public.occasions WHERE id=oc FOR UPDATE;
   CREATE TEMP TABLE tmp_product_types (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_products (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_spots (old_id bigint, new_id bigint) ON COMMIT DROP;
@@ -52,10 +63,12 @@ BEGIN
   ------------------------------------------------------------------
 
   -- 3a. Email Templates
-  INSERT INTO public.email_templates (html, occasion, unit, subject, organization, code)
-  SELECT html, new_occ, unit, subject, organization, code
+  INSERT INTO public.email_templates (html, occasion, unit, subject, organization, code, title)
+  SELECT DISTINCT ON (code) html, new_occ, v_target_unit, subject, v_organization, code, title
   FROM public.email_templates
-  WHERE occasion = oc;
+  WHERE occasion = oc
+  ORDER BY code, (unit IS NOT DISTINCT FROM v_source_unit) DESC,
+    (organization IS NOT DISTINCT FROM v_organization) DESC, id DESC;
 
   -- 3b. Duplicate information_hidden rows using a loop and record mapping.
   FOR rec IN
@@ -78,7 +91,7 @@ BEGIN
          CASE WHEN information_hidden IS NOT NULL
               THEN (SELECT tih.new_id FROM tmp_information_hidden AS tih WHERE tih.old_id = information_hidden)
               ELSE NULL END,
-         unit
+         v_target_unit
   FROM public.information
   WHERE occasion = oc;
 
@@ -100,7 +113,7 @@ BEGIN
   LOOP
     INSERT INTO public.places
       (title, description, type, created_at, coordinates, is_hidden, updated_at, occasion, "order", icon, unit)
-    VALUES (rec.title, rec.description, rec.type, rec.created_at, rec.coordinates, rec.is_hidden, now(), new_occ, rec."order", rec.icon, rec.unit)
+    VALUES (rec.title, rec.description, rec.type, rec.created_at, rec.coordinates, rec.is_hidden, now(), new_occ, rec."order", rec.icon, v_target_unit)
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_places (old_id, new_id)
@@ -177,7 +190,7 @@ BEGIN
   LOOP
     INSERT INTO eshop.blueprints
       (created_at, data, title, organization, configuration, objects, groups, occasion, updated_at, background_svg)
-    VALUES (now(), rec.data, rec.title, rec.organization, rec.configuration, rec.objects, rec.groups, new_occ, now(), rec.background_svg)
+    VALUES (now(), rec.data, rec.title, v_organization, rec.configuration, rec.objects, rec.groups, new_occ, now(), rec.background_svg)
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_blueprints (old_id, new_id)
@@ -291,7 +304,16 @@ BEGIN
 
     INSERT INTO public.forms
       (created_at, data, key, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, updated_at, title)
-    VALUES (now(), rec.data, uuid_generate_v4(), new_occ, rec.type, rec.bank_account, rec.deadline_duration_seconds, rec.is_open,
+    VALUES (now(), rec.data, uuid_generate_v4(), new_occ, rec.type,
+            CASE WHEN v_source_unit = v_target_unit OR EXISTS (
+              SELECT 1 FROM eshop.unit_bank_accounts uba
+              WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)
+              THEN rec.bank_account ELSE NULL END,
+            rec.deadline_duration_seconds,
+            CASE WHEN v_source_unit <> v_target_unit AND rec.bank_account IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM eshop.unit_bank_accounts uba
+                WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)
+              THEN false ELSE rec.is_open END,
             replace(uuid_generate_v4()::text, '-', ''),
             COALESCE(new_bp_id, rec.blueprint), rec.header, rec.header_off, now(), rec.title)
     RETURNING id INTO v_new_id;
@@ -316,6 +338,27 @@ BEGIN
   ------------------------------------------------------------------
   -- 8. Return the new occasion id
   ------------------------------------------------------------------
+  -- References are remapped only after the complete type map exists.
+  UPDATE public.occasions o SET features=(SELECT jsonb_agg(CASE WHEN f->>'code'='ticket' AND f ? 'layout'
+    THEN jsonb_set(f,'{layout,templates}',(SELECT jsonb_object_agg(t.key,jsonb_set(t.value,'{elements}',
+      (SELECT jsonb_agg(CASE WHEN e->>'binding'='productType' THEN jsonb_set(e,'{productTypeId}',
+        to_jsonb((SELECT m.new_id FROM tmp_product_types m WHERE m.old_id=(e->>'productTypeId')::bigint))) ELSE e END ORDER BY n)
+       FROM jsonb_array_elements(t.value->'elements') WITH ORDINALITY x(e,n)))) FROM jsonb_each(f->'layout'->'templates') t)) ELSE f END ORDER BY n)
+    FROM jsonb_array_elements(o.features) WITH ORDINALITY x(f,n)) WHERE o.id=new_occ;
+  PERFORM public.validate_ticket_layout_references(new_occ,f->'layout') FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=new_occ AND f->>'code'='ticket' AND f ? 'layout';
+  DROP TABLE tmp_places, tmp_events, tmp_exclusive_groups, tmp_blueprints,
+    tmp_product_types, tmp_products, tmp_spots, tmp_forms, tmp_information_hidden;
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
+REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
+  FROM PUBLIC, anon, authenticated;
+
+-- Existing internal callers retain same-unit semantics.
+CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
+RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
+SET search_path = public, extensions AS $$
+  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
+$$;
+REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
+  FROM PUBLIC, anon, authenticated;

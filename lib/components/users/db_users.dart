@@ -330,9 +330,20 @@ class DbUsers {
     var result = await _supabase
         .rpc("get_all_users_from_unit", params: {"unit_id": unitId});
     if (result["code"] == 200) {
-      var t = List<UnitUserModel>.from(
+      final users = List<UnitUserModel>.from(
           result["data"].map((x) => UnitUserModel.fromJson(x)));
-      return t;
+      int permissionPriority(UnitUserModel user) {
+        if (user.isManager == true) return 3;
+        if (user.isEditor == true) return 2;
+        if (user.isEditorView == true) return 1;
+        return 0;
+      }
+
+      // Keep the original order within each permission level.
+      mergeSort(users,
+          compare: (a, b) =>
+              permissionPriority(b).compareTo(permissionPriority(a)));
+      return users;
     }
     return [];
   }

@@ -51,12 +51,24 @@ Active forward migrations live in `supabase/migrations/`; canonical function
 sources live in `database/functions/`. Do not edit an applied migration or use
 the operator-only `instance-install` function as a production deployment path.
 
-Until the self-hosted cutover is complete, every schema, function and data
-contract change must be applied and verified on the self-hosted target and both
-cloud sources (`default` and `a`). Resolve a live target from `SUPABASE_URL` in
-the selected tenant's `automation/project.conf`, never from a project ref in
-`.env.local`. See [edge_functions.md](../backend/edge_functions.md) for function
-authorization, tests and deployment constraints.
+Production schema, function and contract changes target only the canonical
+self-hosted backend at `https://api.festapp.net`. Former cloud sources remain
+frozen retention/reconciliation targets after the 2026-09-10 switch; do not
+apply routine migrations there.
+
+For a production tenant, require `BACKEND_ACTIVATION_PHASE=canonical` in
+its `automation/project.conf` and verify the published
+`WEB_LINK/backend-activation.json`: tenant ID, canonical generation and endpoint
+must match the selected configuration. Verify
+`BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID` and any `FORCE_OCCASION_LINK`
+in that same canonical database before reading event or user data. Stop on a
+mismatch. `SUPABASE_URL` can be a compiled legacy mobile fallback; neither it
+nor a project ref in `.env.local` selects the live database. The shared main
+configuration is a development template, not evidence of a tenant's activation.
+
+See [AI context](../architecture/ai_context.md) for backend authority and
+[edge_functions.md](../backend/edge_functions.md) for authorization, tests and
+canonical bundle deployment.
 
 ## Tenant creation or upgrade
 
@@ -74,8 +86,10 @@ steps and the checker command are in
 
 - Push notifications use OneSignal. Keep public app IDs in tenant
   configuration and credentials outside Git.
-- SMTP setup is documented in [aws_ses.md](aws_ses.md).
-- Bank import setup is documented in [bank_import.md](bank_import.md).
+- Outbound SES and the global email queue are documented in [aws_ses.md](aws_ses.md).
+- BankSync integration and bank email evidence gates are documented in
+  [bank_import.md](bank_import.md).
+- Google sign-in uses the [broker operation guide](../operations/auth/google-sign-in.md).
 - Participant CSV format is documented in
   [csv_user_import.md](csv_user_import.md).
 - Public and private images use the R2 control plane described in

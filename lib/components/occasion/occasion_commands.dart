@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract interface class OccasionCommands {
   Future<OccasionModel> create(OccasionModel occasion);
   Future<OccasionModel> save(OccasionModel occasion);
-  Future<int> duplicate(int occasionId);
+  Future<int> duplicate(int occasionId, {int? targetUnitId});
   Future<void> delete(int occasionId);
   Future<Map<String, dynamic>> deleteService(
     int occasionId,
@@ -88,10 +88,13 @@ class SupabaseOccasionCommands implements OccasionCommands {
   }
 
   @override
-  Future<int> duplicate(int occasionId) async {
+  Future<int> duplicate(int occasionId, {int? targetUnitId}) async {
     final response = ClientCommandResponse.from(await _transport.invoke(
       'duplicate_occasion_client_sync_v1',
-      {'p_occasion': occasionId},
+      {
+        'p_occasion': occasionId,
+        if (targetUnitId != null) 'p_target_unit': targetUnitId,
+      },
     ));
     if (response.code != 200 || response.data['occasionId'] is! num) {
       throw StateError('Occasion duplication was rejected');

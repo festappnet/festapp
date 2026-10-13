@@ -25,8 +25,8 @@ Deno.test('20 concurrent selections deduplicate, 100 renders stay warm, restart 
   assertEquals([s.counts.fetch,s.counts.create,s.counts.inspect],[1,1,1]);
   const t=preset('named');t.fontId=assets[0].id;
   const resource=fonts[0];
-  const render=await prepareTicketRenderer({id:7,features:[{code:'ticket',ticket_type:'named',layout:{schemaVersion:2,templates:{named:t}}}]},{},{},{
-    load:async()=>({fonts:{[resource.id]:resource},font:resource.bytes,metrics:resource.metrics}),products:async()=>({})
+  const render=await prepareTicketRenderer({id:7,features:[{code:'ticket',ticket_type:'named',layout:{schemaVersion:3,templates:{named:t}}}]},{},{},{
+    load:async()=>({fonts:{[resource.id]:resource},font:resource.bytes,metrics:resource.metrics}),products:async()=>({products:[],product_types:[]})
   });
   for(let i=0;i<100;i++){await s.resolver.resolve(resource.id);await render({ticket_symbol:'12341A2C3E'});}
   assertEquals(s.counts.fetch,1);
@@ -80,8 +80,8 @@ Deno.test('three real families and mixed template embed exact resolved files; me
   const t=preset('named');t.fontId=assets[0].id;
   t.elements.find(e=>e.binding==='occasionTitle')!.style.fontId=assets[1].id;
   t.elements.find(e=>e.binding==='orderName')!.style.fontId=assets[2].id;
-  parseLayout({schemaVersion:2,templates:{named:t}});
-  const data={...sampleData(),occasionTitle:'Příliš žluťoučký kůň',orderName:'Ľščťžýáíé, 0123456789 Kč €'};
+  parseLayout({schemaVersion:3,templates:{named:t}});
+  const data:Record<string,string|null>={...sampleData(),occasionTitle:'Příliš žluťoučký kůň',orderName:'Ľščťžýáíé, 0123456789 Kč €'};
   const r={fonts,font:fonts[assets[0].id].bytes,metrics:fonts[assets[0].id].metrics};
   const output=await generateTicketPdf(data,r,t,'named');const doc=await PDFDocument.load(output.bytes);
   const embedded=doc.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFDict).map(([,o])=>o as PDFDict).filter(o=>o.has(PDFName.of('FontFile2'))||o.has(PDFName.of('FontFile3'))).map(o=>doc.context.lookup(o.get(PDFName.of('FontFile2'))??o.get(PDFName.of('FontFile3'))) as PDFRawStream);
@@ -89,7 +89,7 @@ Deno.test('three real families and mixed template embed exact resolved files; me
   assertEquals(new Set(hashes),new Set(assets.map(a=>a.sha256)));
   const ops=doc.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFRawStream).map(([,o])=>o as PDFRawStream).filter(o=>!o.dict.get(PDFName.of('Length1'))&&o.dict.get(PDFName.of('Filter'))?.toString()==='/FlateDecode').map(o=>new TextDecoder().decode(inflateSync(o.getContents()))).join('\n');
   for(const e of t.elements.filter(e=>['occasionTitle','orderName'].includes(e.binding))) {
-    const m=fonts[e.style.fontId!].metrics;const fit=fitText(data[e.binding]!,e,m);assert(!fit.replaced);
+    const m=fonts[e.style.fontId!].metrics;const fit=fitText(data[e.id]!,e,m);assert(!fit.replaced);
     assert(fit.widths.every(w=>w<=e.box.width));const y=t.page.height-t.ticketArea.y-e.box.y-m.ascent*fit.size;
     assert(ops.includes(`${y} Tm`),'PDF baseline uses the preview metrics');
     assertEquals(pdfBox(t,e.box).height,e.box.height);

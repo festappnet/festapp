@@ -70,6 +70,13 @@ BEGIN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1001, 'message', 'Order symbol is server assigned')::TEXT;
         END IF;
 
+        IF jsonb_typeof(input_data->'ticket') = 'array' AND
+            jsonb_array_length(input_data->'ticket') > public.ticket_order_limit() THEN
+            RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1023,
+                'message', 'Maximum number of tickets per order exceeded',
+                'limit', public.ticket_order_limit())::TEXT;
+        END IF;
+
         form_key := (input_data->>'form')::UUID;
         SELECT id, occasion, bank_account, deadline_duration_seconds, data, is_open
         INTO form_id, occasion_id, bank_account_id, form_deadline_duration, form_data, is_open_val

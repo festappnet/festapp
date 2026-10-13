@@ -1,137 +1,66 @@
-# Bank Account Email Import System
+# BankSync integration and bank email intake
 
-This feature allows the system to automatically import bank transactions by
-parsing incoming emails from banks (e.g., Fio, AirBank).
+BankSync owns bank credentials, polling, recovery windows, authenticated bank
+email intake and signed deliveries. Festapp owns account permissions, physical
+account mappings, its ledger, payment matching, orders and ticket email intents.
+The former Festapp SNS parser and direct bank polling paths are retired.
+Their [historical setup](../archive/setup/bank_import-pre-banksync.md) is not an
+operating procedure.
 
-## Canonical transaction and pairing contract
+## Current boundaries
 
-Both e-mail and API imports are ingest adapters. They store a transaction and
-delegate automatic decisions to `public.match_bank_transaction`; only
-`public.apply_transaction_pairing` may change the payment-info link, derived
-paid/returned totals, order state, and pairing audit.
+- `fetch-transactions` is the occasion-editor API adapter requesting a BankSync
+  pull; it does not contact a bank directly.
+- `bank-sync-manage` handles account control with durable, fenced operation
+  intents. `bank-sync-reconcile` recovers incomplete control operations using
+  versioned protected keys. Account creation, connection and token setup are
+  separate operations; dormant or expired accounts are not implicitly activated.
+- `bank-sync-webhook` verifies a bounded raw-body HMAC v2 before
+  `public.ingest_bank_sync_transaction` atomically commits inbox identity,
+  ledger, existing matcher and receipt. Original bank references and signed
+  amounts remain facts; do not synthesize order IDs or deduplicate by amount/VS.
+- Matching and manual pairing remain Festapp SQL responsibilities. The paid
+  transition atomically enqueues ticket intents and wakes `process-email-queue`
+  after commit. The global email gate can defer sending; a webhook receipt is
+  not proof of delivered tickets.
 
-Fio fields have fixed meanings:
+Canonical SQL lives in `database/functions/eshop_bank_sync/`. The scoped
+migration is assembled by `automation/assemble-bank-sync-migration.py`.
+Apply repository migrations and the reviewed Function bundle only through the
+canonical backend release procedure described in
+[tenant setup](howto.md#database-and-edge-functions) and
+[Edge deployment](../backend/edge_functions.md#deployment).
 
-- `column22` → bank movement `transaction_id`;
-- `column17` and Fio e-mail `ID pokynu` → `command_id`;
-- `column27` → raw `payer_reference`;
-- `column5`, `column7`, `column16`, and `column25` retain VS/reference text.
+## Account rollout and evidence
 
-Never deduplicate on amount, date, payer name, or VS. A transport retry uses
-the same `(bank_account_id, external_id)` and an API retry uses the same
-`(bank_account_id, transaction_id)`. E-mail/API reconciliation is allowed only
-when a provider-issued shared identifier has the same verified meaning. An
-e-mail without such an identity is stored but remains unpaired.
+Follow the [ordered full-cutover runbook](../operations/banksync/FULL-CUTOVER-2026-10-04.md)
+for paused mappings, historical identity adoption, verified credential digests,
+account-specific enablement, guarded retirement and receipt/ledger comparison.
+[Account management](../../lib/components/bank_accounts/README.md) explains
+permissions and token status. Historical migration state does not authorize
+activating a new account or replaying an old delivery.
 
-Matcher verdicts are `paired`, `already_paired`, `unmatched`, `ambiguous`, and
-`ineligible`. Only `paired` changes accounting state. Ambiguous transactions
-must be reviewed through the authorized manual UI; do not add a fuzzy fallback.
+The [implementation record](../operations/banksync/IMPLEMENTATION-2026-10-04.md)
+and [production snapshot](../operations/banksync/PRODUCTION-2026-10-04.md)
+describe different dated phases. Read subsequent evidence before interpreting
+a recorded timeout or blocked payment as current state. This documentation
+refresh performed no new production or bank readback.
 
-EUR orders use ISO 11649 references in the form `RF{check digits}{numeric
-payment-info id}`. The RF prefix and check digits are mandatory; the payload is
-otherwise numeric. Customer activation requires a valid IBAN and explicit legal
-`creditor_name` on the bank account. Run the authorized real-bank pilot before
-deploying the RF activation migration.
+## Bank email evidence gate
 
-## Documentation Map
+Receiving bank emails belongs to BankSync, not a Festapp SES/SNS parser.
+New intake requires authenticated sender evidence, exact server-owned receiving
+addresses and the encrypted spool/storage gates in the implementation record.
+Fio/Air Bank email identifiers without proven movement identity remain retained,
+quarantined observations. A fixture does not prove automatic payment completion.
+Require a real authorized bank email journey and identity evidence before
+claiming automatic email payment confirmation. EUR payment activation additionally
+requires the [real-bank pilot](../operations/work-items/open/eur-payment-reference-rollout-2026-08-24.md).
 
-- **Architecture**: [AI context](../architecture/ai_context.md).
-- **Database**: [Database architecture](../architecture/database.md).
-- **Automation**: [Automation reference](../../automation/README.md).
+## Local verification
 
-## Setup Guide
-
-### 1. AWS Configuration (SES & SNS)
-
-We use a script to automate the AWS setup. **Prerequisites:** AWS CLI installed
-and configured.
-
-**IMPORTANT:** We use a **Subdomain** (`bank.festapp.net`) to avoid breaking
-your main email.
-
-1. Run the setup script:
-   ```bash
-   ./automation/setup_aws_ses.sh
-   ```
-2. If prompted (or if emails don't arrive), verify the subdomain:
-   ```bash
-   aws ses verify-domain-identity --domain bank.festapp.net --region eu-central-1
-   ```
-3. Ensure your DNS **MX Record** for `bank` points to AWS (not your root
-   domain).
-
-### 2. DNS Verification
-
-Run the helper script for the subdomain:
-
-```bash
-./automation/check_dns_setup.sh bank.festapp.net
-```
-
-### 3. Supabase Deployment
-
-Apply the current ordered `supabase/migrations/` set through the approved
-database release workflow. The operator-only `instance-install` function is not
-a production deployment path. Preserve the required pre-cutover parity across
-the self-hosted target and cloud sources `default` and `a`.
-
-**Edge Function:**
-
-```bash
-supabase functions deploy bank-mail-parser --project-ref <PROJECT_REF> --no-verify-jwt
-```
-
-The runtime must define the exact `AWS_SNS_TOPIC_ARN`. Before canonical
-subscription, set the topic to Signature Version 2 and retain the resulting AWS
-receipt as cutover evidence:
-
-```bash
-aws sns set-topic-attributes --topic-arn <TOPIC_ARN> \
-  --attribute-name SignatureVersion --attribute-value 2
-```
-
-### 4. Verification Check (Critical)
-
-New SNS subscriptions start in **PendingConfirmation**. They must be confirmed
-before AWS sends any emails.
-
-1. Check Status:
-   ```bash
-   aws sns list-subscriptions-by-topic \
-     --topic-arn "arn:aws:sns:<region>:<account-id>:<topic-name>" \
-     --region <region>
-   ```
-2. **If "PendingConfirmation"**:
-   - Go to **AWS Console > SNS > Subscriptions**.
-   - Select the subscription and click **Request confirmation**.
-   - Check **Supabase Edge Function Logs**. The function auto-confirms only
-     after the exact-topic Signature Version 2 proof passes; it never logs the
-     confirmation URL or token.
-
-## Testing
-
-Run the local parser and pairing integration coverage without live credentials:
-
-```bash
-cd workers/image-worker
-npx vitest run tests/integration/bank-import.test.ts
-cd ../..
-
-deno test --allow-env --allow-net --allow-read \
-  supabase/functions/bank-mail-parser/test_parser.ts \
-  supabase/functions/bank-mail-parser/test_parser_comprehensive.ts \
-  supabase/functions/bank-mail-parser/snsVerification_test.ts
-```
-
-### Test with REAL Email (End-to-End)
-
-This script sends an actual email via AWS SES and writes to the configured
-canonical database. Run it only as an explicitly authorized production canary;
-keep token and service-role values out of shell history and logs.
-
-```bash
-node tests/integration/bank_import_real.js --existing-token "YOUR_TOKEN" --from "info@festapp.net"
-```
-
-- Requires `aws configure` to be set up.
-- `--from` must be a verified sender in your AWS SES.
+Use `supabase/functions/test-coverage.json` for current receiver/control tests and
+`database/tests/` for identity, ledger, permission and payment regressions.
+[CONTRIBUTING](../../CONTRIBUTING.md) describes isolated test execution.
+Live canaries and email sends require their own explicit scope; do not replay
+archived parser tests or commands.

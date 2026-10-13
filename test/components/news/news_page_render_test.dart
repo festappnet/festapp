@@ -2,11 +2,50 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/news/news_page.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/users/occasion_user_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+class _NewsNavigationRouter extends RootStackRouter {
+  final dynamic pageState;
+  _NewsNavigationRouter(this.pageState);
+
+  @override
+  List<AutoRoute> get routes => [
+        AutoRoute(
+          page: PageInfo('NewsHome',
+              builder: (_) => AutoTabsRouter(
+                    routes: [NewsRoute()],
+                  )),
+          path: '/:${AppRouter.linkFormatted}',
+          children: [
+            AutoRoute(
+              page: PageInfo(NewsRoute.name,
+                  builder: (_) => Builder(
+                      builder: (context) =>
+                          pageState.build(context) as Widget)),
+              path: NewsPage.ROUTE,
+            ),
+          ],
+        ),
+        AutoRoute(
+          page: PageInfo(NewsFormRoute.name,
+              builder: (_) => const Scaffold(
+                    body: Text('NEWS FORM'),
+                  )),
+          path: AppRouter()
+              .routes
+              .singleWhere((route) => route.page.name == NewsFormRoute.name)
+              .path,
+        ),
+      ];
+}
 
 void main() {
   setUpAll(() async {
@@ -19,6 +58,34 @@ void main() {
         localStorage: EmptyLocalStorage(),
       ),
     );
+  });
+
+  testWidgets('create news preserves the occasion in the form URL',
+      (tester) async {
+    final previousRights = RightsService.occasionLinkModel;
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(occasionUser: OccasionUserModel()..isEditor = true);
+    addTearDown(
+        () => RightsService.occasionLinkModelNotifier.value = previousRights);
+    final router = _NewsNavigationRouter(NewsPage().createState());
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: router.config(
+        deepLinkBuilder: (_) => DeepLink.path('/occasion-a/news'),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    expect(find.text('NEWS FORM'), findsOneWidget);
+    expect(router.currentUrl, '/occasion-a/newsForm');
+    expect(router.current.args, isA<NewsFormRouteArgs>());
+    expect((router.current.args as NewsFormRouteArgs).onSubmit, isNotNull);
+    await router.maybePop();
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/occasion-a/news');
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('renders news before live view counts arrive', (tester) async {
@@ -47,7 +114,8 @@ void main() {
       home: StackRouterScope(
         controller: router,
         stateHash: 0,
-        child: Builder(builder: (context) => pageState.build(context) as Widget),
+        child:
+            Builder(builder: (context) => pageState.build(context) as Widget),
       ),
     ));
     await tester.pump();

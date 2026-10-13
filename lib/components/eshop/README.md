@@ -4,15 +4,20 @@
 
 Dart is a thin RPC wrapper. ALL write logic lives in SQL. Do NOT replicate multi-step logic in Dart -- causes race conditions.
 
-## Atomic Order Changes (`confirm_blueprint_order_change`)
+## Atomic order creation and replacement
 
-This SQL function handles the Old Order -> New Order atomic switch:
-1. `analyze_new_order_spots` checks if spots are occupied
-2. If occupied, cancels old tickets (`storno_tickets_bulk`)
-3. Clears secrets, prepares new order JSON
-4. Dart takes output and sends to `send-ticket-order` Edge Function
+`send-ticket-order` routes new orders to `create_ticket_order_client_sync_v1`
+and authenticated seat replacements to `replace_blueprint_order_client_sync_v1`.
+Each operation carries a command ID and uses the receipted SQL boundary for
+atomic validation, order/ticket changes and transactional effect intents.
+`confirm_blueprint_order_change` is retained as the source of the internal
+`confirm_blueprint_order_change_internal_v1` preparation logic still used by
+replacement. The public facade is not this client transport. Do not use it to split
+replacement into client-side cancellation and creation.
 
-**Warning**: If modifying the "Claim" button, check this SQL path.
+The HTTP response confirms the committed order and reports `delivery: queued`
+with an optional confirmation receipt. Email acceptance and later provider
+feedback are separate facts.
 
 ## Gotchas
 
@@ -21,15 +26,20 @@ This SQL function handles the Old Order -> New Order atomic switch:
 
 ```mermaid
 graph LR
-    A[Dart / JS<br/>DbOrders] -->|RPC| B[PostgreSQL<br/>SQL Functions]
-    B -->|invoke| C[Edge Functions<br/>email · Stripe · Comgate]
+    A[Dart / JS] -->|Order create/replace| E[send-ticket-order]
+    A -->|Other authorized commands| B[PostgreSQL RPCs]
+    E -->|Receipted command| B
+    B --> Q[Transactional email intents]
+    Q -->|Post-commit wake / recovery| W[process-email-queue]
+    W -->|Global send permit| S[SES]
 ```
 - **Storno RPC**: `update_order_and_tickets_to_storno_ws_221` -- the `_ws_221` suffix is not a typo
 
 ## SQL RPCs
 
 - `select_spot` -- temporary spot lock with secret + expiration
-- `confirm_blueprint_order_change` -- atomic seat reassignment with storno
+- `create_ticket_order_client_sync_v1` -- receipted atomic order creation
+- `replace_blueprint_order_client_sync_v1` -- receipted atomic seat replacement
 - `update_order_and_tickets_to_paid_ws` -- marks order + tickets paid
 - `update_order_and_tickets_to_storno_ws_221` -- cancels order + tickets
 - `scan_ticket` -- validates + processes ticket scanning (enforces entrance limits)

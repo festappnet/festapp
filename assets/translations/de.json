@@ -287,6 +287,8 @@
     "users": "Benutzer"
   },
   "Unit": {
+    "copyTargetUnit": "Zielorganisation",
+    "copyTargetHint": "Wählen Sie die Organisation für die Kopie. E-Mail-Vorlagen werden ihr zugeordnet. Ein Bankkonto wird nur übernommen, wenn es dort verfügbar ist.",
     "addNewEvent": "Neue Veranstaltung hinzufügen"
   },
   "OccasionHome": {
@@ -556,5 +558,30 @@
     "unknownUpload": "Das Ergebnis des Bild-Uploads ist unbekannt. Ein erneuter Versuch kann ein weiteres Bild erzeugen.",
     "retryUpload": "Upload erneut versuchen",
     "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
-  }
+  },
+  "TicketLayout":{
+    "manageProducts":"Formulare und Produkte verwalten",
+    "layoutLimit":"Das Layout überschreitet 32 KiB. Beschriftungen kürzen oder Felder entfernen.",
+  "addProduct": "Produktfeld hinzufügen",
+  "productGroup": "Produktgruppe",
+  "productLabel": "Beschriftung auf dem Ticket",
+  "labelHint": "Ohne Beschriftung wird nur der Produktname gedruckt",
+  "example": "Beispiel",
+  "noExample": "Kein Beispiel verfügbar",
+  "removeProduct": "Feld entfernen",
+  "searchProducts": "Gruppen suchen",
+  "alreadyAdded": "Bereits auf dem Ticket - Feld auswählen",
+  "emptyProducts": "Keine geeigneten Gruppen. Produkte in den Formulareinstellungen hinzufügen.",
+  "retryCatalog": "Erneut versuchen",
+  "catalogError": "Katalog konnte nicht geladen werden",
+  "missingProduct": "Gruppe fehlt - Feld korrigieren oder entfernen",
+  "hiddenProduct": "Gruppe wird nicht mehr angeboten",
+  "offeredProduct": "Im Formular angeboten",
+  "catalogProduct": "Produkte dieser Veranstaltung",
+  "noSpace": "Kein Platz für ein weiteres Feld. Ticket vergrößern oder Platz schaffen.",
+  "elementLimit": "Ein Ticket kann höchstens 32 Elemente enthalten",
+  "draftProducts": "Produktfelder nach dem Erstellen der Veranstaltung bearbeiten.",
+  "replacementProducts": "Diese Vorlage ersetzt das Layout und entfernt Produktfelder: {count}",
+  "productType": "Produktgruppe"
+}
 }

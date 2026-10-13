@@ -126,8 +126,19 @@ sequenceDiagram
 
     U->>EF: Submit order payload
     EF->>DB: Validate & create order
-    DB-->>EF: Order + tickets
-    EF-->>U: Order confirmation + email sent
+    participant Q as email_messages queue
+    participant W as process-email-queue
+    participant SES as SES
+    DB->>Q: Transactional confirmation intent
+    DB-->>EF: Committed order + tickets
+    EF-->>U: Order confirmation, delivery queued + optional receipt
+    DB->>W: Post-commit wake (cron recovers)
+    W->>DB: Claim + fenced global send permit
+    W->>SES: Send rendered snapshot content
+    SES-->>W: Provider acceptance
+    W->>DB: Persist acceptance and post-actions
+    U->>EF: Poll email-confirmation-status with receipt
+    EF-->>U: Bounded confirmation status
 ```
 
 **Offline Cache Flow**:
@@ -135,11 +146,16 @@ sequenceDiagram
 ```mermaid
 graph LR
     A[App starts] --> B["SynchroService<br/>.refreshOfflineData()"]
-    B --> C[Supabase RPCs/queries]
-    C --> D["OfflineDataService<br/>.saveAll*()"]
+    B --> C{Selected sync capability}
+    C -->|Client Sync v1| V[ClientSyncRuntime]
+    V --> H[Versioned public/private artifacts]
+    H --> S[ClientSyncStore projections]
+    S --> G[Previously synchronized data served offline]
+    C -->|Legacy| R[Supabase RPCs/queries]
+    R --> D["OfflineDataService<br/>.saveAll*()"]
     D --> E[StorageHelper JSON]
     E -->|No connection| F["OfflineDataService<br/>.getAll*()"]
-    F --> G[Cached data served]
+    F --> G
 ```
 
 **For complete implementation details**, refer to:
@@ -150,4 +166,9 @@ graph LR
 
 ---
 
-**Last updated**: 2026-09-10
+Offline reads require previously populated stores; these flows do not promise
+offline authentication, payments or server-confirmed writes. See the
+[Client Sync runbook](../runbooks/client-sync-v1.md) and
+[email queue guide](../setup/aws_ses.md) for operational boundaries.
+
+**Last updated**: 2026-10-07

@@ -82,6 +82,11 @@ fi
 
 echo "Project: ${PROJECT_NAME} | Branch tag: ${BRANCH} | Account: ${CLOUDFLARE_ACCOUNT_ID}"
 
+# The regular build performs this check; prebuilt uploads need the same gate.
+if [ "$SKIP_BUILD" -eq 1 ]; then
+  node automation/verify_image_service.mjs
+fi
+
 # Export the complete public tenant config for the Pages worker and make the
 # project/domain setup identical to the GitHub Actions path.
 set -a

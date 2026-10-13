@@ -1,4 +1,9 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/router_service.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
+import 'package:fstapp/components/forms/views/reservation_page.dart';
+import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'ticket_canvas_color_dialog.dart';
 import '../../_shared/common_strings.dart';
@@ -37,6 +42,7 @@ class TicketLayoutEditor extends StatefulWidget {
   final TicketLayoutResources resources;
   final TicketLayoutService service;
   final bool showTemplatePicker;
+  final bool productEditing;
   final Future<void> Function(TicketLayoutResult)? onSave;
   const TicketLayoutEditor(
       {super.key,
@@ -46,6 +52,7 @@ class TicketLayoutEditor extends StatefulWidget {
       required this.resources,
       required this.service,
       this.showTemplatePicker = false,
+      this.productEditing = true,
       this.onSave,
       this.layout,
       this.background});
@@ -54,9 +61,19 @@ class TicketLayoutEditor extends StatefulWidget {
 }
 
 class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
-  late final controller = TicketLayoutController(widget.resources.template,
+  late final TicketLayoutController controller = TicketLayoutController(
+      widget.resources.template,
       artworkKey: widget.resources.initialArtworkKey,
-      geometryData: () => resources.scenarios[scenario]!,
+      canStoreDocument: (doc) =>
+          ticketLayoutByteSize({
+            'schemaVersion': 3,
+            'templates': {
+              ...?(widget.layout?['templates'] as Map?),
+              widget.type: doc.toJson()
+            }
+          }) <=
+          32768,
+      geometryData: () => resources.previewData(controller.document, scenario),
       prepareDocument: (doc) => ensureTicketCodeFits(
           doc,
           resources.metricsFor(doc,
@@ -155,8 +172,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     return KeyEventResult.handled;
   }
 
-  Map<String, dynamic> get draftLayout => upgradeTicketLayout({
-        'schemaVersion': 1,
+  Map<String, dynamic> get draftLayout => ticketLayoutDocument({
+        'schemaVersion': 3,
         'templates': {
           ...?(widget.layout?['templates'] as Map?),
           widget.type: controller.document.toJson()
@@ -184,6 +201,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Future<void> apply() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    controller.endGesture();
     if (fontBusy || saving) return;
     final repaired = ensureTicketCodeFits(
         controller.document,
@@ -193,13 +212,24 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 .firstWhere((e) => e.binding == 'ticketSymbol')));
     if (!identical(repaired, controller.document)) controller.replace(repaired);
     final errors = controller.document.validate(widget.type);
+    if (widget.productEditing)
+      errors.addAll(controller.document.elements
+          .where((e) =>
+              e.binding == 'productType' &&
+              !resources.catalog.any((t) => t.id == e.productTypeId))
+          .map((e) => e.id));
     final symbol = controller.document.elements
         .firstWhere((e) => e.binding == 'ticketSymbol');
     try {
       validateTicketLayout(draftLayout);
       fitTicketText('XXXX9W9W9W', symbol,
           resources.metricsFor(controller.document, symbol));
-    } on FormatException {
+    } on FormatException catch (error) {
+      if (error.message == 'Layout too large') {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(TicketLayoutStrings.layoutLimit)));
+        return;
+      }
       errors.add(symbol.id);
     }
     if (errors.isNotEmpty) {
@@ -208,7 +238,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           orElse: () => symbol.id));
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              '${TicketLayoutStrings.checkElements}: ${controller.document.elements.where((e) => errors.contains(e.id)).map((e) => TicketLayoutStrings.binding(e.binding)).join(', ')}')));
+              '${TicketLayoutStrings.checkElements}: ${controller.document.elements.where((e) => errors.contains(e.id)).map(elementName).join(', ')}')));
       return;
     }
     final result = TicketLayoutResult(controller.document, background);
@@ -227,6 +257,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Future<void> preview() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    controller.endGesture();
     if (pdfBusy || imageBusy || fontBusy) return;
     final captured = signature;
     final layout = draftLayout;
@@ -251,7 +283,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       Padding(
                           padding: const EdgeInsets.all(8),
                           child: Text(
-                              '${TicketLayoutStrings.overflow}: ${result.warnings.map(TicketLayoutStrings.binding).join(', ')}')),
+                              '${TicketLayoutStrings.overflow}: ${result.warnings.map((id) => controller.document.elements.where((e) => e.id == id).firstOrNull).whereType<TicketElement>().map(elementName).join(', ')}')),
                     Expanded(child: TicketPdfDocument(bytes: result.bytes)),
                   ]))));
       if (mounted) setState(() => pdfSignature = captured);
@@ -375,8 +407,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       controller: controller,
       backgroundImage: canvas.currentState?.backgroundSize,
       onPaperChanged: () => WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) canvas.currentState?.fit();
-      }),
+            if (mounted) canvas.currentState?.fit();
+          }),
       onEditElement: (id) {
         setState(() => editCanvas = false);
         controller.select(id);
@@ -398,7 +430,23 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       selected = await showDialog<String>(
           context: editorContext,
           builder: (context) => AlertDialog(
-                  title: Text(TicketLayoutStrings.styles),
+                  title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(TicketLayoutStrings.styles),
+                        if (controller.document.elements
+                            .any((e) => e.binding == 'productType'))
+                          Text(
+                              TicketLayoutStrings.replacementProducts
+                                  .replaceAll(
+                                      '{count}',
+                                      controller.document.elements
+                                          .where(
+                                              (e) => e.binding == 'productType')
+                                          .length
+                                          .toString()),
+                              style: Theme.of(context).textTheme.bodyMedium)
+                      ]),
                   content: SizedBox(
                       width: 960,
                       height: math.min(
@@ -424,18 +472,17 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                                     const EdgeInsets.all(12),
                                                 child: FittedBox(
                                                     child: CustomPaint(
-                                                        size:
-                                                            entry.value.document
-                                                                .area.size,
-                                                        painter:
-                                                            TicketLayoutPainter(
-                                                                entry.value,
-                                                                resources,
-                                                                resources
-                                                                        .scenarios[
-                                                                    scenario]!,
-                                                                cropToTicket:
-                                                                    true))))),
+                                                        size: entry.value
+                                                            .document.area.size,
+                                                        painter: TicketLayoutPainter(
+                                                            entry.value,
+                                                            resources,
+                                                            resources.previewData(
+                                                                entry.value
+                                                                    .document,
+                                                                scenario),
+                                                            cropToTicket:
+                                                                true))))),
                                         Padding(
                                             padding: const EdgeInsets.all(12),
                                             child: Text(
@@ -468,36 +515,262 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   Widget elements({VoidCallback? onSelected}) => ListenableBuilder(
       listenable: controller,
-      builder: (c, _) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: controller.document.elements
-              .map((e) => ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  minLeadingWidth: 28,
-                  horizontalTitleGap: 8,
-                  selected: controller.selectedIds.contains(e.id),
-                  title: Text(TicketLayoutStrings.binding(e.binding)),
-                  leading: Semantics(
-                      toggled: e.visible,
-                      child: IconButton(
-                          tooltip: TicketLayoutStrings.visible,
-                          icon: Icon(e.visible
-                              ? Icons.visibility
-                              : Icons.visibility_off),
-                          onPressed: ['qr', 'ticketSymbol'].contains(e.binding)
-                              ? null
-                              : () => controller
-                                  .change(e.copyWith(visible: !e.visible)))),
-                  trailing: e.locked ? const Icon(Icons.lock, size: 16) : null,
-                  onTap: () {
-                    if (editCanvas || editBackground) {
-                      setState(() { editCanvas = false; editBackground = false; });
+      builder: (c, _) => Column(mainAxisSize: MainAxisSize.min, children: [
+            Padding(
+                padding: const EdgeInsets.all(8),
+                child: FilledButton.tonalIcon(
+                    onPressed: widget.productEditing
+                        ? () => pickProduct(onSelected: onSelected)
+                        : null,
+                    icon: const Icon(Icons.add),
+                    label: Text(TicketLayoutStrings.addProduct))),
+            if (!widget.productEditing)
+              Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(TicketLayoutStrings.draftProducts)),
+            ...controller.document.elements
+                .map((e) => ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    minLeadingWidth: 28,
+                    horizontalTitleGap: 8,
+                    selected: controller.selectedIds.contains(e.id),
+                    title: Text(elementName(e)),
+                    subtitle: e.binding == 'productType'
+                        ? Text(resources.previewData(
+                                controller.document, scenario)[e.id] ??
+                            TicketLayoutStrings.noExample)
+                        : null,
+                    leading: Semantics(
+                        toggled: e.visible,
+                        child: IconButton(
+                            tooltip: TicketLayoutStrings.visible,
+                            icon: Icon(e.visible
+                                ? Icons.visibility
+                                : Icons.visibility_off),
+                            onPressed: ['qr', 'ticketSymbol']
+                                    .contains(e.binding)
+                                ? null
+                                : () => controller
+                                    .change(e.copyWith(visible: !e.visible)))),
+                    trailing:
+                        e.locked ? const Icon(Icons.lock, size: 16) : null,
+                    onTap: () {
+                      if (editCanvas || editBackground) {
+                        setState(() {
+                          editCanvas = false;
+                          editBackground = false;
+                        });
+                      }
+                      controller.select(e.id,
+                          additive: additiveSelection ||
+                              HardwareKeyboard.instance.isShiftPressed ||
+                              HardwareKeyboard.instance.isControlPressed ||
+                              HardwareKeyboard.instance.isMetaPressed);
+                      onSelected?.call();
+                    }))
+                .toList()
+          ]));
+  String elementName(TicketElement e) => e.binding == 'productType'
+      ? resources.catalog
+              .where((t) => t.id == e.productTypeId)
+              .firstOrNull
+              ?.title ??
+          TicketLayoutStrings.missingProduct
+      : TicketLayoutStrings.binding(e.binding);
+  Widget? productProperties() {
+    final e = controller.selection;
+    if (e?.binding != 'productType') return null;
+    final type =
+        resources.catalog.where((t) => t.id == e!.productTypeId).firstOrNull;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(TicketLayoutStrings.productGroup),
+          subtitle: Text(type?.title ?? TicketLayoutStrings.missingProduct),
+          trailing: const Icon(Icons.edit),
+          onTap: widget.productEditing && !e!.locked
+              ? () => pickProduct(element: e)
+              : null),
+      if (e!.locked) Text(TicketLayoutStrings.locked),
+      if (!widget.productEditing) Text(TicketLayoutStrings.draftProducts),
+      TicketProductLabelInput(
+          key: ValueKey('label-${e.id}'), controller: controller, element: e),
+      Text(
+          '${TicketLayoutStrings.example}: ${type?.example?['value'] ?? TicketLayoutStrings.noExample}'),
+      if (type != null && !type.eligible)
+        Text(TicketLayoutStrings.hiddenProduct),
+      TextButton.icon(
+          onPressed: e.locked ? null : () => controller.removeProductField(e),
+          icon: const Icon(Icons.delete_outline),
+          label: Text(TicketLayoutStrings.removeProduct)),
+    ]);
+  }
+
+  Future<void> pickProduct(
+      {TicketElement? element, VoidCallback? onSelected}) async {
+    controller.endGesture();
+    var filter = '';
+    TicketProductType? selected;
+    bool catalogLoading = false;
+    String? error =
+        resources.catalogError ? TicketLayoutStrings.catalogError : null;
+    final chosen = await showDialog<TicketProductType>(
+        context: editorContext,
+        builder: (dialogContext) => StatefulBuilder(builder: (context, update) {
+              final types = resources.catalog
+                  .where((t) =>
+                      t.eligible &&
+                      t.title.toLowerCase().contains(filter.toLowerCase()))
+                  .toList();
+              Widget dismissible(Widget child) => Focus(
+                  autofocus: true,
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.escape) {
+                      Navigator.pop(dialogContext);
+                      return KeyEventResult.handled;
                     }
-                    controller.select(e.id, additive: additiveSelection);
-                    onSelected?.call();
-                  }))
-              .toList()));
+                    return KeyEventResult.ignored;
+                  },
+                  child: child);
+              final content = Column(children: [
+                TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                        labelText: TicketLayoutStrings.searchProducts),
+                    onChanged: (value) => update(() => filter = value)),
+                if (error != null) Text(error!),
+                if (types.isEmpty && error == null && !catalogLoading)
+                  Text(TicketLayoutStrings.emptyProducts),
+                if (types.isEmpty && error == null && !catalogLoading)
+                  TextButton.icon(
+                      icon: const Icon(Icons.open_in_new),
+                      label: Text(TicketLayoutStrings.manageProducts),
+                      onPressed: widget.routeRouter != null &&
+                              RightsService.currentOccasionId() ==
+                                  widget.occasionId
+                          ? () async {
+                              Navigator.pop(dialogContext);
+                              await pushRootPath(
+                                  widget.routeRouter!,
+                                  RouterService.getCurrentLink() +
+                                      '${ReservationsPage.ROUTE}/${NavigationPaths.forms}');
+                            }
+                          : null),
+                if (catalogLoading) const LinearProgressIndicator(),
+                TextButton(
+                    onPressed: catalogLoading
+                        ? null
+                        : () async {
+                            update(() => catalogLoading = true);
+                            try {
+                              final next = await widget.service
+                                  .catalog(widget.occasionId);
+                              if (mounted && context.mounted)
+                                update(() {
+                                  resources.catalog = next;
+                                  resources.catalogError = false;
+                                  error = null;
+                                });
+                            } catch (_) {
+                              if (mounted && context.mounted)
+                                update(() =>
+                                    error = TicketLayoutStrings.catalogError);
+                            } finally {
+                              if (context.mounted)
+                                update(() => catalogLoading = false);
+                            }
+                          },
+                    child: Text(TicketLayoutStrings.retryCatalog)),
+                Expanded(
+                    child: ListView(
+                        children: types.map((t) {
+                  final existing = controller.document.elements
+                      .where(
+                          (e) => e.productTypeId == t.id && e.id != element?.id)
+                      .firstOrNull;
+                  return RadioListTile<int>(
+                      value: t.id,
+                      groupValue: selected?.id,
+                      isThreeLine: true,
+                      title: Text(t.title),
+                      subtitle: Text(
+                          '${t.example?['value'] ?? TicketLayoutStrings.noExample}\n${existing != null ? TicketLayoutStrings.alreadyAdded : t.offered ? TicketLayoutStrings.offeredProduct : TicketLayoutStrings.hiddenProduct} ${t.forms.map((f) => f['title']).whereType<String>().toSet().join(', ')}'),
+                      onChanged: (_) => update(() => selected = t));
+                }).toList())),
+              ]);
+              final actions = [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(TicketLayoutStrings.cancel)),
+                FilledButton(
+                    onPressed: selected == null || catalogLoading
+                        ? null
+                        : () {
+                            final t = selected!;
+                            final existing = controller.document.elements
+                                .where((e) =>
+                                    e.productTypeId == t.id &&
+                                    e.id != element?.id)
+                                .firstOrNull;
+                            if (existing != null) {
+                              controller.select(existing.id);
+                              Navigator.pop(dialogContext, t);
+                              return;
+                            }
+                            if (element == null) {
+                              if (!controller.addProductField(t.id, t.title)) {
+                                update(() => error =
+                                    controller.productAddError == 'elements'
+                                        ? TicketLayoutStrings.elementLimit
+                                        : controller.productAddError == 'size'
+                                            ? TicketLayoutStrings.layoutLimit
+                                            : TicketLayoutStrings.noSpace);
+                                return;
+                              }
+                            } else
+                              controller.changeProductType(
+                                  element,
+                                  t.id,
+                                  t.title,
+                                  resources.catalog
+                                          .where((v) =>
+                                              v.id == element.productTypeId)
+                                          .firstOrNull
+                                          ?.title ??
+                                      '');
+                            Navigator.pop(dialogContext, t);
+                          },
+                    child: Text(element == null
+                        ? TicketLayoutStrings.addProduct
+                        : CommonStrings.save))
+              ];
+              if (MediaQuery.sizeOf(context).width < 600)
+                return dismissible(Dialog.fullscreen(
+                    child: Scaffold(
+                        appBar: AppBar(
+                            title: Text(TicketLayoutStrings.productGroup)),
+                        body: Padding(
+                            padding: const EdgeInsets.all(16), child: content),
+                        bottomNavigationBar: SafeArea(
+                            child: Wrap(
+                                alignment: WrapAlignment.end,
+                                children: actions)))));
+              return dismissible(AlertDialog(
+                  title: Text(TicketLayoutStrings.productGroup),
+                  content: SizedBox(width: 480, height: 450, child: content),
+                  actions: actions));
+            }));
+    if (!mounted) return;
+    setState(() {});
+    if (chosen != null) {
+      if (onSelected != null)
+        onSelected();
+      else if (MediaQuery.sizeOf(context).width < 900) showMobilePanel(1);
+    }
+  }
+
   Future<void> selectFont(Map<String, dynamic>? asset,
       {String? elementId}) async {
     final generation = ++fontGeneration;
@@ -657,6 +930,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             builder: (context, _) => TicketLayoutProperties(
                 controller: controller,
                 fontControl: elementFontControl(),
+                productControl: productProperties(),
                 defaults: propertyDefaults,
                 backgroundImage:
                     resources.artworks.containsKey(controller.artworkKey)
@@ -664,7 +938,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         : resources.background,
                 metrics: resources.metricsFor(
                     controller.document, controller.selection),
-                data: resources.scenarios[scenario])),
+                data: resources.previewData(controller.document, scenario))),
         panelHeading(TicketLayoutStrings.canvasSection),
         ListenableBuilder(
             listenable: controller,
@@ -674,10 +948,13 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                 subtitle: Text(
                     '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket ? TicketLayoutStrings.paperTicket : controller.document.page == const Size(595.28, 841.89) ? TicketLayoutStrings.paperA4 : TicketLayoutStrings.paperOriginal}'),
                 trailing: const Icon(Icons.tune),
-                onTap: imageBusy ? null : () {
-                  if (MediaQuery.sizeOf(context).width < 900) Navigator.pop(context);
-                  editDimensions();
-                })),
+                onTap: imageBusy
+                    ? null
+                    : () {
+                        if (MediaQuery.sizeOf(context).width < 900)
+                          Navigator.pop(context);
+                        editDimensions();
+                      })),
         Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: SizedBox(
@@ -802,8 +1079,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       child: Text(TicketLayoutStrings.reset))
                 ])),
       ]));
-  Widget modeBanner({required String title, required String hint,
-      required IconData icon, required VoidCallback onDone, Widget? tools,
+  Widget modeBanner(
+      {required String title,
+      required String hint,
+      required IconData icon,
+      required VoidCallback onDone,
+      Widget? tools,
       bool canvasMode = false}) {
     final colors = Theme.of(editorContext).colorScheme;
     return Container(
@@ -815,28 +1096,46 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             color: colors.primaryContainer,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: colors.primary.withValues(alpha: .4))),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
             Icon(icon, color: colors.onPrimaryContainer, size: 24),
             const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: Theme.of(editorContext).textTheme.titleSmall?.copyWith(
-                  color: colors.onPrimaryContainer, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(hint, style: Theme.of(editorContext).textTheme.bodySmall?.copyWith(color: colors.onPrimaryContainer)),
-            ])),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(title,
+                      style: Theme.of(editorContext)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(
+                              color: colors.onPrimaryContainer,
+                              fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(hint,
+                      style: Theme.of(editorContext)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colors.onPrimaryContainer)),
+                ])),
             const SizedBox(width: 12),
             TweenAnimationBuilder<double>(
-                key: ValueKey('mode-done-${canvasMode ? canvasElementAttempts : 0}'),
+                key: ValueKey(
+                    'mode-done-${canvasMode ? canvasElementAttempts : 0}'),
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 650),
                 builder: (context, value, child) => Transform.scale(
                     scale: canvasMode && canvasElementAttempts > 0
-                        ? 1 + .08 * math.pow(math.sin(value * math.pi * 2), 2) : 1,
+                        ? 1 + .08 * math.pow(math.sin(value * math.pi * 2), 2)
+                        : 1,
                     child: child),
                 child: FilledButton(
-                    key: canvasMode ? const ValueKey('finish-canvas-resize') : null,
-                    onPressed: onDone, child: Text(TicketLayoutStrings.doneImage))),
+                    key: canvasMode
+                        ? const ValueKey('finish-canvas-resize')
+                        : null,
+                    onPressed: onDone,
+                    child: Text(TicketLayoutStrings.doneImage))),
           ]),
           if (tools != null) ...[const SizedBox(height: 12), tools],
         ]));
@@ -857,8 +1156,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         }
 
         return modeBanner(
-            title: cropBackground ? TicketLayoutStrings.modeCrop : TicketLayoutStrings.modeImage,
-            hint: cropBackground ? TicketLayoutStrings.cropImageHint : TicketLayoutStrings.dragImage,
+            title: cropBackground
+                ? TicketLayoutStrings.modeCrop
+                : TicketLayoutStrings.modeImage,
+            hint: cropBackground
+                ? TicketLayoutStrings.cropImageHint
+                : TicketLayoutStrings.dragImage,
             icon: cropBackground ? Icons.crop : Icons.photo_size_select_large,
             onDone: () => setState(() => editBackground = false),
             tools: Wrap(
@@ -999,7 +1302,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           Expanded(
               child: TextButton(
                   onPressed: imageBusy ? null : chooseStyle,
-                  child: Text(TicketLayoutStrings.styles))),
+                  child: Text(TicketLayoutStrings.styles,
+                      maxLines: 1, overflow: TextOverflow.ellipsis))),
         IconButton(
             tooltip: TicketLayoutStrings.pdf,
             onPressed: pdfBusy || imageBusy || fontBusy ? null : preview,
@@ -1464,7 +1768,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                             setState(() => canvasElementAttempts++),
                         controller: controller,
                         resources: resources,
-                        data: resources.scenarios[scenario]!,
+                        data: resources.previewData(
+                            controller.document, scenario),
                         transform: transform,
                         pan: pan,
                         editBackground: editBackground,

@@ -56,9 +56,15 @@ BEGIN
         (SELECT product_type FROM eshop.products WHERE id=v_product_id) AND p_input->>'product_type' IS NOT NULL
     ) THEN RAISE EXCEPTION 'CANCEL_PRICE_CHANGES_BEFORE_PRODUCT_MOVE'; END IF;
 
+    IF p_input->>'product_type' IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.product_types WHERE id=(p_input->>'product_type')::bigint AND occasion=v_occasion_id) THEN RAISE EXCEPTION 'Product type occasion mismatch'; END IF;
+    IF p_input->>'occasion' IS NOT NULL AND (p_input->>'occasion')::bigint<>v_occasion_id THEN RAISE EXCEPTION 'Product occasion cannot change'; END IF;
     -- Update only the fields that are provided in the input JSON.
     -- COALESCE is used to keep the existing value if a new one isn't provided.
     -- NULLIF is added to safely handle empty strings '' during casting.
+    PERFORM 1 FROM public.occasions WHERE id=v_occasion_id FOR UPDATE;
+    IF p_input ? 'product_type' AND NULLIF(p_input->>'product_type','')::bigint IS DISTINCT FROM (SELECT product_type FROM eshop.products WHERE id=v_product_id)
+      AND EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE product=v_product_id)
+    THEN RAISE EXCEPTION 'Purchased product type cannot change'; END IF;
     UPDATE eshop.products p
     SET
       occasion      = COALESCE(NULLIF(p_input->>'occasion', '')::BIGINT, p.occasion),

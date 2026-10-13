@@ -100,6 +100,7 @@ BEGIN
                 JSONB_BUILD_OBJECT('code', 4017, 'message', 'Occasion not found or missing required fields')::TEXT;
         END IF;
 
+        IF NOT public.is_service_role() AND NOT (public.get_is_editor_on_unit(occasion_unit) OR public.get_is_editor_on_occasion(occasion_id)) THEN RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
         -- Validate the link field, which must be unique within the same organization
         link_param := input_data->>'link';
         IF link_param IS NULL OR link_param = '' THEN
@@ -286,6 +287,15 @@ BEGIN
                 -- product_type logic now lives here, inside each form_field
                 ----------------------------------------------------------------------------
                 product_type_data := field_data->'product_type';  -- This is JSONB (could be null)
+                IF field_data->>'type' = 'ticket' AND field_data#>>'{data,max_tickets}' IS NOT NULL THEN
+                    IF (field_data#>>'{data,max_tickets}')::numeric < 1 OR
+                       (field_data#>>'{data,max_tickets}')::numeric > public.ticket_order_limit() OR
+                       trunc((field_data#>>'{data,max_tickets}')::numeric) <> (field_data#>>'{data,max_tickets}')::numeric THEN
+                        RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 400,
+                            'message', 'Invalid maximum tickets per order',
+                            'limit', public.ticket_order_limit())::TEXT;
+                    END IF;
+                END IF;
                 field_product_type := NULL;                        -- We'll store numeric ID here if we have a product_type
 
                 IF product_type_data IS NOT NULL AND product_type_data::TEXT <> 'null' THEN
@@ -351,6 +361,7 @@ BEGIN
                                 )::TEXT;
                         END IF;
 
+                        PERFORM 1 FROM public.occasions WHERE id=occasion_id FOR UPDATE;
                         UPDATE eshop.product_types
                            SET
                                updated_at = now_ts,

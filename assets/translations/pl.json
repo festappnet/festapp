@@ -287,6 +287,8 @@
     "users": "Użytkownicy"
   },
   "Unit": {
+    "copyTargetUnit": "Organizacja docelowa",
+    "copyTargetHint": "Wybierz organizację dla kopii. Szablony e-mail zostaną do niej przypisane. Konto bankowe zostanie zachowane tylko wtedy, gdy jest tam dostępne.",
     "addNewEvent": "Dodaj nowe wydarzenie"
   },
   "OccasionHome": {
@@ -556,5 +558,30 @@
     "unknownUpload": "Wynik przesyłania obrazu jest nieznany. Ponowna próba może utworzyć kolejny obraz.",
     "retryUpload": "Ponów przesyłanie",
     "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
-  }
+  },
+  "TicketLayout":{
+    "manageProducts":"Zarządzaj formularzami i produktami",
+    "layoutLimit":"Układ przekracza 32 KiB. Skróć opisy lub usuń pola.",
+  "addProduct": "Dodaj pole produktu",
+  "productGroup": "Grupa produktów",
+  "productLabel": "Opis na bilecie",
+  "labelHint": "Pusty opis oznacza wydruk samej nazwy produktu",
+  "example": "Przykład",
+  "noExample": "Brak dostępnego przykładu",
+  "removeProduct": "Usuń pole",
+  "searchProducts": "Szukaj grupy",
+  "alreadyAdded": "Już na bilecie - wybierz pole",
+  "emptyProducts": "Brak odpowiednich grup. Dodaj produkty w ustawieniach formularza.",
+  "retryCatalog": "Spróbuj ponownie",
+  "catalogError": "Nie udało się wczytać katalogu",
+  "missingProduct": "Brak grupy - popraw lub usuń pole",
+  "hiddenProduct": "Grupa nie jest już oferowana",
+  "offeredProduct": "Oferowane w formularzu",
+  "catalogProduct": "Produkty tego wydarzenia",
+  "noSpace": "Brak miejsca na kolejne pole. Powiększ bilet lub zwolnij miejsce.",
+  "elementLimit": "Bilet może zawierać najwyżej 32 elementy",
+  "draftProducts": "Pola produktów można edytować po utworzeniu wydarzenia.",
+  "replacementProducts": "Ten szablon zastępuje układ i usuwa pola produktów: {count}",
+  "productType": "Grupa produktów"
+}
 }

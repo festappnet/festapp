@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/storage_helper.dart';
 import 'package:http/http.dart' as http;
@@ -100,6 +101,15 @@ class BackendActivationService {
       RegExp(r'^[0-9a-f]{64}$').hasMatch(canonicalProfileSha256);
 
   Future<ResolvedBackend> resolve() async {
+    // An explicitly configured loopback debug backend must remain local even
+    // if a production activation document or cached marker is available.
+    const localOverride = String.fromEnvironment('FESTAPP_SUPABASE_URL');
+    final overrideHost = Uri.tryParse(localOverride)?.host;
+    if (kDebugMode &&
+        localOverride == legacySupabaseUrl &&
+        (overrideHost == '127.0.0.1' || overrideHost == 'localhost')) {
+      return _legacy;
+    }
     if (!isEnabled) return _legacy;
 
     final markerKey = '$_markerPrefix$tenantId';

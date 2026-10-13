@@ -36,7 +36,8 @@ import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 final fixture = jsonDecode(
     File('test/fixtures/ticket_layout/resolve.json').readAsStringSync()) as Map;
 TicketTemplate document() => TicketTemplate.fromJson(fixture['template']);
-TicketLayoutResources resources({ui.Image? background}) =>
+TicketLayoutResources resources(
+        {ui.Image? background, TicketTemplate? template}) =>
     TicketLayoutResources(
         background: background,
         fonts: legacyTicketFontIds.map((name, id) => MapEntry(
@@ -52,7 +53,10 @@ TicketLayoutResources resources({ui.Image? background}) =>
                 400,
                 TicketFontMetrics.fromJson(fixture['metrics']),
                 'TicketFont_${id.split(':').last}'))),
-        template: document(),
+        catalog: (fixture['catalog'] as List)
+            .map((j) => TicketProductType.fromJson(j))
+            .toList(),
+        template: template ?? document(),
         preset: document(),
         presets: (fixture['presets'] as Map).map((key, value) =>
             MapEntry(key as String, TicketTemplate.fromJson(value))),
@@ -72,7 +76,8 @@ class SettingsService extends TicketLayoutService {
       false;
   @override
   Future<TicketLayoutResources> resolve(int occasionId, String type,
-      Map<String, dynamic>? layout, String? background) async {
+      Map<String, dynamic>? layout, String? background,
+      {bool borrowResourcesOnly = false}) async {
     resolvedType = type;
     resolveCalls++;
     if (pendingResolve != null) return pendingResolve!.future;
@@ -681,8 +686,9 @@ void main() {
   testWidgets(
       'font A/B race preserves draft, commits one undo step, isolates editors, blocks pending PDF and Apply',
       (tester) async {
-    final catalog = jsonDecode(File('assets/fonts/ticket-font-catalog.json')
-        .readAsStringSync())['fonts'] as List;
+    final catalog = jsonDecode(
+        File('supabase/functions/_shared/ticket-assets/font-catalog.json')
+            .readAsStringSync())['fonts'] as List;
     final a = (catalog.firstWhere((f) => f['family'] == 'Roboto') as Map)
         .cast<String, dynamic>();
     final b = (catalog.firstWhere((f) => f['family'] == 'Russo One') as Map)
@@ -755,8 +761,9 @@ void main() {
   });
   testWidgets('Cancel invalidates pending font and leaves original untouched',
       (tester) async {
-    final asset = (jsonDecode(File('assets/fonts/ticket-font-catalog.json')
-            .readAsStringSync())['fonts'] as List)
+    final asset = (jsonDecode(
+            File('supabase/functions/_shared/ticket-assets/font-catalog.json')
+                .readAsStringSync())['fonts'] as List)
         .firstWhere((f) => f['family'] == 'Roboto') as Map;
     final service = FakeService();
     final loaded = Completer<TicketFontResource>();
@@ -790,8 +797,9 @@ void main() {
   test(
       'shared Dart registration reuses bytes for A/B/A across service instances',
       () async {
-    final catalog = jsonDecode(File('assets/fonts/ticket-font-catalog.json')
-        .readAsStringSync())['fonts'] as List;
+    final catalog = jsonDecode(
+        File('supabase/functions/_shared/ticket-assets/font-catalog.json')
+            .readAsStringSync())['fonts'] as List;
     final calls = <String>[];
     Future<Map<String, dynamic>> transport(Map<String, dynamic> request) async {
       expect(request['mode'], 'font');
@@ -1323,11 +1331,12 @@ void main() {
       if (e.binding == 'ticketSymbol')
         base = base
             .replace(e.copyWith(box: const Rect.fromLTWH(400, 75, 100, 15)));
-      final i = ['spotGroup', 'food', 'note', 'price'].indexOf(e.binding);
+      final i =
+          ['spotGroup', 'productType', 'note', 'price'].indexOf(e.binding);
       if (i >= 0)
         base = base.replace(e.copyWith(
             box: Rect.fromLTWH(40, 80 + i * 40, 140, 20),
-            visible: !['food', 'note'].contains(e.binding)));
+            visible: !['productType', 'note'].contains(e.binding)));
     }
     base = TicketTemplate(
         fitPageToTicket: base.fitPageToTicket,
@@ -1850,8 +1859,9 @@ void main() {
         expect(d.toJson(), entry.value);
       }
     }
-    final allowed = (jsonDecode(File('assets/fonts/ticket-font-catalog.json')
-            .readAsStringSync())['fonts'] as List)
+    final allowed = (jsonDecode(
+            File('supabase/functions/_shared/ticket-assets/font-catalog.json')
+                .readAsStringSync())['fonts'] as List)
         .map((f) => f['id'] as String)
         .toSet();
     for (final entry in (fixtures['invalid'] as Map).entries)
@@ -1963,6 +1973,48 @@ void main() {
       transform.dispose();
     });
   }
+  testWidgets(
+      'Shift selects a group and its shared handle scales every element',
+      (tester) async {
+    final c = TicketLayoutController(document());
+    final transform = TransformationController();
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: TicketLayoutCanvas(
+                controller: c,
+                resources: resources(),
+                data: resources().scenarios.values.first,
+                transform: transform,
+                snap: false))));
+    await tester.pumpAndSettle();
+    Offset screen(Offset point) =>
+        tester.getTopLeft(find.byType(InteractiveViewer)) +
+        MatrixUtils.transformPoint(
+            transform.value, c.document.area.topLeft + point);
+    final qr = c.document.elements.firstWhere((e) => e.binding == 'qr');
+    final text =
+        c.document.elements.firstWhere((e) => e.binding == 'ticketSymbol');
+    await tester.tapAt(screen(qr.box.center));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.tapAt(screen(text.box.center));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.pump();
+    expect(c.selectedIds, {qr.id, text.id});
+    final before = c.document.toJson();
+    final bounds = c.selectionBounds!;
+    await tester.dragFrom(screen(bounds.bottomRight), const Offset(-12, -12));
+    await tester.pump();
+    expect(c.document.elements.firstWhere((e) => e.id == qr.id).box.width,
+        lessThan(qr.box.width));
+    expect(c.document.elements.firstWhere((e) => e.id == text.id).fontSize,
+        lessThan(text.fontSize));
+    c.undo();
+    expect(c.document.toJson(), before);
+    await tester.pumpWidget(const SizedBox.shrink());
+    c.dispose();
+    transform.dispose();
+  });
+
   test('left text resize preserves font size and right edge', () {
     final c = TicketLayoutController(document())..select('occasionTitle');
     final before = c.selection!;
@@ -1981,7 +2033,7 @@ void main() {
       'code': 'ticket',
       'is_enabled': true,
       'layout': {
-        'schemaVersion': 1,
+        'schemaVersion': 3,
         'templates': {'named': document().toJson()}
       }
     });
@@ -2099,14 +2151,14 @@ void main() {
       'code': 'ticket',
       'is_enabled': true,
       'layout': {
-        'schemaVersion': 1,
+        'schemaVersion': 3,
         'templates': {'named': document().toJson()}
       }
     });
     f.layout!['templates']['named']['elements'][0]['style']['color'] = '17365D';
     final local = copyTicketJson(f.layout!);
     final saved = {
-      'schemaVersion': 1,
+      'schemaVersion': 3,
       'templates': {'named': document().toJson()}
     };
     f.loadSavedLayout(saved);
@@ -2321,14 +2373,14 @@ void main() {
     expect(t.toJson()['qrAppearance'], source['qrAppearance']);
     expect(t.toJson()['flow'], source['flow']);
     expect(TicketTemplate.fromJson(t.toJson()).validate('wide'), isEmpty);
-    expect(t.font, 'robotoSlab');
+    expect(t.fontId, legacyTicketFontIds['robotoSlab']);
     final data = <String, String?>{
       'food': 'Večeře',
       'price': 'Cena',
       'spotGroup': 'Stůl'
     };
     final visible = t.positionedElements(data);
-    final food = visible.firstWhere((e) => e.binding == 'food');
+    final food = visible.firstWhere((e) => e.binding == 'productType');
     final price = visible.firstWhere((e) => e.binding == 'price');
     expect(price.box.top - food.box.top,
         closeTo(t.appearance['flowStep'] as double, .001));
@@ -2344,7 +2396,7 @@ void main() {
     c.replace(c.document.withFont('roboto'));
     expect(c.document.fontId, legacyTicketFontIds['roboto']);
     c.undo();
-    expect(c.document.font, 'robotoSlab');
+    expect(c.document.fontId, legacyTicketFontIds['robotoSlab']);
     final resized = t.resizeArea(Size(t.area.width * .9, t.area.height * .9));
     expect(resized.appearance['flowStep'],
         closeTo((t.appearance['flowStep'] as num) * .9, .001));
@@ -2514,5 +2566,355 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     c.dispose();
+  });
+  test(
+      'product fields use IDs, safe placement, whole-element undo and custom labels',
+      () {
+    final original = document()
+        .resizeCanvasArea(const Size(200, 600))
+        .withElements(document()
+            .elements
+            .where((e) => e.binding != 'productType')
+            .toList());
+    final c = TicketLayoutController(original);
+    expect(c.addProductField(124, 'Odvoz:'), isTrue);
+    final first = c.selection!;
+    expect(first.label, 'Odvoz');
+    expect(
+        original.elements
+            .where((e) => e.visible)
+            .any((e) => e.box.overlaps(first.box)),
+        isFalse);
+    expect(c.addProductField(125, 'VIP menu'), isTrue);
+    final vip = c.selection!;
+    c.beginGesture();
+    c.change(vip.copyWith(label: 'V'));
+    c.change(vip.copyWith(label: 'Vlastní'));
+    c.endGesture();
+    c.undo();
+    expect(c.selection!.label, 'VIP menu');
+    c.redo();
+    expect(c.selection!.label, 'Vlastní');
+    c.changeProductType(c.selection!, 126, 'Nové menu', 'VIP menu');
+    expect(c.selection!.label, 'Vlastní');
+    c.removeProductField(c.selection!);
+    expect(c.selected, isNull);
+    c.undo();
+    expect(c.document.elements.any((e) => e.id == vip.id), isTrue);
+    c.select(first.id);
+    c.changeProductType(c.selection!, 127, 'Nová skupina', 'Odvoz');
+    expect(c.selection!.label, 'Nová skupina');
+    final before = c.document;
+    c.change(c.selection!.copyWith(locked: true));
+    final locked = c.selection!;
+    c.removeProductField(locked);
+    expect(c.document.elements.any((e) => e.id == locked.id), isTrue);
+    final filled = before.withElements([
+      ...before.elements,
+      TicketElement(
+          id: 'blocker', binding: 'logo', box: Offset.zero & before.area.size)
+    ]);
+    final blocked = TicketLayoutController(filled);
+    expect(blocked.addProductField(1000, 'No room'), isFalse);
+    expect(blocked.document, same(filled));
+    blocked.dispose();
+    c.dispose();
+  });
+  test(
+      'catalog projection repaints by element ID and preserves hidden/missing states',
+      () {
+    final r =
+        resources(template: document().resizeCanvasArea(const Size(200, 600)));
+    final base = document().resizeCanvasArea(const Size(200, 600)).withElements(
+        document().elements.where((e) => e.binding != 'productType').toList());
+    final c = TicketLayoutController(base);
+    c.addProductField(123, 'VIP menu');
+    final id = c.selection!.id;
+    expect(r.previewData(c.document, 'normal')[id], 'VIP menu: Řízek');
+    c.change(c.selection!.copyWith(label: ''));
+    expect(r.previewData(c.document, 'normal')[id], 'Řízek');
+    expect(r.previewData(c.document, 'missing')[id], isNull);
+    r.catalog = [const TicketProductType(123, 'Hidden', false, null)];
+    expect(r.previewData(c.document, 'normal')[id], isNull);
+    c.dispose();
+    r.dispose();
+  });
+  testWidgets(
+      'picker confirm/cancel, duplicate selection and local label edits make no requests',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r =
+        resources(template: document().resizeCanvasArea(const Size(200, 600)));
+    r.catalog = [
+      ...r.catalog,
+      const TicketProductType(124, 'Odvoz', true,
+          {'id': 23, 'value': 'Autobus', 'price': 50, 'currency_code': 'CZK'})
+    ];
+    final service = FakeService();
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1, type: 'wide', resources: r, service: service)));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    final original = state.controller.document;
+    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Odvoz').last);
+    await tester.pumpAndSettle();
+    expect(state.controller.document, same(original));
+    await tester
+        .tap(find.widgetWithText(TextButton, 'TicketLayout.cancel'.tr()).last);
+    await tester.pumpAndSettle();
+    expect(state.controller.document, same(original));
+    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Odvoz').last);
+    await tester.pumpAndSettle();
+    await tester.tap(
+        find.widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr()).last);
+    await tester.pumpAndSettle();
+    expect(state.controller.selection.productTypeId, 124);
+    final label = find.byType(TicketProductLabelInput);
+    await tester.ensureVisible(label);
+    await tester.enterText(
+        find.descendant(of: label, matching: find.byType(TextField)),
+        'Můj odvoz');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(state.controller.selection.label, 'Můj odvoz');
+    state.controller.undo();
+    await tester.pumpAndSettle();
+    expect(state.controller.selection.label, 'Odvoz');
+    expect(service.pdfCalls, 0);
+    await tester.pumpWidget(const SizedBox());
+  });
+  test(
+      'hidden form references remain eligible and unused catalog types stay out',
+      () {
+    expect(
+        const TicketProductType(1, 'Hidden', false, null, referenced: true)
+            .eligible,
+        isTrue);
+    expect(
+        const TicketProductType(2, 'Unused', true, {'value': 'visible'},
+                referenced: false)
+            .eligible,
+        isFalse);
+  });
+  testWidgets(
+      'source draft disables product selection while retaining local label editing',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r =
+        resources(template: document().resizeCanvasArea(const Size(200, 600)));
+    final c = TicketLayoutController(r.template)
+      ..addProductField(123, 'VIP menu');
+    final source = TicketLayoutResources(
+        template: c.document,
+        preset: r.preset,
+        scenarios: r.scenarios,
+        metrics: r.metrics,
+        fonts: r.fonts,
+        catalog: r.catalog,
+        qrSize: r.qrSize,
+        qrModules: r.qrModules);
+    final service = FakeService();
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'wide',
+            resources: source,
+            service: service,
+            productEditing: false)));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<FilledButton>(find
+                .widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr())
+                .first)
+            .onPressed,
+        isNull);
+    expect(find.text('TicketLayout.draftProducts'.tr()), findsWidgets);
+    expect(service.pdfCalls, 0);
+    await tester.pumpWidget(const SizedBox());
+    c.dispose();
+    r.dispose();
+  });
+  testWidgets(
+      'mobile picker supports 320 pixels, 200 percent text and Escape from filter',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r =
+        resources(template: document().resizeCanvasArea(const Size(200, 600)));
+    r.catalog = [
+      ...r.catalog,
+      const TicketProductType(
+          124,
+          'Velmi dlouhá skupina produktů pro mobilní panel',
+          true,
+          {'id': 23, 'value': 'Autobus', 'price': 50, 'currency_code': 'CZK'})
+    ];
+    await tester.pumpWidget(MaterialApp(
+        builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(2)),
+            child: child!),
+        home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'wide',
+            resources: r,
+            service: FakeService())));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    unawaited(state.showMobilePanel(0));
+    await tester.pumpAndSettle();
+    final add =
+        find.widgetWithText(FilledButton, 'TicketLayout.addProduct'.tr()).first;
+    await tester.ensureVisible(add);
+    await tester.tap(add);
+    await tester.pumpAndSettle();
+    final filter = find.byWidgetPredicate((w) =>
+        w is TextField &&
+        w.decoration?.labelText == 'TicketLayout.searchProducts'.tr());
+    await tester.enterText(filter, 'Velmi');
+    await tester.pumpAndSettle();
+    expect(find.text('Velmi dlouhá skupina produktů pro mobilní panel'),
+        findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(filter, findsNothing);
+    expect(
+        state.controller.document.elements.any((e) => e.productTypeId == 124),
+        isFalse);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+  test('shared product formatter fixtures match the local projection', () {
+    final cases = jsonDecode(
+        File('test/fixtures/ticket_layout/product-format.json')
+            .readAsStringSync()) as List;
+    final base = document().resizeCanvasArea(const Size(200, 600));
+    final c = TicketLayoutController(base)..addProductField(123, 'VIP menu');
+    final r = resources();
+    for (final item in cases) {
+      c.change(c.selection!.copyWith(label: item['label'] as String));
+      r.catalog = [
+        TicketProductType(
+            123,
+            'VIP menu',
+            true,
+            item['value'] == null
+                ? null
+                : {
+                    'id': 22,
+                    'value': item['value'],
+                    'price': 0,
+                    'currency_code': 'CZK'
+                  })
+      ];
+      expect(r.previewData(c.document, 'normal')[c.selected], item['expected']);
+    }
+    c.dispose();
+    r.dispose();
+  });
+  testWidgets(
+      'catalog retry remains distinct from empty and can finish after picker cancel',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r = resources()
+      ..catalogError = true
+      ..catalog = [];
+    final pending = Completer<Map<String, dynamic>>();
+    final calls = <Map<String, dynamic>>[];
+    final service = TicketLayoutService(transport: (body) {
+      calls.add(body);
+      return pending.future;
+    });
+    await tester.pumpWidget(MaterialApp(
+        home: TicketLayoutEditor(
+            occasionId: 1, type: 'wide', resources: r, service: service)));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    final original = state.controller.document;
+    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.pumpAndSettle();
+    expect(find.text('TicketLayout.catalogError'.tr()), findsOneWidget);
+    expect(find.text('TicketLayout.emptyProducts'.tr()), findsNothing);
+    await tester.tap(find.text('TicketLayout.retryCatalog'.tr()));
+    await tester.pump();
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    await tester
+        .tap(find.widgetWithText(TextButton, 'TicketLayout.cancel'.tr()).last);
+    await tester.pumpAndSettle();
+    pending.complete({'catalog': []});
+    await tester.pump();
+    expect(calls.map((c) => c['mode']), ['catalog']);
+    expect(state.controller.document, same(original));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+  test(
+      'layout byte budget includes storage separator spaces without altering labels',
+      () {
+    final layout = <String, dynamic>{
+      'schemaVersion': 3,
+      'templates': {
+        'wide': {'label': 'A, B: C'}
+      }
+    };
+    expect(
+        ticketLayoutByteSize(layout),
+        utf8
+            .encode(
+                '{"schemaVersion": 3, "templates": {"wide": {"label": "A, B: C"}}}')
+            .length);
+  });
+  test('shared currency symbols keep canvas and PDF price formatting identical',
+      () {
+    final cases = jsonDecode(
+        File('test/fixtures/ticket_layout/product-price-format.json')
+            .readAsStringSync()) as List;
+    final raw = jsonDecode(
+            File('test/fixtures/ticket_layout/layouts.json').readAsStringSync())
+        as Map;
+    final template =
+        TicketTemplate.fromJson(raw['valid'][0]['templates']['wide']);
+    final r = resources();
+    for (final item in cases) {
+      r.catalog = [
+        TicketProductType(123, 'VIP menu', true, {
+          'id': 22,
+          'value': 'Řízek',
+          'price': item['amount'],
+          'currency_code': item['currency'],
+          'currency_symbol': item['symbol']
+        })
+      ];
+      expect(r.previewData(template, 'normal')['price'], item['expected']);
+    }
+    r.catalog = [
+      const TicketProductType(123, 'VIP menu', true, {
+        'id': 22,
+        'value': 'Řízek',
+        'price': null,
+        'currency_code': 'CZK',
+        'currency_symbol': 'Kč'
+      })
+    ];
+    expect(r.previewData(template, 'normal')['price'], isNull);
+    expect(r.previewData(template, 'normal')['food'], 'Večeře: Řízek');
+    r.dispose();
   });
 }

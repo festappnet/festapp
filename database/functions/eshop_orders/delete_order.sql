@@ -23,16 +23,21 @@ BEGIN
     RAISE EXCEPTION 'Order not found.';
   END IF;
 
-  -- Check if the current user is a manager on the order's occasion.
+  -- Deletion belongs to unit managers and editors, including cancelled orders.
   SELECT unit
   INTO unit_id
   FROM public.occasions
   WHERE id = order_oc;
 
-  PERFORM public.check_is_manager_on_unit(unit_id);
-  -- Use the established occasion/group/activity prefix before order and email locks.
+  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
+      OR public.get_is_editor_on_unit(unit_id)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required';
+  END IF;
   PERFORM public.lock_activity_aggregate_internal_v1(order_oc);
-  PERFORM public.check_is_manager_on_unit(unit_id);
+  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
+      OR public.get_is_editor_on_unit(unit_id)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required';
+  END IF;
 
   -- After authorization, match the worker lock order (capacity, order,
   -- attempts, message). Recheck the order after locking against concurrent edits.
@@ -44,8 +49,6 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Order not found or occasion changed.';
   END IF;
-
-  PERFORM public.check_order_is_mutable(order_id);
 
   -- Remove every queued/reminder/provider record for this order. log_emails
   -- and address suppressions are independent audit/safety records and remain.
@@ -99,10 +102,6 @@ BEGIN
   -- the retired public RPC. Authorization remains the order's manager boundary.
   IF EXISTS(SELECT 1 FROM public.occasion_users WHERE ticket=ANY(ticket_ids) AND occasion<>order_oc) THEN
     RAISE invalid_parameter_value USING MESSAGE='ticket membership belongs to another occasion';
-  END IF;
-  IF EXISTS(SELECT 1 FROM public.occasion_users WHERE ticket=ANY(ticket_ids) AND occasion=order_oc)
-    AND NOT (public.get_is_manager_on_occasion(order_oc) OR public.get_is_admin_on_occasion(order_oc)) THEN
-    RAISE insufficient_privilege USING MESSAGE='occasion manager required';
   END IF;
   FOR ou_record IN SELECT "user",occasion FROM public.occasion_users
     WHERE ticket=ANY(ticket_ids) AND occasion=order_oc ORDER BY "user"
@@ -162,7 +161,7 @@ BEGIN
   SELECT o.occasion,oc.unit INTO v_occasion,v_unit FROM eshop.orders o
     JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT public.get_is_manager_on_unit(v_unit) THEN
+    OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'order',p_order)::text,'UTF8'),'sha256'),'hex');
@@ -170,7 +169,8 @@ BEGIN
     'inventory.order.delete',v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   PERFORM public.lock_activity_aggregate_internal_v1(v_occasion);
-  PERFORM public.check_is_manager_on_unit(v_unit);
+  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required'; END IF;
   SELECT COALESCE(array_agg(DISTINCT ou."user"),'{}'::uuid[]) INTO v_removed_users
   FROM eshop.order_product_ticket opt JOIN public.occasion_users ou
     ON ou.ticket=opt.ticket AND ou.occasion=v_occasion

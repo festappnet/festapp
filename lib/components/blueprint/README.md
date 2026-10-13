@@ -49,4 +49,10 @@ sequenceDiagram
 ## SQL RPCs
 
 - `select_spot` -- locks/unlocks seat with secret and expiration
-- `confirm_blueprint_order_change` -- atomic seat reassignment with storno of old tickets
+- `create_ticket_order_client_sync_v1` -- receipted order creation via `send-ticket-order`
+- `replace_blueprint_order_client_sync_v1` -- atomic seat/order replacement via the same Edge boundary
+
+Replacement still calls `confirm_blueprint_order_change_internal_v1` inside its
+transaction. The original SQL source is retained for that implementation and
+historical schema reconstruction; lack of direct frontend calls does not make
+the domain logic obsolete.

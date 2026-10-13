@@ -13,16 +13,18 @@ RETURNS void LANGUAGE plpgsql STABLE
 SET search_path = public, extensions AS $$
 DECLARE t jsonb; e jsonb; b jsonb; s jsonb; a jsonb; q jsonb; kind text; k text; ids text[]; bindings text[]; luminance double precision; background_luminance double precision;
 BEGIN
-  IF p_layout IS NULL OR jsonb_typeof(p_layout) <> 'object' OR p_layout->'schemaVersion' NOT IN ('1'::jsonb,'2'::jsonb) OR NOT (p_layout ? 'schemaVersion')
+  IF p_layout IS NULL OR jsonb_typeof(p_layout) <> 'object' OR p_layout->'schemaVersion' IS DISTINCT FROM '3'::jsonb OR NOT (p_layout ? 'schemaVersion')
     OR jsonb_typeof(p_layout->'templates') IS DISTINCT FROM 'object' OR p_layout->'templates'='{}'::jsonb OR octet_length(p_layout::text)>32768
   THEN RAISE EXCEPTION 'Invalid ticket layout'; END IF;
+  IF EXISTS(SELECT 1 FROM jsonb_object_keys(p_layout) AS keys(key) WHERE keys.key NOT IN ('schemaVersion','templates')) THEN RAISE EXCEPTION 'Invalid layout metadata'; END IF;
   IF (SELECT count(DISTINCT id) FROM (
     SELECT value->>'fontId' id FROM jsonb_each(p_layout->'templates')
     UNION ALL SELECT elem.value->'style'->>'fontId' FROM jsonb_each(p_layout->'templates') tmpl CROSS JOIN LATERAL jsonb_array_elements(tmpl.value->'elements') elem
   ) fonts WHERE id IS NOT NULL)>12 THEN RAISE EXCEPTION 'Too many ticket fonts'; END IF;
   FOR kind,t IN SELECT * FROM jsonb_each(p_layout->'templates') LOOP
+    IF EXISTS(SELECT 1 FROM jsonb_object_keys(t) AS keys(key) WHERE keys.key NOT IN ('canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','border','pageFit','page','ticketArea','elements')) THEN RAISE EXCEPTION 'Invalid template metadata'; END IF;
     IF kind NOT IN ('wide','named') OR jsonb_typeof(t->'elements') IS DISTINCT FROM 'array'
-      OR jsonb_array_length(t->'elements') NOT BETWEEN 2 AND 11
+      OR jsonb_array_length(t->'elements') NOT BETWEEN 2 AND 32
       OR (t ? 'pageFit' AND t->'pageFit' IS DISTINCT FROM '"ticket"'::jsonb)
       OR (NOT (t ? 'pageFit')
           AND t->'page' IS DISTINCT FROM '{"width":595.28,"height":841.89}'::jsonb
@@ -56,7 +58,7 @@ BEGIN
     IF t ? 'flowStep' AND (jsonb_typeof(t->'flowStep') IS DISTINCT FROM 'number' OR (t->>'flowStep')::numeric NOT BETWEEN 1 AND 842) THEN RAISE EXCEPTION 'Invalid ticket flow spacing'; END IF;
     IF t ? 'flow' THEN
       IF jsonb_typeof(t->'flow') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'Invalid ticket flow'; END IF;
-      IF EXISTS(SELECT 1 FROM jsonb_array_elements_text(t->'flow') v WHERE v NOT IN ('spotGroup','food','note','price'))
+      IF EXISTS(SELECT 1 FROM jsonb_array_elements_text(t->'flow') v WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t->'elements') e WHERE e->>'id'=v AND e->>'binding' NOT IN ('qr','logo')))
         OR (SELECT count(*)<>count(DISTINCT v) FROM jsonb_array_elements_text(t->'flow') v)
       THEN RAISE EXCEPTION 'Invalid ticket flow'; END IF;
     END IF;
@@ -68,9 +70,9 @@ BEGIN
       THEN RAISE EXCEPTION 'Invalid QR appearance'; END IF;
       IF (t->'qrAppearance'->>'opacity')::numeric NOT BETWEEN 0 AND 1 OR (t->'qrAppearance'->>'margin')::numeric NOT BETWEEN 0 AND 8 THEN RAISE EXCEPTION 'Invalid QR appearance'; END IF;
     END IF;
-    IF p_layout->>'schemaVersion'='2' AND t ? 'font' THEN RAISE EXCEPTION 'Legacy font field in schema 2'; END IF;
+    IF t ? 'font' THEN RAISE EXCEPTION 'Legacy font field in schema 2'; END IF;
     IF t ? 'fontId' THEN
-      IF p_layout->>'schemaVersion'='1' OR jsonb_typeof(t->'fontId')<>'string'
+      IF jsonb_typeof(t->'fontId')<>'string'
         OR NOT EXISTS(SELECT 1 FROM public.ticket_font_assets WHERE id=t->>'fontId')
       THEN RAISE EXCEPTION 'Invalid ticket font'; END IF;
     END IF;
@@ -111,16 +113,24 @@ BEGIN
     FOR e IN SELECT * FROM jsonb_array_elements(t->'elements') LOOP
       b:=e->'box'; s:=e->'style';
       IF s ? 'fontId' THEN
-        IF p_layout->>'schemaVersion'='1' OR e->>'binding' IN ('qr','logo') OR jsonb_typeof(s->'fontId')<>'string'
+        IF e->>'binding' IN ('qr','logo') OR jsonb_typeof(s->'fontId')<>'string'
           OR NOT EXISTS(SELECT 1 FROM public.ticket_font_assets WHERE id=s->>'fontId')
         THEN RAISE EXCEPTION 'Invalid ticket font'; END IF;
       END IF;
-      IF e->>'binding' IS NULL OR e->>'binding' NOT IN ('qr','ticketSymbol','spotGroup','food','note','price','occasionTitle','occasionDatePlace','orderName','logo','footer')
-        OR e->>'binding'=ANY(bindings) OR e->>'id'=ANY(ids) OR COALESCE(e->>'id','') !~ '^[a-zA-Z0-9_-]{1,40}$'
+      IF e->>'binding' IS NULL OR e->>'binding' NOT IN ('qr','ticketSymbol','spotGroup','productType','note','price','occasionTitle','occasionDatePlace','orderName','logo','footer')
+        OR (e->>'binding'<>'productType' AND e->>'binding'=ANY(bindings)) OR e->>'id'=ANY(ids) OR COALESCE(e->>'id','') !~ '^[a-zA-Z0-9_-]{1,40}$'
         OR jsonb_typeof(e->'visible') IS DISTINCT FROM 'boolean' OR jsonb_typeof(e->'locked') IS DISTINCT FROM 'boolean'
         OR (b->>'x')::numeric+(b->>'width')::numeric>(a->>'width')::numeric+.001
         OR (b->>'y')::numeric+(b->>'height')::numeric>(a->>'height')::numeric+.001
       THEN RAISE EXCEPTION 'Invalid layout element'; END IF;
+      IF EXISTS(SELECT 1 FROM jsonb_object_keys(e) AS keys(key) WHERE keys.key NOT IN ('id','binding','productTypeId','label','box','visible','locked','style')) THEN RAISE EXCEPTION 'Invalid element metadata'; END IF;
+      IF e->>'binding'='productType' THEN
+        IF jsonb_typeof(e->'productTypeId') IS DISTINCT FROM 'number' OR jsonb_typeof(e->'label') IS DISTINCT FROM 'string' THEN RAISE EXCEPTION 'Invalid product field'; END IF;
+        IF (e->>'productTypeId')::numeric NOT BETWEEN 1 AND 9007199254740991 OR trunc((e->>'productTypeId')::numeric)<>(e->>'productTypeId')::numeric
+          OR e->>'label'<>btrim(e->>'label',U&'\0009\000A\000B\000C\000D\0020\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF') OR length(e->>'label')>120
+          OR (SELECT count(*) FROM jsonb_array_elements(t->'elements') x WHERE x->'productTypeId'=e->'productTypeId')<>1
+        THEN RAISE EXCEPTION 'Invalid product field'; END IF;
+      ELSIF e ? 'productTypeId' OR e ? 'label' THEN RAISE EXCEPTION 'Invalid product metadata'; END IF;
       ids:=array_append(ids,e->>'id'); bindings:=array_append(bindings,e->>'binding');
       IF jsonb_typeof(s->'fontSize') IS DISTINCT FROM 'number' OR jsonb_typeof(s->'minFontSize') IS DISTINCT FROM 'number'
         OR jsonb_typeof(s->'maxLines') IS DISTINCT FROM 'number' OR COALESCE(s->>'color','') !~ '^[a-fA-F0-9]{6}$'
@@ -173,18 +183,10 @@ BEGIN
       RAISE EXCEPTION 'ticket_layout_conflict' USING ERRCODE='40001';
     END IF;
     -- A client must not downgrade a schema it does not understand.
-    IF old_layout IS NOT NULL AND old_layout->'schemaVersion' NOT IN ('1'::jsonb,'2'::jsonb) THEN RAISE EXCEPTION 'Unsupported ticket layout'; END IF;
+    IF old_layout IS NOT NULL AND old_layout->'schemaVersion' IS DISTINCT FROM '3'::jsonb THEN RAISE EXCEPTION 'Unsupported ticket layout'; END IF;
     next_layout:=p_change->'next';
-    IF old_layout->>'schemaVersion'='2' AND next_layout->>'schemaVersion'='1' THEN RAISE EXCEPTION 'Ticket layout downgrade'; END IF;
-    IF next_layout IS DISTINCT FROM 'null'::jsonb THEN PERFORM public.validate_ticket_layout(next_layout); ELSE next_layout:=NULL; END IF;
-    -- Old clients discard appearance fields they do not understand. Fail closed
-    -- instead of turning a migrated original back into an approximate preset.
-    -- A validated schema-2 fontId is the current editor's explicit replacement.
-    IF EXISTS(SELECT 1 FROM jsonb_each(COALESCE(old_layout->'templates','{}'::jsonb)) old
-      WHERE old.value ? 'font' AND NOT COALESCE(next_layout->'templates'->old.key ? 'font',false)
-        AND NOT COALESCE(next_layout->>'schemaVersion'='2'
-          AND next_layout->'templates'->old.key ? 'fontId',false))
-    THEN RAISE EXCEPTION 'Ticket editor update required'; END IF;
+    IF next_layout IS NULL OR next_layout='null'::jsonb THEN RAISE EXCEPTION 'Ticket layout reset rejected'; END IF;
+    PERFORM public.validate_ticket_layout(next_layout);
   END IF;
   FOR f IN SELECT * FROM jsonb_array_elements(p_next) LOOP
     IF f->>'code'='ticket' THEN
@@ -198,3 +200,24 @@ BEGIN
   RETURN result;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.validate_ticket_layout_references(p_occasion bigint,p_layout jsonb)
+RETURNS void LANGUAGE plpgsql STABLE SET search_path = public, extensions AS $$
+BEGIN
+  PERFORM public.validate_ticket_layout(p_layout);
+  IF EXISTS(SELECT 1 FROM jsonb_each(p_layout->'templates') t CROSS JOIN LATERAL jsonb_array_elements(t.value->'elements') e
+    WHERE e->>'binding'='productType' AND NOT EXISTS(SELECT 1 FROM eshop.product_types pt WHERE pt.id=(e->>'productTypeId')::bigint AND pt.occasion=p_occasion))
+  THEN RAISE EXCEPTION 'ticket_product_type_missing'; END IF;
+END; $$;
+REVOKE ALL ON FUNCTION public.validate_ticket_layout_references(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.validate_ticket_layout_references(bigint,jsonb) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.ticket_layout_uses_product_type(p_occasion bigint,p_type bigint)
+RETURNS boolean LANGUAGE sql STABLE SET search_path = public, extensions AS $$
+ SELECT EXISTS(SELECT 1 FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f
+ CROSS JOIN LATERAL jsonb_each(COALESCE(f->'layout'->'templates','{}')) t
+ CROSS JOIN LATERAL jsonb_array_elements(t.value->'elements') e
+ WHERE o.id=p_occasion AND f->>'code'='ticket' AND e->>'binding'='productType' AND (e->>'productTypeId')::bigint=p_type);
+$$;
+REVOKE ALL ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) TO service_role;

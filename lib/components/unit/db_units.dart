@@ -10,6 +10,14 @@ class DbUnits {
   static final _supabase = Supabase.instance.client;
   static UnitCommands get _commands => SupabaseUnitCommands(_supabase);
 
+  static Future<List<UnitModel>> getOccasionCopyUnits(int occasionId) async {
+    final rows = await _supabase.rpc('get_occasion_copy_units',
+        params: {'p_occasion': occasionId}) as List;
+    return rows
+        .map((row) => UnitModel.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
   static Future<bool> hasOccasions(int unitId) async {
     final count = await _supabase
         .from(Tb.occasions.table)

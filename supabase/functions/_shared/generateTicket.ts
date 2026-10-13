@@ -30,7 +30,7 @@ export async function prepareTicketBackground(bytes: Uint8Array): Promise<Prepar
 }
 
 export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_type:'wide'|'named'=t.page.width===595.28?'wide':'named',_sample=false) {
-  validateLayout({schemaVersion:t.fontId||t.elements.some(e=>e.style.fontId)?2:1,templates:{[_type]:t}},new Set([...Object.keys(r.fonts??{}),...(r.registeredIds??[])]));
+  validateLayout({schemaVersion:3,templates:{[_type]:t}},new Set([...Object.keys(r.fonts??{}),...(r.registeredIds??[])]));
   const doc=await PDFDocument.create();doc.registerFontkit(fontkit);
   const embedded=new Map<string,any>();const page=doc.addPage([t.page.width,t.page.height]);const warnings:string[]=[];
   const color=(hex:string)=>rgb(...([0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255) as [number,number,number]));
@@ -56,10 +56,10 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
   for(const e of positionedElements(t,data).filter(e=>e.visible && e.binding!=='qr')) {
     const b=pdfBox(t,e.box);
     if(e.binding==='logo') {if(r.logo)await image(r.logo,b);continue;}
-    const text=data[e.binding];if(!text)continue;
+    const text=data[e.id];if(!text)continue;
     const id=effectiveFontId(t,e);const resource=r.fonts?.[id]??(!t.fontId&&!e.style.fontId?{bytes:r.font,metrics:r.metrics}:undefined);
     if(!resource)throw new Error('font_resource_missing');let font=embedded.get(id);if(!font){font=await doc.embedFont(resource.bytes);embedded.set(id,font);}const metrics=resource.metrics;
-    const fit=fitText(text,e,metrics);if(fit.overflow||fit.replaced)warnings.push(e.binding);
+    const fit=fitText(text,e,metrics);if(fit.overflow||fit.replaced)warnings.push(e.id);
     page.pushOperators(pushGraphicsState(),rectangle(b.x,b.y,b.width,b.height),clip(),endPath());
     fit.lines.forEach((line,i)=>{
       let x=b.x+(e.style.align==='center'?(b.width-fit.widths[i])/2:e.style.align==='right'?b.width-fit.widths[i]:0);
@@ -77,7 +77,7 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
     page.pushOperators(popGraphicsState());
   }
   const q=t.elements.find(e=>e.binding==='qr')!;const b=pdfBox(t,q.box);
-  const qr=QRCode.create(data.qr!,{errorCorrectionLevel:'M'}).modules;
+  const qr=QRCode.create(data[q.id]!,{errorCorrectionLevel:'M'}).modules;
   const margin=t.qrAppearance?.margin??4;
   const module=b.width/(qr.size+2*margin);if(module<1.2)throw new Error('QR modules are too small for print');
   page.drawRectangle({...b,color:color(t.qrAppearance?.background??'FFFFFF'),opacity:t.qrAppearance?.opacity??1});
