@@ -1,8 +1,8 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import '../../eshop/db_orders.dart';
 import 'package:flutter/material.dart';
-import '../../_shared/common_strings.dart';
 import '../../eshop/models/order_model.dart';
 import '../models/form_model.dart';
 import '../models/form_capacity_model.dart';
@@ -160,7 +160,8 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
         ? null
         : FormCapacityModel.fromJson(
             Map<String, dynamic>.from(_proposal!['capacity']));
-    return AlertDialog(
+    return AppAlertDialog(
+      dismissible: !_busy,
       title: Text(WaitlistStrings.send),
       content: SizedBox(
           width: 600,
@@ -236,9 +237,6 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                 ],
               ]))),
       actions: [
-        TextButton(
-            onPressed: _busy ? null : () => Navigator.pop(context),
-            child: Text(CommonStrings.close)),
         if (!_sent && _proposal == null)
           TextButton(
               onPressed: _busy ? null : _load,

@@ -6,7 +6,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; f public.forms; occ public.occasions; org public.organizations;
  manage_message public.email_messages; manage_cap eshop.waitlist_capabilities;
- source_cap eshop.waitlist_capabilities; v_recipient text;
+ source_cap eshop.waitlist_capabilities; v_recipient text; v_timezone text;
 BEGIN
  PERFORM public.require_client_sync_service_role_v1();
  SELECT * INTO o FROM eshop.orders WHERE id=p_order_id;
@@ -19,6 +19,16 @@ BEGIN
   AND EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id AND outcome='pending'))) THEN
   RAISE EXCEPTION 'waitlist_email_source_invalid';
  END IF;
+ SELECT name INTO v_timezone FROM pg_timezone_names WHERE name=nullif(occ.data->>'timezone','');
+ IF v_timezone IS NULL THEN
+  SELECT zone.name INTO v_timezone FROM public.units u JOIN pg_timezone_names zone
+   ON zone.name=nullif(u.data->>'timezone','') WHERE u.id=occ.unit;
+ END IF;
+ IF v_timezone IS NULL THEN
+  SELECT name INTO v_timezone FROM pg_timezone_names WHERE name=nullif(org.data->>'timezone','');
+ END IF;
+ -- Same timezone key as occasions/units; TimeHelper's canonical default is Europe/Prague.
+ v_timezone:=coalesce(v_timezone,'Europe/Prague');
  v_recipient:=coalesce(p_recipient,o.data->>'email');
  SELECT * INTO manage_message FROM public.email_messages m
  WHERE m.order_id=o.id AND m.message_kind='waitlist_confirmation'
@@ -40,6 +50,7 @@ BEGIN
   'participantCount',(SELECT count(*) FROM public.get_order_tickets_internal(o.id)),
   'offeredCount',(SELECT count(*) FROM eshop.waitlist_offer_slots
     WHERE offer_id=p_offer_id AND outcome='pending'),
+  'timeZone',v_timezone,
   'expiresAt',(SELECT expires_at FROM eshop.waitlist_offers WHERE id=p_offer_id),
   'tokenHash',source_cap.token_hash,'manageTokenHash',manage_cap.token_hash,
   'manageEnvelope',manage_message.data->'waitlistEnvelope',

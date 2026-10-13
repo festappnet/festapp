@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
@@ -108,7 +109,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
               TextEditingController(text: colorToHex(pickerColor));
           FocusNode hexFocus = FocusNode();
 
-          return AlertDialog(
+          return AppAlertDialog(
             title: Text(FormStrings.pickColor),
             content: StatefulBuilder(builder: (context, setState) {
               return SingleChildScrollView(

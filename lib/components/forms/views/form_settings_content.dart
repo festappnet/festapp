@@ -1,6 +1,6 @@
-import 'waitlist_offers_dialog.dart';
 import '../waitlist_strings.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
@@ -50,10 +50,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   final _snapshot = EditorSnapshot();
   final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
-        _capacityController.text,
-        _offerHoursController.text,
-        _waitlistEnabled,
-        _showRemaining,
         _titleController.text,
         _linkController.text,
         _deadlineDaysController.text,
@@ -78,11 +74,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       TextEditingController();
   final ValueNotifier<String> _linkNotifier = ValueNotifier<String>("");
 
-  final _capacityController = TextEditingController();
-  final _offerHoursController = TextEditingController();
-  bool _waitlistEnabled = false;
-  bool _showRemaining = true;
-  bool _capacityBlocked = false;
   bool _isReminderEnabled = false;
   late FormFeature _formFeature;
   String? _linkError;
@@ -104,8 +95,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   void initState() {
     super.initState();
     for (final controller in [
-      _capacityController,
-      _offerHoursController,
       _titleController,
       _linkController,
       _deadlineDaysController,
@@ -131,8 +120,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   @override
   void dispose() {
     _bankSettingsLink.dispose();
-    _capacityController.dispose();
-    _offerHoursController.dispose();
     _titleController.dispose();
     _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
@@ -185,15 +172,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           ? savedTone as String
           : 'inherit';
 
-      _capacityController.text = _form!.participantCapacity?.toString() ?? '';
-      _offerHoursController.text = _form!.waitlistOfferDurationSeconds == null
-          ? ''
-          : (_form!.waitlistOfferDurationSeconds! / 3600).toString();
-      _waitlistEnabled = _form!.waitlistEnabled;
-      _showRemaining = _form!.showRemainingCapacity;
-      _capacityBlocked = (_form!.capacity?.waitingPeople ?? 0) +
-              (_form!.capacity?.offeredPlaces ?? 0) >
-          0;
       if (_form!.deadlineDurationSeconds != null &&
           _form!.deadlineDurationSeconds! > 0) {
         final days = (_form!.deadlineDurationSeconds! / (24 * 3600)).round();
@@ -257,12 +235,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
     }
 
-    _form!.participantCapacity = int.tryParse(_capacityController.text);
-    _form!.waitlistEnabled = _waitlistEnabled;
-    _form!.showRemainingCapacity = _showRemaining;
-    _form!.waitlistOfferDurationSeconds = _waitlistEnabled
-        ? ((double.tryParse(_offerHoursController.text) ?? 0) * 3600).round()
-        : null;
     final days = int.tryParse(_deadlineDaysController.text);
     if (days != null && days > 0) {
       _form!.deadlineDurationSeconds = days * 24 * 60 * 60;
@@ -334,9 +306,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _confirmDelete(BuildContext currentContext) async {
     bool? confirm = await showDialog<bool>(
       context: currentContext,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
         insetPadding: const EdgeInsets.all(16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
         title: Text(FormStrings.deleteFormTitle),
         content: Text(FormStrings.deleteFormContent),
         actions: [
@@ -446,8 +418,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                         recognizer: _bankSettingsLink,
                       ),
                       TextSpan(
-                          text: guidance.substring(
-                              linkStart + settingsLabel.length)),
+                          text: guidance
+                              .substring(linkStart + settingsLabel.length)),
                     ]
                   : [TextSpan(text: guidance)],
             ),
@@ -554,87 +526,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                 key: ObjectKey(_form),
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (_form!.blueprint == null) ...[
-                                    Text(WaitlistStrings.settings,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _capacityController,
-                                      onChanged: (value) {
-                                        if (value.isEmpty && !_capacityBlocked)
-                                          setState(
-                                              () => _waitlistEnabled = false);
-                                      },
-                                      decoration: InputDecoration(
-                                          labelText: WaitlistStrings.capacity,
-                                          helperText:
-                                              WaitlistStrings.unlimited),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ],
-                                      validator: (value) {
-                                        final n = int.tryParse(value ?? '');
-                                        if ((value ?? '').isEmpty)
-                                          return _capacityBlocked ||
-                                                  _waitlistEnabled
-                                              ? WaitlistStrings.activeEntries
-                                              : null;
-                                        if (n == null || n <= 0)
-                                          return WaitlistStrings.positiveNumber;
-                                        if (n <
-                                            (_form!.capacity?.occupiedPeople ??
-                                                    0) +
-                                                (_form!.capacity
-                                                        ?.offeredPlaces ??
-                                                    0))
-                                          return WaitlistStrings.activeEntries;
-                                        return null;
-                                      },
-                                    ),
-                                    if (_capacityController
-                                        .text.isNotEmpty) ...[
-                                      SwitchListTile(
-                                          contentPadding: EdgeInsets.zero,
-                                          title: Text(
-                                              WaitlistStrings.showRemaining),
-                                          value: _showRemaining,
-                                          onChanged: (v) => setState(
-                                              () => _showRemaining = v)),
-                                      SwitchListTile(
-                                          contentPadding: EdgeInsets.zero,
-                                          title: Text(WaitlistStrings.enabled),
-                                          subtitle: _capacityBlocked
-                                              ? Text(
-                                                  WaitlistStrings.activeEntries)
-                                              : null,
-                                          value: _waitlistEnabled,
-                                          onChanged: _capacityBlocked
-                                              ? null
-                                              : (v) => setState(
-                                                  () => _waitlistEnabled = v)),
-                                      if (_waitlistEnabled)
-                                        TextFormField(
-                                          controller: _offerHoursController,
-                                          decoration: InputDecoration(
-                                              labelText: WaitlistStrings
-                                                  .durationHours),
-                                          keyboardType: const TextInputType
-                                              .numberWithOptions(decimal: true),
-                                          validator: (v) =>
-                                              (double.tryParse(v ?? '') ?? 0) >
-                                                      0
-                                                  ? null
-                                                  : WaitlistStrings
-                                                      .positiveNumber,
-                                        ),
-                                    ],
-                                    if (_form!.capacity case final c?)
-                                      WaitlistCapacitySummary(capacity: c),
-                                    const SizedBox(height: 24),
-                                  ],
                                   Text(FormStrings.formSettingsTitle,
                                       style: Theme.of(innerContext)
                                           .textTheme

@@ -2,6 +2,15 @@ import 'package:easy_localization/easy_localization.dart';
 
 class WaitlistStrings {
   static String text(String key) => 'Waitlist.$key'.tr();
+  static String get limitCapacity => text('limitCapacity');
+  static String get capacityHelp => text('capacityHelp');
+  static String get waitlistOn => text('waitlistOn');
+  static String get waitlistOff => text('waitlistOff');
+  static String get waitlistHelp => text('waitlistHelp');
+  static String get durationHelp => text('durationHelp');
+  static String get blueprintCapacity => text('blueprintCapacity');
+  static String get saveWithForm => text('saveWithForm');
+  static String get applySettings => text('applySettings');
   static String get settings => text('settings');
   static String get capacity => text('capacity');
   static String get unlimited => text('unlimited');

@@ -5,6 +5,8 @@ import { sha256Text, type WaitlistEmailSource } from "./waitlistEmail.ts";
 import {
   renderWaitlistEmail,
   waitlistCapabilityUrl,
+  waitlistCountPhrase,
+  waitlistExpiryText,
   type WaitlistEmailRow,
   type WaitlistRenderContext,
 } from "./waitlistEmailRenderer.ts";
@@ -62,6 +64,7 @@ async function fixture(offer = false) {
     offeredCount: offer ? 1 : undefined,
     participantCount: offer ? 3 : 4,
     expiresAt: selected.expiresAt,
+    timeZone: "Europe/Prague",
     manageEnvelope: manageSealed,
     manageContentHash: await sha256Text(JSON.stringify(source)),
     manageTokenHash: await sha256Text(source.token),
@@ -237,5 +240,43 @@ Deno.test("links permit trusted localhost previews and reject credentialed or un
       () => waitlistCapabilityUrl({ ...context, webLink }, selected),
       /origin_invalid/,
     );
+  }
+});
+
+Deno.test("Czech complete person and place phrases cover one, few and many", () => {
+  for (const [count, people, places] of [[1, "1 osobu", "1 místo"], [2, "2 osoby", "2 místa"], [5, "5 osob", "5 míst"], [21, "21 osob", "21 míst"]] as const) {
+    assert.equal(waitlistCountPhrase(count, "person"), people);
+    assert.equal(waitlistCountPhrase(count, "place"), places);
+  }
+});
+
+Deno.test("offer expiry uses configured timezone through both DST boundaries", () => {
+  const beforeSpring = waitlistExpiryText("2026-03-29T00:30:00Z", "Europe/Prague");
+  const afterSpring = waitlistExpiryText("2026-03-29T01:30:00Z", "Europe/Prague");
+  assert.match(beforeSpring, /01:30/);
+  assert.match(afterSpring, /03:30/);
+  assert.match(waitlistExpiryText("2026-10-25T00:30:00Z", "Europe/Prague"), /02:30/);
+  assert.match(waitlistExpiryText("2026-10-25T01:30:00Z", "Europe/Prague"), /02:30/);
+  assert.match(waitlistExpiryText("2026-10-14T12:00:00Z", "America/New_York"), /08:00/);
+  assert.match(afterSpring, /Europe\/Prague/);
+  assert.throws(() => waitlistExpiryText("2026-10-14T12:00:00Z", "not/a-zone"));
+});
+
+Deno.test("semantic phrases render alongside unchanged custom numeric placeholders", async () => {
+  for (const count of [1, 2, 5]) {
+    const f = await fixture(true);
+    f.selected.offeredCount = count;
+    f.selected.participantCount = count;
+    f.context.offeredCount = count;
+    f.context.participantCount = count;
+    f.row.data.content_hash = await sha256Text(JSON.stringify(f.selected));
+    f.dependencies.render = (input) => renderEmail(input, async () => ({
+      template: {id: 1, subject: "{{offered_places}}", html: "{{participant_phrase}}|{{participant_count}}|{{offered_count}}|{{offer_expires_at}}"},
+      wrapper: {html: "{{content}}"},
+    }));
+    const result = await renderWaitlistEmail(f.row, f.dependencies);
+    assert.equal(result.prepared.subject, waitlistCountPhrase(count, "place"));
+    assert.match(result.prepared.html, new RegExp(`${waitlistCountPhrase(count, "person")}\\|${count}\\|${count}\\|`));
+    assert.match(result.prepared.html, /14:00 \(Europe\/Prague\)/);
   }
 });

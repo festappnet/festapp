@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import '../models/order_change_summary.dart';
@@ -15,7 +16,8 @@ Future<bool> showOrderUpdateEmailDialog(
   return await showDialog<bool>(
           context: context,
           builder: (context) {
-            return AlertDialog(
+            return AppAlertDialog(
+              onClose: () => Navigator.of(context).pop(false),
               title: Text(OrdersStrings.sendUpdateTitle),
               content: SingleChildScrollView(
                 child: Column(

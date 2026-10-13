@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -364,7 +365,8 @@ class _UserAssignmentsDialogState extends State<_UserAssignmentsDialog> {
     final String hoursText =
         '${assignedHours.inHours}h ${assignedHours.inMinutes.remainder(60)}m';
 
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       titlePadding: const EdgeInsets.fromLTRB(24.0, 16.0, 16.0, 8.0),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -390,11 +392,6 @@ class _UserAssignmentsDialogState extends State<_UserAssignmentsDialog> {
                 ),
               ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: ActivitiesComponentStrings.tooltipCloseDialog,
-            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
@@ -643,7 +640,7 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
       title: Text(ActivitiesComponentStrings.dialogTitleSelectTargetUser),
       content: SizedBox(
         width: 300,

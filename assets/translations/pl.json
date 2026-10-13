@@ -651,7 +651,16 @@
     "WAITLIST_COMMAND_FAILED": "Nie udało się ukończyć żądania. Spróbuj ponownie.",
     "regularToWaitlist": "Dostępność się zmieniła. Przejść do zapisu na listę rezerwową?",
     "declineAssigned": "Można odrzucić tylko obecnie oferowane miejsca. Do przyjęcia możesz wybrać inne osoby.",
-    "orderState": "Lista rezerwowa"
+    "orderState": "Lista rezerwowa",
+    "limitCapacity": "Ogranicz liczbę osób",
+    "capacityHelp": "Bez limitu mogą zapisać się wszyscy zainteresowani.",
+    "waitlistOn": "Lista rezerwowa włączona",
+    "waitlistOff": "Zapisy zamykają się po osiągnięciu limitu",
+    "waitlistHelp": "Po osiągnięciu limitu zainteresowani mogą dołączyć do listy rezerwowej. Oferty wolnych miejsc wysyłasz ręcznie.",
+    "durationHelp": "Czas na przyjęcie wysłanej oferty przez osoby z listy rezerwowej.",
+    "blueprintCapacity": "Liczbę miejsc określa plan sali. Lista rezerwowa nie jest dostępna dla planów sali.",
+    "saveWithForm": "Zmiany zostaną zapisane razem z formularzem przyciskiem Zapisz.",
+    "applySettings": "Zastosuj ustawienia"
   },
   "EmailTemplates": {
     "subs": {

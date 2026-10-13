@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:collection/collection.dart';
@@ -403,7 +404,8 @@ class _InventoryPoolSettingsViewState extends State<InventoryPoolSettingsView> {
                   .format(model.blockDate!);
         }
 
-        return AlertDialog(
+        return AppAlertDialog(
+          onClose: () => Navigator.of(dialogContext).pop(),
           title: Text(isNew
               ? InventoryStrings.contextDialogAddTitle
               : InventoryStrings.contextDialogEditTitle),

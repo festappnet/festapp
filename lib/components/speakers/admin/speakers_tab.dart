@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -313,7 +314,8 @@ class _TopicEditorDialogState extends State<_TopicEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(false),
       title: Text(widget.topic.id == null
           ? SpeakersStrings.addTopic
           : SpeakersStrings.manageTopics),

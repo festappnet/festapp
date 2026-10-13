@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -76,15 +77,17 @@ class _NewsFormPageState extends State<NewsFormPage> {
     if (_controller.isDirty) {
       final discard = await showDialog<bool>(
           context: context,
-          builder: (context) =>
-              AlertDialog(title: Text(HtmlStrings.discardDraft), actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(CommonStrings.storno)),
-                TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(CommonStrings.ok)),
-              ]));
+          builder: (context) => AppAlertDialog(
+                  onClose: () => Navigator.pop(context, false),
+                  title: Text(HtmlStrings.discardDraft),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(CommonStrings.storno)),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(CommonStrings.ok)),
+                  ]));
       if (discard != true || !mounted) return;
     }
     Navigator.pop(context);
