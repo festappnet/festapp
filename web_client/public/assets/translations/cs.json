@@ -2606,6 +2606,13 @@
     "managementExplanation": "Zde vidíte stav svého čekání. Až vám nabídneme místo, pošleme vám e-mail s odkazem pro potvrzení.",
     "withdrawSelection": "Vyberte osoby, jejichž čekání chcete ukončit.",
     "withdrawConfirmation": "Vybraným osobám ukončíte čekání. Pro případnou další účast se budou muset znovu přihlásit.",
-    "declineConfirmation": "Odmítnete nabídnutá místa pro vybrané osoby. Tato místa budou uvolněna dalším náhradníkům."
+    "declineConfirmation": "Odmítnete nabídnutá místa pro vybrané osoby. Tato místa budou uvolněna dalším náhradníkům.",
+    "yourRegistration": "Vaše přihláška",
+    "registrationDetail": "Přehled přihlášky",
+    "registrationSymbol": "Symbol přihlášky",
+    "waitingStatus": "Zatím jste náhradník, místo ještě není potvrzené.",
+    "withdrawInterest": "Nemám již zájem se zúčastnit",
+    "withdrawConfirmationOne": "Ukončíte čekání na místo. Pokud se později rozhodnete zúčastnit, bude potřeba se znovu přihlásit.",
+    "formOpenWaitlistMessage": "Formulář je otevřen v režimu náhradníků."
   }
 }

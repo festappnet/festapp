@@ -209,3 +209,39 @@ test('canonical template seed is idempotent and preserves tenant custom content'
     assert.equal((await control.query("SELECT public.get_email_template_and_wrapper('waitlist_offer',jsonb_build_object('occasion',$1::bigint)) result", [fixture.occasion])).rows[0].result.template.id, Number(custom));
   });
 });
+
+for (const deletionFirst of [true, false]) {
+  test(`admin deletion versus partial acceptance (${deletionFirst ? 'delete' : 'accept'} queued first)`, { skip: !enabled }, async () => {
+    await withFixture(1, async (control, fixture) => {
+      await control.query('INSERT INTO unit_users(unit,"user",is_manager) VALUES($1,$2,true)', [fixture.unit, fixture.actor]);
+      const filled = (await control.query('SELECT public.create_ticket_order_internal_v1(pg_temp.checkout($1::jsonb)) result', [fixture])).rows[0].result;
+      assert.ok(successful(filled));
+      const source = Number((await control.query('SELECT pg_temp.register($1::jsonb,2) result', [fixture])).rows[0].result.order);
+      await control.query('SELECT public.update_order_and_tickets_to_storno_221($1)', [filled.order.id]);
+      const offer = (await control.query('SELECT pg_temp.offer($1::jsonb,$2,1) result', [fixture, source])).rows[0].result;
+      const tickets = (await control.query('SELECT pg_temp.ticket_ids($1) ids', [source])).rows[0].ids.map(Number);
+      const checkout = (await control.query('SELECT pg_temp.checkout($1::jsonb,$2::bigint[]) input', [fixture, [tickets[1]]])).rows[0].input;
+      const acceptance = commandJob('accept', { offerId: offer.id, ticketIds: [tickets[1]], orderDetails: checkout }, fixture.actor);
+      const deletion = {
+        sql: `WITH actor AS MATERIALIZED (SELECT set_config('request.jwt.claim.sub',$1,true))
+          SELECT public.delete_order_client_sync_v1($2,$3::uuid) result FROM actor`,
+        params: [fixture.actor, source, randomUUID()],
+      };
+      const jobs = deletionFirst ? [deletion, acceptance] : [acceptance, deletion];
+      const results = await race(control, fixture, jobs);
+      assert.ok(successful(results[deletionFirst ? 0 : 1]), JSON.stringify(results));
+      const accepted = results[deletionFirst ? 1 : 0];
+      assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.orders WHERE id=$1', [source])).rows[0].n), 0);
+      assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.waitlist_offers WHERE order_id=$1', [source])).rows[0].n), 0);
+      if (successful(accepted)) {
+        const child = accepted.data.order.id;
+        const saved = (await control.query('SELECT state,price,source_waitlist_order_id FROM eshop.orders WHERE id=$1', [child])).rows[0];
+        assert.equal(saved.source_waitlist_order_id, null);
+        assert.equal(Number(saved.price), 100);
+        assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.order_product_ticket WHERE "order"=$1 AND ticket=$2', [child, tickets[1]])).rows[0].n), 1);
+      } else {
+        assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.tickets WHERE id=ANY($1::bigint[])', [tickets])).rows[0].n), 0);
+      }
+    });
+  });
+}

@@ -106,4 +106,47 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
     }
   });
+  testWidgets('PDF download requires a ticket symbol and excludes waiting rows',
+      (tester) async {
+    await EasyLocalization.ensureInitialized();
+    final cases = [
+      ('waitlisted', null, false),
+      ('storno', null, false),
+      ('paid', '', false),
+      ('paid', '  ', false),
+      ('paid', 'VALID', true),
+      ('storno', 'CANCELLEDVALID', true),
+      ('waitlisted', 'INVALIDWAITING', false),
+    ];
+    for (var i = 0; i < cases.length; i++) {
+      final (state, symbol, enabled) = cases[i];
+      final ticket = TicketModel(id: 8837, state: state, ticketSymbol: symbol);
+      await tester.pumpWidget(EasyLocalization(
+        key: ValueKey(i),
+        supportedLocales: const [Locale('cs')],
+        path: 'unused',
+        assetLoader: _Translations(),
+        child: Builder(
+            builder: (localizedContext) => MaterialApp(
+                  locale: localizedContext.locale,
+                  supportedLocales: localizedContext.supportedLocales,
+                  localizationsDelegates:
+                      localizedContext.localizationDelegates,
+                  home: Scaffold(
+                      body: Builder(
+                          builder: (context) => TrinaGrid(
+                                columns: EshopColumns.generateColumns(
+                                    context, [EshopColumns.TICKET_DOWNLOAD]),
+                                rows: [ticket.toTrinaRow(context)],
+                              ))),
+                )),
+      ));
+      await tester.pumpAndSettle();
+      final download = tester
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.download));
+      expect(download.onPressed != null, enabled,
+          reason: '$state symbol=$symbol');
+      expect(tester.takeException(), isNull);
+    }
+  });
 }

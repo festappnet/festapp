@@ -11,43 +11,56 @@ DECLARE
   order_oc BIGINT;
   unit_id BIGINT;
   ou_record RECORD;
+  form_id BIGINT;
+  related_orders BIGINT[];
+  offer_ids UUID[];
   v_activity_impacts jsonb := '[]'::jsonb;
 BEGIN
   -- Retrieve the order's occasion and payment_info.
-  SELECT occasion, payment_info
-    INTO order_oc, payment_info_id
+  SELECT occasion, payment_info, form
+    INTO order_oc, payment_info_id, form_id
     FROM eshop.orders
-   WHERE id = order_id;
+   WHERE id = delete_order_internal_v1.order_id;
 
   IF order_oc IS NULL THEN
     RAISE EXCEPTION 'Order not found.';
   END IF;
 
-  -- Deletion belongs to unit managers and editors, including cancelled orders.
+  -- Deletion belongs to scoped unit managers/editors and organization admins.
   SELECT unit
   INTO unit_id
   FROM public.occasions
   WHERE id = order_oc;
 
   IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
-      OR public.get_is_editor_on_unit(unit_id)) THEN
-    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required';
+      OR public.get_is_editor_on_unit(unit_id) OR public.get_is_admin_on_occasion(order_oc)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required';
   END IF;
   -- The queue send gate locks global capacity before an order. Deletion must
   -- acquire that outer lock before the form/order helper to avoid inversion.
   PERFORM 1 FROM public.email_capacity FOR UPDATE;
-  PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
-  IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=order_id AND state IN ('waitlisted','preparing_payment'))
-    OR EXISTS(SELECT 1 FROM eshop.waitlist_offers offer WHERE offer.order_id=delete_order_internal_v1.order_id)
-    OR EXISTS(SELECT 1 FROM eshop.orders WHERE source_waitlist_order_id=delete_order_internal_v1.order_id)
-    OR EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE target_order_id=delete_order_internal_v1.order_id
-      OR source_order_id=delete_order_internal_v1.order_id) THEN
-    RAISE EXCEPTION 'ORDER_HAS_WAITLIST_HISTORY'; END IF;
-  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id IN(SELECT form FROM eshop.orders WHERE id=order_id);
+  -- Form serialization fences offer issuance, acceptance, expiry and recovery.
+  -- Lock every directly related order in ID order before changing any links.
+  PERFORM 1 FROM public.forms WHERE id=form_id FOR UPDATE;
+  SELECT array_agg(DISTINCT id ORDER BY id) INTO related_orders FROM (
+    SELECT o.id FROM eshop.orders o WHERE o.id=delete_order_internal_v1.order_id OR o.source_waitlist_order_id=delete_order_internal_v1.order_id
+      OR o.id=(SELECT source_waitlist_order_id FROM eshop.orders WHERE id=delete_order_internal_v1.order_id)
+    UNION SELECT a.source_order_id FROM eshop.waitlist_acceptance_attempts a WHERE a.source_order_id=delete_order_internal_v1.order_id OR a.target_order_id=delete_order_internal_v1.order_id
+    UNION SELECT a.target_order_id FROM eshop.waitlist_acceptance_attempts a WHERE a.source_order_id=delete_order_internal_v1.order_id OR a.target_order_id=delete_order_internal_v1.order_id
+  ) related;
+  IF EXISTS(SELECT 1 FROM eshop.orders o WHERE o.id=ANY(related_orders)
+      AND (o.occasion<>order_oc OR o.form IS DISTINCT FROM form_id)) THEN
+    RAISE EXCEPTION 'ORDER_WAITLIST_SCOPE_MISMATCH'; END IF;
+  PERFORM public.lock_order_capacity_scope_internal(related_orders);
+  IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=delete_order_internal_v1.order_id AND state='preparing_payment')
+    OR EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts a
+      WHERE (a.target_order_id=delete_order_internal_v1.order_id OR a.source_order_id=delete_order_internal_v1.order_id) AND a.state='preparing') THEN
+    RAISE EXCEPTION 'WAITLIST_ACCEPTANCE_IN_PROGRESS'; END IF;
+  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id IN(SELECT form FROM eshop.orders WHERE id=delete_order_internal_v1.order_id);
   PERFORM public.lock_activity_aggregate_internal_v1(order_oc);
   IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
-      OR public.get_is_editor_on_unit(unit_id)) THEN
-    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required';
+      OR public.get_is_editor_on_unit(unit_id) OR public.get_is_admin_on_occasion(order_oc)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required';
   END IF;
 
   -- After authorization, match the worker lock order (capacity, order,
@@ -87,15 +100,33 @@ BEGIN
    WHERE m.order_id = delete_order_internal_v1.order_id;
 
   -- Collect all order_product_ticket IDs for the order.
-  SELECT ARRAY(SELECT id FROM eshop.order_product_ticket WHERE "order" = order_id)
+  SELECT ARRAY(SELECT id FROM eshop.order_product_ticket WHERE "order" = delete_order_internal_v1.order_id)
     INTO order_product_ticket_ids;
 
   -- Collect all ticket IDs from the order_product_ticket rows.
   SELECT ARRAY(SELECT ticket
                  FROM eshop.order_product_ticket
-                WHERE "order" = order_id
+                WHERE "order" = delete_order_internal_v1.order_id
                   AND ticket IS NOT NULL)
     INTO ticket_ids;
+
+  IF EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x.ticket=ANY(ticket_ids) AND x."order"<>delete_order_internal_v1.order_id) THEN
+    RAISE EXCEPTION 'TICKET_LINKED_TO_ANOTHER_ORDER'; END IF;
+
+  -- Remove only this order's capability/offer evidence. Accepted children are
+  -- independent orders: detach their source FK, never their tickets or finance.
+  SELECT coalesce(array_agg(w.id),'{}') INTO offer_ids FROM eshop.waitlist_offers w WHERE w.order_id=delete_order_internal_v1.order_id;
+  PERFORM 1 FROM eshop.waitlist_acceptance_attempts a
+    WHERE a.source_order_id=delete_order_internal_v1.order_id OR a.target_order_id=delete_order_internal_v1.order_id ORDER BY a.command_id FOR UPDATE;
+  PERFORM 1 FROM eshop.waitlist_offers w WHERE w.id=ANY(offer_ids) ORDER BY w.id FOR UPDATE;
+  PERFORM 1 FROM eshop.waitlist_offer_slots x
+    WHERE x.offer_id=ANY(offer_ids) OR x.ticket_id=ANY(ticket_ids) OR x.resulting_order_id=delete_order_internal_v1.order_id ORDER BY x.id FOR UPDATE;
+  DELETE FROM eshop.waitlist_capabilities c WHERE c.order_id=delete_order_internal_v1.order_id OR c.offer_id=ANY(offer_ids);
+  DELETE FROM eshop.waitlist_acceptance_attempts a WHERE a.source_order_id=delete_order_internal_v1.order_id OR a.target_order_id=delete_order_internal_v1.order_id;
+  UPDATE eshop.waitlist_offer_slots x SET resulting_order_id=NULL,updated_at=clock_timestamp() WHERE x.resulting_order_id=delete_order_internal_v1.order_id;
+  DELETE FROM eshop.waitlist_offer_slots x WHERE x.offer_id=ANY(offer_ids) OR x.ticket_id=ANY(ticket_ids);
+  DELETE FROM eshop.waitlist_offers w WHERE w.id=ANY(offer_ids);
+  UPDATE eshop.orders o SET source_waitlist_order_id=NULL,updated_at=clock_timestamp() WHERE o.source_waitlist_order_id=delete_order_internal_v1.order_id;
 
   -- Free any spots that reference these order_product_ticket rows:
   -- set order_product_ticket, secret, and secret_expiration_time to NULL.
@@ -107,7 +138,7 @@ BEGIN
    WHERE order_product_ticket = ANY(order_product_ticket_ids);
 
   -- Delete the related order_product_ticket entries.
-  DELETE FROM eshop.order_product_ticket WHERE "order" = order_id;
+  DELETE FROM eshop.order_product_ticket WHERE "order" = delete_order_internal_v1.order_id;
 
   -- Ticket-bound membership teardown has one domain owner, independent of
   -- the retired public RPC. Authorization remains the order's manager boundary.
@@ -135,16 +166,16 @@ BEGIN
   DELETE FROM eshop.tickets WHERE id = ANY(ticket_ids);
 
   -- Delete order history rows.
-  DELETE FROM eshop.orders_history WHERE "order" = order_id;
+  DELETE FROM eshop.orders_history WHERE "order" = delete_order_internal_v1.order_id;
 
   -- Order-specific bank requests must not keep the order alive through their FK.
-  DELETE FROM eshop.bank_account_requests WHERE "order" = order_id;
+  DELETE FROM eshop.bank_account_requests WHERE "order" = delete_order_internal_v1.order_id;
 
   -- If a payment_info row exists, first free it from the order reference, then delete it.
   IF payment_info_id IS NOT NULL THEN
     UPDATE eshop.orders
        SET payment_info = NULL
-     WHERE id = order_id;
+     WHERE id = delete_order_internal_v1.order_id;
 
     -- Retain imported/manual bank transactions while removing their payment link.
     UPDATE eshop.transactions
@@ -155,7 +186,7 @@ BEGIN
   END IF;
 
   -- Finally, delete the order record.
-  DELETE FROM eshop.orders WHERE id = order_id;
+  DELETE FROM eshop.orders WHERE id = delete_order_internal_v1.order_id;
 
 END;
 $$;
@@ -169,21 +200,28 @@ DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_unit bigint;
   v_begin jsonb; v_hash text; v_removed_users uuid[]; v_remaining_users uuid[];
   v_public text[]:='{}'; v_dirty jsonb:='[]'::jsonb;
 BEGIN
-  SELECT o.occasion,oc.unit INTO v_occasion,v_unit FROM eshop.orders o
-    JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
-  IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)) THEN
-    RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'order',p_order)::text,'UTF8'),'sha256'),'hex');
+  SELECT o.occasion,oc.unit INTO v_occasion,v_unit FROM eshop.orders o
+    JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
+  -- Successful deletion removes the order. Exact retries retain their verified
+  -- scope in the existing receipt, and still require current scoped rights.
+  IF v_occasion IS NULL THEN
+    SELECT r.occasion,oc.unit INTO v_occasion,v_unit FROM public.client_mutation_receipts r
+    JOIN public.occasions oc ON oc.id=r.occasion
+    WHERE r.command_id=p_command_id AND r.command_name='inventory.order.delete'
+      AND r.actor_id=v_actor AND r.request_sha256=v_hash AND r.status IN ('completed','expired');
+  END IF;
+  IF v_actor IS NULL OR v_occasion IS NULL
+    OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)
+      OR public.get_is_admin_on_occasion(v_occasion)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required'; END IF;
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.order.delete',v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+  -- Match the email worker's outer send fence before form/order locks.
   PERFORM 1 FROM public.email_capacity FOR UPDATE;
-  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
-  PERFORM public.lock_activity_aggregate_internal_v1(v_occasion);
-  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)) THEN
-    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required'; END IF;
+  PERFORM 1 FROM public.forms WHERE id=(SELECT form FROM eshop.orders WHERE id=p_order) FOR UPDATE;
   SELECT COALESCE(array_agg(DISTINCT ou."user"),'{}'::uuid[]) INTO v_removed_users
   FROM eshop.order_product_ticket opt JOIN public.occasion_users ou
     ON ou.ticket=opt.ticket AND ou.occasion=v_occasion

@@ -66,6 +66,7 @@ BEGIN
             'header_off', f.header_off,
             'occasion', jsonb_build_object(
                 'id', o.id,
+                'title', o.title,
                 'features', o.features,
                 'start_time', o.start_time
             ),

@@ -159,7 +159,7 @@ test('waitlist people retain typed personal answers after another input and addi
 });
 
 test('participant labels show canonical answers without legacy aliases or internal field IDs', () => {
-    assert.equal(ticketLabel({id: 'p', answers: {fields: [{107: 'Waiting', name: 'Waiting', _subFieldId: 107}, {108: 'One', surname: 'One', _subFieldId: '108'}]}}), 'Waiting · One');
+    assert.equal(ticketLabel({id: 'p', answers: {fields: [{107: 'Waiting', name: 'Waiting', _subFieldId: 107}, {108: 'One', surname: 'One', _subFieldId: '108'}]}}), 'Waiting One');
     assert.equal(ticketLabel({id: 'p', answers: {fields: [{name: 'Legacy', _subFieldId: 107}]}}), 'Legacy');
 });
 

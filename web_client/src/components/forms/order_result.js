@@ -21,7 +21,7 @@ export class OrderResult {
         if (success) {
             title = isWaitlist ? WaitlistStrings.registered : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
-            subtitle = isWaitlist ? WaitlistStrings.explanation : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+            subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus')} ${WaitlistStrings.text('managementExplanation')}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
             const prodTitle = (resultData.product && resultData.product.title) || "";
             title = PublicOrderStrings.productUnavailable(prodTitle);
@@ -43,6 +43,7 @@ export class OrderResult {
                 <div class="result-icon-wrapper ${colorClass}">
                     <i class="material-icons result-icon">${icon}</i>
                 </div>
+                <p class="result-occasion-title"></p>
                 <h2 class="result-title ${colorClass}"></h2>
                 <p class="result-subtitle"></p>
                 <p class="result-order-symbol"></p>
@@ -156,11 +157,12 @@ export class OrderResult {
             </style>
         `;
 
+        container.querySelector('.result-occasion-title').textContent = formModel.occasionTitle || '';
         container.querySelector('.result-title').textContent = title;
         container.querySelector('.result-subtitle').textContent = subtitle + (success && resultData?.conversion === 'split' ? ` ${WaitlistStrings.remaining}: ${resultData.waitlistSummary?.pendingPlaces ?? 0}.` : '');
         const orderSymbol = success ? resultData?.ticketOrder?.order?.order_symbol : null;
         if (typeof orderSymbol === 'string') {
-            container.querySelector('.result-order-symbol').textContent = `${OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;
+            container.querySelector('.result-order-symbol').textContent = `${isWaitlist ? WaitlistStrings.text('registrationSymbol') : OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;
         }
 
         const paymentQr = success && !isWaitlist ? resultData?.payment_qr : null;

@@ -677,7 +677,14 @@
     "managementExplanation": "Hier sehen Sie Ihren Wartestatus. Sobald wir Ihnen einen Platz anbieten, erhalten Sie eine E-Mail mit einem Bestätigungslink.",
     "withdrawSelection": "Wählen Sie die Personen aus, die Sie von der Warteliste entfernen möchten.",
     "withdrawConfirmation": "Die ausgewählten Personen verlassen die Warteliste. Für eine Teilnahme müssen sie sich erneut anmelden.",
-    "declineConfirmation": "Sie lehnen die angebotenen Plätze für die ausgewählten Personen ab. Diese Plätze werden für andere Personen auf der Warteliste freigegeben."
+    "declineConfirmation": "Sie lehnen die angebotenen Plätze für die ausgewählten Personen ab. Diese Plätze werden für andere Personen auf der Warteliste freigegeben.",
+    "yourRegistration": "Ihre Anmeldung",
+    "registrationDetail": "Anmeldungsübersicht",
+    "registrationSymbol": "Anmeldungsnummer",
+    "waitingStatus": "Sie stehen derzeit auf der Warteliste. Ihr Platz ist noch nicht bestätigt.",
+    "withdrawInterest": "Ich möchte nicht mehr teilnehmen",
+    "withdrawConfirmationOne": "Sie verlassen die Warteliste. Wenn Sie später doch teilnehmen möchten, müssen Sie sich erneut anmelden.",
+    "formOpenWaitlistMessage": "Das Formular ist für Anmeldungen auf der Warteliste geöffnet."
   },
   "EmailTemplates": {
     "subs": {

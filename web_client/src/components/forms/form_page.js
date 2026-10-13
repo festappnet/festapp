@@ -1,5 +1,5 @@
 import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
-import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel } from './waitlist_form.js';
+import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
 import { FormModel } from './form_models.js';
 
@@ -228,7 +228,8 @@ export class FormPage extends Component {
         const content = document.createElement('section');
         content.className = 'form-wrapper waitlist-management';
         const title = document.createElement('h2');
-        title.textContent = bundle.offerStatus ? WaitlistStrings.text(bundle.offerStatus) : (this.waitlistScope.offerId ? WaitlistStrings.expired : WaitlistStrings.title);
+        appendWaitlistContext(content, bundle);
+        title.textContent = bundle.offerStatus ? WaitlistStrings.text(bundle.offerStatus) : (this.waitlistScope.offerId ? WaitlistStrings.expired : WaitlistStrings.text('registrationDetail'));
         const intro = document.createElement('p');
         intro.className = 'waitlist-intro';
         intro.textContent = WaitlistStrings.text('managementExplanation');
@@ -238,7 +239,7 @@ export class FormPage extends Component {
         const selected = new Set(eligible.length === 1 ? [eligible[0].id] : []);
         const button = document.createElement('button');
         button.type = 'button'; button.className = 'btn btn-outline-secondary waitlist-withdraw';
-        button.textContent = WaitlistStrings.withdraw;
+        button.textContent = eligible.length === 1 ? WaitlistStrings.text('withdrawInterest') : WaitlistStrings.withdraw;
         button.disabled = !selected.size;
         for (const [index, person] of bundle.tickets.entries()) {
             const label = document.createElement('label'); label.className = 'waitlist-person-row form-field-card';
@@ -252,9 +253,9 @@ export class FormPage extends Component {
                 label.appendChild(checkbox);
             }
             const name = document.createElement('strong');
-            name.textContent = ticketLabel(person, index);
+            name.textContent = ticketLabel(person, index, bundle.form, bundle.tickets.length);
             const status = document.createElement('span'); status.className = 'waitlist-person-status';
-            status.textContent = WaitlistStrings.text(person.lifecycle);
+            status.textContent = WaitlistStrings.text(person.lifecycle === 'waiting' ? 'waitingStatus' : person.lifecycle);
             label.append(name, status); content.appendChild(label);
         }
         if (!this.waitlistScope.offerId && eligible.length) {
@@ -271,7 +272,9 @@ export class FormPage extends Component {
         if (!ticketIds.length) return;
         const { OrderPreview } = await import('./order_preview.js');
         const bundle = this.waitlistBundle;
-        const title = operation === 'withdraw' ? WaitlistStrings.withdraw : WaitlistStrings.decline;
+        const title = operation === 'withdraw'
+            ? (ticketIds.length === 1 ? WaitlistStrings.text('withdrawInterest') : WaitlistStrings.withdraw)
+            : WaitlistStrings.decline;
         const model = new FormModel({ registrationMode: 'waitlist', fields: [] });
         OrderPreview.show(null, model, { totalPrice: 0, currency: 'CZK' }, async overlay => {
             const button = overlay.querySelector('.btn-submit-order');
@@ -290,8 +293,9 @@ export class FormPage extends Component {
             }
         }, null, { fields: [], ticket: [] }, {
             title, submitLabel: title,
-            explanation: WaitlistStrings.text(operation === 'withdraw' ? 'withdrawConfirmation' : 'declineConfirmation'),
-            people: (bundle?.tickets || []).flatMap((person, index) => ticketIds.includes(person.id) ? [ticketLabel(person, index)] : []),
+            occasionTitle: bundle?.occasionTitle, orderSymbol: bundle?.orderSymbol,
+            explanation: WaitlistStrings.text(operation === 'withdraw' ? (ticketIds.length === 1 ? 'withdrawConfirmationOne' : 'withdrawConfirmation') : 'declineConfirmation'),
+            people: (bundle?.tickets || []).flatMap((person, index) => ticketIds.includes(person.id) ? [ticketLabel(person, index, bundle.form, bundle.tickets.length)] : []),
         });
     }
 

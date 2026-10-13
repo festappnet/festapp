@@ -158,6 +158,31 @@ void main() {
     });
   }
 
+  for (final mode in ['blueprint', 'disabled', 'enabled']) {
+    testWidgets('zero offer counts stay hidden ($mode)',
+        (tester) async {
+      final blueprint = mode == 'blueprint';
+      final form = FormModel(
+          blueprint: blueprint ? 5 : null,
+          participantCapacity: blueprint ? null : 12,
+          waitlistEnabled: mode == 'enabled',
+          capacity: FormCapacityModel.fromJson(
+              {'occupiedPeople': 11, 'offeredPlaces': 0}));
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: FormCapacitySettings(
+                  form: form, canEdit: true, onChanged: () {}))));
+      expect(find.textContaining(': 11'), findsOneWidget);
+      expect(find.textContaining(WaitlistStrings.offeredPlacesCount), findsNothing);
+      expect(tester.widget<ListTile>(find.byType(ListTile)).enabled, !blueprint);
+      if (!blueprint) {
+        await tester.tap(find.text(WaitlistStrings.settings));
+        await tester.pumpAndSettle();
+        expect(find.textContaining(WaitlistStrings.offeredPlacesCount), findsNothing);
+      }
+    });
+  }
+
   testWidgets('visual review artifact', (tester) async {
     await open(
         tester, FormModel(participantCapacity: 150, waitlistEnabled: true),
