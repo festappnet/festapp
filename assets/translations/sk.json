@@ -676,7 +676,14 @@
     "managementExplanation": "Tu vidíte stav svojho čakania. Keď vám ponúkneme miesto, pošleme vám e-mail s odkazom na potvrdenie.",
     "withdrawSelection": "Vyberte osoby, ktorých čakanie chcete ukončiť.",
     "withdrawConfirmation": "Vybraným osobám ukončíte čakanie. Pre prípadnú ďalšiu účasť sa budú musieť znova prihlásiť.",
-    "declineConfirmation": "Odmietnete ponúknuté miesta pre vybrané osoby. Tieto miesta sa uvoľnia ďalším náhradníkom."
+    "declineConfirmation": "Odmietnete ponúknuté miesta pre vybrané osoby. Tieto miesta sa uvoľnia ďalším náhradníkom.",
+    "yourRegistration": "Vaša prihláška",
+    "registrationDetail": "Prehľad prihlášky",
+    "registrationSymbol": "Symbol prihlášky",
+    "waitingStatus": "Zatiaľ ste náhradník, miesto ešte nie je potvrdené.",
+    "withdrawInterest": "Už nemám záujem zúčastniť sa",
+    "withdrawConfirmationOne": "Ukončíte čakanie na miesto. Ak sa neskôr rozhodnete zúčastniť, bude potrebné prihlásiť sa znova.",
+    "formOpenWaitlistMessage": "Formulár je otvorený v režime náhradníkov."
   },
   "EmailTemplates": {
     "subs": {

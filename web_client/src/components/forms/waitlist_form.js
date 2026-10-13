@@ -1,11 +1,36 @@
 import { WaitlistStrings as S } from './waitlist_strings.js';
 
-export function ticketLabel(person, index = 0) {
-    return (person.answers?.fields || []).flatMap(field => {
-        const canonical = Object.entries(field).filter(([key]) => /^\d+$/.test(key));
-        const entries = canonical.length ? canonical : Object.entries(field).filter(([key]) => !key.startsWith('_'));
-        return entries.map(([, value]) => value).filter(value => typeof value === 'string' && value.trim());
-    }).join(' · ') || `${S.text('person')} ${index + 1}`;
+export function ticketLabel(person, index = 0, form = null, total = 1) {
+    // Only display name fields, never arbitrary answers (notes or identity documents).
+    if (typeof person.displayName === 'string' && person.displayName.trim()) return person.displayName.trim();
+    const definitions = (form?.relatedFields || form?.fields || []).flatMap(field =>
+        field.type === 'ticket' ? (field.subFields || field.data?.fields || []) :
+            (field.isTicketField || field.is_ticket_field ? [field] : []));
+    const fields = person.answers?.fields || [];
+    const names = ['name', 'surname'].flatMap(type => {
+        const definition = definitions.find(field => field.type === type && !field.isHidden && !field.is_hidden);
+        const answer = definition ? fields.find(field => field[definition.id] !== undefined || field._subFieldId === definition.id) : null;
+        const value = answer?.[definition?.id] ?? answer?.[type] ??
+            (!form ? fields.find(field => typeof field[type] === 'string')?.[type] : null);
+        return typeof value === 'string' && value.trim() ? [value.trim()] : [];
+    });
+    return names.join(' ') || (total === 1 ? S.text('yourRegistration') : `${S.text('person')} ${index + 1}`);
+}
+
+export function appendWaitlistContext(container, context) {
+    if (!context?.occasionTitle && !context?.orderSymbol) return;
+    const header = document.createElement('header');
+    header.className = 'waitlist-context';
+    if (context.occasionTitle) {
+        const title = document.createElement('h1'); title.textContent = context.occasionTitle;
+        header.appendChild(title);
+    }
+    if (context.orderSymbol) {
+        const symbol = document.createElement('p'); symbol.className = 'waitlist-order-symbol';
+        symbol.textContent = `${S.text('registrationSymbol')}: ${context.orderSymbol}`;
+        header.appendChild(symbol);
+    }
+    container.appendChild(header);
 }
 
 export function prepareOfferSession(session, model) {
@@ -72,7 +97,7 @@ export function renderWaitlistControls(page, model) {
         input.hidden = eligiblePeople.length === 1;
         input.checked = model.selectedTicketIds.includes(person.id);
         input.disabled = person.lifecycle === 'offered' && !b.slots.some(s => s.ticketId === person.id && s.outcome === 'pending');
-        const name = ticketLabel(person, index);
+        const name = ticketLabel(person, index, model, b.tickets.length);
         label.append(input, document.createTextNode(` ${name} ${S.text(person.lifecycle)}`));
         input.onchange = () => {
             if (input.checked && model.selectedTicketIds.length >= session.maxTickets) {

@@ -381,3 +381,10 @@ body.dark-mode .deposit-option span {
 
 .waitlist-withdraw { border: 1px solid var(--primary-color); background: transparent; color: var(--primary-color); }
 .waitlist-withdraw:disabled { opacity: .55; cursor: default; }
+
+.waitlist-context { text-align: center; margin-block-end: 20px; overflow-wrap: anywhere; }
+.waitlist-context h1 { margin: 0 0 8px; font-size: 1.5rem; }
+.waitlist-context p { margin: 8px 0 0; }
+.waitlist-order-symbol { font-size: .95rem; }
+.waitlist-person-status { flex-basis: 100%; line-height: 1.5; }
+.result-occasion-title { margin: 0 0 12px; font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }

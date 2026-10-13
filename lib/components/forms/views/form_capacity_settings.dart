@@ -26,12 +26,20 @@ class FormCapacitySettings extends StatelessWidget {
             ? WaitlistStrings.unlimited
             : '${WaitlistStrings.capacity}: ${form.participantCapacity}\n'
                 '${(form.waitlistEnabled ? WaitlistStrings.waitlistOn : WaitlistStrings.waitlistOff)}';
+    final showOffers = !blueprint &&
+        form.participantCapacity != null &&
+        form.waitlistEnabled &&
+        (form.capacity?.offeredPlaces ?? 0) > 0;
     final counts = form.capacity == null
         ? null
-        : '${OrdersStrings.validTickets}: ${form.capacity!.occupiedPeople}\n'
-            '${WaitlistStrings.offeredPlacesCount}: ${form.capacity!.offeredPlaces}';
+        : [
+            '${OrdersStrings.validTickets}: ${form.capacity!.occupiedPeople}',
+            if (showOffers)
+              '${WaitlistStrings.offeredPlacesCount}: ${form.capacity!.offeredPlaces}',
+          ].join('\n');
     final summary = [settingsSummary, if (counts != null) counts].join('\n');
     return ListTile(
+      enabled: !blueprint,
       contentPadding: EdgeInsets.zero,
       title: Text(WaitlistStrings.settings,
           style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -137,8 +145,9 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                   if (widget.form.capacity != null) ...[
                                     Text(
                                         '${OrdersStrings.validTickets}: ${widget.form.capacity!.occupiedPeople}'),
-                                    Text(
-                                        '${WaitlistStrings.offeredPlacesCount}: ${widget.form.capacity!.offeredPlaces}'),
+                                    if (widget.form.capacity!.offeredPlaces > 0)
+                                      Text(
+                                          '${WaitlistStrings.offeredPlacesCount}: ${widget.form.capacity!.offeredPlaces}'),
                                     const SizedBox(height: 12),
                                   ],
                                   TextFormField(

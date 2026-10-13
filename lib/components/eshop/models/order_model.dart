@@ -141,6 +141,9 @@ class OrderModel extends ITrinaRowModel {
     Color color;
     String firstPart = state.split(";")[0];
     switch (firstPart) {
+      case waitlistedState:
+        color = Colors.amber[700]!;
+        break;
       case expiredState:
       case orderedState:
         color = Colors.green[100]!; // Blue for ordered

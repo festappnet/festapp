@@ -534,6 +534,9 @@ class _FormEditorContentState extends State<FormEditorContent>
       text = FormStrings.endedWithTime(
           DateFormat('dd.MM HH:mm').format(form.endTime!));
       color = ThemeConfig.redColor(context);
+    } else if (!_prototype && form.isWaitlist) {
+      text = WaitlistStrings.formOpenWaitlistMessage;
+      color = ThemeConfig.warningColor(context);
     } else {
       text = FormStrings.formOpenMessage;
       color = Theme.of(context).primaryColor;

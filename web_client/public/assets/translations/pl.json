@@ -654,7 +654,14 @@
     "managementExplanation": "Tutaj sprawdzisz status oczekiwania. Gdy zaproponujemy miejsce, wyślemy e-mail z linkiem do potwierdzenia.",
     "withdrawSelection": "Wybierz osoby, które chcesz usunąć z listy rezerwowej.",
     "withdrawConfirmation": "Wybrane osoby opuszczą listę rezerwową. Aby wziąć udział, będą musiały zapisać się ponownie.",
-    "declineConfirmation": "Odrzucisz oferowane miejsca dla wybranych osób. Miejsca te zostaną udostępnione innym osobom z listy rezerwowej."
+    "declineConfirmation": "Odrzucisz oferowane miejsca dla wybranych osób. Miejsca te zostaną udostępnione innym osobom z listy rezerwowej.",
+    "yourRegistration": "Twoje zgłoszenie",
+    "registrationDetail": "Szczegóły zgłoszenia",
+    "registrationSymbol": "Numer zgłoszenia",
+    "waitingStatus": "Jesteś na liście rezerwowej. Twoje miejsce nie jest jeszcze potwierdzone.",
+    "withdrawInterest": "Nie chcę już uczestniczyć",
+    "withdrawConfirmationOne": "Zakończysz oczekiwanie na miejsce. Jeśli później zdecydujesz się wziąć udział, konieczny będzie ponowny zapis.",
+    "formOpenWaitlistMessage": "Formularz jest otwarty dla zapisów na listę rezerwową."
   },
   "EmailTemplates": {
     "subs": {

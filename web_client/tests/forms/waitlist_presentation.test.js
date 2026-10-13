@@ -84,7 +84,7 @@ test('classic preview and result retain finance while waitlist shares result wit
     model.registrationMode = 'waitlist';
     OrderResult.render(host, true, result, model, () => {});
     assert.equal(host.querySelector('.result-title').textContent, 'Jste v pořadníku náhradníků');
-    assert.match(host.querySelector('.result-subtitle').textContent, /e-mailem nabídku/);
+    assert.match(host.querySelector('.result-subtitle').textContent, /místo ještě není potvrzené/);
     assert.match(host.querySelector('.result-order-symbol').textContent, /ABC123/);
     assert.equal(host.querySelector('.result-payment-card'), null);
     OrderResult.render(host, false, { errorCode: 'WAITLIST_NOT_AVAILABLE' }, model, () => {});
@@ -99,7 +99,7 @@ test('single management entry needs no checkbox, multi-entry selects IDs and nev
     page.renderWaitlistManagement({ tickets: [first] });
     assert.equal(page.host.querySelector('input'), null);
     assert.doesNotMatch(page.host.textContent, /8837/);
-    assert.match(page.host.textContent, /Osoba 1/);
+    assert.match(page.host.textContent, /Vaše přihláška/);
     page.host.querySelector('button').click();
     assert.deepEqual(calls.pop(), ['withdraw', [8837]]);
     page.renderWaitlistManagement({ tickets: [first, { id: 9000, lifecycle: 'waiting', answers: { fields: [{2: 'Robin'}] } }] });
@@ -109,13 +109,13 @@ test('single management entry needs no checkbox, multi-entry selects IDs and nev
     assert.deepEqual(calls.pop(), ['withdraw', [9000]]);
     page.renderWaitlistManagement({ tickets: [{ ...first, lifecycle: 'withdrawn' }] });
     assert.equal(page.host.querySelector('button'), null);
-    assert.equal(ticketLabel({ id: 7777 }), 'Osoba 1');
+    assert.equal(ticketLabel({ id: 7777 }), 'Vaše přihláška');
     d.window.close();
 });
 test('withdraw and decline use shared preview and only execute after its confirmation', async () => {
     const d = dom(); const { FormPage } = await import('../../src/components/forms/form_page.js');
     const page = new FormPage('host'); page.waitlistScope = { orderId: 20, token: 'secret' };
-    page.waitlistBundle = { tickets: [{ id: 8837, lifecycle: 'waiting', answers: { fields: [{2: '<Alex>'}] } }] };
+    page.waitlistBundle = { form: { fields }, tickets: [{ id: 8837, lifecycle: 'waiting', answers: { fields: [{2: '<Alex>'}] } }] };
     page.init = async () => {};
     const calls = []; page.waitlistCommands = { command: async (...args) => calls.push(args) };
     const show = OrderPreview.show;
@@ -183,4 +183,69 @@ test('waitlist validates into the classic preview and submits personal payload t
         RouterService.goBackProgrammatically = original.back; RouterService.pushOverlayState = original.push;
         FormNetwork.submitOrder = original.network; d.window.close();
     }
+});
+
+test('management and confirmation retain event and enrollment context without interpreting customer answers as markup', async () => {
+    const d = dom(); const { FormPage } = await import('../../src/components/forms/form_page.js');
+    const page = new FormPage('host'); page.waitlistScope = { orderId: 20 };
+    const bundle = {
+        occasionTitle: 'Víkend <setkání>', orderSymbol: 'ABC123', form: { fields },
+        tickets: [{ id: 8837, lifecycle: 'waiting', answers: { fields: [{2: 'Alex'}] } }],
+    };
+    page.applyTheme = () => {};
+    page.renderWaitlistManagement(bundle);
+    assert.equal(page.host.querySelector('.waitlist-context h1').textContent, 'Víkend <setkání>');
+    assert.equal(page.host.querySelector('.waitlist-order-symbol').textContent, 'Symbol přihlášky: ABC123');
+    assert.equal(page.host.querySelector('.waitlist-person-row strong').textContent, 'Alex');
+    assert.equal(page.host.querySelector('.waitlist-person-status').textContent, 'Zatím jste náhradník, místo ještě není potvrzené.');
+    assert.equal(page.host.querySelector('.waitlist-withdraw').textContent, 'Nemám již zájem se zúčastnit');
+    assert.equal(page.host.querySelector('setkání'), null);
+    const original = OrderPreview.show;
+    try {
+        OrderPreview.show = (form, model, price, confirm, close, payload, presentation) => {
+            assert.equal(presentation.occasionTitle, bundle.occasionTitle);
+            assert.equal(presentation.orderSymbol, bundle.orderSymbol);
+            assert.match(presentation.explanation, /^Ukončíte čekání na místo/);
+            assert.equal(presentation.title, 'Nemám již zájem se zúčastnit');
+        };
+        await page.resolveWaitlist('withdraw', [8837]);
+    } finally { OrderPreview.show = original; }
+    page.waitlistScope = { offerId: 'expired' };
+    page.renderWaitlistManagement({ offerStatus: 'expired', form: null, tickets: [] });
+    assert.equal(page.host.querySelector('.waitlist-context'), null);
+    assert.equal(page.host.querySelector('button'), null);
+    d.window.close();
+});
+
+test('display names use own ticket names only, with a natural single enrollment fallback', () => {
+    const form = { fields: [
+        {id: 10, type: 'name'},
+        {id: 2, type: 'name', is_ticket_field: true},
+        {id: 5, type: 'surname', is_ticket_field: true},
+        {id: 6, type: 'note', is_ticket_field: true},
+        {id: 7, type: 'id_document', is_ticket_field: true},
+    ] };
+    const person = { id: 8837, answers: { fields: [{10: 'Buyer'}, {2: 'Alex'}, {5: 'Novotný'}, {6: 'Private note'}, {7: 'AB123'}] } };
+    assert.equal(ticketLabel(person, 0, form, 1), 'Alex Novotný');
+    assert.equal(ticketLabel({ ...person, answers: { fields: [{6:'Private note'}] } }, 0, form, 1), 'Vaše přihláška');
+    assert.equal(ticketLabel({ id: 9000, answers: {fields:[{2:'Robin'}]} }, 1, form, 2), 'Robin');
+    assert.equal(ticketLabel({ id: 9000, displayName: 'Server Name' }, 1, form, 2), 'Server Name');
+});
+
+test('waiting success and shared preview show occasion and enrollment context without a numbered single person', () => {
+    const d = dom(); const host = document.querySelector('main');
+    const model = new FormModel({ registrationMode: 'waitlist', occasion: {title:'Víkend setkání'}, fields });
+    const session = new FormSession(model);
+    session.state.tickets = [{ fields: [{name: 'Alex', _subFieldId: 2}] }];
+    session._syncPayloadFromState();
+    const prepared = OrderPreview._prepareData(null, model, session.state, session.payload);
+    host.innerHTML = OrderPreview._render(prepared);
+    assert.match(host.textContent, /Víkend setkání/);
+    assert.match(host.textContent, /Vaše přihláška/);
+    assert.doesNotMatch(host.textContent, /Osoba 1/);
+    OrderResult.render(host, true, {ticketOrder:{order:{order_symbol:'ABC123'}}}, model, () => {});
+    assert.equal(host.querySelector('.result-occasion-title').textContent, 'Víkend setkání');
+    assert.equal(host.querySelector('.result-order-symbol').textContent, 'Symbol přihlášky: ABC123');
+    assert.match(host.querySelector('.result-subtitle').textContent, /místo ještě není potvrzené/);
+    d.window.close();
 });

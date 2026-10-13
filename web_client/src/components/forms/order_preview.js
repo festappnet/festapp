@@ -380,6 +380,8 @@ export class OrderPreview {
 
         return {
             registrationMode: formModel.registrationMode,
+            occasionTitle: formModel.occasionTitle,
+            orderSymbol: formModel.offerBundle?.orderSymbol,
             personalInfo,
             tickets,
             totalPrice: totalPriceData.totalPrice,
@@ -460,7 +462,7 @@ export class OrderPreview {
     static _render(data) {
         // Determine labels
         const isWaitlist = data.registrationMode === 'waitlist';
-        const itemLabel = isWaitlist ? WaitlistStrings.text('person') : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
+        const itemLabel = isWaitlist ? WaitlistStrings.text(data.tickets.length === 1 ? 'yourRegistration' : 'person') : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
 
         // Header
         let html = `
@@ -475,6 +477,11 @@ export class OrderPreview {
                 <div class="order-preview-body">
         `;
 
+        const occasionTitle = data.presentation?.occasionTitle || data.occasionTitle;
+        const orderSymbol = data.presentation?.orderSymbol || data.orderSymbol;
+        if (occasionTitle || orderSymbol) {
+            html += `<div class="waitlist-context">${occasionTitle ? htmlText`<strong>${occasionTitle}</strong>` : ''}${orderSymbol ? htmlText`<p>${WaitlistStrings.text('registrationSymbol')}: ${orderSymbol}</p>` : ''}</div>`;
+        }
         if (isWaitlist) html += `<p class="waitlist-intro preview-section">${data.presentation?.explanation || WaitlistStrings.explanation}</p>`;
 
         if (data.presentation?.people) {

@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 
 class WaitlistStrings {
   static String text(String key) => 'Waitlist.$key'.tr();
+  static String get formOpenWaitlistMessage => text('formOpenWaitlistMessage');
   static String get limitCapacity => text('limitCapacity');
   static String get capacityHelp => text('capacityHelp');
   static String get capacityHelpLimited => text('capacityHelpLimited');

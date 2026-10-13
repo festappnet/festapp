@@ -8,6 +8,7 @@ import 'package:fstapp/components/forms/views/form_settings_content.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/features/form_feature.dart';
 import 'dart:convert';
+import 'package:timezone/data/latest.dart' as tz;
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:easy_localization/src/localization.dart';
@@ -15,6 +16,9 @@ import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
+import 'package:fstapp/components/forms/waitlist_strings.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
@@ -25,11 +29,43 @@ import 'package:fstapp/data_services/rights_service.dart';
 
 void main() {
   setUpAll(() {
+    tz.initializeTimeZones();
     Localization.load(const Locale('cs'),
         translations: Translations(
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>));
   });
+  for (final state in ['waitlist', 'regular', 'closed', 'scheduled', 'ended', 'prototype']) {
+    testWidgets('availability explains server waitlist mode with $state precedence',
+        (tester) async {
+      tester.view.physicalSize = const Size(1600, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      RightsService.occasionLinkModelNotifier.value =
+          OccasionLinkModel(occasionUser: OccasionUserModel(isEditorOrder: true));
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final form = FormModel(
+          link: 'test', registrationMode: state == 'regular' ? 'regular' : 'waitlist',
+          isOpen: state != 'closed', data: {});
+      if (state == 'scheduled') form.startTime = DateTime.now().add(const Duration(days: 1));
+      if (state == 'ended') form.endTime = DateTime.now().subtract(const Duration(days: 1));
+      final bundle = FormEditBundle(form: form, formFields: [], productTypes: [], products: [], availableBankAccounts: []);
+      await tester.pumpWidget(MaterialApp(home: state == 'prototype'
+          ? FormEditorContent.prototype(bundle: bundle, onPrototypeSave: (_) {})
+          : FormEditorContent(formLink: 'test', loadBundle: (_) async => bundle)));
+      await tester.pumpAndSettle();
+      expect(find.text(WaitlistStrings.formOpenWaitlistMessage), state == 'waitlist' ? findsOneWidget : findsNothing);
+      if (state == 'waitlist') {
+        final found = find.text(WaitlistStrings.formOpenWaitlistMessage);
+        expect(tester.widget<Text>(found).style!.color, ThemeConfig.warningColor(tester.element(found)));
+      }
+      if (state == 'regular' || state == 'prototype') expect(find.text(FormStrings.formOpenMessage), findsOneWidget);
+      if (state == 'closed') expect(find.text(FormStrings.formClosedMessage), findsOneWidget);
+      if (state == 'scheduled' || state == 'ended') expect(find.text(FormStrings.formOpenMessage), findsNothing);
+    });
+  }
+
   for (final canManage in [true, false]) {
     for (final hasCzkAccount in [true, false]) {
       testWidgets(

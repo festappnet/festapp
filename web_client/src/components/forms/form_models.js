@@ -123,6 +123,7 @@ export class FormModel {
         this.description = data.description;
         this.data = data.data || {};
         this.key = data.key;
+        this.occasionTitle = data.occasion?.title || null;
         this.occasionId = data.occasion; // Occasion ID might come as integer or object depending on query
         this.blueprint = data.blueprint;
         this.type = data.type;

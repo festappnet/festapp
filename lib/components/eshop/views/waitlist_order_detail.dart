@@ -1,21 +1,25 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../../services/time_helper.dart';
 import '../../../data_services/rights_service.dart';
 import '../../../services/dialog_helper.dart';
 import '../../forms/waitlist_commands.dart';
 import '../../forms/waitlist_strings.dart';
 import '../../forms/views/form_page.dart';
 import '../models/order_model.dart';
+import '../orders_strings.dart';
 
 class WaitlistOrderDetail extends StatefulWidget {
-  const WaitlistOrderDetail({super.key, required this.order});
+  const WaitlistOrderDetail({super.key, required this.order, this.loadDetail});
   final OrderModel order;
+  final Future<Map<String, dynamic>> Function(int)? loadDetail;
   @override
   State<WaitlistOrderDetail> createState() => _WaitlistOrderDetailState();
 }
 
 class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
-  final _commands = WaitlistCommands();
+  late final _commands = WaitlistCommands();
   final _selected = <int>{};
   Map<String, dynamic>? _detail;
   String? _error;
@@ -28,12 +32,20 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
 
   Future<void> _load() async {
     try {
-      final detail = await _commands.detail(widget.order.id!);
-      if (mounted)
+      final detail =
+          await (widget.loadDetail ?? _commands.detail)(widget.order.id!);
+      if (mounted) {
         setState(() {
           _detail = detail;
           _selected.clear();
+          _error = null;
+          final eligible =
+              (detail['tickets'] as List? ?? []).where(_isSelectable).toList();
+          if (eligible.length == 1) {
+            _selected.add(eligible.single['id'] as int);
+          }
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _error = WaitlistStrings.invalid);
     } finally {
@@ -55,11 +67,12 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       });
       await _load();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = WaitlistStrings.stale;
           _busy = false;
         });
+      }
     }
   }
 
@@ -67,6 +80,32 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       _selected.isNotEmpty &&
       _selected.every((id) => (offer['slots'] as List)
           .any((s) => s['ticketId'] == id && s['outcome'] == 'pending'));
+
+  bool _isSelectable(dynamic ticket) => const {
+        'waiting',
+        'offered',
+        'offer_expired',
+        'offer_declined',
+        'offer_cancelled'
+      }.contains(ticket['lifecycle']);
+
+  String _ticketLabel(dynamic ticket, int index) {
+    final name = ticket['displayName']?.toString().trim();
+    if (name != null && name.isNotEmpty) return name;
+    final count = (_detail?['tickets'] as List? ?? []).length;
+    return count == 1
+        ? OrdersStrings.itemSingular
+        : '${OrdersStrings.itemSingular} ${index + 1}';
+  }
+
+  String _slotLabel(dynamic slot) {
+    final tickets = _detail?['tickets'] as List? ?? [];
+    final index =
+        tickets.indexWhere((ticket) => ticket['id'] == slot['ticketId']);
+    return index < 0
+        ? OrdersStrings.itemSingular
+        : _ticketLabel(tickets[index], index);
+  }
 
   bool _offerIsPending(dynamic offer) {
     final now = DateTime.tryParse(
@@ -92,99 +131,116 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                     children: [
                   if (_busy) const LinearProgressIndicator(),
                   if (_error != null) Text(_error!),
-                  for (final p in _detail?['tickets'] ?? [])
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _selected.contains(p['id']),
-                      title: Text((p['answers']?['fields'] as List? ?? [])
-                          .expand((f) => (f as Map).values)
-                          .join(' · ')),
-                      subtitle: Text(
-                          '${WaitlistStrings.text(p['lifecycle'])} · ${p['registered_at']} · ${p['queue_at']}'),
-                      onChanged: !_busy &&
-                              RightsService.isEditorOrder() &&
-                              !['admitted', 'withdrawn', 'cancelled']
-                                  .contains(p['lifecycle'])
-                          ? (v) => setState(() {
-                                if (v == true) {
-                                  _selected.add(p['id']);
-                                } else {
-                                  _selected.remove(p['id']);
-                                }
-                              })
-                          : null,
-                    ),
-                  if (RightsService.isEditorOrder() &&
+                  if (_detail?['occasionTitle'] case final String title)
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(title,
+                            style: Theme.of(context).textTheme.titleMedium)),
+                  for (final entry
+                      in (_detail?['tickets'] as List? ?? []).indexed)
+                    Card(
+                        child: (_detail?['tickets'] as List? ?? []).length >
+                                    1 &&
+                                RightsService.isEditorOrder() &&
+                                _isSelectable(entry.$2)
+                            ? CheckboxListTile(
+                                value: _selected.contains(entry.$2['id']),
+                                title: Text(_ticketLabel(entry.$2, entry.$1)),
+                                subtitle: Text(WaitlistStrings.text(
+                                    entry.$2['lifecycle'])),
+                                onChanged: _busy
+                                    ? null
+                                    : (value) => setState(() {
+                                          if (value == true) {
+                                            _selected.add(entry.$2['id']);
+                                          } else {
+                                            _selected.remove(entry.$2['id']);
+                                          }
+                                        }))
+                            : ListTile(
+                                title: Text(_ticketLabel(entry.$2, entry.$1)),
+                                subtitle: Text(WaitlistStrings.text(
+                                    entry.$2['lifecycle'])))),
+                  if (!_busy &&
+                      _selected.isNotEmpty &&
+                      RightsService.isEditorOrder() &&
                       widget.order.isWaitlisted)
-                    TextButton(
-                        onPressed: _busy || _selected.isEmpty
-                            ? null
-                            : () => _resolve('withdraw'),
-                        child: Text(WaitlistStrings.withdraw)),
-                  Text(WaitlistStrings.offers,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  Text(WaitlistStrings.text('selectionExplanation')),
-                  for (final offer in _detail?['offers'] ?? [])
                     Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  '${WaitlistStrings.expiresAt}: ${DateTime.tryParse(offer['expires_at'])?.toLocal()}'),
-                              for (final slot in offer['slots'])
-                                Text(
-                                    '${slot['ticketId']} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !_offerIsPending(offer) ? 'expired' : slot['outcome'])}'),
-                              if (RightsService.isEditorOrder() &&
-                                  _offerIsPending(offer))
-                                Wrap(spacing: 8, children: [
-                                  TextButton(
-                                      onPressed: _busy
-                                          ? null
-                                          : () async {
-                                              final bundle = await _commands
-                                                  .read(offerId: offer['id']);
-                                              if (bundle['form'] == null) {
+                        child: OutlinedButton(
+                            onPressed: () => _resolve('withdraw'),
+                            child: Text(WaitlistStrings.withdraw))),
+                  if ((_detail?['offers'] as List? ?? []).isNotEmpty) ...[
+                    Text(WaitlistStrings.offers,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    if ((_detail?['offers'] as List? ?? [])
+                        .any(_offerIsPending))
+                      Text(WaitlistStrings.text('selectionExplanation')),
+                    for (final offer in _detail?['offers'] ?? [])
+                      Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (DateTime.tryParse(
+                                        offer['expires_at']?.toString() ?? '')
+                                    case final DateTime expires)
+                                  Text(
+                                      '${WaitlistStrings.expiresAt}: ${DateFormat('d. M. yyyy HH:mm').format(expires.toOccasionTime())}'),
+                                for (final slot in offer['slots'])
+                                  Text(
+                                      '${_slotLabel(slot)} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !_offerIsPending(offer) ? 'expired' : slot['outcome'])}'),
+                                if (RightsService.isEditorOrder() &&
+                                    _offerIsPending(offer))
+                                  Wrap(spacing: 8, children: [
+                                    TextButton(
+                                        onPressed: _busy
+                                            ? null
+                                            : () async {
+                                                final bundle = await _commands
+                                                    .read(offerId: offer['id']);
+                                                if (bundle['form'] == null) {
+                                                  await _load();
+                                                  return;
+                                                }
+                                                if (!context.mounted) return;
+                                                await Navigator.of(context)
+                                                    .push(MaterialPageRoute(
+                                                        builder: (_) => FormPage(
+                                                            formLink: bundle[
+                                                                        'form']
+                                                                    ['link'] ??
+                                                                widget.order
+                                                                    .form?.link,
+                                                            offerId:
+                                                                offer['id'])));
                                                 await _load();
-                                                return;
-                                              }
-                                              if (!context.mounted) return;
-                                              await Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                      builder: (_) => FormPage(
-                                                          formLink: bundle[
-                                                                      'form']
-                                                                  ['link'] ??
-                                                              widget.order.form
-                                                                  ?.link,
-                                                          offerId:
-                                                              offer['id'])));
-                                              await _load();
-                                            },
-                                      child: Text(WaitlistStrings.accept)),
-                                  TextButton(
-                                      onPressed: _busy ||
-                                              !_selectionBelongsTo(offer)
-                                          ? null
-                                          : () =>
-                                              _resolve('decline', offer['id']),
-                                      child: Text(WaitlistStrings.decline)),
-                                  TextButton(
-                                      onPressed: _busy ||
-                                              !_selectionBelongsTo(offer)
-                                          ? null
-                                          : () =>
-                                              _resolve('cancel', offer['id']),
-                                      child: Text(WaitlistStrings.cancel)),
-                                ]),
-                            ])),
-                  Text(WaitlistStrings.linkedOrders,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  if (_detail?['sourceOrderId'] != null)
-                    Text('${_detail!['sourceOrderId']}'),
-                  for (final order in _detail?['linkedOrders'] ?? [])
-                    Text(
-                        '${order['orderSymbol']} · ${OrderModel.stateToLocale(order['state'])}'),
+                                              },
+                                        child: Text(WaitlistStrings.accept)),
+                                    TextButton(
+                                        onPressed:
+                                            _busy || !_selectionBelongsTo(offer)
+                                                ? null
+                                                : () => _resolve(
+                                                    'decline', offer['id']),
+                                        child: Text(WaitlistStrings.decline)),
+                                    TextButton(
+                                        onPressed: _busy ||
+                                                !_selectionBelongsTo(offer)
+                                            ? null
+                                            : () =>
+                                                _resolve('cancel', offer['id']),
+                                        child: Text(WaitlistStrings.cancel)),
+                                  ]),
+                              ])),
+                  ],
+                  if ((_detail?['linkedOrders'] as List? ?? []).isNotEmpty) ...[
+                    Text(WaitlistStrings.linkedOrders,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    for (final order in _detail?['linkedOrders'] ?? [])
+                      Text(
+                          '${order['orderSymbol']} · ${OrderModel.stateToLocale(order['state'])}'),
+                  ],
                 ]))),
         actions: [],
       );

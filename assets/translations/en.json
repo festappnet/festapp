@@ -2623,6 +2623,13 @@
     "managementExplanation": "You can see your waiting status here. When we offer you a place, we will email you a link to confirm it.",
     "withdrawSelection": "Select the people you want to remove from the waitlist.",
     "withdrawConfirmation": "The selected people will leave the waitlist. They will need to register again if they want to attend.",
-    "declineConfirmation": "You will decline the offered places for the selected people. These places will be released to other people on the waitlist."
+    "declineConfirmation": "You will decline the offered places for the selected people. These places will be released to other people on the waitlist.",
+    "yourRegistration": "Your registration",
+    "registrationDetail": "Registration details",
+    "registrationSymbol": "Registration reference",
+    "waitingStatus": "You are currently on the waitlist. Your place is not confirmed yet.",
+    "withdrawInterest": "I no longer wish to attend",
+    "withdrawConfirmationOne": "You will leave the waitlist. If you decide to attend later, you will need to register again.",
+    "formOpenWaitlistMessage": "The form is open for waitlist registrations."
   }
 }
