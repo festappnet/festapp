@@ -61,6 +61,37 @@ CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql
  SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
 DO $$
+DECLARE x jsonb:=pg_temp.fixture(1); f bigint:=(x->>'form')::bigint;
+ regular bigint; first_order bigint; second_order bigint; proposal jsonb; r jsonb; row jsonb;
+BEGIN
+ r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));
+ PERFORM assert_eq(r->>'code','200'::text,'fill offer limit fixture');
+ regular:=(r#>>'{order,id}')::bigint;
+ first_order:=(pg_temp.register(x,1)->>'order')::bigint;
+ second_order:=(pg_temp.register(x,3)->>'order')::bigint;
+ PERFORM public.update_order_and_tickets_to_storno_221(regular);
+ proposal:=public.get_waitlist_offer_proposal(f);
+ PERFORM assert_eq(jsonb_array_length(proposal->'recipients'),2,'include eligible unallocated recipients');
+ SELECT value INTO row FROM jsonb_array_elements(proposal->'recipients') WHERE (value->>'orderId')::bigint=first_order;
+ PERFORM assert_eq((row->>'count')::integer,1,'suggest first waiting person');
+ PERFORM assert_eq((row->>'waitingCount')::integer,1,'singleton recipient limit');
+ SELECT value INTO row FROM jsonb_array_elements(proposal->'recipients') WHERE (value->>'orderId')::bigint=second_order;
+ PERFORM assert_eq((row->>'count')::integer,0,'unallocated recipient starts excluded');
+ PERFORM assert_eq((row->>'waitingCount')::integer,3,'unallocated recipient retains actual waiting limit');
+ PERFORM assert_eq((proposal#>>'{capacity,offerablePlaces}')::integer,1,'one free place');
+ r:=public.execute_waitlist_command_client_sync_v1('send',jsonb_build_object('formId',f,'revision',proposal->'revision','expiresAt',clock_timestamp()+interval '1 hour','recipients',jsonb_build_array(jsonb_build_object('orderId',first_order,'count',2))),gen_random_uuid(),gen_random_uuid(),(x->>'actor')::uuid,'[]'::jsonb);
+ PERFORM assert_eq(r#>>'{data,errorCode}','FORM_CAPACITY_EXCEEDED'::text,'reject allocation beyond capacity');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.waitlist_offers WHERE form_id=f),0::bigint,'capacity rejection leaves no offer');
+ UPDATE public.forms SET participant_capacity=2,capacity_revision=capacity_revision+1 WHERE id=f;
+ proposal:=public.get_waitlist_offer_proposal(f);
+ PERFORM assert_eq((proposal#>>'{capacity,offerablePlaces}')::integer,2,'capacity allows two but singleton does not');
+ r:=public.execute_waitlist_command_client_sync_v1('send',jsonb_build_object('formId',f,'revision',proposal->'revision','expiresAt',clock_timestamp()+interval '1 hour','recipients',jsonb_build_array(jsonb_build_object('orderId',first_order,'count',2))),gen_random_uuid(),gen_random_uuid(),(x->>'actor')::uuid,'[]'::jsonb);
+ PERFORM assert_eq(r#>>'{data,errorCode}','OFFER_CHANGED'::text,'reject allocation beyond recipient registrations');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.waitlist_offers WHERE form_id=f),0::bigint,'recipient rejection leaves no offer');
+ PERFORM pg_temp.offer(x,second_order,2);
+ PERFORM assert_eq((SELECT count(*) FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE w.form_id=f AND s.outcome='pending'),2::bigint,'manual allocation within both limits succeeds');
+END $$;
+DO $$
 DECLARE x jsonb:=pg_temp.fixture(2); f bigint:=(x->>'form')::bigint; regular bigint; source bigint; child bigint; r jsonb; w jsonb; ids bigint[]; offered bigint[]; pick bigint; remaining bigint; token text:=repeat('b',64); cmd uuid:=gen_random_uuid(); seq bigint; symbol text; q timestamptz;
 BEGIN
  FOR i IN 1..2 LOOP r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x)); PERFORM assert_eq(r->>'code','200'::text,'fill'); END LOOP;
