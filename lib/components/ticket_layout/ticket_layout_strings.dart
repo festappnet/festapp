@@ -16,7 +16,9 @@ class TicketLayoutStrings {
   static String get retryCatalog => 'TicketLayout.retryCatalog'.tr();
   static String get catalogError => 'TicketLayout.catalogError'.tr();
   static String get missingProduct => 'TicketLayout.missingProduct'.tr();
-  static String get hiddenProduct => 'TicketLayout.hiddenProduct'.tr();
+  static String get unreferencedProduct =>
+      'TicketLayout.unreferencedProduct'.tr();
+  static String get hiddenFormProduct => 'TicketLayout.hiddenFormProduct'.tr();
   static String get offeredProduct => 'TicketLayout.offeredProduct'.tr();
   static String get catalogProduct => 'TicketLayout.catalogProduct'.tr();
   static String get noSpace => 'TicketLayout.noSpace'.tr();

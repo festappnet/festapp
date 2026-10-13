@@ -292,3 +292,12 @@ Zbývající hlavní rizika jsou změna dat od okamžiku inventury, nedoložený
 ### Upřesnění podle úplné release inventury
 
 Akce 1072509 (organization 8) má čtyři používané food skupiny, ale historická aktivní named šablona žádné food pole netiskne a wide slot není uložený. Ambiguity gate se vztahuje jen na skutečná historická food pole. Chybějící neaktivní slot dostane neutrální canonical preset, jako nový slot v editoru; nesmí vytvořit domnělé historické food pole. Existující uložené slots i aktivní implicitní slot se nadále materializují s původní geometrií. Tuto situaci pokrývá samostatný offline migrační test.
+
+### Upřesnění UI stavu skupin po produkčním ověření 2026-10-13
+
+Pole Odvoz v akci 32316 je skutečně použité ve formuláři, ale skryté.
+`offered=false` tedy neznamená odstraněnou či nekompatibilní skupinu.
+Picker dál zahrnuje form-reference včetně skrytých polí podle původního
+upřesnění uživatele; skupiny bez reference nenabízí. Skryté použité pole
+nesmí označit jako „již není v nabídce“. Varování nepoužívané skupiny
+patří pouze k dříve uloženému poli bez aktuální formulářové reference.

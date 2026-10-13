@@ -628,7 +628,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       if (e.locked) Text(TicketLayoutStrings.locked),
       if (!widget.productEditing) Text(TicketLayoutStrings.draftProducts),
       if (type != null && !type.eligible)
-        Text(TicketLayoutStrings.hiddenProduct),
+        Text(TicketLayoutStrings.unreferencedProduct),
       const SizedBox(height: 20),
       TicketProductLabelInput(
           key: ValueKey('label-${e.id}'), controller: controller, element: e),
@@ -756,7 +756,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       isThreeLine: true,
                       title: Text(t.title),
                       subtitle: Text(
-                          '${t.example?['value'] ?? TicketLayoutStrings.noExample}\n${existing != null ? TicketLayoutStrings.alreadyAdded : t.offered ? TicketLayoutStrings.offeredProduct : TicketLayoutStrings.hiddenProduct} ${t.forms.map((f) => f['title']).whereType<String>().toSet().join(', ')}'),
+                          '${t.example?['value'] ?? TicketLayoutStrings.noExample}\n${existing != null ? TicketLayoutStrings.alreadyAdded : t.offered ? TicketLayoutStrings.offeredProduct : TicketLayoutStrings.hiddenFormProduct} ${t.forms.map((f) => f['title']).whereType<String>().where((title) => title != t.title).toSet().join(', ')}'.trim()),
                       onChanged: (_) => update(() => selected = t));
                 }).toList())),
               ]);
