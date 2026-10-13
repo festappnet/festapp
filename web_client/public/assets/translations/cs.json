@@ -2703,7 +2703,7 @@
     "waitingForPlace": "Čeká na místo",
     "awaitingOfferAcceptance": "Čeká na přijetí nabídky",
     "limitTickets": "Omezit počet vstupenek",
-    "capacityRegistrations": "Počet přihlášek",
-    "capacityTickets": "Počet vstupenek"
+    "capacityRegistrations": "Maximální počet přihlášek v tomto formuláři",
+    "capacityTickets": "Maximální počet vstupenek v tomto formuláři"
   }
 }

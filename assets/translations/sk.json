@@ -755,8 +755,8 @@
     "adminWithdrawHelp": "Ak sa účastník nezúčastní, vyraďte jeho prihlášku. Čakanie sa skončí a prípadné ponúknuté miesto sa uvoľní.",
     "acceptOne": "Potvrdiť prihlásenie",
     "limitTickets": "Obmedziť počet vstupeniek",
-    "capacityRegistrations": "Počet prihlášok",
-    "capacityTickets": "Počet vstupeniek"
+    "capacityRegistrations": "Maximálny počet prihlášok v tomto formulári",
+    "capacityTickets": "Maximálny počet vstupeniek v tomto formulári"
   },
   "EmailTemplates": {
     "subs": {

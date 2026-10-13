@@ -2702,7 +2702,7 @@
     "waitingForPlace": "Waiting for a place",
     "awaitingOfferAcceptance": "Awaiting offer acceptance",
     "limitTickets": "Limit the number of tickets",
-    "capacityRegistrations": "Number of registrations",
-    "capacityTickets": "Number of tickets"
+    "capacityRegistrations": "Maximum number of registrations in this form",
+    "capacityTickets": "Maximum number of tickets in this form"
   }
 }

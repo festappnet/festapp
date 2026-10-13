@@ -749,8 +749,8 @@
     "adminWithdrawHelp": "Jeśli uczestnik nie weźmie udziału, usuń jego zgłoszenie z listy oczekujących. Oczekiwanie się zakończy, a oferowane miejsce zostanie zwolnione.",
     "acceptOne": "Potwierdź zgłoszenie",
     "limitTickets": "Ogranicz liczbę biletów",
-    "capacityRegistrations": "Liczba zgłoszeń",
-    "capacityTickets": "Liczba biletów"
+    "capacityRegistrations": "Maksymalna liczba zgłoszeń w tym formularzu",
+    "capacityTickets": "Maksymalna liczba biletów w tym formularzu"
   },
   "EmailTemplates": {
     "subs": {
