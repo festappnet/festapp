@@ -17,14 +17,12 @@ class RichHtmlEditorDialog extends StatefulWidget {
     this.textStyle,
     this.ownsController = true,
     this.fullPage = false,
-    this.readOnly = false,
   });
   final RichHtmlEditorController controller;
   final String? title;
   final TextStyle? textStyle;
   final bool ownsController;
   final bool fullPage;
-  final bool readOnly;
 
   static Future<String?> show(
     BuildContext context, {
@@ -35,7 +33,6 @@ class RichHtmlEditorDialog extends StatefulWidget {
     HtmlContentProfile profile = HtmlContentProfile.appContent,
     HtmlSaveCoordinator? coordinator,
     HtmlMediaDraft? media,
-    bool readOnly = false,
   }) async {
     String? html = initialHtml;
     if (html == null && loadHtml != null) {
@@ -51,7 +48,7 @@ class RichHtmlEditorDialog extends StatefulWidget {
     }
     if (!context.mounted) return null;
     coordinator ??= HtmlEditingScope.maybeOf(context);
-    final draftMedia = readOnly ? null : media ?? coordinator?.media;
+    final draftMedia = media ?? coordinator?.media;
     final controller = RichHtmlEditorController(
       initialHtml: html,
       owner: draftMedia == null ? const HtmlMediaOwner.none() : owner,
@@ -61,10 +58,10 @@ class RichHtmlEditorDialog extends StatefulWidget {
     final result = await showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => RichHtmlEditorDialog._(
-          controller: controller, title: title, readOnly: readOnly),
+      builder: (_) =>
+          RichHtmlEditorDialog._(controller: controller, title: title),
     );
-    if (!readOnly && result != null) coordinator?.recordValue(controller);
+    if (result != null) coordinator?.recordValue(controller);
     return result;
   }
 
@@ -105,8 +102,7 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
 
   void _finish(bool save) {
     if (widget.ownsController) {
-      Navigator.pop<String>(
-          context, save && !widget.readOnly ? widget.controller.html : null);
+      Navigator.pop<String>(context, save ? widget.controller.html : null);
     } else {
       Navigator.pop<HtmlEditorFullscreenAction>(
         context,
@@ -127,7 +123,7 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
     }
     setState(() => _expanded = !_expanded);
     await WidgetsBinding.instance.endOfFrame;
-    if (mounted && !widget.readOnly) widget.controller.focusNode.requestFocus();
+    if (mounted) widget.controller.focusNode.requestFocus();
   }
 
   Future<bool> _canClose() async {
@@ -203,7 +199,6 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                     padding: const EdgeInsets.all(12),
                     child: RichHtmlEditor(
                       controller: widget.controller,
-                      enabled: !widget.readOnly,
                       textStyle: widget.textStyle,
                       onCancel: _requestCancel,
                       fullscreen: true,
@@ -220,7 +215,6 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                           padding: const EdgeInsets.all(12),
                           child: RichHtmlEditor(
                               controller: widget.controller,
-                              enabled: !widget.readOnly,
                               textStyle: widget.textStyle,
                               onCancel: _requestCancel),
                         ),
@@ -242,10 +236,9 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                     ),
                     const SizedBox(width: 12),
                     FilledButton(
-                      onPressed:
-                          !widget.readOnly && widget.controller.hasUserChanges
-                              ? () => _finish(true)
-                              : null,
+                      onPressed: widget.controller.hasUserChanges
+                          ? () => _finish(true)
+                          : null,
                       child: Text(CommonStrings.save),
                     ),
                   ],
