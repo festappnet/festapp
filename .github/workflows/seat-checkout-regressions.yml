@@ -8,6 +8,7 @@ on:
       - 'database/functions/eshop_waitlist/**'
       - 'database/functions/eshop_forms/**'
       - 'database/tests/eshop_orders/required*test.sql'
+      - 'database/tests/eshop_orders/manual_paid_state_only_test.sql'
       - 'database/tests/emails/paid_then_manual_ticket_delivery_test.sql'
       - 'supabase/functions/send-tickets/**'
       - 'supabase/functions/preview-ticket-layout/**'
@@ -51,7 +52,7 @@ jobs:
       - run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
       - run: bash automation/bootstrap_local_db.sh
       - name: Database contract and anonymous checkout
-        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test
+        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test
       - name: Click a seat and complete checkout in a real browser
         run: npm --prefix web_client run test:seat-checkout-browser
 

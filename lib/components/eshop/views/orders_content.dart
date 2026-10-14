@@ -446,7 +446,7 @@ class _OrdersContentState extends State<OrdersContent> {
     if (selectedFull.isEmpty) return;
     var stateChange =
         selectedFull.where((s) => s.state == OrderModel.orderedState).toList();
-    // Join the automatic paid intent even if the worker accepted it already.
+    // First Send after marking paid uses this payment generation, not a resend.
     final newlyPaidIds = stateChange.map((order) => order.id).toSet();
     if (stateChange.isNotEmpty) {
       var confirm = await DataGridActionConfirmation.show<OrderModel>(
