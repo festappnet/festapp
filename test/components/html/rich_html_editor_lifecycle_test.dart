@@ -34,6 +34,35 @@ void insert(RichHtmlEditorController controller, String text) {
 void _ignoreHtml(String _) {}
 
 void main() {
+  testWidgets('read-only HTML uses the same dialog without editing or saving',
+      (tester) async {
+    String? result = 'pending';
+    await tester.pumpWidget(MaterialApp(
+        home: Builder(
+            builder: (context) => Scaffold(
+                body: TextButton(
+                    onPressed: () async {
+                      result = await RichHtmlEditorDialog.show(context,
+                          initialHtml: '<p>Example description</p>',
+                          readOnly: true);
+                    },
+                    child: const Text('Open'))))));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RichHtmlEditorDialog), findsOneWidget);
+    expect(tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).enabled,
+        isFalse);
+    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull);
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pumpAndSettle();
+    expect(tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).enabled,
+        isFalse);
+    await tester.tap(find.byType(TextButton).last);
+    await tester.pumpAndSettle();
+    expect(result, isNull);
+  });
+
   for (final html in ['<br>', '<span></span>']) {
     testWidgets('empty inline markup accepts text and undo: $html',
         (tester) async {

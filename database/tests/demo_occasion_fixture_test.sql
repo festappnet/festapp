@@ -25,11 +25,24 @@ BEGIN
  PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.transactions t JOIN public.demo_occasions d ON d.bank_account=t.bank_account_id
   WHERE d.occasion IN(ball,concert,weekend) AND t.date > '2026-10-14 12:00Z'),'payments precede fixture reference');
 
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.orders WHERE occasion IN(ball,concert,weekend) AND state='paid'),'fully paid demo orders have been sent');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info
+  WHERE o.occasion=ball AND o.state='ordered' AND p.paid=0 AND p.deadline<'2026-10-14 12:00Z'),'expired unpaid order uses ordinary deadline semantics');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info
+  WHERE o.occasion=ball AND p.paid>p.amount),'overpayment example');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info
+  WHERE o.occasion=ball AND p.paid>0 AND p.paid<p.amount AND o.state='ordered'),'partial payment stays pending');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.forms WHERE occasion=weekend AND header LIKE '%/demo-assets/weekend-nature.jpg%' AND header LIKE '%žádný e-mail%'),'illustrated weekend description with explicit simulation notice');
+ PERFORM assert_true((SELECT count(*)>=10 FROM public.form_fields ff JOIN public.forms f ON f.id=ff.form
+  WHERE f.occasion=weekend AND ff.type IN ('phone','birth_year','select_one','select_many','text','note')),'realistic contact, travel, dietary and consent fields');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.form_fields ff JOIN public.forms f ON f.id=ff.form
+  WHERE f.occasion=weekend AND ff.type='select_many' AND ff.data ? 'default_value'),'consents are never preselected');
+
  PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.tickets t JOIN eshop.order_product_ticket x ON x.ticket=t.id
   JOIN eshop.orders o ON o.id=x."order" WHERE t.occasion=weekend AND t.state='waitlisted'
    AND (t.ticket_symbol IS NOT NULL OR x.product IS NOT NULL OR o.price IS NOT NULL OR o.payment_info IS NOT NULL)), 'waiting has no finance or admission');
  PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.tickets t ON t.id=s.ticket_id
-  WHERE t.occasion=weekend AND s.outcome='accepted' AND t.state='paid'),'accepted offer keeps ticket ID');
+  WHERE t.occasion=weekend AND s.outcome='accepted' AND t.state='sent'),'accepted offer keeps ticket ID');
  PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.spots s JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
   JOIN eshop.tickets t ON t.id=x.ticket WHERE public.is_demo_occasion(s.occasion) AND t.state='storno'),'cancelled tickets occupy no seats');
  PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.orders o WHERE public.is_demo_occasion(o.occasion)
