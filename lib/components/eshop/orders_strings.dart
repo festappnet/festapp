@@ -3,6 +3,7 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 
 class OrdersStrings {
+  static String get noOrders => 'FeatureOrders.noOrders'.tr();
   static String get waveNow => 'FeatureOrders.waveNow'.tr();
   static String get waveHiddenState => 'FeatureOrders.waveHiddenState'.tr();
   static String get scheduledCurrentPrice => 'FeatureOrders.currentPrice'.tr();

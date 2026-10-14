@@ -393,6 +393,7 @@
     "surname": "Priezvisko"
   },
   "FeatureOrders": {
+    "noOrders": "Zatiaľ nie sú žiadne objednávky.",
     "copyLink": "Kopírovať odkaz"
   },
   "FeatureMap": {

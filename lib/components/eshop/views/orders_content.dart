@@ -240,7 +240,7 @@ class _OrdersContentState extends State<OrdersContent> {
             (field.isTicketField ?? false) == false));
 
     var formFeat =
-        FeatureService.getFeatureDetails(FeatureConstants.form) as FormFeature;
+        FeatureService.getFeatureDetails(FeatureConstants.form) as FormFeature?;
 
     // Start with the base list of columns
     List<String> columnIdentifiers = [
@@ -262,7 +262,7 @@ class _OrdersContentState extends State<OrdersContent> {
       EshopColumns.PAYMENT_INFO_VARIABLE_SYMBOL,
       if (hasOrderNoteField) EshopColumns.ORDER_DATA_NOTE,
       EshopColumns.ORDER_NOTE_HIDDEN,
-      if (formFeat.isEnabled && (formFeat.reminderIsEnabled ?? false))
+      if (formFeat?.isEnabled == true && (formFeat?.reminderIsEnabled ?? false))
         EshopColumns.PAYMENT_INFO_REMINDER_SENT,
       EshopColumns.PAYMENT_INFO_DEADLINE,
       if (FeatureService.isFeatureEnabled(FeatureConstants.deposit))
@@ -387,7 +387,8 @@ class _OrdersContentState extends State<OrdersContent> {
     if (controller == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    return SingleTableDataGrid<OrderModel>(controller!);
+    return SingleTableDataGrid<OrderModel>(controller!,
+        emptyMessage: OrdersStrings.noOrders);
   }
 
   Future<void> cancelOrders(SingleDataGridController singleDataGrid) async {

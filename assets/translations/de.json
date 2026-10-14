@@ -393,6 +393,7 @@
     "surname": "Nachname"
   },
   "FeatureOrders": {
+    "noOrders": "Es gibt noch keine Bestellungen.",
     "copyLink": "Link kopieren"
   },
   "FeatureMap": {

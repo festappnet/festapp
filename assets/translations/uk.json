@@ -501,6 +501,7 @@
     "title": "Розклад"
   },
   "FeatureOrders": {
+    "noOrders": "Замовлень поки немає.",
     "addTransactionConfirmation": "Додати цю транзакцію?",
     "generateNewCodeWarning": "Після генерації нового коду старий більше не працюватиме.",
     "copy": "Копіювати",
