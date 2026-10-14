@@ -40,6 +40,9 @@ const FORCED_OCCASION_PATH = ${JSON.stringify(forcedOccasionLink ? `/${forcedOcc
 const STANDALONE_DOCUMENT_PATHS = new Set(${JSON.stringify(standaloneDocuments, null, 2)});
 const PRECACHE_PATHS = new Set(PRECACHE_URLS.map((url) =>
   new URL(url, self.location.origin).pathname));
+// Worker globals can disappear between the HTML response and its first script.
+// Keep only the served build identity, never auth or application data.
+const CLIENT_VERSION_CACHE_NAME = 'festapp-client-versions-v1';
 const clientVersions = new Map();
 const clientCacheNames = new Map();
 const pendingClientVersionReports = new Map();
@@ -119,13 +122,43 @@ async function requiresHandoffBootstrapActivation() {
   }
 }
 
-function recordClientVersion(clientId, version) {
+async function recordClientVersion(clientId, version) {
   clientVersions.set(clientId, version);
   const pending = pendingClientVersionReports.get(clientId);
   if (pending) {
     clearTimeout(pending.timeoutId);
     pending.resolve(true);
     pendingClientVersionReports.delete(clientId);
+  }
+  try {
+    const cache = await withStorageTimeout(caches.open(CLIENT_VERSION_CACHE_NAME));
+    await withStorageTimeout(cache.put(clientVersionRequest(clientId),
+      new Response(JSON.stringify({ version }), { headers: { 'content-type': 'application/json' } })));
+  } catch (_) {
+    // Storage failure must not block a live page whose version is already known.
+  }
+}
+
+function clientVersionRequest(clientId) {
+  return new Request(new URL('/__festapp_client_version__/' + encodeURIComponent(clientId),
+    self.location.origin));
+}
+
+async function restoreClientVersion(clientId) {
+  if (clientVersions.has(clientId)) return true;
+  try {
+    const cache = await withStorageTimeout(caches.open(CLIENT_VERSION_CACHE_NAME));
+    const response = await withStorageTimeout(cache.match(clientVersionRequest(clientId)));
+    if (!response) return false;
+    const { version } = await withStorageTimeout(response.json());
+    // A live report can arrive while the storage read is in progress.
+    if (clientVersions.has(clientId)) return true;
+    if (typeof version !== 'string' || !version) return false;
+    clientVersions.set(clientId, version);
+    if (version !== BUILD_VERSION) clientCacheNames.set(clientId, CACHE_PREFIX + version);
+    return true;
+  } catch (_) {
+    return false;
   }
 }
 
@@ -144,6 +177,12 @@ function waitForClientVersion(clientId) {
     }, CLIENT_VERSION_REPORT_TIMEOUT_MS),
   };
   pendingClientVersionReports.set(clientId, pending);
+  // Existing Android tabs may resume under a restarted worker, including tabs
+  // opened before durable reports shipped. Ask the loaded document directly
+  // rather than waiting for an unrelated focus event or polling interval.
+  Promise.resolve().then(() => self.clients.get(clientId)).then((client) => {
+    client?.postMessage({ type: 'FESTAPP_REPORT_VERSION' });
+  }).catch(() => {});
   return promise;
 }
 
@@ -168,6 +207,7 @@ async function reconcileShellCaches({ apply = false } = {}) {
     const liveVersions = [];
     let unknown = 0;
     for (const client of windowClients) {
+      await restoreClientVersion(client.id);
       const version = clientVersions.get(client.id);
       if (typeof version !== 'string' || version.length === 0) {
         unknown++;
@@ -303,7 +343,7 @@ self.addEventListener('message', (event) => {
     // client back to the old shell recreates a mixed-generation mobile reload.
     if (event.source.id === cutoverClientId &&
         event.data.version !== BUILD_VERSION) return;
-    recordClientVersion(event.source.id, event.data.version);
+    const persistedVersion = recordClientVersion(event.source.id, event.data.version);
     if (event.data.version === BUILD_VERSION) {
       clientCacheNames.delete(event.source.id);
       if (event.source.id === cutoverClientId) cutoverClientId = null;
@@ -313,7 +353,7 @@ self.addEventListener('message', (event) => {
         CACHE_PREFIX + event.data.version,
       );
     }
-    event.waitUntil(scheduleShellReconcile({ apply: true }));
+    event.waitUntil(Promise.all([persistedVersion, scheduleShellReconcile({ apply: true })]));
   }
 });
 
@@ -340,7 +380,7 @@ self.addEventListener('activate', (event) => {
       // client-version handshake deadlock.
       for (const client of windowClients) {
         clientCacheNames.delete(client.id);
-        recordClientVersion(client.id, BUILD_VERSION);
+        await recordClientVersion(client.id, BUILD_VERSION);
         try {
           await client.navigate(client.url);
         } catch (_) {
@@ -454,7 +494,7 @@ self.addEventListener('fetch', (event) => {
     const callbackClient = event.resultingClientId || event.clientId;
     if (request.mode === 'navigate' && callbackClient) {
       clientCacheNames.delete(callbackClient);
-      recordClientVersion(callbackClient, BUILD_VERSION);
+      event.waitUntil(recordClientVersion(callbackClient, BUILD_VERSION));
     }
     event.respondWith(fetch(request, { cache: 'no-store' }));
     return;
@@ -496,8 +536,8 @@ self.addEventListener('fetch', (event) => {
     // Runtime requests from an older, still-open tab stay on its mapped shell.
     if (request.mode === 'navigate' && clientId) {
       clientCacheNames.delete(clientId);
-      recordClientVersion(clientId, BUILD_VERSION);
-    } else if (clientId && !clientVersions.has(clientId)) {
+      await recordClientVersion(clientId, BUILD_VERSION);
+    } else if (clientId && !await restoreClientVersion(clientId)) {
       const reported = await waitForClientVersion(clientId);
       if (!reported) return Response.error();
     }
