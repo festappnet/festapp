@@ -12,6 +12,19 @@ import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:uuid/uuid.dart';
 import 'demo_occasion_navigation.dart';
 
+/// The panel overlays the whole page, including nested scaffold footers.
+class DemoOccasionOverlay extends StatelessWidget {
+  final Widget child;
+  const DemoOccasionOverlay({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
+        child,
+        const Positioned(
+            left: 0, right: 0, bottom: 0, child: DemoOccasionBanner()),
+      ]);
+}
+
 class DemoOccasionBanner extends StatefulWidget {
   const DemoOccasionBanner({super.key});
   @override
