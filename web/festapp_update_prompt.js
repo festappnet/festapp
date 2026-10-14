@@ -62,40 +62,6 @@
 
   // The manifest can reach an edge before the matching executable shell. A
   // worker version handshake proves that the coherent shell was installed.
-  async function networkBuildVersion() {
-    try {
-      const response = await fetch('/festapp-version.json?refresh=' + Date.now(), {
-        cache: 'no-store', headers: { 'cache-control': 'no-cache' }
-      });
-      return response.ok ? (await response.json()).version : null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  async function repairActiveAppShell(version) {
-    const worker = navigator.serviceWorker?.controller;
-    if (!worker || typeof MessageChannel === 'undefined') return false;
-    return new Promise(function(resolve) {
-      const channel = new MessageChannel();
-      const timeout = window.setTimeout(function() { finish(false); }, 120000);
-      function finish(ok) {
-        window.clearTimeout(timeout);
-        channel.port1.close?.();
-        resolve(ok);
-      }
-      channel.port1.onmessage = function(event) {
-        finish(event.data?.ok === true && event.data?.version === version);
-      };
-      try {
-        worker.postMessage({ type: 'FESTAPP_REPAIR_APP_SHELL', version: version },
-          [channel.port2]);
-      } catch (_) {
-        finish(false);
-      }
-    });
-  }
-
   async function queryWorkerVersion(worker) {
     if (!worker || typeof MessageChannel === 'undefined') return null;
     return new Promise(function(resolve) {
@@ -425,9 +391,7 @@
       // Keep the last working shell until the matching new worker is installed,
       // activated and controlling this tab. If preparation fails, the user can
       // retry without losing the version that still launches offline.
-      const targetVersion = await networkBuildVersion() || latestVersion;
-      if (!(await cutOverToVersion(targetVersion,
-          window.__FESTAPP_APP_READY__ !== true && targetVersion === currentVersion))) {
+      if (!(await cutOverToVersion(latestVersion))) {
         reloadButton.disabled = false;
         reloadButton.textContent = copy.reload;
       }
@@ -488,12 +452,10 @@
     }
   }
 
-  async function cutOverToVersion(latestVersion, repair = false, onlyIfStalled = false) {
+  async function cutOverToVersion(latestVersion) {
     if (!latestVersion) return false;
     const ready = await activateWaitingFestappWorker(latestVersion);
-    if (!ready || (onlyIfStalled && window.__FESTAPP_APP_READY__ === true)) return false;
-    if (repair && !(await repairActiveAppShell(latestVersion))) return false;
-    if (onlyIfStalled && window.__FESTAPP_APP_READY__ === true) return false;
+    if (!ready) return false;
     sessionStorage.setItem(cutoverStorageKey, latestVersion);
     window.location.reload();
     return true;
@@ -517,10 +479,9 @@
 
     console.warn('Festapp startup stalled; retrying from the network:', reason);
     sessionStorage.setItem(startupRecoveryStorageKey, currentVersion || '1');
-    const targetVersion = await networkBuildVersion() || currentVersion;
-    const recovered = await cutOverToVersion(targetVersion, targetVersion === currentVersion, true);
-    if (!recovered && window.__FESTAPP_APP_READY__ !== true) showUpdateBanner(targetVersion, 'legacy-cache');
-    return recovered;
+    await prepareNetworkReload();
+    window.location.reload();
+    return true;
   }
 
   function isDartDispatchRuntimeFailure(event) {
