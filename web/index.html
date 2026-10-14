@@ -453,16 +453,16 @@
         {{flutter_js}}
         {{flutter_build_config}}
 
-        window.setFestappStartupPhase('S01');
+        window.setFestappStartupPhase?.('S01');
         _flutter.loader.load({
           onEntrypointLoaded: async function(engineInitializer) {
             try {
-              window.setFestappStartupPhase('S02');
+              window.setFestappStartupPhase?.('S02');
               const appRunner = await engineInitializer.initializeEngine({
                 useColorEmoji: true,
                 assetBase: new URL(".", document.baseURI).href
               });
-              window.setFestappStartupPhase('S03');
+              window.setFestappStartupPhase?.('S03');
               await appRunner.runApp();
             } catch (error) {
               console.error('Festapp Flutter startup failed:', error);
