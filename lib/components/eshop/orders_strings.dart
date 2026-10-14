@@ -3,6 +3,28 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 
 class OrdersStrings {
+  static String get bankSyncPaymentPaused =>
+      'FeatureOrders.bankSyncPaymentPaused'.tr();
+  static String get bankSyncWarningTitle =>
+      'FeatureOrders.bankSyncWarningTitle'.tr();
+  static String get bankSyncWarningHelp =>
+      'FeatureOrders.bankSyncWarningHelp'.tr();
+  static String get bankSyncWarningContactShort =>
+      'FeatureOrders.bankSyncWarningContactShort'.tr();
+  static String get bankSyncWarningContact =>
+      'FeatureOrders.bankSyncWarningContact'.tr();
+  static String get bankSyncWarningFallback =>
+      'FeatureOrders.bankSyncWarningFallback'.tr();
+  static String bankSyncWarningReason(String code) =>
+      'FeatureOrders.bankSyncWarningReasons.${const {
+        'not_configured',
+        'suspended',
+        'bank_error',
+        'stale',
+        'token_missing',
+        'email_missing'
+      }.contains(code) ? code : 'not_configured'}'
+          .tr();
   static String get noOrders => 'FeatureOrders.noOrders'.tr();
   static String get waveNow => 'FeatureOrders.waveNow'.tr();
   static String get waveHiddenState => 'FeatureOrders.waveHiddenState'.tr();
@@ -321,9 +343,10 @@ class OrdersStrings {
   static String get gridOrderSequenceHelp =>
       "OrderGridColumns.orderSequenceHelp".tr();
   static String get validOrders => "OrderGridColumns.validOrders".tr();
-  static String get validTickets => FeatureService.isFeatureEnabled(FeatureConstants.ticket)
-      ? "OrderGridColumns.validTickets".tr()
-      : "OrderGridColumns.validApplications".tr();
+  static String get validTickets =>
+      FeatureService.isFeatureEnabled(FeatureConstants.ticket)
+          ? "OrderGridColumns.validTickets".tr()
+          : "OrderGridColumns.validApplications".tr();
   static String get gridOrderSymbol =>
       'OrderGridColumns.orderSymbol'.tr(); // "Order Symbol"
   static String get gridCustomer =>

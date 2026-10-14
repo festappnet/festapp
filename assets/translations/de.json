@@ -1,5 +1,10 @@
 {
   "BankAccount": {
+    "synchronizationPending": "Synchronisierung aktiviert. Der nächste Abruf wartet auf die Bankfrist.",
+    "automaticSynchronization": "Automatische Synchronisierung",
+    "synchronizationEnabled": "Ein",
+    "synchronizationPaused": "Aus",
+    "synchronizationChanging": "Synchronisierung wird aktualisiert",
     "emailBankUnsupported": "Die Bank-E-Mail-Anbindung ist derzeit nur für Fio banka und Air Bank verfügbar. Für dieses Konto können Sie Zahlungen manuell erfassen."
   },
   "EmailDelivery": {
@@ -397,6 +402,20 @@
     "surname": "Nachname"
   },
   "FeatureOrders": {
+    "bankSyncWarningContactShort": "Kontakt:",
+    "bankSyncPaymentPaused": "Die Banksynchronisierung für das Empfängerkonto dieser Zahlung ist ausgeschaltet.",
+    "bankSyncWarningTitle": "Automatischer Zahlungsabgleich nicht verfügbar",
+    "bankSyncWarningHelp": "Die Zahlung kann bereits eingegangen sein, ohne dieser Bestellung zugeordnet zu sein. Prüfen Sie den Kontoauszug, bevor Sie eine Zahlungserinnerung senden.",
+    "bankSyncWarningContact": "Bitten Sie einen Kontoadministrator, die Synchronisierung zu prüfen:",
+    "bankSyncWarningFallback": "Bitten Sie den Veranstalter, den Kontoadministrator zu kontaktieren.",
+    "bankSyncWarningReasons": {
+      "not_configured": "Die automatische Synchronisierung ist nicht eingerichtet.",
+      "suspended": "Die automatische Synchronisierung ist pausiert.",
+      "bank_error": "Bei der Banksynchronisierung ist ein Fehler aufgetreten.",
+      "stale": "Bankzahlungen wurden seit längerer Zeit nicht aktualisiert.",
+      "token_missing": "Der Bankzugangstoken fehlt.",
+      "email_missing": "Der Empfang von Bank-E-Mails ist nicht eingerichtet."
+    },
     "noOrders": "Es gibt noch keine Bestellungen.",
     "copyLink": "Link kopieren"
   },

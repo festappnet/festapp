@@ -185,7 +185,8 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/_shared/canonicalEmail_test.ts"
+        "supabase/functions/_shared/canonicalEmail_test.ts",
+        "supabase/functions/_shared/bankSyncWarningEmail_test.ts"
       ]
     },
     "email-provider-events": {
@@ -236,7 +237,8 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/bankSyncOperation_test.ts",
-        "supabase/functions/_shared/bankSyncToken_test.ts"
+        "supabase/functions/_shared/bankSyncToken_test.ts",
+        "supabase/functions/_shared/bankSyncHealth_test.ts"
       ]
     },
     "bank-sync-webhook": {

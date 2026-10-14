@@ -1328,7 +1328,7 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_operations (
   id uuid PRIMARY KEY,
   bank_account_id bigint NOT NULL REFERENCES eshop.bank_accounts(id),
   actor uuid NOT NULL REFERENCES public.user_info(id),
-  operation text NOT NULL CHECK(operation IN ('create','set_token','rotate_pairing','sync','suspend')),
+  operation text NOT NULL CHECK(operation IN ('create','set_token','rotate_pairing','sync','suspend','resume','update_details')),
   payload_sha256 text NOT NULL CHECK(payload_sha256 ~ '^[0-9a-f]{64}$'),
   state text NOT NULL CHECK(state IN ('pending','running','uncertain','completed','failed')),
   remote_reference text,
@@ -1460,3 +1460,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS demo_occasions_listed_uidx
  ON public.demo_occasions(organization,demo_key) WHERE is_listed;
 ALTER TABLE public.demo_occasions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.demo_occasions FROM PUBLIC,anon,authenticated,service_role;
+
+-- BankSync health observations. Canonical source: eshop_bank_sync/bank_sync_health.sql.
+-- BankSync observations and one durable notification incident per connection.
+CREATE TABLE IF NOT EXISTS eshop.bank_sync_health (
+  connection_id bigint PRIMARY KEY REFERENCES eshop.bank_sync_connections(id) ON DELETE CASCADE,
+  checked_at timestamptz NOT NULL DEFAULT now(),
+  ingest_enabled boolean,
+  polling_enabled boolean,
+  token_present boolean,
+  warning_code text,
+  warning_since timestamptz,
+  incident_id uuid,
+  notified_at timestamptz
+);
+ALTER TABLE eshop.bank_sync_health ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON eshop.bank_sync_health FROM PUBLIC,anon,authenticated,service_role;

@@ -7,7 +7,7 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { ...cors, "content-type": "application/json", "cache-control": "no-store" },
 });
-const operations = new Set(["create", "set_token", "rotate_pairing", "sync", "suspend"]);
+const operations = new Set(["create", "set_token", "rotate_pairing", "sync", "suspend", "resume"]);
 async function hash(value: string): Promise<string> {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))))
     .map((byte) => byte.toString(16).padStart(2, "0")).join("");

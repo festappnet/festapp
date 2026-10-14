@@ -15,7 +15,8 @@ BEGIN
     'SELECT apply_planned_changes()'
   );
 
-  -- BankSync owns bank polling. This job only recovers durable control intents.
+  -- BankSync owns bank polling. This job recovers durable control intents.
+  -- Scoped health observation is configured explicitly with configure_bank_sync_health_monitor.
   PERFORM cron.schedule('festapp_canonical_bank_sync_reconcile','*/5 * * * *',
     format($$SELECT net.http_post(url:='%s/functions/v1/bank-sync-reconcile',
       body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)),

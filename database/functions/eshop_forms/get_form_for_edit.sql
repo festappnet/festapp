@@ -181,7 +181,10 @@ BEGIN
             'account_number_human_readable', ba.account_number_human_readable,
             'title', ba.title,
             'supported_currencies', ba.supported_currencies,
-            'type', ba.type
+            'type', ba.type,
+            'bank_sync_warning', public.bank_sync_warning(ba.id),
+            'bank_sync', (SELECT jsonb_build_object('state',c.state,'mode',c.mode) FROM eshop.bank_sync_connections c
+              WHERE c.bank_account_id=ba.id OR c.id IN (SELECT a.connection_id FROM eshop.bank_sync_account_aliases a WHERE a.bank_account_id=ba.id))
         ) ORDER BY uba.priority ASC, ba.id ASC
     ), '[]'::jsonb)
     INTO availableBankAccountsData

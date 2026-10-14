@@ -53,3 +53,10 @@ Updating a connected account commits its Festapp details and a durable `update_d
 Connected physical account identity remains immutable: add/select a new account for future orders rather than reassigning historical bank transactions. Creation and token/email setup are separate operations; API ingestion currently supports Fio. BankSync's public API supports Fio and Air Bank adapters, not arbitrary bank API providers.
 
 A bank cooldown or transient failure after the full persisted-token digest check is a deferred verification, not failed storage. Complete the saved-token operation, re-enable polling and show `token_saved: true` with the verification error. Leaving it uncertain and polling disabled falsely reported failure on a normal concurrent poll.
+
+## Synchronization control and health
+
+Account admins can pause/resume automatic synchronization without replacing the
+token. The connection status, order payment warnings and form/unit bank cards
+share safe operational details. See
+[health and incident notifications](../../../docs/operations/banksync/HEALTH-ALERTS.md).

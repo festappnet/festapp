@@ -1,3 +1,5 @@
+import 'package:fstapp/components/bank_accounts/bank_sync_warning.dart';
+export 'package:fstapp/components/bank_accounts/bank_sync_warning.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 
 class PaymentInfoModel {
@@ -15,10 +17,14 @@ class PaymentInfoModel {
   String? currencyCode;
   Map<String, dynamic>? data;
   bool? isReminderSent;
+  BankSyncWarning? bankSyncWarning;
 
   factory PaymentInfoModel.fromJson(Map<String, dynamic> json) {
     final data = json[TbEshop.payment_info.data] as Map<String, dynamic>?;
     return PaymentInfoModel(
+      bankSyncWarning: json['bank_sync_warning'] is Map<String, dynamic>
+          ? BankSyncWarning.fromJson(json['bank_sync_warning'])
+          : null,
       id: json[TbEshop.payment_info.id],
       createdAt: json[TbEshop.payment_info.created_at] != null
           ? DateTime.parse(json[TbEshop.payment_info.created_at])
@@ -55,6 +61,7 @@ class PaymentInfoModel {
   String toBasicString() => id != null ? "Payment Info #$id" : "Payment Info";
 
   PaymentInfoModel({
+    this.bankSyncWarning,
     this.id,
     this.createdAt,
     this.bankAccount,

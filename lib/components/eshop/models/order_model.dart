@@ -36,13 +36,15 @@ class OrderModel extends ITrinaRowModel {
   bool get isWaitlisted => state == waitlistedState;
   String get stateLabel {
     final counts = waitlistSummary?.counts;
-    if (isWaitlisted && counts != null &&
+    if (isWaitlisted &&
+        counts != null &&
         counts.values.fold<int>(0, (sum, count) => sum + count) == 1 &&
         counts['offered'] == 1) {
       return WaitlistStrings.text('offered');
     }
     return stateToLocale(state);
   }
+
   bool get isActive =>
       active ??
       waitlistSummary?.isActive ??
@@ -67,6 +69,22 @@ class OrderModel extends ITrinaRowModel {
       state != null &&
       ![waitlistedState, stornoState, 'preparing_payment'].contains(state);
   bool get canChangePayment => canChangePaymentInState(state) && allows('edit');
+
+  /// Warn only while the order is awaiting a bank payment. Completed states
+  /// stay quiet even if historical ledger amounts differ from the order price.
+  BankSyncWarning? get bankSyncWarning {
+    final payment = paymentInfoModel;
+    if (!isActive ||
+        ![
+          orderedState,
+          expiredState,
+        ].contains(state) ||
+        payment?.bankAccount == null ||
+        (payment!.amount ?? 0) <= (payment.paid ?? 0)) {
+      return null;
+    }
+    return payment.bankSyncWarning;
+  }
 
   bool get canEdit => allows('edit');
   Map<String, dynamic>? data;

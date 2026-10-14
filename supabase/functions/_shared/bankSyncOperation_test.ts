@@ -93,3 +93,94 @@ for (const mismatch of [false, true]) {
     } finally {requestHandler=undefined;}
   });
 }
+
+for (const scenario of ['resume-api', 'resume-inactive', 'resume-email', 'suspend-api', 'suspend-email', 'resume-readback-mismatch'] as const) {
+  Deno.test(`synchronization control: ${scenario}`, async () => {
+    const suspend = scenario.startsWith('suspend');
+    const mode = scenario.endsWith('email') ? 'email' : 'api';
+    let ingress = suspend;
+    let polling = suspend;
+    let pulls = 0;
+    let tokenWrites = 0;
+    const calls: {name:string;body:any}[] = [];
+    requestHandler = (async (input:any, init?:RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      const body = init?.body ? JSON.parse(String(init.body)) : {};
+      const respond = (value:unknown,status=200) => new Response(JSON.stringify(value),{status,headers:{'content-type':'application/json'}});
+      if (url.hostname === '127.0.0.1') {
+        const name = url.pathname.split('/').pop()!;
+        calls.push({name,body});
+        return respond(name === 'claim_bank_sync_operation'
+          ? {connection_id:1,remote_id:'9',barrier:'active',lease_token:'lease',mode}
+          : null);
+      }
+      if (url.pathname.endsWith('/ingest-state')) {
+        if (init?.method === 'PUT') ingress = body.enabled;
+        return respond({ingest_enabled:scenario === 'resume-readback-mismatch' ? false : ingress});
+      }
+      if (url.pathname.endsWith('/fio-token')) {
+        polling = body.fetch_enabled;
+        if (body.fio_api_token) tokenWrites++;
+        return respond({});
+      }
+      if (url.pathname.endsWith('/fio-sync')) {
+        pulls++;
+        assertEquals(ingress,true);
+        assertEquals(polling,true);
+        return scenario === 'resume-inactive'
+          ? respond({error:'fio_token_invalid_or_inactive'},422)
+          : respond({api_last_success_at:'2026-10-14T22:00:00Z'});
+      }
+      if (url.pathname === '/bank-accounts/9') return respond({api_fetch_enabled:polling});
+      throw new Error('Unexpected request');
+    }) as typeof fetch;
+    try {
+      const run = () => runBankSyncOperation({operation_id:'fixture',operation:suspend?'suspend':'resume'},'hash');
+      if (scenario === 'resume-readback-mismatch') {
+        await assertRejects(run,Error,'sync_state_not_verified');
+        assertEquals(calls.some(c=>c.name==='update_bank_sync_connection_metadata'),false);
+        assertEquals(calls.at(-1)?.body.p_state,'uncertain');
+      } else {
+        const result = await run();
+        assertEquals(ingress,!suspend);
+        assertEquals(polling,mode==='api' ? !suspend : suspend);
+        assertEquals(pulls,!suspend && mode==='api' ? 1 : 0);
+        assertEquals(result.state,suspend?'suspended':scenario==='resume-inactive'?'degraded':'connected');
+        assertEquals(calls.at(-1)?.body.p_state,'completed');
+        assertEquals(calls.find(c=>c.name==='update_bank_sync_connection_metadata')?.body.p_expiry,null);
+        if (scenario==='resume-inactive') assertEquals(result.verification_error,'fio_token_invalid_or_inactive');
+      }
+      assertEquals(tokenWrites,0,'Pause/resume must preserve existing credentials');
+    } finally {requestHandler=undefined;}
+  });
+}
+
+for (const deferred of ['cooldown','busy'] as const) {
+  Deno.test(`resume treats ${deferred} as pending synchronization, not a bank failure`, async()=>{
+    const calls:{name:string;body:any}[]=[];
+    requestHandler=(async(input:any,init?:RequestInit)=>{
+      const url=new URL(input instanceof Request?input.url:String(input));
+      const body=init?.body?JSON.parse(String(init.body)):{};
+      const respond=(v:unknown,status=200)=>new Response(JSON.stringify(v),{status,headers:{'content-type':'application/json'}});
+      if(url.hostname==='127.0.0.1') {
+        const name=url.pathname.split('/').pop()!;calls.push({name,body});
+        return respond(name==='claim_bank_sync_operation'?{connection_id:1,remote_id:'9',barrier:'active',lease_token:'lease',mode:'api',state:'suspended'}:null);
+      }
+      if(url.pathname.endsWith('/ingest-state'))return respond({ingest_enabled:true});
+      if(url.pathname.endsWith('/fio-token'))return respond({});
+      if(url.pathname.endsWith('/fio-sync'))return deferred==='cooldown'
+        ?respond({error:'api_fetch_throttled',retry_after_s:30},429)
+        :respond({deferred:true,api_last_success_at:null});
+      if(url.pathname==='/bank-accounts/9')return respond({api_fetch_enabled:true});
+      throw new Error('Unexpected request');
+    }) as typeof fetch;
+    try {
+      const result=await runBankSyncOperation({operation_id:'fixture',operation:'resume'},'hash');
+      assertEquals(result.state,'connected');
+      assertEquals(result.sync_pending,true);
+      assertEquals(result.verification_error,undefined);
+      assertEquals(calls.some(c=>c.name==='record_bank_sync_pull'),false,'No bank request means no new success or failure fact');
+      assertEquals(calls.at(-1)?.body.p_state,'completed');
+    } finally {requestHandler=undefined;}
+  });
+}

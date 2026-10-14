@@ -53,6 +53,15 @@ BEGIN
  PERFORM public.require_service_role();
  IF public.is_demo_occasion(p_message.occasion) THEN RETURN false; END IF;
  IF p_message.expires_at<=now() THEN RETURN false; END IF;
+ IF p_message.message_kind='custom' AND p_message.code='BANK_SYNC_WARNING' THEN
+  IF NOT EXISTS (SELECT 1 FROM eshop.bank_sync_health h JOIN eshop.bank_sync_connections c ON c.id=h.connection_id
+    WHERE h.connection_id=(p_message.data->>'connection_id')::bigint
+      AND h.incident_id::text=p_message.data->>'incident_id' AND h.warning_code IS NOT NULL
+      AND c.state IN ('connected','degraded') AND public.bank_sync_problem(c.id) IS NOT NULL
+      AND EXISTS(SELECT 1 FROM eshop.bank_account_users bau WHERE bau."user"=p_message.recipient_user AND bau.is_admin
+        AND (bau.bank_account=c.bank_account_id OR bau.bank_account IN
+          (SELECT x.bank_account_id FROM eshop.bank_sync_account_aliases x WHERE x.connection_id=c.id)))) THEN RETURN false; END IF;
+ END IF;
  IF p_message.order_id IS NULL THEN
   IF p_message.recipient_user IS NOT NULL AND p_message.message_kind<>'deletion_complete' THEN
    IF p_message.message_kind<>'gotrue' AND public.get_user_delivery_email(p_message.recipient_user) IS DISTINCT FROM p_message.recipient THEN RETURN false; END IF;
