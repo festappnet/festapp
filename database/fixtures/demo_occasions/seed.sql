@@ -170,11 +170,12 @@ BEGIN
   PERFORM pg_temp.refresh_demo_presentation(p_org);
   PERFORM pg_temp.enrich_demo_examples(p_org);
   PERFORM pg_temp.refresh_demo_artwork(p_org);
+  PERFORM pg_temp.refresh_demo_titles(p_org);
   RETURN;
  END IF;
  INSERT INTO public.units(title,organization) VALUES('Ukázkový pořadatel',p_org) RETURNING id INTO un;
  FOREACH k IN ARRAY ARRAY['ball','concert','weekend'] LOOP
-  title:=CASE k WHEN 'ball' THEN 'Ples pod hvězdami' WHEN 'concert' THEN 'Večer živé hudby' ELSE 'Víkend v přírodě' END;
+  title:=CASE k WHEN 'ball' THEN 'Ples' WHEN 'concert' THEN 'Koncert' ELSE 'Víkendovka' END;
   summary:=CASE k WHEN 'ball' THEN 'Místa u stolů, objednávky a platby' WHEN 'concert' THEN 'Vstupenky a odbavení' ELSE 'Přihlášky, ubytování a náhradníci' END;
   beginning:=CASE k WHEN 'ball' THEN '2027-02-20 19:30+01'::timestamptz WHEN 'concert' THEN '2027-03-06 19:00+01'::timestamptz ELSE '2027-04-16 17:00+02'::timestamptz END;
   closing:=beginning+CASE k WHEN 'ball' THEN interval '6 hours 30 minutes' WHEN 'concert' THEN interval '4 hours' ELSE interval '44 hours' END;
@@ -395,4 +396,5 @@ BEGIN
  PERFORM pg_temp.refresh_demo_presentation(p_org);
  PERFORM pg_temp.enrich_demo_examples(p_org);
   PERFORM pg_temp.refresh_demo_artwork(p_org);
+  PERFORM pg_temp.refresh_demo_titles(p_org);
 END $fixture$;

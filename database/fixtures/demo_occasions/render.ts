@@ -10,7 +10,7 @@ await Deno.mkdir(output,{recursive:true});
 const font = await Deno.readFile(new URL('../../../supabase/functions/_shared/ticket-assets/font.ttf',import.meta.url));
 
 const report = [];
-for (const [key,title,price] of [['ball','Ples pod hvězdami',450],['concert','Večer živé hudby',590]] as const) {
+for (const [key,title,price] of [['ball','Ples',450],['concert','Koncert',590]] as const) {
   const layout = JSON.parse(await Deno.readTextFile(new URL(`./${key}-layout.json`,import.meta.url)));
   validateLayout(layout);
   const template = layout.templates.wide;

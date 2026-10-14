@@ -104,3 +104,21 @@ change flags, or create a dirty draft by loading the preview.
 Demo cards now display the actual occasion title and use the same copy menu and
 creation helper as ordinary cards. Mobile/desktop floating titles match the
 administration breadcrumb, with the localized demo suffix in parentheses.
+
+## Saved-preview registry access correction and actual demo names
+
+The first saved-preview entrypoint attempted a direct `demo_occasions` SELECT
+with the service role. The registry intentionally revokes that privilege, so
+settings showed an error and no thumbnail. The entrypoint now calls the existing
+`is_demo_occasion` RPC; no registry grants or authorization rules are widened.
+`preview-ticket-layout/entrypoint_test.ts` drives the real entrypoint with the
+service-role registry denial reproduced at its HTTP boundary, while using real
+saved layout parsing, bundled fonts and the resource resolver. It fails against
+the previously shipped entrypoint and passes with the correction. Its simulated
+HTTP boundary does not replace the verified live registry/RPC privilege checks.
+
+`automation/rename_demo_occasions.sql` changes the actual registered occasion
+rows to Ples, Koncert and Víkendovka, and the ordinary fixture seeder uses the
+same temporary maintenance function. The existing demo suffix remains localized
+navigation chrome. The rename leaves links, artwork, orders and ticket identities
+unchanged. Repeated maintenance creates no additional commits once titles match.

@@ -8,7 +8,8 @@
       "behaviorTests": [
         "supabase/functions/preview-ticket-layout/preview_test.ts",
         "supabase/functions/preview-ticket-layout/products_test.ts",
-        "supabase/functions/_shared/ticketFonts_test.ts"
+        "supabase/functions/_shared/ticketFonts_test.ts",
+        "supabase/functions/preview-ticket-layout/entrypoint_test.ts"
       ]
     },
     "cancel-reception-registration": {

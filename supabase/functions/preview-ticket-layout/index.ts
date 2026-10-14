@@ -14,7 +14,7 @@ Deno.serve(req=>handlePreview(req,{
     const {data,error}=await client.rpc('can_edit_ticket_layout',{p_occasion:occasionId});
     return !error&&data===true;
   },
-  occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,organization,title,start_time,end_time,features,data').eq('id',id).single();if(error)throw error;const {data:demo,error:demoError}=await supabaseAdmin.from('demo_occasions').select('occasion').eq('occasion',id).maybeSingle();if(demoError)throw demoError;return {...data,demo_read_only:demo!=null};},
+  occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,organization,title,start_time,end_time,features,data').eq('id',id).single();if(error)throw error;const {data:demo,error:demoError}=await supabaseAdmin.rpc('is_demo_occasion',{p_occasion:id});if(demoError)throw demoError;return {...data,demo_read_only:demo===true};},
   products:id=>loadPreviewProducts(supabaseAdmin,id),
   resources:loadLayoutResources,
   font:resolveTicketFont,layout:parseRegisteredTicketLayout,
