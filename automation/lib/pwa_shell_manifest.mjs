@@ -102,6 +102,7 @@ export async function collectPwaShellManifest(buildDir) {
     standaloneDocumentSet.has(url) ||
     url === flutterMain ||
     installCriticalNames.has(url.split('?')[0]) ||
+    /^\/festapp_(?:update_prompt|flutter_bootstrap_guard|pwa_bridge)\.[0-9][0-9A-Za-z.+-]*\.js$/.test(url) ||
     /^\/main\.dart\.js_\d+\.part\.js$/.test(url.split('?')[0]));
   const total = (resources) => resources.reduce(
     (sum, url) => sum + (byUrl.get(url)?.bytes ?? 0), 0);

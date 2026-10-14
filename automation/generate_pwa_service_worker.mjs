@@ -74,6 +74,16 @@ const FALSE_OFFLINE_RECOVERY_CACHE_NAMES = new Set([
 // Remove this bounded migration list once supported installations are newer
 // than 0.19.93+459.
 const HANDOFF_BOOTSTRAP_CACHE_NAMES = new Set([
+  'festapp-app-shell-0.20.185+669',
+  'festapp-app-shell-0.20.186+670',
+  'festapp-app-shell-0.20.187+671',
+  'festapp-app-shell-0.20.188+672',
+  'festapp-app-shell-0.20.189+673',
+  'festapp-app-shell-0.20.190+674',
+  'festapp-app-shell-0.20.191+675',
+  'festapp-app-shell-0.20.192+676',
+  'festapp-app-shell-0.20.193+677',
+  'festapp-app-shell-0.20.194+678',
   'festapp-app-shell-0.19.93+455',
   'festapp-app-shell-0.19.93+456',
   'festapp-app-shell-0.19.93+457',
