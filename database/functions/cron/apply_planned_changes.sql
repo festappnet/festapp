@@ -9,7 +9,7 @@ BEGIN
   -- Serializes workers, including backlog across multiple instants of one product.
   IF NOT pg_try_advisory_xact_lock(7310420261004::bigint) THEN RETURN; END IF;
   FOR v_candidate IN SELECT id,subject_id,change_type FROM eshop.planned_changes
-    WHERE change_time<=now() AND NOT applied AND failed_at IS NULL ORDER BY change_time,id
+    WHERE NOT public.is_demo_occasion(occasion) AND change_time<=now() AND NOT applied AND failed_at IS NULL ORDER BY change_time,id
   LOOP
     -- Same lock order as editor commands: subject, then plan. Recheck after lock.
     IF v_candidate.change_type IN ('products.price','products.is_hidden') THEN

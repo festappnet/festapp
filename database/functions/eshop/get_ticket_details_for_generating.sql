@@ -27,7 +27,7 @@ BEGIN
                                 opt2.product,
                                 s.title AS spot_title,
                                 p.data->>'short_title' AS short_title,
-                                p.title AS product_title, 
+                                p.title AS product_title,
                                 (
                                     SELECT g.value->>'title'
                                     FROM jsonb_array_elements(bp.groups) AS g(value)
@@ -45,7 +45,7 @@ BEGIN
                                 ON s.order_product_ticket = opt2.id
                             LEFT JOIN eshop.products p
                                 ON p.id = opt2.product
-                            LEFT JOIN eshop.product_types pt 
+                            LEFT JOIN eshop.product_types pt
                                 ON pt.id = p.product_type
                             LEFT JOIN eshop.blueprints bp
                                 ON bp.id = s.blueprint
@@ -74,7 +74,7 @@ BEGIN
         ),
 
         -- 2. Build the 'occasion' key (dumps the whole occasion row including 'features')
-        'occasion', to_jsonb(o),
+        'occasion', to_jsonb(o)||jsonb_build_object('demo_read_only',public.is_demo_occasion(o.id)),
         'order_data', jsonb_build_object('name', ord.data->'name', 'surname', ord.data->'surname')
     )
     INTO result

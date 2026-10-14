@@ -1,3 +1,5 @@
+import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
+import 'package:fstapp/data_services/auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
@@ -189,6 +191,10 @@ abstract class UnitPageBaseState<T extends UnitPageBase> extends State<T> {
             onSignIn: _handleSignIn,
             onAdminPressed: adminCallback,
           ),
+          if (AuthService.isLoggedIn())
+            SliverToBoxAdapter(
+                child: DemoOccasionsSection(
+                    key: ValueKey('demo-$_currentUnitId'))),
           // Search Bar
           SliverToBoxAdapter(
             child: Padding(

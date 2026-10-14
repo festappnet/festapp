@@ -13,6 +13,7 @@ DECLARE
     blueprint_id BIGINT;
     spot_record RECORD;
 BEGIN
+    PERFORM public.check_occasion_writable((SELECT occasion FROM public.forms WHERE key=form_key));
     -- Check if the spot exists under the current form's blueprint
     SELECT b.id INTO blueprint_id
     FROM public.forms f

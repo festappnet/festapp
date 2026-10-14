@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION get_is_manager_on_unit(unit_id bigint) RETURNS bool
     SECURITY DEFINER
 SET search_path = public, extensions
     AS $$
-  select coalesce((
+  select NOT public.is_demo_unit(unit_id) AND coalesce((
   select
     is_manager
   from

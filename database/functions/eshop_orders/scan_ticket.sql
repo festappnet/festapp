@@ -88,6 +88,7 @@ BEGIN
     WHERE o.id = order_id
     LIMIT 1;
 
+    PERFORM public.check_occasion_writable(occasion_id);
     IF occasion_id IS NULL THEN
         RETURN jsonb_build_object('code', 404, 'message', 'Occasion for order not found');
     END IF;

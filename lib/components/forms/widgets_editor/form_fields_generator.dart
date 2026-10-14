@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -26,7 +27,12 @@ const double kHiddenOpacity = 0.5;
 class FormFieldsGenerator extends StatefulWidget {
   final FormEditBundle bundle;
   final VoidCallback? onChanged;
-  const FormFieldsGenerator({super.key, required this.bundle, this.onChanged});
+  final bool editingEnabled;
+  const FormFieldsGenerator(
+      {super.key,
+      required this.bundle,
+      this.onChanged,
+      this.editingEnabled = true});
 
   @override
   _FormFieldsGeneratorState createState() => _FormFieldsGeneratorState();
@@ -72,6 +78,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         return _buildFieldItem(context, index, field, topLevelFields);
       },
       onReorder: (oldIndex, newIndex) {
+        if (!widget.editingEnabled || RightsService.isDemoReadOnly) return;
         _refresh(() {
           if (oldIndex < newIndex) newIndex -= 1;
           final item = topLevelFields.removeAt(oldIndex);
@@ -115,7 +122,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
       key: field.id != null ? ValueKey(field.id) : ObjectKey(field),
       onTap: () {
         if (!isSelected) {
-          _refresh(() {
+          setState(() {
             selectedIndex = index;
           });
         }
@@ -212,6 +219,9 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     List<FormFieldModel> displayList,
     int index,
   ) {
+    if (!widget.editingEnabled || RightsService.isDemoReadOnly) {
+      return _buildFieldItemNonSelected(field);
+    }
     final isTicket = field.type == FormHelper.fieldTypeTicket;
     final String defaultDescription = CommonStrings.description;
     final form = widget.bundle.form;
@@ -288,7 +298,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         ],
         _buildAnswerWidget(context, field, true),
         const SizedBox(height: 16),
-        _FieldControlsBar(
+        if (!RightsService.isDemoReadOnly) _FieldControlsBar(
           controls: [
             if (!isTicket && field.type != FormHelper.fieldTypeEmail)
               SizedBox(

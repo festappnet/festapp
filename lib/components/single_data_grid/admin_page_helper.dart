@@ -126,7 +126,8 @@ class AdministrationTabs {
         emailTemplates,
         users,
         if (RightsService.isManager() || RightsService.isAdmin()) changes,
-        if (RightsService.isUnitEditor()) settings
+        if (RightsService.isUnitEditor() || RightsService.isDemoReadOnly)
+          settings
       ];
   static List<RoutedTabDefinition> get reservations => [
         orders,
@@ -140,6 +141,7 @@ class AdministrationTabs {
         report,
         emailTemplates,
         users,
-        if (RightsService.isUnitEditor()) settings
+        if (RightsService.isUnitEditor() || RightsService.isDemoReadOnly)
+          settings
       ];
 }

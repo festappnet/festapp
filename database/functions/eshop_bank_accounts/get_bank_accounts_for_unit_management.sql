@@ -19,19 +19,22 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 BEGIN
-    PERFORM public.check_is_manager_on_unit(p_unit_id);
+    IF NOT EXISTS(SELECT 1 FROM public.demo_occasions d JOIN public.occasions o ON o.id=d.occasion
+      WHERE o.unit=p_unit_id AND public.can_read_demo_occasion(d.occasion)) THEN
+      PERFORM public.check_is_manager_on_unit(p_unit_id);
+    END IF;
     RETURN QUERY
-    SELECT 
+    SELECT
         ba.id,
         ba.account_number,
         ba.title,
         ba.creditor_name,
         ba.type,
         EXISTS (
-            SELECT 1 
+            SELECT 1
             FROM eshop.bank_account_users bau
-            WHERE bau.bank_account = ba.id 
-            AND bau."user" = auth.uid() 
+            WHERE bau.bank_account = ba.id
+            AND bau."user" = auth.uid()
             AND bau.is_admin = true
         ) as is_admin,
         NULL::text as token_masked,
@@ -52,7 +55,8 @@ BEGIN
     FROM eshop.bank_accounts ba
     JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
     WHERE uba.unit = p_unit_id
-    AND ba.type != 'CASH'; -- Exclude Cash Accounts from management list
+    AND ba.type != 'CASH'
+    AND (NOT public.is_demo_unit(p_unit_id) OR EXISTS (SELECT 1 FROM public.demo_occasions demo_bank WHERE demo_bank.bank_account=ba.id AND public.get_is_editor_order_view_on_occasion(demo_bank.occasion))); -- Exclude Cash Accounts from management list
 END;
 $$;
 

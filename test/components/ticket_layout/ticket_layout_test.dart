@@ -1114,6 +1114,22 @@ void main() {
     expect(layout.fitPageToTicket, isFalse);
   });
 
+  testWidgets('read-only settings never request the editor preview',
+      (tester) async {
+    final service = SettingsService();
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: TicketSettings(
+                    feature: TicketFeature(code: 'ticket', isEnabled: true),
+                    occasionId: 7,
+                    readOnly: true,
+                    service: service)))));
+    await tester.pumpAndSettle();
+    expect(service.resolveCalls, 0);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('settings expose templates without a second type selector',
       (tester) async {
     for (final type in <String?>['named', 'wide', null]) {
@@ -2933,7 +2949,8 @@ void main() {
         tester
             .widget<ButtonStyleButton>(find.ancestor(
                 of: find.text('TicketLayout.addProduct'.tr()).first,
-                matching: find.byWidgetPredicate((w) => w is ButtonStyleButton)))
+                matching:
+                    find.byWidgetPredicate((w) => w is ButtonStyleButton)))
             .onPressed,
         isNull);
     expect(find.text('TicketLayout.draftProducts'.tr()), findsWidgets);

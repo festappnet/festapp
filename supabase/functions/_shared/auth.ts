@@ -1,5 +1,6 @@
 import {
   canManageOccasionUsers,
+  createUserClient,
   getSupabaseUser,
   isUserEditorOrder,
   supabaseAdmin,
@@ -22,7 +23,7 @@ interface AuthParams {
   requestSecret?: string;
   authorizationHeader?: string | null;
   occasionId?: number;
-  permission?: "editorOrder" | "manageUsers";
+  permission?: "editorOrder" | "manageUsers" | "readOrder";
 }
 
 interface AuthResult {
@@ -41,6 +42,10 @@ export async function authorizeRequest({
   occasionId,
   permission = "editorOrder",
 }: AuthParams): Promise<AuthResult> {
+  if (occasionId && permission !== "readOrder") {
+    const {data: demo, error} = await supabaseAdmin.rpc("is_demo_occasion", {p_occasion: occasionId});
+    if (error || demo === true) throw new AuthError("Demo event is read only", 403);
+  }
   // Path 1: Authorization via request secret (for cron jobs, etc.)
   if (requestSecret) {
     const { data: secretValid, error: secretError } = await supabaseAdmin.rpc(
@@ -64,7 +69,11 @@ export async function authorizeRequest({
 
     const userId = userResponse.user.id;
     // Note: Passing BigInt(occasionId) assuming occasionId comes in as number but DB expects BigInt context
-    const userIsEditor = permission === "manageUsers"
+    const userIsEditor = permission === "readOrder"
+      ? await createUserClient(authorizationHeader).rpc(
+        "get_is_editor_order_view_on_occasion", { oc: occasionId },
+      ).then(({ data, error }) => !error && data === true)
+      : permission === "manageUsers"
       ? await canManageOccasionUsers(authorizationHeader, BigInt(occasionId))
       : await isUserEditorOrder(userId, BigInt(occasionId));
 

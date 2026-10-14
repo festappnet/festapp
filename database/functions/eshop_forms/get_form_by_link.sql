@@ -23,6 +23,9 @@ BEGIN
     END IF;
 
     SELECT occasion INTO occ_id FROM public.forms WHERE id = p_form_id;
+    IF public.is_demo_occasion(occ_id) AND NOT public.can_read_demo_occasion(occ_id) THEN
+        RETURN jsonb_build_object('code',404,'message','Form does not exist.');
+    END IF;
     is_editor_view := public.get_is_editor_order_view_on_occasion(occ_id);
 
 
@@ -50,6 +53,7 @@ BEGIN
     SELECT jsonb_build_object(
         'code', 200,
         'data', jsonb_build_object(
+            'demo_simulation', public.is_demo_occasion(f.occasion),
             'capacity', public.get_form_capacity_snapshot_internal(f.id),
             'registrationMode',public.get_form_registration_mode_internal(f.id),
             'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,

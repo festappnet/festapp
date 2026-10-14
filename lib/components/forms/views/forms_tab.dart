@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -164,7 +165,7 @@ class _FormsTabState extends State<FormsListView> {
         toolbarHeight: 44.0,
         automaticallyImplyLeading: false,
         actions: [
-          Padding(
+          if (!RightsService.isDemoReadOnly) Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
             child: ElevatedButton.icon(
               icon: const Icon(Icons.add, size: 18),
@@ -267,7 +268,7 @@ class FormCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              PopupMenuButton<String>(
+              if (!RightsService.isDemoReadOnly) PopupMenuButton<String>(
                 elevation: 0,
                 icon: Icon(Icons.more_vert,
                     color: onSurfaceColor.withOpacity(0.7)),

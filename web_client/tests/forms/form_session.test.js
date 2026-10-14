@@ -1,6 +1,7 @@
 
 import { test, describe, it, before, beforeEach } from 'node:test';
 import assert from 'node:assert';
+import { DbForms } from '../../src/components/forms/db_forms.js';
 import { FormSession } from '../../src/components/forms/form_session.js';
 import { JSDOM } from 'jsdom';
 
@@ -152,4 +153,21 @@ describe('FormSession', () => {
         assert.strictEqual(session.state.currency, 'USD');
         assert.strictEqual(stateEmitted.currency, 'USD');
     });
+    it('demo seat selection and removal keep the normal session without reserving seats', async () => {
+        const original = DbForms.selectSpot;
+        let writes = 0;
+        DbForms.selectSpot = async () => { writes++; throw new Error('real reservation called'); };
+        try {
+            mockFormModel.demoSimulation = true;
+            await session.toggleSpot({ id: 123, title: 'A1', product: { price: 450 } }, true);
+            assert.ok(session.state.tickets.some(ticket => ticket.spot === 123));
+            const index = session.state.tickets.findIndex(ticket => ticket.spot === 123);
+            await session.removeTicket(index);
+            assert.ok(!session.state.tickets.some(ticket => ticket.spot === 123));
+            assert.equal(writes, 0);
+        } finally {
+            DbForms.selectSpot = original;
+        }
+    });
+
 });

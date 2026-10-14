@@ -10,6 +10,7 @@ export class FormRenderer {
         // Declarative Layout
         container.innerHTML = html`
             <div class="form-wrapper ${formModel.isCardDesign ? 'is-card-design' : ''}">
+                ${formModel.demoSimulation ? html`<p role="status" class="demo-form-notice">${FormStrings.demoNotice}</p>` : ''}
                 ${showPreview ? html`<div style="width:100%; color:black; background:orange; padding:8px; margin-bottom:16px; text-align:center; font-weight:bold; font-size:13px;">${FormStrings.previewMode}</div>` : ''}
                 
                 ${formModel.header ? html`<div class="form-header">${sanitizeHtml(this._optimizeLcp(formModel.header))}</div>` : ''}

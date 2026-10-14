@@ -16,6 +16,7 @@ class OccasionLinkModel {
   bool? isAdmin = false;
   OrganizationModel? organization;
   bool clientSyncV1;
+  final bool demoReadOnly;
 
   bool isAvailable() => code == 200;
   bool isAccessDenied() => code == 403;
@@ -54,6 +55,7 @@ class OccasionLinkModel {
       unit: json["unit"] != null ? UnitModel.fromJson(json["unit"]) : null,
       isAdmin: json["is_admin"],
       organization: organization,
+      demoReadOnly: json['demo_read_only'] == true,
       clientSyncV1: json['client_sync_v1'] as bool? ?? false,
     );
   }
@@ -69,5 +71,6 @@ class OccasionLinkModel {
     this.isAdmin,
     this.organization,
     this.clientSyncV1 = false,
+    this.demoReadOnly = false,
   });
 }

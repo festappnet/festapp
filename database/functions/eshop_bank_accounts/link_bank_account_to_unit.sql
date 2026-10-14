@@ -13,12 +13,13 @@ DECLARE
     v_conflict_data jsonb;
     v_is_reordering boolean;
 BEGIN
+    PERFORM public.check_bank_account_writable(p_bank_account_id);
     -- Strict Check: User must be a MANAGER of the unit to link/unlink bank accounts
     PERFORM check_is_manager_on_unit(p_unit_id);
 
     IF p_priority IS NULL THEN
         -- Unlink Logic
-        
+
         -- Dependency Check (unless hard)
         IF NOT p_hard THEN
             WITH TargetAcc AS (
@@ -66,7 +67,7 @@ BEGIN
     ELSE
         -- Link or Update Priority
         v_is_reordering := EXISTS (
-            SELECT 1 FROM eshop.unit_bank_accounts 
+            SELECT 1 FROM eshop.unit_bank_accounts
             WHERE unit = p_unit_id AND bank_account = p_bank_account_id
         );
 
@@ -74,7 +75,7 @@ BEGIN
         -- If just reordering, we skip this check (assuming they verified it when linking).
         IF NOT v_is_reordering THEN
             IF NOT EXISTS (
-                SELECT 1 FROM eshop.bank_account_users 
+                SELECT 1 FROM eshop.bank_account_users
                 WHERE bank_account = p_bank_account_id AND "user" = auth.uid() AND is_admin = true
             ) THEN
                 RAISE EXCEPTION 'User is not an admin of this bank account.';
@@ -88,7 +89,7 @@ BEGIN
         ELSE
             INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority)
             VALUES (p_unit_id, p_bank_account_id, p_priority);
-            
+
             -- Ensure Creator is Admin (if they are linking, they should be able to manage permissions)
             IF NOT EXISTS (SELECT 1 FROM eshop.bank_account_users WHERE bank_account = p_bank_account_id AND "user" = auth.uid()) THEN
                  INSERT INTO eshop.bank_account_users (bank_account, "user", is_admin, is_support)

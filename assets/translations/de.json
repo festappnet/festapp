@@ -772,5 +772,22 @@
       "waitlistOffer_title": "Platzangebot für die Warteliste",
       "waitlistOffer_description": "Platzangebot mit persönlichem Link und Ablaufzeit. Produktauswahl nach aktueller Verfügbarkeit."
     }
+  },
+  "DemoOccasions": {
+    "formNotice": "Demoformular. Testen Sie die Anmeldung; nichts wird gespeichert, keine E-Mail versendet und keine Zahlung gestartet.",
+    "formComplete": "Demoanmeldung abgeschlossen",
+    "formResult": "Dies war ein Demoformular. Die Anmeldung wurde nicht gespeichert, keine E-Mail versendet und keine Zahlung gestartet.",
+
+    "heading": "Sehen Sie, was Sie erstellen können",
+    "intro": "Entdecken Sie eine fertige Veranstaltung und erstellen Sie Ihre eigene Kopie.",
+    "inspiration": "Von Beispielveranstaltungen inspirieren lassen",
+    "badge": "Beispiel",
+    "view": "Beispiel ansehen",
+    "readOnly": "Beispielveranstaltung - nur zum Ansehen",
+    "copy": "Eigene Kopie erstellen",
+    "copyHint": "Die Kopie ist zunächst verborgen, ohne Teilnehmer und Zahlungen. Prüfen Sie Termine, Preise und Ihr Konto vor der Freigabe.",
+    "unavailable": "Beispielveranstaltungen konnten nicht geladen werden.",
+    "noTarget": "Zum Kopieren benötigen Sie eine Organisation, die Sie verwalten dürfen.",
+    "back": "Zurück zu Ihren Veranstaltungen"
   }
 }

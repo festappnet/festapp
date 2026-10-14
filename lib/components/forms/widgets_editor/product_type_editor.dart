@@ -1,3 +1,4 @@
+import 'product_detail_editor_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/models/form_field_model.dart';
@@ -131,69 +132,75 @@ class ProductTypeEditorWidgets {
 
                     return Opacity(
                       opacity: productHidden ? kHiddenOpacity : 1.0,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2.0),
-                        child: Row(
-                          children: [
-                            // Radio or Checkbox based on selection type
-                            SizedBox(
-                              width: 48,
-                              child: isSelectMany
-                                  ? Checkbox(value: false, onChanged: null)
-                                  : Radio<String>(
-                                      value: product.id.toString(),
-                                      groupValue: null,
-                                      onChanged: null),
-                            ),
-                            // Product title and description icon
-                            Expanded(
-                              flex: 8,
-                              child: Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      product.title ?? '',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: rowStyle, // Apply style
-                                    ),
-                                  ),
-                                  if (!HtmlHelper.isHtmlEmptyOrNull(
-                                      product.description))
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          left: 8.0, right: 4.0),
-                                      child: DescriptionTooltip(
-                                        description: product.description!,
-                                        child: const Icon(Icons.description,
-                                            size: 16),
+                      child: InkWell(
+                        onTap: () => showDialog<void>(
+                            context: context,
+                            builder: (_) => ProductDetailEditorDialog(
+                                product: product, readOnly: true)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
+                          child: Row(
+                            children: [
+                              // Radio or Checkbox based on selection type
+                              SizedBox(
+                                width: 48,
+                                child: isSelectMany
+                                    ? Checkbox(value: false, onChanged: null)
+                                    : Radio<String>(
+                                        value: product.id.toString(),
+                                        groupValue: null,
+                                        onChanged: null),
+                              ),
+                              // Product title and description icon
+                              Expanded(
+                                flex: 8,
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        product.title ?? '',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: rowStyle, // Apply style
                                       ),
                                     ),
-                                ],
+                                    if (!HtmlHelper.isHtmlEmptyOrNull(
+                                        product.description))
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 8.0, right: 4.0),
+                                        child: DescriptionTooltip(
+                                          description: product.description!,
+                                          child: const Icon(Icons.description,
+                                              size: 16),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            // Product price
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                Utilities.formatPrice(
-                                    context, product.price ?? 0,
-                                    currencyCode: product.currencyCode),
-                                style: rowStyle, // Apply style
-                              ),
-                            ),
-                            // Product capacity
-                            if (showCapacityColumn)
+                              // Product price
                               Expanded(
                                 flex: 3,
                                 child: Text(
-                                  TicketEditorWidgets.formatOrderedCount(
-                                      product.orderedCount, product.maximum),
-                                  textAlign: TextAlign.center,
+                                  Utilities.formatPrice(
+                                      context, product.price ?? 0,
+                                      currencyCode: product.currencyCode),
                                   style: rowStyle, // Apply style
                                 ),
                               ),
-                          ],
+                              // Product capacity
+                              if (showCapacityColumn)
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    TicketEditorWidgets.formatOrderedCount(
+                                        product.orderedCount, product.maximum),
+                                    textAlign: TextAlign.center,
+                                    style: rowStyle, // Apply style
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     );

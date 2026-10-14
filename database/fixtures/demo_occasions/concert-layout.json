@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 3,
+  "templates": {
+    "wide": {
+      "canvasColor": "101820",
+      "canvasOpacity": 1,
+      "qrAppearance": {
+        "background": "FFFFFF",
+        "opacity": 1,
+        "margin": 4
+      },
+      "pageFit": "ticket",
+      "page": {
+        "width": 580,
+        "height": 290
+      },
+      "ticketArea": {
+        "x": 0,
+        "y": 0,
+        "width": 580,
+        "height": 290
+      },
+      "elements": [
+        {
+          "id": "occasionTitle",
+          "binding": "occasionTitle",
+          "box": {
+            "x": 24,
+            "y": 20,
+            "width": 332,
+            "height": 56
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 26,
+            "minFontSize": 8,
+            "maxLines": 2,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "occasionDatePlace",
+          "binding": "occasionDatePlace",
+          "box": {
+            "x": 24,
+            "y": 84,
+            "width": 330,
+            "height": 36
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 13,
+            "minFontSize": 8,
+            "maxLines": 2,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "orderName",
+          "binding": "orderName",
+          "box": {
+            "x": 24,
+            "y": 137,
+            "width": 330,
+            "height": 44
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 16,
+            "minFontSize": 8,
+            "maxLines": 2,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "spotGroup",
+          "binding": "spotGroup",
+          "box": {
+            "x": 24,
+            "y": 193,
+            "width": 240,
+            "height": 28
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 14,
+            "minFontSize": 8,
+            "maxLines": 2,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "price",
+          "binding": "price",
+          "box": {
+            "x": 280,
+            "y": 193,
+            "width": 75,
+            "height": 28
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 14,
+            "minFontSize": 8,
+            "maxLines": 2,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "footer",
+          "binding": "footer",
+          "box": {
+            "x": 24,
+            "y": 242,
+            "width": 510,
+            "height": 24
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 10,
+            "minFontSize": 8,
+            "maxLines": 2,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        },
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 414,
+            "y": 24,
+            "width": 120,
+            "height": 120
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 8,
+            "maxLines": 1,
+            "color": "000000",
+            "align": "left"
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 386,
+            "y": 158,
+            "width": 170,
+            "height": 24
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 8,
+            "maxLines": 1,
+            "color": "FFFFFF",
+            "align": "left"
+          }
+        }
+      ]
+    }
+  }
+}

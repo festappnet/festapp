@@ -19,7 +19,7 @@ import 'ticket_layout_canvas.dart';
 class TicketSettings extends StatefulWidget {
   final TicketFeature feature;
   final int occasionId;
-  final bool productEditing, borrowResourcesOnly;
+  final bool productEditing, borrowResourcesOnly, readOnly;
   final Future<void> Function(TicketFeature)? onSave;
   final TicketLayoutService service;
   TicketSettings(
@@ -28,6 +28,7 @@ class TicketSettings extends StatefulWidget {
       required this.occasionId,
       this.onSave,
       this.productEditing = true,
+      this.readOnly = false,
       this.borrowResourcesOnly = false,
       TicketLayoutService? service})
       : service = service ?? TicketLayoutService();
@@ -67,7 +68,7 @@ class _TicketSettingsState extends State<TicketSettings> {
 
   Future<void> refresh() async {
     final request = ++generation;
-    if (unsupported) return;
+    if (unsupported || widget.readOnly) return;
     await ExceptionHandler.guard(context, futureFunction: () async {
       final next = await service.resolve(widget.occasionId, type,
           widget.feature.layout, widget.feature.ticketBackground,
@@ -109,7 +110,7 @@ class _TicketSettingsState extends State<TicketSettings> {
   }
 
   Future<void> edit() async {
-    if (busy || unsupported || _editorOpen) return;
+    if (busy || unsupported || widget.readOnly || _editorOpen) return;
     _editorOpen = true;
     _refresh(() => busy = true);
     try {
@@ -244,7 +245,10 @@ class _TicketSettingsState extends State<TicketSettings> {
               },
               child: Text(TicketLayoutStrings.restoreDraft)),
         FilledButton.icon(
-            onPressed: busy || unsupported || !RightsService.isUnitEditor()
+            onPressed: busy ||
+                    unsupported ||
+                    widget.readOnly ||
+                    !RightsService.isUnitEditor()
                 ? null
                 : edit,
             icon: busy

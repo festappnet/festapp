@@ -19,6 +19,7 @@ DECLARE
 
     is_privileged         BOOLEAN := false;
 BEGIN
+  PERFORM public.check_occasion_writable(oc);
     -- 1. Retrieve the organization, the unit, and the open status of the occasion.
     SELECT organization, unit, is_open
       INTO occasion_org, unit_id, occasion_open

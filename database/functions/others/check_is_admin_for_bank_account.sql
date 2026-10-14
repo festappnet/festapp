@@ -5,6 +5,7 @@ LANGUAGE plpgsql
 SET search_path = public, extensions
 AS $$
 BEGIN
+    PERFORM public.check_bank_account_writable(bank_acc);
     IF NOT EXISTS (
         SELECT 1
         FROM eshop.bank_account_users

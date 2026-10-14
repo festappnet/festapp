@@ -1,3 +1,5 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
@@ -28,7 +30,20 @@ class DataGridHelper {
     HtmlContentProfile profile = HtmlContentProfile.appContent,
     String? title,
   }) {
-
+    if (RightsService.isDemoReadOnly) {
+      return TextButton(
+          onPressed: () async {
+            final html = await loadContent();
+            if (!context.mounted) return;
+            await showDialog<void>(
+                context: context,
+                builder: (_) => AppAlertDialog(
+                    title: Text(title ?? CommonStrings.content),
+                    content:
+                        SingleChildScrollView(child: HtmlView(html: html ?? ''))));
+          },
+          child: Text(CommonStrings.content));
+    }
     Widget buttonChild = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -213,7 +228,8 @@ class DataGridHelper {
     var value = rendererContext.cell.value == "true" ? true : false;
     return Checkbox(
       value: value,
-      onChanged: isEnabled != null && isEnabled() == false
+      onChanged: RightsService.isDemoReadOnly ||
+              (isEnabled != null && isEnabled() == false)
           ? null
           : (bool? value) {
               var cell = rendererContext.row.cells[idString]!;

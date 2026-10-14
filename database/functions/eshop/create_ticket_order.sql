@@ -2,10 +2,8 @@ CREATE OR REPLACE FUNCTION public.create_ticket_order_internal_v1(input_data jso
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE f bigint; target bigint; result jsonb;
 BEGIN
+ PERFORM public.check_occasion_writable((SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid));
  BEGIN
-  IF jsonb_typeof(input_data->'ticket')='array' AND jsonb_array_length(input_data->'ticket')>public.ticket_order_limit() THEN
-   RAISE EXCEPTION '%',jsonb_build_object('code',1023,'message','Maximum number of tickets per order exceeded','limit',public.ticket_order_limit())::text;
-  END IF;
   SELECT id INTO f FROM public.forms WHERE key=(input_data->>'form')::uuid FOR UPDATE;
   IF f IS NULL THEN RAISE EXCEPTION 'Form not found'; END IF;
   target:=public.allocate_ticket_order_identity_internal(f);

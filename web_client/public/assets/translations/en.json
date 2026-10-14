@@ -2704,5 +2704,21 @@
     "limitTickets": "Limit the number of tickets",
     "capacityRegistrations": "Maximum number of registrations in this form",
     "capacityTickets": "Maximum number of tickets in this form"
+  },
+  "DemoOccasions": {
+      "formNotice": "Demo form. Try registering; nothing is saved, no email is sent and no payment is started.",
+      "formComplete": "Demo registration complete",
+      "formResult": "This was a demo form. Your registration was not saved, no email was sent and no payment was started.",
+      "heading": "See what you can create",
+      "intro": "Explore a complete event and create your own copy.",
+      "inspiration": "Get inspired by demo events",
+      "badge": "Demo",
+      "view": "Explore demo",
+      "readOnly": "Demo event - read only",
+      "copy": "Create your own copy",
+      "copyHint": "The copy starts hidden, without participants or payments. Check dates, prices and your bank account before opening it.",
+      "unavailable": "Demo events could not be loaded.",
+      "noTarget": "You need an organization you can manage to create a copy.",
+      "back": "Back to your events"
   }
 }

@@ -58,6 +58,7 @@ DECLARE
     v_product_deposit NUMERIC;
     v_total_deposit NUMERIC := 0;
 BEGIN
+    PERFORM public.check_occasion_writable((SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid));
     -- Wrap the entirelogic in a subtransaction block
     BEGIN
         -- Validate input_data and extract form key and email

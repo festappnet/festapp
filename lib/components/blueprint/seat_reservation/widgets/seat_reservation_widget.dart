@@ -18,6 +18,7 @@ import 'package:venue_seat_picker/venue_seat_picker.dart';
 class SeatReservationWidget extends StatefulWidget {
   static const int boxSize = 15;
 
+  final bool demoSimulation;
   final int blueprintId;
   final String secret;
   final String formDataKey;
@@ -28,6 +29,7 @@ class SeatReservationWidget extends StatefulWidget {
 
   const SeatReservationWidget({
     super.key,
+    this.demoSimulation = false,
     required this.blueprintId,
     required this.secret,
     required this.formDataKey,
@@ -132,6 +134,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
   Future<bool> _requestSelection(
     SeatSelectionRequest<BlueprintObjectModel, Object> request,
   ) async {
+    if (widget.demoSimulation) return true;
     final accepted = await ExceptionHandler.guard<bool>(
       context,
       futureFunction: () => DbOrders.selectSpot(

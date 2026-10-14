@@ -1,3 +1,5 @@
+import 'package:fstapp/components/occasion/demo/demo_occasion_banner.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -85,11 +87,15 @@ class RoutedTabScaffold extends StatelessWidget {
                 appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context,
                     activeTabs: tabs, tabController: controller),
                 body: SafeArea(top: false, child: child));
-            if (!reservations) return scaffold;
-            return Column(children: [
-              const SafeArea(bottom: false, child: RedStripWidget()),
-              Expanded(child: scaffold)
-            ]);
+            final page = reservations
+                ? Column(children: [
+                    const SafeArea(bottom: false, child: RedStripWidget()),
+                    Expanded(child: scaffold)
+                  ])
+                : scaffold;
+            return RightsService.isDemoReadOnly
+                ? DemoOccasionOverlay(child: page)
+                : page;
           }
           return Column(children: [
             Container(

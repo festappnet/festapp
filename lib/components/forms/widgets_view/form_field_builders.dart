@@ -155,12 +155,13 @@ class FormFieldBuilders {
     return StatefulBuilder(
       builder: (context, setState) {
         Future<void> removeTicket(int index) async {
-          await DbOrders.selectSpot(
-              context,
-              formHolder.controller!.formKey!,
-              formHolder.controller!.secret!,
-              ticket.tickets[index].seat!.seat!.id!,
-              false);
+          if (!formHolder.controller!.demoSimulation)
+            await DbOrders.selectSpot(
+                context,
+                formHolder.controller!.formKey!,
+                formHolder.controller!.secret!,
+                ticket.tickets[index].seat!.seat!.id!,
+                false);
           setState(() {
             ticket.tickets.removeAt(index);
           });
