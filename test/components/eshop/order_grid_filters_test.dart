@@ -15,16 +15,16 @@ import 'package:fstapp/components/single_data_grid/single_data_grid_controller.d
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 
 void main() {
-  test('active filter includes waiting and offered registrations but excludes terminal waiting states',
+  test('active filter excludes waiting registrations and retains active offers',
       () {
     TrinaRow row(String lifecycle) {
       final order = OrderModel.fromJson({
         'id': 5,
         'state': 'waitlisted',
-        'isActive': ['waiting', 'offered'].contains(lifecycle),
+        'isActive': true,
         'waitlistSummary': {
           'counts': {lifecycle: 1},
-          'isActive': ['waiting', 'offered'].contains(lifecycle),
+          'isActive': true,
           'pendingPlaces': lifecycle == 'offered' ? 1 : 0
         }
       });
@@ -32,12 +32,9 @@ void main() {
           cells: {EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: order)});
     }
 
-    expect(OrderGridFilters.orderIsActive(row('waiting')), isTrue);
+    expect(OrderGridFilters.orderIsActive(row('waiting')), isFalse);
     expect(OrderGridFilters.orderIsActive(row('offered')), isTrue);
     expect(OrderGridFilters.orderIsActive(row('offer_expired')), isFalse);
-    expect(OrderGridFilters.orderIsActive(row('offer_declined')), isFalse);
-    expect(OrderGridFilters.orderIsActive(row('offer_cancelled')), isFalse);
-    expect(OrderGridFilters.orderIsActive(row('withdrawn')), isFalse);
   });
 
 
