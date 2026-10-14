@@ -15,7 +15,9 @@ class OccasionEditCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onCreateCopy;
   final Color? backgroundColor;
+  final String? displayTitle;
   final String? badge;
+  final String? viewLabel;
   final bool isPresent;
   final bool isAppLanding;
   final VoidCallback? onSetAppLanding;
@@ -27,6 +29,8 @@ class OccasionEditCard extends StatelessWidget {
     this.onCreateCopy,
     this.backgroundColor,
     this.badge,
+    this.displayTitle,
+    this.viewLabel,
     this.isPresent = false,
     this.isAppLanding = false,
     this.onSetAppLanding,
@@ -90,12 +94,15 @@ class OccasionEditCard extends StatelessWidget {
                 icon: Icon(Icons.more_vert,
                     color: onSurfaceColor.withOpacity(0.7)),
                 onSelected: (value) {
+                  if (value == "view") onTap();
                   if (value == "app_landing") onSetAppLanding?.call();
                   if (value == "create_copy") {
                     onCreateCopy?.call();
                   }
                 },
                 itemBuilder: (BuildContext context) => [
+                  if (viewLabel != null)
+                    PopupMenuItem(value: 'view', child: Text(viewLabel!)),
                   if (onSetAppLanding != null)
                     PopupMenuItem(
                         value: 'app_landing',
@@ -143,7 +150,7 @@ class OccasionEditCard extends StatelessWidget {
                     ]),
                     const SizedBox(height: 4),
                     Text(
-                      occasion.title ?? '',
+                      displayTitle ?? occasion.title ?? '',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
