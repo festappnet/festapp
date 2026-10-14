@@ -1,4 +1,16 @@
 (function initFestappFlutterBootstrapGuard() {
+  // S00 shell, S01 entrypoint, S02 engine, S03 runApp, S04 Dart startup,
+  // S05 backend, S06 installation/storage, S07 connectivity, S08 locale,
+  // S09 auth/sync, S10 cached context, S11 occasion, S12 first frame, S13 ready.
+  let startupPhase = 'S00';
+  const startupPhases = new Set(Array.from({ length: 14 }, (_, index) =>
+    'S' + String(index).padStart(2, '0')));
+  window.setFestappStartupPhase = function(phase) {
+    if (startupPhases.has(phase)) startupPhase = phase;
+  };
+  window.getFestappStartupPhase = function() { return startupPhase; };
+  window.retryFestappStartup = function() { window.location.reload(); };
+
   const dispatchRecordPrefix = '___dart_dispatch_record';
 
   function nativePrototypeCandidates() {

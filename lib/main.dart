@@ -1,3 +1,5 @@
+import 'package:fstapp/services/bounded_database_opener.dart';
+import 'package:fstapp/startup/startup_failure_screen.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:fstapp/services/auth_session_storage.dart';
@@ -104,15 +106,20 @@ bool isUnitAdminStartupRoute(Uri uri) {
 /// cannot leave the process sitting on an OS/browser splash with no Flutter UI.
 class FestappBootstrap extends StatefulWidget {
   static const loadingKey = Key('festapp-startup-loading');
+  static const failureKey = Key('festapp-startup-failed');
 
   final String initialRoute;
   final Future<void> Function() initialize;
   final Widget Function() buildReadyApp;
+  final Duration initializationTimeout;
+  final VoidCallback? onRetry;
 
   const FestappBootstrap({
     this.initialRoute = '/',
     required this.initialize,
     required this.buildReadyApp,
+    this.initializationTimeout = const Duration(seconds: 45),
+    this.onRetry,
     super.key,
   });
 
@@ -123,6 +130,8 @@ class FestappBootstrap extends StatefulWidget {
 class _FestappBootstrapState extends State<FestappBootstrap> {
   late final String _initialRoute = widget.initialRoute;
   bool _isReady = false;
+  bool _startupFailed = false;
+  bool _storageOpenFailed = false;
 
   @override
   void initState() {
@@ -132,16 +141,33 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
 
   Future<void> _initialize() async {
     try {
-      await widget.initialize();
+      await widget.initialize().timeout(widget.initializationTimeout);
+    } on TimeoutException catch (error) {
+      // Do not launch a second initializer or the app beside a pending storage
+      // migration. A retry starts a new document; it never clears user data.
+      AppLogger.error('Startup timed out: $error');
+      if (!mounted) return;
+      setState(() {
+        _startupFailed = true;
+        _storageOpenFailed = error is StorageOpenTimeoutException;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) WebBootstrapBridge.markAppReady();
+      });
+      return;
     } catch (error) {
       // initializeEverything isolates its individual steps already. This final
       // boundary still guarantees a usable app shell after an unexpected error.
       AppLogger.error('Unexpected startup failure: $error');
     }
     if (!mounted) return;
+    WebBootstrapBridge.markStartupPhase('S12');
     setState(() => _isReady = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) WebBootstrapBridge.markAppReady();
+      if (mounted) {
+        WebBootstrapBridge.markStartupPhase('S13');
+        WebBootstrapBridge.markAppReady();
+      }
     });
   }
 
@@ -158,6 +184,19 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
   Widget build(BuildContext context) {
     if (_isReady) return widget.buildReadyApp();
     final baseTheme = ThemeConfig.theme();
+    if (_startupFailed) {
+      return MaterialApp(
+        theme: baseTheme,
+        darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
+        debugShowCheckedModeBanner: false,
+        home: StartupFailureScreen(
+          key: FestappBootstrap.failureKey,
+          phase: WebBootstrapBridge.startupPhase,
+          storageOpenFailed: _storageOpenFailed,
+          onRetry: widget.onRetry ?? (kIsWeb ? WebBootstrapBridge.retryStartup : null),
+        ),
+      );
+    }
     return MaterialApp(
       theme: baseTheme,
       darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
@@ -173,6 +212,7 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
 }
 
 Future<void> initializeEverything() async {
+  WebBootstrapBridge.markStartupPhase('S04');
   AppLogger.debug('Initialization started');
 
   // Unit editors and Google returns own their context. A default occasion
@@ -184,6 +224,7 @@ Future<void> initializeEverything() async {
   WidgetsFlutterBinding.ensureInitialized();
   AppLogger.debug('Widgets binding initialized');
 
+  WebBootstrapBridge.markStartupPhase('S05');
   final resolvedBackend = await BackendActivationService().resolve();
   AppConfig.organization = resolvedBackend.organizationId;
   ConnectivityService.configureBackendOrigin(resolvedBackend.supabaseUrl);
@@ -193,6 +234,7 @@ Future<void> initializeEverything() async {
     '(profile ${resolvedBackend.profileSha256.isEmpty ? 'legacy' : resolvedBackend.profileSha256.substring(0, 12)})',
   );
 
+  WebBootstrapBridge.markStartupPhase('S06');
   var allowPersistedOccasionData = false;
   try {
     await InstallationCutoverService(
@@ -222,6 +264,7 @@ Future<void> initializeEverything() async {
     AppLogger.error('PWA setup failed: $e');
   }
 
+  WebBootstrapBridge.markStartupPhase('S07');
   try {
     await ConnectivityService.initialize();
     AppLogger.debug('Connectivity service initialized');
@@ -239,6 +282,7 @@ Future<void> initializeEverything() async {
     AppLogger.error('Date formatting initialization failed: $e');
   }
 
+  WebBootstrapBridge.markStartupPhase('S08');
   try {
     await EasyLocalization.ensureInitialized();
     AppLogger.debug('EasyLocalization initialized');
@@ -246,6 +290,7 @@ Future<void> initializeEverything() async {
     AppLogger.error('EasyLocalization initialization failed: $e');
   }
 
+  WebBootstrapBridge.markStartupPhase('S09');
   var supabaseInitialized = false;
   try {
     final requestHeaders = await PlatformHelper.getBackendRequestHeaders();
@@ -311,6 +356,7 @@ Future<void> initializeEverything() async {
     AppLogger.error('Tz setup failed: $e');
   }
 
+  WebBootstrapBridge.markStartupPhase('S10');
   try {
     final cachedSyncModel = allowPersistedOccasionData && !skipInitialOccasion
         ? await ClientSyncRuntime.restoreLastContext()
@@ -356,6 +402,7 @@ Future<void> initializeEverything() async {
     AppLogger.error('Offline data helper initialization failed: $e');
   }
 
+  WebBootstrapBridge.markStartupPhase('S11');
   try {
     // Tabs own their existing online/cache refresh flow. Blocking first paint
     // on a serial refresh of every offline bundle leaves the app blank when
