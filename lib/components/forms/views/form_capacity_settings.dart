@@ -186,7 +186,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                         }
                                         if (number <
                                             (widget.form.capacity
-                                                    ?.occupiedPlaces ??
+                                                    ?.minimumCapacity ??
                                                 0)) {
                                           return WaitlistStrings.text(
                                               'CAPACITY_BELOW_COMMITTED');

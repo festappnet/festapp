@@ -85,6 +85,6 @@ Waitlisted orders collect contact answers and waiting tickets with their own
 answers, without sale products or payments. Waiting tickets are not valid
 admissions and have no ticket symbol. Acceptance reuses their ticket IDs. Editors explicitly confirm offers of a number of places. A personal
 link opens a prefilled form; only its explicit submit accepts selected tickets
-and currently available products. Active offers and the server-provided `heldForWaiting` priority reservations count toward displayed occupancy and the minimum editable capacity. Waiting registrations without a current offer remain outside the admin Active filter; offer preparation reads the full loaded order set independently of that filter. Offers hold person capacity only. The same
+and currently available products. Displayed occupancy counts admissions, active offers and all waiting registrations, and may exceed the configured limit. The minimum editable capacity counts admissions, active offers and server-provided `heldForWaiting` priority reservations. The admin Active filter includes both waiting registrations and current offers, excluding terminal waiting states; offer preparation reads the full loaded order set independently of that filter. Offers hold person capacity only. The same
 per-order person ceiling applies to both modes. See the
 [implementation contract](../../../docs/plans/form-capacity-waitlist-plan-2026-10-13.md).
