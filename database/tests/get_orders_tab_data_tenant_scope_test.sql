@@ -62,8 +62,32 @@ BEGIN
   PERFORM assert_eq(v_result->'email_delivery', '{}'::jsonb,
     'email summaries resolve the same authorized occasion without ambiguity');
 
+  -- A second occasion in the same tenant can carry the same legacy slug.
+  INSERT INTO public.occasions
+    (title, link, start_time, end_time, organization, unit)
+  VALUES ('Same-tenant duplicate', v_link, now(), now() + interval '1 day',
+    v_own_org, v_own_unit) RETURNING id INTO v_own_occasion;
+  INSERT INTO public.occasion_users
+    (occasion, "user", is_editor_order_view, is_editor_view)
+  VALUES (v_own_occasion, v_user, true, true);
+
+  SET LOCAL ROLE authenticated;
+  v_result := public.get_orders_tab_data(v_link);
+  RESET ROLE;
+  PERFORM assert_eq(v_result->'email_delivery', '{}'::jsonb,
+    'same-tenant duplicate links do not break delivery summaries');
+
+  DELETE FROM eshop.orders WHERE id = v_own_order;
+  SET LOCAL ROLE authenticated;
+  v_result := public.get_orders_tab_data(v_link);
+  RESET ROLE;
+  PERFORM assert_eq(jsonb_array_length(v_result->'orders'), 0,
+    'same-tenant duplicate links return a successful empty orders list');
+  PERFORM assert_eq(v_result->'email_delivery', '{}'::jsonb,
+    'empty orders skip delivery lookup');
+
   UPDATE public.occasion_users SET is_editor_order_view = false
-  WHERE occasion = v_own_occasion AND "user" = v_user;
+  WHERE "user" = v_user;
   BEGIN
     SET LOCAL ROLE authenticated;
     PERFORM public.get_orders_tab_data(v_link);
