@@ -74,7 +74,7 @@ void main() {
   });
 
   testWidgets(
-      'demo panel overlays content and its footer without reducing page height',
+      'demo panel floats over full-height content while keeping footer controls visible',
       (tester) async {
     const bodyKey = Key('body');
     const footerKey = Key('footer');
@@ -89,7 +89,13 @@ void main() {
     final panel = tester.getRect(find.byType(DemoOccasionBanner));
     expect(page.height,
         tester.view.physicalSize.height / tester.view.devicePixelRatio);
-    expect(panel.bottom, page.bottom);
+    expect(panel.bottom, page.bottom - 64);
+    final card = tester.getRect(find
+        .descendant(
+            of: find.byType(DemoOccasionBanner),
+            matching: find.byType(Material))
+        .first);
+    expect(card.bottom, lessThanOrEqualTo(footer.top));
     expect(panel.top, lessThan(footer.bottom));
     expect(tester.getRect(find.byKey(bodyKey)).bottom, footer.top);
   });

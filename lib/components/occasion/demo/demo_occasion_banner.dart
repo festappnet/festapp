@@ -12,7 +12,7 @@ import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:uuid/uuid.dart';
 import 'demo_occasion_navigation.dart';
 
-/// The panel overlays the whole page, including nested scaffold footers.
+/// Float over the full page while keeping nested footer controls visible.
 class DemoOccasionOverlay extends StatelessWidget {
   final Widget child;
   const DemoOccasionOverlay({super.key, required this.child});
@@ -21,7 +21,7 @@ class DemoOccasionOverlay extends StatelessWidget {
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
         child,
         const Positioned(
-            left: 0, right: 0, bottom: 0, child: DemoOccasionBanner()),
+            left: 0, right: 0, bottom: 64, child: DemoOccasionBanner()),
       ]);
 }
 
@@ -87,41 +87,49 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-      top: false,
-      child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-          child: Align(
-              heightFactor: 1,
-              alignment: Alignment.bottomCenter,
-              child: Material(
-                  elevation: 8,
-                  shadowColor: Colors.black26,
-                  borderRadius: BorderRadius.circular(24),
-                  clipBehavior: Clip.antiAlias,
-                  color: Theme.of(context).cardColor,
-                  child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 16,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            TextButton.icon(
-                                onPressed: () =>
-                                    DemoOccasionNavigation.back(context),
-                                icon: const Icon(Icons.arrow_back),
-                                label: Text(DemoOccasionStrings.back)),
-                            Text(DemoOccasionStrings.readOnly),
-                            FilledButton(
-                                onPressed: _busy ? null : _copy,
-                                child: _busy
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2))
-                                    : Text(DemoOccasionStrings.copy))
-                          ]))))));
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return SafeArea(
+        top: false,
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: Align(
+                heightFactor: 1,
+                alignment: Alignment.bottomCenter,
+                child: Material(
+                    elevation: 12,
+                    shadowColor: colors.shadow.withValues(alpha: .4),
+                    surfaceTintColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        side: BorderSide(
+                            color: colors.outline.withValues(alpha: .6))),
+                    clipBehavior: Clip.antiAlias,
+                    color: colors.surfaceContainerHighest,
+                    child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 16,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              TextButton.icon(
+                                  onPressed: () =>
+                                      DemoOccasionNavigation.back(context),
+                                  icon: const Icon(Icons.arrow_back),
+                                  label: Text(DemoOccasionStrings.back)),
+                              Text(DemoOccasionStrings.readOnly,
+                                  style: TextStyle(color: colors.onSurface)),
+                              FilledButton(
+                                  onPressed: _busy ? null : _copy,
+                                  child: _busy
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2))
+                                      : Text(DemoOccasionStrings.copy))
+                            ]))))));
+  }
 }
