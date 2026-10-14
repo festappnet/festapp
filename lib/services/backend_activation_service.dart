@@ -1,3 +1,4 @@
+import 'bounded_database_opener.dart';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -115,6 +116,9 @@ class BackendActivationService {
     final markerKey = '$_markerPrefix$tenantId';
     try {
       if (await _read(markerKey) == _canonicalMarker) return _canonical;
+    } on StorageOpenTimeoutException {
+      // An unreadable monotonic marker must never select the legacy writer.
+      rethrow;
     } catch (_) {
       return _legacy;
     }
@@ -136,6 +140,8 @@ class BackendActivationService {
       }
       await _write(markerKey, _canonicalMarker);
       return _canonical;
+    } on StorageOpenTimeoutException {
+      rethrow;
     } catch (_) {
       return _legacy;
     }

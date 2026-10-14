@@ -271,7 +271,8 @@
         message: 'Aplikace je připravená k obnovení.',
         reload: 'Obnovit',
         later: 'Později',
-        loading: 'Obnovuji...'
+        loading: 'Obnovuji...',
+        diagnostic: 'Kód pro podporu'
       }
     },
     en: {
@@ -285,7 +286,8 @@
         message: 'The app is ready to refresh.',
         reload: 'Refresh',
         later: 'Later',
-        loading: 'Refreshing...'
+        loading: 'Refreshing...',
+        diagnostic: 'Support code'
       }
     },
     sk: {
@@ -299,7 +301,8 @@
         message: 'Aplikácia je pripravená na obnovenie.',
         reload: 'Obnoviť',
         later: 'Neskôr',
-        loading: 'Obnovujem...'
+        loading: 'Obnovujem...',
+        diagnostic: 'Kód pre podporu'
       }
     },
     de: {
@@ -313,7 +316,8 @@
         message: 'Die App ist bereit zur Aktualisierung.',
         reload: 'Aktualisieren',
         later: 'Später',
-        loading: 'Aktualisiere...'
+        loading: 'Aktualisiere...',
+        diagnostic: 'Support-Code'
       }
     },
     pl: {
@@ -327,7 +331,8 @@
         message: 'Aplikacja jest gotowa do odświeżenia.',
         reload: 'Odśwież',
         later: 'Później',
-        loading: 'Odświeżanie...'
+        loading: 'Odświeżanie...',
+        diagnostic: 'Kod pomocy'
       }
     },
     uk: {
@@ -341,7 +346,8 @@
         message: 'Застосунок готовий до оновлення.',
         reload: 'Оновити',
         later: 'Пізніше',
-        loading: 'Оновлення...'
+        loading: 'Оновлення...',
+        diagnostic: 'Код підтримки'
       }
     }
   };
@@ -385,6 +391,18 @@
 
     const message = document.createElement('div');
     message.textContent = copy.message;
+    if (reason === 'legacy-cache' && window.__FESTAPP_APP_READY__ !== true) {
+      const diagnostic = document.createElement('div');
+      diagnostic.setAttribute('data-festapp-startup-diagnostic', 'true');
+      const version = String(currentVersion || '')
+        .replace(/[^0-9A-Za-z.+-]/g, '').slice(0, 40);
+      const candidate = window.getFestappStartupPhase?.();
+      const phase = /^S(?:0[0-9]|1[0-3])$/.test(candidate) ? candidate : 'S00';
+      diagnostic.textContent = copy.diagnostic + ': ' + version + ' / ' + phase;
+      diagnostic.style.fontSize = '12px';
+      diagnostic.style.marginTop = '4px';
+      message.append(diagnostic);
+    }
     message.style.minWidth = '0';
     message.style.flex = '1 1 auto';
 

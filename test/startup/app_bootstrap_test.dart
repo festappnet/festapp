@@ -1,3 +1,4 @@
+import 'package:fstapp/services/bounded_database_opener.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,41 @@ import 'package:fstapp/main.dart';
 import 'package:fstapp/startup/startup_failure_policy.dart';
 
 void main() {
+  testWidgets('pending database startup becomes actionable without launching the app', (tester) async {
+    final pending = Completer<void>();
+    var builds = 0;
+    var retries = 0;
+    await tester.pumpWidget(FestappBootstrap(
+      initialize: () => pending.future,
+      initializationTimeout: const Duration(milliseconds: 100),
+      onRetry: () => retries++,
+      buildReadyApp: () { builds++; return const SizedBox(); },
+    ));
+    await tester.pump(const Duration(milliseconds: 101));
+    await tester.pump();
+    expect(find.byKey(FestappBootstrap.loadingKey), findsNothing);
+    expect(find.byKey(FestappBootstrap.failureKey), findsOneWidget);
+    expect(builds, 0);
+    await tester.tap(find.byType(FilledButton));
+    expect(retries, 1);
+    pending.complete();
+    await tester.pump();
+    expect(builds, 0, reason: 'Late initialization must not start alongside the failure surface');
+    expect(find.byKey(FestappBootstrap.failureKey), findsOneWidget);
+  });
+
+  testWidgets('activation storage timeout fails closed with storage guidance', (tester) async {
+    var builds = 0;
+    await tester.pumpWidget(FestappBootstrap(
+      initialize: () async => throw StorageOpenTimeoutException(const Duration(seconds: 5)),
+      buildReadyApp: () { builds++; return const SizedBox(); },
+    ));
+    await tester.pumpAndSettle();
+    expect(builds, 0);
+    expect(find.byKey(FestappBootstrap.failureKey), findsOneWidget);
+    expect(find.textContaining('Close other Festapp tabs'), findsOneWidget);
+  });
+
   test('keeps the root route when no forced occasion is configured', () {
     expect(initialRouteForUri(Uri.parse('https://preview.example/')), '/');
   });

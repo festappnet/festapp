@@ -1,3 +1,4 @@
+import 'bounded_database_opener.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sembast/sembast_io.dart';
 import 'package:sembast_web/sembast_web.dart';
@@ -5,7 +6,10 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 class StorageHelper {
-  static final Map<String, Database> _databases = {};
+  static final _opener = BoundedDatabaseOpener(open: (path) async {
+    final fullPath = await _constructDbPath(path);
+    return _databaseFactory.openDatabase(fullPath);
+  });
 
   static DatabaseFactory get _databaseFactory {
     return kIsWeb ? databaseFactoryWeb : databaseFactoryIo;
@@ -23,11 +27,7 @@ class StorageHelper {
 
   static Future<Database> _getDatabase([String? dbPath]) async {
     final path = dbPath ?? 'default.db';
-    if (!_databases.containsKey(path)) {
-      final fullPath = await _constructDbPath(path);
-      _databases[path] = await _databaseFactory.openDatabase(fullPath);
-    }
-    return _databases[path]!;
+    return _opener.get(path);
   }
 
   static Future<String?> get(String key, [String? dbPath]) async {

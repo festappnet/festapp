@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
 import 'package:collection/collection.dart';
@@ -341,10 +342,12 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         }
         ToastHelper.Show(
           context,
-          "${BankAccountStrings.save}. ${BankAccountStrings.setupConnectionNow}",
+          savedAccount.supportsEmailConnection || savedAccount.type == 'FIO'
+              ? "${CommonStrings.saved}. ${BankAccountStrings.setupConnectionNow}"
+              : CommonStrings.saved,
         );
       } else {
-        ToastHelper.Show(context, BankAccountStrings.save);
+        ToastHelper.Show(context, CommonStrings.saved);
       }
 
       if (widget.isDialog && _account.pairingCode == null) {

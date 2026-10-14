@@ -26,6 +26,14 @@ function createContext({ configurable = true } = {}) {
 
 {
   const { window, MutationObserver } = createContext();
+  assert.equal(window.getFestappStartupPhase(), 'S00');
+  window.setFestappStartupPhase('S06');
+  assert.equal(window.getFestappStartupPhase(), 'S06');
+  for (const invalid of ['S14', 'https://private.test/?token=secret', undefined]) {
+    window.setFestappStartupPhase(invalid);
+    assert.equal(window.getFestappStartupPhase(), 'S06',
+      'startup diagnostics must accept fixed non-sensitive phase codes only');
+  }
   const result = window.prepareFestappFlutterBootstrap();
   assert.equal(result.removedDispatchRecords, 1);
   assert.equal(
@@ -50,6 +58,9 @@ function createContext({ configurable = true } = {}) {
 
 const index = await readFile(path.join(projectRoot, 'web/index.html'), 'utf8');
 assert.match(index, /festapp_flutter_bootstrap_guard\.js/);
+for (const phase of ['S01', 'S02', 'S03']) {
+  assert.ok(index.includes("setFestappStartupPhase('" + phase + "')"));
+}
 assert.ok(
   index.indexOf('prepareFestappFlutterBootstrap()') <
     index.indexOf('{{flutter_js}}'),
