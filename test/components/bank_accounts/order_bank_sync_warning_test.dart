@@ -194,6 +194,8 @@ void main() {
         final tooltip =
             tester.widget<IconButton>(find.byType(IconButton)).tooltip!;
         expect(tooltip, isNot(contains('Festival account')));
+        if (scenario != 'fallback')
+          expect(tooltip, contains('Contact: Jane Admin'));
         expect(tooltip, contains(reason));
         expect(tooltip, isNot(contains('Check the bank statement')));
         expect(

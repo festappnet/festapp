@@ -402,6 +402,7 @@
     "surname": "Priezvisko"
   },
   "FeatureOrders": {
+    "bankSyncWarningContactShort": "Kontaktujte:",
     "bankSyncPaymentPaused": "Synchronizácia bankového účtu pre túto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párovanie platieb nefunguje",
     "bankSyncWarningHelp": "Platba už mohla prísť na účet, ale zatiaľ nie je priradená k objednávke. Pred pripomenutím platby overte výpis z účtu.",

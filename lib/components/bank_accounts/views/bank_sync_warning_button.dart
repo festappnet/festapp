@@ -27,11 +27,7 @@ class BankSyncWarningButton extends StatelessWidget {
         reason,
         contacts.isEmpty
             ? OrdersStrings.bankSyncWarningFallback
-            : contacts
-                .map((contact) => contact.name.isNotEmpty
-                    ? contact.name
-                    : contact.email ?? '')
-                .join(', '),
+            : '${OrdersStrings.bankSyncWarningContactShort} ${contacts.map((contact) => contact.name.isNotEmpty ? contact.name : contact.email ?? '').join(', ')}',
       ].join('\n'),
       icon: const Icon(Icons.warning_amber_rounded),
       color: Theme.of(context).brightness == Brightness.dark

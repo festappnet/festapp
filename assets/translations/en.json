@@ -548,6 +548,7 @@
     "setDefaultProduct": "Click to make this product the default option for customers."
   },
   "FeatureOrders": {
+    "bankSyncWarningContactShort": "Contact:",
     "bankSyncPaymentPaused": "Bank synchronization is off for the account receiving this payment.",
     "bankSyncWarningTitle": "Automatic payment matching is unavailable",
     "bankSyncWarningHelp": "Payment may already have reached the account without being matched to this order. Check the bank statement before sending a payment reminder.",

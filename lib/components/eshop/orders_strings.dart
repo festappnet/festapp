@@ -9,6 +9,8 @@ class OrdersStrings {
       'FeatureOrders.bankSyncWarningTitle'.tr();
   static String get bankSyncWarningHelp =>
       'FeatureOrders.bankSyncWarningHelp'.tr();
+  static String get bankSyncWarningContactShort =>
+      'FeatureOrders.bankSyncWarningContactShort'.tr();
   static String get bankSyncWarningContact =>
       'FeatureOrders.bankSyncWarningContact'.tr();
   static String get bankSyncWarningFallback =>

@@ -402,6 +402,7 @@
     "surname": "Nazwisko"
   },
   "FeatureOrders": {
+    "bankSyncWarningContactShort": "Kontakt:",
     "bankSyncPaymentPaused": "Synchronizacja rachunku bankowego dla tej płatności jest wyłączona.",
     "bankSyncWarningTitle": "Automatyczne dopasowywanie płatności jest niedostępne",
     "bankSyncWarningHelp": "Płatność mogła już wpłynąć na konto bez przypisania do tego zamówienia. Sprawdź wyciąg bankowy przed wysłaniem przypomnienia o płatności.",
