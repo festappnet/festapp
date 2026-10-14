@@ -6,9 +6,19 @@ export function parseWaitlistFragment(fragment) {
     if (!fragment?.startsWith('#waitlist?')) return null;
     const p = new URLSearchParams(fragment.slice(10));
     const token = p.get('token');
-    if (!/^[a-f0-9]{64}$/i.test(token || '')) throw new Error('INVALID_CAPABILITY');
     const offerId = p.get('offer_id');
     const orderId = p.get('order_id');
+    if (!p.has('token')) {
+        // The marker only selects session-authenticated access. The server
+        // still checks the signed-in actor's occasion editor permission.
+        if (p.get('admin') === '1' && p.getAll('admin').length === 1 &&
+            p.getAll('offer_id').length === 1 && !p.has('order_id') &&
+            /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(offerId || '')) {
+            return { token: null, offerId };
+        }
+        throw new Error('INVALID_CAPABILITY');
+    }
+    if (!/^[a-f0-9]{64}$/i.test(token || '')) throw new Error('INVALID_CAPABILITY');
     if (offerId && /^[a-f0-9-]{36}$/i.test(offerId)) return { token, offerId };
     if (orderId && /^\d+$/.test(orderId)) return { token, orderId: Number(orderId) };
     throw new Error('INVALID_CAPABILITY');

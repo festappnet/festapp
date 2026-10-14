@@ -84,7 +84,7 @@ void main() {
     final history = OrderHistoryModel(state:'waitlisted', orderModel:OrderModel(state:'paid'), data:{'action':'waitlist_withdraw','ticketIds':[1]});
     await tester.pumpWidget(MaterialApp(home: Builder(builder:(context) {
       final cell=history.toTrinaRow(context).cells[EshopColumns.HISTORY_STATE]!.value;
-      expect(cell,'waitlisted;Náhradníci → history:withdrawn;Čekání ukončeno (1)');
+      expect(cell,'waitlisted;Náhradníci → history:withdrawn;Vyřazeno z náhradníků (1)');
       return const SizedBox();
     })));
     history.data={'action':'offer_sent','count':2};

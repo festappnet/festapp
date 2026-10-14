@@ -29,6 +29,7 @@ class OrderGridFilters {
 
   static bool orderIsActive(TrinaRow row) =>
       order(row)?.isActive ?? orderIsNonCancelled(row);
+
   static bool allows(TrinaRow row, String action) =>
       order(row)?.allows(action) ?? false;
 
