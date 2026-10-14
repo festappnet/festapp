@@ -114,7 +114,6 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
                 ...enabledFeatures.map((feature) => FeatureForm(
                     feature: feature,
                     occasion: widget.occasionId,
-                    readOnly: !widget.isEditingEnabled,
                     onSaveTicket: widget.onSaveTicket)),
               ],
               if (disabledFeatures.isNotEmpty) ...[
@@ -125,7 +124,6 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
                 ...disabledFeatures.map((feature) => FeatureForm(
                     feature: feature,
                     occasion: widget.occasionId,
-                    readOnly: !widget.isEditingEnabled,
                     onSaveTicket: widget.onSaveTicket)),
               ],
               if (featuresToShow.isEmpty && _featureSearchQuery.isNotEmpty)
