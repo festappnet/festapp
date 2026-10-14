@@ -54,7 +54,7 @@
     <script>
         // This handshake must not depend on the module it unlocks. A resumed
         // mobile worker can forget the client generation before loading JS.
-        window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+        window.__FESTAPP_BUILD_VERSION__ = "0.20.191+675";
         const startupCopy = navigator.language.startsWith('cs') || navigator.language.startsWith('sk')
             ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
             : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
@@ -144,8 +144,7 @@
         // The combined web build already ships this canonical public script.
         if (startupServiceWorker && !['localhost', '127.0.0.1', '::1'].includes(location.hostname)) {
             const recovery = document.createElement('script');
-            recovery.src = '/festapp_update_prompt.js?v=' +
-                encodeURIComponent(window.__FESTAPP_BUILD_VERSION__);
+            recovery.src = '/festapp_update_prompt.js';
             recovery.onload = function() {
                 if (window.__FESTAPP_WEB_STARTUP_FAILURE__) {
                     window.failFestappWebClientStartup(window.__FESTAPP_WEB_STARTUP_FAILURE__);
