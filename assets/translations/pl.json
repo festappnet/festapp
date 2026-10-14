@@ -1,9 +1,8 @@
 {
   "BankAccount": {
-    "synchronizationPending": "Synchronizacja jest włączona. Pobieranie czeka na limit banku.",
     "automaticSynchronization": "Automatyczna synchronizacja",
-    "synchronizationEnabled": "Włączona",
-    "synchronizationPaused": "Wyłączona",
+    "synchronizationEnabled": "Włączona. Nowe płatności są importowane automatycznie; błędy banku są poniżej.",
+    "synchronizationPaused": "Wyłączona. Nowe płatności nie są importowane automatycznie.",
     "synchronizationChanging": "Aktualizowanie synchronizacji",
     "emailBankUnsupported": "Integracja e-maili bankowych jest obecnie dostępna tylko dla Fio banka i Air Bank. Na tym koncie możesz rejestrować płatności ręcznie."
   },
@@ -402,8 +401,6 @@
     "surname": "Nazwisko"
   },
   "FeatureOrders": {
-    "bankSyncWarningContactShort": "Kontakt:",
-    "bankSyncPaymentPaused": "Synchronizacja rachunku bankowego dla tej płatności jest wyłączona.",
     "bankSyncWarningTitle": "Automatyczne dopasowywanie płatności jest niedostępne",
     "bankSyncWarningHelp": "Płatność mogła już wpłynąć na konto bez przypisania do tego zamówienia. Sprawdź wyciąg bankowy przed wysłaniem przypomnienia o płatności.",
     "bankSyncWarningContact": "Poproś administratora konta bankowego o sprawdzenie synchronizacji:",

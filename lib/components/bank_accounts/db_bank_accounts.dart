@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,18 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
 
 class DbBankAccounts {
-  static final connectionChanges =
-      ValueNotifier<({int accountId, int revision})>(
-          (accountId: 0, revision: 0));
-  static final Map<int, String> _connectionSnapshots = {};
-
-  static void _connectionChanged(int accountId) {
-    connectionChanges.value = (
-      accountId: accountId,
-      revision: connectionChanges.value.revision + 1,
-    );
-  }
-
   static final Map<String, String> _operationIds = {};
   static Future<Map<String, dynamic>> manage(
     int accountId,
@@ -52,10 +39,6 @@ class DbBankAccounts {
       throw BankSyncError.fromResponse(result);
     }
     _operationIds.remove(key);
-    if (['resume', 'suspend', 'sync', 'set_token', 'create']
-        .contains(operation)) {
-      _connectionChanged(accountId);
-    }
     if (result.containsKey('verification_error')) {
       throw BankSyncError.fromResponse(result);
     }
@@ -67,14 +50,11 @@ class DbBankAccounts {
       'bank-sync-manage',
       body: {'account_id': accountId, 'operation': 'status'},
     );
-    if (response.data == null) return null;
-    final connection = BankSyncConnection.fromJson(
-        Map<String, dynamic>.from(response.data as Map));
-    final snapshot = jsonEncode(connection.toJson());
-    final previous = _connectionSnapshots[accountId];
-    _connectionSnapshots[accountId] = snapshot;
-    if (previous != null && previous != snapshot) _connectionChanged(accountId);
-    return connection;
+    return response.data == null
+        ? null
+        : BankSyncConnection.fromJson(
+            Map<String, dynamic>.from(response.data as Map),
+          );
   }
 
   static final _supabase = Supabase.instance.client;

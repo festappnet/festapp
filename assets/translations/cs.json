@@ -548,8 +548,6 @@
     "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka."
   },
   "FeatureOrders": {
-    "bankSyncWarningContactShort": "Kontaktujte:",
-    "bankSyncPaymentPaused": "Synchronizace bankovního účtu pro tuto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párování plateb nefunguje",
     "bankSyncWarningHelp": "Platba již mohla dorazit na účet, ale zatím není přiřazena k objednávce. Před připomenutím platby ověřte výpis z účtu.",
     "bankSyncWarningContact": "Požádejte správce bankovního účtu o kontrolu synchronizace:",
@@ -1642,10 +1640,9 @@
     "copied": "Zkopírováno"
   },
   "BankAccount": {
-    "synchronizationPending": "Synchronizace je zapnutá. Načtení čeká na limit banky.",
     "automaticSynchronization": "Automatická synchronizace",
-    "synchronizationEnabled": "Zapnuto",
-    "synchronizationPaused": "Vypnuto",
+    "synchronizationEnabled": "Zapnuto. Načítání nových plateb probíhá automaticky; případné chyby banky jsou uvedeny níže.",
+    "synchronizationPaused": "Vypnuto. Nové platby se automaticky nenačítají.",
     "synchronizationChanging": "Měním nastavení synchronizace",
     "organizationSettings": "nastavení organizace",
     "settingsTitle": "Nastavení bankovního účtu",

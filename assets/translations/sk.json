@@ -1,9 +1,8 @@
 {
   "BankAccount": {
-    "synchronizationPending": "Synchronizácia je zapnutá. Načítanie čaká na limit banky.",
     "automaticSynchronization": "Automatická synchronizácia",
-    "synchronizationEnabled": "Zapnuté",
-    "synchronizationPaused": "Vypnuté",
+    "synchronizationEnabled": "Zapnuté. Nové platby sa načítavajú automaticky; chyby banky sú uvedené nižšie.",
+    "synchronizationPaused": "Vypnuté. Nové platby sa automaticky nenačítavajú.",
     "synchronizationChanging": "Mením nastavenie synchronizácie",
     "emailBankUnsupported": "Prepojenie bankových e-mailov je zatiaľ dostupné iba pre Fio banku a Air Bank. Tento účet môžete používať na ručnú evidenciu platieb."
   },
@@ -402,8 +401,6 @@
     "surname": "Priezvisko"
   },
   "FeatureOrders": {
-    "bankSyncWarningContactShort": "Kontaktujte:",
-    "bankSyncPaymentPaused": "Synchronizácia bankového účtu pre túto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párovanie platieb nefunguje",
     "bankSyncWarningHelp": "Platba už mohla prísť na účet, ale zatiaľ nie je priradená k objednávke. Pred pripomenutím platby overte výpis z účtu.",
     "bankSyncWarningContact": "Požiadajte správcu bankového účtu o kontrolu synchronizácie:",

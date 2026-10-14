@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
@@ -146,49 +144,20 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     timeago.setLocaleMessages('cs', timeago.CsMessages());
   }
 
-  bool _isLoadingConnection = false;
-  Timer? _connectionRefreshBurst;
-
-  Future<void> _loadBankSyncConnection({bool background = false}) async {
-    if (_isLoadingConnection || !mounted || (background && _isSaving)) return;
-    _isLoadingConnection = true;
-    Future<void> load() async {
-      final connection = await DbBankAccounts.getConnection(_account.id);
-      if (mounted && connection != null) {
-        setState(() {
-          _account = _account.copyWith(bankSync: connection);
-          _pairingCode = connection.receivingAddress?.split('@').first;
-        });
-        widget.onUpdated?.call(_account);
-      }
-    }
-
-    try {
-      if (background) {
-        await load();
-      } else {
-        await ExceptionHandler.guard(context, futureFunction: load);
-      }
-    } catch (error) {
-      AppLogger.error('Could not refresh bank connection: $error');
-    } finally {
-      _isLoadingConnection = false;
-    }
-  }
-
-  void _refreshAfterSynchronization() {
-    _connectionRefreshBurst?.cancel();
-    var remaining = 12;
-    _connectionRefreshBurst =
-        Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (!mounted || --remaining < 0) {
-        timer.cancel();
-        return;
-      }
-      // Read status while the bank service's own cooldown/polling and signed
-      // webhook delivery finish. This never requests another Fio pull.
-      _loadBankSyncConnection(background: true);
-    });
+  Future<void> _loadBankSyncConnection() async {
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        final connection = await DbBankAccounts.getConnection(_account.id);
+        if (mounted && connection != null) {
+          setState(() {
+            _account = _account.copyWith(bankSync: connection);
+            _pairingCode = connection.receivingAddress?.split('@').first;
+          });
+          widget.onUpdated?.call(_account);
+        }
+      },
+    );
   }
 
   Future<void> _connectBankSync(String mode) async {
@@ -220,16 +189,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       _isChangingSynchronization = true;
     });
     try {
-      final result = await DbBankAccounts.manage(
-          _account.id, enabled ? 'resume' : 'suspend');
-      if (enabled) {
-        _refreshAfterSynchronization();
-        if (mounted && result['sync_pending'] == true) {
-          ToastHelper.Show(context, BankAccountStrings.synchronizationPending);
-        }
-      } else {
-        _connectionRefreshBurst?.cancel();
-      }
+      await DbBankAccounts.manage(_account.id, enabled ? 'resume' : 'suspend');
     } catch (error) {
       _showError(
         BankAccountStrings.syncError(
@@ -256,7 +216,6 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
 
   @override
   void dispose() {
-    _connectionRefreshBurst?.cancel();
     _ibanController.dispose();
     _prefixController.dispose();
     _accountBodyController.dispose();
@@ -498,7 +457,6 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       if (!mounted) return;
 
       _rememberSavedToken();
-      _refreshAfterSynchronization();
 
       await _loadBankSyncConnection();
       if (!mounted) return;
@@ -509,7 +467,6 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       if (!mounted) return;
       if (e is BankSyncError && e.tokenSaved) {
         _rememberSavedToken();
-        _refreshAfterSynchronization();
         _tokenController.clear();
         _savedConnection = _connectionValues;
       }
@@ -678,9 +635,6 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         onSaveToken: _saveToken,
         onSynchronizationChanged: _changeSynchronization,
         isChangingSynchronization: _isChangingSynchronization,
-        onRefreshConnection: widget.readOnly || _account.id == 0
-            ? null
-            : () => _loadBankSyncConnection(background: true),
       );
   Widget _users(BuildContext context) => BankAccountUsersTab(
         accountId: _account.id,

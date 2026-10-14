@@ -25,6 +25,7 @@ import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -35,7 +36,7 @@ import 'models/orders_history_model.dart';
 import 'orders_strings.dart';
 import 'views/order_history_dialog.dart';
 import 'views/order_state_display.dart';
-import 'views/order_state_cell.dart';
+import 'views/order_bank_sync_warning.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'views/add_cash_payment_dialog.dart';
@@ -1409,11 +1410,40 @@ class EshopColumns {
     String firstPart = value.split(";")[0];
     String textValue = OrderModel.statesDataGridToUpper(label ?? value.split(";").last);
 
-    return OrderStateCell(
-      label: textValue,
-      background: getBackground(firstPart),
-      order: OrderGridFilters.order(rendererContext.row),
-      expired: firstPart == OrderModel.expiredState,
+    return Container(
+      color: getBackground(firstPart),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Tooltip(
+                message: textValue,
+                child: Text(textValue,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+            if (OrderGridFilters.order(rendererContext.row) case final order?)
+              OrderBankSyncWarning(order: order),
+            if (firstPart == OrderModel.expiredState)
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Tooltip(
+                  message: OrdersStrings.expiredOrderTooltip,
+                  child: CircleAvatar(
+                    radius: 12,
+                    backgroundColor: ThemeConfig.redColor(context),
+                    child: const Icon(
+                      Icons.error_outline,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 

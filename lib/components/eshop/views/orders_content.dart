@@ -1,6 +1,3 @@
-import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
-import 'package:fstapp/services/app_logger.dart';
-import 'order_state_column_width.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import '../../forms/waitlist_strings.dart';
@@ -188,34 +185,6 @@ class _OrdersContentState extends State<OrdersContent> {
   bool loadFailed = false;
 
   @override
-  void initState() {
-    super.initState();
-    DbBankAccounts.connectionChanges.addListener(_bankConnectionChanged);
-  }
-
-  Future<void> _bankConnectionChanged() async {
-    final grid = controller;
-    final id = DbBankAccounts.connectionChanges.value.accountId;
-    if (!mounted ||
-        grid == null ||
-        !grid.rows.any((row) =>
-            OrderGridFilters.order(row)?.paymentInfoModel?.bankAccount == id))
-      return;
-    try {
-      await grid.reloadIfClean(
-          canApply: () => mounted && identical(grid, controller));
-    } catch (error) {
-      AppLogger.error('Could not refresh bank-linked orders: $error');
-    }
-  }
-
-  @override
-  void dispose() {
-    DbBankAccounts.connectionChanges.removeListener(_bankConnectionChanged);
-    super.dispose();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final newOccasionLink = context.routeData.inheritedPathParams
@@ -261,20 +230,6 @@ class _OrdersContentState extends State<OrdersContent> {
         grid.stateManager.hideColumn(column, !waitlistEnabled());
       } else {
         column.hide = !waitlistEnabled();
-      }
-    }
-
-    void fitStateColumn(
-        SingleDataGridController<OrderModel> grid, List<OrderModel> orders) {
-      final column = grid.columns
-          .firstWhere((column) => column.field == EshopColumns.ORDER_STATE);
-      final requiredWidth = orderStateColumnWidth(context, orders);
-      column.minWidth = requiredWidth;
-      if (column.width >= requiredWidth) return;
-      if (grid.isGridLoaded) {
-        grid.stateManager.resizeColumn(column, requiredWidth - column.width);
-      } else {
-        column.width = requiredWidth;
       }
     }
 
@@ -350,10 +305,7 @@ class _OrdersContentState extends State<OrdersContent> {
             await DbOrders.getOrdersTabData(occasionLink: occasionLink!);
         bundle = newBundle;
         forms = newBundle.forms;
-        if (mounted && controller != null) {
-          updateWaitlistColumn(controller!);
-          fitStateColumn(controller!, newBundle.orders);
-        }
+        if (mounted && controller != null) updateWaitlistColumn(controller!);
         return newBundle.orders;
       },
       fromPlutoJson: OrderModel.fromPlutoJson,
@@ -405,7 +357,6 @@ class _OrdersContentState extends State<OrdersContent> {
     );
 
     updateWaitlistColumn(newController);
-    fitStateColumn(newController, bundle.orders);
     if (mounted) {
       setState(() {
         controller = newController;
@@ -542,8 +493,7 @@ class _OrdersContentState extends State<OrdersContent> {
       final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
       var futures = sending.where((o) => visibleIds.contains(o.id)).map((s) {
         return () async {
-          await sendTicketsToEmail(s,
-              firstDelivery: newlyPaidIds.contains(s.id));
+          await sendTicketsToEmail(s, firstDelivery: newlyPaidIds.contains(s.id));
         };
       }).toList();
 

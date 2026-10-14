@@ -548,8 +548,6 @@
     "setDefaultProduct": "Click to make this product the default option for customers."
   },
   "FeatureOrders": {
-    "bankSyncWarningContactShort": "Contact:",
-    "bankSyncPaymentPaused": "Bank synchronization is off for the account receiving this payment.",
     "bankSyncWarningTitle": "Automatic payment matching is unavailable",
     "bankSyncWarningHelp": "Payment may already have reached the account without being matched to this order. Check the bank statement before sending a payment reminder.",
     "bankSyncWarningContact": "Ask a bank account administrator to check synchronization:",
@@ -1642,10 +1640,9 @@
     "copied": "Copied"
   },
   "BankAccount": {
-    "synchronizationPending": "Synchronization is enabled. The next bank fetch is waiting for the bank cooldown.",
     "automaticSynchronization": "Automatic synchronization",
-    "synchronizationEnabled": "On",
-    "synchronizationPaused": "Off",
+    "synchronizationEnabled": "Enabled. New payments are imported automatically; bank errors appear below.",
+    "synchronizationPaused": "Disabled. New payments are not imported automatically.",
     "synchronizationChanging": "Updating synchronization",
     "emailBankUnsupported": "Bank email integration is currently available only for Fio banka and Air Bank. You can use this account to record payments manually.",
     "organizationSettings": "organization settings",
