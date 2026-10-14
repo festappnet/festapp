@@ -1,4 +1,3 @@
-import 'package:fstapp/components/occasion/occasion_creation_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
@@ -6,19 +5,13 @@ import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
 import 'demo_occasion_navigation.dart';
 import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
 
-/// Unit administration supplies its unfiltered occasion state; the public
-/// catalogue uses the account-wide metadata returned with its examples.
+/// Both entry points share metadata loading and the tenant-wide, unfiltered
+/// own-work state. Search and the selected Unit never decide onboarding state.
 class DemoOccasionsSection extends StatefulWidget {
-  final bool? hasOwnOccasions;
   final Future<DemoCatalog> Function() load;
   final Future<void> Function(DemoOccasion)? onOpen;
-  final Future<void> Function(DemoOccasion)? onCreateCopy;
   const DemoOccasionsSection(
-      {super.key,
-      this.hasOwnOccasions,
-      this.load = DemoCatalog.load,
-      this.onOpen,
-      this.onCreateCopy});
+      {super.key, this.load = DemoCatalog.load, this.onOpen});
   @override
   State<DemoOccasionsSection> createState() => _DemoOccasionsSectionState();
 }
@@ -67,20 +60,20 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
     final catalog = _catalog;
     if (catalog == null) return const SizedBox.shrink();
     if (catalog.items.isEmpty) return const SizedBox.shrink();
-    final hasOwnOccasions = widget.hasOwnOccasions ?? catalog.hasOwnWork;
-    final showCards = !hasOwnOccasions || _expanded;
+    final showCards = !catalog.hasOwnWork || _expanded;
     return Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (hasOwnOccasions)
+          if (catalog.hasOwnWork)
             TextButton.icon(
                 onPressed: () => setState(() => _expanded = !_expanded),
                 icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-                label: Text(DemoOccasionStrings.heading))
-          else
+                label: Text(DemoOccasionStrings.inspiration)),
+          if (showCards) ...[
             Text(DemoOccasionStrings.heading,
                 style: Theme.of(context).textTheme.headlineSmall),
-          if (showCards) ...[
+            const SizedBox(height: 8),
+            Text(DemoOccasionStrings.intro),
             const SizedBox(height: 16),
             GridView.builder(
               shrinkWrap: true,
@@ -101,15 +94,7 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
                 return OccasionEditCard(
                   occasion: item.occasion,
                   onTap: () => _open(item),
-                  onCreateCopy: () async {
-                    if (widget.onCreateCopy != null) {
-                      await widget.onCreateCopy!(item);
-                    } else {
-                      await OccasionCreationHelper.createCopy(
-                          context, item.occasion);
-                    }
-                    if (mounted) await _load();
-                  },
+                  viewLabel: DemoOccasionStrings.view,
                   badge: DemoOccasionStrings.badge,
                   backgroundColor: Color.alphaBlend(
                       theme.colorScheme.primary.withValues(alpha: .06), base),

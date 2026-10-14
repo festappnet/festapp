@@ -68,18 +68,17 @@ class _TicketSettingsState extends State<TicketSettings> {
 
   Future<void> refresh() async {
     final request = ++generation;
-    if (unsupported) return;
+    if (unsupported || widget.readOnly) return;
     await ExceptionHandler.guard(context, futureFunction: () async {
       final next = await service.resolve(widget.occasionId, type,
           widget.feature.layout, widget.feature.ticketBackground,
-          borrowResourcesOnly: widget.borrowResourcesOnly,
-          readOnly: widget.readOnly);
+          borrowResourcesOnly: widget.borrowResourcesOnly);
       if (!mounted || request != generation) {
         next.dispose();
         return;
       }
       final old = thumbnail, oldController = thumbnailController;
-      setState(() {
+      _refresh(() {
         thumbnail = next;
         thumbnailController = TicketLayoutController(next.template);
       });
@@ -202,12 +201,6 @@ class _TicketSettingsState extends State<TicketSettings> {
     if (mounted) _refresh(() => busy = false);
   }
 
-  Widget _previewCanvas() => CustomPaint(
-      size: thumbnail!.template.area.size,
-      painter: TicketLayoutPainter(thumbnailController!, thumbnail!,
-          thumbnail!.previewData(thumbnailController!.document, 'normal'),
-          cropToTicket: true));
-
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
@@ -215,16 +208,14 @@ class _TicketSettingsState extends State<TicketSettings> {
             value: widget.feature.canScanManually ?? false,
             title: Text(FeaturesStrings.enableManualTicketScan),
             subtitle: Text(FeaturesStrings.enableManualTicketScanDescription),
-            onChanged: widget.readOnly
-                ? null
-                : (v) => _refresh(() => widget.feature.canScanManually = v)),
+            onChanged: (v) =>
+                _refresh(() => widget.feature.canScanManually = v)),
         CheckboxListTile(
             value: widget.feature.showHiddenNote ?? false,
             title: Text(FeaturesStrings.labelShowHiddenNote),
             subtitle: Text(FeaturesStrings.descriptionShowHiddenNote),
-            onChanged: widget.readOnly
-                ? null
-                : (v) => _refresh(() => widget.feature.showHiddenNote = v)),
+            onChanged: (v) =>
+                _refresh(() => widget.feature.showHiddenNote = v)),
         const SizedBox(height: 12),
         if (unsupported) Text(TicketLayoutStrings.unsupported),
         if (thumbnail?.missingBackground == true)
@@ -232,27 +223,21 @@ class _TicketSettingsState extends State<TicketSettings> {
               padding: const EdgeInsets.all(12),
               child: Text(TicketLayoutStrings.missingBackground)),
         if (thumbnail != null && !unsupported)
-          InkWell(
-              onTap: () => showDialog<void>(
-                  context: context,
-                  builder: (c) => AppDialog.fullscreen(
-                      child: Scaffold(
-                          appBar: AppDialogAppBar(
-                              title: Text(TicketLayoutStrings.pdf),
-                              onClose: () => Navigator.pop(c)),
-                          body: InteractiveViewer(
-                              minScale: .5,
-                              maxScale: 4,
-                              child: Center(
-                                  child: FittedBox(
-                                      fit: BoxFit.contain,
-                                      child: _previewCanvas())))))),
-              child: SizedBox(
-                  height: 200,
-                  child:
-                      FittedBox(fit: BoxFit.contain, child: _previewCanvas()))),
+          SizedBox(
+              height: 160,
+              child: FittedBox(
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  child: CustomPaint(
+                      size: thumbnail!.template.area.size,
+                      painter: TicketLayoutPainter(
+                          thumbnailController!,
+                          thumbnail!,
+                          thumbnail!.previewData(
+                              thumbnailController!.document, 'normal'),
+                          cropToTicket: true)))),
         const SizedBox(height: 8),
-        if (!widget.readOnly && widget.feature.conflictDraft != null)
+        if (widget.feature.conflictDraft != null)
           TextButton(
               onPressed: () {
                 _refresh(() => widget.feature.restoreConflictDraft());
