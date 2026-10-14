@@ -32,3 +32,12 @@ repository.
   in scope and keep versions consistent within that approved set.
 - Read-only inventory and drift checks across branches are allowed when needed
   to assess impact; they do not authorize writes, builds, or deployments.
+
+## Production web release execution
+
+- Build Flutter and the web client locally, then deploy directly with
+  `automation/deploy_direct.sh` to the selected tenant.
+- Do not dispatch the GitHub Deploy workflow or use a GitHub-hosted production
+  build unless the user explicitly requests that execution path.
+- Preserve canonical main/tenant ancestry, drift checks, build verification and
+  coherent live-version probes when deploying locally.
