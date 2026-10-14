@@ -96,11 +96,13 @@ class DbTickets {
     required int orderId,
     required String email,
     String? requestId,
+    bool firstDelivery = false,
   }) async {
     final body = {
       "orderId": orderId,
       "email": email,
       "requestId": requestId ?? const Uuid().v4(),
+      if (firstDelivery) "firstDelivery": true,
     };
 
     try {

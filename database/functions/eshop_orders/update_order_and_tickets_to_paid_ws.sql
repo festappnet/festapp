@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_order_and_tickets_to_paid_ws(order_id bigint)
+CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_paid_ws(order_id bigint)
 RETURNS jsonb SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -17,8 +17,8 @@ BEGIN
         RAISE EXCEPTION 'User is not authorized to edit this occasion.';
     END IF;
 
-    -- Call the original function to update the order and tickets
-    RETURN update_order_and_tickets_to_paid(order_id);
+    -- Manual marking changes state only. The explicit Send action owns delivery.
+    RETURN public.mark_order_and_tickets_paid_internal_v1(order_id);
 EXCEPTION WHEN OTHERS THEN
     -- Handle any exceptions
     RETURN jsonb_build_object(
