@@ -547,6 +547,7 @@
     "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka."
   },
   "FeatureOrders": {
+    "noOrders": "Zatím nejsou žádné objednávky.",
     "searchUnpairedTransactions": "Vyhledat nespárované transakce",
     "cancel": "Stornovat",
     "synchronizePayments": "Synchronizovat platby",

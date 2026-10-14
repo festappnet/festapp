@@ -547,6 +547,7 @@
     "setDefaultProduct": "Click to make this product the default option for customers."
   },
   "FeatureOrders": {
+    "noOrders": "There are no orders yet.",
     "searchUnpairedTransactions": "Search unpaired transactions",
     "cancel": "Cancel",
     "synchronizePayments": "Synchronize Payments",
