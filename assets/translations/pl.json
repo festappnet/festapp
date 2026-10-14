@@ -1,4 +1,7 @@
 {
+  "BankAccount": {
+    "emailBankUnsupported": "Integracja e-maili bankowych jest obecnie dostępna tylko dla Fio banka i Air Bank. Na tym koncie możesz rejestrować płatności ręcznie."
+  },
   "EmailDelivery": {
     "title": "Email",
     "history": "Email history",

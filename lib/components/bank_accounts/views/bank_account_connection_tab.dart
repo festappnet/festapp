@@ -181,11 +181,20 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               const SizedBox(height: 16),
             ],
             if (widget.isFio) ..._buildFioTokenSectionWidgets(),
-            if (widget.account.bankSync == null && !widget.isReadOnly)
+            if (widget.account.bankSync == null && !widget.isReadOnly) ...[
               OutlinedButton(
-                onPressed: widget.onConnectEmail,
+                onPressed:
+                    widget.account.supportsEmailConnection && !widget.isSaving
+                        ? widget.onConnectEmail
+                        : null,
                 child: Text(BankAccountStrings.connectEmail),
               ),
+              if (!widget.account.supportsEmailConnection)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(BankAccountStrings.emailBankUnsupported),
+                ),
+            ],
             if (widget.account.bankSync?.mode == 'email' &&
                 forwardingEmail != null) ...[
               if (widget.isFio) ...[

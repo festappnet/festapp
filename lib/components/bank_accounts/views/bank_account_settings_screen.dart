@@ -160,17 +160,23 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   }
 
   Future<void> _connectBankSync(String mode) async {
-    await ExceptionHandler.guard(
-      context,
-      futureFunction: () async {
-        await DbBankAccounts.manage(
-          _account.id,
-          'create',
-          values: {'mode': mode},
-        );
-        await _loadBankSyncConnection();
-      },
-    );
+    if (_isSaving) return;
+    if (mode == 'email' && !_account.supportsEmailConnection) {
+      _showError(BankAccountStrings.emailBankUnsupported);
+      return;
+    }
+    setState(() => _isSaving = true);
+    try {
+      await DbBankAccounts.manage(_account.id, 'create',
+          values: {'mode': mode});
+      await _loadBankSyncConnection();
+    } on BankSyncError catch (error) {
+      if (mounted) _showError(BankAccountStrings.syncError(error.code));
+    } catch (error) {
+      if (mounted) ExceptionHandler.handle(context, error: error);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   bool get _isFio {

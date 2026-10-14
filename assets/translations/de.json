@@ -1,4 +1,7 @@
 {
+  "BankAccount": {
+    "emailBankUnsupported": "Die Bank-E-Mail-Anbindung ist derzeit nur für Fio banka und Air Bank verfügbar. Für dieses Konto können Sie Zahlungen manuell erfassen."
+  },
   "EmailDelivery": {
     "title": "Email",
     "history": "Email history",

@@ -1627,6 +1627,7 @@
     "copied": "Copied"
   },
   "BankAccount": {
+    "emailBankUnsupported": "Bank email integration is currently available only for Fio banka and Air Bank. You can use this account to record payments manually.",
     "organizationSettings": "organization settings",
     "settingsTitle": "Bank Account Settings",
     "generalTab": "General",
