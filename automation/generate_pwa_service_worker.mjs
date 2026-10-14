@@ -316,7 +316,35 @@ function scheduleExplicitShellPrune() {
   return scheduled;
 }
 
+async function repairCurrentAppShell(expectedVersion) {
+  if (expectedVersion !== BUILD_VERSION) return { ok: false, reason: 'wrong-worker' };
+  try {
+    const response = await fetch('/festapp-version.json?shell-repair=' +
+      encodeURIComponent(BUILD_VERSION), { cache: 'no-store' });
+    if (!response.ok) return { ok: false, reason: 'network-unavailable' };
+    const manifest = await response.json();
+    if (manifest.version !== BUILD_VERSION ||
+        '/' + manifest.main !== FLUTTER_MAIN) {
+      return { ok: false, reason: 'version-changed' };
+    }
+    // Cache.addAll commits the complete batch only after every download succeeds.
+    // Preserve auth, application data and every other generation's offline shell.
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(CORE_URLS.map((url) => new Request(
+      new URL(url, self.location.origin), { cache: 'reload' })));
+    return { ok: true, version: BUILD_VERSION };
+  } catch (_) {
+    return { ok: false, reason: 'repair-failed' };
+  }
+}
+
 self.addEventListener('message', (event) => {
+  if (event.data?.type === 'FESTAPP_REPAIR_APP_SHELL' && event.source?.id) {
+    event.waitUntil(repairCurrentAppShell(event.data.version).then((result) => {
+      event.ports?.[0]?.postMessage(result);
+    }));
+    return;
+  }
   if (event.data?.type === 'FESTAPP_QUERY_BUILD_VERSION') {
     event.ports?.[0]?.postMessage({ version: BUILD_VERSION });
     return;
