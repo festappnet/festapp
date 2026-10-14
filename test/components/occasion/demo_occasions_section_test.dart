@@ -35,14 +35,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       DemoOccasion? opened;
-      DemoOccasion? copied;
       await tester.pumpWidget(MaterialApp(
           home: Scaffold(
               body: DemoOccasionsSection(
                   hasOwnOccasions: own,
                   load: () async => catalog,
-                  onOpen: (item) async => opened = item,
-                  onCreateCopy: (item) async => copied = item))));
+                  onOpen: (item) async => opened = item))));
       await tester.pumpAndSettle();
       expect(find.text(DemoOccasionStrings.heading), findsOneWidget);
       expect(
@@ -51,27 +49,17 @@ void main() {
         await tester.tap(find.text(DemoOccasionStrings.heading));
         await tester.pumpAndSettle();
       }
-      for (final title in [
-        'Detailed ball title',
-        'Detailed concert title',
-        'Detailed weekend title'
-      ]) {
+      for (final title in ['Ples', 'Koncert', 'Víkendovka']) {
         expect(find.text(title), findsOneWidget);
       }
       expect(
           find.text('Prohlédněte si hotovou akci a vytvořte si vlastní kopii.'),
           findsNothing);
       expect(find.text(DemoOccasionStrings.heading), findsOneWidget);
-      await tester.tap(find.text('Detailed ball title'));
+      await tester.tap(find.text('Ples'));
       await tester.pumpAndSettle();
       expect(opened?.key, 'ball');
       expect(opened?.title, 'Detailed ball title');
-      await tester.tap(find.byType(PopupMenuButton<String>).first);
-      await tester.pumpAndSettle();
-      expect(find.text(DemoOccasionStrings.view), findsNothing);
-      await tester.tap(find.text('Vytvořit kopii'));
-      await tester.pumpAndSettle();
-      expect(copied?.key, 'ball');
     });
   }
 }
