@@ -148,6 +148,33 @@ void main() {
     expect(form.participantCapacity, 11);
   });
 
+  testWidgets(
+      'occupancy includes all waiting registrations above capacity without inflating its minimum',
+      (tester) async {
+    final capacity = FormCapacityModel.fromJson({
+      'limit': 10,
+      'occupiedPeople': 9,
+      'offeredPlaces': 1,
+      'waitingPeople': 1,
+      'heldForWaiting': 0
+    });
+    expect(capacity.occupiedPlaces, 11);
+    expect(capacity.minimumCapacity, 10);
+    final form = FormModel(
+        participantCapacity: 10, waitlistEnabled: true, capacity: capacity);
+    await open(tester, form);
+    await tester.tap(find.text(WaitlistStrings.applySettings));
+    await tester.pumpAndSettle();
+    expect(find.text(WaitlistStrings.text('CAPACITY_BELOW_COMMITTED')),
+        findsNothing);
+    expect(form.participantCapacity, 10);
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: FormCapacitySettings(
+                form: form, canEdit: false, onChanged: () {}))));
+    expect(find.textContaining('Obsazenost: 11 z 10'), findsOneWidget);
+  });
+
   testWidgets('unlimited switch removes capacity and waitlist together',
       (tester) async {
     final form = FormModel(participantCapacity: 100, waitlistEnabled: true);

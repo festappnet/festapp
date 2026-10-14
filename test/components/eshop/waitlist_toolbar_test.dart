@@ -227,7 +227,7 @@ void main() {
     await open(tester, [order(5), order(6), order(11, state: 'sent')]);
     expect(toolbar(), findsOneWidget);
     expect(find.text('${WaitlistStrings.send} (3)'), findsOneWidget);
-    expect(grid.stateManager.rows, hasLength(1));
+    expect(grid.stateManager.rows, hasLength(3));
     final active = find.byKey(const ValueKey('onlyNonCancelled'));
     expect(tester.getTopLeft(toolbar()).dx,
         greaterThan(tester.getTopLeft(active).dx));
@@ -325,10 +325,10 @@ void main() {
     expect(toolbar(), findsNothing);
   });
 
-  testWidgets('unselected hidden waiting registrations open offer preparation',
+  testWidgets('unselected active waiting registrations open offer preparation',
       (tester) async {
     await open(tester, [order(5), order(11, state: 'sent')]);
-    expect(grid.stateManager.rows, hasLength(1));
+    expect(grid.stateManager.rows, hasLength(2));
     await tester.tap(toolbar());
     await tester.pumpAndSettle();
     final dialog =

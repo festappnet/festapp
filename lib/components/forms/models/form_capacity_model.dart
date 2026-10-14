@@ -12,8 +12,11 @@ class FormCapacityModel {
 
   int get heldForWaiting => (data['heldForWaiting'] as num?)?.toInt() ?? 0;
 
-  /// Includes admissions, active offers and the server's priority reservations.
-  int get occupiedPlaces => occupiedPeople + offeredPlaces + heldForWaiting;
+  /// Active registrations include every waiting item and may exceed the limit.
+  int get occupiedPlaces => occupiedPeople + offeredPlaces + waitingPeople;
+
+  /// Only committed admissions and reservations constrain capacity edits.
+  int get minimumCapacity => occupiedPeople + offeredPlaces + heldForWaiting;
   int get waitingPeople => (data['waitingPeople'] as num?)?.toInt() ?? 0;
   int get offerablePlaces => (data['offerablePlaces'] as num?)?.toInt() ?? 0;
   int get revision => (data['revision'] as num?)?.toInt() ?? 0;
