@@ -5,6 +5,11 @@ BEGIN
  SELECT occasion INTO STRICT ball FROM public.demo_occasions WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='ball';
  SELECT occasion INTO STRICT concert FROM public.demo_occasions WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='concert';
  SELECT occasion INTO STRICT weekend FROM public.demo_occasions WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='weekend';
+ PERFORM assert_eq((SELECT count(*) FROM public.occasions WHERE id IN(ball,concert,weekend) AND data->>'image' LIKE 'https://img.festapp.net/images/demo-occasions/20261014/%-cover-v1.jpg'),3::bigint,'all demos have introductory artwork');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=ball AND f->>'code'='ticket' AND (f#>>'{layout,templates,wide,ticketArea,width}')::numeric <= (f#>>'{layout,templates,wide,ticketArea,height}')::numeric),'ball ticket is landscape');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=concert AND f->>'code'='ticket' AND (f#>>'{layout,templates,wide,ticketArea,width}')::numeric < (f#>>'{layout,templates,wide,ticketArea,height}')::numeric),'concert ticket is portrait');
+ PERFORM public.validate_ticket_layout_references(ball,(SELECT f->'layout' FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=ball AND f->>'code'='ticket'));
+ PERFORM public.validate_ticket_layout_references(concert,(SELECT f->'layout' FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=concert AND f->>'code'='ticket'));
  PERFORM assert_eq((SELECT count(*) FROM eshop.tickets WHERE occasion=ball AND state<>'storno'),240::bigint,'240 ball tickets');
  PERFORM assert_eq((SELECT count(*) FROM eshop.tickets WHERE occasion=concert AND state<>'storno'),55::bigint,'55 concert tickets');
  PERFORM assert_eq((SELECT count(*) FROM eshop.tickets WHERE occasion=weekend AND state NOT IN ('storno','waitlisted')),24::bigint,'24 admitted');

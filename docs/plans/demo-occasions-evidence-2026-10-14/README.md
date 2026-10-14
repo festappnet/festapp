@@ -52,3 +52,73 @@ Description columns retain the normal Edit button and RichHtmlEditorDialog, with
 The forward data migration 20261014200000_demo_example_details updates only organization 3's registered `.3` fixtures. Fully paid examples use sent state, while partial/unpaid cases remain pending; order 7 has an overdue deadline using the existing expired-order UI calculation. Payment totals and participant counts remain unchanged. Demo banks copy only the display number from the operator's configured Fio account; routing numbers, credentials and fetching remain disabled.
 
 The weekend form follows definition patterns from AKH forms 492 and 278, without reading any participant responses. It adds phone, origin/travel, birth year, dietary needs, notes, unselected acknowledgements and optional newsletter consent. The illustrated description covers arrival, lodging, meals, packing, price and illustrative cancellation terms, with an explicit no-save/no-email/no-payment demo statement. Its fictional lodge illustration is an original generated asset served from /demo-assets/weekend-nature.jpg. Source event and welcome information reuse the same description. Existing links, form IDs, products and occupancy are retained. Three targeted SQL suites pass, covering fixture integrity, permissions and copy/replay.
+
+
+## Shared cards, read-only controls and occasion draft lifetime
+
+Demo catalogue entries now use the actual OccasionEditCard: the normal date, title,
+statistics, overflow and chevron layout, with only a subtle tint and localized demo
+badge. Catalogue SQL returns real synthetic event dates, timezone, enabled feature
+flags and aggregate counts. The forward 20261014213000 migration replaces only
+get_demo_occasions; authentication and tenant filtering are unchanged.
+
+The floating panel sits 48 px above the viewport bottom and names the actual
+occasion. The Czech copy action is “Vytvořit kopii této akce”. Astra's four
+actual-widget renders cover desktop/320px in both themes.
+
+Form design/settings controls honor the existing write permission in ordinary
+read-only and demo views. HTML grid dialogs also honor the column's read-only
+flag. Email template subject, content, reset/save and banner uploads use the same
+occasion/order-editor or unit-editor permissions as their backend operations.
+
+Leaving an occasion for a Unit/root screen or another occasion disposes its
+nested editor widgets automatically. The active nested route is preserved for
+Back, which reconstructs clean editor state. Switching tabs within the same
+occasion retains drafts and object-level discard confirmation. A regression
+first failed on the old behavior, and the full targeted routing suite passes.
+
+The same release includes the isolated deferred form-font catalogue and checked
+web-font registration optimization described in the startup implementation note.
+No experimental route splitting or unrelated dirty-checkout changes are included.
+
+## Artwork and saved ticket previews
+
+The three introductory covers and two print backgrounds are versioned under
+`database/fixtures/demo_occasions/assets`, with exact image_gen prompts.
+Ball uses a landscape 580 x 290 pt editable template; concert uses a portrait
+320 x 480 pt template. Both have 3 mm paper margins, live product-type references,
+name/date/place/price, real vector QR and code, and a demo-only admission notice.
+The shared renderer produces the four PDFs in this directory without warnings.
+`automation/refresh_demo_artwork.sql` applies the canonical idempotent fixture
+maintenance to an explicit tenant, without recreating orders or ticket identities.
+
+Read-only ticket settings resolve the saved template through the existing
+preview function with `readOnly:true`. This branch uses existing occasion view
+permissions, rejects layout/background overrides and all editor resource modes,
+and fails on missing artwork or product data. No preview request writes data.
+Editable requests keep the original unit-editor permission. The visible canvas
+uses the same template, resources and rendering data as PDF, including when no
+background is configured. Viewers may enlarge it but cannot open the editor,
+change flags, or create a dirty draft by loading the preview.
+
+Demo cards now display the actual occasion title and use the same copy menu and
+creation helper as ordinary cards. Mobile/desktop floating titles match the
+administration breadcrumb, with the localized demo suffix in parentheses.
+
+## Saved-preview registry access correction and actual demo names
+
+The first saved-preview entrypoint attempted a direct `demo_occasions` SELECT
+with the service role. The registry intentionally revokes that privilege, so
+settings showed an error and no thumbnail. The entrypoint now calls the existing
+`is_demo_occasion` RPC; no registry grants or authorization rules are widened.
+`preview-ticket-layout/entrypoint_test.ts` drives the real entrypoint with the
+service-role registry denial reproduced at its HTTP boundary, while using real
+saved layout parsing, bundled fonts and the resource resolver. It fails against
+the previously shipped entrypoint and passes with the correction. Its simulated
+HTTP boundary does not replace the verified live registry/RPC privilege checks.
+
+`automation/rename_demo_occasions.sql` changes the actual registered occasion
+rows to Ples, Koncert and Víkendovka, and the ordinary fixture seeder uses the
+same temporary maintenance function. The existing demo suffix remains localized
+navigation chrome. The rename leaves links, artwork, orders and ticket identities
+unchanged. Repeated maintenance creates no additional commits once titles match.

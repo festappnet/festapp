@@ -64,78 +64,72 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
     final enabledFeatures = featuresToShow.where((f) => f.isEnabled).toList();
     final disabledFeatures = featuresToShow.where((f) => !f.isEnabled).toList();
 
-    return Opacity(
-      opacity: widget.isEditingEnabled ? 1.0 : 0.5,
-      child: AbsorbPointer(
-        absorbing: !widget.isEditingEnabled,
-        child: Container(
-          padding: const EdgeInsets.all(12.0),
-          decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(OccasionSettingsStrings.features,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _featureSearchController,
-                enabled: widget.isEditingEnabled,
-                decoration: InputDecoration(
-                  labelText: OccasionSettingsStrings.searchFeatures,
-                  prefixIcon: const Icon(Icons.search),
-                  border: const OutlineInputBorder(),
-                  suffixIcon:
-                      _featureSearchQuery.isNotEmpty && widget.isEditingEnabled
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _featureSearchController.clear();
-                                setState(() {
-                                  _featureSearchQuery = "";
-                                });
-                              },
-                            )
-                          : null,
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _featureSearchQuery = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              if (enabledFeatures.isNotEmpty) ...[
-                Text(OccasionSettingsStrings.enabledFeatures,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ...enabledFeatures.map((feature) => FeatureForm(
-                    feature: feature,
-                    occasion: widget.occasionId,
-                    readOnly: !widget.isEditingEnabled,
-                    onSaveTicket: widget.onSaveTicket)),
-              ],
-              if (disabledFeatures.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(OccasionSettingsStrings.otherFeatures,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ...disabledFeatures.map((feature) => FeatureForm(
-                    feature: feature,
-                    occasion: widget.occasionId,
-                    readOnly: !widget.isEditingEnabled,
-                    onSaveTicket: widget.onSaveTicket)),
-              ],
-              if (featuresToShow.isEmpty && _featureSearchQuery.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(OccasionSettingsStrings.noFeaturesFound),
-                ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(OccasionSettingsStrings.features,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _featureSearchController,
+            enabled: widget.isEditingEnabled,
+            decoration: InputDecoration(
+              labelText: OccasionSettingsStrings.searchFeatures,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+              suffixIcon:
+                  _featureSearchQuery.isNotEmpty && widget.isEditingEnabled
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _featureSearchController.clear();
+                            setState(() {
+                              _featureSearchQuery = "";
+                            });
+                          },
+                        )
+                      : null,
+            ),
+            onChanged: (value) {
+              setState(() {
+                _featureSearchQuery = value;
+              });
+            },
           ),
-        ),
+          const SizedBox(height: 16),
+          if (enabledFeatures.isNotEmpty) ...[
+            Text(OccasionSettingsStrings.enabledFeatures,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ...enabledFeatures.map((feature) => FeatureForm(
+                feature: feature,
+                occasion: widget.occasionId,
+                readOnly: !widget.isEditingEnabled,
+                onSaveTicket: widget.onSaveTicket)),
+          ],
+          if (disabledFeatures.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(OccasionSettingsStrings.otherFeatures,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ...disabledFeatures.map((feature) => FeatureForm(
+                feature: feature,
+                occasion: widget.occasionId,
+                readOnly: !widget.isEditingEnabled,
+                onSaveTicket: widget.onSaveTicket)),
+          ],
+          if (featuresToShow.isEmpty && _featureSearchQuery.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(OccasionSettingsStrings.noFeaturesFound),
+            ),
+        ],
       ),
     );
   }

@@ -72,6 +72,7 @@ case "$FESTAPP_SETUP_ENABLED" in
     *) echo "OCCASION_SETUP_ENABLED must be true or false." >&2; exit 1 ;;
 esac
 "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
+node automation/optimize_web_fonts.mjs build/web automation/project.conf
 bash automation/emit_version_manifest.sh build/web
 
 if [ "$TARGET" = cloudflare ]; then

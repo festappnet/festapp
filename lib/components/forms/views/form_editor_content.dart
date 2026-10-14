@@ -60,6 +60,7 @@ class _FormEditorContentState extends State<FormEditorContent>
   final _snapshot = EditorSnapshot();
   final _draftRevision = ValueNotifier<int>(0);
   bool get _hasChanges =>
+      _canEdit &&
       _bundle != null &&
       (_snapshot.differs(_bundle!.form.toEditedJson()) ||
           _htmlSave.hasActiveDraft);
@@ -755,8 +756,9 @@ class _FormEditorContentState extends State<FormEditorContent>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_canEdit) Text(FormStrings.dragToReorder,
-              style: Theme.of(context).textTheme.bodySmall),
+          if (_canEdit)
+            Text(FormStrings.dragToReorder,
+                style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
           Form(
             onChanged: _draftChanged,
@@ -856,10 +858,11 @@ class _FormEditorContentState extends State<FormEditorContent>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 8),
-                            if (_canEdit) Text(
-                              FormStrings.dragToReorder,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
+                            if (_canEdit)
+                              Text(
+                                FormStrings.dragToReorder,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                           ],
                         ),
                         const SizedBox(height: 16),

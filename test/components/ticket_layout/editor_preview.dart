@@ -70,7 +70,7 @@ class _PreviewService extends TicketLayoutService {
   @override
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background,
-      {bool borrowResourcesOnly = false}) async {
+      {bool borrowResourcesOnly = false, bool readOnly = false}) async {
     final result = await super.resolve(occasionId, type, layout, background);
     if (type != 'wide') return result;
     try {

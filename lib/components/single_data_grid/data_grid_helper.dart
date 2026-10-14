@@ -46,7 +46,9 @@ class DataGridHelper {
       final owner = unitId != null
           ? HtmlMediaOwner.unit(unitId)
           : HtmlMediaOwner.occasion(occasionId);
-      if (!RightsService.isDemoReadOnly)
+      final readOnly =
+          RightsService.isDemoReadOnly || rendererContext.column.readOnly;
+      if (!readOnly)
         coordinator?.registerValue(
             HtmlFieldIdentity(rendererContext.row.key, field),
             read: () => cell.value as String?,
@@ -62,8 +64,8 @@ class DataGridHelper {
                 owner: owner,
                 profile: profile,
                 coordinator: coordinator,
-                readOnly: RightsService.isDemoReadOnly);
-            if (value != null && value != initial) {
+                readOnly: readOnly);
+            if (!readOnly && value != null && value != initial) {
               rendererContext.stateManager
                   .changeCellValue(cell, value, force: true);
             }

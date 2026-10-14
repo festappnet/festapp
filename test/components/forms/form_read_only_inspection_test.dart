@@ -89,7 +89,7 @@ void main() {
     final panel = tester.getRect(find.byType(DemoOccasionBanner));
     expect(page.height,
         tester.view.physicalSize.height / tester.view.devicePixelRatio);
-    expect(panel.bottom, page.bottom - 64);
+    expect(panel.bottom, page.bottom - 48);
     final card = tester.getRect(find
         .descendant(
             of: find.byType(DemoOccasionBanner),

@@ -77,7 +77,7 @@ class SettingsService extends TicketLayoutService {
   @override
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background,
-      {bool borrowResourcesOnly = false}) async {
+      {bool borrowResourcesOnly = false, bool readOnly = false}) async {
     resolvedType = type;
     resolveCalls++;
     if (pendingResolve != null) return pendingResolve!.future;
@@ -1114,7 +1114,8 @@ void main() {
     expect(layout.fitPageToTicket, isFalse);
   });
 
-  testWidgets('read-only settings never request the editor preview',
+  testWidgets(
+      'read-only settings show the saved ticket without artwork or editable controls',
       (tester) async {
     final service = SettingsService();
     await tester.pumpWidget(MaterialApp(
@@ -1126,7 +1127,30 @@ void main() {
                     readOnly: true,
                     service: service)))));
     await tester.pumpAndSettle();
-    expect(service.resolveCalls, 0);
+    expect(service.resolveCalls, 1);
+    expect(
+        find.byWidgetPredicate(
+            (w) => w is CustomPaint && w.painter is TicketLayoutPainter),
+        findsOneWidget);
+    for (final control
+        in tester.widgetList<CheckboxListTile>(find.byType(CheckboxListTile))) {
+      expect(control.onChanged, isNull);
+    }
+    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull);
+    await tester.ensureVisible(find.byWidgetPredicate((w) =>
+        w is InkWell &&
+        w.child is SizedBox &&
+        (w.child as SizedBox).height == 200));
+    await tester.tap(find.byWidgetPredicate((w) =>
+        w is InkWell &&
+        w.child is SizedBox &&
+        (w.child as SizedBox).height == 200));
+    await tester.pumpAndSettle();
+    expect(find.byType(InteractiveViewer), findsOneWidget);
+    expect(find.byType(TicketLayoutEditor), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 

@@ -225,3 +225,34 @@ Deno.test('saved per-element colors survive legacy darkColor in editor and PDF p
     assert(colors.some(c => c.every((v, i) => Math.abs(v - [44, 119, 62][i] / 255) < 0.000001)), 'PDF must draw the saved green text');
   }
 });
+
+Deno.test('read-only preview uses saved geometry and data without artwork', async () => {
+  const s=setup();
+  const template=preset('named');
+  const layout={schemaVersion:3,templates:{wide:template}};
+  s.deps.occasion=async()=>({id:7,title:'Koncert',demo_read_only:true,features:[{code:'ticket',ticket_type:'wide',layout}],data:{place_name:'Klub'}});
+  let authorizedReadOnly=false;
+  s.deps.authorize=async(_header,_id,readOnly)=>{authorizedReadOnly=readOnly===true;return authorizedReadOnly;};
+  const response=await handlePreview(req({...body,type:'wide',readOnly:true}),s.deps);
+  assertEquals(response.status,200);
+  const data=await response.json();
+  assert(authorizedReadOnly);
+  assertEquals(data.template,template);
+  assertEquals(data.background,null);
+  assertEquals(data.data.occasionTitle,'Koncert');
+  assert(data.data.footer.startsWith('UKÁZKA - NEPLATÍ PRO VSTUP'));
+});
+Deno.test('read-only preview cannot supply edits, switch slots or use editor resource modes',async()=>{
+  for(const extra of [{layout:{schemaVersion:3,templates:{named:preset('named')}}},{background:null},{borrowResourcesOnly:true},{mode:'pdf'},{mode:'font'},{mode:'catalog'},{type:'wide'}]){
+    const s=setup();
+    const response=await handlePreview(req({...body,readOnly:true,...extra}),s.deps);
+    assertEquals(response.status,400);
+  }
+  const denied=setup(false);
+  assertEquals((await handlePreview(req({...body,readOnly:true}),denied.deps)).status,403);
+  assertEquals(denied.counts(),[0,0,0]);
+});
+Deno.test('saved-only preview fails rather than hiding unavailable product data',async()=>{
+  const s=setup();s.deps.products=async()=>{throw new Error('unavailable');};
+  assertEquals((await handlePreview(req({...body,readOnly:true}),s.deps)).status,400);
+});

@@ -249,16 +249,17 @@ class TicketLayoutService {
 
   Future<TicketLayoutResources> resolve(int occasionId, String type,
       Map<String, dynamic>? layout, String? background,
-      {bool borrowResourcesOnly = false}) async {
+      {bool borrowResourcesOnly = false, bool readOnly = false}) async {
     if (layout != null) validateTicketLayout(layout);
     final j = await _request({
       'fontProtocol': 2,
       'occasionId': occasionId,
       'type': type,
       'mode': 'resolve',
-      'borrowResourcesOnly': borrowResourcesOnly,
-      if (layout != null) 'layout': layout,
-      'background': background
+      if (readOnly) 'readOnly': true,
+      if (!readOnly) 'borrowResourcesOnly': borrowResourcesOnly,
+      if (!readOnly && layout != null) 'layout': layout,
+      if (!readOnly) 'background': background
     });
     if (layout?['schemaVersion'] == 3 && j['fonts'] == null)
       throw const FormatException('Unsupported font protocol');

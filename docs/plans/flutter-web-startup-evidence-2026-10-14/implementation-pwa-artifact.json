@@ -1,0 +1,13 @@
+{
+  "executables": [
+    "main.dart.js",
+    "main.dart.js_1.part.js"
+  ],
+  "coreResources": [
+    "/flutter?pwa-cache=1",
+    "/main.dart.js",
+    "/main.dart.js_1.part.js",
+    "/webclient?pwa-cache=1"
+  ],
+  "passed": true
+}

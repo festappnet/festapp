@@ -139,6 +139,7 @@
     "orderLabel": "Zamówienie"
   },
   "FeatureFormSettings": {
+    "fontLoadFailed": "Nie udało się załadować czcionek. Spróbuj ponownie.",
     "helperReminderEnabled": "Domyślne wysyłanie przypomnień o płatności. Każdy formularz może mieć własne ustawienie.",
     "helperDeadlineDuration": "Domyślna liczba dni na opłacenie nowego zamówienia. Puste pole oznacza 7 dni.",
     "nonNegativeDays": "Wpisz zero lub dodatnią liczbę dni.",
@@ -774,17 +775,18 @@
     }
   },
   "DemoOccasions": {
+      "ball": "Bal",
+      "concert": "Koncert",
+      "weekend": "Wyjazd weekendowy",
     "formNotice": "Formularz demonstracyjny. Wypróbuj rejestrację; dane nie zostaną zapisane, e-mail nie zostanie wysłany ani płatność uruchomiona.",
     "formComplete": "Rejestracja demonstracyjna zakończona",
     "formResult": "To był formularz demonstracyjny. Rejestracja nie została zapisana, nie wysłano e-maila i nie uruchomiono płatności.",
 
     "heading": "Zobacz, co możesz stworzyć",
-    "intro": "Przejrzyj gotowe wydarzenie i utwórz własną kopię.",
-    "inspiration": "Zainspiruj się przykładowymi wydarzeniami",
     "badge": "Przykład",
     "view": "Zobacz przykład",
     "readOnly": "Przykładowe wydarzenie - tylko do odczytu",
-    "copy": "Utwórz własną kopię",
+    "copy": "Utwórz kopię tego wydarzenia",
     "copyHint": "Kopia będzie ukryta, bez uczestników i płatności. Przed otwarciem sprawdź daty, ceny i własne konto.",
     "unavailable": "Nie udało się wczytać przykładowych wydarzeń.",
     "noTarget": "Do utworzenia kopii potrzebujesz organizacji, którą możesz zarządzać.",

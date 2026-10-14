@@ -1,3 +1,8 @@
+import 'package:fstapp/components/occasion/occasion_copy_dialog.dart';
+import 'package:fstapp/components/unit/db_units.dart';
+import 'package:fstapp/components/unit/unit_strings.dart';
+import 'package:fstapp/services/dialog_helper.dart';
+import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
@@ -18,6 +23,45 @@ import 'package:fstapp/widgets/mouse_detector.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 
 class OccasionCreationHelper {
+  static Future<UnitModel?> createCopy(
+      BuildContext context, OccasionModel source,
+      {int? sourceUnitId,
+      List<OccasionModel> existingOccasions = const []}) async {
+    final destinations = await ExceptionHandler.guard(context,
+        futureFunction: () => DbUnits.getOccasionCopyUnits(source.id!));
+    if (!context.mounted || destinations == null || destinations.isEmpty)
+      return null;
+    final target = await showOccasionCopyTargetDialog(context, destinations,
+        sourceUnitId: sourceUnitId ?? source.unit);
+    if (target == null || !context.mounted) return null;
+    if (AppConfig.occasionSetupEnabled) {
+      await createNewOccasion(context, target, existingOccasions,
+          source: source);
+      return target;
+    }
+    bool mediaCopied = false;
+    final created = await DialogHelper.showProgressDialogAsync(
+        context, UnitStrings.createCopy, 1,
+        isBasic: true,
+        futures: [
+          () async {
+            mediaCopied = await DbOccasions.duplicateOccasion(source.id!,
+                targetUnitId: target.id);
+          }
+        ]);
+    if (!context.mounted) return null;
+    if (!created) {
+      ToastHelper.Show(context, UnitStrings.createCopyFailed);
+      return null;
+    }
+    ToastHelper.Show(
+        context,
+        mediaCopied
+            ? UnitStrings.createCopySuccess
+            : UnitStrings.createCopyMediaFailed);
+    return target;
+  }
+
   static Future<OccasionModel?> createNewOccasion(BuildContext context,
       UnitModel unit, List<OccasionModel> existingOccasions,
       {OccasionModel? source}) async {
