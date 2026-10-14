@@ -65,6 +65,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eshop REVOKE ALL ON FUNCTIO
 SQL
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$BASELINE_FILE" >/dev/null
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/local_db/reference_tenants.sql" >/dev/null
 
 temporary_dir="$(mktemp -d /tmp/festapp-local-db.XXXXXX)"
 trap 'rm -rf "$temporary_dir"' EXIT
