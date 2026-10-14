@@ -242,6 +242,7 @@ BEGIN
     -- Return combined data
     RETURN jsonb_build_object(
         'code', 200,
+        'occasion_id', v_occasion_id,
         'data', jsonb_build_object(
             'spots', COALESCE(spotsData, '[]'::jsonb),
             'products', COALESCE(productsData, '[]'::jsonb),
