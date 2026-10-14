@@ -86,13 +86,10 @@ class RoutedTabScaffold extends StatelessWidget {
             final scaffold = Scaffold(
                 appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context,
                     activeTabs: tabs, tabController: controller),
-                body: SafeArea(
-                    top: false,
-                    child: Column(children: [
-                      if (RightsService.isDemoReadOnly)
-                        const DemoOccasionBanner(),
-                      Expanded(child: child),
-                    ])));
+                body: SafeArea(top: false, child: child),
+                bottomNavigationBar: RightsService.isDemoReadOnly
+                    ? const DemoOccasionBanner()
+                    : null);
             if (!reservations) return scaffold;
             return Column(children: [
               const SafeArea(bottom: false, child: RedStripWidget()),

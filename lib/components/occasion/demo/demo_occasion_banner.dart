@@ -10,6 +10,7 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:uuid/uuid.dart';
+import 'demo_occasion_navigation.dart';
 
 class DemoOccasionBanner extends StatefulWidget {
   const DemoOccasionBanner({super.key});
@@ -62,7 +63,7 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
       final copy = await DbOccasions.getOccasion(result.occasionId);
       if (!mounted) return;
       ToastHelper.Show(context, DemoOccasionStrings.copyHint);
-      await RouterService.navigate(context, '/${copy.link}/admin/settings');
+      await RouterService.navigate(context, '/${copy.link}/reservations/settings');
     } catch (_) {
       if (mounted) ToastHelper.Show(context, UnitStrings.createCopyFailed);
       // The same target and command survive a timeout; Retry replays its receipt.
@@ -75,16 +76,17 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
   Widget build(BuildContext context) => Material(
       color: Theme.of(context).colorScheme.surfaceContainer,
       child: SafeArea(
-          bottom: false,
+          top: false,
           child: Padding(
               padding: const EdgeInsets.all(8),
               child: Wrap(
+                  alignment: WrapAlignment.center,
                   spacing: 16,
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     TextButton.icon(
-                        onPressed: () => RouterService.navigateHome(context),
+                        onPressed: () => DemoOccasionNavigation.back(context),
                         icon: const Icon(Icons.arrow_back),
                         label: Text(DemoOccasionStrings.back)),
                     Text(DemoOccasionStrings.readOnly),

@@ -60,7 +60,7 @@ class AppPanelHelper {
     List<Widget> breadcrumbItems = [];
 
     // Unit Selector
-    if (currentUnit != null) {
+    if (currentUnit != null && !RightsService.isDemoReadOnly) {
       breadcrumbItems.add(_buildBreadcrumbSegment<UnitModel>(
         context: context,
         title: currentUnit.title ?? '---',
@@ -100,8 +100,8 @@ class AppPanelHelper {
     if (currentUnit != null && currentOccasion != null && !isUnitLevelPage) {
       final onAppBarColor =
           Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
-      // Separator
-      breadcrumbItems.add(Padding(
+      // A shared demo has no organizer breadcrumb in the user's hierarchy.
+      if (breadcrumbItems.isNotEmpty) breadcrumbItems.add(Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: Text("/",
             style:
@@ -624,7 +624,7 @@ class AppPanelHelper {
 
           return Row(
             children: [
-              Flexible(
+              if (!RightsService.isDemoReadOnly) Flexible(
                 flex: 2,
                 child: (allUnits.length <= 1 &&
                         (RightsService.occasionLinkModel?.organization
@@ -695,7 +695,7 @@ class AppPanelHelper {
               ),
               if (currentOccasion != null) ...[
                 // Separator
-                Padding(
+                if (!RightsService.isDemoReadOnly) Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2.0),
                   child: Text("/",
                       style: TextStyle(fontSize: 16, color: separatorColor)),

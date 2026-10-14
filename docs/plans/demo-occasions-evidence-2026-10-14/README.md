@@ -24,3 +24,9 @@ Screenshots and PDFs are adjacent to this document. `catalog-desktop.png` was ca
 ## Reproduction and activation
 
 Generate the migration with `python3 automation/assemble-demo-occasions-migration.py`. It contains exact canonical SQL sources, including removal of the two superseded read helpers without CASCADE. Apply the migration and ledger atomically through the protected canonical backend workflow. Seed only the explicitly selected tenant with `automation/seed_demo_occasions.sql` and `demo_organization=3`. This maintenance entrypoint does not invoke production checkout, Auth invitations, bank ingest or email producers. It creates an unlisted version and is idempotent for that tenant/version. After verified backend, Edge and client release, run `automation/activate_demo_occasions.sql` for organization 3. Withdrawal changes `is_listed` only; retired versions remain protected.
+
+## Navigation correction after live review
+
+Demo cards now enter the same existing reservation shell as an ordinary ball. All three keep its established tabs; no demo administration tab list is composed. Ball has Tickets and Blueprint, concert has Tickets without Blueprint, weekend has Applications without either. Legacy demo `/admin` entries normalize to this shell. The synthetic storage Unit is omitted from desktop and mobile breadcrumbs. The demo notice, return and copy actions occupy the bottom navigation area, centered, without covering the content. The card appearance remains as reviewed.
+
+The originating owned occasion list is retained in `demoReturnTo`; return restores that list, including after physical reload. Direct entries fall back to an owned Unit, never the demo's storage Unit. Local headless checks compared ordinary and demo ball tabs, checked concert/weekend differences, legacy-entry normalization, desktop/mobile footer and both return paths. Three focused navigation tests passed and targeted Dart analysis found no errors.

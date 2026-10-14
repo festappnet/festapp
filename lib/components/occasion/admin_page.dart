@@ -1,3 +1,4 @@
+import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/navigation/administration_loading_shell.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:auto_route/auto_route.dart';
@@ -19,9 +20,22 @@ class AdminPage extends StatelessWidget {
             const AdministrationLoadingShell(reservations: false),
         // AutoRouter defers its initial routes until the next frame. Keep
         // the same chrome during that frame too, after access has resolved.
-        builder: (_) => AutoRouter(
-            placeholder: (_) =>
-                const AdministrationLoadingShell(reservations: false)));
+        builder: (context) {
+          if (RightsService.isDemoReadOnly) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) return;
+              final uri = context.router.root.urlState.uri;
+              final link = RightsService.currentOccasion()?.link;
+              if (link != null) {
+                replaceRootPath(context.router.root,
+                    uri.replace(path: '/$link/reservations').toString());
+              }
+            });
+            return const AdministrationLoadingShell(reservations: true);
+          }
+          return AutoRouter(placeholder: (_) =>
+              const AdministrationLoadingShell(reservations: false));
+        });
   }
 }
 

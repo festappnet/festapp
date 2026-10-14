@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
-import 'package:fstapp/router_service.dart';
+import 'demo_occasion_navigation.dart';
 
 /// Both entry points share metadata loading and the tenant-wide, unfiltered
 /// own-work state. Search and the selected Unit never decide onboarding state.
@@ -42,7 +42,7 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
     if (widget.onOpen != null) {
       await widget.onOpen!(item);
     } else {
-      await RouterService.navigateToOccasionByLink(context, item.link);
+      await DemoOccasionNavigation.open(context, item.link);
     }
     if (mounted) await _load();
   }

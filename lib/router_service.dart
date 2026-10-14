@@ -285,8 +285,11 @@ class RouterService {
 
   /// The routed reservation boundary owns its context load and access check.
   static Future<void> navigateToOccasionReservationsByLink(
-      BuildContext context, String link) async {
-    await RouterService.navigate(context, "/$link/${ReservationsPage.ROUTE}");
+      BuildContext context, String link,
+      {Map<String, String>? queryParameters}) async {
+    await RouterService.navigate(context, Uri(
+        path: "/$link/${ReservationsPage.ROUTE}",
+        queryParameters: queryParameters).toString());
   }
 
   /// Preserve the nearest administration ancestor when changing occasions.
