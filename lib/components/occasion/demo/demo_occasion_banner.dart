@@ -136,7 +136,11 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
                                   Expanded(
                                       child: Tooltip(
                                           message: title,
-                                          child: Text(title,
+                                          child: Text(
+                                              RightsService.currentOccasion()
+                                                      ?.title ??
+                                                  DemoOccasionStrings.badge,
+                                              textAlign: TextAlign.center,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
