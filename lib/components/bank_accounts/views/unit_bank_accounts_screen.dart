@@ -403,6 +403,17 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                         textAlign: TextAlign.center,
                       ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton.icon(
+                          onPressed: () => _addOrEditAccount(),
+                          icon: const Icon(Icons.add),
+                          label: Text(BankAccountStrings.addBankAccount),
+                        ),
+                      ),
+                    ),
                     Expanded(
                       child: ReorderableListView.builder(
                         buildDefaultDragHandles: false,
@@ -520,10 +531,6 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                 ),
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEditAccount(),
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

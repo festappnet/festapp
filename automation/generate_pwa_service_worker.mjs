@@ -35,6 +35,7 @@ const OCCASION_MEDIA_CACHE_NAME = 'festapp-occasion-media-v1';
 const PRECACHE_URLS = ${JSON.stringify(assets, null, 2)};
 const CORE_URLS = ${JSON.stringify(coreAssets, null, 2)};
 const FLUTTER_ENTRY = ${JSON.stringify(flutterEntry)};
+const FLUTTER_MAIN = ${JSON.stringify(manifest.flutterMain)};
 const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
 const FORCED_OCCASION_PATH = ${JSON.stringify(forcedOccasionLink ? `/${forcedOccasionLink}/event` : null)};
 const STANDALONE_DOCUMENT_PATHS = new Set(${JSON.stringify(standaloneDocuments, null, 2)});
@@ -411,14 +412,14 @@ function cachedNavigationTarget(pathname) {
 }
 
 function isFlutterExecutable(pathname) {
-  return pathname === '/main.dart.js' ||
+  return pathname === FLUTTER_MAIN || pathname === '/main.dart.js' ||
     /^\\/main\\.dart\\.js_\\d+\\.part\\.js$/.test(pathname) ||
     pathname === '/flutter.js' ||
     pathname === '/flutter_bootstrap.js';
 }
 
 function isFlutterBootstrapExecutable(pathname) {
-  return pathname === '/main.dart.js' ||
+  return pathname === FLUTTER_MAIN || pathname === '/main.dart.js' ||
     pathname === '/flutter.js' ||
     pathname === '/flutter_bootstrap.js';
 }
