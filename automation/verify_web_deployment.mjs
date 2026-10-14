@@ -117,7 +117,7 @@ async function verifyOnce() {
   for (const script of [
     'festapp_update_prompt.js', 'festapp_flutter_bootstrap_guard.js', 'festapp_pwa_bridge.js',
   ]) {
-    assert.ok(html.includes(`src="${script}?v=${encodeURIComponent(expectedVersion)}"`),
+    assert.ok(html.includes(`src="${script.replace(/\.js$/, `.${expectedVersion.replaceAll('+', '-')}.js`)}?v=${encodeURIComponent(expectedVersion)}"`),
       `Flutter support script ${script} is not bound to this release`);
   }
   assert.match(
@@ -128,9 +128,8 @@ async function verifyOnce() {
 
   const versionedResponse = await fetchFresh(`/${manifest.main}`);
   assert.equal(versionedResponse.status, 200, 'versioned main bundle is missing');
-  assert.deepEqual(
-    Buffer.from(await versionedResponse.arrayBuffer()),
-    Buffer.from(main),
+  assert.ok(
+    Buffer.from(await versionedResponse.arrayBuffer()).equals(Buffer.from(main)),
     'canonical and versioned main bundles differ',
   );
 }

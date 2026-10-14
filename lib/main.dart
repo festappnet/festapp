@@ -1,3 +1,4 @@
+import 'package:fstapp/startup/startup_language.dart';
 import 'package:fstapp/services/bounded_database_opener.dart';
 import 'package:fstapp/startup/startup_failure_screen.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
@@ -132,10 +133,13 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
   bool _isReady = false;
   bool _startupFailed = false;
   bool _storageOpenFailed = false;
+  late final Future<String> _startupLanguage;
+  String? _failureLanguage;
 
   @override
   void initState() {
     super.initState();
+    _startupLanguage = resolveStartupLanguage();
     unawaited(_initialize());
   }
 
@@ -146,9 +150,11 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
       // Do not launch a second initializer or the app beside a pending storage
       // migration. A retry starts a new document; it never clears user data.
       AppLogger.error('Startup timed out: $error');
+      final language = await _startupLanguage;
       if (!mounted) return;
       setState(() {
         _startupFailed = true;
+        _failureLanguage = language;
         _storageOpenFailed = error is StorageOpenTimeoutException;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -192,6 +198,7 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
         home: StartupFailureScreen(
           key: FestappBootstrap.failureKey,
           phase: WebBootstrapBridge.startupPhase,
+          language: _failureLanguage!,
           storageOpenFailed: _storageOpenFailed,
           onRetry: widget.onRetry ?? (kIsWeb ? WebBootstrapBridge.retryStartup : null),
         ),

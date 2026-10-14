@@ -69,10 +69,10 @@ assert.ok(
 for (const script of [
   'festapp_update_prompt.js', 'festapp_flutter_bootstrap_guard.js', 'festapp_pwa_bridge.js',
 ]) {
-  assert.ok(flutterHtml.includes(`src="${script}?v=${encodeURIComponent(expectedVersion)}"`),
+  assert.ok(flutterHtml.includes(`src="${script.replace(/\.js$/, `.${expectedVersion.replaceAll('+', '-')}.js`)}?v=${encodeURIComponent(expectedVersion)}"`),
     `Flutter support script ${script} is not bound to this release`);
 }
-assert.deepEqual(versionedMain, main, 'versioned and canonical main bundles differ');
+assert.ok(versionedMain.equals(main), 'versioned and canonical main bundles differ');
 
 const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]

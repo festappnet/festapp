@@ -81,7 +81,7 @@ const document = {
 };
 
 const navigator = {
-  language: 'cs',
+  language: 'en',
   onLine: true,
   serviceWorker: {
     controller: activeWorker,
@@ -119,7 +119,7 @@ const context = {
     version: '2.0.0+2',
     main: 'main.dart.2.0.0-2.js',
   })),
-  localStorage: storage(),
+  localStorage: storage({ 'flutter.locale': '"cs"', 'flutter.Locale': '"en"' }),
   navigator,
   sessionStorage,
   caches: cacheStorage,
@@ -224,4 +224,9 @@ assert.equal(reloads, 3);
 assert.equal(unregistered, 0);
 assert.deepEqual(deletedCaches, []);
 
+context.localStorage.setItem('flutter.locale', '"en"');
+navigator.language = 'cs';
+windowListeners.get('festapp-update-available')({ detail: { version: '3.0.0+3', reason: 'legacy-cache' } });
+assert.equal(appendedElements.at(-1).children[0].textContent,
+  'The app is ready to refresh.', 'saved English must win over the Czech device');
 console.log('update_prompt_behavior.test: ok');
