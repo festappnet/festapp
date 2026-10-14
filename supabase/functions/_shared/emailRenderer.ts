@@ -1,3 +1,4 @@
+import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
 import { supabaseAdmin } from "./supabaseUtil.ts";
@@ -29,6 +30,9 @@ export async function renderQueuedEmail(
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
   if (["waitlist_confirmation", "waitlist_offer"].includes(row.message_kind)) {
     return await renderWaitlistEmail(row);
+  }
+  if (row.message_kind === 'custom' && row.code === 'BANK_SYNC_WARNING') {
+    return {prepared:bankSyncWarningEmail(row.recipient,row.data,Deno.env.get('DEFAULT_EMAIL') ?? ''),postAction:{tracking_policy:'disabled'}};
   }
   if (row.message_kind === "custom" && row.code === "NEW_USER_FIRST_LOGIN") {
     return { prepared: firstLoginEmail(row.recipient, row.data, Deno.env.get("DEFAULT_EMAIL") ?? ""), postAction: { tracking_policy: "disabled" } };

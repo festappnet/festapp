@@ -1,3 +1,4 @@
+import 'bank_account_sync_status.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
@@ -448,6 +449,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                                 if (account.accountNumber != null)
                                   Text(account.accountNumberHumanReadable ??
                                       account.accountNumber!),
+                                BankAccountSyncStatus(account: account),
                                 if (account.supportedCurrencies.isNotEmpty)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4.0),

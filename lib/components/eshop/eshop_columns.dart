@@ -36,6 +36,7 @@ import 'models/orders_history_model.dart';
 import 'orders_strings.dart';
 import 'views/order_history_dialog.dart';
 import 'views/order_state_display.dart';
+import 'views/order_bank_sync_warning.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'views/add_cash_payment_dialog.dart';
@@ -1422,6 +1423,8 @@ class EshopColumns {
                     maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
+            if (OrderGridFilters.order(rendererContext.row) case final order?)
+              OrderBankSyncWarning(order: order),
             if (firstPart == OrderModel.expiredState)
               Padding(
                 padding: const EdgeInsets.only(left: 8.0),

@@ -12,7 +12,8 @@ RETURNS TABLE (
     token_expiry_date timestamptz,
     supported_currencies text[],
     last_fio_fetch_time timestamptz,
-    bank_sync jsonb
+    bank_sync jsonb,
+    bank_sync_warning jsonb
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -51,7 +52,8 @@ BEGIN
             SELECT jsonb_build_object('state',connection.state,'mode',connection.mode)
             FROM eshop.bank_sync_connections connection
             WHERE connection.bank_account_id = ba.id
-          ) END AS bank_sync
+          ) END AS bank_sync,
+        public.bank_sync_warning(ba.id) AS bank_sync_warning
     FROM eshop.bank_accounts ba
     JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
     WHERE uba.unit = p_unit_id

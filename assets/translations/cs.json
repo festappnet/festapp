@@ -548,6 +548,18 @@
     "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka."
   },
   "FeatureOrders": {
+    "bankSyncWarningTitle": "Automatické párování plateb nefunguje",
+    "bankSyncWarningHelp": "Platba již mohla dorazit na účet, ale zatím není přiřazena k objednávce. Před připomenutím platby ověřte výpis z účtu.",
+    "bankSyncWarningContact": "Požádejte správce bankovního účtu o kontrolu synchronizace:",
+    "bankSyncWarningFallback": "Požádejte organizátora, aby kontaktoval správce bankovního účtu.",
+    "bankSyncWarningReasons": {
+      "not_configured": "Automatická synchronizace není nastavena.",
+      "suspended": "Automatická synchronizace je vypnutá.",
+      "bank_error": "Při synchronizaci s bankou došlo k chybě.",
+      "stale": "Bankovní platby nebyly delší dobu aktualizovány.",
+      "token_missing": "Chybí přístupový token k bance.",
+      "email_missing": "Příjem bankovních e-mailů není nastaven."
+    },
     "noOrders": "Zatím nejsou žádné objednávky.",
     "searchUnpairedTransactions": "Vyhledat nespárované transakce",
     "cancel": "Stornovat",
@@ -1628,6 +1640,10 @@
     "copied": "Zkopírováno"
   },
   "BankAccount": {
+    "automaticSynchronization": "Automatická synchronizace",
+    "synchronizationEnabled": "Zapnuto. Načítání nových plateb probíhá automaticky; případné chyby banky jsou uvedeny níže.",
+    "synchronizationPaused": "Vypnuto. Nové platby se automaticky nenačítají.",
+    "synchronizationChanging": "Měním nastavení synchronizace",
     "organizationSettings": "nastavení organizace",
     "settingsTitle": "Nastavení bankovního účtu",
     "generalTab": "Obecné",

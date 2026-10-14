@@ -1,3 +1,5 @@
+import 'bank_sync_warning.dart';
+
 class BankAccountModel {
   final int id;
   // force cache invalidation
@@ -14,6 +16,7 @@ class BankAccountModel {
   final List<String> linkedUnits;
   final String? pairingCode;
   final BankSyncConnection? bankSync;
+  final BankSyncWarning? bankSyncWarning;
   final String? accountNumberHumanReadable;
   final DateTime? lastFetchTime;
   final DateTime? lastFioFetchTime;
@@ -35,6 +38,7 @@ class BankAccountModel {
     this.lastFioFetchTime,
     this.pairingCode,
     this.bankSync,
+    this.bankSyncWarning,
   });
 
   /// Matches the providers supported by the BankSync email parsers.
@@ -54,6 +58,9 @@ class BankAccountModel {
   factory BankAccountModel.fromJson(Map<String, dynamic> json) {
     return BankAccountModel(
       id: json['id'],
+      bankSyncWarning: json['bank_sync_warning'] is Map<String, dynamic>
+          ? BankSyncWarning.fromJson(json['bank_sync_warning'])
+          : null,
       bankSync: json['bank_sync'] is Map
           ? BankSyncConnection.fromJson(
               Map<String, dynamic>.from(json['bank_sync']))
@@ -105,6 +112,7 @@ class BankAccountModel {
       'last_fetch_time': lastFetchTime?.toIso8601String(),
       'pairing_code': pairingCode,
       'bank_sync': bankSync?.toJson(),
+      'bank_sync_warning': bankSyncWarning?.toJson(),
     };
   }
 
@@ -144,6 +152,8 @@ class BankAccountModel {
       lastFioFetchTime: lastFioFetchTime ?? this.lastFioFetchTime,
       pairingCode: pairingCode ?? this.pairingCode,
       bankSync: bankSync ?? this.bankSync,
+      // A fresh connection snapshot supersedes the cached bundle warning.
+      bankSyncWarning: bankSync == null ? bankSyncWarning : null,
     );
   }
 }

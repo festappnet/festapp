@@ -180,6 +180,33 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     }
   }
 
+  bool _isChangingSynchronization = false;
+
+  Future<void> _changeSynchronization(bool enabled) async {
+    if (_isSaving || _isReadOnly || !_account.isAdmin) return;
+    setState(() {
+      _isSaving = true;
+      _isChangingSynchronization = true;
+    });
+    try {
+      await DbBankAccounts.manage(_account.id, enabled ? 'resume' : 'suspend');
+    } catch (error) {
+      _showError(
+        BankAccountStrings.syncError(
+          error is BankSyncError ? error.code : null,
+        ),
+      );
+    } finally {
+      await _loadBankSyncConnection();
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          _isChangingSynchronization = false;
+        });
+      }
+    }
+  }
+
   bool get _isFio {
     if (_ibanController.text.isNotEmpty && isFioBank(_ibanController.text))
       return true;
@@ -606,6 +633,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         expiryDate: _expiryDate,
         onExpiryDateChanged: (d) => setState(() => _expiryDate = d),
         onSaveToken: _saveToken,
+        onSynchronizationChanged: _changeSynchronization,
+        isChangingSynchronization: _isChangingSynchronization,
       );
   Widget _users(BuildContext context) => BankAccountUsersTab(
         accountId: _account.id,

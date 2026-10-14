@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../_shared/supabaseUtil.ts';
 import { authorizeRequest, AuthError } from '../_shared/auth.ts';
 import { openBankSyncToken } from '../_shared/bankSyncToken.ts';
+import { monitorBankSyncHealth } from '../_shared/bankSyncHealth.ts';
 import { runBankSyncOperation } from '../_shared/bankSyncOperation.ts';
 Deno.serve(async (req) => {
   const json = (data: unknown, status=200) => new Response(JSON.stringify(data), {
@@ -8,8 +9,12 @@ Deno.serve(async (req) => {
   });
   if (req.method !== 'POST') return json({error:'method_not_allowed'},405);
   try {
-    const {requestSecret} = await req.json();
+    const {requestSecret,monitor_organization_id} = await req.json();
     await authorizeRequest({requestSecret});
+    if (monitor_organization_id !== undefined) {
+      if (!Number.isSafeInteger(monitor_organization_id) || monitor_organization_id<=0) return json({error:'organization_required'},400);
+      return json(await monitorBankSyncHealth(monitor_organization_id));
+    }
     const {data, error} = await supabaseAdmin.rpc('get_recoverable_bank_sync_operations');
     if (error) throw new Error('operations_read_failed');
     const results = [];

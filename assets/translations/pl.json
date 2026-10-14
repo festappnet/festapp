@@ -1,5 +1,9 @@
 {
   "BankAccount": {
+    "automaticSynchronization": "Automatyczna synchronizacja",
+    "synchronizationEnabled": "Włączona. Nowe płatności są importowane automatycznie; błędy banku są poniżej.",
+    "synchronizationPaused": "Wyłączona. Nowe płatności nie są importowane automatycznie.",
+    "synchronizationChanging": "Aktualizowanie synchronizacji",
     "emailBankUnsupported": "Integracja e-maili bankowych jest obecnie dostępna tylko dla Fio banka i Air Bank. Na tym koncie możesz rejestrować płatności ręcznie."
   },
   "EmailDelivery": {
@@ -397,6 +401,18 @@
     "surname": "Nazwisko"
   },
   "FeatureOrders": {
+    "bankSyncWarningTitle": "Automatyczne dopasowywanie płatności jest niedostępne",
+    "bankSyncWarningHelp": "Płatność mogła już wpłynąć na konto bez przypisania do tego zamówienia. Sprawdź wyciąg bankowy przed wysłaniem przypomnienia o płatności.",
+    "bankSyncWarningContact": "Poproś administratora konta bankowego o sprawdzenie synchronizacji:",
+    "bankSyncWarningFallback": "Poproś organizatora o kontakt z administratorem konta bankowego.",
+    "bankSyncWarningReasons": {
+      "not_configured": "Automatyczna synchronizacja nie jest skonfigurowana.",
+      "suspended": "Automatyczna synchronizacja jest wstrzymana.",
+      "bank_error": "Wystąpił błąd synchronizacji z bankiem.",
+      "stale": "Płatności bankowe nie były ostatnio aktualizowane.",
+      "token_missing": "Brakuje tokena dostępu do banku.",
+      "email_missing": "Odbiór wiadomości e-mail z banku nie jest skonfigurowany."
+    },
     "noOrders": "Nie ma jeszcze żadnych zamówień.",
     "copyLink": "Kopiuj link"
   },

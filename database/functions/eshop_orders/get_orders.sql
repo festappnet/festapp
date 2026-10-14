@@ -196,7 +196,8 @@ BEGIN
     -- Fetch payment information linked to the orders
     SELECT jsonb_agg(jsonb_build_object(
         'id', pi.id, 'bank_account', pi.bank_account, 'variable_symbol', pi.variable_symbol, 'amount', pi.amount, 'deposit_amount', pi.deposit_amount,
-        'deposit_deadline', pi.deposit_deadline, 'paid', pi.paid, 'returned', pi.returned, 'deadline', pi.deadline, 'currency_code', pi.currency_code, 'data', pi.data
+        'deposit_deadline', pi.deposit_deadline, 'paid', pi.paid, 'returned', pi.returned, 'deadline', pi.deadline, 'currency_code', pi.currency_code, 'data', pi.data,
+        'bank_sync_warning', public.bank_sync_warning(pi.bank_account)
     ))
     INTO paymentInfoData
     FROM eshop.payment_info pi

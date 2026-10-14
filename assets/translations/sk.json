@@ -1,5 +1,9 @@
 {
   "BankAccount": {
+    "automaticSynchronization": "Automatická synchronizácia",
+    "synchronizationEnabled": "Zapnuté. Nové platby sa načítavajú automaticky; chyby banky sú uvedené nižšie.",
+    "synchronizationPaused": "Vypnuté. Nové platby sa automaticky nenačítavajú.",
+    "synchronizationChanging": "Mením nastavenie synchronizácie",
     "emailBankUnsupported": "Prepojenie bankových e-mailov je zatiaľ dostupné iba pre Fio banku a Air Bank. Tento účet môžete používať na ručnú evidenciu platieb."
   },
   "EmailDelivery": {
@@ -397,6 +401,18 @@
     "surname": "Priezvisko"
   },
   "FeatureOrders": {
+    "bankSyncWarningTitle": "Automatické párovanie platieb nefunguje",
+    "bankSyncWarningHelp": "Platba už mohla prísť na účet, ale zatiaľ nie je priradená k objednávke. Pred pripomenutím platby overte výpis z účtu.",
+    "bankSyncWarningContact": "Požiadajte správcu bankového účtu o kontrolu synchronizácie:",
+    "bankSyncWarningFallback": "Požiadajte organizátora, aby kontaktoval správcu bankového účtu.",
+    "bankSyncWarningReasons": {
+      "not_configured": "Automatická synchronizácia nie je nastavená.",
+      "suspended": "Automatická synchronizácia je vypnutá.",
+      "bank_error": "Pri synchronizácii s bankou došlo k chybe.",
+      "stale": "Bankové platby neboli dlhší čas aktualizované.",
+      "token_missing": "Chýba prístupový token k banke.",
+      "email_missing": "Príjem bankových e-mailov nie je nastavený."
+    },
     "noOrders": "Zatiaľ nie sú žiadne objednávky.",
     "copyLink": "Kopírovať odkaz"
   },

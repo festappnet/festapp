@@ -68,6 +68,25 @@ class OrderModel extends ITrinaRowModel {
       ![waitlistedState, stornoState, 'preparing_payment'].contains(state);
   bool get canChangePayment => canChangePaymentInState(state) && allows('edit');
 
+  /// The server omits warnings for cash accounts. Deposits can leave a balance
+  /// even after tickets have been paid, sent or used.
+  BankSyncWarning? get bankSyncWarning {
+    final payment = paymentInfoModel;
+    if (!isActive ||
+        ![
+          orderedState,
+          paidState,
+          sentState,
+          usedState,
+          expiredState,
+        ].contains(state) ||
+        payment?.bankAccount == null ||
+        (payment!.amount ?? 0) <= (payment.paid ?? 0)) {
+      return null;
+    }
+    return payment.bankSyncWarning;
+  }
+
   bool get canEdit => allows('edit');
   Map<String, dynamic>? data;
   int? occasion;

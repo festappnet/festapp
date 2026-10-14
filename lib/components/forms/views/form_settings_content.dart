@@ -1,3 +1,4 @@
+import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.dart';
 import '../waitlist_strings.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -495,6 +496,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                 '',
                             style: const TextStyle(fontSize: 13),
                           ),
+                          BankAccountSyncStatus(account: account),
                           if (account.supportedCurrencies.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Wrap(
