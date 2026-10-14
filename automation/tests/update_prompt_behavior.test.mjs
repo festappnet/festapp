@@ -14,14 +14,15 @@ const source = await readFile(
 const clickHandler = source.match(
   /reloadButton\.addEventListener\('click',[\s\S]*?\n    \}\);/,
 )?.[0] ?? '';
-assert.match(clickHandler, /cutOverToVersion\(latestVersion\)/);
+assert.match(clickHandler, /networkBuildVersion\(\)/);
+assert.match(clickHandler, /cutOverToVersion\(targetVersion/);
 assert.doesNotMatch(
   clickHandler,
   /recoverFailedCutover\(latestVersion\)/,
   'accepting an update must preserve the currently working offline shell',
 );
 const cutoverFunction = source.match(
-  /async function cutOverToVersion\(latestVersion\) \{[\s\S]*?\n  \}/,
+  /async function cutOverToVersion\(latestVersion, repair = false, onlyIfStalled = false\) \{[\s\S]*?\n  \}/,
 )?.[0] ?? '';
 assert.ok(
   cutoverFunction.indexOf('activateWaitingFestappWorker') <
@@ -66,9 +67,12 @@ const document = {
   createElement: (tag) => ({
     tag,
     style: {},
-    setAttribute() {},
-    addEventListener() {},
-    append() {},
+    attributes: {},
+    listeners: {},
+    children: [],
+    setAttribute(name, value) { this.attributes[name] = value; },
+    addEventListener(type, listener) { this.listeners[type] = listener; },
+    append(...children) { this.children.push(...children); },
     remove() {},
   }),
   getElementById: () => null,
@@ -167,5 +171,47 @@ windowListeners.get('unhandledrejection')({
 });
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(reloads, 1, 'runtime recovery must neither match other errors nor reload-loop');
+
+// A stale startup banner captures the old document's version. Accepting it
+// must still activate the newest installed generation, rather than do nothing
+// because the old generation is no longer the registration's active worker.
+context.MessageChannel = class {
+  constructor() {
+    this.port1 = { onmessage: null, close() {} };
+    this.port2 = { reply: (data) => this.port1.onmessage?.({ data }) };
+  }
+};
+let workerVersion = '2.0.0+2';
+let repairs = 0;
+activeWorker.postMessage = (message, ports = []) => {
+  if (message?.type === 'FESTAPP_QUERY_BUILD_VERSION') {
+    ports[0]?.reply({ version: workerVersion });
+  }
+  if (message?.type === 'FESTAPP_REPAIR_APP_SHELL') {
+    repairs++;
+    ports[0]?.reply({ ok: true, version: workerVersion });
+  }
+};
+window.__FESTAPP_APP_READY__ = false;
+sessionStorage.setItem('festappStartupRecoveryVersion', '1.0.0+1');
+await window.recoverFestappStartup('still-stalled');
+const banner = appendedElements.at(-1);
+const refresh = banner.children[1].children.find(
+  (element) => element.attributes['data-festapp-update-action'] === 'reload');
+assert.ok(refresh);
+await refresh.listeners.click();
+assert.equal(reloads, 2, 'Refresh must leave the stranded document for the latest ready generation');
+assert.equal(sessionStorage.getItem('festappCutoverVersion'), '2.0.0+2');
+assert.equal(repairs, 0, 'a newly installed generation already has a coherent shell');
+
+// Retrying the same failed generation must refetch its core before reload.
+workerVersion = '1.0.0+1';
+context.fetch = async () => new Response(JSON.stringify({ version: workerVersion }));
+sessionStorage.removeItem('festappStartupRecoveryVersion');
+await window.recoverFestappStartup('same-version-stall');
+assert.equal(repairs, 1, 'same-generation startup recovery must repair cached core files');
+assert.equal(reloads, 3);
+assert.equal(unregistered, 0);
+assert.deepEqual(deletedCaches, []);
 
 console.log('update_prompt_behavior.test: ok');

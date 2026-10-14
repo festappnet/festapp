@@ -112,6 +112,38 @@ test('precache contains the immutable main selected by the deployed Flutter HTML
       'homepage-to-Flutter handoff must load the exact main while the network is unavailable');
     assert.equal(await (await fetchThroughWorker(new Request(
       'https://app.test/festapp_flutter_bootstrap_guard.js'))).text(), 'guard');
+    entries.set('/main.dart.1.0.0-1.js', new Response('corrupted main'));
+    context.fetch = async () => new Response(JSON.stringify({
+      version: '1.0.0+1', main: 'main.dart.1.0.0-1.js',
+    }), {
+      headers: { 'content-type': 'application/json' },
+    });
+    let repair;
+    let repaired;
+    handlers.message({
+      data: { type: 'FESTAPP_REPAIR_APP_SHELL', version: '1.0.0+1' },
+      source: { id: 'mobile' },
+      ports: [{ postMessage: (message) => { repaired = message; } }],
+      waitUntil: (promise) => { repair = promise; },
+    });
+    assert.ok(repair, 'explicit Refresh must repair the stalled shell before restarting');
+    await repair;
+    assert.equal(repaired?.ok, true);
+    assert.equal(await entries.get('/main.dart.1.0.0-1.js').clone().text(), 'main');
+    context.fetch = async () => new Response(JSON.stringify({
+      version: '1.0.1+2', main: 'main.dart.1.0.1-2.js',
+    }));
+    handlers.message({
+      data: { type: 'FESTAPP_REPAIR_APP_SHELL', version: '1.0.0+1' },
+      source: { id: 'mobile' },
+      ports: [{ postMessage: (message) => { repaired = message; } }],
+      waitUntil: (promise) => { repair = promise; },
+    });
+    await repair;
+    assert.equal(repaired?.ok, false, 'never repair an old shell using a newer deployment');
+    assert.equal(await entries.get('/main.dart.1.0.0-1.js').clone().text(), 'main');
+
+
 
   } finally {
     await rm(root, { recursive: true, force: true });
