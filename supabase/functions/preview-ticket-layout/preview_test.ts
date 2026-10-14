@@ -196,3 +196,32 @@ Deno.test('blank setup draft borrows resources without exposing source product f
  const result=await (await handlePreview(req({...body,type:'wide',borrowResourcesOnly:true}),s.deps)).json();
  assertEquals(result.catalog,[]);assertEquals(result.template.elements.some((e:any)=>e.binding==='productType'),false);
 });
+
+Deno.test('saved per-element colors survive legacy darkColor in editor and PDF preview', async () => {
+  const s = setup();
+  const template = preset('wide');
+  for (const e of template.elements) if (e.binding !== 'qr') e.style.color = '2C773E';
+  const layout = { schemaVersion: 3, templates: { wide: template } };
+  const original = JSON.stringify(layout);
+  s.deps.occasion = async () => ({ id: 7, features: [{ code: 'ticket', darkColor: 'FFFFFF', layout }] });
+  for (const supplied of [false, true]) {
+    const input = { ...body, type: 'wide', ...(supplied ? { layout } : {}) };
+    const resolved = await (await handlePreview(req(input), s.deps)).json();
+    assertEquals(resolved.template.elements.find((e: any) => e.binding === 'price').style.color, '2C773E');
+    assertEquals(JSON.stringify(layout), original, 'Resolve must not mutate the saved template');
+    const response = await handlePreview(req({ ...input, mode: 'pdf' }), s.deps);
+    assertEquals(response.status, 200);
+    const { PDFDocument, PDFRawStream } = await import('npm:pdf-lib');
+    const { inflateSync } = await import('node:zlib');
+    const pdf = await PDFDocument.load(Uint8Array.from(atob((await response.json()).file), c => c.charCodeAt(0)));
+    const colors: number[][] = [];
+    for (const [, object] of pdf.context.enumerateIndirectObjects()) {
+      if (!(object instanceof PDFRawStream)) continue;
+      try {
+        const operators = new TextDecoder().decode(inflateSync(object.getContents()));
+        for (const match of operators.matchAll(/([\d.]+) ([\d.]+) ([\d.]+) rg/g)) colors.push(match.slice(1).map(Number));
+      } catch { /* Non-Flate resources are not page operators. */ }
+    }
+    assert(colors.some(c => c.every((v, i) => Math.abs(v - [44, 119, 62][i] / 255) < 0.000001)), 'PDF must draw the saved green text');
+  }
+});
