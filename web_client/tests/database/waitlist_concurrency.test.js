@@ -3,16 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import pg from 'pg';
 import { randomUUID } from 'node:crypto';
+import { assertLocalDatabaseUrl, assertDisposableDatabase } from './disposable_database.js';
 
 const repositoryFile = (relativePath) => new URL(`../../../${relativePath}`, import.meta.url);
 
 const databaseUrl = process.env.DATABASE_URL;
 const enabled = Boolean(databaseUrl);
-function assertDisposable() {
-  const url = new URL(databaseUrl);
-  assert.ok(['127.0.0.1', 'localhost'].includes(url.hostname) && url.port === '56922',
-    'Concurrency tests require the dedicated disposable database on localhost:56922');
-}
 async function connect() {
   const client = new pg.Client({ connectionString: databaseUrl });
   await client.connect();
@@ -62,10 +58,11 @@ async function cleanup(client, fixture) {
 }
 
 async function withFixture(capacity, run) {
-  assertDisposable();
+  assertLocalDatabaseUrl(databaseUrl);
   const control = await connect();
   let fixture;
   try {
+    await assertDisposableDatabase(control);
     // Reuse transaction-local helpers from the SQL behavioral suite.
     const sql = await fs.readFile(repositoryFile('database/tests/eshop_orders/waitlist_lifecycle_test.sql'), 'utf8');
     await control.query(sql.slice(0, sql.indexOf('DO $$\nDECLARE x jsonb')));

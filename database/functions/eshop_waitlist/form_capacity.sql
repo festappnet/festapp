@@ -23,7 +23,10 @@ BEGIN
  SELECT * INTO f FROM public.forms WHERE id=p_form; d:=public.get_effective_form_data(p_form);
  IF NOT f.is_open OR p_at < nullif(coalesce(d#>>'{schedule,start_time}',d->>'start_time'),'')::timestamptz
  OR p_at > nullif(coalesce(d#>>'{schedule,end_time}',d->>'end_time'),'')::timestamptz THEN RETURN 'closed'; END IF;
- IF f.blueprint IS NOT NULL THEN RETURN 'blueprint'; END IF;
+ IF f.blueprint IS NOT NULL AND EXISTS (
+  SELECT 1 FROM public.occasions o WHERE o.id=f.occasion
+  AND jsonb_path_exists(o.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)')
+ ) THEN RETURN 'blueprint'; END IF;
  c:=public.get_form_capacity_snapshot_internal(p_form,p_at);
  IF f.participant_capacity IS NULL OR (c->>'remainingPublic')::bigint>0 THEN RETURN 'regular'; END IF;
  RETURN CASE WHEN f.waitlist_enabled THEN 'waitlist' ELSE 'full' END;
@@ -37,6 +40,9 @@ BEGIN
  n:=CASE WHEN p_input ? 'participant_capacity' THEN (p_input->>'participant_capacity')::integer ELSE f.participant_capacity END;
  enabled:=CASE WHEN p_input ? 'waitlist_enabled' THEN (p_input->>'waitlist_enabled')::boolean ELSE f.waitlist_enabled END;
  bp:=CASE WHEN p_input ? 'blueprint' THEN nullif(p_input->>'blueprint','')::bigint ELSE f.blueprint END;
+ -- A retained blueprint is inactive when the occasion feature is disabled.
+ IF NOT EXISTS (SELECT 1 FROM public.occasions o WHERE o.id=f.occasion
+  AND jsonb_path_exists(o.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)')) THEN bp:=NULL; END IF;
  IF n IS NOT NULL AND n<(c->>'occupiedPeople')::bigint+(c->>'offeredPlaces')::bigint+coalesce((c->>'heldForWaiting')::bigint,0) THEN
   RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','CAPACITY_BELOW_COMMITTED','capacity',c)::text; END IF;
  IF ((NOT enabled) OR n IS NULL OR bp IS NOT NULL) AND

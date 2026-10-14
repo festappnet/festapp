@@ -81,7 +81,9 @@ BEGIN
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'below waiting reservations allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%CAPACITY_BELOW_COMMITTED%' THEN RAISE; END IF; END;
  PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":2}');
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":null}'); RAISE EXCEPTION 'remove active limit allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
+ UPDATE occasions SET features='[{"code":"blueprint","is_enabled":true}]' WHERE id=(x->>'occasion')::bigint;
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"blueprint":1}'); RAISE EXCEPTION 'blueprint active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
+ UPDATE occasions SET features='[]' WHERE id=(x->>'occasion')::bigint;
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"waitlist_enabled":false}'); RAISE EXCEPTION 'disable active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
  w:=pg_temp.offer(x,source,2);
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'below reserved allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%CAPACITY_BELOW_COMMITTED%' THEN RAISE; END IF; END;

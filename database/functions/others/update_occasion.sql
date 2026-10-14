@@ -203,6 +203,14 @@ SET search_path = public, extensions
          occ_id := updated_occ.id;
      END IF;
 
+     -- Enabling the blueprint feature must not bypass form capacity/waitlist guards,
+     -- including when the stored blueprint already exists.
+     IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
+       FOR v_form_id IN SELECT id FROM public.forms WHERE occasion=occ_id ORDER BY id LOOP
+         PERFORM public.check_form_capacity_settings_internal(v_form_id, '{"blueprint":1}'::jsonb);
+       END LOOP;
+     END IF;
+
      PERFORM public.validate_ticket_layout_references(occ_id, f->'layout') FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
      --
      -- Post-update/insert feature handling

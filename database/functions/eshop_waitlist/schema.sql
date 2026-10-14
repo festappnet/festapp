@@ -5,14 +5,13 @@ ALTER TABLE public.forms ADD COLUMN IF NOT EXISTS participant_capacity integer,
  ADD COLUMN IF NOT EXISTS waitlist_offer_duration_seconds integer,
  ADD COLUMN IF NOT EXISTS capacity_revision bigint NOT NULL DEFAULT 0;
 ALTER TABLE eshop.orders ADD COLUMN IF NOT EXISTS source_waitlist_order_id bigint REFERENCES eshop.orders(id);
-DO $$ BEGIN
- IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='forms_capacity_configuration') THEN
-  ALTER TABLE public.forms ADD CONSTRAINT forms_capacity_configuration CHECK (
+-- Cross-table blueprint compatibility is enforced by the form and occasion commands.
+ALTER TABLE public.forms DROP CONSTRAINT IF EXISTS forms_capacity_configuration;
+ALTER TABLE public.forms ADD CONSTRAINT forms_capacity_configuration CHECK (
    (participant_capacity IS NULL OR participant_capacity>0) AND
    (waitlist_offer_duration_seconds IS NULL OR waitlist_offer_duration_seconds>0) AND
-   (NOT waitlist_enabled OR (participant_capacity IS NOT NULL AND waitlist_offer_duration_seconds IS NOT NULL AND waitlist_offer_duration_seconds>0)) AND
-   (blueprint IS NULL OR (participant_capacity IS NULL AND NOT waitlist_enabled)));
- END IF;
+   (NOT waitlist_enabled OR (participant_capacity IS NOT NULL AND waitlist_offer_duration_seconds IS NOT NULL AND waitlist_offer_duration_seconds>0)));
+DO $$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='orders_waitlist_finance') THEN
   ALTER TABLE eshop.orders ADD CONSTRAINT orders_waitlist_finance CHECK
    (state IS DISTINCT FROM 'waitlisted' OR (price IS NULL AND payment_info IS NULL));
