@@ -58,7 +58,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     const initial=await resolveTicketTemplate({...occasion,features:[feature]},resources);
 
     if(/^[0-9A-Fa-f]{6}$/.test(feature.darkColor??'')) {
-      const colored=[...Object.entries(choices).filter(([key])=>!key.startsWith('portrait')).map(([,t])=>t),...(type==='wide'?[initial]:[])];
+      const colored=[...Object.entries(choices).filter(([key])=>!key.startsWith('portrait')).map(([,t])=>t),...(type==='wide'&&!layout?[initial]:[])];
       for(const t of colored)for(const e of t.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
     }
     template??=initial;
