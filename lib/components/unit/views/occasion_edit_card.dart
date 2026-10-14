@@ -16,6 +16,7 @@ class OccasionEditCard extends StatelessWidget {
   final VoidCallback? onCreateCopy;
   final Color? backgroundColor;
   final String? badge;
+  final String? viewLabel;
   final bool isPresent;
   final bool isAppLanding;
   final VoidCallback? onSetAppLanding;
@@ -27,6 +28,7 @@ class OccasionEditCard extends StatelessWidget {
     this.onCreateCopy,
     this.backgroundColor,
     this.badge,
+    this.viewLabel,
     this.isPresent = false,
     this.isAppLanding = false,
     this.onSetAppLanding,
@@ -90,12 +92,15 @@ class OccasionEditCard extends StatelessWidget {
                 icon: Icon(Icons.more_vert,
                     color: onSurfaceColor.withOpacity(0.7)),
                 onSelected: (value) {
+                  if (value == "view") onTap();
                   if (value == "app_landing") onSetAppLanding?.call();
                   if (value == "create_copy") {
                     onCreateCopy?.call();
                   }
                 },
                 itemBuilder: (BuildContext context) => [
+                  if (viewLabel != null)
+                    PopupMenuItem(value: 'view', child: Text(viewLabel!)),
                   if (onSetAppLanding != null)
                     PopupMenuItem(
                         value: 'app_landing',
@@ -131,14 +136,9 @@ class OccasionEditCard extends StatelessWidget {
                         )),
                       if (badge != null) ...[
                         const SizedBox(width: 8),
-                        Badge(
-                            backgroundColor: theme.colorScheme.primary,
-                            textColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            textStyle: theme.textTheme.labelSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                            label: Text(badge!)),
+                        Text(badge!,
+                            style: theme.textTheme.labelSmall
+                                ?.copyWith(color: theme.colorScheme.primary)),
                       ],
                     ]),
                     const SizedBox(height: 4),

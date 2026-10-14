@@ -1,4 +1,5 @@
 import 'package:fstapp/components/unit/app_landing.dart';
+import 'package:fstapp/components/occasion/occasion_copy_dialog.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/app_config.dart';
@@ -10,11 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/db_units.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/components/occasion/occasion_creation_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
@@ -121,7 +124,9 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
           icon: const Icon(Icons.refresh),
           label: Text(UnitStrings.landingLoadFailed));
     }
-    return const SizedBox.shrink();
+    return _landing == null || _savingLanding
+        ? const LinearProgressIndicator()
+        : const SizedBox.shrink();
   }
 
   final TextEditingController _searchController = TextEditingController();
@@ -242,15 +247,58 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
 
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
     final sourceUnitId = widget.unit.id;
-    final target = await OccasionCreationHelper.createCopy(context, occasion,
-        sourceUnitId: sourceUnitId, existingOccasions: _allOccasions);
-    if (!mounted || widget.unit.id != sourceUnitId || target == null) return;
+    final destinations = await ExceptionHandler.guard(context,
+        futureFunction: () => DbUnits.getOccasionCopyUnits(occasion.id!));
+    if (!mounted ||
+        widget.unit.id != sourceUnitId ||
+        destinations == null ||
+        destinations.isEmpty) {
+      return;
+    }
+    final target = await showOccasionCopyTargetDialog(context, destinations,
+        sourceUnitId: sourceUnitId);
+    if (target == null || !mounted) return;
     if (AppConfig.occasionSetupEnabled) {
-      await _loadDrafts();
-    } else if (target.id == widget.unit.id) {
-      await _loadOccasions();
-    } else {
-      await RouterService.navigateToUnitAdmin(context, target);
+      await OccasionCreationHelper.createNewOccasion(
+          context, target, _allOccasions,
+          source: occasion);
+      if (mounted) await _loadDrafts();
+      return;
+    }
+    if (mounted) {
+      bool mediaCopied = false;
+      final created = await DialogHelper.showProgressDialogAsync(
+        context,
+        UnitStrings.createCopy,
+        1,
+        isBasic: true,
+        futures: [
+          () async {
+            mediaCopied = await DbOccasions.duplicateOccasion(occasion.id!,
+                targetUnitId: target.id);
+          },
+        ],
+      );
+      if (!mounted) return;
+      if (!created) {
+        ToastHelper.Show(context, UnitStrings.createCopyFailed);
+        return;
+      }
+      ToastHelper.Show(
+          context,
+          mediaCopied
+              ? UnitStrings.createCopySuccess
+              : UnitStrings.createCopyMediaFailed);
+      try {
+        if (target.id == widget.unit.id) {
+          await _loadOccasions();
+        } else {
+          await RouterService.navigateToUnitAdmin(context, target);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ToastHelper.Show(context, UnitStrings.loadEventFailed);
+      }
     }
   }
 
@@ -280,11 +328,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
-                    SliverToBoxAdapter(
-                        child: DemoOccasionsSection(
-                            hasOwnOccasions: _allOccasions.isNotEmpty,
-                            onCreateCopy: (item) =>
-                                _handleCreateCopy(item.occasion))),
+                    const SliverToBoxAdapter(child: DemoOccasionsSection()),
                     if (_canEditDrafts && _draftError != null)
                       SliverToBoxAdapter(
                           child: TextButton(
@@ -352,7 +396,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16.0),
-          if (_landingFailed) ...[
+          if (_landing == null || _landingFailed || _savingLanding) ...[
             _buildLandingStatus(),
             const SizedBox(height: 16),
           ],
