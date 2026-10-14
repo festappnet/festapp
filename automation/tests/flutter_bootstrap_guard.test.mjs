@@ -59,7 +59,7 @@ function createContext({ configurable = true } = {}) {
 const index = await readFile(path.join(projectRoot, 'web/index.html'), 'utf8');
 assert.match(index, /festapp_flutter_bootstrap_guard\.js/);
 for (const phase of ['S01', 'S02', 'S03']) {
-  assert.ok(index.includes("setFestappStartupPhase('" + phase + "')"));
+  assert.ok(index.includes("setFestappStartupPhase?.('" + phase + "')"));
 }
 assert.ok(
   index.indexOf('prepareFestappFlutterBootstrap()') <
@@ -77,3 +77,5 @@ for (const baseURI of ['https://live.festapp.net/', 'https://example.com/app/'])
     `${baseURI}assets/FontManifest.json`);
 }
 console.log('flutter_bootstrap_guard.test: ok');
+
+assert.doesNotMatch(await readFile(new URL('../../web/index.html', import.meta.url), 'utf8'), /window\.setFestappStartupPhase\(/, 'missing optional phase hook must not prevent Flutter loading');

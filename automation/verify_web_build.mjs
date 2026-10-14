@@ -72,7 +72,7 @@ for (const script of [
   assert.ok(flutterHtml.includes(`src="${script.replace(/\.js$/, `.${expectedVersion.replaceAll('+', '-')}.js`)}?v=${encodeURIComponent(expectedVersion)}"`),
     `Flutter support script ${script} is not bound to this release`);
 }
-assert.deepEqual(versionedMain, main, 'versioned and canonical main bundles differ');
+assert.ok(versionedMain.equals(main), 'versioned and canonical main bundles differ');
 
 const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]

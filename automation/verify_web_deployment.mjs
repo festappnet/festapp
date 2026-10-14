@@ -128,9 +128,8 @@ async function verifyOnce() {
 
   const versionedResponse = await fetchFresh(`/${manifest.main}`);
   assert.equal(versionedResponse.status, 200, 'versioned main bundle is missing');
-  assert.deepEqual(
-    Buffer.from(await versionedResponse.arrayBuffer()),
-    Buffer.from(main),
+  assert.ok(
+    Buffer.from(await versionedResponse.arrayBuffer()).equals(Buffer.from(main)),
     'canonical and versioned main bundles differ',
   );
 }
