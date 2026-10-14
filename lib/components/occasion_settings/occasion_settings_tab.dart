@@ -40,9 +40,7 @@ import 'occasion_save_state.dart';
 import 'occasion_settings_strings.dart';
 
 class OccasionSettingsTab extends StatefulWidget {
-  final Future<OccasionModel> Function(String) loadOccasion;
-  const OccasionSettingsTab(
-      {super.key, this.loadOccasion = DbOccasions.getOccasionByLink});
+  const OccasionSettingsTab({super.key});
 
   @override
   _OccasionSettingsTabState createState() => _OccasionSettingsTabState();
@@ -62,7 +60,6 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
         _isOpen,
         _isHidden,
         _isPromoted,
-        occasion?.data?[Tb.occasions.data_image],
         _selectedTimezone,
         occasion?.features.map((f) => f.toJson()).toList()
       ];
@@ -134,7 +131,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
     });
 
     final identity = occasionLink!;
-    final fetchedOccasion = await widget.loadOccasion(identity);
+    final fetchedOccasion = await DbOccasions.getOccasionByLink(identity);
 
     if (mounted && occasionLink == identity) {
       setState(() {
@@ -368,22 +365,34 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   }
 
   Future<void> _removeImage() async {
-    if (!RightsService.isUnitEditor()) return;
     final imageUrl = occasion!.data?[Tb.occasions.data_image];
-    if (imageUrl == null) return;
-    final confirmation = await DialogHelper.showConfirmationDialog(
-      context,
-      OccasionSettingsStrings.confirmRemoval,
-      OccasionSettingsStrings.deleteImageConfirmation,
-    );
-    if (!mounted || !confirmation || !RightsService.isUnitEditor()) return;
-    // Detach only in the draft. Deleting the object here breaks the saved
-    // cover when the user discards changes or leaves this occasion.
-    setState(() {
-      occasion!.data ??= {};
-      occasion!.data![Tb.occasions.data_image] = null;
-      _isPromoted = false;
-    });
+    if (imageUrl != null) {
+      final confirmation = await DialogHelper.showConfirmationDialog(
+        context,
+        OccasionSettingsStrings.confirmRemoval,
+        OccasionSettingsStrings.deleteImageConfirmation,
+      );
+      if (confirmation == true) {
+        try {
+          await DbImages.removeImage(imageUrl);
+          setState(() {
+            occasion!.data ??= {};
+            occasion!.data![Tb.occasions.data_image] = null;
+
+            // <-- MODIFIED (Added) -->
+            // If the image is removed, it can no longer be promoted.
+            if (_isPromoted) {
+              _isPromoted = false;
+            }
+            // <-- END MODIFICATION -->
+          });
+          ToastHelper.Show(
+              context, OccasionSettingsStrings.imageRemovedSuccess);
+        } catch (e) {
+          ToastHelper.Show(context, OccasionSettingsStrings.imageRemovedFail);
+        }
+      }
+    }
   }
 
   Widget _buildHtmlParent(BuildContext context) {
@@ -467,8 +476,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                       Uint8List imageData = await file.readAsBytes();
                       try {
                         final publicUrl = await DbImages.uploadImage(
-                            imageData, occasion!.id, null,
-                            profile: ImageUploadProfile.banner);
+                            imageData, occasion!.id, null, profile: ImageUploadProfile.banner);
                         setState(() {
                           occasion!.data ??= {};
                           occasion!.data![Tb.occasions.data_image] = publicUrl;

@@ -60,7 +60,7 @@ class _FeatureFormState extends State<FeatureForm> {
         ),
         trailing: Switch(
           value: isEnabled,
-          onChanged: !widget.readOnly && widget.feature.canBeDisabled
+          onChanged: widget.feature.canBeDisabled
               ? (value) {
                   _refresh(() {
                     isEnabled = value;
@@ -86,13 +86,7 @@ class _FeatureFormState extends State<FeatureForm> {
               occasionId: widget.occasion,
               readOnly: widget.readOnly,
               onSave: widget.onSaveTicket)
-          : ExcludeFocus(
-              excluding: widget.readOnly,
-              child: AbsorbPointer(
-                  absorbing: widget.readOnly,
-                  child: Opacity(
-                      opacity: widget.readOnly ? .5 : 1,
-                      child: widget.feature.buildFormField(context)))),
+          : widget.feature.buildFormField(context),
     ];
   }
 }
