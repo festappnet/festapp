@@ -1,0 +1,46 @@
+name: Seat checkout regressions
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'database/functions/eshop/**'
+      - 'database/functions/eshop_orders/**'
+      - 'database/functions/eshop_waitlist/**'
+      - 'database/functions/eshop_forms/**'
+      - 'database/tests/eshop_orders/required*test.sql'
+      - 'supabase/migrations/**'
+      - 'web_client/src/**'
+      - 'web_client/scripts/test_seat_checkout_browser.mjs'
+      - 'web_client/tests/fixtures/seat_checkout/**'
+      - '.github/workflows/seat-checkout-regressions.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  seat-checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
+      SEAT_CHECKOUT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web_client/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.111.0
+      - run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - run: npm ci --no-audit --no-fund
+        working-directory: web_client
+      - run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
+      - run: bash automation/bootstrap_local_db.sh
+      - name: Database contract and anonymous checkout
+        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test
+      - name: Click a seat and complete checkout in a real browser
+        run: npm --prefix web_client run test:seat-checkout-browser
