@@ -15,6 +15,16 @@ BEGIN
  PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.tickets WHERE occasion=weekend AND ticket_symbol IS NOT NULL),'weekend applications have no admission QR');
  PERFORM assert_true(EXISTS(SELECT 1 FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=weekend AND f->>'code'='ticket' AND f->>'is_enabled'='false' AND NOT f ? 'layout'),'weekend ticket feature disabled without a layout');
 
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f
+  WHERE o.id IN(ball,concert,weekend) AND f->>'code'='services' AND f->>'is_enabled'='true'),'no capacity groups in demo navigation');
+ PERFORM assert_true((SELECT count(*) FILTER(WHERE state='sent') > count(*)::numeric*0.8
+  FROM eshop.tickets WHERE occasion IN(ball,concert) AND state<>'storno'),'upcoming ticket events predominantly show sent tickets');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.tickets WHERE occasion IN(ball,concert) AND state='used'),'future events have no check-ins');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.orders WHERE occasion IN(ball,concert,weekend) AND created_at > '2026-10-14 12:00Z'),'sales precede fixture reference');
+ PERFORM assert_true((SELECT count(DISTINCT created_at::date)>15 FROM eshop.orders WHERE occasion=ball),'report spans several weeks');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.transactions t JOIN public.demo_occasions d ON d.bank_account=t.bank_account_id
+  WHERE d.occasion IN(ball,concert,weekend) AND t.date > '2026-10-14 12:00Z'),'payments precede fixture reference');
+
  PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.tickets t JOIN eshop.order_product_ticket x ON x.ticket=t.id
   JOIN eshop.orders o ON o.id=x."order" WHERE t.occasion=weekend AND t.state='waitlisted'
    AND (t.ticket_symbol IS NOT NULL OR x.product IS NOT NULL OR o.price IS NOT NULL OR o.payment_info IS NOT NULL)), 'waiting has no finance or admission');

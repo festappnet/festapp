@@ -1,3 +1,5 @@
+import 'package:fstapp/components/occasion/demo/demo_occasion_navigation.dart';
+import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
 import 'package:fstapp/components/_shared/breadcrumb_row.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -53,14 +55,16 @@ class AppPanelHelper {
   static Widget _buildBreadcrumbs(
       BuildContext originalContext, BuildContext context) {
     final allUnits = RightsService.currentUser()?.units ?? [];
-    final currentUnit = RightsService.currentUnit();
+    final currentUnit = RightsService.isDemoReadOnly
+        ? DemoOccasionNavigation.breadcrumbUnit(context)
+        : RightsService.currentUnit();
     final occasionsInCurrentUnit = RightsService.currentUser()?.occasions ?? [];
     final currentOccasion = RightsService.currentOccasion();
 
     List<Widget> breadcrumbItems = [];
 
     // Unit Selector
-    if (currentUnit != null && !RightsService.isDemoReadOnly) {
+    if (currentUnit != null) {
       breadcrumbItems.add(_buildBreadcrumbSegment<UnitModel>(
         context: context,
         title: currentUnit.title ?? '---',
@@ -97,21 +101,24 @@ class AppPanelHelper {
     final currentRoutePath = originalContext.routeData.path;
     final isUnitLevelPage = currentRoutePath.contains('/unit/') &&
         currentRoutePath.contains('/edit');
-    if (currentUnit != null && currentOccasion != null && !isUnitLevelPage) {
+    if (currentOccasion != null && !isUnitLevelPage) {
       final onAppBarColor =
           Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
-      // A shared demo has no organizer breadcrumb in the user's hierarchy.
-      if (breadcrumbItems.isNotEmpty) breadcrumbItems.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: Text("/",
-            style:
-                TextStyle(fontSize: 16, color: onAppBarColor.withOpacity(0.4))),
-      ));
+      // Keep the demo in the viewer's organizer context.
+      if (breadcrumbItems.isNotEmpty)
+        breadcrumbItems.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: Text("/",
+              style: TextStyle(
+                  fontSize: 16, color: onAppBarColor.withOpacity(0.4))),
+        ));
 
       // Occasion Selector
       breadcrumbItems.add(_buildBreadcrumbSegment<OccasionModel>(
         context: context,
-        title: currentOccasion.title ?? '---',
+        title: RightsService.isDemoReadOnly
+            ? '${currentOccasion.title} (${DemoOccasionStrings.badge})'
+            : currentOccasion.title ?? '---',
         isBold: true,
         items: occasionsInCurrentUnit,
         selectedItem: currentOccasion,
@@ -125,7 +132,7 @@ class AppPanelHelper {
                 occasion: item);
           }
         },
-        onCreateNew: !RightsService.isUnitEditor()
+        onCreateNew: currentUnit == null || !RightsService.isUnitEditor()
             ? null
             : () async {
                 final newOccasion =
@@ -616,90 +623,100 @@ class AppPanelHelper {
         valueListenable: RightsService.occasionLinkModelNotifier,
         builder: (listenableContext, _, __) {
           final allUnits = RightsService.currentUser()?.units ?? [];
-          final currentUnit = RightsService.currentUnit();
+          final currentUnit = RightsService.isDemoReadOnly
+              ? DemoOccasionNavigation.breadcrumbUnit(context)
+              : RightsService.currentUnit();
           final occasionsInUnit = RightsService.currentUser()?.occasions ?? [];
           final currentOccasion = RightsService.currentOccasion();
 
-          if (currentUnit == null) return const SizedBox.shrink();
+          if (currentUnit == null && currentOccasion == null)
+            return const SizedBox.shrink();
 
           return Row(
             children: [
-              if (!RightsService.isDemoReadOnly) Flexible(
-                flex: 2,
-                child: (allUnits.length <= 1 &&
-                        (RightsService.occasionLinkModel?.organization
-                                ?.isUnitCreationEnabled !=
-                            true))
-                    ? TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: onAppBarColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                          textStyle: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.normal),
-                        ),
-                        onPressed: () async {
-                          await RouterService.navigateToUnitAdmin(
-                              context, currentUnit);
-                        },
-                        child: Text(
-                          currentUnit.title ?? '---',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )
-                    // If multiple units, display the picker button.
-                    : Builder(builder: (buttonContext) {
-                        return TextButton(
+              if (currentUnit != null)
+                Flexible(
+                  flex: 2,
+                  child: (allUnits.length <= 1 &&
+                          (RightsService.occasionLinkModel?.organization
+                                  ?.isUnitCreationEnabled !=
+                              true))
+                      ? TextButton(
                           style: TextButton.styleFrom(
                             foregroundColor: onAppBarColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.normal),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12.0),
+                            textStyle: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.normal),
                           ),
-                          onPressed: () => _showPicker<UnitModel>(
-                            context: buttonContext,
-                            items: allUnits,
-                            selectedItem: currentUnit,
-                            itemTitleBuilder: (i) => i.title ?? '---',
-                            itemIdBuilder: (i) => i.id,
-                            onItemSelected: (item) async =>
-                                await RouterService.navigateToUnitAdmin(
-                                    context, item),
-                            onCreateNew: (RightsService.occasionLinkModel
-                                        ?.organization?.isUnitCreationEnabled ==
-                                    true)
-                                ? () async {
-                                    final newUnit =
-                                        await UnitCreationHelper.createNewUnit(
-                                            context);
-                                    if (newUnit != null) {
-                                      await RouterService.navigateToUnitAdmin(
-                                          context, newUnit);
+                          onPressed: () async {
+                            await RouterService.navigateToUnitAdmin(
+                                context, currentUnit);
+                          },
+                          child: Text(
+                            currentUnit.title ?? '---',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )
+                      // If multiple units, display the picker button.
+                      : Builder(builder: (buttonContext) {
+                          return TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: onAppBarColor,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              textStyle: const TextStyle(
+                                  fontWeight: FontWeight.normal),
+                            ),
+                            onPressed: () => _showPicker<UnitModel>(
+                              context: buttonContext,
+                              items: allUnits,
+                              selectedItem: currentUnit,
+                              itemTitleBuilder: (i) => i.title ?? '---',
+                              itemIdBuilder: (i) => i.id,
+                              onItemSelected: (item) async =>
+                                  await RouterService.navigateToUnitAdmin(
+                                      context, item),
+                              onCreateNew: (RightsService
+                                          .occasionLinkModel
+                                          ?.organization
+                                          ?.isUnitCreationEnabled ==
+                                      true)
+                                  ? () async {
+                                      final newUnit = await UnitCreationHelper
+                                          .createNewUnit(context);
+                                      if (newUnit != null) {
+                                        await RouterService.navigateToUnitAdmin(
+                                            context, newUnit);
+                                      }
                                     }
-                                  }
-                                : null,
-                            searchHintText: AdministrationStrings.findUnitHint,
-                            createNewText: AdministrationStrings.newUnitButton,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                  child: Text(currentUnit.title ?? '---',
-                                      overflow: TextOverflow.ellipsis)),
-                              Icon(Icons.unfold_more_rounded,
-                                  size: 20, color: iconColor),
-                            ],
-                          ),
-                        );
-                      }),
-              ),
+                                  : null,
+                              searchHintText:
+                                  AdministrationStrings.findUnitHint,
+                              createNewText:
+                                  AdministrationStrings.newUnitButton,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                    child: Text(currentUnit.title ?? '---',
+                                        overflow: TextOverflow.ellipsis)),
+                                Icon(Icons.unfold_more_rounded,
+                                    size: 20, color: iconColor),
+                              ],
+                            ),
+                          );
+                        }),
+                ),
               if (currentOccasion != null) ...[
                 // Separator
-                if (!RightsService.isDemoReadOnly) Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                  child: Text("/",
-                      style: TextStyle(fontSize: 16, color: separatorColor)),
-                ),
+                if (currentUnit != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                    child: Text("/",
+                        style: TextStyle(fontSize: 16, color: separatorColor)),
+                  ),
                 // Occasion Switcher still has priority with a higher flex factor.
                 Flexible(
                   flex: 5,
@@ -735,7 +752,10 @@ class AppPanelHelper {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Flexible(
-                              child: Text(currentOccasion.title ?? '---',
+                              child: Text(
+                                  RightsService.isDemoReadOnly
+                                      ? '${currentOccasion.title} (${DemoOccasionStrings.badge})'
+                                      : currentOccasion.title ?? '---',
                                   overflow: TextOverflow.ellipsis)),
                           Icon(Icons.unfold_more_rounded,
                               size: 20, color: iconColor),

@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 
@@ -23,11 +24,28 @@ class DemoOccasionNavigation {
         !uri.hasScheme &&
         !uri.hasAuthority &&
         (uri.path == '/' ||
-            (unit != null && ownUnits.contains(int.parse(unit.group(1)!))))) {
+            (unit != null &&
+                ownUnits.contains(int.tryParse(unit.group(1)!))))) {
       return uri.toString();
     }
     return ownUnits.isEmpty ? '/' : '/unit/${ownUnits.first}/edit/occasions';
   }
+
+  static UnitModel? originUnit(String? origin, List<UnitModel> ownUnits) {
+    final path =
+        returnPath(origin, ownUnits.map((unit) => unit.id).whereType<int>());
+    final match = RegExp(r'^/unit/([0-9]+)/edit/occasions/?$')
+        .firstMatch(Uri.parse(path).path);
+    final id = int.tryParse(match?.group(1) ?? '');
+    for (final unit in ownUnits) {
+      if (unit.id == id && id != null) return unit;
+    }
+    return ownUnits.isEmpty ? null : ownUnits.first;
+  }
+
+  static UnitModel? breadcrumbUnit(BuildContext context) => originUnit(
+      context.router.root.urlState.uri.queryParameters[returnQuery],
+      RightsService.currentUser()?.units ?? []);
 
   static Future<void> back(BuildContext context) async {
     final path = returnPath(

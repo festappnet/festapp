@@ -63,7 +63,8 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
       final copy = await DbOccasions.getOccasion(result.occasionId);
       if (!mounted) return;
       ToastHelper.Show(context, DemoOccasionStrings.copyHint);
-      await RouterService.navigate(context, '/${copy.link}/reservations/settings');
+      await RouterService.navigate(
+          context, '/${copy.link}/reservations/settings');
     } catch (_) {
       if (mounted) ToastHelper.Show(context, UnitStrings.createCopyFailed);
       // The same target and command survive a timeout; Retry replays its receipt.
@@ -73,31 +74,41 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
   }
 
   @override
-  Widget build(BuildContext context) => Material(
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      child: SafeArea(
-          top: false,
-          child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 16,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    TextButton.icon(
-                        onPressed: () => DemoOccasionNavigation.back(context),
-                        icon: const Icon(Icons.arrow_back),
-                        label: Text(DemoOccasionStrings.back)),
-                    Text(DemoOccasionStrings.readOnly),
-                    FilledButton(
-                        onPressed: _busy ? null : _copy,
-                        child: _busy
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : Text(DemoOccasionStrings.copy))
-                  ]))));
+  Widget build(BuildContext context) => SafeArea(
+      top: false,
+      child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: Align(
+              heightFactor: 1,
+              alignment: Alignment.bottomCenter,
+              child: Material(
+                  elevation: 8,
+                  shadowColor: Colors.black26,
+                  borderRadius: BorderRadius.circular(24),
+                  clipBehavior: Clip.antiAlias,
+                  color: Theme.of(context).cardColor,
+                  child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 16,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            TextButton.icon(
+                                onPressed: () =>
+                                    DemoOccasionNavigation.back(context),
+                                icon: const Icon(Icons.arrow_back),
+                                label: Text(DemoOccasionStrings.back)),
+                            Text(DemoOccasionStrings.readOnly),
+                            FilledButton(
+                                onPressed: _busy ? null : _copy,
+                                child: _busy
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2))
+                                    : Text(DemoOccasionStrings.copy))
+                          ]))))));
 }
