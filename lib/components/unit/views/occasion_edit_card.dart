@@ -138,9 +138,14 @@ class OccasionEditCard extends StatelessWidget {
                         )),
                       if (badge != null) ...[
                         const SizedBox(width: 8),
-                        Text(badge!,
-                            style: theme.textTheme.labelSmall
-                                ?.copyWith(color: theme.colorScheme.primary)),
+                        Badge(
+                            backgroundColor: theme.colorScheme.primary,
+                            textColor: theme.colorScheme.onPrimary,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            textStyle: theme.textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                            label: Text(badge!)),
                       ],
                     ]),
                     const SizedBox(height: 4),
