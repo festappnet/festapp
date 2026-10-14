@@ -58,9 +58,7 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
             TextButton(onPressed: _load, child: Text(CommonStrings.retry))
           ]));
     final catalog = _catalog;
-    if (catalog == null)
-      return const Padding(
-          padding: EdgeInsets.all(16), child: LinearProgressIndicator());
+    if (catalog == null) return const SizedBox.shrink();
     if (catalog.items.isEmpty) return const SizedBox.shrink();
     final showCards = !catalog.hasOwnWork || _expanded;
     return Padding(

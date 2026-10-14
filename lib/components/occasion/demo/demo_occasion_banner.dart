@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/unit/unit_creation_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
@@ -89,54 +90,97 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return SafeArea(
-        top: false,
-        child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: Align(
-                heightFactor: 1,
-                alignment: Alignment.bottomCenter,
-                child: Material(
-                    elevation: 12,
-                    shadowColor: colors.shadow.withValues(alpha: .4),
-                    surfaceTintColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        side: BorderSide(
-                            color: colors.outline.withValues(alpha: .6))),
-                    clipBehavior: Clip.antiAlias,
-                    color: colors.surfaceContainerHighest,
-                    child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 16,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              TextButton.icon(
-                                  onPressed: () =>
-                                      DemoOccasionNavigation.back(context),
-                                  icon: const Icon(Icons.arrow_back),
-                                  label: Text(DemoOccasionStrings.back)),
-                              Text(
-                                  [
-                                    DemoOccasionStrings.badge,
-                                    RightsService.currentOccasion()?.title
-                                  ]
-                                      .where((part) =>
-                                          part != null && part.isNotEmpty)
-                                      .join(': '),
-                                  style: TextStyle(color: colors.onSurface)),
-                              FilledButton(
-                                  onPressed: _busy ? null : _copy,
-                                  child: _busy
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2))
-                                      : Text(DemoOccasionStrings.copy))
-                            ]))))));
+    final title = [
+      DemoOccasionStrings.badge,
+      RightsService.currentOccasion()?.title
+    ].where((part) => part != null && part.isNotEmpty).join(': ');
+    return LayoutBuilder(builder: (context, constraints) {
+      final compact = constraints.maxWidth < 600;
+      final copyProgress = const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2));
+      return SafeArea(
+          top: false,
+          child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                  compact ? 12 : 20, 8, compact ? 12 : 20, 16),
+              child: Align(
+                  heightFactor: 1,
+                  alignment: Alignment.bottomCenter,
+                  child: Material(
+                      elevation: 12,
+                      shadowColor: colors.shadow.withValues(alpha: .4),
+                      surfaceTintColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          side: BorderSide(
+                              color: colors.outline.withValues(alpha: .6))),
+                      clipBehavior: Clip.antiAlias,
+                      color: colors.surfaceContainerHighest,
+                      child: Padding(
+                          padding: compact
+                              ? const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 4)
+                              : const EdgeInsets.all(12),
+                          child: compact
+                              ? Row(children: [
+                                  IconButton(
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                              width: 48, height: 48),
+                                      tooltip: DemoOccasionStrings.back,
+                                      onPressed: () =>
+                                          DemoOccasionNavigation.back(context),
+                                      icon: const Icon(Icons.arrow_back)),
+                                  Expanded(
+                                      child: Tooltip(
+                                          message: title,
+                                          child: Text(title,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  color: colors.onSurface)))),
+                                  PopupMenuButton<String>(
+                                      enabled: !_busy,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 200, maxWidth: 280),
+                                      tooltip: CommonStrings.moreOptions,
+                                      icon: _busy
+                                          ? copyProgress
+                                          : const Icon(Icons.more_horiz),
+                                      style: IconButton.styleFrom(
+                                          minimumSize: const Size(48, 48)),
+                                      onSelected: (_) => _copy(),
+                                      itemBuilder: (_) => [
+                                            PopupMenuItem(
+                                                value: 'copy',
+                                                child: Text(
+                                                    DemoOccasionStrings.copy))
+                                          ]),
+                                ])
+                              : Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 16,
+                                  runSpacing: 8,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                      TextButton.icon(
+                                          onPressed: () =>
+                                              DemoOccasionNavigation.back(
+                                                  context),
+                                          icon: const Icon(Icons.arrow_back),
+                                          label:
+                                              Text(DemoOccasionStrings.back)),
+                                      Text(title,
+                                          style: TextStyle(
+                                              color: colors.onSurface)),
+                                      FilledButton(
+                                          onPressed: _busy ? null : _copy,
+                                          child: _busy
+                                              ? copyProgress
+                                              : Text(DemoOccasionStrings.copy)),
+                                    ]))))));
+    });
   }
 }

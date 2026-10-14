@@ -124,9 +124,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
           icon: const Icon(Icons.refresh),
           label: Text(UnitStrings.landingLoadFailed));
     }
-    return _landing == null || _savingLanding
-        ? const LinearProgressIndicator()
-        : const SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 
   final TextEditingController _searchController = TextEditingController();
@@ -396,7 +394,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16.0),
-          if (_landing == null || _landingFailed || _savingLanding) ...[
+          if (_landingFailed) ...[
             _buildLandingStatus(),
             const SizedBox(height: 16),
           ],
