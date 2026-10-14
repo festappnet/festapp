@@ -20,11 +20,7 @@ class WebBootstrapBridge {
   static void markStartupPhase(String phase) {
     startupPhase = phase;
     if (kIsWeb) {
-      try {
-        _jsInterop.callMethod('setFestappStartupPhase', [phase]);
-      } catch (_) {
-        // Optional diagnostics must not abort startup in an older HTML shell.
-      }
+      _jsInterop.callMethod('setFestappStartupPhase', [phase]);
     }
   }
 

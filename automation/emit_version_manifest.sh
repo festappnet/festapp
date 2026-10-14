@@ -69,10 +69,8 @@ for (const relative of ['index.html', 'flutter_bootstrap.js']) {
       'festapp_update_prompt.js', 'festapp_flutter_bootstrap_guard.js',
       'festapp_pwa_bridge.js',
     ]) {
-      const immutable = script.replace(/\.js$/, `.${version.replaceAll('+', '-')}.js`);
-      fs.copyFileSync(path.join(buildDir, script), path.join(buildDir, immutable));
       stamped = stamped.replaceAll(`src="${script}"`,
-        `src="${immutable}?v=${encodeURIComponent(version)}"`);
+        `src="${script}?v=${encodeURIComponent(version)}"`);
     }
   }
   fs.writeFileSync(file, stamped);

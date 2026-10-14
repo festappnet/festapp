@@ -214,7 +214,7 @@
        OneSignalDeferred.push(async function(OneSignal) {
            try {
              await OneSignal.User.addTags({
-               app_generation: '',
+               app_generation: 'festapptickets_cutover_v1',
                occasion: ''
              });
              if (callback) callback(null);
@@ -290,7 +290,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.194+678";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -453,16 +453,16 @@
         {{flutter_js}}
         {{flutter_build_config}}
 
-        window.setFestappStartupPhase?.('S01');
+        window.setFestappStartupPhase('S01');
         _flutter.loader.load({
           onEntrypointLoaded: async function(engineInitializer) {
             try {
-              window.setFestappStartupPhase?.('S02');
+              window.setFestappStartupPhase('S02');
               const appRunner = await engineInitializer.initializeEngine({
                 useColorEmoji: true,
                 assetBase: new URL(".", document.baseURI).href
               });
-              window.setFestappStartupPhase?.('S03');
+              window.setFestappStartupPhase('S03');
               await appRunner.runApp();
             } catch (error) {
               console.error('Festapp Flutter startup failed:', error);
