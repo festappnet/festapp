@@ -19,15 +19,17 @@ class BankSyncWarningButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contacts = warning.uniqueContacts;
-    final reason = showPaymentHelp && warning.code == 'suspended'
-        ? OrdersStrings.bankSyncPaymentPaused
-        : OrdersStrings.bankSyncWarningReason(warning.code);
+    final reason = OrdersStrings.bankSyncWarningReason(warning.code);
     return IconButton(
       tooltip: [
         reason,
         contacts.isEmpty
             ? OrdersStrings.bankSyncWarningFallback
-            : '${OrdersStrings.bankSyncWarningContactShort} ${contacts.map((contact) => contact.name.isNotEmpty ? contact.name : contact.email ?? '').join(', ')}',
+            : contacts
+                .map((contact) => contact.name.isNotEmpty
+                    ? contact.name
+                    : contact.email ?? '')
+                .join(', '),
       ].join('\n'),
       icon: const Icon(Icons.warning_amber_rounded),
       color: Theme.of(context).brightness == Brightness.dark
