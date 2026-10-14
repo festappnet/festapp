@@ -65,3 +65,13 @@ Deno.test('waiting tickets cannot allocate a PDF or QR while ordinary tickets st
   assertEquals(created,1);
  }finally{PDFDocument.create=original;}
 });
+
+Deno.test('an application-only occasion cannot prepare admission PDFs even for admitted participants',async()=>{
+ let reads=0;
+ await assertRejects(()=>prepareTicketRenderer(
+  {...occasion,features:[{code:'ticket',is_enabled:false}]},
+  {id:300,state:'paid',ticket_symbol:null}, {},
+  {load:async()=>{reads++;return {font,metrics};},products:async()=>{reads++;return {products:[],product_types:[]};}},
+ ),Error,'Admission tickets are disabled for this occasion');
+ assertEquals(reads,0,'no ticket resources or products are loaded for an application-only event');
+});
