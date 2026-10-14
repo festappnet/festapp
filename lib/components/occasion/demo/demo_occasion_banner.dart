@@ -90,10 +90,8 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final title = [
-      DemoOccasionStrings.badge,
-      RightsService.currentOccasion()?.title
-    ].where((part) => part != null && part.isNotEmpty).join(': ');
+    final title =
+        '${RightsService.currentOccasion()?.title ?? ''} (${DemoOccasionStrings.badge})';
     return LayoutBuilder(builder: (context, constraints) {
       final compact = constraints.maxWidth < 600;
       final copyProgress = const SizedBox(
@@ -136,10 +134,7 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
                                   Expanded(
                                       child: Tooltip(
                                           message: title,
-                                          child: Text(
-                                              RightsService.currentOccasion()
-                                                      ?.title ??
-                                                  DemoOccasionStrings.badge,
+                                          child: Text(title,
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,

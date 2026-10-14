@@ -80,3 +80,27 @@ first failed on the old behavior, and the full targeted routing suite passes.
 The same release includes the isolated deferred form-font catalogue and checked
 web-font registration optimization described in the startup implementation note.
 No experimental route splitting or unrelated dirty-checkout changes are included.
+
+## Artwork and saved ticket previews
+
+The three introductory covers and two print backgrounds are versioned under
+`database/fixtures/demo_occasions/assets`, with exact image_gen prompts.
+Ball uses a landscape 580 x 290 pt editable template; concert uses a portrait
+320 x 480 pt template. Both have 3 mm paper margins, live product-type references,
+name/date/place/price, real vector QR and code, and a demo-only admission notice.
+The shared renderer produces the four PDFs in this directory without warnings.
+`automation/refresh_demo_artwork.sql` applies the canonical idempotent fixture
+maintenance to an explicit tenant, without recreating orders or ticket identities.
+
+Read-only ticket settings resolve the saved template through the existing
+preview function with `readOnly:true`. This branch uses existing occasion view
+permissions, rejects layout/background overrides and all editor resource modes,
+and fails on missing artwork or product data. No preview request writes data.
+Editable requests keep the original unit-editor permission. The visible canvas
+uses the same template, resources and rendering data as PDF, including when no
+background is configured. Viewers may enlarge it but cannot open the editor,
+change flags, or create a dirty draft by loading the preview.
+
+Demo cards now display the actual occasion title and use the same copy menu and
+creation helper as ordinary cards. Mobile/desktop floating titles match the
+administration breadcrumb, with the localized demo suffix in parentheses.

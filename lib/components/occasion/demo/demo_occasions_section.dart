@@ -1,3 +1,4 @@
+import 'package:fstapp/components/occasion/occasion_creation_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
@@ -11,11 +12,13 @@ class DemoOccasionsSection extends StatefulWidget {
   final bool? hasOwnOccasions;
   final Future<DemoCatalog> Function() load;
   final Future<void> Function(DemoOccasion)? onOpen;
+  final Future<void> Function(DemoOccasion)? onCreateCopy;
   const DemoOccasionsSection(
       {super.key,
       this.hasOwnOccasions,
       this.load = DemoCatalog.load,
-      this.onOpen});
+      this.onOpen,
+      this.onCreateCopy});
   @override
   State<DemoOccasionsSection> createState() => _DemoOccasionsSectionState();
 }
@@ -97,14 +100,16 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
                     : theme.cardColor;
                 return OccasionEditCard(
                   occasion: item.occasion,
-                  displayTitle: switch (item.key) {
-                    'ball' => DemoOccasionStrings.ball,
-                    'concert' => DemoOccasionStrings.concert,
-                    'weekend' => DemoOccasionStrings.weekend,
-                    _ => item.title,
-                  },
                   onTap: () => _open(item),
-                  viewLabel: DemoOccasionStrings.view,
+                  onCreateCopy: () async {
+                    if (widget.onCreateCopy != null) {
+                      await widget.onCreateCopy!(item);
+                    } else {
+                      await OccasionCreationHelper.createCopy(
+                          context, item.occasion);
+                    }
+                    if (mounted) await _load();
+                  },
                   badge: DemoOccasionStrings.badge,
                   backgroundColor: Color.alphaBlend(
                       theme.colorScheme.primary.withValues(alpha: .06), base),

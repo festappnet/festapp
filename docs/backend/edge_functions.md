@@ -49,7 +49,7 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `send-ticket-order` | Creates/replaces an order through one receipted RPC; confirmation effects are queued transactionally. |
 | `send-tickets` | Enqueues PDF ticket email through the canonical global queue. |
 | `report-exchange-rates` | Verified-user, fixed CNB endpoint proxy; one-hour cache, dated indicative CZK rates, no event data or service-role path. |
-| `preview-ticket-layout` | Unit-editor JWT only; resolves local editor resources or explicitly generates a synthetic PDF through the existing ticket functions, without writes. |
+| `preview-ticket-layout` | Unit-editor JWT for editor resources and synthetic PDF; saved-only resolve also accepts existing occasion editor/viewer permissions (including tenant-scoped demos), rejects all layout/artwork overrides, and performs no writes. |
 | `download-ticket` | Returns a single ticket PDF as Base64 JSON for in-app download. |
 | `fetch-transactions` | Occasion-editor adapter that requests a pull from BankSync; no direct bank access. |
 | `instance-install` | Operator-only bootstrap SQL tool; explicitly excluded from canonical production. |

@@ -8,7 +8,7 @@ import {TicketFontError,type TicketFont} from '../_shared/ticketFonts.ts';
 const fontReply=(f:TicketFont)=>({id:f.id,family:f.family,weight:f.weight,font:Buffer.from(f.bytes).toString('base64'),metrics:f.metrics});
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Cache-Control':'no-store'};
 export interface PreviewDependencies {
-  authorize(header:string,occasionId:number):Promise<boolean>;
+  authorize(header:string,occasionId:number,readOnly?:boolean):Promise<boolean>;
   occasion(id:number):Promise<any>;
   products(id:number):Promise<ProductCatalog>;
   font?:(id:string)=>Promise<TicketFont>;
@@ -28,11 +28,14 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     raw+=decoder.decode();const body=JSON.parse(raw);
     const {occasionId,mode,type,scenario='normal'}=body;
     if(!Number.isSafeInteger(occasionId)||occasionId<1||!['resolve','pdf','font','catalog'].includes(mode)||(!['font','catalog'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
-    if(!await deps.authorize(auth,occasionId))return reply(403,{error:'Forbidden'});
+    const readOnly=body.readOnly===true;
+    if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
+    if(!await deps.authorize(auth,occasionId,readOnly))return reply(403,{error:'Forbidden'});
     if(mode==='font'){if(body.fontProtocol!==2||typeof body.fontId!=='string'||!deps.font)return reply(400,{error:'Invalid font request'});return reply(200,fontReply(await deps.font(body.fontId)));}
     const occasion=await deps.occasion(occasionId);
+    if(readOnly&&type!==(occasion.features?.find((f:any)=>f.code==='ticket')?.ticket_type==='named'?'named':'wide'))return reply(400,{error:'Saved ticket type mismatch'});
     let products:ProductCatalog;let catalogError=false;
-    try {products=await deps.products(occasionId);} catch(error){if(mode!=='resolve')throw error;catalogError=true;products={types:new Map(),products:new Map()};}
+    try {products=await deps.products(occasionId);} catch(error){if(mode!=='resolve'||readOnly)throw error;catalogError=true;products={types:new Map(),products:new Map()};}
     if(mode==='catalog')return reply(200,{catalog:[...products.types.values()]});
     const feature={...(occasion.features?.find((f:any)=>f.code==='ticket')??{}),ticket_type:type};
     if(body.borrowResourcesOnly===true&&mode==='resolve'){delete feature.layout;feature.background=null;products={types:new Map(),products:new Map()};}
@@ -50,7 +53,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     if(body.fontProtocol!==2)return reply(400,{error:'ticket_font_protocol_unsupported'});
     if(layout)feature.layout=layout;
     if(layout&&!catalogError)for(const template of Object.values(layout.templates))validateProductReferences(template,products);
-    const resources=await deps.resources(occasion,feature,{allowMissingBackground:mode==='resolve'});
+    const resources=await deps.resources(occasion,feature,{allowMissingBackground:mode==='resolve'&&!readOnly});
     let template=layout?.templates[type as TicketType];
     let width=1600,height=900;
     if(resources.background){const doc=await PDFDocument.create();let img;try{img=await doc.embedPng(resources.background);}catch{img=await doc.embedJpg(resources.background);}width=img.width;height=img.height;}
