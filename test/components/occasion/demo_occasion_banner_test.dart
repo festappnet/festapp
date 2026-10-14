@@ -73,6 +73,9 @@ void main() {
           expect(tester.getSize(back).height, greaterThanOrEqualTo(48));
           expect(tester.getSize(more).height, greaterThanOrEqualTo(48));
           expect(tester.widget<Text>(title).maxLines, 1);
+          expect(tester.widget<Text>(title).textAlign, TextAlign.center);
+          expect(
+              tester.widget<Text>(title).data, startsWith('Ples pod hvězdami'));
           expect(tester.widget<Text>(title).overflow, TextOverflow.ellipsis);
           expect(find.byType(FilledButton), findsNothing);
           if (width == 320 && scale == 1) {
