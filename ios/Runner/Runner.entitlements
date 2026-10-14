@@ -6,11 +6,11 @@
 	<string>development</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:vstupenky.online</string>
+		<string>applinks:hvezdamorska.festapp.net</string>
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.festapp.festapp.onesignal</string>
+		<string>group.festapp.hvezdamorska.onesignal</string>
 	</array>
 </dict>
 </plist>
