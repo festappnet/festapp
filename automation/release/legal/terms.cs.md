@@ -1,35 +1,19 @@
-# Podmínky používání – Festapp
+# Podmínky používání – Hvězda Mořská
 
-Účinnost: 9. října 2026. Verze: 1.1.
+Účinnost: 25. srpna 2026. Verze: 1.0.
 
-## Poskytovatel systému
+Aplikace Hvězda Mořská je poskytována pro CK Hvězda Mořská s.r.o., IČ 23146354, Nové sady 988/2, Staré Brno, 602 00 Brno. Technickou podporu aplikace zajišťuje její vývojář a vydavatel Michael Bujnovský na `info@festapp.net`; CK lze kontaktovat na `info@hvezdamorska.cz` nebo +420 733 356 244.
 
-Poskytovatelem systému Festapp a Vstupenky.online je Michael Bujnovský, IČO 06455361, se sídlem Přívozská 1704/24, Moravská Ostrava, 702 00 Ostrava. Kontakt pro provoz systému a technickou podporu je `info@festapp.net`.
+Pro distribuci na zařízeních Apple se použije standardní licenční smlouva Apple: <https://www.apple.com/legal/internet-services/itunes/dev/stdeula/>. Použití aplikace získané z Google Play podléhá také příslušným podmínkám Google Play.
 
-## K čemu systém slouží
+Aplikace poskytuje program poutí a dalších událostí, mapu, zprávy a praktické informace. Podle konkrétní události může umožnit vytvoření účtu, registraci na aktivitu, odeslání formuláře, objednávku nebo zobrazení vstupenky. Přihlašovací údaje a vstupenky jsou osobní a nesmějí být zpřístupněny neoprávněné osobě.
 
-Vstupenky.online je webový systém pro pořadatele a účastníky akcí. Umožňuje zveřejňovat nabídky, spravovat přihlášky a objednávky, prodávat vstupenky nebo účast na akci a komunikovat s účastníky. Lze jej využít například pro skautské a jiné tábory, kurzy, setkání, kulturní akce nebo další jednorázové i opakované akce. Pořadatelem může být spolek, oddíl, firma i jednotlivý člověk.
+Objednávka zájezdu nebo jiné služby CK je samostatným smluvním vztahem. Řídí se údaji uvedenými u konkrétní nabídky a všeobecnými obchodními podmínkami CK Hvězda Mořská s.r.o.: <https://hvezdamorska.cz/wp-content/uploads/2025/06/VSEOBECNE-OBCHODNI-PODMINKY-CK.pdf>. Tyto podmínky používání aplikace nenahrazují smlouvu o zájezdu, storno podmínky, reklamační pravidla ani jiné povinné informace CK.
 
-## Systém a pořadatel akce
+Program, ceny, dostupnost, místa na mapě a organizační informace se mohou měnit. Uživatel má dbát aktuálních pokynů CK nebo pořadatele konkrétní akce; data uložená pro offline použití nemusí do dalšího připojení obsahovat poslední změny.
 
-Michael Bujnovský poskytuje technický systém. Konkrétní akci, její obsah, cenu, podmínky účasti, platby, zrušení a vyřízení dotazů či reklamací zajišťuje pořadatel uvedený u nabídky nebo objednávky. Smluvní podmínky konkrétní akce, vstupenky nebo jiné služby určuje její pořadatel. Tyto podmínky používání systému je nenahrazují.
+Aplikaci není dovoleno používat k narušování provozu, obcházení kapacitních nebo bezpečnostních omezení, neoprávněnému přístupu k cizím účtům či vstupenkám, automatizovanému zneužívání služby ani k odesílání protiprávního nebo škodlivého obsahu.
 
-Vytvořením účtu přijímáte tyto podmínky používání systému. Samotná registrace účtu není objednávkou vstupenky ani souhlasem s pravidly konkrétní akce.
+CK a technický provozovatel usilují o dostupnost a správnost aplikace, nemohou však zaručit nepřetržitý provoz, dostupnost připojení nebo aktuálnost offline dat. Tím nejsou dotčena práva spotřebitele ani odpovědnost, kterou nelze podle práva vyloučit.
 
-## E-maily a komunikace
-
-Systém může zasílat e-maily potřebné k používání účtu a služeb, například potvrzení registrace, přihlášení a obnovu přístupu, potvrzení objednávky a platby, vstupenky, připomenutí nebo informace o změně či zrušení objednávky. Pořadatel může prostřednictvím systému posílat také organizační informace související s konkrétní akcí nebo přihláškou. Za obsah zpráv pořadatele odpovídá pořadatel.
-
-Přijetí těchto podmínek samo o sobě neznamená souhlas s reklamními e-maily nebo newsletterem.
-
-## Pravidla používání
-
-Přihlašovací údaje a vstupenky jsou osobní. Systém není dovoleno používat k narušování provozu, obcházení kapacitních nebo bezpečnostních omezení, neoprávněnému přístupu k cizím účtům či vstupenkám ani k odesílání protiprávního nebo škodlivého obsahu.
-
-## Aktuálnost informací
-
-Informace o akci se mohou měnit. Aktuální podmínky a organizační informace poskytuje pořadatel. Tím nejsou dotčena práva spotřebitele ani odpovědnost, kterou nelze podle práva vyloučit.
-
-## Soukromí a podpora
-
-Zpracování osobních údajů popisuje dokument <https://vstupenky.online/privacy/>. Technickou pomoc najdete na stránce <https://vstupenky.online/support/>.
+Účet lze smazat postupem na <https://hvezdamorska.festapp.net/privacy/choices/>. Zpracování osobních údajů popisují zásady na <https://hvezdamorska.festapp.net/privacy/>. Technickou pomoc najdete na <https://hvezdamorska.festapp.net/support/>.
