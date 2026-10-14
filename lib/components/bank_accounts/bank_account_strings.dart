@@ -24,6 +24,8 @@ class BankAccountStrings {
       'BankAccount.tokenSavedNeedsAuthorization'.tr();
   static String connectionStatus(String state) =>
       'BankAccount.syncState.$state'.tr();
+  static String get emailBankUnsupported =>
+      'BankAccount.emailBankUnsupported'.tr();
   static String get connectEmail => 'BankAccount.connect_email'.tr();
   static String get connectionState => 'BankAccount.connection_state'.tr();
   static String get bankPull => 'BankAccount.bank_pull'.tr();

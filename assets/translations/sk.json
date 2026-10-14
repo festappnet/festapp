@@ -1,4 +1,7 @@
 {
+  "BankAccount": {
+    "emailBankUnsupported": "Prepojenie bankových e-mailov je zatiaľ dostupné iba pre Fio banku a Air Bank. Tento účet môžete používať na ručnú evidenciu platieb."
+  },
   "EmailDelivery": {
     "title": "Email",
     "history": "Email history",
