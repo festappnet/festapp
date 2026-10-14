@@ -11,6 +11,11 @@ BEGIN
   k:=f.id::text;
   IF f.is_ticket_field THEN
    FOR person IN SELECT * FROM jsonb_array_elements(p_people) LOOP
+    -- Selected seats use the ticket's top-level spot transport. The finalizer
+    -- checks occasion ownership, availability and reservation secret afterward.
+    IF f.type='spot' AND (p_waitlist OR nullif(person->>'spot','') IS NOT NULL) THEN
+     CONTINUE;
+    END IF;
     IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(person->'fields','[]')) answer WHERE answer ? k AND nullif(answer->>k,'') IS NOT NULL) THEN
      RAISE EXCEPTION '%',jsonb_build_object('code',400,'errorCode','REQUIRED_FIELD_MISSING','fieldId',f.id)::text; END IF;
    END LOOP;
