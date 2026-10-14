@@ -119,6 +119,7 @@ try {
   const cachedPuts = [];
   const deletedCaches = [];
   const openedCaches = [];
+  const persistentCaches = new Map();
   let cacheNames = [
     'festapp-app-shell-1.2.3+2',
     'festapp-app-shell-1.2.3+3',
@@ -167,7 +168,14 @@ try {
     caches: {
       open: async (name) => {
         openedCaches.push(name);
-        return cache;
+        if (name.startsWith('festapp-app-shell-') || name === 'festapp-used-fonts-v1') return cache;
+        if (!persistentCaches.has(name)) persistentCaches.set(name, new Map());
+        const entries = persistentCaches.get(name);
+        return {
+          put: async (request, response) => entries.set(String(request.url || request), response.clone()),
+          match: async (request) => entries.get(String(request.url || request))?.clone(),
+          delete: async (request) => entries.delete(String(request.url || request)),
+        };
       },
       keys: async () => [...cacheNames],
       delete: async (name) => {
@@ -272,13 +280,13 @@ try {
   assert.equal(await freshAssetResponse.text(), '{}',
     'a cold page must load subresources before its report script executes');
 
-  const openedBeforeUnknownFetch = openedCaches.length;
+  const openedBeforeUnknownFetch = openedCaches.filter(name => name.startsWith('festapp-app-shell-')).length;
   const unknownGenerationResponse = await dispatchFetch(
     new Request('https://app.test/assets/translation.json'),
     'older-open-tab',
   );
   assert.equal(unknownGenerationResponse.type, 'error');
-  assert.equal(openedCaches.length, openedBeforeUnknownFetch,
+  assert.equal(openedCaches.filter(name => name.startsWith('festapp-app-shell-')).length, openedBeforeUnknownFetch,
     'activation must not guess one old cache for an unreported client');
   await reportVersion(clientsById.get('older-open-tab'), '1.2.3+3');
 
@@ -461,6 +469,51 @@ try {
   } finally {
     resumedPage.window.close();
   }
+
+  // Chrome may terminate a service worker after it served the HTML but
+  // before the page fetched the script which reports its build version.
+  // Restart the actual generated worker with the same durable CacheStorage.
+  cachePutFails = false;
+  const restartingNavigation = new Request('https://app.test/login');
+  Object.defineProperty(restartingNavigation, 'mode', { value: 'navigate' });
+  await dispatchFetch(restartingNavigation, '', 'restart-before-bootstrap');
+  vm.runInNewContext(worker, { ...context, self: { ...context.self } });
+  const afterRestart = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'),
+    'restart-before-bootstrap',
+  );
+  assert.equal(afterRestart.status, 200,
+    'service worker restart must not strand a cold Flutter page before its first version report');
+  assert.equal(await afterRestart.text(), '{}');
+
+  const olderRestartClient = { id: 'restart-old-tab', url: 'https://app.test/login', postMessage() {} };
+  clientsById.set(olderRestartClient.id, olderRestartClient);
+  await reportVersion(olderRestartClient, '1.2.3+3');
+  vm.runInNewContext(worker, { ...context, self: { ...context.self } });
+  const pinnedAfterRestart = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'), olderRestartClient.id,
+  );
+  assert.equal(pinnedAfterRestart.status, 200);
+  assert.equal(openedCaches.at(-1), 'festapp-app-shell-1.2.3+3',
+    'worker restart must preserve the older open tab generation, not mix current build resources');
+
+  const resumeMessages = [];
+  const resumeClient = {
+    id: 'resume-without-durable-report', url: 'https://app.test/login',
+    postMessage(message) {
+      resumeMessages.push(message.type);
+      if (message.type === 'FESTAPP_REPORT_VERSION') {
+        queueMicrotask(() => reportVersion(resumeClient, '1.2.3+3'));
+      }
+    },
+  };
+  clientsById.set(resumeClient.id, resumeClient);
+  const resumedAsset = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'), resumeClient.id,
+  );
+  assert.equal(resumedAsset.status, 200,
+    'an already loaded mobile tab must be asked for its version when the worker has no saved report');
+  assert.deepEqual(resumeMessages, ['FESTAPP_REPORT_VERSION']);
 
   const webClientIndex = await readFile(
     path.join(projectRoot, 'web_client/index.html'),

@@ -1,4 +1,6 @@
 import 'package:fstapp/components/users/widgets/google_login_panel.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -38,6 +40,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
+  bool _resolvingInitialSession = false;
+  bool _initialNavigationFailed = false;
   LoginQrTransitionState? _qrTransition;
 
   final _emailController = TextEditingController();
@@ -48,17 +52,12 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     GoogleAuthService.state.addListener(_googleStateChanged);
-    if (AppConfig.isWebclientSupported) {
-      AuthService.tryAuthUser().then((isLoggedIn) {
-        if (isLoggedIn) {
-          _checkAutoRedirect();
-        }
-      });
-    }
+    _resolvingInitialSession =
+        (AppConfig.isWebclientSupported || !AppConfig.isAppSupported) &&
+            !GoogleAuthService.hasCallback &&
+            !GoogleAuthService.isContinuation;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!AppConfig.isAppSupported) {
-        _checkAutoRedirect();
-      }
+      if (_resolvingInitialSession) _checkAutoRedirect();
     });
   }
 
@@ -67,20 +66,27 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _checkAutoRedirect() async {
-    if (GoogleAuthService.hasCallback || GoogleAuthService.isContinuation) {
-      return;
+    try {
+      if (GoogleAuthService.hasCallback || GoogleAuthService.isContinuation) {
+        return;
+      }
+      final loggedIn = await ensureAuthenticatedSession(
+        isLoggedIn: AuthService.isLoggedIn,
+        restoreSession: AuthService.tryAuthUser,
+      ).timeout(const Duration(seconds: 10));
+      if (!mounted ||
+          !loggedIn ||
+          GoogleAuthService.hasCallback ||
+          GoogleAuthService.isContinuation) {
+        return;
+      }
+      await _refreshSignedInStatus(null).timeout(const Duration(seconds: 15));
+    } catch (error) {
+      AppLogger.error('Initial signed-in navigation failed: $error');
+      _initialNavigationFailed = true;
+    } finally {
+      if (mounted) setState(() => _resolvingInitialSession = false);
     }
-    final loggedIn = await ensureAuthenticatedSession(
-      isLoggedIn: AuthService.isLoggedIn,
-      restoreSession: AuthService.tryAuthUser,
-    );
-    if (!mounted ||
-        !loggedIn ||
-        GoogleAuthService.hasCallback ||
-        GoogleAuthService.isContinuation) {
-      return;
-    }
-    await _refreshSignedInStatus(null);
   }
 
   Future<void> _recoverAuthenticatedNavigation() async {
@@ -98,6 +104,31 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Session restoration and administration routing own the initial surface.
+    // Do not render signed-out controls for an already authenticated account.
+    if (_resolvingInitialSession) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_initialNavigationFailed) {
+      return Scaffold(
+          body: Center(
+              child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(CommonStrings.unexpectedError),
+          const SizedBox(height: 16),
+          FilledButton(
+              onPressed: () {
+                setState(() {
+                  _initialNavigationFailed = false;
+                  _resolvingInitialSession = true;
+                });
+                _checkAutoRedirect();
+              },
+              child: Text(CommonStrings.retry)),
+        ],
+      )));
+    }
     List<Widget> actions = [
       if (FeatureService.isFeatureEnabled(FeatureConstants.reception))
         IconButton(
