@@ -771,6 +771,7 @@ class _FormPageState extends State<FormPage> {
                                         if (_offerBundle != null)
                                           _buildWaitlistPeople(),
                                         if (_offerBundle == null &&
+                                            !form!.isWaitlist &&
                                             form!.capacity?.showRemaining ==
                                                 true &&
                                             form!.capacity?.remainingPublic !=

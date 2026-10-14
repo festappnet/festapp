@@ -2599,7 +2599,7 @@
     "OFFER_EXPIRED": "Platnost této nabídky vypršela.",
     "OFFER_CHANGED": "Nabídka se změnila. Obnovte ji a znovu potvrďte.",
     "OFFER_SLOT_ALREADY_RESOLVED": "Tato místa nabídky už byla vyřízena.",
-    "CAPACITY_BELOW_COMMITTED": "Kapacita nemůže být nižší než počet přijatých přihlášek a platných nabídek.",
+    "CAPACITY_BELOW_COMMITTED": "Kapacita nemůže být nižší než počet zabraných a rezervovaných míst.",
     "WAITLIST_HAS_ACTIVE_ENTRIES": "Aktivní čekající přihlášky nebo nabídky tuto změnu blokují.",
     "BLUEPRINT_CONFLICT": "Plánek nelze kombinovat s kapacitou přihlášek ani náhradníky.",
     "PRODUCT_CAPACITY_EXCEEDED": "Vybraný produkt už není dostupný v požadovaném množství. Vyberte jiný produkt.",

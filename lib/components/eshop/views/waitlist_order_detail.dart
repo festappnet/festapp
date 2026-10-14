@@ -367,11 +367,6 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                     style: TextStyle(color: theme.colorScheme.error),
                   ),
                 ),
-              if (_detail?['occasionTitle'] case final String title)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(title, style: theme.textTheme.titleMedium),
-                ),
               if (multiple && editor)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),

@@ -2598,7 +2598,7 @@
     "OFFER_EXPIRED": "This offer has expired.",
     "OFFER_CHANGED": "The offer has changed. Refresh it and confirm again.",
     "OFFER_SLOT_ALREADY_RESOLVED": "These offer places have already been resolved.",
-    "CAPACITY_BELOW_COMMITTED": "Capacity cannot be lower than admitted registrations and valid offers.",
+    "CAPACITY_BELOW_COMMITTED": "Capacity cannot be lower than the number of occupied and reserved places.",
     "WAITLIST_HAS_ACTIVE_ENTRIES": "Active waiting registrations or offers prevent this change.",
     "BLUEPRINT_CONFLICT": "A seat plan cannot be combined with participant capacity or a waitlist.",
     "PRODUCT_CAPACITY_EXCEEDED": "A selected product is no longer available in the required quantity. Choose another product.",

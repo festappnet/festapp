@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:fstapp/components/forms/models/form_capacity_model.dart';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -56,12 +57,12 @@ void main() {
       },
       'recipients': form == 7
           ? [
-              {'orderId': 5, 'count': 1},
-              {'orderId': 6, 'count': 2}
+              {'orderId': 5, 'count': 1, 'waitingCount': 1},
+              {'orderId': 6, 'count': 2, 'waitingCount': 2}
             ]
           : [
-              {'orderId': 8, 'count': 1},
-              {'orderId': 9, 'count': 2}
+              {'orderId': 8, 'count': 1, 'waitingCount': 1},
+              {'orderId': 9, 'count': 2, 'waitingCount': 2}
             ]
     };
   }
@@ -88,7 +89,7 @@ void main() {
         active: active);
     result.waitlistSummary = state == 'waitlisted'
         ? WaitlistSummaryModel.fromJson({
-            'counts': {lifecycle: 1},
+            'counts': {lifecycle: id == 6 || id == 9 ? 2 : 1},
             'isActive': active,
             'allowedActions': ['view', 'offer', 'withdraw']
           })
@@ -104,6 +105,10 @@ void main() {
     refreshed = 0;
     final configured =
         forms ?? [FormModel(id: 7, title: 'Form seven', waitlistEnabled: true)];
+    for (final form in configured) {
+      form.capacity ??= FormCapacityModel.fromJson(
+          {'canSendOffers': true, 'offerablePlaces': 8});
+    }
     tester.view.physicalSize = const Size(1600, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -119,33 +124,34 @@ void main() {
                 supportedLocales: localized.supportedLocales,
                 localizationsDelegates: localized.localizationDelegates,
                 home: Scaffold(body: Builder(builder: (context) {
-                  final action = createWaitlistOffersAction(context,
-                      forms: () => configured,
-                      controller: () => grid,
-                      offerDialogBuilder: (form, recipients, ids) =>
-                          WaitlistOffersDialog(
-                              form: form,
-                              orders: recipients,
-                              selectedOrderIds: ids,
-                              loadProposal: proposal,
-                              loadPreview: (_) async => {
-                                    'template': {
-                                      'subject': 'Offer {{order_symbol}}',
-                                      'html': '<p>{{offered_count}}</p>'
-                                    },
-                                    'wrapper': {'html': '{{content}}'},
-                                    'occasionTitle': 'Fixture'
-                                  },
-                              executeCommand: (operation, payload) async {
-                                sent.add({
-                                  'operation': operation,
-                                  'payload': payload
-                                });
-                                return {'code': 200};
-                              }),
-                      onRefresh: () async {
-                        refreshed++;
-                      });
+                  Widget offerButton(BuildContext context,
+                          SingleDataGridController<OrderModel> grid) =>
+                      waitlistOffersToolbarButton(context, grid,
+                          forms: configured,
+                          offerDialogBuilder: (form, recipients, ids) =>
+                              WaitlistOffersDialog(
+                                  form: form,
+                                  orders: recipients,
+                                  selectedOrderIds: ids,
+                                  loadProposal: proposal,
+                                  loadPreview: (_) async => {
+                                        'template': {
+                                          'subject': 'Offer {{order_symbol}}',
+                                          'html': '<p>{{offered_count}}</p>'
+                                        },
+                                        'wrapper': {'html': '{{content}}'},
+                                        'occasionTitle': 'Fixture'
+                                      },
+                                  executeCommand: (operation, payload) async {
+                                    sent.add({
+                                      'operation': operation,
+                                      'payload': payload
+                                    });
+                                    return {'code': 200};
+                                  }),
+                          onRefresh: () async {
+                            refreshed++;
+                          });
                   grid = SingleDataGridController<OrderModel>(
                       context: context,
                       loadData: () async => orders,
@@ -157,11 +163,12 @@ void main() {
                       actionsExtended: DataGridActionsController(
                           isAddActionPossible: () => false,
                           areAllActionsEnabled: () => true),
-                      headerChildren: [
-                        if (RightsService.isEditorOrder() &&
-                            hasActiveWaitlistOrders(orders))
-                          action
-                      ],
+                      headerFilterBuilder: (context, grid) =>
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            OrderGridFilters.filterButton(context, grid,
+                                label: WaitlistStrings.text('active')),
+                            offerButton(context, grid),
+                          ]),
                       columns: [
                         TrinaColumn(
                             title: 'ID',
@@ -181,8 +188,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder toolbar() => find.widgetWithText(ElevatedButton, WaitlistStrings.send);
+  Finder toolbar() => find.ancestor(
+      of: find.byWidgetPredicate((widget) =>
+          widget is Text &&
+          widget.data?.startsWith('${WaitlistStrings.send} (') == true),
+      matching: find.byType(ElevatedButton));
   Future<void> check(WidgetTester tester, int id) async {
+    final target = grid.rows
+        .singleWhere((row) => row.cells[EshopColumns.ORDER_ID]!.value == id);
+    if (!grid.stateManager.rows.contains(target)) {
+      grid.toggleAdditionalFilter(false);
+    }
     grid.stateManager.setRowChecked(
         grid.rows.singleWhere(
             (row) => row.cells[EshopColumns.ORDER_ID]!.value == id),
@@ -206,13 +222,18 @@ void main() {
   });
 
   testWidgets(
-      'none checked and ordinary-only selection stay disabled; selected waiting uses real send path',
+      'offers work without selection and checked waiting uses the real send path',
       (tester) async {
     await open(tester, [order(5), order(6), order(11, state: 'sent')]);
     expect(toolbar(), findsOneWidget);
-    expect(tester.widget<ElevatedButton>(toolbar()).onPressed, isNull);
+    expect(find.text('${WaitlistStrings.send} (3)'), findsOneWidget);
+    expect(grid.stateManager.rows, hasLength(1));
+    final active = find.byKey(const ValueKey('onlyNonCancelled'));
+    expect(tester.getTopLeft(toolbar()).dx,
+        greaterThan(tester.getTopLeft(active).dx));
+    expect(tester.widget<ElevatedButton>(toolbar()).onPressed, isNotNull);
     await check(tester, 11);
-    expect(tester.widget<ElevatedButton>(toolbar()).onPressed, isNull);
+    expect(tester.widget<ElevatedButton>(toolbar()).onPressed, isNotNull);
     await check(tester, 5);
     expect(tester.widget<ElevatedButton>(toolbar()).onPressed, isNotNull);
     await tester.tap(toolbar());
@@ -225,7 +246,7 @@ void main() {
         find.descendant(
             of: find.byType(WaitlistOffersDialog),
             matching: find.byType(TextField)),
-        findsOneWidget);
+        findsNothing);
     await tester.tap(find.widgetWithText(FilledButton, WaitlistStrings.send));
     await tester.pumpAndSettle();
     expect(sent, hasLength(1));
@@ -279,14 +300,42 @@ void main() {
       'active offered rows stay visible but ineligible; readonly role has no toolbar',
       (tester) async {
     await open(tester, [order(5, lifecycle: 'offered')]);
-    expect(toolbar(), findsOneWidget);
+    expect(toolbar(), findsNothing);
     await check(tester, 5);
-    expect(tester.widget<ElevatedButton>(toolbar()).onPressed, isNull);
+    expect(toolbar(), findsNothing);
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         occasionUser:
             OccasionUserModel.fromJson({'is_editor_order_view': true}));
     await open(tester, [order(5)]);
     expect(toolbar(), findsNothing);
+  });
+
+  testWidgets(
+      'zero offerable capacity hides toolbar even with waiting registrations',
+      (tester) async {
+    await open(tester, [
+      order(5)
+    ], forms: [
+      FormModel(
+          id: 7,
+          waitlistEnabled: true,
+          capacity: FormCapacityModel.fromJson(
+              {'canSendOffers': false, 'offerablePlaces': 0}))
+    ]);
+    expect(toolbar(), findsNothing);
+  });
+
+  testWidgets('unselected hidden waiting registrations open offer preparation',
+      (tester) async {
+    await open(tester, [order(5), order(11, state: 'sent')]);
+    expect(grid.stateManager.rows, hasLength(1));
+    await tester.tap(toolbar());
+    await tester.pumpAndSettle();
+    final dialog =
+        tester.widget<WaitlistOffersDialog>(find.byType(WaitlistOffersDialog));
+    expect(dialog.orders.map((order) => order.id), [5]);
+    expect(dialog.selectedOrderIds, {5});
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('offer action keeps unsaved row drafts protected',

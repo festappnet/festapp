@@ -95,7 +95,7 @@ void main() {
     expect(loads, 1);
     expect(tester.takeException(), isNull);
     expect(find.byType(LinearProgressIndicator), findsNothing);
-    expect(find.text('Festival & letní setkání'), findsOneWidget);
+    expect(find.text('Festival & letní setkání'), findsNothing);
     expect(find.byType(CheckboxListTile), findsNothing);
     expect(find.byType(Checkbox), findsNothing);
     expect(find.text(WaitlistStrings.offers), findsNothing);

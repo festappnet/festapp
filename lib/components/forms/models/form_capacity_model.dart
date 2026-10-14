@@ -10,8 +10,10 @@ class FormCapacityModel {
   int get occupiedPeople => (data['occupiedPeople'] as num?)?.toInt() ?? 0;
   int get offeredPlaces => (data['offeredPlaces'] as num?)?.toInt() ?? 0;
 
-  /// Display occupancy includes admissions and the server's active offer holds.
-  int get occupiedPlaces => occupiedPeople + offeredPlaces;
+  int get heldForWaiting => (data['heldForWaiting'] as num?)?.toInt() ?? 0;
+
+  /// Includes admissions, active offers and the server's priority reservations.
+  int get occupiedPlaces => occupiedPeople + offeredPlaces + heldForWaiting;
   int get waitingPeople => (data['waitingPeople'] as num?)?.toInt() ?? 0;
   int get offerablePlaces => (data['offerablePlaces'] as num?)?.toInt() ?? 0;
   int get revision => (data['revision'] as num?)?.toInt() ?? 0;
