@@ -37,6 +37,20 @@ class BankAccountModel {
     this.bankSync,
   });
 
+  /// Matches the providers supported by the BankSync email parsers.
+  bool get supportsEmailConnection {
+    final normalized =
+        (accountNumber ?? '').replaceAll(RegExp(r'\s'), '').toUpperCase();
+    if (normalized.startsWith('CZ') && normalized.length >= 8) {
+      return const ['2010', '3030'].contains(normalized.substring(4, 8));
+    }
+    final bankCode = normalized.split('/');
+    if (bankCode.length == 2) {
+      return const ['2010', '3030'].contains(bankCode.last);
+    }
+    return false;
+  }
+
   factory BankAccountModel.fromJson(Map<String, dynamic> json) {
     return BankAccountModel(
       id: json['id'],

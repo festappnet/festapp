@@ -1757,6 +1757,7 @@
     "receiver_commit": "Pohyb přijat",
     "not_received": "Zatím nepřijato",
     "email_identity_notice": "Zprávy bez ověřené bankovní identity čekají na kontrolu správce a automaticky nehradí objednávky.",
+    "emailBankUnsupported": "Propojení bankovních e-mailů je zatím dostupné pouze pro Fio banku a Air Bank. Tento účet můžete používat pro ruční evidenci plateb.",
     "connect_email": "Připojit bankovní email",
     "missingAccountForCurrencies": "Bankovní účet pro {} není nastaven.",
     "addAccountForPayments": "Pro přijímání plateb přidejte v nastavení organizace účet, který podporuje uvedené měny.",

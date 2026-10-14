@@ -13,7 +13,7 @@ import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/drag_handle_dots.dart';
 import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/services/toast_helper.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/users/db_users.dart';
 
 class UnitBankAccountsScreen extends StatefulWidget {
@@ -80,6 +80,21 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     }
   }
 
+  Future<List<BankAccountModel>> _loadAvailableAccounts() async {
+    final organizationAccounts = _organizationId == null
+        ? <BankAccountModel>[]
+        : await DbBankAccounts.getBankAccountsForOrganization(_organizationId!);
+    final myAccounts = await DbBankAccounts.getMyAdminBankAccounts();
+    final linkedIds = _unitAccounts.map((account) => account.id).toSet();
+    final available = <int, BankAccountModel>{};
+    for (final account in [...organizationAccounts, ...myAccounts]) {
+      if (!linkedIds.contains(account.id)) {
+        available.putIfAbsent(account.id, () => account);
+      }
+    }
+    return available.values.toList();
+  }
+
   Future<void> _addOrEditAccount([BankAccountModel? account]) async {
     // If editing existing, we check if it is org account
 
@@ -91,73 +106,74 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       BankAccountModel? selectedAccount;
       bool createNew = true;
 
+      Future<List<BankAccountModel>>? availableAccounts;
       final choice = await showDialog<String>(
         context: context,
-        builder: (context) => AppSimpleDialog(
-          title: Text(BankAccountStrings.addBankAccount),
-          children: [
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, 'new'),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(BankAccountStrings.createNewAccount),
+        builder: (context) => StatefulBuilder(
+          builder: (context, updateDialog) {
+            availableAccounts ??= _loadAvailableAccounts();
+            return FutureBuilder<List<BankAccountModel>>(
+              future: availableAccounts,
+              builder: (context, snapshot) => AppSimpleDialog(
+                title: Text(BankAccountStrings.addBankAccount),
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, 'new'),
+                    child: Text(BankAccountStrings.createNewAccount),
+                  ),
+                  TextButton(
+                    onPressed: snapshot.hasData && snapshot.data!.isNotEmpty
+                        ? () => Navigator.pop(context, 'link')
+                        : null,
+                    child: Text(BankAccountStrings.linkExistingAccount),
+                  ),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(CommonStrings.loading),
+                        ],
+                      ),
+                    ),
+                  if (snapshot.hasError) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(CommonStrings.unexpectedError),
+                    ),
+                    TextButton(
+                      onPressed: () => updateDialog(() {
+                        availableAccounts = null;
+                      }),
+                      child: Text(CommonStrings.retry),
+                    ),
+                  ],
+                ],
               ),
-            ),
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, 'link'),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(BankAccountStrings.linkExistingAccount),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       );
 
-      if (choice == null) return;
+      if (choice == null || !mounted) return;
       createNew = choice == 'new';
 
       if (!createNew) {
-        // Link Existing: Fetch ALL Org accounts + My Admin accounts
-        setState(() => _isLoading = true);
-        List<BankAccountModel> availableAccounts = [];
-        try {
-          if (_organizationId != null) {
-            availableAccounts =
-                await DbBankAccounts.getBankAccountsForOrganization(
-                    _organizationId!);
-          }
-          // Also fetch "My Admin" just in case they are not in Org view but I am admin
-          final myAccounts = await DbBankAccounts.getMyAdminBankAccounts();
-          // Merge and distinct
-          final existingIds = availableAccounts.map((a) => a.id).toSet();
-          availableAccounts
-              .addAll(myAccounts.where((a) => !existingIds.contains(a.id)));
-
-          // Filter out already linked to THIS unit
-          final linkedIds = _unitAccounts.map((a) => a.id).toSet();
-          availableAccounts = availableAccounts
-              .where((a) => !linkedIds.contains(a.id))
-              .toList();
-        } catch (e) {
-          // ignore
-        } finally {
-          if (mounted) setState(() => _isLoading = false);
-        }
-
-        if (availableAccounts.isEmpty) {
-          if (mounted)
-            ToastHelper.Show(context, "No existing accounts found to link.");
-          return;
-        }
-
+        final accounts = await availableAccounts!;
         if (!mounted) return;
 
         selectedAccount = await showDialog<BankAccountModel>(
           context: context,
           builder: (context) => AppSimpleDialog(
             title: Text(BankAccountStrings.selectAccount),
-            children: availableAccounts
+            children: accounts
                 .map((a) => SimpleDialogOption(
                       onPressed: () => Navigator.pop(context, a),
                       child: Padding(
