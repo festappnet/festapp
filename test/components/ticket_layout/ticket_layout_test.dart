@@ -1056,8 +1056,7 @@ void main() {
     await tester.tapAt(screen(code.box.center));
     await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
     expect(c.selectedIds, {'qr', 'ticketSymbol'});
-    final drag = await tester.startGesture(screen(qr.box.center),
-        kind: PointerDeviceKind.mouse);
+    final drag = await tester.startGesture(screen(qr.box.center));
     await drag.moveBy(const Offset(-5, -5));
     await drag.up();
     await tester.pump();
@@ -1079,7 +1078,7 @@ void main() {
     await tester.pumpAndSettle();
     final previous = c.document;
     final touchDrag = await tester.startGesture(screen(qr.box.center));
-    await touchDrag.moveBy(const Offset(-20, -20));
+    await touchDrag.moveBy(const Offset(-8, -8));
     await touchDrag.up();
     await tester.pump();
     expect(c.selectedIds, containsAll(['qr', 'ticketSymbol']));
@@ -1960,10 +1959,7 @@ void main() {
       final start = origin +
           MatrixUtils.transformPoint(transform.value,
               c.document.area.topLeft + handle.position(before));
-      final resizeGesture =
-          await tester.startGesture(start, kind: PointerDeviceKind.mouse);
-      await resizeGesture.moveBy(Offset(-handle.x * 12, -handle.y * 12));
-      await resizeGesture.up();
+      await tester.dragFrom(start, Offset(-handle.x * 12, -handle.y * 12));
       await tester.pump();
       final after = c.selection!.box;
       expect(after.width, lessThan(before.width));
@@ -2006,10 +2002,7 @@ void main() {
     expect(c.selectedIds, {qr.id, text.id});
     final before = c.document.toJson();
     final bounds = c.selectionBounds!;
-    final resizeGesture = await tester.startGesture(screen(bounds.bottomRight),
-        kind: PointerDeviceKind.mouse);
-    await resizeGesture.moveBy(const Offset(-12, -12));
-    await resizeGesture.up();
+    await tester.dragFrom(screen(bounds.bottomRight), const Offset(-12, -12));
     await tester.pump();
     expect(c.document.elements.firstWhere((e) => e.id == qr.id).box.width,
         lessThan(qr.box.width));
@@ -2094,8 +2087,7 @@ void main() {
             state.widget.transform.value, c.document.area.topLeft + p);
     final original =
         c.document.elements.firstWhere((e) => e.binding == 'qr').box;
-    final gesture = await tester.startGesture(screen(original.center),
-        kind: PointerDeviceKind.mouse);
+    final gesture = await tester.startGesture(screen(original.center));
     await gesture.moveBy(const Offset(8, -4));
     await tester.pump();
     expect(c.selection!.box, isNot(original),
@@ -2109,10 +2101,7 @@ void main() {
     expect(c.selection!.box, original);
     c.redo();
     final qr = c.selection!.box;
-    final resizeGesture = await tester.startGesture(screen(qr.bottomRight),
-        kind: PointerDeviceKind.mouse);
-    await resizeGesture.moveBy(const Offset(8, 8));
-    await resizeGesture.up();
+    await tester.dragFrom(screen(qr.bottomRight), const Offset(8, 8));
     await tester.pump();
     expect(c.selection!.box.width, c.selection!.box.height);
     state.zoomAt(1.2);
