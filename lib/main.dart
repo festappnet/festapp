@@ -40,6 +40,7 @@ import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/backend_activation_service.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/time_travel_widget.dart';
+import 'package:fstapp/widgets/app_text_selection.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:pwa_install/pwa_install.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -485,7 +486,7 @@ class _MyAppState extends State<MyApp> {
             },
             child: Stack(
               children: [
-                child!,
+                AppTextSelection(child: child!),
                 Positioned(
                   left: _offset.dx,
                   top: _offset.dy,

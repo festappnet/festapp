@@ -52,6 +52,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   int? _middlePan;
   Offset? _last, _marqueeStart, _dragStart;
   String? _pendingToggle;
+  bool _dragStarted = false;
+  double _dragSlop = 6;
   Set<String> _selectionBeforeMarquee = {};
   TicketResizeHandle? _resizeHandle, _hoverHandle;
   bool _space = false;
@@ -323,6 +325,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     }
     widget.controller.beginGesture();
     _last = _dragStart = point;
+    _dragStarted = false;
+    _dragSlop = event.kind == PointerDeviceKind.mouse ? 6 : kTouchSlop;
     setState(() => _editing = event.pointer);
   }
 
@@ -379,8 +383,10 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       });
       return;
     }
-    if (_pendingToggle != null) {
-      if ((point - _dragStart!).distance * zoom < 3) return;
+    if (!_dragStarted) {
+      // Measure click tolerance in screen pixels, regardless of canvas zoom.
+      if ((point - _dragStart!).distance * zoom <= _dragSlop) return;
+      _dragStarted = true;
       _pendingToggle = null;
     }
     final delta = point - _last!;
