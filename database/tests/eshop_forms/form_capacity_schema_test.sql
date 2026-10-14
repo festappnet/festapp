@@ -76,8 +76,22 @@ BEGIN
  BEGIN UPDATE forms SET waitlist_enabled=true,waitlist_offer_duration_seconds=1 WHERE id=f; RAISE EXCEPTION 'unlimited waitlist accepted'; EXCEPTION WHEN check_violation THEN NULL; END;
  INSERT INTO eshop.blueprints(organization,occasion,title) VALUES((x->>'organization')::bigint,(x->>'occasion')::bigint,'Blueprint') RETURNING id INTO bp;
  UPDATE forms SET blueprint=bp WHERE id=f;
+ PERFORM assert_eq(public.get_form_registration_mode_internal(f),'regular'::text,'disabled retained blueprint is regular');
+ PERFORM assert_true((public.get_form_bundle_internal(f)->'data'->>'blueprint') IS NULL,'public bundle omits inactive blueprint');
+ PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":3,"waitlist_enabled":true,"waitlist_offer_duration_seconds":3600}');
+ r:=public.update_form_internal_v1(jsonb_build_object('id',f,'occasion',x->'occasion','link',x->'link','blueprint',bp,'participant_capacity',3,'waitlist_enabled',true,'waitlist_offer_duration_seconds',3600));
+ PERFORM assert_eq(r->>'code','200'::text,'save capacity with disabled stored blueprint');
+ PERFORM assert_true((SELECT blueprint=bp AND participant_capacity=3 AND waitlist_enabled FROM forms WHERE id=f),'disabled blueprint is retained');
+ INSERT INTO unit_users(unit,"user",is_editor) VALUES((x->>'unit')::bigint,(x->>'actor')::uuid,true);
+ BEGIN
+  PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',x->'occasion','features','[{"code":"blueprint","is_enabled":true}]'::jsonb));
+  RAISE EXCEPTION 'feature enabled despite configured capacity';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%BLUEPRINT_CONFLICT%' THEN RAISE; END IF; END;
+ PERFORM assert_eq(public.get_form_registration_mode_internal(f),'regular'::text,'failed enable leaves feature disabled');
+ UPDATE forms SET participant_capacity=NULL,waitlist_enabled=false WHERE id=f;
+ PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',x->'occasion','features','[{"code":"blueprint","is_enabled":true}]'::jsonb));
  PERFORM assert_eq(public.get_form_registration_mode_internal(f),'blueprint'::text,'blueprint mode');
- BEGIN UPDATE forms SET participant_capacity=1 WHERE id=f; RAISE EXCEPTION 'blueprint capacity accepted'; EXCEPTION WHEN check_violation THEN NULL; END;
+ BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'blueprint capacity accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%BLUEPRINT_CONFLICT%' THEN RAISE; END IF; END;
  UPDATE forms SET blueprint=NULL,participant_capacity=3,waitlist_enabled=true,waitlist_offer_duration_seconds=3600 WHERE id=f;
  BEGIN UPDATE forms SET waitlist_offer_duration_seconds=NULL WHERE id=f; RAISE EXCEPTION 'NULL offer duration accepted'; EXCEPTION WHEN check_violation THEN NULL; END;
  BEGIN UPDATE forms SET waitlist_offer_duration_seconds=0 WHERE id=f; RAISE EXCEPTION 'zero offer duration accepted'; EXCEPTION WHEN check_violation THEN NULL; END;

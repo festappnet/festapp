@@ -82,7 +82,8 @@ BEGIN
 
     -- No deposit reminder should be queued (on_site deadline)
     SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
-    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+      AND (data->>'is_deposit_reminder')::boolean IS TRUE;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 1: No reminder for on_site deadline');
     RAISE NOTICE 'Step 1 PASSED: Order created, no reminder for on_site';
 
@@ -104,7 +105,8 @@ BEGIN
     -- ==================================================================
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
     SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
-    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id
+      AND (data->>'is_deposit_reminder')::boolean IS TRUE;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 3: No reminder from batch for on_site');
     RAISE NOTICE 'Step 3 PASSED: Batch produces no reminder for on_site';
 

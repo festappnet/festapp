@@ -21,7 +21,8 @@ class FormCapacitySettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final blueprint = form.blueprint != null;
+    final blueprint = form.blueprint != null &&
+        FeatureService.isFeatureEnabled(FeatureConstants.blueprint);
     final snapshot = form.capacity;
     final occupancy = !blueprint && snapshot?.limit != null
         ? WaitlistStrings.text('occupancy')

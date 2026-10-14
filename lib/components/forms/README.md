@@ -71,8 +71,9 @@ migration for later cap changes instead of rewriting the deployed migration.
 
 Capacity counts DISTINCT eligible `eshop.tickets` through existing
 order_product_ticket links, including unpaid regular orders. Waiting tickets and
-storno do not consume occupied capacity. There is no person ledger or backfill. `participant_capacity=NULL` preserves unlimited registration. Blueprint
-forms cannot enable this limit or waitlisting. Form saves preserve omitted
+storno do not consume occupied capacity. There is no person ledger or backfill. `participant_capacity=NULL` preserves unlimited registration. Forms with an enabled blueprint feature and an attached blueprint cannot enable
+this limit or waitlisting. A stored blueprint is retained but ignored when the
+occasion blueprint feature is disabled. Form saves preserve omitted
 settings; removing a limit uses an explicit NULL. Live waiting tickets or offers
 block disabling waitlisting, removing the limit and switching to a blueprint.
 

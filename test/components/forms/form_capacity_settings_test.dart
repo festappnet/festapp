@@ -16,6 +16,7 @@ import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/theme_config.dart';
 
@@ -78,6 +79,44 @@ void main() {
           find.text(WaitlistStrings.text(
               tickets ? 'capacityTickets' : 'capacityRegistrations')),
           findsOneWidget);
+    });
+  }
+
+  for (final enabled in [false, true]) {
+    testWidgets('stored blueprint uses enabled feature $enabled', (
+      tester,
+    ) async {
+      final previous = RightsService.occasionLinkModelNotifier.value;
+      addTearDown(
+        () => RightsService.occasionLinkModelNotifier.value = previous,
+      );
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        occasion: OccasionModel(
+          isOpen: true,
+          isHidden: false,
+          isPromoted: false,
+          features: [SimpleFeature(code: 'blueprint', isEnabled: enabled)],
+        ),
+      );
+      final form = FormModel(blueprint: 42);
+      await open(tester, form);
+      expect(
+        find.byType(FormCapacityDialog),
+        enabled ? findsNothing : findsOneWidget,
+      );
+      expect(
+        find.text(WaitlistStrings.blueprintCapacity),
+        enabled ? findsOneWidget : findsNothing,
+      );
+      if (!enabled) {
+        await tester.tap(find.byType(SwitchListTile).first);
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextFormField).first, '50');
+        await tester.tap(find.text(WaitlistStrings.applySettings));
+        await tester.pumpAndSettle();
+        expect(form.participantCapacity, 50);
+        expect(form.blueprint, 42);
+      }
     });
   }
 
@@ -246,6 +285,11 @@ void main() {
   for (final mode in ['blueprint', 'disabled', 'enabled']) {
     testWidgets('zero offer counts stay hidden ($mode)', (tester) async {
       final blueprint = mode == 'blueprint';
+      final previous = RightsService.occasionLinkModelNotifier.value;
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          occasion: OccasionModel(isOpen: true, isHidden: false, isPromoted: false,
+              features: [SimpleFeature(code: 'blueprint', isEnabled: blueprint)]));
       final form = FormModel(
           blueprint: blueprint ? 5 : null,
           participantCapacity: blueprint ? null : 12,
