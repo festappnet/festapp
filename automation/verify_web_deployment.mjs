@@ -117,7 +117,7 @@ async function verifyOnce() {
   for (const script of [
     'festapp_update_prompt.js', 'festapp_flutter_bootstrap_guard.js', 'festapp_pwa_bridge.js',
   ]) {
-    assert.ok(html.includes(`src="${script}?v=${encodeURIComponent(expectedVersion)}"`),
+    assert.ok(html.includes(`src="${script.replace(/\.js$/, `.${expectedVersion.replaceAll('+', '-')}.js`)}?v=${encodeURIComponent(expectedVersion)}"`),
       `Flutter support script ${script} is not bound to this release`);
   }
   assert.match(
