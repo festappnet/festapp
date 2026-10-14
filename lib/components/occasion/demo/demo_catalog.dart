@@ -1,12 +1,15 @@
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DemoOccasion {
+  final OccasionModel occasion;
   final int id;
   final String link, title, key, description, version;
   final String? image;
   const DemoOccasion(
-      {required this.id,
+      {required this.occasion,
+      required this.id,
       required this.link,
       required this.title,
       required this.key,
@@ -15,6 +18,7 @@ class DemoOccasion {
       this.image});
 
   factory DemoOccasion.fromJson(Map<String, dynamic> json) => DemoOccasion(
+      occasion: OccasionModel.fromJson(json),
       id: (json['id'] as num).toInt(),
       link: json['link'] as String,
       title: json['title'] as String,

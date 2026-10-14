@@ -68,6 +68,7 @@ class _OccasionAdministrationBoundaryState
   StackRouter? _root;
   int _generation = 0;
   bool _ready = false;
+  bool _inactive = false;
   bool _denied = false;
   bool _loading = false;
   bool _loadFailed = false;
@@ -103,10 +104,37 @@ class _OccasionAdministrationBoundaryState
 
   void _contextChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted ||
-          _link == null ||
-          _loadFailed ||
-          !isVisibleRouteInstance(context)) return;
+      if (!mounted || _link == null) return;
+      if (!isVisibleRouteInstance(context)) {
+        if (!_inactive) {
+          // Preserve the active route for Back, but never the editor state.
+          final data = context.routeData;
+          final nested =
+              context.router.innerRouterOf<RoutingController>(data.name);
+          final segments = nested?.currentSegments ?? <RouteMatch>[];
+          RouteMatch? restored;
+          for (final segment in segments.reversed) {
+            restored = segment.copyWith(
+                children: restored == null ? null : [restored]);
+          }
+          if (restored != null) {
+            data.pendingChildren
+              ..clear()
+              ..add(restored);
+          }
+          setState(() {
+            _inactive = true;
+            ++_generation;
+            _ready = false;
+            _loading = false;
+            _denied = false;
+            _loadFailed = false;
+          });
+        }
+        return;
+      }
+      if (_inactive) setState(() => _inactive = false);
+      if (_loadFailed) return;
       if (widget.access.loadedLink == _link &&
           !widget.access.canAccess(reservations: widget.reservations)) {
         if (!_denied)
@@ -168,6 +196,8 @@ class _OccasionAdministrationBoundaryState
 
   @override
   Widget build(BuildContext context) {
+    // Do not retain drafts on a hidden root occasion, including native Back.
+    if (_inactive) return const SizedBox.shrink();
     final failure = Scaffold(
         body: Center(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -193,10 +223,7 @@ class _OccasionAdministrationBoundaryState
               enabled: !_denied && !waiting,
               child: KeyedSubtree(
                   key: ValueKey(_link), child: widget.builder(context)))),
-      if (_denied)
-        failure
-      else if (waiting)
-        loading,
+      if (_denied) failure else if (waiting) loading,
     ]);
   }
 }

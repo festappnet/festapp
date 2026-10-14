@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -33,6 +34,9 @@ class EmailTemplateSettingsPage extends StatefulWidget {
 
 class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   final _htmlSave = HtmlSaveCoordinator();
+  bool get _canEdit => widget.emailTemplatesResponse.occasion != null
+      ? RightsService.canEditOccasion() || RightsService.isOrderEditor()
+      : RightsService.isUnitEditor();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
       coordinator: _htmlSave, child: _buildHtmlParent(context));
@@ -54,12 +58,14 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   }
 
   Future<void> _saveSettings() async {
+    if (!_canEdit) return;
     await ExceptionHandler.guardVoid(context,
         futureFunction: () =>
             _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
+    if (!_canEdit) return;
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState!.save();
       _htmlContent = await _htmlSave.prepare(
@@ -197,6 +203,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               const SizedBox(height: 16),
               // Subject text field.
               TextFormField(
+                enabled: _canEdit,
                 initialValue: _subject,
                 decoration:
                     InputDecoration(labelText: EmailTemplatesStrings.subject),
@@ -238,6 +245,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               ),
               const SizedBox(height: 8),
               EditableHtmlField(
+                  enabled: _canEdit,
                   html: _htmlContent,
                   coordinator: _htmlSave,
                   profile: HtmlContentProfile.emailContent,
@@ -255,13 +263,14 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       ),
       actions: [
         AppDialogActions(
-          leading: ((widget.template.occasion != null &&
-                      widget.template.occasion ==
-                          widget.emailTemplatesResponse.occasion?.id) ||
-                  (widget.template.unit != null &&
-                      widget.template.unit ==
-                          widget.emailTemplatesResponse.unit.id &&
-                      widget.emailTemplatesResponse.occasion == null))
+          leading: _canEdit &&
+                  ((widget.template.occasion != null &&
+                          widget.template.occasion ==
+                              widget.emailTemplatesResponse.occasion?.id) ||
+                      (widget.template.unit != null &&
+                          widget.template.unit ==
+                              widget.emailTemplatesResponse.unit.id &&
+                          widget.emailTemplatesResponse.occasion == null))
               ? TextButton(
                   onPressed: () async {
                     final confirmed = await DialogHelper.showConfirmationDialog(
@@ -313,7 +322,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             ),
             const SizedBox(width: 8),
             FilledButton(
-              onPressed: _saveSettings,
+              onPressed: _canEdit ? _saveSettings : null,
               child: Text(CommonStrings.save),
             ),
           ],

@@ -1,3 +1,5 @@
+import 'package:fstapp/components/fonts/form_font_catalog.dart';
+import 'package:fstapp/components/fonts/font_family_picker.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -28,41 +30,67 @@ import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
 void main() {
-  setUpAll(() {
+  setUpAll(() async {
+    await FormFontCatalog.load();
     tz.initializeTimeZones();
     Localization.load(const Locale('cs'),
         translations: Translations(
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>));
   });
-  for (final state in ['waitlist', 'regular', 'closed', 'scheduled', 'ended', 'prototype']) {
-    testWidgets('availability explains server waitlist mode with $state precedence',
+  for (final state in [
+    'waitlist',
+    'regular',
+    'closed',
+    'scheduled',
+    'ended',
+    'prototype'
+  ]) {
+    testWidgets(
+        'availability explains server waitlist mode with $state precedence',
         (tester) async {
       tester.view.physicalSize = const Size(1600, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      RightsService.occasionLinkModelNotifier.value =
-          OccasionLinkModel(occasionUser: OccasionUserModel(isEditorOrder: true));
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          occasionUser: OccasionUserModel(isEditorOrder: true));
       addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
       final form = FormModel(
-          link: 'test', registrationMode: state == 'regular' ? 'regular' : 'waitlist',
-          isOpen: state != 'closed', data: {});
-      if (state == 'scheduled') form.startTime = DateTime.now().add(const Duration(days: 1));
-      if (state == 'ended') form.endTime = DateTime.now().subtract(const Duration(days: 1));
-      final bundle = FormEditBundle(form: form, formFields: [], productTypes: [], products: [], availableBankAccounts: []);
-      await tester.pumpWidget(MaterialApp(home: state == 'prototype'
-          ? FormEditorContent.prototype(bundle: bundle, onPrototypeSave: (_) {})
-          : FormEditorContent(formLink: 'test', loadBundle: (_) async => bundle)));
+          link: 'test',
+          registrationMode: state == 'regular' ? 'regular' : 'waitlist',
+          isOpen: state != 'closed',
+          data: {});
+      if (state == 'scheduled')
+        form.startTime = DateTime.now().add(const Duration(days: 1));
+      if (state == 'ended')
+        form.endTime = DateTime.now().subtract(const Duration(days: 1));
+      final bundle = FormEditBundle(
+          form: form,
+          formFields: [],
+          productTypes: [],
+          products: [],
+          availableBankAccounts: []);
+      await tester.pumpWidget(MaterialApp(
+          home: state == 'prototype'
+              ? FormEditorContent.prototype(
+                  bundle: bundle, onPrototypeSave: (_) {})
+              : FormEditorContent(
+                  formLink: 'test', loadBundle: (_) async => bundle)));
       await tester.pumpAndSettle();
-      expect(find.text(WaitlistStrings.formOpenWaitlistMessage), state == 'waitlist' ? findsOneWidget : findsNothing);
+      expect(find.text(WaitlistStrings.formOpenWaitlistMessage),
+          state == 'waitlist' ? findsOneWidget : findsNothing);
       if (state == 'waitlist') {
         final found = find.text(WaitlistStrings.formOpenWaitlistMessage);
-        expect(tester.widget<Text>(found).style!.color, ThemeConfig.warningColor(tester.element(found)));
+        expect(tester.widget<Text>(found).style!.color,
+            ThemeConfig.warningColor(tester.element(found)));
       }
-      if (state == 'regular' || state == 'prototype') expect(find.text(FormStrings.formOpenMessage), findsOneWidget);
-      if (state == 'closed') expect(find.text(FormStrings.formClosedMessage), findsOneWidget);
-      if (state == 'scheduled' || state == 'ended') expect(find.text(FormStrings.formOpenMessage), findsNothing);
+      if (state == 'regular' || state == 'prototype')
+        expect(find.text(FormStrings.formOpenMessage), findsOneWidget);
+      if (state == 'closed')
+        expect(find.text(FormStrings.formClosedMessage), findsOneWidget);
+      if (state == 'scheduled' || state == 'ended')
+        expect(find.text(FormStrings.formOpenMessage), findsNothing);
     });
   }
 
@@ -118,17 +146,18 @@ void main() {
                 hasCzkAccount ? 'EUR' : 'CZK, EUR')),
             findsOneWidget);
         expect(
-            find.text(canManage
-                ? BankAccountStrings.addAccountForPayments
-                : BankAccountStrings.askManagerForPaymentAccount,
+            find.text(
+                canManage
+                    ? BankAccountStrings.addAccountForPayments
+                    : BankAccountStrings.askManagerForPaymentAccount,
                 findRichText: true),
             findsOneWidget);
-        final guidance = tester.widget<Text>(find.byWidgetPredicate(
-            (widget) => widget is Text &&
-                widget.textSpan?.toPlainText() ==
-                    (canManage
-                        ? BankAccountStrings.addAccountForPayments
-                        : BankAccountStrings.askManagerForPaymentAccount)));
+        final guidance = tester.widget<Text>(find.byWidgetPredicate((widget) =>
+            widget is Text &&
+            widget.textSpan?.toPlainText() ==
+                (canManage
+                    ? BankAccountStrings.addAccountForPayments
+                    : BankAccountStrings.askManagerForPaymentAccount)));
 
         final links = (guidance.textSpan! as TextSpan)
             .children!
@@ -226,6 +255,75 @@ void main() {
     expect(tester.widget<FilledButton>(save).onPressed, isNull);
     expect(find.byType(FormEditorContent), findsOneWidget);
   });
+  for (final demo in [false, true]) {
+    for (final design in [true, false]) {
+      testWidgets(
+          'read-only ${demo ? "demo" : "ordinary"} ${design ? "design" : "settings"} disables mutations',
+          (tester) async {
+        tester.view.physicalSize = const Size(1600, 1800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          demoReadOnly: demo,
+          occasionUser: OccasionUserModel(isEditorView: true),
+          occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              data: demo ? {'demo': true} : {},
+              features: [FormFeature(code: 'form')]),
+        );
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final form = FormModel(
+            link: 'test', title: 'Read only', relatedFields: [], data: {});
+        Future<FormEditBundle?> load(String _) async => FormEditBundle(
+            form: form,
+            formFields: [],
+            productTypes: [],
+            products: [],
+            availableBankAccounts: []);
+        await tester.pumpWidget(MaterialApp(
+            home: design
+                ? FormDesignContent(formLink: 'test', loadBundle: load)
+                : FormSettingsContent(formLink: 'test', loadBundle: load)));
+        await tester.pumpAndSettle();
+        if (design) {
+          expect(
+              tester
+                  .widget<SwitchListTile>(find.byType(SwitchListTile))
+                  .onChanged,
+              isNull);
+          final preset = find.ancestor(
+              of: find.text('Forest'), matching: find.byType(InkWell));
+          expect(tester.widget<InkWell>(preset).onTap, isNull);
+          await tester.tap(find.text('Forest'));
+          await tester.pumpAndSettle();
+          expect(form.primaryColor, isNull);
+          expect(
+              tester
+                  .widget<FontFamilyPicker>(find.byType(FontFamilyPicker))
+                  .enabled,
+              isFalse);
+        } else {
+          for (final field
+              in tester.widgetList<TextFormField>(find.byType(TextFormField))) {
+            expect(field.enabled, isFalse);
+          }
+          for (final field
+              in tester.widgetList<DropdownButtonFormField<String>>(
+                  find.byType(DropdownButtonFormField<String>))) {
+            expect(field.onChanged, isNull);
+          }
+        }
+        expect(
+            tester
+                .widget<EditorActionBar>(find.byType(EditorActionBar))
+                .hasChanges,
+            isFalse);
+      });
+    }
+  }
   for (final design in [true, false]) {
     testWidgets(
         '${design ? "design" : "settings"} discard restores data without closing the tab',

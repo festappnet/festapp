@@ -82,8 +82,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   late FormFeature _formFeature;
   String? _linkError;
   bool _isLoading = true;
+  bool get _canEdit => RightsService.canEditOccasion();
   bool get _hasChanges =>
-      !_isLoading && _form != null && _snapshot.differs(_draft);
+      _canEdit && !_isLoading && _form != null && _snapshot.differs(_draft);
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
@@ -212,6 +213,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   }
 
   Future<void> _saveChanges(BuildContext currentContext) async {
+    if (!_canEdit) return;
     _validateLink(_linkController.text);
     if (!_formKey.currentState!.validate() || _linkError != null) {
       ToastHelper.Show(currentContext, FormStrings.errorFixBeforeSave,
@@ -321,6 +323,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _cancelEdit() => _loadData();
 
   Future<void> _deleteForm(BuildContext currentContext) async {
+    if (!_canEdit) return;
     try {
       await DbForms.deleteForm(_form!.id!);
       if (!mounted) return;
@@ -589,12 +592,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child:
                                               Text(FormStrings.remindersOff)),
                                     ],
-                                    onChanged: (value) =>
-                                        setState(() => _reminderMode = value!),
+                                    onChanged: _canEdit
+                                        ? (value) => setState(
+                                            () => _reminderMode = value!)
+                                        : null,
                                   ),
                                   if (remindersEnabled) ...[
                                     const SizedBox(height: 24),
                                     TextFormField(
+                                      enabled: _canEdit,
                                       controller: _reminderDaysController,
                                       decoration: InputDecoration(
                                         labelText:
@@ -626,6 +632,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ],
                                   const SizedBox(height: 24),
                                   TextFormField(
+                                    enabled: _canEdit,
                                     controller: _titleController,
                                     decoration: InputDecoration(
                                       labelText: FormStrings.labelFormTitle,
@@ -634,15 +641,18 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ),
                                   const SizedBox(height: 24),
                                   TextFormField(
+                                    enabled: _canEdit,
                                     controller: _linkController,
                                     decoration: InputDecoration(
                                       labelText: FormStrings.labelFormLink,
                                       border: const OutlineInputBorder(),
                                       errorText: _linkError,
                                     ),
-                                    onChanged: (value) {
-                                      _validateLink(value);
-                                    },
+                                    onChanged: _canEdit
+                                        ? (value) {
+                                            _validateLink(value);
+                                          }
+                                        : null,
                                   ),
                                   const SizedBox(height: 16),
                                   ValueListenableBuilder<String>(
@@ -659,6 +669,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ),
                                   const SizedBox(height: 24),
                                   TextFormField(
+                                    enabled: _canEdit,
                                     controller: _deadlineDaysController,
                                     decoration: InputDecoration(
                                       labelText: FormStrings.labelDeadlineDays,
@@ -703,13 +714,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child:
                                               Text(FormStrings.vsTypeSequence)),
                                     ],
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        setState(() {
-                                          _variableSymbolType = value;
-                                        });
-                                      }
-                                    },
+                                    onChanged: _canEdit
+                                        ? (value) {
+                                            if (value != null) {
+                                              setState(() {
+                                                _variableSymbolType = value;
+                                              });
+                                            }
+                                          }
+                                        : null,
                                   ),
                                   const SizedBox(height: 16),
                                   Visibility(
@@ -718,6 +731,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       padding:
                                           const EdgeInsets.only(bottom: 24.0),
                                       child: TextFormField(
+                                        enabled: _canEdit,
                                         controller: _startingNumberController,
                                         decoration: InputDecoration(
                                           labelText:
@@ -758,13 +772,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child: Text(FormStrings
                                               .msgTypeOccasionTitle)),
                                     ],
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        setState(() {
-                                          _paymentMessageType = value;
-                                        });
-                                      }
-                                    },
+                                    onChanged: _canEdit
+                                        ? (value) {
+                                            if (value != null) {
+                                              setState(() {
+                                                _paymentMessageType = value;
+                                              });
+                                            }
+                                          }
+                                        : null,
                                   ),
                                   const SizedBox(height: 24),
                                   const Divider(),
@@ -803,13 +819,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child:
                                               Text(FormStrings.toneInformal)),
                                     ],
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        setState(() {
-                                          _communicationTone = value;
-                                        });
-                                      }
-                                    },
+                                    onChanged: _canEdit
+                                        ? (value) {
+                                            if (value != null) {
+                                              setState(() {
+                                                _communicationTone = value;
+                                              });
+                                            }
+                                          }
+                                        : null,
                                   ),
                                   const SizedBox(height: 48),
                                   if (RightsService.canEditOccasion())

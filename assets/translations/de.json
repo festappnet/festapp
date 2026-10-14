@@ -139,6 +139,7 @@
     "orderLabel": "Bestellung"
   },
   "FeatureFormSettings": {
+    "fontLoadFailed": "Die Schriftarten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
     "helperReminderEnabled": "Zahlungserinnerungen standardmäßig senden. Jedes Formular kann diese Einstellung überschreiben.",
     "helperDeadlineDuration": "Standardzahl der Tage zur Bezahlung einer neuen Bestellung. Ein leeres Feld bedeutet 7 Tage.",
     "nonNegativeDays": "Geben Sie null oder eine positive Anzahl von Tagen ein.",
@@ -784,7 +785,7 @@
     "badge": "Beispiel",
     "view": "Beispiel ansehen",
     "readOnly": "Beispielveranstaltung - nur zum Ansehen",
-    "copy": "Eigene Kopie erstellen",
+    "copy": "Kopie dieser Veranstaltung erstellen",
     "copyHint": "Die Kopie ist zunächst verborgen, ohne Teilnehmer und Zahlungen. Prüfen Sie Termine, Preise und Ihr Konto vor der Freigabe.",
     "unavailable": "Beispielveranstaltungen konnten nicht geladen werden.",
     "noTarget": "Zum Kopieren benötigen Sie eine Organisation, die Sie verwalten dürfen.",

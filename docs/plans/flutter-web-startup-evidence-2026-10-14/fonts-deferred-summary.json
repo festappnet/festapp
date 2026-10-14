@@ -1,0 +1,1323 @@
+{
+  "mainBytes": 11190337,
+  "mainGzipBytes": 3037911,
+  "programBytes": 21302312,
+  "packages": [
+    {
+      "name": "google_fonts",
+      "bytes": 10032554
+    },
+    {
+      "name": "fstapp",
+      "bytes": 2636489
+    },
+    {
+      "name": "flutter",
+      "bytes": 2037088
+    },
+    {
+      "name": "timezone",
+      "bytes": 805663
+    },
+    {
+      "name": "dart:_engine",
+      "bytes": 589934
+    },
+    {
+      "name": "flutter_localizations",
+      "bytes": 465530
+    },
+    {
+      "name": "super_editor",
+      "bytes": 416695
+    },
+    {
+      "name": "image",
+      "bytes": 316109
+    },
+    {
+      "name": "trina_grid",
+      "bytes": 247080
+    },
+    {
+      "name": "dart:core",
+      "bytes": 154727
+    },
+    {
+      "name": "flutter_widget_from_html_core",
+      "bytes": 135153
+    },
+    {
+      "name": "html",
+      "bytes": 92283
+    },
+    {
+      "name": "flutter_map",
+      "bytes": 81760
+    },
+    {
+      "name": "intl",
+      "bytes": 69843
+    },
+    {
+      "name": "vector_graphics_compiler",
+      "bytes": 69779
+    },
+    {
+      "name": "shadcn_ui",
+      "bytes": 67708
+    },
+    {
+      "name": "auto_route",
+      "bytes": 67186
+    },
+    {
+      "name": "dart:async",
+      "bytes": 59350
+    },
+    {
+      "name": "sembast",
+      "bytes": 52599
+    },
+    {
+      "name": "dart:_js_helper",
+      "bytes": 50611
+    },
+    {
+      "name": "csslib",
+      "bytes": 49995
+    },
+    {
+      "name": "dart:ui",
+      "bytes": 44943
+    },
+    {
+      "name": "mobile_scanner",
+      "bytes": 43932
+    },
+    {
+      "name": "just_audio",
+      "bytes": 42072
+    },
+    {
+      "name": "chewie",
+      "bytes": 40396
+    },
+    {
+      "name": "dart:collection",
+      "bytes": 40078
+    },
+    {
+      "name": "form_builder_validators",
+      "bytes": 38605
+    },
+    {
+      "name": "markdown",
+      "bytes": 36639
+    },
+    {
+      "name": "material_color_utilities",
+      "bytes": 33887
+    },
+    {
+      "name": "gotrue",
+      "bytes": 29779
+    },
+    {
+      "name": "dart:convert",
+      "bytes": 27708
+    },
+    {
+      "name": "dart:_internal",
+      "bytes": 25746
+    },
+    {
+      "name": "attributed_text",
+      "bytes": 23868
+    },
+    {
+      "name": "dart:_interceptors",
+      "bytes": 23160
+    },
+    {
+      "name": "select_dialog",
+      "bytes": 22813
+    },
+    {
+      "name": "archive",
+      "bytes": 22142
+    },
+    {
+      "name": "petitparser",
+      "bytes": 21450
+    },
+    {
+      "name": "idb_shim",
+      "bytes": 21091
+    },
+    {
+      "name": "flutter_form_builder",
+      "bytes": 20168
+    },
+    {
+      "name": "flutter_colorpicker",
+      "bytes": 20066
+    },
+    {
+      "name": "follow_the_leader",
+      "bytes": 18696
+    },
+    {
+      "name": "source_span",
+      "bytes": 17701
+    },
+    {
+      "name": "dart:_rti",
+      "bytes": 17675
+    },
+    {
+      "name": "xml",
+      "bytes": 17558
+    },
+    {
+      "name": "html2md",
+      "bytes": 17010
+    },
+    {
+      "name": "vector_math",
+      "bytes": 16844
+    },
+    {
+      "name": "http",
+      "bytes": 16587
+    },
+    {
+      "name": "super_clipboard",
+      "bytes": 16578
+    },
+    {
+      "name": "vector_graphics",
+      "bytes": 15943
+    },
+    {
+      "name": "rxdart",
+      "bytes": 15226
+    },
+    {
+      "name": "postgrest",
+      "bytes": 14548
+    },
+    {
+      "name": "just_audio_web",
+      "bytes": 14210
+    },
+    {
+      "name": "dart:io",
+      "bytes": 13909
+    },
+    {
+      "name": "flutter_cache_manager",
+      "bytes": 13566
+    },
+    {
+      "name": "multi_split_view",
+      "bytes": 13474
+    },
+    {
+      "name": "supabase_flutter",
+      "bytes": 12756
+    },
+    {
+      "name": "file",
+      "bytes": 12600
+    },
+    {
+      "name": "geobase",
+      "bytes": 12440
+    },
+    {
+      "name": "realtime_client",
+      "bytes": 12373
+    },
+    {
+      "name": "venue_seat_picker",
+      "bytes": 12341
+    },
+    {
+      "name": "just_audio_platform_interface",
+      "bytes": 11760
+    },
+    {
+      "name": "super_native_extensions",
+      "bytes": 11589
+    },
+    {
+      "name": "super_text_layout",
+      "bytes": 11494
+    },
+    {
+      "name": "collection",
+      "bytes": 11148
+    },
+    {
+      "name": "video_player",
+      "bytes": 10088
+    },
+    {
+      "name": "desktop_drop",
+      "bytes": 9825
+    },
+    {
+      "name": "path",
+      "bytes": 9710
+    },
+    {
+      "name": "maplibre_web",
+      "bytes": 9661
+    },
+    {
+      "name": "easy_localization",
+      "bytes": 9581
+    },
+    {
+      "name": "vector_graphics_codec",
+      "bytes": 9121
+    },
+    {
+      "name": "super_editor_clipboard",
+      "bytes": 8344
+    },
+    {
+      "name": "qr",
+      "bytes": 8301
+    },
+    {
+      "name": "timelines_plus",
+      "bytes": 7695
+    },
+    {
+      "name": "dart:_native_typed_data",
+      "bytes": 7410
+    },
+    {
+      "name": "path_parsing",
+      "bytes": 7298
+    },
+    {
+      "name": "characters",
+      "bytes": 6942
+    },
+    {
+      "name": "url_launcher_web",
+      "bytes": 6562
+    },
+    {
+      "name": "geolocator_platform_interface",
+      "bytes": 6346
+    },
+    {
+      "name": "flutter_svg",
+      "bytes": 6194
+    },
+    {
+      "name": "video_player_web",
+      "bytes": 5975
+    },
+    {
+      "name": "qr_flutter",
+      "bytes": 5867
+    },
+    {
+      "name": "audio_session",
+      "bytes": 5843
+    },
+    {
+      "name": "maplibre_platform_interface",
+      "bytes": 5759
+    },
+    {
+      "name": "file_picker",
+      "bytes": 5728
+    },
+    {
+      "name": "file_saver",
+      "bytes": 4986
+    },
+    {
+      "name": "badges",
+      "bytes": 4814
+    },
+    {
+      "name": "dart:ui_web",
+      "bytes": 4795
+    },
+    {
+      "name": "cached_network_image",
+      "bytes": 4640
+    },
+    {
+      "name": "flutter_secure_storage_web",
+      "bytes": 4377
+    },
+    {
+      "name": "octo_image",
+      "bytes": 4318
+    },
+    {
+      "name": "provider",
+      "bytes": 4208
+    },
+    {
+      "name": "fwfh_just_audio",
+      "bytes": 4171
+    },
+    {
+      "name": "async",
+      "bytes": 4128
+    },
+    {
+      "name": "geolocator_web",
+      "bytes": 4029
+    },
+    {
+      "name": "csv",
+      "bytes": 3959
+    },
+    {
+      "name": "supabase",
+      "bytes": 3958
+    },
+    {
+      "name": "storage_client",
+      "bytes": 3950
+    },
+    {
+      "name": "linkify",
+      "bytes": 3630
+    },
+    {
+      "name": "shared_preferences_web",
+      "bytes": 3619
+    },
+    {
+      "name": "flutter_widget_from_html",
+      "bytes": 3564
+    },
+    {
+      "name": "adaptive_theme",
+      "bytes": 3476
+    },
+    {
+      "name": "dart:js_util",
+      "bytes": 3375
+    },
+    {
+      "name": "crypto",
+      "bytes": 3178
+    },
+    {
+      "name": "functions_client",
+      "bytes": 3110
+    },
+    {
+      "name": "timeago",
+      "bytes": 3076
+    },
+    {
+      "name": "package_info_plus",
+      "bytes": 3074
+    },
+    {
+      "name": "flutter_map_animations",
+      "bytes": 3013
+    },
+    {
+      "name": "fwfh_chewie",
+      "bytes": 2977
+    },
+    {
+      "name": "fluttertoast",
+      "bytes": 2853
+    },
+    {
+      "name": "cross_file",
+      "bytes": 2791
+    },
+    {
+      "name": "dart:_http",
+      "bytes": 2748
+    },
+    {
+      "name": "dart:math",
+      "bytes": 2738
+    },
+    {
+      "name": "cached_network_image_web",
+      "bytes": 2660
+    },
+    {
+      "name": "http_parser",
+      "bytes": 2565
+    },
+    {
+      "name": "web_socket_channel",
+      "bytes": 2556
+    },
+    {
+      "name": "supabase_common",
+      "bytes": 2478
+    },
+    {
+      "name": "video_player_platform_interface",
+      "bytes": 2401
+    },
+    {
+      "name": "synchronized",
+      "bytes": 2398
+    },
+    {
+      "name": "uuid",
+      "bytes": 2141
+    },
+    {
+      "name": "other",
+      "bytes": 2129
+    },
+    {
+      "name": "url_launcher",
+      "bytes": 2120
+    },
+    {
+      "name": "shared_preferences",
+      "bytes": 2098
+    },
+    {
+      "name": "flutter_secure_storage",
+      "bytes": 1803
+    },
+    {
+      "name": "dart:developer",
+      "bytes": 1797
+    },
+    {
+      "name": "screenshot",
+      "bytes": 1776
+    },
+    {
+      "name": "latlong2",
+      "bytes": 1710
+    },
+    {
+      "name": "web",
+      "bytes": 1636
+    },
+    {
+      "name": "stream_channel",
+      "bytes": 1612
+    },
+    {
+      "name": "dart:_web_locale_keymap",
+      "bytes": 1599
+    },
+    {
+      "name": "flutter_web_plugins",
+      "bytes": 1573
+    },
+    {
+      "name": "logging",
+      "bytes": 1569
+    },
+    {
+      "name": "easy_logger",
+      "bytes": 1540
+    },
+    {
+      "name": "sembast_web",
+      "bytes": 1470
+    },
+    {
+      "name": "url_launcher_platform_interface",
+      "bytes": 1451
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "bytes": 1442
+    },
+    {
+      "name": "path_provider",
+      "bytes": 1239
+    },
+    {
+      "name": "string_scanner",
+      "bytes": 1034
+    },
+    {
+      "name": "package_info_plus_platform_interface",
+      "bytes": 998
+    },
+    {
+      "name": "connectivity_plus_platform_interface",
+      "bytes": 996
+    },
+    {
+      "name": "fwfh_webview",
+      "bytes": 977
+    },
+    {
+      "name": "pwa_install",
+      "bytes": 977
+    },
+    {
+      "name": "connectivity_plus",
+      "bytes": 974
+    },
+    {
+      "name": "dart:_late_helper",
+      "bytes": 965
+    },
+    {
+      "name": "platform",
+      "bytes": 884
+    },
+    {
+      "name": "flutter_secure_storage_platform_interface",
+      "bytes": 795
+    },
+    {
+      "name": "app_links_platform_interface",
+      "bytes": 717
+    },
+    {
+      "name": "yet_another_json_isolate",
+      "bytes": 707
+    },
+    {
+      "name": "fwfh_svg",
+      "bytes": 685
+    },
+    {
+      "name": "nested",
+      "bytes": 630
+    },
+    {
+      "name": "dart:typed_data",
+      "bytes": 596
+    },
+    {
+      "name": "overlord",
+      "bytes": 395
+    },
+    {
+      "name": "plugin_platform_interface",
+      "bytes": 357
+    },
+    {
+      "name": "dart:js_interop",
+      "bytes": 331
+    },
+    {
+      "name": "flutter_animate",
+      "bytes": 300
+    },
+    {
+      "name": "wakelock_plus_platform_interface",
+      "bytes": 273
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "bytes": 250
+    },
+    {
+      "name": "app_links_web",
+      "bytes": 247
+    },
+    {
+      "name": "dart:_js_primitives",
+      "bytes": 232
+    },
+    {
+      "name": "xdg_directories",
+      "bytes": 204
+    },
+    {
+      "name": "clock",
+      "bytes": 193
+    },
+    {
+      "name": "dart:js_interop_unsafe",
+      "bytes": 128
+    },
+    {
+      "name": "cached_network_image_platform_interface",
+      "bytes": 108
+    },
+    {
+      "name": "path_provider_windows",
+      "bytes": 95
+    },
+    {
+      "name": "app_links",
+      "bytes": 86
+    },
+    {
+      "name": "path_provider_linux",
+      "bytes": 76
+    },
+    {
+      "name": "dart:_foreign_helper",
+      "bytes": 73
+    },
+    {
+      "name": "device_info_plus_platform_interface",
+      "bytes": 73
+    },
+    {
+      "name": "pointer_interceptor_platform_interface",
+      "bytes": 73
+    },
+    {
+      "name": "webview_flutter_platform_interface",
+      "bytes": 73
+    },
+    {
+      "name": "wakelock_plus",
+      "bytes": 59
+    },
+    {
+      "name": "device_info_plus",
+      "bytes": 52
+    },
+    {
+      "name": "pointer_interceptor_web",
+      "bytes": 52
+    },
+    {
+      "name": "youtube_player_iframe_web",
+      "bytes": 52
+    },
+    {
+      "name": "fwfh_cached_network_image",
+      "bytes": 43
+    },
+    {
+      "name": "fwfh_url_launcher",
+      "bytes": 43
+    },
+    {
+      "name": "dart:_js_names",
+      "bytes": 38
+    },
+    {
+      "name": "dart:_js_types",
+      "bytes": 0
+    },
+    {
+      "name": "dart:_recipe_syntax",
+      "bytes": 0
+    },
+    {
+      "name": "dart:_web_test_fonts",
+      "bytes": 0
+    },
+    {
+      "name": "convert",
+      "bytes": 0
+    },
+    {
+      "name": "dio",
+      "bytes": 0
+    },
+    {
+      "name": "dio_web_adapter",
+      "bytes": 0
+    },
+    {
+      "name": "geolocator",
+      "bytes": 0
+    },
+    {
+      "name": "geolocator_android",
+      "bytes": 0
+    },
+    {
+      "name": "onesignal_flutter",
+      "bytes": 0
+    },
+    {
+      "name": "pointycastle",
+      "bytes": 0
+    },
+    {
+      "name": "term_glyph",
+      "bytes": 0
+    },
+    {
+      "name": "universal_platform",
+      "bytes": 0
+    }
+  ],
+  "features": [
+    {
+      "name": "components/eshop",
+      "bytes": 281943
+    },
+    {
+      "name": "components/forms",
+      "bytes": 273228
+    },
+    {
+      "name": "components/schedule",
+      "bytes": 169378
+    },
+    {
+      "name": "components/ticket_layout",
+      "bytes": 163167
+    },
+    {
+      "name": "components/map",
+      "bytes": 152085
+    },
+    {
+      "name": "components/users",
+      "bytes": 131729
+    },
+    {
+      "name": "components/activities",
+      "bytes": 116983
+    },
+    {
+      "name": "components/inventory",
+      "bytes": 83507
+    },
+    {
+      "name": "components/html",
+      "bytes": 82932
+    },
+    {
+      "name": "components/speakers",
+      "bytes": 70992
+    },
+    {
+      "name": "components/bank_accounts",
+      "bytes": 70703
+    },
+    {
+      "name": "data_services/client_sync",
+      "bytes": 66007
+    },
+    {
+      "name": "components/blueprint",
+      "bytes": 63260
+    },
+    {
+      "name": "components/features",
+      "bytes": 60849
+    },
+    {
+      "name": "components/unit",
+      "bytes": 50091
+    },
+    {
+      "name": "components/timeline",
+      "bytes": 48543
+    },
+    {
+      "name": "components/occasion",
+      "bytes": 47648
+    },
+    {
+      "name": "components/groups",
+      "bytes": 37384
+    },
+    {
+      "name": "components/information",
+      "bytes": 36242
+    },
+    {
+      "name": "app_router.gr.dart",
+      "bytes": 33833
+    },
+    {
+      "name": "components/single_data_grid",
+      "bytes": 32407
+    },
+    {
+      "name": "components/_shared",
+      "bytes": 29549
+    },
+    {
+      "name": "components/cleaning",
+      "bytes": 29207
+    },
+    {
+      "name": "components/news",
+      "bytes": 28549
+    },
+    {
+      "name": "components/reception",
+      "bytes": 27261
+    },
+    {
+      "name": "components/occasion_settings",
+      "bytes": 26597
+    },
+    {
+      "name": "components/scan",
+      "bytes": 26486
+    },
+    {
+      "name": "components/email_templates",
+      "bytes": 26266
+    },
+    {
+      "name": "components/icons",
+      "bytes": 22644
+    },
+    {
+      "name": "components/app_management",
+      "bytes": 21455
+    },
+    {
+      "name": "components/event_feedback",
+      "bytes": 21170
+    },
+    {
+      "name": "components/navigation",
+      "bytes": 17946
+    },
+    {
+      "name": "components/search",
+      "bytes": 17770
+    },
+    {
+      "name": "components/organization",
+      "bytes": 17479
+    },
+    {
+      "name": "components/import",
+      "bytes": 15781
+    },
+    {
+      "name": "components/occasion_services",
+      "bytes": 14699
+    },
+    {
+      "name": "components/images",
+      "bytes": 14576
+    },
+    {
+      "name": "components/email_delivery",
+      "bytes": 13316
+    },
+    {
+      "name": "components/timetable",
+      "bytes": 13059
+    },
+    {
+      "name": "main.dart",
+      "bytes": 12853
+    },
+    {
+      "name": "data_services/auth_service.dart",
+      "bytes": 12570
+    },
+    {
+      "name": "widgets/header",
+      "bytes": 10410
+    },
+    {
+      "name": "services/utilities_all.dart",
+      "bytes": 9448
+    },
+    {
+      "name": "data_services/offline_data_service.dart",
+      "bytes": 9292
+    },
+    {
+      "name": "router_service.dart",
+      "bytes": 7830
+    },
+    {
+      "name": "components/fonts",
+      "bytes": 7617
+    },
+    {
+      "name": "services/google_auth_service.dart",
+      "bytes": 7240
+    },
+    {
+      "name": "components/client_changes",
+      "bytes": 7046
+    },
+    {
+      "name": "services/notification_helper.dart",
+      "bytes": 5794
+    },
+    {
+      "name": "components/feedback",
+      "bytes": 5383
+    },
+    {
+      "name": "services/storage_helper.dart",
+      "bytes": 5067
+    },
+    {
+      "name": "services/dialog_helper_confirmation.dart",
+      "bytes": 5039
+    },
+    {
+      "name": "services/dialog_helper_progress.dart",
+      "bytes": 4449
+    },
+    {
+      "name": "data_services/rights_service.dart",
+      "bytes": 4004
+    },
+    {
+      "name": "widgets/time_data_range_picker.dart",
+      "bytes": 3990
+    },
+    {
+      "name": "services/dialog_helper_input.dart",
+      "bytes": 3818
+    },
+    {
+      "name": "widgets/drop_file.dart",
+      "bytes": 3755
+    },
+    {
+      "name": "widgets/time_travel_widget.dart",
+      "bytes": 3400
+    },
+    {
+      "name": "data_services/synchro_service.dart",
+      "bytes": 3336
+    },
+    {
+      "name": "widgets/app_dialog.dart",
+      "bytes": 3254
+    },
+    {
+      "name": "theme_config.dart",
+      "bytes": 3237
+    },
+    {
+      "name": "services/time_helper.dart",
+      "bytes": 2991
+    },
+    {
+      "name": "components/dialogs",
+      "bytes": 2832
+    },
+    {
+      "name": "widgets/buttons_helper.dart",
+      "bytes": 2619
+    },
+    {
+      "name": "services/backend_activation_service.dart",
+      "bytes": 2413
+    },
+    {
+      "name": "services/connectivity_service.dart",
+      "bytes": 2381
+    },
+    {
+      "name": "data_services/data_extensions.dart",
+      "bytes": 2312
+    },
+    {
+      "name": "services/dialog_helper.dart",
+      "bytes": 2280
+    },
+    {
+      "name": "services/exception_handler.dart",
+      "bytes": 2167
+    },
+    {
+      "name": "services/pwa_storage",
+      "bytes": 1982
+    },
+    {
+      "name": "widgets/info_tooltip_button.dart",
+      "bytes": 1958
+    },
+    {
+      "name": "data_services/update_service.dart",
+      "bytes": 1785
+    },
+    {
+      "name": "services/js",
+      "bytes": 1690
+    },
+    {
+      "name": "data_services/app_config_rpc.dart",
+      "bytes": 1252
+    },
+    {
+      "name": "widgets/detail_dialog.dart",
+      "bytes": 1113
+    },
+    {
+      "name": "widgets/password_field.dart",
+      "bytes": 952
+    },
+    {
+      "name": "components/offline",
+      "bytes": 901
+    },
+    {
+      "name": "app_router.dart",
+      "bytes": 799
+    },
+    {
+      "name": "services/installation_cutover_service.dart",
+      "bytes": 617
+    },
+    {
+      "name": "data_services/saved_program_pending_state.dart",
+      "bytes": 603
+    },
+    {
+      "name": "widgets/custom_three_state_checkbox.dart",
+      "bytes": 581
+    },
+    {
+      "name": "services/health_tracking_http_client.dart",
+      "bytes": 560
+    },
+    {
+      "name": "widgets/logo_widget.dart",
+      "bytes": 476
+    },
+    {
+      "name": "services/auth_session_storage.dart",
+      "bytes": 468
+    },
+    {
+      "name": "styles/styles.dart",
+      "bytes": 451
+    },
+    {
+      "name": "widgets/mouse_detector.dart",
+      "bytes": 449
+    },
+    {
+      "name": "widgets/internal_form_fields.dart",
+      "bytes": 426
+    },
+    {
+      "name": "widgets/pop_button.dart",
+      "bytes": 426
+    },
+    {
+      "name": "services/toast_helper.dart",
+      "bytes": 401
+    },
+    {
+      "name": "services/platform_helper.dart",
+      "bytes": 329
+    },
+    {
+      "name": "widgets/standard_dialog.dart",
+      "bytes": 320
+    },
+    {
+      "name": "services/google_auth_browser_web.dart",
+      "bytes": 300
+    },
+    {
+      "name": "services/auth_handoff_web.dart",
+      "bytes": 292
+    },
+    {
+      "name": "widgets/navigate_back_button.dart",
+      "bytes": 273
+    },
+    {
+      "name": "services/web_styles_helper.dart",
+      "bytes": 259
+    },
+    {
+      "name": "config/url_strategy_web.dart",
+      "bytes": 219
+    },
+    {
+      "name": "services/time_utils",
+      "bytes": 206
+    },
+    {
+      "name": "widgets/help_widget.dart",
+      "bytes": 192
+    },
+    {
+      "name": "data_services/auth_refresh_recovery.dart",
+      "bytes": 123
+    },
+    {
+      "name": "app_config.dart",
+      "bytes": 114
+    },
+    {
+      "name": "widgets/app_text_selection.dart",
+      "bytes": 113
+    },
+    {
+      "name": "styles/styles_config.dart",
+      "bytes": 107
+    },
+    {
+      "name": "services/external_url_browser_web.dart",
+      "bytes": 99
+    },
+    {
+      "name": "services/launch_url_service.dart",
+      "bytes": 77
+    },
+    {
+      "name": "services/web_bootstrap_bridge.dart",
+      "bytes": 28
+    },
+    {
+      "name": "database_tables/tb.dart",
+      "bytes": 0
+    },
+    {
+      "name": "services/app_logger.dart",
+      "bytes": 0
+    },
+    {
+      "name": "services/responsive_service.dart",
+      "bytes": 0
+    },
+    {
+      "name": "services/vibrate_service.dart",
+      "bytes": 0
+    },
+    {
+      "name": "startup/startup_failure_policy.dart",
+      "bytes": 0
+    }
+  ],
+  "largestLibraries": [
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_n.dart",
+      "bytes": 1354031
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_p.dart",
+      "bytes": 1006897
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_s.dart",
+      "bytes": 809100
+    },
+    {
+      "uri": "package:timezone/data/latest.dart",
+      "bytes": 799667
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_a.dart",
+      "bytes": 745547
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_b.dart",
+      "bytes": 663357
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_m.dart",
+      "bytes": 655120
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_c.dart",
+      "bytes": 593463
+    },
+    {
+      "uri": "dart:_engine",
+      "bytes": 589934
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_r.dart",
+      "bytes": 527537
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_l.dart",
+      "bytes": 429637
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_g.dart",
+      "bytes": 388311
+    },
+    {
+      "uri": "package:flutter_localizations/src/l10n/generated_material_localizations.dart",
+      "bytes": 331892
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_k.dart",
+      "bytes": 318838
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_t.dart",
+      "bytes": 308973
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_f.dart",
+      "bytes": 292296
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_i.dart",
+      "bytes": 258539
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_e.dart",
+      "bytes": 258505
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_d.dart",
+      "bytes": 217617
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_j.dart",
+      "bytes": 202394
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_h.dart",
+      "bytes": 196519
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_o.dart",
+      "bytes": 163419
+    },
+    {
+      "uri": "dart:core",
+      "bytes": 154727
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_y.dart",
+      "bytes": 133369
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_w.dart",
+      "bytes": 117583
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_v.dart",
+      "bytes": 115622
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_z.dart",
+      "bytes": 112850
+    },
+    {
+      "uri": "package:google_fonts/src/google_fonts_parts/part_u.dart",
+      "bytes": 101045
+    },
+    {
+      "uri": "package:flutter_localizations/src/l10n/generated_widgets_localizations.dart",
+      "bytes": 77903
+    },
+    {
+      "uri": "package:fstapp/components/activities/activities_content.dart",
+      "bytes": 59613
+    }
+  ]
+}

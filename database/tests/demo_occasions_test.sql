@@ -11,6 +11,14 @@ BEGIN
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  result:=public.get_demo_occasions(1);
  PERFORM assert_eq(jsonb_array_length(result->'items'),3,'three tenant demos');
+ PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(result->'items') item
+   JOIN public.occasions o ON o.id=(item->>'id')::bigint
+   WHERE item->>'start_time' IS DISTINCT FROM (to_jsonb(o.start_time)#>>'{}')
+     OR (item->'stats'->>'total')::bigint IS DISTINCT FROM
+       (SELECT count(*) FROM eshop.tickets WHERE occasion=o.id)
+     OR item->'data'->>'timezone' IS DISTINCT FROM o.data->>'timezone'
+     OR jsonb_typeof(item->'features') IS DISTINCT FROM 'array'),
+   'catalog cards use actual dates, features, timezone and counts');
  PERFORM assert_false((result->>'hasOwnWork')::boolean,'reader without Unit has no own work');
  PERFORM assert_true(public.can_read_demo_occasion(oc),'read without membership');
  PERFORM assert_false(public.get_is_editor_on_occasion(oc),'no write role');

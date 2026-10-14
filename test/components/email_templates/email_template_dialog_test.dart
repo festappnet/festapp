@@ -1,3 +1,7 @@
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/users/occasion_user_model.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +12,10 @@ import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
-Future<void> openTemplate(WidgetTester tester) async {
+Future<void> openTemplate(WidgetTester tester, {bool editable = true}) async {
+  RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+      unitUser: OccasionUserModel(isEditor: editable, isEditorView: !editable));
+  addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
       body: Builder(
@@ -38,6 +45,24 @@ Future<void> openTemplate(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('read-only templates disable subject, HTML and save',
+      (tester) async {
+    await openTemplate(tester, editable: false);
+    await tester.scrollUntilVisible(find.byType(EditableHtmlField), 150,
+        scrollable: find
+            .descendant(
+                of: find.byType(ListView), matching: find.byType(Scrollable))
+            .first);
+    expect(tester.widget<TextFormField>(find.byType(TextFormField)).enabled,
+        isFalse);
+    expect(
+        tester
+            .widget<EditableHtmlField>(find.byType(EditableHtmlField))
+            .enabled,
+        isFalse);
+    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull);
+  });
   for (final width in [320.0, 1200.0]) {
     testWidgets('email settings use the shared modal at width $width',
         (tester) async {
@@ -51,7 +76,8 @@ void main() {
       expect(find.byIcon(Icons.close), findsOneWidget);
       final footer = tester.getRect(find.byType(AppDialogActions));
       final save = tester.getRect(find.descendant(
-          of: find.byType(AppDialogActions), matching: find.byType(FilledButton)));
+          of: find.byType(AppDialogActions),
+          matching: find.byType(FilledButton)));
       expect(save.right, closeTo(footer.right, 1));
       expect(tester.takeException(), isNull);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);

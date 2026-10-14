@@ -52,3 +52,31 @@ Description columns retain the normal Edit button and RichHtmlEditorDialog, with
 The forward data migration 20261014200000_demo_example_details updates only organization 3's registered `.3` fixtures. Fully paid examples use sent state, while partial/unpaid cases remain pending; order 7 has an overdue deadline using the existing expired-order UI calculation. Payment totals and participant counts remain unchanged. Demo banks copy only the display number from the operator's configured Fio account; routing numbers, credentials and fetching remain disabled.
 
 The weekend form follows definition patterns from AKH forms 492 and 278, without reading any participant responses. It adds phone, origin/travel, birth year, dietary needs, notes, unselected acknowledgements and optional newsletter consent. The illustrated description covers arrival, lodging, meals, packing, price and illustrative cancellation terms, with an explicit no-save/no-email/no-payment demo statement. Its fictional lodge illustration is an original generated asset served from /demo-assets/weekend-nature.jpg. Source event and welcome information reuse the same description. Existing links, form IDs, products and occupancy are retained. Three targeted SQL suites pass, covering fixture integrity, permissions and copy/replay.
+
+
+## Shared cards, read-only controls and occasion draft lifetime
+
+Demo catalogue entries now use the actual OccasionEditCard: the normal date, title,
+statistics, overflow and chevron layout, with only a subtle tint and localized demo
+badge. Catalogue SQL returns real synthetic event dates, timezone, enabled feature
+flags and aggregate counts. The forward 20261014213000 migration replaces only
+get_demo_occasions; authentication and tenant filtering are unchanged.
+
+The floating panel sits 48 px above the viewport bottom and names the actual
+occasion. The Czech copy action is “Vytvořit kopii této akce”. Astra's four
+actual-widget renders cover desktop/320px in both themes.
+
+Form design/settings controls honor the existing write permission in ordinary
+read-only and demo views. HTML grid dialogs also honor the column's read-only
+flag. Email template subject, content, reset/save and banner uploads use the same
+occasion/order-editor or unit-editor permissions as their backend operations.
+
+Leaving an occasion for a Unit/root screen or another occasion disposes its
+nested editor widgets automatically. The active nested route is preserved for
+Back, which reconstructs clean editor state. Switching tabs within the same
+occasion retains drafts and object-level discard confirmation. A regression
+first failed on the old behavior, and the full targeted routing suite passes.
+
+The same release includes the isolated deferred form-font catalogue and checked
+web-font registration optimization described in the startup implementation note.
+No experimental route splitting or unrelated dirty-checkout changes are included.

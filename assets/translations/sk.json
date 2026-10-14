@@ -139,6 +139,7 @@
     "orderLabel": "Objednávka"
   },
   "FeatureFormSettings": {
+    "fontLoadFailed": "Písma sa nepodarilo načítať. Skúste to prosím znova.",
     "helperReminderEnabled": "Predvolené odosielanie pripomienok platby. Každý formulár môže mať vlastné nastavenie.",
     "helperDeadlineDuration": "Predvolený počet dní na zaplatenie novej objednávky. Prázdne pole znamená 7 dní.",
     "nonNegativeDays": "Zadajte nulu alebo kladný počet dní.",
@@ -790,7 +791,7 @@
     "badge": "Ukážka",
     "view": "Prezrieť ukážku",
     "readOnly": "Ukážková akcia - iba na prezeranie",
-    "copy": "Vytvoriť vlastnú kópiu",
+    "copy": "Vytvoriť kópiu tejto akcie",
     "copyHint": "Kópia bude skrytá, bez účastníkov a platieb. Pred otvorením skontrolujte termíny, ceny a vlastný účet.",
     "unavailable": "Ukážkové akcie sa nepodarilo načítať.",
     "noTarget": "Na kópiu potrebujete vlastnú organizáciu, ktorú môžete spravovať.",

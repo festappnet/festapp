@@ -142,6 +142,7 @@ class FormStrings {
       'FeatureFormSettings.typography'.tr(); // "Typography"
   static String get browseGoogleFonts =>
       'FeatureFormSettings.browseGoogleFonts'.tr(); // "Browse Google Fonts"
+  static String get fontLoadFailed => 'FeatureFormSettings.fontLoadFailed'.tr();
   static String get currentFont =>
       'FeatureFormSettings.currentFont'.tr(); // "Current Font: "
   static String get defaultFont =>

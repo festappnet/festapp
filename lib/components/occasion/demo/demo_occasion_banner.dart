@@ -21,7 +21,7 @@ class DemoOccasionOverlay extends StatelessWidget {
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
         child,
         const Positioned(
-            left: 0, right: 0, bottom: 64, child: DemoOccasionBanner()),
+            left: 0, right: 0, bottom: 48, child: DemoOccasionBanner()),
       ]);
 }
 
@@ -119,7 +119,14 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
                                       DemoOccasionNavigation.back(context),
                                   icon: const Icon(Icons.arrow_back),
                                   label: Text(DemoOccasionStrings.back)),
-                              Text(DemoOccasionStrings.readOnly,
+                              Text(
+                                  [
+                                    DemoOccasionStrings.badge,
+                                    RightsService.currentOccasion()?.title
+                                  ]
+                                      .where((part) =>
+                                          part != null && part.isNotEmpty)
+                                      .join(': '),
                                   style: TextStyle(color: colors.onSurface)),
                               FilledButton(
                                   onPressed: _busy ? null : _copy,

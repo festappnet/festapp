@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -31,6 +32,9 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
   bool _isLoading = false;
   bool _isExpanded = false;
 
+  bool get _canEdit => _isOccasion
+      ? RightsService.canEditOccasion() || RightsService.isOrderEditor()
+      : RightsService.isUnitEditor();
   bool get _isOccasion => widget.response.occasion != null;
   OccasionModel? get _occasion => widget.response.occasion;
   UnitModel get _unit => widget.response.unit;
@@ -63,6 +67,7 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
   }
 
   Future<void> _updateBanner(String? url) async {
+    if (!_canEdit) return;
     setState(() => _isLoading = true);
     try {
       await DbEmailTemplates.updateEntityEmailBanner(
@@ -235,10 +240,12 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                 ? const Center(
                                     child: CircularProgressIndicator())
                                 : ImageArea(
+                                    enabled: _canEdit,
                                     imageUrl: _overrideUrl,
                                     hint: EmailTemplatesStrings
                                         .settingsBannerHint,
                                     onFileSelected: (file) async {
+                                      if (!_canEdit) return null;
                                       Uint8List imageData =
                                           await file.readAsBytes();
                                       try {
@@ -249,7 +256,8 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                                     ? _occasion!.id
                                                     : null,
                                                 !_isOccasion ? _unit.id : null,
-                                                profile: ImageUploadProfile.banner);
+                                                profile:
+                                                    ImageUploadProfile.banner);
                                         await _updateBanner(publicUrl);
                                         return publicUrl;
                                       } catch (e) {
@@ -278,10 +286,12 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                     child: Center(
                                         child: CircularProgressIndicator()))
                                 : ImageArea(
+                                    enabled: _canEdit,
                                     imageUrl: _overrideUrl,
                                     hint: EmailTemplatesStrings
                                         .settingsBannerHint,
                                     onFileSelected: (file) async {
+                                      if (!_canEdit) return null;
                                       Uint8List imageData =
                                           await file.readAsBytes();
                                       try {
@@ -292,7 +302,8 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                                     ? _occasion!.id
                                                     : null,
                                                 !_isOccasion ? _unit.id : null,
-                                                profile: ImageUploadProfile.banner);
+                                                profile:
+                                                    ImageUploadProfile.banner);
                                         await _updateBanner(publicUrl);
                                         return publicUrl;
                                       } catch (e) {

@@ -3,6 +3,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
 import 'demo_occasion_navigation.dart';
+import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
 
 /// Both entry points share metadata loading and the tenant-wide, unfiltered
 /// own-work state. Search and the selected Unit never decide onboarding state.
@@ -76,75 +77,33 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
             const SizedBox(height: 8),
             Text(DemoOccasionStrings.intro),
             const SizedBox(height: 16),
-            LayoutBuilder(builder: (context, box) {
-              final width =
-                  box.maxWidth < 760 ? box.maxWidth : (box.maxWidth - 32) / 3;
-              return Wrap(spacing: 16, runSpacing: 16, children: [
-                for (final item in catalog.items)
-                  SizedBox(
-                      width: width,
-                      child: Card(
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (item.image != null)
-                                  Image.network(item.image!,
-                                      height: 120,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      excludeFromSemantics: true,
-                                      errorBuilder: (_, __, ___) => _art(item)),
-                                if (item.image == null) _art(item),
-                                Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(DemoOccasionStrings.badge,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelMedium),
-                                          const SizedBox(height: 8),
-                                          Text(item.title,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge),
-                                          const SizedBox(height: 8),
-                                          Text(item.description),
-                                          const SizedBox(height: 16),
-                                          FilledButton(
-                                              onPressed: () => _open(item),
-                                              child: Text(
-                                                  DemoOccasionStrings.view))
-                                        ]))
-                              ]))),
-              ]);
-            }),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 420,
+                mainAxisExtent: 110,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+              ),
+              itemCount: catalog.items.length,
+              itemBuilder: (context, index) {
+                final item = catalog.items[index];
+                final theme = Theme.of(context);
+                final base = theme.brightness == Brightness.dark
+                    ? Colors.grey[850]!
+                    : theme.cardColor;
+                return OccasionEditCard(
+                  occasion: item.occasion,
+                  onTap: () => _open(item),
+                  viewLabel: DemoOccasionStrings.view,
+                  badge: DemoOccasionStrings.badge,
+                  backgroundColor: Color.alphaBlend(
+                      theme.colorScheme.primary.withValues(alpha: .06), base),
+                );
+              },
+            ),
           ]
         ]));
-  }
-
-  Widget _art(DemoOccasion item) {
-    final color = switch (item.key) {
-      'ball' => const Color(0xff401529),
-      'concert' => const Color(0xff101820),
-      _ => const Color(0xff123b20),
-    };
-    return ExcludeSemantics(
-        child: Container(
-            height: 120,
-            width: double.infinity,
-            color: color,
-            alignment: Alignment.center,
-            child: Icon(
-                switch (item.key) {
-                  'ball' => Icons.nightlife,
-                  'concert' => Icons.music_note,
-                  _ => Icons.landscape
-                },
-                color: Colors.white,
-                size: 56)));
   }
 }

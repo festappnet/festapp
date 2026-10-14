@@ -1,0 +1,85 @@
+--- a/lib/components/forms/views/form_page.dart
++++ b/lib/components/forms/views/form_page.dart
+@@ -5,7 +5,7 @@
+ import 'package:fstapp/services/dialog_helper.dart';
+ import 'dart:async';
+ import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
+-import 'package:google_fonts/google_fonts.dart';
++import 'package:google_fonts/google_fonts.dart' deferred as font_runtime;
+ 
+ import 'package:auto_route/auto_route.dart';
+ import 'package:collection/collection.dart';
+@@ -516,7 +516,7 @@
+         try {
+           theme = theme.copyWith(
+             textTheme:
+-                GoogleFonts.getTextTheme(form.fontFamily!, theme.textTheme),
++                font_runtime.GoogleFonts.getTextTheme(form.fontFamily!, theme.textTheme),
+           );
+         } catch (e) {
+           AppLogger.error(e.toString());
+@@ -1078,6 +1078,7 @@
+   }
+ 
+   Future<void> loadData() async {
++    await font_runtime.loadLibrary();
+     setState(() {
+       _isLoading = true;
+       _formNotAvailable = false; // Reset the message flag
+--- a/lib/components/forms/views/form_design_settings.dart
++++ b/lib/components/forms/views/form_design_settings.dart
+@@ -3,7 +3,7 @@
+ import 'package:flutter/services.dart';
+ import 'package:fstapp/components/forms/models/form_model.dart';
+ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+-import 'package:google_fonts/google_fonts.dart';
++import 'package:google_fonts/google_fonts.dart' deferred as font_runtime;
+ import '../../fonts/font_family_picker.dart';
+ 
+ import '../form_strings.dart';
+@@ -20,6 +20,15 @@
+ }
+ 
+ class _FormDesignSettingsState extends State<FormDesignSettings> {
++  bool _auditFontsReady = false;
++  @override
++  void initState() {
++    super.initState();
++    font_runtime.loadLibrary().then((_) {
++      if (mounted) setState(() => _auditFontsReady = true);
++    });
++  }
++
+   bool _showAllPresets = false;
+ 
+   final List<Map<String, dynamic>> _colorPresets = [
+@@ -208,7 +217,7 @@
+   TextStyle? _getSafeFont(String? fontFamily) {
+     if (fontFamily == null || fontFamily.isEmpty) return null;
+     try {
+-      return GoogleFonts.getFont(fontFamily);
++      return font_runtime.GoogleFonts.getFont(fontFamily);
+     } catch (e) {
+       return null;
+     }
+@@ -216,6 +225,7 @@
+ 
+   @override
+   Widget build(BuildContext context) {
++    if (!_auditFontsReady) return const Center(child: CircularProgressIndicator());
+     return SingleChildScrollView(
+       padding: const EdgeInsets.all(16.0),
+       child: Column(
+@@ -339,10 +349,10 @@
+           const SizedBox(height: 8),
+           FontFamilyPicker(
+               value: widget.form.fontFamily,
+-              families: GoogleFonts.asMap().keys.toList(),
++              families: font_runtime.GoogleFonts.asMap().keys.toList(),
+               selectedStyle: _getSafeFont(widget.form.fontFamily),
+               onSelected: (value) async {
+-                if (value != null) GoogleFonts.getFont(value);
++                if (value != null) font_runtime.GoogleFonts.getFont(value);
+                 setState(() => widget.form.fontFamily = value);
+                 widget.onChanged();
+               }),

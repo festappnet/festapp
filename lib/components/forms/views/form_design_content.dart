@@ -40,7 +40,10 @@ class _FormDesignContentState extends State<FormDesignContent> {
         _form?.fontFamily,
         _form?.countdownStyle
       ];
-  bool get _hasChanges => _form != null && _snapshot.differs(_draft);
+  bool get _hasChanges =>
+      RightsService.canEditOccasion() &&
+      _form != null &&
+      _snapshot.differs(_draft);
 
   @override
   void didChangeDependencies() {
@@ -70,7 +73,7 @@ class _FormDesignContentState extends State<FormDesignContent> {
   }
 
   Future<void> _saveChanges() async {
-    if (_form == null) return;
+    if (_form == null || !RightsService.canEditOccasion()) return;
     try {
       await DbForms.updateForm(_form!);
       if (!mounted) return;
@@ -108,6 +111,7 @@ class _FormDesignContentState extends State<FormDesignContent> {
             child: FormDesignSettings(
               key: ObjectKey(_form),
               form: _form!,
+              enabled: RightsService.canEditOccasion(),
               onChanged: () => setState(() {}),
             )),
       ),

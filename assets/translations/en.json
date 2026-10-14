@@ -280,6 +280,7 @@
     "updatingUsers": "Updating users"
   },
   "FeatureFormSettings": {
+    "fontLoadFailed": "Could not load fonts. Please try again.",
     "title": "Form Settings",
     "formNotFound": "Form not found.",
     "labelFormTitle": "Form Title",
@@ -2717,7 +2718,7 @@
       "badge": "Demo",
       "view": "Explore demo",
       "readOnly": "Demo event - read only",
-      "copy": "Create your own copy",
+      "copy": "Create a copy of this event",
       "copyHint": "The copy starts hidden, without participants or payments. Check dates, prices and your bank account before opening it.",
       "unavailable": "Demo events could not be loaded.",
       "noTarget": "You need an organization you can manage to create a copy.",

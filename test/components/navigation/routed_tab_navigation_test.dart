@@ -31,19 +31,24 @@ class _LoadingCalendarRouter extends RootStackRouter {
   final ValueNotifier<List<DateTime>> days;
   _LoadingCalendarRouter(this.days);
   @override
-  List<AutoRoute> get routes => [AutoRoute(
-    path: '/calendar',
-    page: PageInfo('LoadingCalendar', builder: (_) => ValueListenableBuilder<List<DateTime>>(
-      valueListenable: days,
-      builder: (context, value, _) => RoutedDayTabs(
-        days: value,
-        child: Builder(builder: (context) => AnimatedBuilder(
-          animation: DefaultTabController.of(context),
-          builder: (context, _) => Text('DAY ${DefaultTabController.of(context).index}'),
-        )),
-      ),
-    )),
-  )];
+  List<AutoRoute> get routes => [
+        AutoRoute(
+          path: '/calendar',
+          page: PageInfo('LoadingCalendar',
+              builder: (_) => ValueListenableBuilder<List<DateTime>>(
+                    valueListenable: days,
+                    builder: (context, value, _) => RoutedDayTabs(
+                      days: value,
+                      child: Builder(
+                          builder: (context) => AnimatedBuilder(
+                                animation: DefaultTabController.of(context),
+                                builder: (context, _) => Text(
+                                    'DAY ${DefaultTabController.of(context).index}'),
+                              )),
+                    ),
+                  )),
+        )
+      ];
 }
 
 class _ActivityProbe extends StatefulWidget {
@@ -95,10 +100,13 @@ class _EarlyCompletionCalendarRouter extends FixtureRouter {
 }
 
 void main() {
-  testWidgets('loading calendar preserves the requested URL until real days arrive', (tester) async {
+  testWidgets(
+      'loading calendar preserves the requested URL until real days arrive',
+      (tester) async {
     final days = ValueNotifier<List<DateTime>>([]);
     final router = _LoadingCalendarRouter(days);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config(
+    await tester.pumpWidget(MaterialApp.router(
+        routerConfig: router.config(
       deepLinkBuilder: (_) => const DeepLink.path('/calendar?day=2026-11-14'),
     )));
     await tester.pump();
@@ -414,7 +422,8 @@ void main() {
       (tester) async {
     final router = FixtureRouter(Access());
     await mount(tester, router, '/occasion-a/reservations/forms/second/editor');
-    await tester.enterText(find.byKey(const Key('draft-field')), 'unsaved form');
+    await tester.enterText(
+        find.byKey(const Key('draft-field')), 'unsaved form');
     router.dirty = true;
     await tester.tap(find.text('Orders'));
     await tester.pumpAndSettle();
@@ -434,6 +443,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('unsaved form'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('leaving an occasion drops drafts without later prompts',
+      (tester) async {
+    final router = FixtureRouter(Access());
+    await mount(tester, router, '/occasion-a/reservations/forms/second/editor');
+    await tester.enterText(find.byKey(const Key('draft-field')), 'old draft');
+    router.dirty = true;
+    expect(
+        await RetainedDraftGuard.instance
+            .confirmPath(router, Uri.parse('/unit/1/edit/occasions')),
+        isTrue);
+    router.push(router.buildPageRoute('/unit/1/edit/occasions',
+        includePrefixMatches: false)!);
+    await tester.pumpAndSettle();
+    expect(router.prompts, 0);
+    expect(
+        await RetainedDraftGuard.instance.confirmPath(
+            router, Uri.parse('/occasion-b/reservations/orders/current')),
+        isTrue);
+    expect(router.prompts, 0, reason: 'No stale draft in the unit/root area');
+    router.dirty = false;
+    await router.maybePop();
+    await tester.pumpAndSettle();
+    expect(find.text('old draft'), findsNothing);
+    expect(find.byKey(const Key('draft-field')), findsOneWidget);
   });
   testWidgets('retained form subtabs preserve editor and cancelled leave',
       (tester) async {

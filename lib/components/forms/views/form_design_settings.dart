@@ -3,17 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/fonts/form_font_catalog.dart';
 import '../../fonts/font_family_picker.dart';
 
 import '../form_strings.dart';
 
 class FormDesignSettings extends StatefulWidget {
   final FormModel form;
+  final bool enabled;
   final VoidCallback onChanged;
+  final Future<FormFontCatalog> Function() loadFonts;
 
   const FormDesignSettings(
-      {super.key, required this.form, required this.onChanged});
+      {super.key,
+      required this.form,
+      required this.onChanged,
+      this.enabled = true,
+      this.loadFonts = FormFontCatalog.load});
 
   @override
   State<FormDesignSettings> createState() => _FormDesignSettingsState();
@@ -21,6 +28,13 @@ class FormDesignSettings extends StatefulWidget {
 
 class _FormDesignSettingsState extends State<FormDesignSettings> {
   bool _showAllPresets = false;
+  late Future<FormFontCatalog> _fonts;
+
+  @override
+  void initState() {
+    super.initState();
+    _fonts = Future<FormFontCatalog>.sync(widget.loadFonts);
+  }
 
   final List<Map<String, dynamic>> _colorPresets = [
     {
@@ -95,6 +109,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
 
   void _pickColor(BuildContext context, Color currentColor,
       Function(Color) onColorChanged) {
+    if (!widget.enabled) return;
     showDialog(
         context: context,
         builder: (context) {
@@ -198,6 +213,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
   }
 
   void _applyPreset(Map<String, dynamic> preset) {
+    if (!widget.enabled) return;
     setState(() {
       widget.form.primaryColor = preset['primary'];
       widget.form.secondaryColor = preset['secondary'];
@@ -205,10 +221,10 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
     });
   }
 
-  TextStyle? _getSafeFont(String? fontFamily) {
+  TextStyle? _getSafeFont(FormFontCatalog fonts, String? fontFamily) {
     if (fontFamily == null || fontFamily.isEmpty) return null;
     try {
-      return GoogleFonts.getFont(fontFamily);
+      return fonts.getFont(fontFamily);
     } catch (e) {
       return null;
     }
@@ -225,12 +241,14 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
             title: Text(FormStrings.labelCardDesign),
             subtitle: Text(FormStrings.subtitleCardDesign),
             value: widget.form.isCardDesign,
-            onChanged: (value) {
-              setState(() {
-                widget.form.isCardDesign = value;
-                widget.onChanged();
-              });
-            },
+            onChanged: widget.enabled
+                ? (value) {
+                    setState(() {
+                      widget.form.isCardDesign = value;
+                      widget.onChanged();
+                    });
+                  }
+                : null,
             contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 16),
@@ -246,7 +264,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
               ...(_showAllPresets ? _colorPresets : _colorPresets.take(6))
                   .map((preset) {
                 return InkWell(
-                  onTap: () => _applyPreset(preset),
+                  onTap: widget.enabled ? () => _applyPreset(preset) : null,
                   child: Column(
                     children: [
                       Container(
@@ -337,15 +355,41 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           Text(FormStrings.typography,
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          FontFamilyPicker(
-              value: widget.form.fontFamily,
-              families: GoogleFonts.asMap().keys.toList(),
-              selectedStyle: _getSafeFont(widget.form.fontFamily),
-              onSelected: (value) async {
-                if (value != null) GoogleFonts.getFont(value);
-                setState(() => widget.form.fontFamily = value);
-                widget.onChanged();
-              }),
+          FutureBuilder<FormFontCatalog>(
+            future: _fonts,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  children: [
+                    Text(FormStrings.fontLoadFailed),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _fonts = Future<FormFontCatalog>.sync(widget.loadFonts);
+                      }),
+                      child: Text(CommonStrings.retry),
+                    ),
+                  ],
+                );
+              }
+              final fonts = snapshot.data;
+              if (fonts == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return FontFamilyPicker(
+                enabled: widget.enabled,
+                value: widget.form.fontFamily,
+                families: fonts.families,
+                selectedStyle: _getSafeFont(fonts, widget.form.fontFamily),
+                onSelected: (value) async {
+                  if (value != null) fonts.getFont(value);
+                  setState(() => widget.form.fontFamily = value);
+                  widget.onChanged();
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -357,7 +401,9 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
       children: [
         Expanded(child: Text(label)),
         GestureDetector(
-          onTap: () => _pickColor(context, color, onColorChanged),
+          onTap: widget.enabled
+              ? () => _pickColor(context, color, onColorChanged)
+              : null,
           child: Container(
             width: 40,
             height: 40,
@@ -376,7 +422,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: FormStrings.resetToDefault,
-            onPressed: onClear,
+            onPressed: widget.enabled ? onClear : null,
           ),
       ],
     );

@@ -8,7 +8,7 @@ import 'package:fstapp/components/forms/models/holder_models/form_ticket_model.d
 import 'package:fstapp/services/dialog_helper.dart';
 import 'dart:async';
 import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:fstapp/components/fonts/form_font_catalog.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
@@ -72,6 +72,8 @@ class _FormPageState extends State<FormPage> {
   FormModel? _changedCapacityForm;
   bool _isLoading = false;
   bool _formNotAvailable = false;
+  FormFontCatalog? _fonts;
+  bool _fontLoadFailed = false;
 
   Map<String, dynamic>? formResult;
   FormHolder? formHolder;
@@ -525,11 +527,10 @@ class _FormPageState extends State<FormPage> {
     var form = this.form; // Use class member
 
     if (form != null) {
-      if (form.fontFamily != null) {
+      if (form.fontFamily != null && _fonts != null) {
         try {
           theme = theme.copyWith(
-            textTheme:
-                GoogleFonts.getTextTheme(form.fontFamily!, theme.textTheme),
+            textTheme: _fonts!.getTextTheme(form.fontFamily!, theme.textTheme),
           );
         } catch (e) {
           AppLogger.error(e.toString());
@@ -659,6 +660,20 @@ class _FormPageState extends State<FormPage> {
 
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_fontLoadFailed) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(FormStrings.fontLoadFailed),
+              TextButton(onPressed: loadData, child: Text(CommonStrings.retry)),
+            ],
+          ),
+        ),
+      );
     }
 
     if (_demoCompleted) {
@@ -1126,6 +1141,7 @@ class _FormPageState extends State<FormPage> {
   Future<void> loadData() async {
     setState(() {
       _isLoading = true;
+      _fontLoadFailed = false;
       _formNotAvailable = false; // Reset the message flag
     });
 
@@ -1178,6 +1194,23 @@ class _FormPageState extends State<FormPage> {
 
       if (widget.formLink != null)
         await RightsService.updateAppData(formLink: widget.formLink);
+
+      _fonts = null;
+      if (form!.fontFamily?.isNotEmpty == true) {
+        try {
+          _fonts = await FormFontCatalog.load();
+        } catch (error) {
+          AppLogger.error('Form font catalog loading failed: $error');
+          if (mounted) {
+            setState(() {
+              _fontLoadFailed = true;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+      if (!mounted) return;
 
       formHolder = FormHolder.fromFormFieldModel(form!);
       if (_offerBundle != null) {

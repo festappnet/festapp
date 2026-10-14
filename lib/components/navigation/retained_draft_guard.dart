@@ -20,6 +20,7 @@ class RetainedDraftGuard extends AutoRouteGuard {
         continue;
       final owner = draft._owner;
       if (owner == null) continue;
+      if (_leavesOccasion(owner, target)) continue;
       if (_preservesOwner(owner, target)) continue;
       if (!await draft._confirm()) {
         resolver.next(false);
@@ -42,6 +43,7 @@ class RetainedDraftGuard extends AutoRouteGuard {
         continue;
       final owner = draft._owner;
       if (owner == null) continue;
+      if (_leavesOccasion(owner, routes)) continue;
       if (_preservesOwner(owner, routes)) continue;
       if (!await draft._confirm()) {
         for (final previous in approved) {
@@ -53,6 +55,21 @@ class RetainedDraftGuard extends AutoRouteGuard {
       approved.add(draft);
     }
     return true;
+  }
+
+  // Drafts belong to one occasion. Its administration boundary disposes
+  // editors when that occasion leaves the active root route.
+  static bool _leavesOccasion(RouteData owner, Iterable<RouteMatch> routes) {
+    final occasions = _ancestors(owner).where((route) =>
+        const {'AdminRoute', 'ReservationsRoute'}.contains(route.name));
+    if (occasions.isEmpty) return false; // Unit editors retain their own guard.
+    final occasion = occasions.first;
+    final params = <String, dynamic>{
+      for (final route in routes) ...route.params.rawMap
+    };
+    return !routes.any((route) => route.name == occasion.name) ||
+        !occasion.inheritedPathParams.rawMap.entries
+            .every((entry) => params[entry.key] == entry.value);
   }
 
   /// Guard callbacks and URL preflight must agree about retained tab owners.

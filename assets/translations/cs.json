@@ -280,6 +280,7 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "fontLoadFailed": "Písma se nepodařilo načíst. Zkuste to prosím znovu.",
     "title": "Nastavení formuláře",
     "formNotFound": "Formulář nenalezen.",
     "labelFormTitle": "Název formuláře",
@@ -2718,7 +2719,7 @@
       "badge": "Ukázka",
       "view": "Prohlédnout ukázku",
       "readOnly": "Ukázková akce - pouze k prohlížení",
-      "copy": "Vytvořit vlastní kopii",
+      "copy": "Vytvořit kopii této akce",
       "copyHint": "Kopie bude skrytá, bez účastníků a plateb. Před otevřením zkontrolujte termíny, ceny a vlastní účet.",
       "unavailable": "Ukázkové akce se nepodařilo načíst.",
       "noTarget": "Pro kopii potřebujete vlastní organizaci, kterou můžete spravovat.",

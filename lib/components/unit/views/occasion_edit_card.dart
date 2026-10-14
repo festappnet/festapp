@@ -13,7 +13,10 @@ import '../../_shared/common_strings.dart';
 class OccasionEditCard extends StatelessWidget {
   final OccasionModel occasion;
   final VoidCallback onTap;
-  final VoidCallback onCreateCopy;
+  final VoidCallback? onCreateCopy;
+  final Color? backgroundColor;
+  final String? badge;
+  final String? viewLabel;
   final bool isPresent;
   final bool isAppLanding;
   final VoidCallback? onSetAppLanding;
@@ -22,7 +25,10 @@ class OccasionEditCard extends StatelessWidget {
     super.key,
     required this.occasion,
     required this.onTap,
-    required this.onCreateCopy,
+    this.onCreateCopy,
+    this.backgroundColor,
+    this.badge,
+    this.viewLabel,
     this.isPresent = false,
     this.isAppLanding = false,
     this.onSetAppLanding,
@@ -57,7 +63,8 @@ class OccasionEditCard extends StatelessWidget {
     final isDarkMode = theme.brightness == Brightness.dark;
     final onSurfaceColor = theme.colorScheme.onSurface;
 
-    final cardColor = isDarkMode ? Colors.grey[850] : theme.cardColor;
+    final cardColor =
+        backgroundColor ?? (isDarkMode ? Colors.grey[850] : theme.cardColor);
 
     // Use a glowing primary color border for present events, otherwise a standard border.
     final borderColor = isPresent
@@ -85,22 +92,26 @@ class OccasionEditCard extends StatelessWidget {
                 icon: Icon(Icons.more_vert,
                     color: onSurfaceColor.withOpacity(0.7)),
                 onSelected: (value) {
+                  if (value == "view") onTap();
                   if (value == "app_landing") onSetAppLanding?.call();
                   if (value == "create_copy") {
-                    onCreateCopy();
+                    onCreateCopy?.call();
                   }
                 },
                 itemBuilder: (BuildContext context) => [
+                  if (viewLabel != null)
+                    PopupMenuItem(value: 'view', child: Text(viewLabel!)),
                   if (onSetAppLanding != null)
                     PopupMenuItem(
                         value: 'app_landing',
                         child: Text(isAppLanding
                             ? UnitStrings.clearAppLanding
                             : UnitStrings.setAppLanding)),
-                  PopupMenuItem(
-                    value: "create_copy",
-                    child: Text(FormStrings.createCopy),
-                  ),
+                  if (onCreateCopy != null)
+                    PopupMenuItem(
+                      value: "create_copy",
+                      child: Text(FormStrings.createCopy),
+                    ),
                 ],
               ),
               const SizedBox(width: 4),
@@ -109,16 +120,27 @@ class OccasionEditCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      TimeHelper.getMinimalisticDateRange(
-                          context, occasion.startTime!, occasion.endTime!),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Row(children: [
+                      if (occasion.startTime != null &&
+                          occasion.endTime != null)
+                        Expanded(
+                            child: Text(
+                          TimeHelper.getMinimalisticDateRange(
+                              context, occasion.startTime!, occasion.endTime!),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                      if (badge != null) ...[
+                        const SizedBox(width: 8),
+                        Text(badge!,
+                            style: theme.textTheme.labelSmall
+                                ?.copyWith(color: theme.colorScheme.primary)),
+                      ],
+                    ]),
                     const SizedBox(height: 4),
                     Text(
                       occasion.title ?? '',
