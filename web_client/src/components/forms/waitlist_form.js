@@ -63,10 +63,10 @@ export function renderWaitlistControls(page, model) {
     section.className = 'form-registration-status';
     section.setAttribute('aria-live', 'polite');
     const capacity = model.capacity;
-    if (!model.offerBundle && capacity?.showRemaining && Number.isFinite(capacity.limit) && Number.isFinite(capacity.occupiedPeople)) {
+    if (!model.offerBundle && model.registrationMode !== 'waitlist' && capacity?.showRemaining && Number.isFinite(capacity.limit) && Number.isFinite(capacity.occupiedPeople)) {
         const occupancy = document.createElement('p');
         occupancy.className = 'form-occupancy';
-        occupancy.textContent = S.text('occupancy').replace('{occupied}', capacity.occupiedPeople + (capacity.offeredPlaces ?? 0)).replace('{capacity}', capacity.limit);
+        occupancy.textContent = S.text('occupancy').replace('{occupied}', capacity.occupiedPeople + (capacity.offeredPlaces ?? 0) + (capacity.heldForWaiting ?? 0)).replace('{capacity}', capacity.limit);
         section.appendChild(occupancy);
     }
     const message = document.createElement('p');

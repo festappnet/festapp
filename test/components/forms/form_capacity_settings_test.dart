@@ -125,6 +125,29 @@ void main() {
     expect(form.participantCapacity, 100);
   });
 
+  testWidgets(
+      'waiting priority reservations count toward occupancy and minimum capacity',
+      (tester) async {
+    final form = FormModel(
+        participantCapacity: 11,
+        waitlistEnabled: true,
+        capacity: FormCapacityModel.fromJson({
+          'limit': 11,
+          'occupiedPeople': 9,
+          'offeredPlaces': 0,
+          'waitingPeople': 1,
+          'heldForWaiting': 1
+        }));
+    expect(form.capacity!.occupiedPlaces, 10);
+    await open(tester, form);
+    await tester.enterText(find.byType(TextFormField).first, '9');
+    await tester.tap(find.text(WaitlistStrings.applySettings));
+    await tester.pumpAndSettle();
+    expect(find.text(WaitlistStrings.text('CAPACITY_BELOW_COMMITTED')),
+        findsOneWidget);
+    expect(form.participantCapacity, 11);
+  });
+
   testWidgets('unlimited switch removes capacity and waitlist together',
       (tester) async {
     final form = FormModel(participantCapacity: 100, waitlistEnabled: true);

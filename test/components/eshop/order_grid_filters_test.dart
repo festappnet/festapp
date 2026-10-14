@@ -15,6 +15,29 @@ import 'package:fstapp/components/single_data_grid/single_data_grid_controller.d
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 
 void main() {
+  test('active filter excludes waiting registrations and retains active offers',
+      () {
+    TrinaRow row(String lifecycle) {
+      final order = OrderModel.fromJson({
+        'id': 5,
+        'state': 'waitlisted',
+        'isActive': true,
+        'waitlistSummary': {
+          'counts': {lifecycle: 1},
+          'isActive': true,
+          'pendingPlaces': lifecycle == 'offered' ? 1 : 0
+        }
+      });
+      return TrinaRow(
+          cells: {EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: order)});
+    }
+
+    expect(OrderGridFilters.orderIsActive(row('waiting')), isFalse);
+    expect(OrderGridFilters.orderIsActive(row('offered')), isTrue);
+    expect(OrderGridFilters.orderIsActive(row('offer_expired')), isFalse);
+  });
+
+
   test('valid tickets exclude waiting rows and waiting orders without hiding active waiting orders', () {
     TrinaRow row(String ticketState, String orderState) => TrinaRow(cells: {
       EshopColumns.TICKET_STATE: TrinaCell(value: '$ticketState;Label'),

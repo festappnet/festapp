@@ -654,7 +654,7 @@
     "OFFER_EXPIRED": "Dieses Angebot ist abgelaufen.",
     "OFFER_CHANGED": "Das Angebot hat sich geändert. Aktualisieren und bestätigen Sie es erneut.",
     "OFFER_SLOT_ALREADY_RESOLVED": "Diese Angebotsplätze wurden bereits bearbeitet.",
-    "CAPACITY_BELOW_COMMITTED": "Die Kapazität darf nicht unter der Zahl aufgenommener Anmeldungen und gültiger Angebote liegen.",
+    "CAPACITY_BELOW_COMMITTED": "Die Kapazität darf nicht unter der Anzahl belegter und reservierter Plätze liegen.",
     "WAITLIST_HAS_ACTIVE_ENTRIES": "Aktiv wartende Anmeldungen oder Angebote verhindern diese Änderung.",
     "BLUEPRINT_CONFLICT": "Ein Sitzplan lässt sich nicht mit Personenkapazität oder Warteliste kombinieren.",
     "PRODUCT_CAPACITY_EXCEEDED": "Ein ausgewähltes Produkt ist nicht mehr in der erforderlichen Menge verfügbar. Wählen Sie ein anderes Produkt.",

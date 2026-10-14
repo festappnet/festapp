@@ -42,23 +42,78 @@ bool canSaveOrderGridChanges({
 }) =>
     isOrderEditor || isUnitManager || isUnitEditor;
 
-/// Toolbar presence follows actual server-owned active waitlist rows, not form configuration.
-bool hasActiveWaitlistOrders(Iterable<OrderModel> orders) =>
-    orders.any((order) => order.isWaitlisted && order.isActive);
-
-List<OrderModel> checkedWaitingOrdersForOffers(
+/// Waiting registrations remain available for offers when the Active filter hides them.
+List<OrderModel> waitingOrdersForOffers(
         SingleDataGridController grid, List<FormModel> forms) =>
-    grid.visibleCheckedRows
+    grid.rows
         .map(OrderGridFilters.order)
         .whereType<OrderModel>()
         .where((order) =>
             order.isWaitlisted &&
-            order.isActive &&
             order.allows('offer') &&
             (order.waitlistSummary?.counts['waiting'] ?? 0) > 0 &&
-            forms
-                .any((form) => form.id == order.formId && form.waitlistEnabled))
+            forms.any((form) =>
+                form.id == order.formId &&
+                form.waitlistEnabled &&
+                form.capacity?.canSendOffers == true &&
+                form.capacity!.offerablePlaces > 0))
         .toList();
+
+List<OrderModel> checkedWaitingOrdersForOffers(
+    SingleDataGridController grid, List<FormModel> forms) {
+  final eligible = waitingOrdersForOffers(grid, forms);
+  final checked = grid.visibleCheckedRows.map(OrderGridFilters.order).toSet();
+  return eligible.where(checked.contains).toList();
+}
+
+int availableWaitlistOffers(
+    List<FormModel> forms, Iterable<OrderModel> orders) {
+  var total = 0;
+  for (final form in forms) {
+    final capacity = form.capacity;
+    if (!form.waitlistEnabled || capacity?.canSendOffers != true) {
+      continue;
+    }
+    final waiting = orders
+        .where((order) =>
+            order.formId == form.id &&
+            order.isWaitlisted &&
+            order.allows('offer'))
+        .fold<int>(
+            0,
+            (sum, order) =>
+                sum + (order.waitlistSummary?.counts['waiting'] ?? 0));
+    final available = capacity!.offerablePlaces;
+    total += waiting < available ? waiting : available;
+  }
+  return total;
+}
+
+Widget waitlistOffersToolbarButton(
+  BuildContext context,
+  SingleDataGridController<OrderModel> grid, {
+  required List<FormModel> forms,
+  required Future<void> Function() onRefresh,
+  Widget Function(FormModel, List<OrderModel>, Set<int>)? offerDialogBuilder,
+}) {
+  final count = availableWaitlistOffers(
+      forms, grid.rows.map(OrderGridFilters.order).whereType<OrderModel>());
+  if (!RightsService.isEditorOrder() || count == 0) {
+    return const SizedBox.shrink();
+  }
+  final action = createWaitlistOffersAction(context,
+      forms: () => forms,
+      controller: () => grid,
+      onRefresh: onRefresh,
+      offerDialogBuilder: offerDialogBuilder);
+  return Padding(
+    padding: const EdgeInsetsDirectional.only(start: 8),
+    child: ElevatedButton(
+      onPressed: action.isEnabled!() ? () => action.action!(grid, null) : null,
+      child: Text('${WaitlistStrings.send} ($count)'),
+    ),
+  );
+}
 
 /// The grid and widget tests use the same selection and canonical offer orchestration.
 DataGridAction createWaitlistOffersAction(
@@ -70,22 +125,28 @@ DataGridAction createWaitlistOffersAction(
 }) =>
     DataGridAction(
       name: WaitlistStrings.send,
-      requiresSelection: true,
+      requiresSelection: false,
       isEnabled: () {
         final grid = controller();
         return RightsService.isEditorOrder() &&
             grid != null &&
             grid.isGridLoaded &&
             !grid.hasUnsavedChanges &&
-            checkedWaitingOrdersForOffers(grid, forms()).isNotEmpty;
+            availableWaitlistOffers(
+                    forms(), waitingOrdersForOffers(grid, forms())) >
+                0;
       },
       action: (SingleDataGridController grid, [_]) async {
         if (!RightsService.isEditorOrder() || grid.hasUnsavedChanges) return;
-        final selected = checkedWaitingOrdersForOffers(grid, forms());
+        final checked = checkedWaitingOrdersForOffers(grid, forms());
+        final selected = checked.isNotEmpty
+            ? checked
+            : waitingOrdersForOffers(grid, forms());
         if (selected.isEmpty) return;
         final eligible = forms()
             .where((form) =>
                 form.waitlistEnabled &&
+                form.capacity?.canSendOffers == true &&
                 selected.any((order) => order.formId == form.id))
             .toList();
         final chosen = eligible.length == 1
@@ -220,19 +281,19 @@ class _OrdersContentState extends State<OrdersContent> {
     // Create the controller with the final column list
     List<OrderModel>? firstLoadOrders = bundle.orders;
 
-    bool hasWaitingRows() => hasActiveWaitlistOrders(bundle.orders);
-    final sendOffersAction = createWaitlistOffersAction(context,
-        forms: () => forms,
-        controller: () => controller,
-        onRefresh: refreshData);
-
     final newController = SingleDataGridController<OrderModel>(
       context: context,
       additionalFilterEnabled: true,
       additionalRowPredicate: OrderGridFilters.orderIsActive,
-      headerFilterBuilder: (context, controller) =>
-          OrderGridFilters.filterButton(context, controller,
+      headerFilterBuilder: (context, grid) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          OrderGridFilters.filterButton(context, grid,
               label: WaitlistStrings.text('active')),
+          waitlistOffersToolbarButton(context, grid,
+              forms: forms, onRefresh: refreshData),
+        ],
+      ),
       loadData: () async {
         if (firstLoadOrders != null) {
           final orders = firstLoadOrders;
@@ -245,11 +306,6 @@ class _OrdersContentState extends State<OrdersContent> {
         bundle = newBundle;
         forms = newBundle.forms;
         if (mounted && controller != null) updateWaitlistColumn(controller!);
-        final actions = controller?.headerChildren;
-        actions?.removeWhere((action) => identical(action, sendOffersAction));
-        if (RightsService.isEditorOrder() && hasWaitingRows()) {
-          actions?.insert(0, sendOffersAction);
-        }
         return newBundle.orders;
       },
       fromPlutoJson: OrderModel.fromPlutoJson,
@@ -268,7 +324,6 @@ class _OrdersContentState extends State<OrdersContent> {
         isAddActionPossible: () => false,
       ),
       headerChildren: [
-        if (RightsService.isEditorOrder() && hasWaitingRows()) sendOffersAction,
         DataGridAction(
           name: CommonStrings.cancel,
           requiresSelection: true,

@@ -654,7 +654,7 @@
     "OFFER_EXPIRED": "Ta oferta wygasła.",
     "OFFER_CHANGED": "Oferta się zmieniła. Odśwież ją i potwierdź ponownie.",
     "OFFER_SLOT_ALREADY_RESOLVED": "Te miejsca z oferty zostały już rozpatrzone.",
-    "CAPACITY_BELOW_COMMITTED": "Limit nie może być niższy od liczby przyjętych zgłoszeń i ważnych ofert.",
+    "CAPACITY_BELOW_COMMITTED": "Pojemność nie może być mniejsza niż liczba zajętych i zarezerwowanych miejsc.",
     "WAITLIST_HAS_ACTIVE_ENTRIES": "Aktywne zgłoszenia oczekujące lub oferty blokują tę zmianę.",
     "BLUEPRINT_CONFLICT": "Planu miejsc nie można łączyć z limitem zgłoszeń ani listą rezerwową.",
     "PRODUCT_CAPACITY_EXCEEDED": "Wybrany produkt nie jest już dostępny w wymaganej ilości. Wybierz inny produkt.",
