@@ -11,7 +11,11 @@ The existing authenticated `bank-sync-reconcile` endpoint also accepts a scoped
 never introduces another bank polling or payment matching engine. Only the
 configured organization's linked connections are observed. The service-only
 `configure_bank_sync_health_monitor(organization_id)` installs its five-minute
-cron using the canonical email worker origin. Production activation for this
+cron using the canonical email worker origin when pg_cron is installed in that
+same database. On the self-hosted backend pg_cron lives in the separate postgres
+control database: install the same job there with
+`automation/banksync/install_health_monitor.sql`, supplying the verified runtime
+database and selected organization as psql variables. Production activation for this
 release is limited to organization 3 (festapptickets).
 
 For enabled connections, a bank error, missing token/email configuration, disabled
