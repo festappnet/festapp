@@ -202,10 +202,9 @@ class _HtmlViewState extends State<HtmlView> {
       },
     );
 
-    return widget.isSelectable
+    // Join the enclosing page selection instead of creating a nested region.
+    return widget.isSelectable && SelectionContainer.maybeOf(context) == null
         ? SelectionArea(
-            focusNode: FocusNode(),
-            selectionControls: materialTextSelectionControls,
             child: content,
           )
         : content;
