@@ -235,12 +235,13 @@
 
   function getActiveLanguage() {
     // Prefer the language the user explicitly picked inside the app
-    // (Flutter easy_localization → flutter.Locale, web client → locale).
+    // (Flutter easy_localization → flutter.locale, web client → locale).
     // Fall back to the browser's navigator.language only if nothing was
     // saved — otherwise a Czech user with English browser settings would
     // see the banner in English.
     try {
-      const flutterRaw = localStorage.getItem('flutter.Locale');
+      const flutterRaw = localStorage.getItem('flutter.locale') ||
+        localStorage.getItem('flutter.Locale');
       if (flutterRaw) {
         // easy_localization stores e.g. '"cs"', 'cs', or '{"languageCode":"cs"}'
         const trimmed = flutterRaw.replace(/^"+|"+$/g, '');

@@ -4,17 +4,17 @@ import 'package:flutter/material.dart';
 class StartupFailureScreen extends StatelessWidget {
   final VoidCallback? onRetry;
   final String phase;
+  final String language;
   final bool storageOpenFailed;
   const StartupFailureScreen(
       {super.key,
       this.onRetry,
       required this.phase,
+      required this.language,
       this.storageOpenFailed = false});
 
   @override
   Widget build(BuildContext context) {
-    final language =
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
     final copy = switch (language) {
       'cs' => (
           'Aplikaci se nepodařilo spustit. Zkuste ji znovu otevřít.',
