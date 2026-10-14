@@ -94,15 +94,17 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
     if (controller == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    final capacity = _capacityForm?.capacity;
+    final canSendOffers =
+        _capacityForm?.waitlistEnabled == true && RightsService.isEditorOrder();
     return Column(children: [
-      if (_capacityForm?.capacity case final capacity?)
+      if (capacity != null && (capacity.enabled || canSendOffers))
         Padding(
             padding: const EdgeInsets.all(16),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (capacity.enabled) WaitlistCapacitySummary(capacity: capacity),
-              if (_capacityForm!.waitlistEnabled &&
-                  RightsService.isEditorOrder())
+              if (canSendOffers)
                 TextButton(
                     onPressed: () async {
                       await showDialog(
@@ -122,7 +124,6 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
     EshopColumns.ORDER_SYMBOL,
     EshopColumns.TICKET_PRODUCTS_EXTENDED,
     EshopColumns.ORDER_STATE,
-    EshopColumns.ORDER_WAITLIST,
     EshopColumns.RESPONSES
   ];
 }
