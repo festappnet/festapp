@@ -8,6 +8,13 @@ on:
       - 'database/functions/eshop_waitlist/**'
       - 'database/functions/eshop_forms/**'
       - 'database/tests/eshop_orders/required*test.sql'
+      - 'database/tests/emails/paid_then_manual_ticket_delivery_test.sql'
+      - 'supabase/functions/send-tickets/**'
+      - 'supabase/functions/preview-ticket-layout/**'
+      - 'supabase/functions/_shared/**'
+      - 'lib/components/eshop/db_tickets.dart'
+      - 'lib/components/eshop/views/orders_content.dart'
+      - 'test/components/eshop/ticket_delivery_request_test.dart'
       - 'supabase/migrations/**'
       - 'automation/bootstrap_local_db.sh'
       - 'automation/local_db/**'
@@ -44,6 +51,34 @@ jobs:
       - run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
       - run: bash automation/bootstrap_local_db.sh
       - name: Database contract and anonymous checkout
-        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test
+        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test
       - name: Click a seat and complete checkout in a real browser
         run: npm --prefix web_client run test:seat-checkout-browser
+
+  ticket-preview-and-delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FVM_CACHE_PATH: /tmp/festapp-fvm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: '2.9.0'
+      - name: Ticket preview colors and first-delivery intent
+        run: deno test --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts
+      - id: sdk
+        run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.sdk.outputs.version }}
+          cache: true
+      - name: Use the installed SDK through FVM
+        run: |
+          dart pub global activate fvm 4.1.2
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          mkdir -p "$FVM_CACHE_PATH/versions"
+          ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
+      - run: fvm flutter pub get
+      - name: First delivery and resend client requests
+        run: fvm flutter test --no-pub test/components/eshop/ticket_delivery_request_test.dart
