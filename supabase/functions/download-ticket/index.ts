@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     const { ticket, occasion } = result;
 
     const authorizationHeader = req.headers.get("Authorization");
-    await authorizeRequest({ requestSecret, authorizationHeader, occasionId: occasion.id });
+    await authorizeRequest({ requestSecret, authorizationHeader, occasionId: occasion.id, permission: "readOrder" });
 
     const render = await prepareTicketRenderer(occasion, ticket, result.order_data);
     const { bytes: pdfBytes } = await render(ticket);

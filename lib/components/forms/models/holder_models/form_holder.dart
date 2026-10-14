@@ -16,6 +16,7 @@ import 'package:fstapp/components/_shared/person_fields_strings.dart';
 import 'ticket_holder.dart';
 
 class FormHolderController {
+  final bool demoSimulation;
   final String? secret;
   final int? blueprintId;
   final GlobalKey<FormBuilderState> globalKey;
@@ -27,6 +28,7 @@ class FormHolderController {
   void Function(List<BlueprintSeat>?)? onCloseSeatReservation;
 
   FormHolderController({
+    this.demoSimulation = false,
     this.secret,
     this.blueprintId,
     required this.globalKey,

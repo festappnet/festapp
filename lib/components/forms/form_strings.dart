@@ -2,6 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get demoNotice => 'DemoOccasions.formNotice'.tr();
+  static String get demoComplete => 'DemoOccasions.formComplete'.tr();
+  static String get demoResult => 'DemoOccasions.formResult'.tr();
   static String get formPaymentDefaultsHelp =>
       'FeatureFormSettings.formPaymentDefaultsHelp'.tr();
   static String get occasionPaymentDefaultsHelp =>

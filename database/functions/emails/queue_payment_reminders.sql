@@ -3,6 +3,7 @@ RETURNS VOID
 SET search_path = public, extensions AS $$
 -- The interval argument is retained for callers; persisted form/occasion settings own scheduling.
 BEGIN
+  IF public.is_demo_occasion(p_occasion_id) THEN RETURN; END IF;
 
   UPDATE public.email_messages SET workflow_state='cancelled',last_error='reminder_superseded',lease_token=NULL,lease_until=NULL
   WHERE (occasion=p_occasion_id OR order_id IN (SELECT id FROM eshop.orders WHERE payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id))) AND message_kind='order_reminder' AND workflow_state IN ('pending','retry_wait','blocked','preparing');

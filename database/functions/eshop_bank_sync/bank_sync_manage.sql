@@ -71,6 +71,7 @@ DECLARE v_op eshop.bank_sync_operations%ROWTYPE; v_account eshop.bank_accounts%R
 BEGIN
   PERFORM public.require_service_role();
   SELECT * INTO STRICT v_op FROM eshop.bank_sync_operations WHERE id=p_operation_id AND state='running';
+  PERFORM public.check_bank_account_writable(v_op.bank_account_id);
   IF v_op.operation<>'create' THEN RAISE EXCEPTION 'BANK_SYNC_PROVISION_OPERATION_REQUIRED'; END IF;
   SELECT * INTO STRICT v_account FROM eshop.bank_accounts WHERE id=v_op.bank_account_id FOR UPDATE;
   -- Activation adopts historical movement identities under the account lock.

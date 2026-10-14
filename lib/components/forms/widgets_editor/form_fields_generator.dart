@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -53,7 +54,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
 
   @override
   Widget build(BuildContext context) {
-    return _buildFieldsList();
+    return IgnorePointer(ignoring: RightsService.isDemoReadOnly,
+        child: _buildFieldsList());
   }
 
   Widget _buildFieldsList() {
@@ -288,7 +290,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         ],
         _buildAnswerWidget(context, field, true),
         const SizedBox(height: 16),
-        _FieldControlsBar(
+        if (!RightsService.isDemoReadOnly) _FieldControlsBar(
           controls: [
             if (!isTicket && field.type != FormHelper.fieldTypeEmail)
               SizedBox(

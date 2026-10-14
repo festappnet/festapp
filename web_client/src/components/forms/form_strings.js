@@ -1,6 +1,10 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class FormStrings {
+    static get demoNotice() { return LocalizationService.tr('DemoOccasions.formNotice'); }
+    static get demoComplete() { return LocalizationService.tr('DemoOccasions.formComplete'); }
+    static get demoResult() { return LocalizationService.tr('DemoOccasions.formResult'); }
+
     // Currency Selector
     static get currencySelectLabel() { return LocalizationService.tr('FormsFeature.inWhatCurrency'); }
 

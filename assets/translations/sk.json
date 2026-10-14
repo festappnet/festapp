@@ -778,5 +778,22 @@
       "waitlistOffer_title": "Ponuka miest náhradníkovi",
       "waitlistOffer_description": "Ponuka miest s osobným odkazom a termínom. Produkty sa vyberajú podľa aktuálnej dostupnosti."
     }
+  },
+  "DemoOccasions": {
+    "formNotice": "Ukážkový formulár. Prihlášku si môžete vyskúšať; neuloží sa, žiadny e-mail neodošleme a platba sa nespustí.",
+    "formComplete": "Ukážková prihláška dokončená",
+    "formResult": "Toto bol ukážkový formulár. Prihláška sa neuložila, žiadny e-mail sme neodoslali a platba nebola spustená.",
+
+    "heading": "Pozrite sa, čo môžete vytvoriť",
+    "intro": "Prezrite si hotovú akciu a vytvorte si vlastnú kópiu.",
+    "inspiration": "Inšpirujte sa ukážkovými akciami",
+    "badge": "Ukážka",
+    "view": "Prezrieť ukážku",
+    "readOnly": "Ukážková akcia - iba na prezeranie",
+    "copy": "Vytvoriť vlastnú kópiu",
+    "copyHint": "Kópia bude skrytá, bez účastníkov a platieb. Pred otvorením skontrolujte termíny, ceny a vlastný účet.",
+    "unavailable": "Ukážkové akcie sa nepodarilo načítať.",
+    "noTarget": "Na kópiu potrebujete vlastnú organizáciu, ktorú môžete spravovať.",
+    "back": "Späť k vlastným akciám"
   }
 }

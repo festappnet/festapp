@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:async';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'dart:convert';
@@ -182,6 +183,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   /// Localized plain-text explanations, keyed by column field.
   final Map<String, String> columnHelp;
 
+  bool get isDemoReadOnly => RightsService.isDemoReadOnly;
   String firstColumnTypeId = "delete0";
 
   SingleDataGridController({
@@ -249,6 +251,11 @@ class SingleDataGridController<T extends ITrinaRowModel> {
 
   /// Applies [rows] to the grid and inserts the first column if needed.
   void applyDataToGrid() async {
+    if (isDemoReadOnly) {
+      for (final column in columns) {
+        column.readOnly = true;
+      }
+    }
     final sorted = additionalRowPredicate == null
         ? null
         : stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
@@ -291,6 +298,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
             ? 50
             : 100,
         renderer: (rendererContext) {
+          if (isDemoReadOnly) return const SizedBox.shrink();
           List<Widget> rowChildren = [];
           if (firstColumnType != DataGridFirstColumn.check) {
             rowChildren.add(

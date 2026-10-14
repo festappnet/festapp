@@ -1,3 +1,4 @@
+import { FormStrings } from './form_strings.js';
 import { WaitlistStrings } from './waitlist_strings.js';
 import { observeOrderDelivery } from './order_delivery_status.js';
 import { OrdersStrings } from '../eshop/orders_strings.js';
@@ -7,6 +8,7 @@ import QRCode from 'qrcode';
 export class OrderResult {
     static render(container, success, resultData, formModel, onClose) {
         container._orderDeliveryObserver?.stop();
+        if (formModel.demoSimulation) resultData = {};
         // Prepare Data
         const isWaitlist = formModel.registrationMode === 'waitlist';
         const tone = formModel.communicationTone; 
@@ -18,7 +20,10 @@ export class OrderResult {
         let icon = 'check_circle';
         let colorClass = 'success-color'; 
 
-        if (success) {
+        if (success && formModel.demoSimulation) {
+            title = FormStrings.demoComplete;
+            subtitle = FormStrings.demoResult;
+        } else if (success) {
             title = isWaitlist ? WaitlistStrings.text('registered', tone) : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
             subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus', tone)} ${WaitlistStrings.text('resultNextStep', tone)}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');

@@ -20,7 +20,8 @@ BEGIN
   FROM public.occasions o WHERE o.id = p_occasion;
   v_unit := COALESCE(p_target_unit, v_source_unit);
   IF v_actor IS NULL OR v_source_unit IS NULL OR v_unit IS NULL
-     OR NOT public.get_is_manager_on_unit(v_source_unit)
+     OR NOT public.can_copy_occasion_source(p_occasion)
+     OR public.is_demo_unit(v_unit)
      OR NOT public.get_is_manager_on_unit(v_unit)
      OR NOT EXISTS (SELECT 1 FROM public.units WHERE id=v_unit AND organization=v_org) THEN
     RAISE insufficient_privilege USING MESSAGE = 'unit manager required';
@@ -102,12 +103,13 @@ SET search_path = public, extensions AS $$
 DECLARE v_org bigint; v_unit bigint;
 BEGIN
   SELECT organization, unit INTO v_org, v_unit FROM public.occasions WHERE id=p_occasion;
-  IF auth.uid() IS NULL OR v_unit IS NULL OR NOT public.get_is_manager_on_unit(v_unit) THEN
+  IF auth.uid() IS NULL OR v_unit IS NULL
+     OR NOT public.can_copy_occasion_source(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='source unit manager required';
   END IF;
   RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object(
     'id', u.id, 'title', u.title, 'organization', u.organization) ORDER BY u.title,u.id)
-    FROM public.units u WHERE u.organization=v_org AND public.get_is_manager_on_unit(u.id)), '[]'::jsonb);
+    FROM public.units u WHERE u.organization=v_org AND public.get_is_manager_on_unit(u.id) AND NOT public.is_demo_unit(u.id)), '[]'::jsonb);
 END; $$;
 REVOKE ALL ON FUNCTION public.get_occasion_copy_units(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_occasion_copy_units(bigint) TO authenticated;

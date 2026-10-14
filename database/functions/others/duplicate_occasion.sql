@@ -17,12 +17,15 @@ DECLARE
   v_source_unit bigint;
   v_target_unit bigint;
   v_organization bigint;
+  v_demo boolean;
 BEGIN
   SELECT unit, organization INTO v_source_unit, v_organization
   FROM public.occasions WHERE id = oc;
   v_target_unit := COALESCE(p_target_unit, v_source_unit);
+  v_demo := public.is_demo_occasion(oc);
   IF auth.uid() IS NULL OR v_source_unit IS NULL OR v_target_unit IS NULL
-     OR NOT public.get_is_manager_on_unit(v_source_unit)
+     OR NOT public.can_copy_occasion_source(oc)
+     OR public.is_demo_unit(v_target_unit)
      OR NOT public.get_is_manager_on_unit(v_target_unit)
      OR NOT EXISTS (SELECT 1 FROM public.units
        WHERE id = v_target_unit AND organization = v_organization) THEN
@@ -35,9 +38,10 @@ BEGIN
   ------------------------------------------------------------------
   INSERT INTO public.occasions
     (created_at, updated_at, data, is_hidden, is_open, is_promoted, start_time, end_time, link, title, organization, services, unit, features, occasion_hidden, description)
-  SELECT now(), now(), data, is_hidden, is_open, is_promoted, start_time, end_time,
+  SELECT now(), now(), data, CASE WHEN v_demo THEN true ELSE is_hidden END,
+         CASE WHEN v_demo THEN false ELSE is_open END, CASE WHEN v_demo THEN false ELSE is_promoted END, start_time, end_time,
          link || '-copy-' || substring(md5(random()::text) from 1 for 8) AS link,
-         title || ' (Copy)', v_organization, services, v_target_unit, features, occasion_hidden, description
+         title || ' (Copy)', v_organization, services, v_target_unit, features, CASE WHEN v_demo THEN NULL ELSE occasion_hidden END, description
   FROM public.occasions
   WHERE id = oc
   RETURNING id INTO new_occ;
@@ -55,6 +59,10 @@ BEGIN
   CREATE TEMP TABLE tmp_product_types (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_products (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_spots (old_id bigint, new_id bigint) ON COMMIT DROP;
+  CREATE TEMP TABLE tmp_inventory_pools (old_id bigint, new_id bigint) ON COMMIT DROP;
+  CREATE TEMP TABLE tmp_inventory_contexts (old_id bigint, new_id bigint) ON COMMIT DROP;
+  CREATE TEMP TABLE tmp_resources (old_id bigint, new_id bigint) ON COMMIT DROP;
+  CREATE TEMP TABLE tmp_resource_slots (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_forms (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_information_hidden (old_id bigint, new_id bigint) ON COMMIT DROP;
 
@@ -74,7 +82,7 @@ BEGIN
   FOR rec IN
     SELECT id, data
     FROM public.information_hidden
-    WHERE occasion = oc
+    WHERE occasion = oc AND NOT v_demo
   LOOP
     INSERT INTO public.information_hidden (created_at, data, occasion)
     VALUES (now(), rec.data, new_occ)
@@ -214,7 +222,7 @@ BEGIN
 
   -- 5c. Products – adjust product_type via mapping.
   FOR rec IN
-    SELECT id, title, description, price, data, product_type, is_hidden, currency_code, "order"
+    SELECT id, title, description, price, data, product_type, is_hidden, currency_code, "order", maximum
     FROM eshop.products
     WHERE occasion = oc
   LOOP
@@ -223,18 +231,52 @@ BEGIN
       WHERE t.old_id = rec.product_type;
 
     INSERT INTO eshop.products
-      (created_at, updated_at, title, description, price, data, product_type, occasion, is_hidden, currency_code, "order")
+      (created_at, updated_at, title, description, price, data, product_type, occasion, is_hidden, currency_code, "order", maximum)
     VALUES (now(), now(), rec.title, rec.description, rec.price, rec.data,
-            COALESCE(new_pt_id, rec.product_type), new_occ, rec.is_hidden, rec.currency_code, rec."order")
+            COALESCE(new_pt_id, rec.product_type), new_occ, rec.is_hidden, rec.currency_code, rec."order", rec.maximum)
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_products (old_id, new_id)
     VALUES (rec.id, v_new_id);
   END LOOP;
 
+  -- Inventory configuration is copied, never its allocations or reservations.
+  FOR rec IN SELECT * FROM public.inventory_pools WHERE occasion=oc LOOP
+    INSERT INTO public.inventory_pools(title,description,type,data,sellable_capacity,occasion)
+    VALUES(rec.title,rec.description,rec.type,rec.data,rec.sellable_capacity,new_occ)
+    RETURNING id INTO v_new_id;
+    INSERT INTO tmp_inventory_pools VALUES(rec.id,v_new_id);
+  END LOOP;
+  FOR rec IN SELECT c.* FROM public.inventory_contexts c
+    JOIN tmp_inventory_pools m ON m.old_id=c.inventory_pool LOOP
+    INSERT INTO public.inventory_contexts(inventory_pool,block_date,title,"order",data)
+    VALUES((SELECT new_id FROM tmp_inventory_pools WHERE old_id=rec.inventory_pool),
+      rec.block_date,rec.title,rec."order",rec.data) RETURNING id INTO v_new_id;
+    INSERT INTO tmp_inventory_contexts VALUES(rec.id,v_new_id);
+  END LOOP;
+  FOR rec IN SELECT r.* FROM public.resources r
+    JOIN tmp_inventory_pools m ON m.old_id=r.inventory_pool LOOP
+    INSERT INTO public.resources(title,description,capacity,booking_rules,inventory_pool,place,occasion,unit,data)
+    VALUES(rec.title,rec.description,rec.capacity,rec.booking_rules,
+      (SELECT new_id FROM tmp_inventory_pools WHERE old_id=rec.inventory_pool),
+      (SELECT new_id FROM tmp_places WHERE old_id=rec.place),new_occ,v_target_unit,rec.data)
+    RETURNING id INTO v_new_id;
+    INSERT INTO tmp_resources VALUES(rec.id,v_new_id);
+  END LOOP;
+  FOR rec IN SELECT r.* FROM public.resource_slots r JOIN tmp_resources m ON m.old_id=r.resource LOOP
+    INSERT INTO public.resource_slots(resource,title,data)
+    VALUES((SELECT new_id FROM tmp_resources WHERE old_id=rec.resource),rec.title,rec.data)
+    RETURNING id INTO v_new_id;
+    INSERT INTO tmp_resource_slots VALUES(rec.id,v_new_id);
+  END LOOP;
+  INSERT INTO eshop.product_inventory_contexts(product,inventory_context,quantity)
+    SELECT p.new_id,c.new_id,x.quantity FROM eshop.product_inventory_contexts x
+    JOIN tmp_products p ON p.old_id=x.product
+    JOIN tmp_inventory_contexts c ON c.old_id=x.inventory_context;
+
   -- 5d. Spots – adjust foreign keys for product and blueprint.
   FOR rec IN
-    SELECT id, product, secret, secret_expiration_time, title, order_product_ticket, blueprint
+    SELECT id, product, secret, secret_expiration_time, title, order_product_ticket, blueprint, inventory_context, resource, resource_slot
     FROM eshop.spots
     WHERE occasion = oc
   LOOP
@@ -247,8 +289,11 @@ BEGIN
       WHERE t.old_id = rec.blueprint;
 
     INSERT INTO eshop.spots
-      (created_at, occasion, product, updated_at, secret, secret_expiration_time, title, order_product_ticket, blueprint)
-    VALUES (now(), new_occ, COALESCE(new_product_id, rec.product), now(), null, null, rec.title, null, COALESCE(new_bp_id, rec.blueprint))
+      (created_at, occasion, product, updated_at, secret, secret_expiration_time, title, order_product_ticket, blueprint, inventory_context, resource, resource_slot)
+    VALUES (now(), new_occ, COALESCE(new_product_id, rec.product), now(), null, null, rec.title, null, COALESCE(new_bp_id, rec.blueprint),
+      (SELECT new_id FROM tmp_inventory_contexts WHERE old_id=rec.inventory_context),
+      (SELECT new_id FROM tmp_resources WHERE old_id=rec.resource),
+      (SELECT new_id FROM tmp_resource_slots WHERE old_id=rec.resource_slot))
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_spots (old_id, new_id)
@@ -294,8 +339,7 @@ BEGIN
 
   -- 7a. Forms – adjust the blueprint foreign key via mapping and update the link to be unique.
   FOR rec IN
-    SELECT id, data, key, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, title,
-      participant_capacity, waitlist_enabled, show_remaining_capacity, waitlist_offer_duration_seconds
+    SELECT id, data, key, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, title, participant_capacity, waitlist_enabled, show_remaining_capacity, waitlist_offer_duration_seconds
     FROM public.forms
     WHERE occasion = oc
   LOOP
@@ -306,12 +350,12 @@ BEGIN
     INSERT INTO public.forms
       (created_at, data, key, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, updated_at, title, participant_capacity, waitlist_enabled, show_remaining_capacity, waitlist_offer_duration_seconds)
     VALUES (now(), rec.data, uuid_generate_v4(), new_occ, rec.type,
-            CASE WHEN v_source_unit = v_target_unit OR EXISTS (
+            CASE WHEN v_demo THEN NULL WHEN v_source_unit = v_target_unit OR EXISTS (
               SELECT 1 FROM eshop.unit_bank_accounts uba
               WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)
               THEN rec.bank_account ELSE NULL END,
             rec.deadline_duration_seconds,
-            CASE WHEN v_source_unit <> v_target_unit AND rec.bank_account IS NOT NULL
+            CASE WHEN v_demo THEN false WHEN v_source_unit <> v_target_unit AND rec.bank_account IS NOT NULL
               AND NOT EXISTS (SELECT 1 FROM eshop.unit_bank_accounts uba
                 WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)
               THEN false ELSE rec.is_open END,
@@ -348,7 +392,8 @@ BEGIN
     FROM jsonb_array_elements(o.features) WITH ORDINALITY x(f,n)) WHERE o.id=new_occ;
   PERFORM public.validate_ticket_layout_references(new_occ,f->'layout') FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=new_occ AND f->>'code'='ticket' AND f ? 'layout';
   DROP TABLE tmp_places, tmp_events, tmp_exclusive_groups, tmp_blueprints,
-    tmp_product_types, tmp_products, tmp_spots, tmp_forms, tmp_information_hidden;
+    tmp_product_types, tmp_products, tmp_spots, tmp_forms, tmp_information_hidden,
+    tmp_inventory_pools,tmp_inventory_contexts,tmp_resources,tmp_resource_slots;
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;

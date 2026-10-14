@@ -279,7 +279,7 @@ export class FormSession extends EventTarget {
             
             // Sync with Backend: Deselect Spot if present
             // If skipBackendSync is true (optimistic update from toggleSpot), we rely on toggleSpot's queue.
-            if (!skipBackendSync && ticket.spot) {
+            if (!this.formModel.demoSimulation && !skipBackendSync && ticket.spot) {
                 try {
                     await DbForms.selectSpot(this.formModel.key, this.formModel.secret, ticket.spot, false);
                 } catch (e) {
@@ -387,7 +387,8 @@ export class FormSession extends EventTarget {
 
                  // 2. Sync with Backend
                  // ALWAYS use the latest secret from the model (which might have been updated by previous queue task)
-                 const resultData = await DbForms.selectSpot(this.formModel.key, currentSecret, spotId, isSelecting);
+                 const resultData = this.formModel.demoSimulation ? {}
+                     : await DbForms.selectSpot(this.formModel.key, currentSecret, spotId, isSelecting);
                  
                  return resultData;
             } catch (e) {

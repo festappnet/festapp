@@ -5,6 +5,7 @@ RETURNS void LANGUAGE plpgsql SECURITY INVOKER
 SET search_path = public, extensions AS $$
 DECLARE v_state text;
 BEGIN
+  PERFORM public.check_occasion_writable((SELECT occasion FROM eshop.orders WHERE id=p_order));
   PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
   SELECT state INTO v_state FROM eshop.orders WHERE id=p_order FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND' USING ERRCODE='P0002'; END IF;

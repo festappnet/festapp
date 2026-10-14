@@ -137,6 +137,10 @@ BEGIN
     IF occasionId IS NOT NULL THEN
         -- Process occasion-related queries only if an occasion was determined
 
+        IF public.is_demo_occasion(occasionId) AND NOT public.can_read_demo_occasion(occasionId) THEN
+            RETURN jsonb_build_object('code',403,'message','Demo access denied');
+        END IF;
+
         -- Get the is_open status for the occasion
         SELECT is_open
           INTO is_open_bool
@@ -191,8 +195,8 @@ BEGIN
         END IF;
 
         -- If the occasion user record is not found and the user is authenticated, add the user to the occasion
-        IF occasion_user IS NULL AND current_user_id IS NOT NULL THEN
-            IF is_app_supported_bool IS TRUE 
+        IF occasion_user IS NULL AND current_user_id IS NOT NULL AND NOT public.is_demo_occasion(occasionId) THEN
+            IF is_app_supported_bool IS TRUE
                OR (unit_user.is_manager IS TRUE OR unit_user.is_editor IS TRUE OR unit_user.is_editor_view IS TRUE) THEN
                 PERFORM add_user_to_occasion(occasionId, current_user_id);
 
@@ -264,10 +268,10 @@ BEGIN
             -- AND where they have privileged access (manager, editor, etc.)
             SELECT json_agg(
                 json_build_object(
-                    'id', o.id, 
-                    'title', o.title, 
-                    'link', o.link, 
-                    'start_time', o.start_time, 
+                    'id', o.id,
+                    'title', o.title,
+                    'link', o.link,
+                    'start_time', o.start_time,
                     'end_time', o.end_time
                 ) ORDER BY o.start_time DESC
             )
@@ -279,10 +283,10 @@ BEGIN
                  WHERE ou."user" = current_user_id
                  AND o.unit = occasion_unit
                  AND (
-                     ou.is_manager IS TRUE 
-                     OR ou.is_editor IS TRUE 
-                     OR ou.is_editor_view IS TRUE 
-                     OR ou.is_editor_order IS TRUE 
+                     ou.is_manager IS TRUE
+                     OR ou.is_editor IS TRUE
+                     OR ou.is_editor_view IS TRUE
+                     OR ou.is_editor_order IS TRUE
                      OR ou.is_editor_order_view IS TRUE
                  )
                  ORDER BY o.start_time DESC
@@ -297,24 +301,24 @@ BEGIN
     FROM public.units u
     WHERE u.organization = org_id AND (
         EXISTS (
-            SELECT 1 
-            FROM public.unit_users uu 
-            WHERE uu.unit = u.id 
-            AND uu."user" = current_user_id 
+            SELECT 1
+            FROM public.unit_users uu
+            WHERE uu.unit = u.id
+            AND uu."user" = current_user_id
             AND uu.is_editor_view = TRUE
         )
         OR
         EXISTS (
-            SELECT 1 
+            SELECT 1
             FROM public.occasions o
             JOIN public.occasion_users ou ON ou.occasion = o.id
-            WHERE o.unit = u.id 
+            WHERE o.unit = u.id
             AND ou."user" = current_user_id
             AND (
-                ou.is_manager IS TRUE 
-                OR ou.is_editor IS TRUE 
-                OR ou.is_editor_view IS TRUE 
-                OR ou.is_editor_order IS TRUE 
+                ou.is_manager IS TRUE
+                OR ou.is_editor IS TRUE
+                OR ou.is_editor_view IS TRUE
+                OR ou.is_editor_order IS TRUE
                 OR ou.is_editor_order_view IS TRUE
             )
         )
@@ -353,6 +357,7 @@ BEGIN
     RETURN json_build_object(
         'code', 200,
         'is_admin', is_admin_bool,
+        'demo_read_only', public.can_read_demo_occasion(occasionId),
         'occasion_user', COALESCE(row_to_json(occasion_user)::jsonb, NULL),
         'unit_user', COALESCE(row_to_json(unit_user)::jsonb, NULL),
         'occasion', COALESCE(occasion_json, '{}'::jsonb),

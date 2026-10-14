@@ -130,6 +130,7 @@ export class FormModel {
         this.bankAccountId = data.bank_account;
         this.deadlineDurationSeconds = data.deadline_duration_seconds;
         this.isOpen = data.is_open;
+        this.demoSimulation = data.demo_simulation === true;
         this.accountNumber = data.account_number;
         this.secret = data.secret;
         this.header = data.header;

@@ -16,6 +16,8 @@ DECLARE
   v_old_payment_info_id bigint;
   v_order_id bigint;
 BEGIN
+  PERFORM public.check_bank_account_writable((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id));
+  PERFORM public.check_bank_account_writable((SELECT bank_account FROM eshop.payment_info WHERE id=p_payment_info_id));
   IF p_method IS NULL OR p_method !~ '^[a-z0-9_]{1,64}$' THEN
     RAISE EXCEPTION 'PAIRING_INVALID_METHOD';
   END IF;

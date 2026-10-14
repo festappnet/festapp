@@ -108,7 +108,7 @@ class _FormDetailPageState extends State<FormDetailPage> {
                 toolbarHeight: 44,
                 title: _buildBreadcrumbs(),
                 actions: [
-                  Padding(
+                  if (!RightsService.isDemoReadOnly) Padding(
                       padding: const EdgeInsets.symmetric(
                           vertical: 6, horizontal: 4),
                       child: ElevatedButton.icon(

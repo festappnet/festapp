@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -67,6 +68,7 @@ class _FormPageState extends State<FormPage> {
   final Set<int> _selectedTicketIds = {};
   final Map<int, FormTicketModel> _ticketDrafts = {};
   String? _waitlistMessage;
+  bool _demoCompleted = false;
   FormModel? _changedCapacityForm;
   bool _isLoading = false;
   bool _formNotAvailable = false;
@@ -242,6 +244,7 @@ class _FormPageState extends State<FormPage> {
             secret: formHolder!.controller!.secret!,
             formDataKey: formHolder!.controller!.formKey!,
             blueprintId: formHolder!.controller!.blueprintId!,
+            demoSimulation: form!.demoSimulation,
             selectedSeats: formSession!.currentSeats,
             maxTickets: formHolder!.getTicket()?.maxTickets,
             onSelectionChanged: (sts) {
@@ -339,7 +342,10 @@ class _FormPageState extends State<FormPage> {
     }
     var valid = await FormHelper.saveValidateAndScroll(formHolder!);
     setState(() {});
-    if (valid && form!.isWaitlist && _offerBundle == null) {
+    if (valid &&
+        !form!.demoSimulation &&
+        form!.isWaitlist &&
+        _offerBundle == null) {
       final confirmed = await DialogHelper.showConfirmationDialog(
           context, WaitlistStrings.title, WaitlistStrings.explanation);
       if (!confirmed || !mounted) return;
@@ -429,6 +435,11 @@ class _FormPageState extends State<FormPage> {
 
   Future<void> _sendOrder() async {
     if (formHolder == null || form == null) return;
+    if (form!.demoSimulation) {
+      _hideOrderPreview();
+      setState(() => _demoCompleted = true);
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -650,6 +661,23 @@ class _FormPageState extends State<FormPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    if (_demoCompleted) {
+      return Scaffold(
+          body: Center(
+              child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(FormStrings.demoComplete,
+              style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 16),
+          Text(FormStrings.demoResult, textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          TextButton(
+              onPressed: () => setState(() => _demoCompleted = false),
+              child: Text(CommonStrings.close)),
+        ]),
+      )));
+    }
     if (_waitlistMessage != null)
       return Scaffold(
           body: Center(
@@ -716,6 +744,11 @@ class _FormPageState extends State<FormPage> {
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
                           children: [
+                            if (form!.demoSimulation)
+                              Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: Text(FormStrings.demoNotice,
+                                      textAlign: TextAlign.center)),
                             if (showPreview)
                               Container(
                                 width: double.infinity,
@@ -1168,6 +1201,7 @@ class _FormPageState extends State<FormPage> {
       });
 
       formHolder!.controller = FormHolderController(
+          demoSimulation: form!.demoSimulation,
           secret: form!.secret,
           blueprintId: form!.blueprint,
           globalKey: _formKey,

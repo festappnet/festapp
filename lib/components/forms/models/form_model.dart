@@ -32,6 +32,7 @@ class FormStatsModel {
 }
 
 class FormModel {
+  final bool demoSimulation;
   int? participantCapacity;
   bool waitlistEnabled;
   bool showRemainingCapacity;
@@ -105,6 +106,7 @@ class FormModel {
 
   FormModel({
     this.participantCapacity,
+    this.demoSimulation = false,
     this.waitlistEnabled = false,
     this.showRemainingCapacity = true,
     this.waitlistOfferDurationSeconds,
@@ -148,6 +150,7 @@ class FormModel {
     }
 
     return FormModel(
+      demoSimulation: json['demo_simulation'] == true,
       participantCapacity: json['participant_capacity'],
       waitlistEnabled: json['waitlist_enabled'] == true,
       showRemainingCapacity: json['show_remaining_capacity'] != false,

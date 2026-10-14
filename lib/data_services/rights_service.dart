@@ -136,8 +136,12 @@ class RightsService {
         var globalSettings =
             OccasionSettingsModel.fromOccasion(occasionLinkModel!.occasion!);
         SynchroService.globalSettingsModel = globalSettings;
-        await OfflineDataService.saveGlobalSettings(globalSettings);
-        if (refreshOffline && !ClientSyncRuntime.isV1Selected) {
+        if (!checkedObject.demoReadOnly) {
+          await OfflineDataService.saveGlobalSettings(globalSettings);
+        }
+        if (refreshOffline &&
+            !checkedObject.demoReadOnly &&
+            !ClientSyncRuntime.isV1Selected) {
           await SynchroService.refreshOfflineData();
         }
       } else {
@@ -155,6 +159,7 @@ class RightsService {
   }
 
   static bool canSeeAdmin() {
+    if (isDemoReadOnly) return true;
     return isEditor() || isManager() || isUnitEditorView() || isAdmin();
   }
 
@@ -200,35 +205,46 @@ class RightsService {
   }
 
   static bool canSignInOutUsersFromEvents() {
+    if (isDemoReadOnly) return false;
     return currentOccasionUser()?.isEditor ?? false;
   }
 
+  static bool get isDemoReadOnly =>
+      occasionLinkModelNotifier.value?.demoReadOnly == true;
+
   static bool canSeeReservations() {
+    if (isDemoReadOnly) return true;
     return isUnitEditorView() || isEditorOrderView();
   }
 
   static bool canSeeAdministration() {
+    if (isDemoReadOnly) return true;
     return isUnitEditorView() || isEditorView();
   }
 
   static bool isAdmin() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.isAdmin ?? false;
   }
 
   static bool isEditor() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditor ?? false;
   }
 
   static bool isEditorView() {
+    if (isDemoReadOnly) return true;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorView ?? false;
   }
 
   static bool isOrderEditor() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrder ??
         false;
   }
 
   static bool isUnitEditor() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.unitUser?.isEditor ?? false;
   }
 
@@ -237,11 +253,13 @@ class RightsService {
   }
 
   static bool isEditorOrderView() {
+    if (isDemoReadOnly) return true;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrderView ??
         false;
   }
 
   static bool isEditorOrder() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrder ??
         false;
   }
@@ -254,10 +272,12 @@ class RightsService {
   }
 
   static bool isManager() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isManager ?? false;
   }
 
   static bool isUnitManager() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.unitUser?.isManager ?? false;
   }
 
@@ -292,6 +312,7 @@ class RightsService {
         isAdmin: valid.isAdmin,
         organization: newOrg,
         clientSyncV1: valid.clientSyncV1,
+        demoReadOnly: valid.demoReadOnly,
       );
     }
   }

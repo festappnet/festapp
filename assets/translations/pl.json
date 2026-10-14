@@ -772,5 +772,22 @@
       "waitlistOffer_title": "Oferta miejsc dla osoby z listy rezerwowej",
       "waitlistOffer_description": "Oferta miejsc z osobistym linkiem i terminem. Produkty wybierane według aktualnej dostępności."
     }
+  },
+  "DemoOccasions": {
+    "formNotice": "Formularz demonstracyjny. Wypróbuj rejestrację; dane nie zostaną zapisane, e-mail nie zostanie wysłany ani płatność uruchomiona.",
+    "formComplete": "Rejestracja demonstracyjna zakończona",
+    "formResult": "To był formularz demonstracyjny. Rejestracja nie została zapisana, nie wysłano e-maila i nie uruchomiono płatności.",
+
+    "heading": "Zobacz, co możesz stworzyć",
+    "intro": "Przejrzyj gotowe wydarzenie i utwórz własną kopię.",
+    "inspiration": "Zainspiruj się przykładowymi wydarzeniami",
+    "badge": "Przykład",
+    "view": "Zobacz przykład",
+    "readOnly": "Przykładowe wydarzenie - tylko do odczytu",
+    "copy": "Utwórz własną kopię",
+    "copyHint": "Kopia będzie ukryta, bez uczestników i płatności. Przed otwarciem sprawdź daty, ceny i własne konto.",
+    "unavailable": "Nie udało się wczytać przykładowych wydarzeń.",
+    "noTarget": "Do utworzenia kopii potrzebujesz organizacji, którą możesz zarządzać.",
+    "back": "Powrót do własnych wydarzeń"
   }
 }

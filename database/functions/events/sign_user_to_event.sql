@@ -28,6 +28,7 @@ declare
   v_active integer;
 
 begin
+  PERFORM public.check_occasion_writable((SELECT occasion FROM public.events WHERE id=ev));
   -- Authorize before any membership or attendance mutation.
   IF auth.uid() IS NULL OR usr IS NULL THEN
     RETURN jsonb_build_object('code', 403);

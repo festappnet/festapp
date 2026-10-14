@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.expire_waitlist_form_internal(p_form bigint,p_
 RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE n integer;
 BEGIN
+ IF public.is_demo_occasion((SELECT occasion FROM public.forms WHERE id=p_form)) THEN RETURN 0; END IF;
  PERFORM 1 FROM public.forms WHERE id=p_form FOR UPDATE;
  WITH expired AS (UPDATE eshop.waitlist_offer_slots s SET outcome='expired',updated_at=p_at
  FROM eshop.waitlist_offers w WHERE w.id=s.offer_id AND w.form_id=p_form AND w.expires_at<=p_at AND s.outcome='pending'

@@ -39,7 +39,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
   bool _isLoading = true;
   String? _orderState;
   bool get _canEdit =>
-      !_isLoading && OrderModel.canChangePaymentInState(_orderState);
+      !RightsService.isDemoReadOnly && !_isLoading && OrderModel.canChangePaymentInState(_orderState);
 
   @override
   void initState() {

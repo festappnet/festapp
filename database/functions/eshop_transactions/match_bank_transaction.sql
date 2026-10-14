@@ -10,6 +10,9 @@ DECLARE
   v_candidate_id bigint;
   v_signal_count integer := 0;
 BEGIN
+  IF public.is_demo_bank_account((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id)) THEN
+    RETURN jsonb_build_object('outcome','skipped_demo');
+  END IF;
   PERFORM public.require_service_role();
 
   SELECT * INTO v_transaction

@@ -699,7 +699,9 @@ export class FormPage extends Component {
         }
 
         // 4. Submit via Network
-        const request = formModel.registrationMode === 'waitlist'
+        const request = formModel.demoSimulation
+            ? Promise.resolve({ success: true, data: { demoSimulation: true } })
+            : formModel.registrationMode === 'waitlist'
             ? this.waitlistCommands.command('register', waitlistRegistrationPayload(this.currentSession))
                 .then(data => ({ success: true, data: { ...data, ticketOrder: { order: data.order } } }))
             : formModel.offerBundle

@@ -210,6 +210,30 @@ class DbOccasions {
     }
   }
 
+  /// Keeps the committed result visible even if the following media work fails.
+  static Future<({int occasionId, bool mediaCopied})> duplicateDemoOccasion(
+      int source,
+      {required int targetUnitId,
+      required String commandId}) async {
+    final response =
+        await _supabase.rpc('duplicate_occasion_client_sync_v1', params: {
+      'p_occasion': source,
+      'p_target_unit': targetUnitId,
+      'p_command_id': commandId,
+    });
+    final id = (response['data']['occasionId'] as num).toInt();
+    var ready = false;
+    try {
+      final copy = await getOccasion(id);
+      await copyOccasionMedia(copy, DbImages.createCopyOfImage);
+      await updateOccasion(copy);
+      ready = true;
+    } catch (_) {
+      // Never repeat SQL creation to recover a media failure.
+    }
+    return (occasionId: id, mediaCopied: ready);
+  }
+
   static Future<void> deleteOccasion(int oc) async {
     if (ClientSyncRuntime.isV1Selected) {
       await _commands.delete(oc);

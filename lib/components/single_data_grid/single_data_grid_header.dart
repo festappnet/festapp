@@ -96,31 +96,33 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     final canSaveOrDiscard =
         canChange && controller.hasPendingChanges && !_isSaving;
 
-    leftActions.addAll([
-      if (actionsController?.isAddActionPossible?.call() ?? true)
+    if (!controller.isDemoReadOnly)
+      leftActions.addAll([
+        if (actionsController?.isAddActionPossible?.call() ?? true)
+          ElevatedButton(
+            onPressed: actionsController != null &&
+                    actionsController.areAllActionsEnabled != null &&
+                    !actionsController.areAllActionsEnabled!()
+                ? null
+                : _addRow,
+            child: Text(CommonStrings.add),
+          ),
         ElevatedButton(
-          onPressed: actionsController != null &&
-                  actionsController.areAllActionsEnabled != null &&
-                  !actionsController.areAllActionsEnabled!()
-              ? null
-              : _addRow,
-          child: Text(CommonStrings.add),
+          onPressed: canSaveOrDiscard ? _cancelChanges : null,
+          child: Text(DataGridStrings.discardChanges),
         ),
-      ElevatedButton(
-        onPressed: canSaveOrDiscard ? _cancelChanges : null,
-        child: Text(DataGridStrings.discardChanges),
-      ),
-      ElevatedButton(
-        onPressed: canSaveOrDiscard &&
-                (actionsController?.saveAction?.isEnabled?.call() ?? true)
-            ? _runSave
-            : null,
-        child: Text(
-            actionsController?.saveAction?.name ?? CommonStrings.saveChanges),
-      ),
-    ]);
+        ElevatedButton(
+          onPressed: canSaveOrDiscard &&
+                  (actionsController?.saveAction?.isEnabled?.call() ?? true)
+              ? _runSave
+              : null,
+          child: Text(
+              actionsController?.saveAction?.name ?? CommonStrings.saveChanges),
+        ),
+      ]);
 
-    if (controller.headerChildren != null &&
+    if (!controller.isDemoReadOnly &&
+        controller.headerChildren != null &&
         controller.headerChildren!.isNotEmpty) {
       for (var a in controller.headerChildren!) {
         leftActions.add(

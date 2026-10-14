@@ -7,6 +7,7 @@ AS $$
 DECLARE
     unit_id BIGINT;
 BEGIN
+  PERFORM public.check_occasion_writable(oc);
 
   SELECT unit
   INTO unit_id

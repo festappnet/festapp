@@ -2,7 +2,7 @@ DROP FUNCTION IF EXISTS public.update_bank_account(bigint,text,text,text,text[])
 DROP FUNCTION IF EXISTS public.update_bank_account(bigint,text,text,text,text[],text,bigint);
 DROP FUNCTION IF EXISTS public.update_bank_account(bigint,text,text,text,text[],text,bigint,text);
 
-CREATE FUNCTION public.update_bank_account(
+CREATE OR REPLACE FUNCTION public.update_bank_account(
     p_id bigint,
     p_account_number text,
     p_title text,
@@ -23,6 +23,7 @@ DECLARE
     v_operation_id uuid;
     v_request jsonb;
 BEGIN
+    PERFORM public.check_bank_account_writable(p_id);
     -- Prevent manual manipulation of CASH accounts
     IF p_type = 'CASH' THEN
         RAISE EXCEPTION 'CASH_ACCOUNT_MANUAL_UPDATE_FORBIDDEN';
@@ -65,7 +66,7 @@ BEGIN
 
         -- Security Check: Caller must be an Admin of the bank account
         IF NOT EXISTS (
-            SELECT 1 FROM eshop.bank_account_users 
+            SELECT 1 FROM eshop.bank_account_users
             WHERE bank_account = p_id AND "user" = auth.uid() AND is_admin = true
         ) THEN
             RAISE EXCEPTION 'Permission denied: Only bank account admins can update details.';

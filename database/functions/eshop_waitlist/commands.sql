@@ -40,6 +40,7 @@ BEGIN
  ELSIF p_operation='withdraw' THEN oid:=(p_payload->>'orderId')::bigint; SELECT form INTO fid FROM eshop.orders WHERE id=oid;
  ELSE offer:=(p_payload->>'offerId')::uuid; SELECT order_id,form_id INTO oid,fid FROM eshop.waitlist_offers WHERE id=offer; END IF;
  SELECT * INTO f FROM public.forms WHERE id=fid; occ:=f.occasion;
+ PERFORM public.check_occasion_writable(occ);
  IF occ IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
  IF p_operation IN ('send','cancel') AND NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=occ AND "user"=p_actor AND is_editor_order) THEN
   RAISE insufficient_privilege USING MESSAGE='Order editor required'; END IF;

@@ -103,6 +103,7 @@ SET search_path = public, extensions
      occ_id := (input_data->>'id')::BIGINT;
 
      IF occ_id IS NOT NULL THEN
+         PERFORM public.check_occasion_writable(occ_id);
          -- This is an UPDATE operation
 
          -- Check for the existence of the occasion and get its current unit

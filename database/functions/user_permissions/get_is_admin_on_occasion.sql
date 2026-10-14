@@ -7,6 +7,7 @@ DECLARE
     is_admin_var boolean;
     organization_id bigint;
 BEGIN
+    IF public.is_demo_occasion(oc) THEN RETURN false; END IF;
     -- Retrieve the organization ID associated with the given occasion
     SELECT organization INTO organization_id
     FROM occasions

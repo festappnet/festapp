@@ -20,6 +20,10 @@ BEGIN
         RETURN NULL;
     END IF;
 
+    IF public.is_demo_occasion(occ_record.id) AND NOT public.can_read_demo_occasion(occ_record.id) THEN
+        RAISE insufficient_privilege USING MESSAGE='Demo access denied';
+    END IF;
+
     -- 2. Check for active orders
     SELECT EXISTS (
         SELECT 1

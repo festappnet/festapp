@@ -1,4 +1,6 @@
-import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/unit/app_landing.dart';
+import 'package:fstapp/components/occasion/occasion_copy_dialog.dart';
+import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
@@ -6,8 +8,6 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_strings.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/unit/app_landing.dart';
-import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -255,75 +255,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         destinations.isEmpty) {
       return;
     }
-    final units = {for (final unit in destinations) unit.id!: unit};
-    var selectedUnitId = widget.unit.id!;
-    var changingTargetUnit = false;
-    final target = await showDialog<UnitModel>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AppAlertDialog(
-          onClose: () => Navigator.of(dialogContext).pop(),
-          title: Text(UnitStrings.createCopy),
-          content: SizedBox(
-            width: 380,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(UnitStrings.createCopyConfirm),
-                  const SizedBox(height: 16),
-                  if (!changingTargetUnit) ...[
-                    Text(UnitStrings.copyTargetUnit,
-                        style: Theme.of(dialogContext).textTheme.labelMedium),
-                    Text(widget.unit.title ?? selectedUnitId.toString(),
-                        style: Theme.of(dialogContext).textTheme.titleMedium),
-                    if (units.length > 1)
-                      TextButton(
-                        onPressed: () =>
-                            setDialogState(() => changingTargetUnit = true),
-                        child: Text(UnitStrings.changeCopyTargetUnit),
-                      ),
-                  ] else
-                    DropdownButtonFormField<int>(
-                      initialValue: selectedUnitId,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                          labelText: UnitStrings.copyTargetUnit),
-                      items: units.values
-                          .map((unit) => DropdownMenuItem(
-                                value: unit.id!,
-                                child: Text(unit.title ?? unit.id.toString()),
-                              ))
-                          .toList(),
-                      onChanged: (id) {
-                        if (id != null) {
-                          setDialogState(() => selectedUnitId = id);
-                        }
-                      },
-                    ),
-                  if (selectedUnitId != sourceUnitId) ...[
-                    const SizedBox(height: 12),
-                    Text(UnitStrings.copyTargetHint),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(CommonStrings.storno),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(units[selectedUnitId]),
-              child: Text(UnitStrings.createCopy),
-            ),
-          ],
-        ),
-      ),
-    );
+    final target = await showOccasionCopyTargetDialog(context, destinations,
+        sourceUnitId: sourceUnitId);
     if (target == null || !mounted) return;
     if (AppConfig.occasionSetupEnabled) {
       await OccasionCreationHelper.createNewOccasion(
@@ -391,11 +324,11 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 onRefresh: () async {
                   await _loadOccasions();
                   await _loadDrafts();
-                  if (!_savingLanding) await _loadLanding();
                 },
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
+                    const SliverToBoxAdapter(child: DemoOccasionsSection()),
                     if (_canEditDrafts && _draftError != null)
                       SliverToBoxAdapter(
                           child: TextButton(
