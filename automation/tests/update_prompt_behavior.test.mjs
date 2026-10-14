@@ -194,8 +194,18 @@ activeWorker.postMessage = (message, ports = []) => {
 };
 window.__FESTAPP_APP_READY__ = false;
 sessionStorage.setItem('festappStartupRecoveryVersion', '1.0.0+1');
+window.getFestappStartupPhase = () => 'S06';
 await window.recoverFestappStartup('still-stalled');
 const banner = appendedElements.at(-1);
+const diagnostic = banner.children[0].children.find((element) =>
+  element.attributes['data-festapp-startup-diagnostic'] === 'true');
+assert.ok(diagnostic, 'stalled phone recovery must expose a code without a console');
+assert.equal(diagnostic.textContent, 'Kód pro podporu: 1.0.0+1 / S06');
+window.getFestappStartupPhase = () => 'https://private.test/?token=secret';
+await window.recoverFestappStartup('invalid-phase');
+assert.equal(appendedElements.at(-1).children[0].children[0].textContent,
+  'Kód pro podporu: 1.0.0+1 / S00');
+assert.ok(!appendedElements.at(-1).children[0].children[0].textContent.includes('secret'));
 const refresh = banner.children[1].children.find(
   (element) => element.attributes['data-festapp-update-action'] === 'reload');
 assert.ok(refresh);
