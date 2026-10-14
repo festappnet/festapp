@@ -1,4 +1,4 @@
-import { access, readdir, stat } from 'node:fs/promises';
+import { access, readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const excludedNames = new Set([
@@ -60,7 +60,26 @@ async function firstExisting(buildDir, candidates) {
 export async function collectPwaShellManifest(buildDir) {
   const flutterEntry = await firstExisting(buildDir, ['flutter', 'flutter.html']);
   const webClientEntry = await firstExisting(buildDir, ['webclient', 'index.html']);
+  let flutterMain = '/main.dart.js';
+  try {
+    const versionManifest = JSON.parse(await readFile(
+      path.join(buildDir, 'festapp-version.json'), 'utf8'));
+    if (!/^main\.dart\.[0-9][0-9A-Za-z.+-]*\.js$/.test(versionManifest.main)) {
+      throw new Error('Invalid immutable Flutter entrypoint in festapp-version.json');
+    }
+    flutterMain = '/' + versionManifest.main;
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
   const files = await collectFiles(buildDir);
+  if (flutterMain !== '/main.dart.js') {
+    // Flutter HTML requests the immutable name. Cache exactly that executable,
+    // rather than an unused mutable copy with identical bytes.
+    const file = path.join(buildDir, flutterMain.slice(1));
+    const aliasIndex = files.findIndex((entry) => entry.url === '/main.dart.js');
+    if (aliasIndex !== -1) files.splice(aliasIndex, 1);
+    files.push({ url: flutterMain, bytes: (await stat(file)).size });
+  }
   const byUrl = new Map();
   for (const file of files) {
     const existing = byUrl.get(file.url);
@@ -74,12 +93,14 @@ export async function collectPwaShellManifest(buildDir) {
   const installCriticalNames = new Set([
     '/flutter.js', '/flutter_bootstrap.js', '/main.dart.js',
     '/festapp_update_prompt.js', '/festapp_pwa_bridge.js',
+    '/festapp_flutter_bootstrap_guard.js',
     '/festapp-version.json', '/manifest.json', '/manifest.webmanifest',
     '/AssetManifest.json', '/FontManifest.json',
   ]);
   const coreResources = knownResources.filter((url) =>
     url === flutterEntry || url === webClientEntry ||
     standaloneDocumentSet.has(url) ||
+    url === flutterMain ||
     installCriticalNames.has(url.split('?')[0]) ||
     /^\/main\.dart\.js_\d+\.part\.js$/.test(url.split('?')[0]));
   const total = (resources) => resources.reduce(
@@ -87,6 +108,7 @@ export async function collectPwaShellManifest(buildDir) {
 
   return {
     flutterEntry,
+    flutterMain,
     webClientEntry,
     standaloneDocuments,
     coreResources,
