@@ -31,7 +31,7 @@ const initialDom = dom();
 const { OrderPreview } = await import('../../src/components/forms/order_preview.js');
 initialDom.window.close();
 
-test('occupancy uses admitted count even when waiting priority reduces public availability', () => {
+test('regular occupancy includes waiting registrations; waitlist mode hides occupancy', () => {
     const d = dom();
     for (const registrationMode of ['regular', 'waitlist']) {
         const model = new FormModel({ registrationMode, fields, capacity: { showRemaining: true, limit: 12, occupiedPeople: 11, offeredPlaces: 0, waitingPeople: 3, remainingPublic: registrationMode === 'regular' ? 1 : 0 } });
@@ -39,7 +39,8 @@ test('occupancy uses admitted count even when waiting priority reduces public av
         const host = document.querySelector('main');
         FormRenderer.render(host, current, model, false, {});
         renderWaitlistControls({ host, currentSession: current }, model);
-        assert.equal(host.querySelector('.form-occupancy').textContent, 'Obsazenost: 11 z 12');
+        if (registrationMode === 'waitlist') assert.equal(host.querySelector('.form-occupancy'), null);
+        else assert.equal(host.querySelector('.form-occupancy').textContent, 'Obsazenost: 14 z 12');
         assert.ok(host.querySelector('form').firstElementChild.classList.contains('form-registration-status'));
         if (registrationMode === 'waitlist') assert.match(host.querySelector('.waitlist-intro').textContent, /e-mailem nabídku/);
     }
@@ -48,17 +49,17 @@ test('occupancy uses admitted count even when waiting priority reduces public av
 test('occupancy includes active offer holds and reflects release without changing server mode', () => {
     const d = dom(); const host = document.querySelector('main');
     for (const offeredPlaces of [1, 0]) {
-        const model = new FormModel({ registrationMode: 'waitlist', fields, capacity: {
-            showRemaining: true, limit: 11, occupiedPeople: 10, offeredPlaces, remainingPublic: 0,
+        const model = new FormModel({ registrationMode: 'regular', fields, capacity: {
+            showRemaining: true, limit: 11, occupiedPeople: 10, offeredPlaces, remainingPublic: 1,
         } });
         const current = new FormSession(model);
         FormRenderer.render(host, current, model, false, {});
         renderWaitlistControls({ host, currentSession: current }, model);
         assert.equal(host.querySelector('.form-occupancy').textContent, `Obsazenost: ${10 + offeredPlaces} z 11`);
-        assert.equal(model.registrationMode, 'waitlist');
-        assert.equal(model.capacity.remainingPublic, 0);
+        assert.equal(model.registrationMode, 'regular');
+        assert.equal(model.capacity.remainingPublic, 1);
         assert.equal(model.capacity.occupiedPeople, 10);
-        assert.ok(host.querySelector('.form-registration-status.is-waitlist'));
+        assert.equal(host.querySelector('.form-registration-status.is-waitlist'), null);
     }
     d.window.close();
 });
@@ -123,7 +124,7 @@ test('single management entry needs no checkbox, multi-entry selects IDs and nev
     assert.deepEqual(calls.pop(), ['withdraw', [8837]]);
     page.renderWaitlistManagement({ tickets: [first, { id: 9000, lifecycle: 'waiting', answers: { fields: [{2: 'Robin'}] } }] });
     assert.ok(page.host.querySelector('button').disabled);
-    assert.match(page.host.textContent, /Vyberte osoby/);
+    assert.match(page.host.textContent, /Vyberte přihlášky/);
     page.host.querySelectorAll('input')[1].click(); page.host.querySelector('button').click();
     assert.deepEqual(calls.pop(), ['withdraw', [9000]]);
     page.renderWaitlistManagement({ tickets: [{ ...first, lifecycle: 'withdrawn' }] });
@@ -303,7 +304,7 @@ test('empty waitlist cards disappear while multiple meaningful own answers and c
     assert.equal(host.querySelector('.preview-registration-count'),null);
     render([{fields:[]},{fields:[{_subFieldId:2,name:'Robin'},{_subFieldId:3,text:'Vegan'},{_subFieldId:4,text:'Step-free'}]}]);
     assert.equal(host.querySelectorAll('.ticket-card').length,1);
-    assert.equal(host.querySelector('.ticket-header-title').textContent,'Osoba 2');
+    assert.equal(host.querySelector('.ticket-header-title').textContent,'Přihláška 2');
     assert.equal(host.querySelector('.preview-registration-count').textContent,'Počet přihlášek: 2');
     assert.match(host.textContent,/Robin/);assert.match(host.textContent,/Vegan/);assert.match(host.textContent,/Step-free/);
     model.registrationMode='regular';render([{fields:[]}]);
@@ -385,7 +386,7 @@ test('offer acceptance uses singular or selected-people label in form and shared
         const host = document.querySelector('main');
         FormRenderer.render(host, current, model, false, {});
         renderWaitlistControls({ host, currentSession: current }, model);
-        const expected = count === 1 ? 'Potvrdit přihlášení' : 'Potvrdit vybrané osoby';
+        const expected = count === 1 ? 'Potvrdit přihlášení' : 'Potvrdit vybrané přihlášky';
         assert.equal(host.querySelector('.btn-submit').textContent, expected);
         host.innerHTML = OrderPreview._render(OrderPreview._prepareData(null, model, current.state, current.payload));
         assert.equal(host.querySelector('.btn-submit-order').textContent.trim(), expected);

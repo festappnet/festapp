@@ -66,6 +66,8 @@ for (const role of ['occasion editor', 'unit editor', 'visitor']) {
     }
 
     window.dispatchEvent(new window.PopStateEvent('popstate'));
+    // Closing a successful result reloads server state and rechecks editor rights.
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(!!document.querySelector('.fab-edit'), editor,
       'edit access must survive closing the confirmation');
     assert.equal(document.querySelectorAll('.fab-edit').length, editor ? 1 : 0);

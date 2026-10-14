@@ -38,7 +38,9 @@ BEGIN
  UPDATE eshop.waitlist_offers SET expires_at=now()-interval '1 second' WHERE id=w;
  reply:=public.get_waitlist_offer_form(offer_token,w,NULL);
  ASSERT (reply->>'code')::int=200 AND reply->'form'='null'::jsonb,'Expired offer terminal unavailable';
- ASSERT NOT reply ? 'occasionTitle' AND NOT reply ? 'orderSymbol' AND NOT reply ? 'orderData','Terminal scope widened';
+ ASSERT reply->>'occasionTitle'='Visible event title','Terminal occasion context missing';
+ ASSERT reply->>'orderSymbol'=(SELECT order_symbol FROM eshop.orders WHERE id=oid),'Terminal order context missing';
+ ASSERT NOT reply ? 'orderData','Terminal answers leaked';
  ASSERT reply->'tickets'='[]'::jsonb,'Terminal ticket data leaked';
  INSERT INTO auth.users(id,email) VALUES(actor,actor::text||'@example.invalid');
  INSERT INTO public.user_info(id,email_readonly) VALUES(actor,actor::text||'@example.invalid');

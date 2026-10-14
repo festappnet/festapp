@@ -70,7 +70,8 @@ BEGIN
                 'features', o.features,
                 'start_time', o.start_time
             ),
-            'blueprint', f.blueprint,
+            'blueprint', CASE WHEN jsonb_path_exists(o.features,
+                '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN f.blueprint END,
             'deadline_duration_seconds', f.deadline_duration_seconds,
             'account_number', ba.account_number,
             'secret', generated_secret,
