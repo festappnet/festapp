@@ -43,7 +43,9 @@ quota, suppression, expiry and delivery fences apply.
 
 Authorized order bundles include a safe warning and account-administrator
 contacts for the order's actual bank account, including canonical aliases. Only
-regular orders with an outstanding payment balance display the warning. CASH
+orders awaiting payment (`ordered` or `expired`) with an outstanding balance
+display the warning. Paid, sent and used orders stay quiet, including historical
+ledger differences or deposit balances. CASH
 accounts, fully paid orders and inactive waiting/cancelled registrations do not.
 Form bank-account cards and unit account lists use the same diagnosis. No token,
 raw bank error or unrestricted contact lookup is exposed to clients.

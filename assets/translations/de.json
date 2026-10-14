@@ -402,6 +402,7 @@
     "surname": "Nachname"
   },
   "FeatureOrders": {
+    "bankSyncPaymentPaused": "Die Banksynchronisierung für das Empfängerkonto dieser Zahlung ist ausgeschaltet.",
     "bankSyncWarningTitle": "Automatischer Zahlungsabgleich nicht verfügbar",
     "bankSyncWarningHelp": "Die Zahlung kann bereits eingegangen sein, ohne dieser Bestellung zugeordnet zu sein. Prüfen Sie den Kontoauszug, bevor Sie eine Zahlungserinnerung senden.",
     "bankSyncWarningContact": "Bitten Sie einen Kontoadministrator, die Synchronisierung zu prüfen:",

@@ -129,6 +129,9 @@ void main() {
 
   for (final scenario in [
     'ordered',
+    'expired',
+    'expired-full',
+    'ordered-full',
     'fallback',
     'paid-deposit',
     'sent-deposit',
@@ -181,13 +184,13 @@ void main() {
       await tester.pumpAndSettle();
       final visible = scenario == 'ordered' ||
           scenario == 'fallback' ||
-          scenario.endsWith('deposit');
+          scenario == 'expired';
       expect(find.byIcon(Icons.warning_amber_rounded),
           visible ? findsOneWidget : findsNothing);
       if (visible) {
         final reason = scenario == 'fallback'
             ? 'Bank payments have not been updated recently.'
-            : 'Automatic synchronization is paused.';
+            : 'Bank synchronization is off for the account receiving this payment.';
         final tooltip =
             tester.widget<IconButton>(find.byType(IconButton)).tooltip!;
         expect(tooltip, isNot(contains('Festival account')));

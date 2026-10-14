@@ -19,7 +19,9 @@ class BankSyncWarningButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contacts = warning.uniqueContacts;
-    final reason = OrdersStrings.bankSyncWarningReason(warning.code);
+    final reason = showPaymentHelp && warning.code == 'suspended'
+        ? OrdersStrings.bankSyncPaymentPaused
+        : OrdersStrings.bankSyncWarningReason(warning.code);
     return IconButton(
       tooltip: [
         reason,

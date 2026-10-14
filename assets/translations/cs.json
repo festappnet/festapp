@@ -548,6 +548,7 @@
     "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka."
   },
   "FeatureOrders": {
+    "bankSyncPaymentPaused": "Synchronizace bankovního účtu pro tuto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párování plateb nefunguje",
     "bankSyncWarningHelp": "Platba již mohla dorazit na účet, ale zatím není přiřazena k objednávce. Před připomenutím platby ověřte výpis z účtu.",
     "bankSyncWarningContact": "Požádejte správce bankovního účtu o kontrolu synchronizace:",
