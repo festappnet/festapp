@@ -775,13 +775,14 @@
     }
   },
   "DemoOccasions": {
+      "ball": "Ball",
+      "concert": "Konzert",
+      "weekend": "Wochenendfreizeit",
     "formNotice": "Demoformular. Testen Sie die Anmeldung; nichts wird gespeichert, keine E-Mail versendet und keine Zahlung gestartet.",
     "formComplete": "Demoanmeldung abgeschlossen",
     "formResult": "Dies war ein Demoformular. Die Anmeldung wurde nicht gespeichert, keine E-Mail versendet und keine Zahlung gestartet.",
 
     "heading": "Sehen Sie, was Sie erstellen können",
-    "intro": "Entdecken Sie eine fertige Veranstaltung und erstellen Sie Ihre eigene Kopie.",
-    "inspiration": "Von Beispielveranstaltungen inspirieren lassen",
     "badge": "Beispiel",
     "view": "Beispiel ansehen",
     "readOnly": "Beispielveranstaltung - nur zum Ansehen",

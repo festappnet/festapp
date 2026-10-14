@@ -775,13 +775,14 @@
     }
   },
   "DemoOccasions": {
+      "ball": "Bal",
+      "concert": "Koncert",
+      "weekend": "Wyjazd weekendowy",
     "formNotice": "Formularz demonstracyjny. Wypróbuj rejestrację; dane nie zostaną zapisane, e-mail nie zostanie wysłany ani płatność uruchomiona.",
     "formComplete": "Rejestracja demonstracyjna zakończona",
     "formResult": "To był formularz demonstracyjny. Rejestracja nie została zapisana, nie wysłano e-maila i nie uruchomiono płatności.",
 
     "heading": "Zobacz, co możesz stworzyć",
-    "intro": "Przejrzyj gotowe wydarzenie i utwórz własną kopię.",
-    "inspiration": "Zainspiruj się przykładowymi wydarzeniami",
     "badge": "Przykład",
     "view": "Zobacz przykład",
     "readOnly": "Przykładowe wydarzenie - tylko do odczytu",

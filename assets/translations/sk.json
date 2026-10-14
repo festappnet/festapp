@@ -781,13 +781,14 @@
     }
   },
   "DemoOccasions": {
+      "ball": "Ples",
+      "concert": "Koncert",
+      "weekend": "Víkendovka",
     "formNotice": "Ukážkový formulár. Prihlášku si môžete vyskúšať; neuloží sa, žiadny e-mail neodošleme a platba sa nespustí.",
     "formComplete": "Ukážková prihláška dokončená",
     "formResult": "Toto bol ukážkový formulár. Prihláška sa neuložila, žiadny e-mail sme neodoslali a platba nebola spustená.",
 
     "heading": "Pozrite sa, čo môžete vytvoriť",
-    "intro": "Prezrite si hotovú akciu a vytvorte si vlastnú kópiu.",
-    "inspiration": "Inšpirujte sa ukážkovými akciami",
     "badge": "Ukážka",
     "view": "Prezrieť ukážku",
     "readOnly": "Ukážková akcia - iba na prezeranie",

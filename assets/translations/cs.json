@@ -2710,12 +2710,13 @@
     "capacityTickets": "Maximální počet vstupenek v tomto formuláři"
   },
   "DemoOccasions": {
+      "ball": "Ples",
+      "concert": "Koncert",
+      "weekend": "Víkendovka",
       "formNotice": "Ukázkový formulář. Přihlášku si můžete vyzkoušet; neuloží se, žádný e-mail neodešleme a platba se nespustí.",
       "formComplete": "Ukázková přihláška dokončena",
       "formResult": "Toto byl ukázkový formulář. Přihláška se neuložila, žádný e-mail jsme neodeslali a platba nebyla spuštěna.",
       "heading": "Podívejte se, co můžete vytvořit",
-      "intro": "Prohlédněte si hotovou akci a vytvořte si vlastní kopii.",
-      "inspiration": "Inspirujte se ukázkovými akcemi",
       "badge": "Ukázka",
       "view": "Prohlédnout ukázku",
       "readOnly": "Ukázková akce - pouze k prohlížení",

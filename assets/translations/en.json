@@ -2709,12 +2709,13 @@
     "capacityTickets": "Maximum number of tickets in this form"
   },
   "DemoOccasions": {
+      "ball": "Ball",
+      "concert": "Concert",
+      "weekend": "Weekend",
       "formNotice": "Demo form. Try registering; nothing is saved, no email is sent and no payment is started.",
       "formComplete": "Demo registration complete",
       "formResult": "This was a demo form. Your registration was not saved, no email was sent and no payment was started.",
       "heading": "See what you can create",
-      "intro": "Explore a complete event and create your own copy.",
-      "inspiration": "Get inspired by demo events",
       "badge": "Demo",
       "view": "Explore demo",
       "readOnly": "Demo event - read only",

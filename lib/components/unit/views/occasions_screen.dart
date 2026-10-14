@@ -326,7 +326,9 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
-                    const SliverToBoxAdapter(child: DemoOccasionsSection()),
+                    SliverToBoxAdapter(
+                        child: DemoOccasionsSection(
+                            hasOwnOccasions: _allOccasions.isNotEmpty)),
                     if (_canEditDrafts && _draftError != null)
                       SliverToBoxAdapter(
                           child: TextButton(

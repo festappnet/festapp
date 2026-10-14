@@ -15,6 +15,7 @@ class OccasionEditCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onCreateCopy;
   final Color? backgroundColor;
+  final String? displayTitle;
   final String? badge;
   final String? viewLabel;
   final bool isPresent;
@@ -28,6 +29,7 @@ class OccasionEditCard extends StatelessWidget {
     this.onCreateCopy,
     this.backgroundColor,
     this.badge,
+    this.displayTitle,
     this.viewLabel,
     this.isPresent = false,
     this.isAppLanding = false,
@@ -143,7 +145,7 @@ class OccasionEditCard extends StatelessWidget {
                     ]),
                     const SizedBox(height: 4),
                     Text(
-                      occasion.title ?? '',
+                      displayTitle ?? occasion.title ?? '',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
