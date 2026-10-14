@@ -1,4 +1,4 @@
-import { bankSyncRemote as remote, bankSyncErrorCode } from './bankSyncRemote.ts';
+import { bankSyncRemote as remote, bankSyncErrorCode, BankSyncRemoteError } from './bankSyncRemote.ts';
 import { bankSyncHash as hash } from "./bankSyncToken.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 export async function runBankSyncOperation(input: Record<string, any>, fingerprint: string) {
@@ -83,22 +83,30 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
         const ingress = await remote(`${path}/ingest-state`);
         if (!ingress.ingest_enabled) throw new Error("sync_state_not_verified");
         let verificationError: string | null = null;
+        let syncPending = false;
         if (context.mode === "api") {
           await remote(`${path}/fio-token`, "PUT", { fetch_enabled: true, ingest_mode: "api" });
           const account = await remote(path);
           if (!account.api_fetch_enabled) throw new Error("sync_state_not_verified");
           try {
             const pull = await remote(`${path}/fio-sync`, "POST", {});
-            await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:pull.api_last_success_at,p_error:null});
+            syncPending = pull.deferred === true;
+            if (!syncPending) {
+              await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:pull.api_last_success_at,p_error:null});
+            }
           } catch (error) {
-            verificationError = bankSyncErrorCode(error);
-            await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:null,p_error:verificationError});
+            if (error instanceof BankSyncRemoteError && error.retryAfterSeconds !== null) {
+              syncPending = true;
+            } else {
+              verificationError = bankSyncErrorCode(error);
+              await rpc("record_bank_sync_pull", {p_id:context.connection_id,p_success_at:null,p_error:verificationError});
+            }
           }
         }
-        const state = verificationError ? "degraded" : "connected";
+        const state = verificationError || (syncPending && context.state === "degraded") ? "degraded" : "connected";
         await rpc("update_bank_sync_connection_metadata", {p_id:context.connection_id,
           p_pairing_code:null,p_expiry:null,p_state:state});
-        result = {state, sync_enabled:true, ...(verificationError ? {verification_error:verificationError} : {})};
+        result = {state, sync_enabled:true, ...(syncPending ? {sync_pending:true} : {}), ...(verificationError ? {verification_error:verificationError} : {})};
       } else if (input.operation === "suspend") {
         await remote(`${path}/ingest-state`, "PUT", { enabled: false });
         if (context.mode === "api") await remote(`${path}/fio-token`, "PUT", { fetch_enabled: false });

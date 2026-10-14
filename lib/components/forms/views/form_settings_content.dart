@@ -1,3 +1,5 @@
+import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
+import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.dart';
 import '../waitlist_strings.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
@@ -100,6 +102,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   @override
   void initState() {
     super.initState();
+    DbBankAccounts.connectionChanges.addListener(_bankConnectionChanged);
     for (final controller in [
       _titleController,
       _linkController,
@@ -126,6 +129,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   @override
   void dispose() {
+    DbBankAccounts.connectionChanges.removeListener(_bankConnectionChanged);
     _bankSettingsLink.dispose();
     _titleController.dispose();
     _linkController.removeListener(_updateLinkPreview);
@@ -139,6 +143,35 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   void _updateLinkPreview() {
     _linkNotifier.value = _linkController.text;
+  }
+
+  bool _refreshingBankAccounts = false;
+
+  Future<void> _bankConnectionChanged() async {
+    final form = _form;
+    final link = _formLink;
+    final id = DbBankAccounts.connectionChanges.value.accountId;
+    if (!mounted ||
+        _refreshingBankAccounts ||
+        form == null ||
+        link == null ||
+        !(form.availableBankAccounts?.any((account) => account.id == id) ??
+            false)) {
+      return;
+    }
+    _refreshingBankAccounts = true;
+    try {
+      final bundle = await (widget.loadBundle ?? DbForms.getFormForEdit)(link);
+      if (mounted && identical(_form, form) && bundle != null) {
+        // Refresh operational facts only; preserve the form editor's draft.
+        setState(
+            () => form.availableBankAccounts = bundle.availableBankAccounts);
+      }
+    } catch (error) {
+      AppLogger.error('Could not refresh form bank account cards: $error');
+    } finally {
+      _refreshingBankAccounts = false;
+    }
   }
 
   Future<void> _loadData() async {

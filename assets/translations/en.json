@@ -1640,9 +1640,10 @@
     "copied": "Copied"
   },
   "BankAccount": {
+    "synchronizationPending": "Synchronization is enabled. The next bank fetch is waiting for the bank cooldown.",
     "automaticSynchronization": "Automatic synchronization",
-    "synchronizationEnabled": "Enabled. New payments are imported automatically; bank errors appear below.",
-    "synchronizationPaused": "Disabled. New payments are not imported automatically.",
+    "synchronizationEnabled": "On",
+    "synchronizationPaused": "Off",
     "synchronizationChanging": "Updating synchronization",
     "emailBankUnsupported": "Bank email integration is currently available only for Fio banka and Air Bank. You can use this account to record payments manually.",
     "organizationSettings": "organization settings",

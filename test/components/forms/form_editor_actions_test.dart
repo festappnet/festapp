@@ -1,3 +1,4 @@
+import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/components/fonts/form_font_catalog.dart';
 import 'package:fstapp/components/fonts/font_family_picker.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
@@ -407,4 +408,70 @@ void main() {
       }
     });
   }
+  testWidgets('bank synchronization refresh preserves an unsaved form draft',
+      (tester) async {
+    tester.view.physicalSize = const Size(1600, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        occasionUser: OccasionUserModel(isEditorOrder: true, isEditor: true),
+        occasion: OccasionModel(
+            isOpen: true,
+            isHidden: false,
+            isPromoted: false,
+            features: [FormFeature(code: 'form', isEnabled: true)]));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+    final oldAccount = BankAccountModel.fromJson({
+      'id': 42,
+      'title': 'Bank',
+      'bank_sync': {'state': 'suspended', 'mode': 'api'}
+    });
+    final newAccount = BankAccountModel.fromJson({
+      'id': 42,
+      'title': 'Bank',
+      'bank_sync': {'state': 'connected', 'mode': 'api'}
+    });
+    final form = FormModel(
+        link: 'bank-refresh',
+        title: 'Original',
+        data: {},
+        availableBankAccounts: [oldAccount]);
+    var loads = 0;
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeConfig.theme(),
+        home: FormSettingsContent(
+          formLink: 'bank-refresh',
+          loadBundle: (_) async {
+            loads++;
+            return FormEditBundle(
+                form: loads == 1
+                    ? form
+                    : FormModel(title: 'Server original', data: {}),
+                formFields: [],
+                productTypes: [],
+                products: [],
+                availableBankAccounts: [loads == 1 ? oldAccount : newAccount]);
+          },
+        )));
+    await tester.pumpAndSettle();
+    final title =
+        find.widgetWithText(TextFormField, FormStrings.labelFormTitle);
+    await tester.enterText(title, 'Unsaved title');
+    await tester.pump();
+    expect(
+        tester.widget<TextFormField>(title).controller!.text, 'Unsaved title');
+    final revision = DbBankAccounts.connectionChanges.value.revision;
+    DbBankAccounts.connectionChanges.value =
+        (accountId: 42, revision: revision + 1);
+    await tester.pumpAndSettle();
+    expect(loads, 2);
+    expect(form.availableBankAccounts!.single.bankSync!.state, 'connected');
+    expect(
+        tester.widget<TextFormField>(title).controller!.text, 'Unsaved title');
+    expect(
+        tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
+        isTrue);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

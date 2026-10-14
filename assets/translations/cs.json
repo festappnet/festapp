@@ -1640,9 +1640,10 @@
     "copied": "Zkopírováno"
   },
   "BankAccount": {
+    "synchronizationPending": "Synchronizace je zapnutá. Načtení čeká na limit banky.",
     "automaticSynchronization": "Automatická synchronizace",
-    "synchronizationEnabled": "Zapnuto. Načítání nových plateb probíhá automaticky; případné chyby banky jsou uvedeny níže.",
-    "synchronizationPaused": "Vypnuto. Nové platby se automaticky nenačítají.",
+    "synchronizationEnabled": "Zapnuto",
+    "synchronizationPaused": "Vypnuto",
     "synchronizationChanging": "Měním nastavení synchronizace",
     "organizationSettings": "nastavení organizace",
     "settingsTitle": "Nastavení bankovního účtu",

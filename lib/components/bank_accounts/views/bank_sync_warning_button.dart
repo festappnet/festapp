@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/bank_accounts/bank_sync_warning.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -8,33 +9,38 @@ import 'package:fstapp/widgets/app_dialog.dart';
 class BankSyncWarningButton extends StatelessWidget {
   final BankSyncWarning warning;
   final bool showPaymentHelp;
+  final bool compact;
   const BankSyncWarningButton(
-      {super.key, required this.warning, this.showPaymentHelp = true});
+      {super.key,
+      required this.warning,
+      this.showPaymentHelp = true,
+      this.compact = false});
 
   @override
   Widget build(BuildContext context) {
+    final contacts = warning.uniqueContacts;
     final reason = OrdersStrings.bankSyncWarningReason(warning.code);
     return IconButton(
       tooltip: [
-        OrdersStrings.bankSyncWarningTitle,
-        if (warning.bankAccountTitle.isNotEmpty) warning.bankAccountTitle,
         reason,
-        if (showPaymentHelp) OrdersStrings.bankSyncWarningHelp,
-        warning.contacts.isEmpty
+        contacts.isEmpty
             ? OrdersStrings.bankSyncWarningFallback
-            : OrdersStrings.bankSyncWarningContact,
-        for (final contact in warning.contacts)
-          [contact.name, if (contact.email?.isNotEmpty == true) contact.email!]
-              .where((part) => part.isNotEmpty)
-              .join(' - '),
+            : contacts
+                .map((contact) => contact.name.isNotEmpty
+                    ? contact.name
+                    : contact.email ?? '')
+                .join(', '),
       ].join('\n'),
       icon: const Icon(Icons.warning_amber_rounded),
       color: Theme.of(context).brightness == Brightness.dark
           ? Colors.amber.shade200
           : Colors.brown.shade800,
-      iconSize: 22,
-      padding: const EdgeInsets.all(4),
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      iconSize: compact ? 20 : 22,
+      padding: EdgeInsets.all(compact ? 2 : 4),
+      constraints: BoxConstraints(
+          minWidth: compact ? 24 : 40, minHeight: compact ? 24 : 40),
+      style:
+          IconButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
       onPressed: () => showDialog<void>(
         context: context,
         builder: (context) => AppAlertDialog(
@@ -46,31 +52,38 @@ class BankSyncWarningButton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (warning.bankAccountTitle.isNotEmpty) ...[
-                  Text(
+                  SelectableText(
                     warning.bankAccountTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
                 ],
-                Text(reason),
+                SelectableText(reason),
                 if (showPaymentHelp) ...[
                   const SizedBox(height: 12),
-                  Text(OrdersStrings.bankSyncWarningHelp),
+                  SelectableText(OrdersStrings.bankSyncWarningHelp),
                 ],
                 const SizedBox(height: 16),
-                Text(
-                  warning.contacts.isEmpty
+                SelectableText(
+                  contacts.isEmpty
                       ? OrdersStrings.bankSyncWarningFallback
                       : OrdersStrings.bankSyncWarningContact,
                 ),
-                for (final contact in warning.contacts)
+                for (final contact in contacts)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      [
-                        contact.name,
-                        if (contact.email?.isNotEmpty == true) contact.email!,
-                      ].where((part) => part.isNotEmpty).join('\n'),
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (contact.name.isNotEmpty)
+                          SelectableText(contact.name),
+                        if (contact.email?.isNotEmpty == true)
+                          Row(children: [
+                            Flexible(child: SelectableText(contact.email!)),
+                            const SizedBox(width: 8),
+                            CopyButton(value: contact.email!),
+                          ]),
+                      ],
                     ),
                   ),
               ],

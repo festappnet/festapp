@@ -10,10 +10,29 @@ class BankSyncWarning {
     this.contacts = const [],
   });
 
+  /// Migrated identities may represent the same administrator more than once.
+  /// Delivery addresses are canonical; keep distinct people without an address.
+  List<BankSyncContact> get uniqueContacts {
+    final result = <String, BankSyncContact>{};
+    for (final contact in contacts) {
+      final email = contact.email?.trim();
+      final name = contact.name.trim();
+      if (name.isEmpty && (email == null || email.isEmpty)) continue;
+      final key = email?.isNotEmpty == true
+          ? 'email:${email!.toLowerCase()}'
+          : 'name:${name.toLowerCase().replaceAll(RegExp(r'\s+'), ' ')}';
+      final previous = result[key];
+      if (previous == null || (previous.name.isEmpty && name.isNotEmpty)) {
+        result[key] = BankSyncContact(name: name, email: email);
+      }
+    }
+    return result.values.toList(growable: false);
+  }
+
   Map<String, dynamic> toJson() => {
         'code': code,
         'bank_account_title': bankAccountTitle,
-        'contacts': contacts
+        'contacts': uniqueContacts
             .map((contact) => {
                   'name': contact.name,
                   'email': contact.email,

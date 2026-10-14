@@ -76,6 +76,10 @@ void main() {
       await tester.pump();
       final toggle = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
       expect(toggle.value, !paused);
+      final subtitle = toggle.subtitle! as Text;
+      expect(subtitle.data, paused ? 'Vypnuto' : 'Zapnuto');
+      expect(subtitle.style?.color,
+          Theme.of(tester.element(find.byType(SwitchListTile))).hintColor);
       final canEdit = !scenario.endsWith('reader') &&
           !scenario.endsWith('nonadmin') &&
           !busy;

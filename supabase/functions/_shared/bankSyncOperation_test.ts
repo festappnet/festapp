@@ -154,3 +154,33 @@ for (const scenario of ['resume-api', 'resume-inactive', 'resume-email', 'suspen
     } finally {requestHandler=undefined;}
   });
 }
+
+for (const deferred of ['cooldown','busy'] as const) {
+  Deno.test(`resume treats ${deferred} as pending synchronization, not a bank failure`, async()=>{
+    const calls:{name:string;body:any}[]=[];
+    requestHandler=(async(input:any,init?:RequestInit)=>{
+      const url=new URL(input instanceof Request?input.url:String(input));
+      const body=init?.body?JSON.parse(String(init.body)):{};
+      const respond=(v:unknown,status=200)=>new Response(JSON.stringify(v),{status,headers:{'content-type':'application/json'}});
+      if(url.hostname==='127.0.0.1') {
+        const name=url.pathname.split('/').pop()!;calls.push({name,body});
+        return respond(name==='claim_bank_sync_operation'?{connection_id:1,remote_id:'9',barrier:'active',lease_token:'lease',mode:'api',state:'suspended'}:null);
+      }
+      if(url.pathname.endsWith('/ingest-state'))return respond({ingest_enabled:true});
+      if(url.pathname.endsWith('/fio-token'))return respond({});
+      if(url.pathname.endsWith('/fio-sync'))return deferred==='cooldown'
+        ?respond({error:'api_fetch_throttled',retry_after_s:30},429)
+        :respond({deferred:true,api_last_success_at:null});
+      if(url.pathname==='/bank-accounts/9')return respond({api_fetch_enabled:true});
+      throw new Error('Unexpected request');
+    }) as typeof fetch;
+    try {
+      const result=await runBankSyncOperation({operation_id:'fixture',operation:'resume'},'hash');
+      assertEquals(result.state,'connected');
+      assertEquals(result.sync_pending,true);
+      assertEquals(result.verification_error,undefined);
+      assertEquals(calls.some(c=>c.name==='record_bank_sync_pull'),false,'No bank request means no new success or failure fact');
+      assertEquals(calls.at(-1)?.body.p_state,'completed');
+    } finally {requestHandler=undefined;}
+  });
+}

@@ -1,8 +1,9 @@
 {
   "BankAccount": {
+    "synchronizationPending": "Synchronizacja jest włączona. Pobieranie czeka na limit banku.",
     "automaticSynchronization": "Automatyczna synchronizacja",
-    "synchronizationEnabled": "Włączona. Nowe płatności są importowane automatycznie; błędy banku są poniżej.",
-    "synchronizationPaused": "Wyłączona. Nowe płatności nie są importowane automatycznie.",
+    "synchronizationEnabled": "Włączona",
+    "synchronizationPaused": "Wyłączona",
     "synchronizationChanging": "Aktualizowanie synchronizacji",
     "emailBankUnsupported": "Integracja e-maili bankowych jest obecnie dostępna tylko dla Fio banka i Air Bank. Na tym koncie możesz rejestrować płatności ręcznie."
   },

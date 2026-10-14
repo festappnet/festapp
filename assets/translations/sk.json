@@ -1,8 +1,9 @@
 {
   "BankAccount": {
+    "synchronizationPending": "Synchronizácia je zapnutá. Načítanie čaká na limit banky.",
     "automaticSynchronization": "Automatická synchronizácia",
-    "synchronizationEnabled": "Zapnuté. Nové platby sa načítavajú automaticky; chyby banky sú uvedené nižšie.",
-    "synchronizationPaused": "Vypnuté. Nové platby sa automaticky nenačítavajú.",
+    "synchronizationEnabled": "Zapnuté",
+    "synchronizationPaused": "Vypnuté",
     "synchronizationChanging": "Mením nastavenie synchronizácie",
     "emailBankUnsupported": "Prepojenie bankových e-mailov je zatiaľ dostupné iba pre Fio banku a Air Bank. Tento účet môžete používať na ručnú evidenciu platieb."
   },

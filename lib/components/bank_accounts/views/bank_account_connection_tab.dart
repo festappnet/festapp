@@ -19,6 +19,7 @@ class BankAccountConnectionTab extends StatefulWidget {
   final VoidCallback? onConnectEmail;
   final ValueChanged<bool>? onSynchronizationChanged;
   final bool isChangingSynchronization;
+  final Future<void> Function()? onRefreshConnection;
 
   // FIO token fields
   final TextEditingController tokenController;
@@ -37,6 +38,7 @@ class BankAccountConnectionTab extends StatefulWidget {
     this.onConnectEmail,
     this.onSynchronizationChanged,
     this.isChangingSynchronization = false,
+    this.onRefreshConnection,
     required this.tokenController,
     required this.expiryDate,
     required this.onExpiryDateChanged,
@@ -56,7 +58,9 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   void initState() {
     super.initState();
     _relativeTimeRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted || !TickerMode.valuesOf(context).enabled) return;
       setState(() {});
+      if (!widget.isSaving) widget.onRefreshConnection?.call();
     });
   }
 
@@ -160,10 +164,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                 sync.state == 'suspended'
                     ? BankAccountStrings.synchronizationPaused
                     : BankAccountStrings.synchronizationEnabled,
+                style: TextStyle(color: Theme.of(context).hintColor),
               ),
               value: sync.state == 'connected' || sync.state == 'degraded',
-              onChanged:
-                  !widget.isReadOnly &&
+              onChanged: !widget.isReadOnly &&
                       !widget.isSaving &&
                       widget.account.isAdmin &&
                       [

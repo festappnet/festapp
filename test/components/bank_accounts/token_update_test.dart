@@ -13,6 +13,11 @@ void main() {
   SharedPreferences.setMockInitialValues({});
   final calls = <Map<String, dynamic>>[];
   Map<String, dynamic> outcome = {};
+  Map<String, dynamic> connectionStatus = {
+    'id': 1,
+    'state': 'connected',
+    'mode': 'api'
+  };
   setUpAll(() async {
     await Supabase.initialize(
         url: 'https://local-test.invalid',
@@ -32,8 +37,7 @@ void main() {
           final body = jsonDecode(request.body) as Map<String, dynamic>;
           calls.add(body);
           if (body['operation'] == 'status') {
-            return http.Response(
-                jsonEncode({'id': 1, 'state': 'connected', 'mode': 'api'}), 200,
+            return http.Response(jsonEncode(connectionStatus), 200,
                 headers: {'content-type': 'application/json'});
           }
           return http.Response(jsonEncode(outcome), 200,
@@ -47,6 +51,37 @@ void main() {
     calls.clear();
   });
 
+  test(
+      'new bank pull or committed movement publishes account refresh, unchanged snapshot does not',
+      () async {
+    connectionStatus = {'id': 1, 'state': 'connected', 'mode': 'api'};
+    await DbBankAccounts.getConnection(444);
+    final initial = DbBankAccounts.connectionChanges.value.revision;
+    await DbBankAccounts.getConnection(444);
+    expect(DbBankAccounts.connectionChanges.value.revision, initial);
+    connectionStatus = {
+      ...connectionStatus,
+      'bank_pull_at': '2026-10-15T00:30:00Z',
+      'receiver_commit_at': '2026-10-15T00:30:05Z'
+    };
+    await DbBankAccounts.getConnection(444);
+    expect(DbBankAccounts.connectionChanges.value.accountId, 444);
+    expect(DbBankAccounts.connectionChanges.value.revision, initial + 1);
+  });
+  test(
+      'resuming during bank cooldown refreshes consumers and reports pending without failure',
+      () async {
+    outcome = {
+      'state': 'connected',
+      'sync_enabled': true,
+      'sync_pending': true
+    };
+    final initial = DbBankAccounts.connectionChanges.value.revision;
+    final result = await DbBankAccounts.manage(159, 'resume');
+    expect(result['sync_pending'], isTrue);
+    expect(DbBankAccounts.connectionChanges.value.revision, initial + 1);
+    expect(calls.single['operation'], 'resume');
+  });
   test('Update token sends the new value to the BankSync management endpoint',
       () async {
     outcome = {'state': 'connected', 'token_saved': true};

@@ -1,8 +1,9 @@
 {
   "BankAccount": {
+    "synchronizationPending": "Synchronisierung aktiviert. Der nächste Abruf wartet auf die Bankfrist.",
     "automaticSynchronization": "Automatische Synchronisierung",
-    "synchronizationEnabled": "Aktiviert. Neue Zahlungen werden automatisch importiert; Bankfehler werden unten angezeigt.",
-    "synchronizationPaused": "Deaktiviert. Neue Zahlungen werden nicht automatisch importiert.",
+    "synchronizationEnabled": "Ein",
+    "synchronizationPaused": "Aus",
     "synchronizationChanging": "Synchronisierung wird aktualisiert",
     "emailBankUnsupported": "Die Bank-E-Mail-Anbindung ist derzeit nur für Fio banka und Air Bank verfügbar. Für dieses Konto können Sie Zahlungen manuell erfassen."
   },

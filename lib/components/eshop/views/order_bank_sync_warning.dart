@@ -11,6 +11,6 @@ class OrderBankSyncWarning extends StatelessWidget {
     final warning = order.bankSyncWarning;
     return warning == null
         ? const SizedBox.shrink()
-        : BankSyncWarningButton(warning: warning);
+        : BankSyncWarningButton(warning: warning, compact: true);
   }
 }

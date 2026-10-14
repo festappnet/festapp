@@ -27,6 +27,8 @@ class BankAccountStrings {
   static String get emailBankUnsupported =>
       'BankAccount.emailBankUnsupported'.tr();
   static String get connectEmail => 'BankAccount.connect_email'.tr();
+  static String get synchronizationPending =>
+      'BankAccount.synchronizationPending'.tr();
   static String get automaticSynchronization =>
       'BankAccount.automaticSynchronization'.tr();
   static String get synchronizationEnabled =>

@@ -6,6 +6,18 @@ ingress and API polling flags and attempts a bank pull; bank verification failur
 keeps retries enabled and exposes a degraded state. Recorded token expiry does
 not prevent an explicit administrator resume.
 
+After a control change, account cards and clean order grids refresh their bank
+facts. The form editor refreshes only its account list, preserving draft fields.
+The connection dialog reads status every minute while active and briefly every
+five seconds after resume/token updates, covering asynchronous webhook receipts.
+These refreshes never request another bank pull.
+
+A BankSync `api_fetch_throttled` response or `deferred` bank poll is pending work,
+not a new bank failure. Resume leaves polling enabled without recording a false
+failure or successful pull. BankSync owns its durable 30-second token and physical
+account cooldown; pause/resume does not reset that budget. Tested against the
+canonical BankSync package 0.3.0 with a rapid toggle and a competing second poll.
+
 The existing authenticated `bank-sync-reconcile` endpoint also accepts a scoped
 `monitor_organization_id`. Monitoring reads BankSync account/ingress status; it
 never introduces another bank polling or payment matching engine. Only the

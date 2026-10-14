@@ -1,4 +1,5 @@
-import 'bank_account_sync_status.dart';
+import 'package:fstapp/services/app_logger.dart';
+import 'unit_bank_account_card.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
@@ -11,7 +12,6 @@ import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/_shared/drag_handle_dots.dart';
 import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -37,7 +37,38 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   @override
   void initState() {
     super.initState();
+    DbBankAccounts.connectionChanges.addListener(_bankConnectionChanged);
     _loadData();
+  }
+
+  bool _refreshingConnections = false;
+
+  void _bankConnectionChanged() {
+    final id = DbBankAccounts.connectionChanges.value.accountId;
+    if (_unitAccounts.any((account) => account.id == id)) {
+      _refreshConnections();
+    }
+  }
+
+  Future<void> _refreshConnections() async {
+    if (_refreshingConnections || !mounted) return;
+    _refreshingConnections = true;
+    try {
+      final accounts =
+          await (BankAccountsLoadScope.maybeOf(context)?.load(true) ??
+              DbBankAccounts.getBankAccountsForUnit(widget.unitId));
+      if (mounted) setState(() => _unitAccounts = accounts);
+    } catch (error) {
+      AppLogger.error('Could not refresh bank account cards: $error');
+    } finally {
+      _refreshingConnections = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    DbBankAccounts.connectionChanges.removeListener(_bankConnectionChanged);
+    super.dispose();
   }
 
   void _showError(String message) {
@@ -438,109 +469,20 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                         onReorder: _onReorder,
                         itemBuilder: (context, index) {
                           final account = _unitAccounts[index];
-                          bool canEdit = account.isAdmin;
-                          return ListTile(
+                          final higherPriorityCurrencies = _unitAccounts
+                              .take(index)
+                              .expand((account) => account.supportedCurrencies)
+                              .toSet();
+                          return UnitBankAccountCard(
                             key: ValueKey(account.id),
-                            title: Text(
-                                account.title ?? BankAccountStrings.untitled),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (account.accountNumber != null)
-                                  Text(account.accountNumberHumanReadable ??
-                                      account.accountNumber!),
-                                BankAccountSyncStatus(account: account),
-                                if (account.supportedCurrencies.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: () {
-                                      return Wrap(
-                                        spacing: 4,
-                                        runSpacing: 4,
-                                        children: account.supportedCurrencies
-                                            .map((c) {
-                                          // Check if any higher priority (lower index) account has this currency
-                                          bool isPrimary = true;
-                                          for (int i = 0; i < index; i++) {
-                                            if (_unitAccounts[i]
-                                                .supportedCurrencies
-                                                .contains(c)) {
-                                              isPrimary = false;
-                                              break;
-                                            }
-                                          }
-
-                                          return Tooltip(
-                                            message: isPrimary
-                                                ? BankAccountStrings
-                                                    .primaryAccountFor(c)
-                                                : BankAccountStrings
-                                                    .backupAccountFor(c),
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: isPrimary
-                                                    ? Colors.green.shade100
-                                                    : Colors.grey.shade200,
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                                border: Border.all(
-                                                    color: isPrimary
-                                                        ? Colors.green.shade400
-                                                        : Colors.grey.shade400),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(c,
-                                                      style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: isPrimary
-                                                              ? Colors.green
-                                                                  .shade900
-                                                              : Colors
-                                                                  .black87)),
-                                                  if (isPrimary) ...[
-                                                    const SizedBox(width: 4),
-                                                    Icon(Icons.star,
-                                                        size: 10,
-                                                        color: Colors
-                                                            .green.shade800),
-                                                  ]
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      );
-                                    }(),
-                                  ),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                      canEdit ? Icons.edit : Icons.visibility),
-                                  onPressed: () => _addOrEditAccount(account),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.link_off),
-                                  onPressed: () => _unlinkAccount(account),
-                                ),
-                                if (canEdit)
-                                  ReorderableDragStartListener(
-                                    index: index,
-                                    child: const DragHandleDots(),
-                                  ),
-                              ],
-                            ),
+                            account: account,
+                            primaryCurrencies: account.supportedCurrencies
+                                .where((currency) => !higherPriorityCurrencies
+                                    .contains(currency))
+                                .toSet(),
+                            index: index,
+                            onOpen: () => _addOrEditAccount(account),
+                            onUnlink: () => _unlinkAccount(account),
                           );
                         },
                       ),

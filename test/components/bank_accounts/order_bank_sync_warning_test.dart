@@ -118,7 +118,7 @@ void main() {
         expect(find.text('Festival account'), findsOneWidget);
         expect(
             find.text(status == 'suspended'
-                ? 'Jane Admin\nadmin@example.test'
+                ? 'admin@example.test'
                 : 'Ask the organizer to contact the bank account administrator.'),
             findsOneWidget);
       }
@@ -190,22 +190,21 @@ void main() {
             : 'Automatic synchronization is paused.';
         final tooltip =
             tester.widget<IconButton>(find.byType(IconButton)).tooltip!;
-        expect(tooltip, contains('Automatic payment matching is unavailable'));
-        expect(tooltip, contains('Festival account'));
+        expect(tooltip, isNot(contains('Festival account')));
         expect(tooltip, contains(reason));
-        expect(tooltip, contains('Check the bank statement'));
+        expect(tooltip, isNot(contains('Check the bank statement')));
         expect(
             tooltip,
             contains(scenario == 'fallback'
                 ? 'Ask the organizer to contact the bank account administrator.'
-                : 'Jane Admin - admin@example.test'));
+                : 'Jane Admin'));
         await tester.tap(find.byType(IconButton));
         await tester.pumpAndSettle();
         expect(find.text('Festival account'), findsOneWidget);
         expect(
             find.text(scenario == 'fallback'
                 ? 'Ask the organizer to contact the bank account administrator.'
-                : 'Jane Admin\nadmin@example.test'),
+                : 'admin@example.test'),
             findsOneWidget);
         expect(find.text(reason), findsOneWidget);
       }
