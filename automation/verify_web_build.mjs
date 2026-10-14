@@ -66,6 +66,12 @@ assert.ok(
   !flutterHtml.includes('"mainJsPath":"main.dart.js"'),
   'Flutter HTML still loads the mutable main.dart.js entrypoint',
 );
+for (const script of [
+  'festapp_update_prompt.js', 'festapp_flutter_bootstrap_guard.js', 'festapp_pwa_bridge.js',
+]) {
+  assert.ok(flutterHtml.includes(`src="${script}?v=${encodeURIComponent(expectedVersion)}"`),
+    `Flutter support script ${script} is not bound to this release`);
+}
 assert.deepEqual(versionedMain, main, 'versioned and canonical main bundles differ');
 
 const projectConfig = await readFile(configPath, 'utf8');

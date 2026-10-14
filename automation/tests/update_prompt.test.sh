@@ -143,6 +143,9 @@ printf '// fake compiled app\n%s\n%s\n%s\n%s\n%s\n' \
   > "$BUILD_DIR/main.dart.js"
 printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><script>_flutter.buildConfig={"builds":[{"mainJsPath":"main.dart.js"}]};</script>\n' \
   > "$BUILD_DIR/index.html"
+for script in festapp_update_prompt.js festapp_flutter_bootstrap_guard.js festapp_pwa_bridge.js; do
+  printf '<script src="%s" defer></script>\n' "$script" >> "$BUILD_DIR/index.html"
+done
 printf '_flutter.buildConfig={"builds":[{"mainJsPath":"main.dart.js"}]};\n' \
   > "$BUILD_DIR/flutter_bootstrap.js"
 printf "const SUPABASE_KEY = 'sb-%s-auth-token';\n" "$CONFIG_PROJECT_REF" \
@@ -164,6 +167,10 @@ assert_contains "$BUILD_DIR/festapp-version.json" '"main":"main.dart.1.2.3-456.j
 assert_contains "$BUILD_DIR/index.html" '"mainJsPath":"main.dart.1.2.3-456.js"'
 assert_contains "$BUILD_DIR/flutter_bootstrap.js" '"mainJsPath":"main.dart.1.2.3-456.js"'
 assert_not_contains "$BUILD_DIR/index.html" '"mainJsPath":"main.dart.js"'
+for script in festapp_update_prompt.js festapp_flutter_bootstrap_guard.js festapp_pwa_bridge.js; do
+  assert_contains "$BUILD_DIR/index.html" "src=\"$script?v=1.2.3%2B456\""
+done
+
 
 # The stamped copy must be byte-identical to the entrypoint it mirrors.
 if cmp -s "$BUILD_DIR/main.dart.js" "$BUILD_DIR/main.dart.1.2.3-456.js"; then
@@ -177,6 +184,9 @@ fi
 CONFIG_LOADING_LOGO="$(sed -n 's/^WEB_LOADING_LOGO_ASSET=//p' "$PROJECT_ROOT/automation/project.conf")"
 printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><script>_flutter.buildConfig={"builds":[{"mainJsPath":"main.dart.1.2.3-456.js"}]};</script><img class="initial-logo" src="%s">\n' \
   "$CONFIG_LOADING_LOGO" > "$BUILD_DIR/flutter"
+for script in festapp_update_prompt.js festapp_flutter_bootstrap_guard.js festapp_pwa_bridge.js; do
+  printf '<script src="%s?v=1.2.3%%2B456" defer></script>\n' "$script" >> "$BUILD_DIR/flutter"
+done
 printf 'const BUILD_VERSION = "1.2.3+456"; const FORCED_OCCASION_PATH = "/test-occasion"; // FESTAPP_QUERY_BUILD_VERSION\n' > "$BUILD_DIR/festapp_service_worker.js"
 printf '{"start_url":"/test-occasion/"}\n' > "$BUILD_DIR/site.webmanifest"
 printf 'const FORCED_OCCASION_PATH = "/test-occasion";\n' > "$BUILD_DIR/_worker.js"

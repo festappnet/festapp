@@ -47,10 +47,10 @@ cp "${BUILD_DIR}/main.dart.js" "${BUILD_DIR}/${VERSIONED_MAIN}"
 # Dart bundle during web-client -> Flutter handoff. Bind both bootstrap copies
 # to the immutable filename from this exact release instead. This is stronger
 # than response-header tuning and keeps the deployment atomic on every host.
-node - "$BUILD_DIR" "$VERSIONED_MAIN" <<'NODE'
+node - "$BUILD_DIR" "$VERSIONED_MAIN" "$VERSION" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
-const [buildDir, versionedMain] = process.argv.slice(2);
+const [buildDir, versionedMain, version] = process.argv.slice(2);
 for (const relative of ['index.html', 'flutter_bootstrap.js']) {
   const file = path.join(buildDir, relative);
   if (!fs.existsSync(file)) {
@@ -61,10 +61,19 @@ for (const relative of ['index.html', 'flutter_bootstrap.js']) {
   if (!source.includes(marker)) {
     throw new Error(`emit_version_manifest: ${relative} lacks ${marker}`);
   }
-  fs.writeFileSync(
-    file,
-    source.replaceAll(marker, `"mainJsPath":"${versionedMain}"`),
-  );
+  let stamped = source.replaceAll(marker, `"mainJsPath":"${versionedMain}"`);
+  if (relative === 'index.html') {
+    // Existing Chrome HTTP caches can predate today's no-store headers.
+    // The document must not execute a previous generation's recovery code.
+    for (const script of [
+      'festapp_update_prompt.js', 'festapp_flutter_bootstrap_guard.js',
+      'festapp_pwa_bridge.js',
+    ]) {
+      stamped = stamped.replaceAll(`src="${script}"`,
+        `src="${script}?v=${encodeURIComponent(version)}"`);
+    }
+  }
+  fs.writeFileSync(file, stamped);
 }
 NODE
 
