@@ -144,7 +144,8 @@
         // The combined web build already ships this canonical public script.
         if (startupServiceWorker && !['localhost', '127.0.0.1', '::1'].includes(location.hostname)) {
             const recovery = document.createElement('script');
-            recovery.src = '/festapp_update_prompt.js';
+            recovery.src = '/festapp_update_prompt.js?v=' +
+                encodeURIComponent(window.__FESTAPP_BUILD_VERSION__);
             recovery.onload = function() {
                 if (window.__FESTAPP_WEB_STARTUP_FAILURE__) {
                     window.failFestappWebClientStartup(window.__FESTAPP_WEB_STARTUP_FAILURE__);

@@ -114,6 +114,12 @@ async function verifyOnce() {
     !html.includes('"mainJsPath":"main.dart.js"'),
     'live Flutter HTML still loads the service-worker-cacheable main.dart.js',
   );
+  for (const script of [
+    'festapp_update_prompt.js', 'festapp_flutter_bootstrap_guard.js', 'festapp_pwa_bridge.js',
+  ]) {
+    assert.ok(html.includes(`src="${script}?v=${encodeURIComponent(expectedVersion)}"`),
+      `Flutter support script ${script} is not bound to this release`);
+  }
   assert.match(
     worker,
     new RegExp(`const BUILD_VERSION = "${escapedVersion}"`),

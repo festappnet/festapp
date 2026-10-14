@@ -35,6 +35,7 @@ const OCCASION_MEDIA_CACHE_NAME = 'festapp-occasion-media-v1';
 const PRECACHE_URLS = ${JSON.stringify(assets, null, 2)};
 const CORE_URLS = ${JSON.stringify(coreAssets, null, 2)};
 const FLUTTER_ENTRY = ${JSON.stringify(flutterEntry)};
+const FLUTTER_MAIN = ${JSON.stringify(manifest.flutterMain)};
 const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
 const FORCED_OCCASION_PATH = ${JSON.stringify(forcedOccasionLink ? `/${forcedOccasionLink}/event` : null)};
 const STANDALONE_DOCUMENT_PATHS = new Set(${JSON.stringify(standaloneDocuments, null, 2)});
@@ -315,7 +316,35 @@ function scheduleExplicitShellPrune() {
   return scheduled;
 }
 
+async function repairCurrentAppShell(expectedVersion) {
+  if (expectedVersion !== BUILD_VERSION) return { ok: false, reason: 'wrong-worker' };
+  try {
+    const response = await fetch('/festapp-version.json?shell-repair=' +
+      encodeURIComponent(BUILD_VERSION), { cache: 'no-store' });
+    if (!response.ok) return { ok: false, reason: 'network-unavailable' };
+    const manifest = await response.json();
+    if (manifest.version !== BUILD_VERSION ||
+        '/' + manifest.main !== FLUTTER_MAIN) {
+      return { ok: false, reason: 'version-changed' };
+    }
+    // Cache.addAll commits the complete batch only after every download succeeds.
+    // Preserve auth, application data and every other generation's offline shell.
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(CORE_URLS.map((url) => new Request(
+      new URL(url, self.location.origin), { cache: 'reload' })));
+    return { ok: true, version: BUILD_VERSION };
+  } catch (_) {
+    return { ok: false, reason: 'repair-failed' };
+  }
+}
+
 self.addEventListener('message', (event) => {
+  if (event.data?.type === 'FESTAPP_REPAIR_APP_SHELL' && event.source?.id) {
+    event.waitUntil(repairCurrentAppShell(event.data.version).then((result) => {
+      event.ports?.[0]?.postMessage(result);
+    }));
+    return;
+  }
   if (event.data?.type === 'FESTAPP_QUERY_BUILD_VERSION') {
     event.ports?.[0]?.postMessage({ version: BUILD_VERSION });
     return;
@@ -411,14 +440,14 @@ function cachedNavigationTarget(pathname) {
 }
 
 function isFlutterExecutable(pathname) {
-  return pathname === '/main.dart.js' ||
+  return pathname === FLUTTER_MAIN || pathname === '/main.dart.js' ||
     /^\\/main\\.dart\\.js_\\d+\\.part\\.js$/.test(pathname) ||
     pathname === '/flutter.js' ||
     pathname === '/flutter_bootstrap.js';
 }
 
 function isFlutterBootstrapExecutable(pathname) {
-  return pathname === '/main.dart.js' ||
+  return pathname === FLUTTER_MAIN || pathname === '/main.dart.js' ||
     pathname === '/flutter.js' ||
     pathname === '/flutter_bootstrap.js';
 }
