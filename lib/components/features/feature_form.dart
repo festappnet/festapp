@@ -10,14 +10,12 @@ import 'feature_metadata.dart';
 class FeatureForm extends StatefulWidget {
   final Feature feature;
   final int occasion;
-  final bool readOnly;
   final Future<void> Function(TicketFeature)? onSaveTicket;
 
   const FeatureForm(
       {super.key,
       required this.feature,
       required this.occasion,
-      this.readOnly = false,
       this.onSaveTicket});
 
   @override
@@ -84,7 +82,6 @@ class _FeatureFormState extends State<FeatureForm> {
               key: ValueKey((widget.feature as TicketFeature).layout),
               feature: widget.feature as TicketFeature,
               occasionId: widget.occasion,
-              readOnly: widget.readOnly,
               onSave: widget.onSaveTicket)
           : widget.feature.buildFormField(context),
     ];

@@ -755,7 +755,7 @@ class _FormEditorContentState extends State<FormEditorContent>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_canEdit) Text(FormStrings.dragToReorder,
+          Text(FormStrings.dragToReorder,
               style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
           Form(
@@ -763,7 +763,6 @@ class _FormEditorContentState extends State<FormEditorContent>
             child: FormFieldsGenerator(
                 key: ObjectKey(_bundle),
                 bundle: _bundle!,
-                editingEnabled: _canEdit,
                 onChanged: _draftChanged),
           ),
           const SizedBox(height: 16),
@@ -856,7 +855,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 8),
-                            if (_canEdit) Text(
+                            Text(
                               FormStrings.dragToReorder,
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
@@ -868,7 +867,6 @@ class _FormEditorContentState extends State<FormEditorContent>
                             child: FormFieldsGenerator(
                                 key: ObjectKey(_bundle),
                                 bundle: _bundle!,
-                                editingEnabled: _canEdit,
                                 onChanged: _draftChanged)),
                         const SizedBox(height: 102),
                       ],

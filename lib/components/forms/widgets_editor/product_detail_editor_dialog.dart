@@ -11,13 +11,8 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 
 class ProductDetailEditorDialog extends StatefulWidget {
   final ProductModel product;
-  final bool readOnly;
   final HtmlSaveCoordinator? coordinator;
-  const ProductDetailEditorDialog(
-      {super.key,
-      required this.product,
-      this.coordinator,
-      this.readOnly = false});
+  const ProductDetailEditorDialog({super.key, required this.product, this.coordinator});
 
   @override
   _ProductDetailEditorDialogState createState() =>
@@ -72,7 +67,6 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
               const SizedBox(height: 16),
               TextField(
                 controller: _shortTitleController,
-                enabled: !widget.readOnly,
                 decoration: InputDecoration(
                   labelText: OrdersStrings.gridShortTitle,
                   border: const UnderlineInputBorder(),
@@ -83,7 +77,6 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
             // Editable Product Quantity with helper text
             TextField(
               controller: _quantityController,
-              enabled: !widget.readOnly,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: FormStrings.productQuantity,
@@ -98,15 +91,9 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
             ),
             const SizedBox(height: 8),
             // Full HTML description (no height limit)
-            EditableHtmlField(
-                html: _description,
-                enabled: !widget.readOnly,
-                coordinator: widget.coordinator,
-                owner: HtmlMediaOwner.occasion(widget.product.occasion),
-                onChanged: (html) => setState(() {
-                      _description = html;
-                      widget.product.description = html;
-                    })),
+            EditableHtmlField(html: _description, coordinator: widget.coordinator,
+              owner: HtmlMediaOwner.occasion(widget.product.occasion),
+              onChanged: (html) => setState(() { _description = html; widget.product.description = html; })),
             const SizedBox(height: 24),
           ],
         ),
