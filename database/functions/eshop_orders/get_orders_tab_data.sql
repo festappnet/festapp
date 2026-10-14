@@ -22,10 +22,14 @@ BEGIN
           RAISE EXCEPTION 'get_all_forms_with_fields failed: %', v_forms_data->>'message';
     END IF;
 
+    -- No orders means no delivery status. Do not resolve an ambiguous event slug.
     RETURN (v_orders_data->'data') || jsonb_build_object('forms', v_forms_data->'data', 'email_delivery',
-      public.get_order_email_summaries((SELECT id FROM public.occasions
-        WHERE link = p_occasion_link
-          AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid())),
-        ARRAY(SELECT (ord->>'id')::bigint FROM jsonb_array_elements(v_orders_data#>'{data,orders}') ord)));
+      CASE WHEN jsonb_array_length(v_orders_data#>'{data,orders}') = 0
+        THEN '{}'::jsonb
+        ELSE public.get_order_email_summaries(
+          (v_orders_data->>'occasion_id')::bigint,
+          ARRAY(SELECT (ord->>'id')::bigint
+            FROM jsonb_array_elements(v_orders_data#>'{data,orders}') ord))
+      END);
 END;
 $$;
