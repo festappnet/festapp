@@ -294,3 +294,57 @@ Deno.test("exchange-sign-in-code hides invalid proof and account existence", asy
     });
   }
 });
+
+Deno.test("first ticket delivery joins the paid intent while explicit resend gets a new identity", async () => {
+  const handler = await loadHandler("send-tickets");
+  const { supabaseAdmin } = await import("./supabaseUtil.ts");
+  const originalRpc = supabaseAdmin.rpc;
+  const enqueues: Record<string, unknown>[] = [];
+  supabaseAdmin.rpc = ((name: string, args: Record<string, unknown>) => {
+    let data: unknown;
+    if (name === "get_order_details_for_email") {
+      data = {
+        code: 200,
+        data: {
+          order: { id: 42, data: { email: "regression@example.invalid" } },
+          occasion: { id: 7, organization: 3, unit: 8 },
+        },
+      };
+    } else if (name === "is_demo_occasion") data = false;
+    else if (name === "check_request_secret") data = true;
+    else if (name === "enqueue_order_email") {
+      enqueues.push(args);
+      data = { message_id: "fixture-message" };
+    } else if (name === "get_internal_email_state") data = "accepted";
+    else throw new Error("Unexpected RPC: " + name);
+    return Promise.resolve({ data, error: null });
+  }) as unknown as typeof supabaseAdmin.rpc;
+  try {
+    for (const firstDelivery of [true, false]) {
+      const response = await handler(
+        new Request("https://edge-test.invalid", {
+          method: "POST",
+          body: JSON.stringify({
+            orderId: 42,
+            email: "regression@example.invalid",
+            requestSecret: "fixture-secret",
+            requestId: "fixture-click",
+            firstDelivery,
+          }),
+        }),
+      );
+      assertEquals(response.status, 200);
+    }
+    assertEquals(
+      enqueues[0].p_request,
+      undefined,
+      "First delivery must reuse the automatic paid generation",
+    );
+    assertEquals(
+      enqueues[1].p_request,
+      "resend:fixture-click:42:regression@example.invalid",
+    );
+  } finally {
+    supabaseAdmin.rpc = originalRpc;
+  }
+});

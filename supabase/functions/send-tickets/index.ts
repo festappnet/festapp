@@ -10,10 +10,11 @@ const headers = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   try {
-    const { orderId, email, requestSecret, requestId } = await req.json();
+    const { orderId, email, requestSecret, requestId, firstDelivery = false } =
+      await req.json();
     if (
       typeof orderId !== "number" || typeof email !== "string" ||
-      !email.includes("@")
+      !email.includes("@") || typeof firstDelivery !== "boolean"
     ) {
       return Response.json({ error: "Invalid input parameters" }, {
         status: 400,
@@ -41,7 +42,7 @@ Deno.serve(async (req) => {
       p_org: occasion.organization,
       p_occ: occasion.id,
       p_unit: occasion.unit,
-      ...(requestId
+      ...(requestId && !firstDelivery
         ? { p_request: `resend:${requestId}:${orderId}:${email}` }
         : {}),
     });

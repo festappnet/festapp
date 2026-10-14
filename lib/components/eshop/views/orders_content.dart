@@ -446,6 +446,8 @@ class _OrdersContentState extends State<OrdersContent> {
     if (selectedFull.isEmpty) return;
     var stateChange =
         selectedFull.where((s) => s.state == OrderModel.orderedState).toList();
+    // Join the automatic paid intent even if the worker accepted it already.
+    final newlyPaidIds = stateChange.map((order) => order.id).toSet();
     if (stateChange.isNotEmpty) {
       var confirm = await DataGridActionConfirmation.show<OrderModel>(
         context: context,
@@ -491,7 +493,7 @@ class _OrdersContentState extends State<OrdersContent> {
       final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
       var futures = sending.where((o) => visibleIds.contains(o.id)).map((s) {
         return () async {
-          await sendTicketsToEmail(s);
+          await sendTicketsToEmail(s, firstDelivery: newlyPaidIds.contains(s.id));
         };
       }).toList();
 
@@ -502,10 +504,12 @@ class _OrdersContentState extends State<OrdersContent> {
     if (mounted) await refreshData();
   }
 
-  Future<void> sendTicketsToEmail(OrderModel order) async {
+  Future<void> sendTicketsToEmail(OrderModel order,
+      {bool firstDelivery = false}) async {
     await DbTickets.sendTicketsToEmail(
       orderId: order.id!,
       email: order.data!["email"],
+      firstDelivery: firstDelivery,
     );
   }
 
