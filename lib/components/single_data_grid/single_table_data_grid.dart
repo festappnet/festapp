@@ -7,7 +7,6 @@ import 'package:trina_grid/trina_grid.dart';
 import 'data_grid_strings.dart';
 import 'pluto_abstract.dart';
 import 'single_data_grid_header.dart';
-import 'package:collection/collection.dart';
 import 'package:fstapp/theme_config.dart';
 
 import 'single_data_grid_controller.dart';
@@ -16,7 +15,9 @@ import 'data_grid_column_header.dart';
 class SingleTableDataGrid<T extends ITrinaRowModel> extends StatefulWidget {
   final SingleDataGridController<T> controller;
 
-  const SingleTableDataGrid(this.controller, {super.key});
+  const SingleTableDataGrid(this.controller, {super.key, this.emptyMessage});
+
+  final String? emptyMessage;
 
   @override
   _SingleTableDataGridState<T> createState() => _SingleTableDataGridState<T>();
@@ -163,7 +164,8 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
         child: _withColumnHelpTraversal(TrinaGrid(
           noRowsWidget: isDataGridLoading
               ? null
-              : Center(child: Text(DataGridStrings.noItems)),
+              : Center(
+                  child: Text(widget.emptyMessage ?? DataGridStrings.noItems)),
           columns: widget.controller.columns,
           rows: [],
           onChanged: (TrinaGridOnChangedEvent event) {
