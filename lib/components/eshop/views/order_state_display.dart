@@ -86,11 +86,8 @@ class OrderStateDisplay extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Center(
-          child: Tooltip(
-            message: text,
-            child: Text(text, maxLines: 1,
-                textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
-          ),
+          child: Text(text, maxLines: 1,
+              textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
         ),
       ),
     );

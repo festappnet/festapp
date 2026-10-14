@@ -26,11 +26,7 @@ class OrderStateCell extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Tooltip(
-                message: label,
-                child:
-                    Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             if (order case final order? when order.bankSyncWarning != null) ...[
               const SizedBox(width: 4),
