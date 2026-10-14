@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/services/bounded_database_opener.dart';
 import 'dart:async';
 
@@ -7,6 +8,7 @@ import 'package:fstapp/main.dart';
 import 'package:fstapp/startup/startup_failure_policy.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   testWidgets('pending database startup becomes actionable without launching the app', (tester) async {
     final pending = Completer<void>();
     var builds = 0;
@@ -39,7 +41,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(builds, 0);
     expect(find.byKey(FestappBootstrap.failureKey), findsOneWidget);
-    expect(find.textContaining('Close other Festapp tabs'), findsOneWidget);
+    expect(find.textContaining('Zavřete ostatní karty Festapp'), findsOneWidget);
   });
 
   test('keeps the root route when no forced occasion is configured', () {
