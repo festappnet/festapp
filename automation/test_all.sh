@@ -159,6 +159,9 @@ if [ "$RUN_WEB" = true ]; then
     fi
 fi
 
+# Every selected combination must start its next suite at the repository root.
+cd "$PROJECT_ROOT"
+
 # 2. Run Database Tests
 if [ "$RUN_DB" = true ]; then
     echo ""
