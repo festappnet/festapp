@@ -54,7 +54,9 @@ export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={
     const {data,error}=await supabaseAdmin.rpc('get_products_and_types',{p_occasion_id:id});if(error)throw new Error('Failed to load ticket products');return data;
   }
 }) {
-  const layout=occasion.features?.find((f:any)=>f.code==='ticket')?.layout;
+  const feature=occasion.features?.find((f:any)=>f.code==='ticket');
+  if(feature?.is_enabled===false)throw new Error('Admission tickets are disabled for this occasion');
+  const layout=feature?.layout;
   if(layout)await parseRegisteredTicketLayout(layout);
   const resources={...await dependencies.load(occasion)};
   if(resources.background)resources.preparedBackground=await prepareTicketBackground(resources.background);
