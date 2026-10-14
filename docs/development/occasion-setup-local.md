@@ -3,7 +3,7 @@
 Spuštění z kořene repozitáře (Docker/Colima, Supabase CLI, psql, Python 3.11+ a FVM):
 
 ```sh
-python3 automation/run_occasion_setup_local.py
+python3 automation/run_occasion_setup_local.py --enable-wizard
 ```
 
 Otevři http://127.0.0.1:56880/unit/1/edit a přihlas se jako `t@t.com`, heslo `test`.
@@ -55,7 +55,9 @@ node web_client/scripts/import_occasion_setup_sources.js ../festapp-wizard-local
 ```
 
 Koncepty jsou v `public.occasion_setup_drafts`, nikdy v `public.occasions`.
-Vývojový flag `FESTAPP_OCCASION_SETUP` je ve výchozím sestavení vypnutý.
+Vývojový flag `FESTAPP_OCCASION_SETUP` je ve výchozím sestavení vypnutý a
+v produkčním sestavení se ignoruje. Lokální spouštěč bez `--enable-wizard`
+ponechává původní způsob vytvoření události.
 
 Backend patří výhradně projektu `festapp-wizard-local` v sourozenecké složce
 repozitáře. Porty API/DB jsou 56821/56822. Skript vytvoří čerstvý backend,

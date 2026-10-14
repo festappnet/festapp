@@ -90,7 +90,7 @@ def prepare():
     with os.fdopen(descriptor, 'w') as stream:
         json.dump({'FESTAPP_SUPABASE_URL': status['API_URL'],
                    'FESTAPP_SUPABASE_ANON_KEY': status['ANON_KEY'],
-                   'FESTAPP_OCCASION_SETUP': 'true'}, stream)
+                   'FESTAPP_OCCASION_SETUP': '--enable-wizard' in sys.argv}, stream)
     os.chmod(defines, 0o600)
     functions = BACKEND / 'supabase/functions'
     expected = ROOT / 'supabase/functions'
