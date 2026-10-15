@@ -20,6 +20,7 @@ Future<void> _pump(
   Future<EventFeedbackModel?> Function(int eventId)? loadFeedback,
   Future<bool> Function()? isOffline,
   Future<Map<String, dynamic>?> Function(int eventId)? loadCachedFeedback,
+  Future<void> Function(int, Map<String, dynamic>?)? saveCachedFeedback,
   Duration loadTimeout = const Duration(seconds: 12),
   bool settle = true,
 }) async {
@@ -36,6 +37,7 @@ Future<void> _pump(
           isOfflineOverride: isOffline,
           loadCachedFeedbackOverride: loadCachedFeedback,
           loadTimeout: loadTimeout,
+          saveCachedFeedbackOverride: saveCachedFeedback ?? (_, __) async {},
         ),
       ),
     ),
@@ -54,6 +56,28 @@ FilledButton _submitButton(WidgetTester tester) =>
     tester.widget<FilledButton>(find.byType(FilledButton));
 
 void main() {
+  testWidgets('remote feedback refresh updates the offline cache',
+      (tester) async {
+    final writes = <Map<String, dynamic>?>[];
+    await _pump(tester, isOpen: true, existing: _rated('positive'),
+        saveCachedFeedback: (eventId, feedback) async {
+      expect(eventId, 1);
+      writes.add(feedback);
+    });
+    expect(writes.single?['rating'], 'positive');
+    expect(find.text('EventFeedback.updateFeedback'), findsOneWidget);
+  });
+
+  testWidgets('cache failure does not break a successful live feedback load',
+      (tester) async {
+    await _pump(tester, isOpen: true, saveCachedFeedback: (_, __) async {
+      throw StateError('cache unavailable');
+    });
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byIcon(Icons.sentiment_neutral), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('known offline state never waits on the remote feedback request',
       (tester) async {
     final neverCompletes = Completer<EventFeedbackModel?>();

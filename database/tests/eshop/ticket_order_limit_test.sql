@@ -1,18 +1,29 @@
 DO $$
-DECLARE result jsonb;
+DECLARE result jsonb; org bigint; unit_id bigint; occasion_id bigint;
+    form_key uuid := gen_random_uuid();
 BEGIN
+    INSERT INTO public.organizations(title) VALUES ('Ticket cap checkout fixture') RETURNING id INTO org;
+    INSERT INTO public.units(organization,title) VALUES (org,'Ticket cap fixture') RETURNING id INTO unit_id;
+    INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
+        VALUES (org,unit_id,'Ticket cap fixture','ticket-cap-'||form_key,now(),now()+interval '1 day') RETURNING id INTO occasion_id;
+    INSERT INTO public.forms(key,occasion,link,is_open)
+        VALUES (form_key,occasion_id,'ticket-cap-'||form_key,true);
     IF public.ticket_order_limit() < 1 THEN
         RAISE EXCEPTION 'Global ticket cap must be positive';
     END IF;
     result := public.create_ticket_order_internal_v1(jsonb_build_object(
-        'form', '00000000-0000-0000-0000-000000000000',
+        'form', form_key,
         'ticket', (SELECT jsonb_agg('{}'::jsonb)
             FROM generate_series(1, public.ticket_order_limit() + 1))));
     IF result->>'code' <> '1023' THEN
         RAISE EXCEPTION 'Oversized order must fail before writing tickets: %', result;
     END IF;
+    IF EXISTS (SELECT 1 FROM eshop.orders WHERE occasion=occasion_id)
+       OR EXISTS (SELECT 1 FROM eshop.tickets WHERE occasion=occasion_id) THEN
+        RAISE EXCEPTION 'Oversized checkout left an order or tickets behind';
+    END IF;
     result := public.create_ticket_order_internal_v1(jsonb_build_object(
-        'form', '00000000-0000-0000-0000-000000000000',
+        'form', form_key,
         'ticket', (SELECT jsonb_agg('{}'::jsonb)
             FROM generate_series(1, public.ticket_order_limit()))));
     IF result->>'code' = '1023' THEN

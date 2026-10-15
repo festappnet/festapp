@@ -84,6 +84,15 @@ async function runTest(file) {
 
     // Read and Execute Test File
     const testSql = fs.readFileSync(file, 'utf8');
+    // Operational maintenance helpers may deliberately live in pg_temp. Load
+    // their canonical source in this same connection, within the test rollback.
+    for (const [, source] of testSql.matchAll(/^-- test-setup: (database\/[\w./-]+\.sql)$/gm)) {
+      const setupPath = path.resolve(PROJECT_ROOT, source);
+      if (!setupPath.startsWith(path.join(PROJECT_ROOT, 'database') + path.sep)) {
+        throw new Error('SQL test setup must stay inside the repository database directory');
+      }
+      await client.query(fs.readFileSync(setupPath, 'utf8'));
+    }
     await client.query(testSql);
 
     // Rollback (Always clean up)

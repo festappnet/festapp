@@ -11,7 +11,12 @@ import 'package:fstapp/theme_config.dart';
 /// when one is stored. Online it renders nothing. Pages outside the occasion
 /// shell (login, unit) knowingly have none.
 class OfflineBanner extends StatelessWidget {
-  const OfflineBanner({super.key});
+  final Future<DateTime?> Function() loadLastSyncedAt;
+
+  const OfflineBanner(
+      {super.key, Future<DateTime?> Function()? loadLastSyncedAt})
+      : loadLastSyncedAt =
+            loadLastSyncedAt ?? OfflineDataService.getLastSyncedAt;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +27,7 @@ class OfflineBanner extends StatelessWidget {
         return Material(
           color: ThemeConfig.grey300(context),
           child: FutureBuilder<DateTime?>(
-            future: OfflineDataService.getLastSyncedAt(),
+            future: loadLastSyncedAt(),
             builder: (context, snapshot) {
               final last = snapshot.data;
               return Padding(

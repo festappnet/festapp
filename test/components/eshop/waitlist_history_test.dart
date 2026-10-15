@@ -92,7 +92,7 @@ void main() {
     expect(history.state,'waitlisted');
   });
 
-  testWidgets('history arrow renders lifecycle colors and full target tooltip at 280px', (tester) async {
+  testWidgets('history arrow renders lifecycle colors and target label without redundant tooltip at 280px', (tester) async {
     for (final action in ['waitlist_withdraw', 'offer_sent', 'waitlist_accept']) {
       final history = OrderHistoryModel(state: 'paid', data: {'action': action, 'ticketIds': [1], 'count': 1});
       final formatted = history.waitlistHistoryState!;
@@ -104,7 +104,8 @@ void main() {
       final expectedColor = action == 'offer_sent' ? OrderModel.singleDataGridStateToColor('waitlisted') : action == 'waitlist_accept' ? OrderModel.singleDataGridStateToColor('paid') : Colors.grey.shade500.withValues(alpha:0.6);
       expect((tags.last.decoration as BoxDecoration).color,expectedColor);
       final target = OrderModel.statesDataGridToUpper(formatted.split(';').last);
-      expect(find.byTooltip(target), findsOneWidget);
+      expect(find.text(target), findsOneWidget);
+      expect(find.byType(Tooltip), findsNothing);
       expect(tester.takeException(), isNull);
     }
   });

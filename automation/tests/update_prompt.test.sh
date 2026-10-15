@@ -192,9 +192,10 @@ printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><script>
 for script in festapp_update_prompt.js festapp_flutter_bootstrap_guard.js festapp_pwa_bridge.js; do
   printf '<script src="%s?v=1.2.3%%2B456" defer></script>\n' "${script%.js}.1.2.3-456.js" >> "$BUILD_DIR/flutter"
 done
-printf 'const BUILD_VERSION = "1.2.3+456"; const FORCED_OCCASION_PATH = "/test-occasion"; // FESTAPP_QUERY_BUILD_VERSION\n' > "$BUILD_DIR/festapp_service_worker.js"
+CONFIG_APP_SUPPORTED="$(sed -n 's/^IS_APP_SUPPORTED=//p' "$PROJECT_ROOT/automation/project.conf")"
+printf 'const IS_APP_SUPPORTED = %s; const BUILD_VERSION = "1.2.3+456"; const FORCED_OCCASION_PATH = "/test-occasion"; // FESTAPP_QUERY_BUILD_VERSION\n' "$CONFIG_APP_SUPPORTED" > "$BUILD_DIR/festapp_service_worker.js"
 printf '{"start_url":"/test-occasion/"}\n' > "$BUILD_DIR/site.webmanifest"
-printf 'const FORCED_OCCASION_PATH = "/test-occasion";\n' > "$BUILD_DIR/_worker.js"
+printf 'const IS_APP_SUPPORTED = %s; const FORCED_OCCASION_PATH = "/test-occasion";\n' "$CONFIG_APP_SUPPORTED" > "$BUILD_DIR/_worker.js"
 CONFIG_APP_NAME="$(sed -n 's/^APP_NAME=//p' "$PROJECT_ROOT/automation/project.conf")"
 CONFIG_APP_NAME="${CONFIG_APP_NAME#\"}"
 CONFIG_APP_NAME="${CONFIG_APP_NAME%\"}"

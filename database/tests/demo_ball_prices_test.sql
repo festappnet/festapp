@@ -1,3 +1,6 @@
+-- test-setup: database/fixtures/demo_occasions/reference.sql
+-- test-setup: database/fixtures/demo_occasions/seed.sql
+-- test-setup: database/fixtures/demo_occasions/ball-prices.sql
 BEGIN;
 DO $$
 DECLARE ball bigint; before_state jsonb; after_state jsonb;
