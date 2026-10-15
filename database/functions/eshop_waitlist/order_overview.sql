@@ -5,6 +5,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  SELECT o.*,p.amount,coalesce(p.paid,0) received,coalesce(p.returned,0) returned,
  p.deposit_amount,p.deposit_deadline,p.deadline,p.variable_symbol,p.creditor_reference,
  b.account_number,b.account_number_human_readable,
+ coalesce(nullif(trim(b.creditor_name),''),(SELECT left(trim(regexp_replace(org.title,'[[:space:][:cntrl:]]+',' ','g')),70) FROM public.occasions occ JOIN public.organizations org ON org.id=occ.organization WHERE occ.id=o.occasion)) creditor_name,
  CASE WHEN o.state='preparing_payment' THEN 'preparing'
  WHEN o.state='storno' THEN 'cancelled'
  WHEN o.state='waitlisted' AND p.id IS NULL THEN 'not_required_yet'
@@ -29,6 +30,11 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
   AND CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END,
  'reference',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN
   CASE WHEN currency_code='EUR' THEN creditor_reference ELSE variable_symbol::text END END,
+ 'qrPayment',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') AND due_now>0 AND account_number IS NOT NULL
+  AND CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END
+ THEN jsonb_build_object('amount',due_now,'currency_code',trim(currency_code),'account_number',account_number,
+  'account_number_human_readable',account_number_human_readable,'creditor_name',creditor_name,
+  'variable_symbol',variable_symbol,'creditor_reference',creditor_reference) END,
  'referenceKind',CASE WHEN currency_code='EUR' THEN 'RF' ELSE 'VS' END,
  'transactions',(SELECT coalesce(jsonb_agg(jsonb_build_object(
   'date',t.date::date,'amount',t.amount,'currency',trim(t.currency),
