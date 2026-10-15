@@ -275,3 +275,23 @@ test('download transport sends the capability and ticket ID in a POST body',asyn
  assert.equal(await commands.downloadTicket({token:'secret',orderId:1},7),'JVBERg==');
  assert.deepEqual(received,{name:'download-ticket',body:{token:'secret',orderId:1,ticketId:7}});
 });
+
+ test('payment shortcut expands the matching order and moves focus without changing capability URL', t => {
+    const host = setup(t), data = fixture();
+    data.orders[0].payment.qrPayment = { amount: 700, currency_code: 'CZK', account_number: '123/0100' };
+    renderOrderOverview(host, data);
+    const link = host.querySelector('.overview-status .overview-payment-link');
+    const details = host.querySelector('details[data-overview-key="payment:2"]');
+    let scrolled = false;
+    details.scrollIntoView = () => { scrolled = true; };
+    const before = window.location.href;
+    assert.equal(details.open, false);
+    link.click();
+    assert.equal(details.open, true);
+    assert.equal(scrolled, true);
+    assert.equal(document.activeElement, details.querySelector('summary'));
+    assert.equal(window.location.href, before);
+    data.orders[0].payment.status = 'fully_paid';
+    renderOrderOverview(host, data);
+    assert.equal(host.querySelector('.overview-payment-link'), null);
+ });
