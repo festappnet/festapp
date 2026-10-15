@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { loadOrderOverview, parseOrderFragment, renderOrderOverview } from '../../src/components/forms/order_overview.js';
+import { loadOrderOverview, parseOrderFragment, parseOrderLocation, renderOrderOverview } from '../../src/components/forms/order_overview.js';
 import { WaitlistCommands } from '../../src/components/forms/waitlist_commands.js';
 const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT' }, serverTime: '2026-10-15T12:00:00Z',
     people: [{ id: 1, label: 'Waiting', effectiveLifecycle: 'offered' }, { id: 2, label: 'Accepted', effectiveLifecycle: 'admitted' }],
@@ -18,7 +18,7 @@ test('view fragment distinct from write scope and validates root', () => {
 test('partial overview renders separate payment facts and no write controls', t => {
     const host = setup(t); renderOrderOverview(host, fixture(), () => {});
     assert.equal(host.querySelector('script'), null);
-    assert.match(host.textContent, /300 CZK/); assert.match(host.textContent, /700 CZK/);
+    assert.match(host.textContent, /300,00\s*Kč/); assert.match(host.textContent, /700,00\s*Kč/);
     assert.equal(host.querySelectorAll('button').length, 1);
     assert.equal(host.querySelector('input'), null);
     assert.equal(host.querySelector('img,canvas'), null);
@@ -43,4 +43,21 @@ test('view transport calls only read RPC; resolver remains a separate POST', asy
     const commands = new WaitlistCommands(client); await commands.overview({ token: 'view', orderId: 1 });
     assert.equal(calls[0].name, 'get_customer_order_overview'); assert.deepEqual(calls[0].params, { p_token: 'view', p_order_id: 1 });
     assert.equal(commands.pending.size, 0);
+});
+
+test('canonical query keeps the root token and rejects ambiguous scope', () => {
+    const scope = { orderId: 12, token: 'a'.repeat(64) };
+    assert.deepEqual(parseOrderLocation(new URL(`https://example.invalid/form/test?order_id=12&token=${scope.token}`)), scope);
+    assert.equal(parseOrderLocation({ search: '?waitlist=1&order_id=12&token=bad' }), null);
+    assert.throws(() => parseOrderLocation({ search: `?order_id=12&order_id=13&token=${scope.token}` }));
+});
+test('history and received transactions include changes without interpreting refunds as payments', t => {
+    const host = setup(t), data = fixture();
+    data.timeline = [{ kind: 'order_changed', at: data.serverTime, previousTotal: 1000, total: 1500, currency: 'CZK', itemsChanged: true, itemsBefore: [{ title: 'Old', price: 1000 }], itemsAfter: [{ title: 'New', price: 1500 }] }];
+    data.orders[0].payment.transactions = [{ kind: 'payment_received', amount: 300, currency: 'CZK', date: '2026-10-15' }, { kind: 'refund', amount: -100, currency: 'CZK', date: null }];
+    renderOrderOverview(host, data, () => {});
+    assert.equal(host.querySelectorAll('.overview-transactions li').length, 2);
+    assert.match(host.textContent, /transactions \(1\)/);
+    assert.match(host.textContent, /Old/); assert.match(host.textContent, /New/);
+    assert.ok(host.querySelector('.overview-timeline time'));
 });

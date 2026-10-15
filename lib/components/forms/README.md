@@ -109,23 +109,29 @@ and per-occasion values; the legacy interval argument on
 
 ## Customer order overview
 
-Waitlist registrations, active offers and their resulting orders share the same
-public form page in JS and Flutter. `#order?order_id=<root>&token=<view>` reads
-`get_customer_order_overview` directly through POST RPC, without offline storage
-or sync transport. Only SQL projects payment facts and distinct ticket usage.
-A view token permits refresh only; accept/decline and waiting withdrawal keep
-the existing write capabilities. Continuing an offer after acceptance requires
-the offer scope still held in memory; reloading a view never recovers write scope.
-Customer cancellation is not supported.
+Waitlist registrations, offers and resulting orders share one stable customer
+URL: `/form/<link>?order_id=<root>&token=<view>`. Legacy `#order?` links still
+resolve and normalize to this URL. The same root token is reused by every order
+email, including split children. Query capabilities are protected by no-store,
+no-referrer and noindex response headers; never log or persist them in clients.
 
-Registration issues the independent view capability and durable encrypted source
-in its transaction. `customer-order-access` can bootstrap an older registration
-only with an active manage/offer bearer; editor reissue revokes the previous
-generation and queues encrypted redelivery through the existing email worker.
-Expired/revoked view links deny all reads. Sources expire independently of offers
-and are cleaned by the existing bounded expiry job. Old immutable v1 email
-sources remain renderable; v2 includes the overview without rewriting inherited
-templates. `ORDER_OVERVIEW` is the inherited explicit editor-redelivery template.
+The page reads `get_customer_order_overview` through POST RPC without offline
+storage. SQL allowlists current payment facts, matched transaction dates/amounts,
+and recorded history transitions and item/price changes. Private transaction
+metadata, admin notes and raw history payloads are never returned. Timeline
+entries are historical observations; the current payment status distinguishes
+paid deposits from fully paid orders.
+
+View access permits reads only. Accept/decline and waiting withdrawal retain
+their existing write capabilities (`?waitlist=1` and legacy `#waitlist?`). The
+orders grid opens the same view URL through authenticated
+`get_order_overview_admin_context`, which checks order-view permission before
+`customer-order-access` opens or initially creates the root's encrypted source.
+It never rotates a token or sends a standalone email. Expired/revoked sources
+are not replaced. `ORDER_OVERVIEW` is retired from the template catalog.
+
+The journey migration is `20261015210000_customer_order_journey.sql`, assembled
+from `order_overview.sql` and `order_overview_admin.sql`.
 
 Use `python3 automation/assemble-order-overview-migration.py --check` for source
 parity; do not regenerate the published capacity migration for this follow-up.

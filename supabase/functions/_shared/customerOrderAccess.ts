@@ -24,6 +24,6 @@ export async function openOrderOverviewUrl(context: Context, source: {
   if ((base.protocol !== "https:" && !(base.protocol === "http:" && local)) ||
     base.username || base.password || base.search || base.hash) throw new Error("INVALID_OVERVIEW_ORIGIN");
   const url = new URL(`form/${encodeURIComponent(context.formLink)}`, `${base.href.replace(/\/$/, "")}/`);
-  url.hash = `order?${new URLSearchParams({ order_id: String(context.orderId), token: plain.token })}`;
+  url.search = new URLSearchParams({ order_id: String(context.orderId), token: plain.token }).toString();
   return url.href;
 }

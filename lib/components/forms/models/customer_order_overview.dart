@@ -18,6 +18,9 @@ class CustomerOrderScope {
   const CustomerOrderScope(this.token, this.orderId);
   final String token;
   final int orderId;
+  static CustomerOrderScope? fromUri(Uri uri) => uri.queryParameters.containsKey('token') && uri.queryParameters['waitlist'] != '1'
+      ? fromFragment('order?${uri.query}')
+      : fromFragment(uri.fragment);
   static CustomerOrderScope? fromFragment(String fragment) {
     if (!fragment.startsWith('order?')) return null;
     final params = Uri.splitQueryString(fragment.substring(6));

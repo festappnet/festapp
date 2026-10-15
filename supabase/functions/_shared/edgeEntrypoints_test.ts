@@ -362,4 +362,9 @@ Deno.test("customer-order-access rejects unsafe methods and malformed scope with
     commandId: "cc000000-0000-0000-0000-000000000001", reissue: true,
   })}));
   assertEquals(reissue.status, 403);
+  const admin = await handler(new Request("https://edge-test.invalid", {method: "POST", body: JSON.stringify({
+    commandId: "cc000000-0000-0000-0000-000000000001", admin: true, orderId: 12,
+    actor: "11111111-1111-1111-1111-111111111111",
+  })}));
+  assertEquals(admin.status, 403);
 });

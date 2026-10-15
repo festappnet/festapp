@@ -15,7 +15,7 @@ Deno.test('confirmation and subsequent emails reuse the root token, including sp
     };
     const row = { order_id: 12, recipient: context.recipient, message_id: crypto.randomUUID() };
     const first = await orderEmailOverviewUrl(row, rpc);
-    assert.match(first!, /#order\?order_id=12&token=[a-f0-9]{64}$/);
+    assert.match(first!, /\?order_id=12&token=[a-f0-9]{64}$/);
     for (const order_id of [12, 13, 12]) {
       assert.equal(await orderEmailOverviewUrl({ ...row, order_id, message_id: crypto.randomUUID() }, rpc), first);
     }
