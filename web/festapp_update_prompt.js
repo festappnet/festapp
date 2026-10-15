@@ -445,8 +445,20 @@
       // activated and controlling this tab. If preparation fails, the user can
       // retry without losing the version that still launches offline.
       const targetVersion = await networkBuildVersion() || latestVersion;
-      if (!(await cutOverToVersion(targetVersion,
-          window.__FESTAPP_APP_READY__ !== true && targetVersion === currentVersion))) {
+      try {
+        if (await cutOverToVersion(targetVersion,
+            window.__FESTAPP_APP_READY__ !== true && targetVersion === currentVersion)) return;
+        // Explicit user reload must not silently stall on a broken registration.
+        // Leave cached shells intact for other open/offline tabs; only the next
+        // navigation bypasses the obsolete registration.
+        if (navigator.onLine !== false && await networkBuildVersion()) {
+          const registration = await navigator.serviceWorker?.getRegistration('/');
+          if (registration) await registration.unregister();
+          const destination = new URL(window.location.href);
+          destination.searchParams.set('festapp-recovery', targetVersion);
+          window.location.replace(destination.toString());
+        }
+      } finally {
         reloadButton.disabled = false;
         reloadButton.textContent = copy.reload;
       }
@@ -463,8 +475,7 @@
       if (!ready) return false;
       const registration = ready.registration;
       const candidate = ready.worker;
-      if (candidate === registration.active &&
-          navigator.serviceWorker.controller === candidate) return true;
+      if (candidate === registration.active && candidate.state === 'activated') return true;
       if (candidate && candidate.state === 'installed') {
         // `activated` can be observed just before this page's controller is
         // replaced. Reloading in that gap lets the previous worker handle the
@@ -499,8 +510,7 @@
         if (!(await activated)) return false;
         return await controlled;
       }
-      return candidate?.state === 'activated' &&
-        navigator.serviceWorker.controller === candidate;
+      return candidate?.state === 'activated' && candidate === registration.active;
     } catch (error) {
       console.warn('Festapp service worker activation failed:', error);
       return false;

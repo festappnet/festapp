@@ -110,8 +110,7 @@ and per-occasion values; the legacy interval argument on
 ## Customer order overview
 
 Waitlist registrations, offers and resulting orders share one stable customer
-URL: `/form/<link>?order_id=<root>&token=<view>`. Legacy `#order?` links still
-resolve and normalize to this URL. The same root token is reused by every order
+URL: `/order?order_id=<root>&token=<view>`. Form-based and hash capability URLs are not accepted. The same root token is reused by every order
 email, including split children. Query capabilities are protected by no-store,
 no-referrer and noindex response headers; never log or persist them in clients.
 
@@ -125,7 +124,7 @@ entries are historical observations; the current payment status distinguishes
 paid deposits from fully paid orders.
 
 View access permits reads only. Accept/decline and waiting withdrawal retain
-their existing write capabilities (`?waitlist=1` and legacy `#waitlist?`). The
+their existing write capabilities on `/order?waitlist=1`. The
 orders grid opens the same view URL through authenticated
 `get_order_overview_admin_context`, which checks order-view permission before
 `customer-order-access` opens or initially creates the root's encrypted source.

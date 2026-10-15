@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { loadOrderOverview, parseOrderFragment, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
+import { loadOrderOverview, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
 import { WaitlistCommands } from '../../src/components/forms/waitlist_commands.js';
 const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT', hasTickets: true }, serverTime: '2026-10-15T12:00:00Z',
     people: [{ id: 1, label: 'Waiting', effectiveLifecycle: 'offered' }, { id: 2, currentOrderId: 2, label: 'Accepted', effectiveLifecycle: 'admitted' }],
@@ -10,10 +10,12 @@ const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</scrip
         payment: { status: 'deposit_paid', received: 300, totalOutstanding: 700, dueNow: 700, returned: 0, overpaid: 0, instructionsAvailable: true, publicAccount: '123/0100', referenceKind: 'VS', reference: '123' },
         tickets: [{ id: 2, label: 'Accepted', displayStatus: 'unused' }] }] });
 function setup(t) { const dom = new JSDOM('<main></main>', { url: 'https://tickets.invalid/form/example' }); globalThis.window = dom.window; globalThis.document = dom.window.document; t.after(() => dom.window.close()); return document.querySelector('main'); }
-test('view fragment distinct from write scope and validates root', () => {
-    assert.equal(parseOrderFragment('#waitlist?token=bad'), null);
-    assert.deepEqual(parseOrderFragment(`#order?order_id=12&token=${'a'.repeat(64)}`), { orderId: 12, token: 'a'.repeat(64) });
-    for (const id of ['0','-1','NaN','9007199254740993']) assert.throws(() => parseOrderFragment(`#order?order_id=${id}&token=${'a'.repeat(64)}`));
+test('only standalone query capabilities are accepted', () => {
+ const token = 'a'.repeat(64);
+ for (const path of [`/form/test?order_id=12&token=${token}`, `/form/test#order?order_id=12&token=${token}`, `/order#order?order_id=12&token=${token}`]) {
+   assert.equal(parseOrderLocation(new URL(path, 'https://tickets.invalid')), null);
+ }
+ for (const id of ['0','-1','NaN','9007199254740993']) assert.throws(() => parseOrderLocation(new URL(`/order?order_id=${id}&token=${token}`, 'https://tickets.invalid')));
 });
 test('partial overview renders separate payment facts and no write controls', t => {
     const host = setup(t); renderOrderOverview(host, fixture());
@@ -47,9 +49,9 @@ test('view transport calls only read RPC; resolver remains a separate POST', asy
 
 test('canonical query keeps the root token and rejects ambiguous scope', () => {
     const scope = { orderId: 12, token: 'a'.repeat(64) };
-    assert.deepEqual(parseOrderLocation(new URL(`https://example.invalid/form/test?order_id=12&token=${scope.token}`)), scope);
-    assert.equal(parseOrderLocation({ search: '?waitlist=1&order_id=12&token=bad' }), null);
-    assert.throws(() => parseOrderLocation({ search: `?order_id=12&order_id=13&token=${scope.token}` }));
+    assert.deepEqual(parseOrderLocation(new URL(`https://example.invalid/order?order_id=12&token=${scope.token}`)), scope);
+    assert.equal(parseOrderLocation({ pathname: '/order', search: '?waitlist=1&order_id=12&token=bad' }), null);
+    assert.throws(() => parseOrderLocation({ pathname: '/order', search: `?order_id=12&order_id=13&token=${scope.token}` }));
 });
 test('history and received transactions include changes without interpreting refunds as payments', t => {
     const host = setup(t), data = fixture();
@@ -165,13 +167,6 @@ test('payment status distinguishes awaiting, overdue and completed without an ov
  p.status='fully_paid';renderOrderOverview(host,data);
  assert.ok(host.querySelector('.overview-status .overview-state-complete'));
  assert.equal(host.querySelector('.overview-status .overview-state-deadline'),null);
-});
-
-test('legacy form capability resolves to independent order URL without changing token',async t=>{
- const host=setup(t),scope={orderId:1,token:'a'.repeat(64)};
- await loadOrderOverview(host,{overview:async()=>fixture()},scope);
- assert.equal(window.location.pathname,'/order');
- assert.equal(new URLSearchParams(window.location.search).get('token'),scope.token);
 });
 
 test('refresh preserves each disclosure by identity and keeps newly added answers collapsed', async t=>{
