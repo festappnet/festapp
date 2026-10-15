@@ -67,7 +67,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
         }
         // Payment belongs to the whole order; individual admissions only show
         // waitlist outcomes or their actual usage/cancellation state.
-        const status = ticket?.displayStatus === 'awaiting_payment' ? null : ticket?.displayStatus;
+        const status = ticket?.displayStatus === 'cancelled' || (data.root.hasTickets && ['used', 'unused'].includes(ticket?.displayStatus)) ? ticket.displayStatus : null;
         if (status) line(row, 'span', overviewText(status));
         else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(row, 'span', overviewText(person.effectiveLifecycle));
     });

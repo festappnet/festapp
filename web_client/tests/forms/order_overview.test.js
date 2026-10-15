@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { loadOrderOverview, parseOrderFragment, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
 import { WaitlistCommands } from '../../src/components/forms/waitlist_commands.js';
-const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT' }, serverTime: '2026-10-15T12:00:00Z',
+const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT', hasTickets: true }, serverTime: '2026-10-15T12:00:00Z',
     people: [{ id: 1, label: 'Waiting', effectiveLifecycle: 'offered' }, { id: 2, currentOrderId: 2, label: 'Accepted', effectiveLifecycle: 'admitted' }],
     offers: [{ pendingPlaces: 1, effectiveStatus: 'pending', expiresAt: '2026-10-16T12:00:00Z' }],
     orders: [{ id: 2, symbol: 'CHILD', state: 'paid', total: 1000, currency: 'CZK', items: [],
@@ -127,4 +127,7 @@ for (const hasTickets of [true, false]) test(`items stay with their admission, p
     assert.equal(host.querySelector('.order-overview-card').textContent.includes('Product'), false);
     assert.equal(host.querySelector('.overview-timeline').textContent.includes('registration_received'), !hasTickets);
     assert.match(host.querySelector('.overview-timeline').textContent, /order_ordered/);
+    data.orders[0].tickets[0].displayStatus = 'used';
+    renderOrderOverview(host, data);
+    assert.equal(host.querySelector('.overview-people').textContent.includes('OrderOverview.used'), hasTickets);
 });
