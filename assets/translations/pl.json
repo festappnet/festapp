@@ -818,6 +818,9 @@
   "OrderOverview": {
     "title": "Przegląd zamówienia",
     "updated": "Zaktualizowano",
+    "downloadTicket": "Pobierz PDF",
+    "downloadingTicket": "Przygotowywanie PDF…",
+    "downloadFailed": "Nie udało się pobrać biletu. Spróbuj ponownie.",
     "usedTickets": "Wykorzystane bilety",
     "cashPayment": "Gotówka",
     "bankPayment": "Przelew bankowy",

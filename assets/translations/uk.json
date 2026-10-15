@@ -997,6 +997,9 @@
   "OrderOverview": {
     "title": "Огляд замовлення",
     "updated": "Оновлено",
+    "downloadTicket": "Завантажити PDF",
+    "downloadingTicket": "Підготовка PDF…",
+    "downloadFailed": "Не вдалося завантажити квиток. Спробуйте ще раз.",
     "usedTickets": "Використані квитки",
     "cashPayment": "Готівка",
     "bankPayment": "Банківський переказ",
