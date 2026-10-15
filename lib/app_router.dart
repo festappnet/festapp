@@ -81,6 +81,8 @@ class AppRouter extends RootStackRouter {
             page: LoginQrScannerRoute.page, path: sl(LoginQrScannerPage.ROUTE)),
         AutoRoute(page: SignupRoute.page, path: sl(SignupPage.ROUTE)),
         AutoRoute(page: SettingsRoute.page, path: sl(SettingsPage.ROUTE)),
+        AutoRoute(page: BankAccountConnectionSettingsRoute.page,
+            path: '/bank-accounts/:accountId/connection', usesPathAsKey: true),
         AutoRoute(page: InstallRoute.page, path: sl(InstallPage.ROUTE)),
         AutoRoute(page: TransferRoute.page, path: "/${TransferPage.ROUTE}"),
         AutoRoute(
