@@ -67,6 +67,8 @@ export class BlueprintSelector {
         // Push a new state so the back button closes the modal instead of navigating away
         const stateId = 'seat-selection';
         RouterService.pushOverlayState(stateId);
+        let closed = false;
+        let closing = false;
 
         // Global Event Killer removed in favor of CSS handling (touch-action: none on container)
         // and targeted gesture handling in BlueprintRenderer/GestureController
@@ -79,6 +81,8 @@ export class BlueprintSelector {
         };
 
         const cleanup = () => {
+             if (closed) return;
+             closed = true;
              // Restore Viewport - not needed as we didn't touch it
 
 
@@ -100,13 +104,22 @@ export class BlueprintSelector {
              document.documentElement.classList.remove('blueprint-active');
              container.remove();
              window.removeEventListener('popstate', popHandler);
+             document.removeEventListener('keydown', escHandler);
         };
 
         // When clicking continue/back explicitly
-        confirmBtn.onclick = () => {
-             // Invokes cleanup via history back, which triggers popHandler
-             window.history.back(); 
+        const requestClose = () => {
+             if (closing || closed) return;
+             closing = true;
+             window.history.back();
         };
+        const escHandler = (event) => {
+             if (event.key !== 'Escape' || event.defaultPrevented) return;
+             event.preventDefault();
+             requestClose();
+        };
+        confirmBtn.onclick = requestClose;
+        document.addEventListener('keydown', escHandler);
         
         window.addEventListener('popstate', popHandler);
 
@@ -128,6 +141,8 @@ export class BlueprintSelector {
                 formModel.key,
                 blueprintId
             );
+
+            if (closed) return;
 
             // --- Fix: Adoption of Blueprint Secret ---
             // The backend may return a persistent secret if we sent a partial/empty one.
@@ -169,6 +184,7 @@ export class BlueprintSelector {
             this.renderer.render(blueprintData, (obj) => this.handleSeatClick(obj, session));
             
         } catch (e) {
+            if (closed) return;
             console.error(e);
             const errorMessage = document.createElement('div');
             errorMessage.className = 'blueprint-error';
