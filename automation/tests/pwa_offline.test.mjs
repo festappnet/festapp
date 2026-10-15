@@ -80,7 +80,7 @@ try {
     'client sync runtime config must not be part of the app-shell precache');
   assert.ok(coreUrls.includes('/main.dart.js'));
   assert.ok(coreUrls.includes('/flutter?pwa-cache=1'));
-  assert.ok(coreUrls.includes('/organizers-page'));
+  assert.ok(coreUrls.includes('/pro-poradatele'));
   assert.ok(coreUrls.includes('/privacy/'),
     'standalone documents must be available before their first navigation');
   assert.ok(coreUrls.includes('/main.dart.js_7.part.js'),
@@ -155,7 +155,7 @@ try {
       if (url === fontUrl) return cachedFont.clone();
       if (url.includes('/flutter?pwa-cache=1')) return cachedShell.clone();
       if (url.includes('/webclient?pwa-cache=1')) return cachedWebClient.clone();
-      if (url === '/organizers-page') return new Response('<html>organizers</html>');
+      if (url === '/pro-poradatele') return new Response('<html>organizers</html>');
       if (url === '/privacy/') return cachedPrivacy.clone();
       if (url.includes('/assets/translation.json')) return new Response('{}');
       return undefined;
