@@ -690,7 +690,7 @@ body.dark-mode .surcharge-info {
 .overview-people > li, .overview-transactions li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-block-end: 1px solid var(--border-color, #8885); }
 .overview-people > li:last-child, .overview-transactions > li:last-child { border-block-end: 0; }
 .overview-transactions small { display: block; margin-block-start: 4px; }
-.order-overview-card, .overview-history-card {
+.order-overview-card, .overview-history-card, .overview-payments-card {
     padding: clamp(18px, 3vw, 28px);
     border: 1px solid var(--border-color, #8885);
     border-radius: 16px;
@@ -753,3 +753,18 @@ body.dark-mode .surcharge-info {
 .overview-state-overdue .overview-state-deadline { font-weight: 600; }
 
 .overview-state-icon { width: 28px; height: 28px; fill: currentColor; flex-shrink: 0; }
+
+.order-overview .overview-event-title { margin: 0 0 24px; font-size: 1.25rem; }
+.order-overview .overview-updated { font-size: .8125rem; margin: 8px 0 24px; }
+.overview-customer { margin: 0 0 24px; padding-block-start: 16px; border-block-start: 1px solid var(--border-color, #8885); }
+.overview-customer > div { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-block: 6px; }
+.overview-customer dd { margin: 0; overflow-wrap: anywhere; min-width: 0; }
+.overview-customer a { font-weight: 600; }
+.overview-people > li { display: block; padding-block: 20px; }
+.overview-admission-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; margin-block-end: 16px; }
+.overview-admission-header h3 { margin: 0; overflow-wrap: anywhere; }
+.overview-admission-status { font-size: .875rem; }
+.overview-products > li + li { border-block-start: 1px solid var(--border-color, #8885); }
+.overview-order-total { border-block-start: 1px solid var(--border-color, #8885); margin: 16px 0 0; padding-block-start: 20px; }
+.overview-order-total > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 16px; font-size: 1.25rem; font-weight: 700; }
+.overview-order-total dd { margin: 0; }
