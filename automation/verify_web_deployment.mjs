@@ -132,6 +132,13 @@ async function verifyOnce() {
     Buffer.from(await versionedResponse.arrayBuffer()).equals(Buffer.from(main)),
     'canonical and versioned main bundles differ',
   );
+  for (const [chunk] of Buffer.from(main).toString().matchAll(/main\.dart\.[^"'\s]+\.part\.js/g)) {
+    assert.ok(chunk.startsWith(`${manifest.main}_`), `Mutable deferred library: ${chunk}`);
+    const response = await fetchFresh(`/${chunk}`);
+    assert.equal(response.status, 200, `Missing deferred library: ${chunk}`);
+    assert.ok((await response.text()).includes('$__dart_deferred_initializers__'), `Invalid deferred library: ${chunk}`);
+  }
+
 }
 
 let consecutive = 0;
