@@ -1,10 +1,14 @@
 /// Safe operational details supplied by the order bundle, never credentials.
 class BankSyncWarning {
+  final int? bankAccountId;
+  final bool isAdmin;
   final String code;
   final String bankAccountTitle;
   final List<BankSyncContact> contacts;
 
   const BankSyncWarning({
+    this.bankAccountId,
+    this.isAdmin = false,
     required this.code,
     required this.bankAccountTitle,
     this.contacts = const [],
@@ -30,6 +34,8 @@ class BankSyncWarning {
   }
 
   Map<String, dynamic> toJson() => {
+    'bank_account_id': bankAccountId,
+    'is_admin': isAdmin,
     'code': code,
     'bank_account_title': bankAccountTitle,
     'contacts': uniqueContacts
@@ -39,6 +45,8 @@ class BankSyncWarning {
 
   factory BankSyncWarning.fromJson(Map<String, dynamic> json) =>
       BankSyncWarning(
+        bankAccountId: json['bank_account_id'] as int?,
+        isAdmin: json['is_admin'] == true,
         code: json['code'] as String? ?? 'not_configured',
         bankAccountTitle: json['bank_account_title'] as String? ?? '',
         contacts: (json['contacts'] as List? ?? [])

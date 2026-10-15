@@ -48,7 +48,10 @@ BEGIN
     'email',public.get_user_delivery_email(ui.id)) ORDER BY ui.name,ui.surname,ui.id),'[]'::jsonb)
     INTO v_contacts FROM eshop.bank_account_users bau JOIN public.user_info ui ON ui.id=bau."user"
     WHERE bau.bank_account=p_bank_account_id AND bau.is_admin;
-  RETURN jsonb_build_object('code',v_code,'bank_account_title',v_title,'contacts',v_contacts);
+  RETURN jsonb_build_object('code',v_code,'bank_account_title',v_title,'contacts',v_contacts,
+    'bank_account_id',p_bank_account_id,'is_admin',EXISTS (
+      SELECT 1 FROM eshop.bank_account_users bau WHERE bau.bank_account=p_bank_account_id
+        AND bau."user"=auth.uid() AND bau.is_admin));
 END;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_warning(bigint) FROM PUBLIC,anon,authenticated,service_role;

@@ -1,3 +1,10 @@
+import 'package:flutter/gestures.dart';
+import 'package:url_launcher/link.dart';
+import 'package:fstapp/components/bank_accounts/views/bank_sync_warning_button.dart';
+import 'package:fstapp/components/bank_accounts/views/bank_account_navigation_page.dart';
+import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
+import 'package:http/http.dart' as http;
+import '../../support/fixtures/root_supabase_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
@@ -18,7 +25,10 @@ class _Translations extends AssetLoader {
 }
 
 void main() {
-  setUpAll(() async { SharedPreferences.setMockInitialValues({}); await EasyLocalization.ensureInitialized(); });
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
   PaymentInfoModel payment({double paid = 0, bool warning = true}) =>
       PaymentInfoModel.fromJson({
@@ -195,7 +205,8 @@ void main() {
             tester.widget<IconButton>(find.byType(IconButton)).tooltip!;
         expect(tooltip, isNot(contains('Festival account')));
         if (scenario != 'fallback')
-          expect(tooltip, contains('Contact: Jane Admin'));
+          expect(tooltip,
+              contains('Contact a bank account administrator: Jane Admin'));
         expect(tooltip, contains(reason));
         expect(tooltip, isNot(contains('Check the bank statement')));
         expect(
@@ -217,4 +228,126 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
+  testWidgets(
+      'account admin has an interactive settings hyperlink in the tooltip',
+      (tester) async {
+    await tester.pumpWidget(EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      path: 'unused',
+      startLocale: const Locale('en'),
+      assetLoader: const _Translations(),
+      child: Builder(
+          builder: (context) => MaterialApp(
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                home: const Scaffold(
+                    body: BankSyncWarningButton(
+                        warning: BankSyncWarning(
+                  code: 'suspended',
+                  bankAccountTitle: 'My bank',
+                  bankAccountId: 42,
+                  isAdmin: true,
+                  contacts: [BankSyncContact(name: 'Jane Admin')],
+                ))),
+              )),
+    ));
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse
+        .moveTo(tester.getCenter(find.byIcon(Icons.warning_amber_rounded)));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    final link = tester.widget<Link>(find.byType(Link));
+    expect(link.uri.toString(), '/bank-accounts/42/connection');
+    expect(link.target, LinkTarget.self);
+    expect(find.text('Bank account settings'), findsOneWidget);
+    expect(find.textContaining('Enable synchronization'), findsOneWidget);
+    expect(find.textContaining('Jane Admin'), findsNothing);
+    await mouse.moveTo(tester.getCenter(find.byType(Link)));
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.byType(Link), findsOneWidget);
+    expect(tester.widget<TextButton>(find.byType(TextButton)).onPressed,
+        isNotNull);
+    await mouse.moveTo(const Offset(700, 500));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    expect(find.byType(Link), findsNothing);
+  });
+
+  group('direct account connection destination', () {
+    late RootSupabaseFixture fixture;
+    var allowed = true;
+    setUpAll(() async {
+      fixture = await RootSupabaseFixture.open((request) {
+        final path = request.url.path;
+        if (path.endsWith('/get_my_admin_bank_accounts')) {
+          return http.Response(
+              jsonEncode(allowed
+                  ? [
+                      {
+                        'id': 42,
+                        'title': 'My bank',
+                        'type': 'FIO',
+                        'account_number': '123456/2010',
+                        'bank_sync': {'state': 'suspended', 'mode': 'api'},
+                      }
+                    ]
+                  : []),
+              200,
+              headers: {'content-type': 'application/json'},
+              request: request);
+        }
+        if (path.endsWith('/bank-sync-manage')) {
+          return http.Response(
+              jsonEncode({'state': 'suspended', 'mode': 'api'}), 200,
+              headers: {'content-type': 'application/json'}, request: request);
+        }
+        throw StateError('Unexpected bank settings request: $path');
+      });
+    });
+    tearDownAll(() => fixture.dispose());
+    for (final isAdmin in [true, false]) {
+      testWidgets('opens only the requested administered account: $isAdmin',
+          (tester) async {
+        allowed = isAdmin;
+        await tester.pumpWidget(EasyLocalization(
+          supportedLocales: const [Locale('en')],
+          path: 'unused',
+          startLocale: const Locale('en'),
+          assetLoader: const _Translations(),
+          child: Builder(
+              builder: (context) => MaterialApp(
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                    home: const BankAccountConnectionSettingsPage(
+                        accountId: '42'),
+                  )),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.byType(BankAccountSettingsScreen),
+            isAdmin ? findsOneWidget : findsNothing);
+        if (isAdmin) {
+          final screen = tester.widget<BankAccountSettingsScreen>(
+              find.byType(BankAccountSettingsScreen));
+          expect(screen.connectionOnly, isTrue);
+          expect(screen.account.id, 42);
+          expect(screen.account.isAdmin, isTrue);
+          expect(screen.unitId, isNull);
+          expect(find.byType(Switch), findsOneWidget);
+        } else {
+          expect(
+              find.text(
+                  'The account was not found or you do not have permission to manage it.'),
+              findsOneWidget);
+        }
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+      });
+    }
+  });
 }
