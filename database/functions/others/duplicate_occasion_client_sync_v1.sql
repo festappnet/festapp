@@ -2,7 +2,7 @@
 -- client_commit_items_operation_check. The old value, 'create', rolled back
 -- every attempted occasion copy before it returned an occasion ID.
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_client_sync_v1(
-  p_occasion bigint, p_command_id uuid, p_target_unit bigint
+  p_occasion bigint, p_command_id uuid, p_target_unit bigint, p_locale text
 ) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE
@@ -28,12 +28,12 @@ BEGIN
   END IF;
   v_hash := encode(extensions.digest(convert_to((jsonb_build_object(
     'occasion', p_occasion) || CASE WHEN v_unit = v_source_unit THEN '{}'::jsonb
-        ELSE jsonb_build_object('targetUnit', v_unit) END)::text, 'UTF8'), 'sha256'), 'hex');
+        ELSE jsonb_build_object('targetUnit', v_unit) END || CASE WHEN p_locale IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('locale',p_locale) END)::text, 'UTF8'), 'sha256'), 'hex');
   v_begin := public.begin_unit_client_mutation_v1(
     p_command_id, 'occasion.duplicate', v_unit, v_actor, v_hash);
   IF v_begin->>'disposition' = 'replay' THEN RETURN v_begin->'response'; END IF;
 
-  v_new := public.duplicate_occasion_internal_v1(p_occasion, v_unit);
+  v_new := public.duplicate_occasion_internal_v1(p_occasion, v_unit,coalesce(p_locale,'en'));
   INSERT INTO public.occasion_users
     (occasion, "user", is_manager, is_editor, is_editor_view, is_editor_order, is_editor_order_view)
   VALUES (v_new, v_actor, true, true, true, true, true);
@@ -49,7 +49,7 @@ BEGIN
     (commit_id, item_index, entity_type, entity_id, operation, safe_label,
      changed_fields)
   VALUES (v_commit.commit_id, 0, 'occasion', v_new::text, 'insert',
-    left(COALESCE(v_title, '') || ' (Copy)', 240), ARRAY['aggregate']);
+    (SELECT left(title,240) FROM public.occasions WHERE id=v_new), ARRAY['aggregate']);
   PERFORM public.fanout_unit_catalog_v1(v_commit.commit_id, v_unit);
   RETURN public.finish_client_mutation_v1(p_command_id, jsonb_build_object(
     'status', 'applied', 'code', 200,
@@ -60,12 +60,18 @@ BEGIN
     'sync', jsonb_build_object('replacements', '[]'::jsonb)),
     v_commit.commit_id);
 END; $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint)
+REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint, text)
   FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint)
+GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint, text)
   TO authenticated;
 
 
+CREATE OR REPLACE FUNCTION public.duplicate_occasion_client_sync_v1(p_occasion bigint,p_command_id uuid,p_target_unit bigint)
+RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+ SELECT public.duplicate_occasion_client_sync_v1(p_occasion,p_command_id,p_target_unit,NULL);
+$$;
+REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint) TO authenticated;
 -- Keep existing client signatures routed through the same canonical command.
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_client_sync_v1(
   p_occasion bigint, p_command_id uuid
@@ -113,3 +119,10 @@ BEGIN
 END; $$;
 REVOKE ALL ON FUNCTION public.get_occasion_copy_units(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_occasion_copy_units(bigint) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint,p_target_unit bigint,p_locale text)
+RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+ SELECT (public.duplicate_occasion_client_sync_v1(oc,gen_random_uuid(),p_target_unit,p_locale)#>>'{data,occasionId}')::bigint;
+$$;
+REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint,bigint,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint,bigint,text) TO authenticated;

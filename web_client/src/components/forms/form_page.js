@@ -137,8 +137,9 @@ export class FormPage extends Component {
                 this.overviewScope = viewScope;
                 if (window.location.hash.startsWith('#order?')) window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
                 this.host.replaceChildren();
-                await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
+                const overview = await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
                     this.continuationScope ? () => this.continueOverviewOffer() : null);
+                this.currentLink = overview?.root?.formLink || link;
                 return;
             }
             this.overviewScope = null;
@@ -149,6 +150,9 @@ export class FormPage extends Component {
                 referrer.content = 'no-referrer';
                 const bundle = await this.waitlistCommands.read(this.waitlistScope);
                 this.waitlistBundle = bundle;
+                RouterService.canonicalizePublicLink('form', link, bundle.form?.link || bundle.formLink);
+                link = bundle.form?.link || bundle.formLink || link;
+                this.currentLink = link;
                 if (!this.waitlistScope.offerId || !bundle.pendingCount) {
                     this.renderWaitlistManagement(bundle);
                     this.attachOverview();
@@ -163,6 +167,9 @@ export class FormPage extends Component {
                 return;
             }
 
+            RouterService.canonicalizePublicLink('form', link, formModel.link);
+            link = formModel.link || link;
+            this.currentLink = link;
             // 4. Apply Theme
             this.applyTheme(formModel);
             

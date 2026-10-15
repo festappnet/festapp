@@ -151,5 +151,5 @@ REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBL
 CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
 RETURNS json LANGUAGE sql SECURITY DEFINER
 SET search_path=public,extensions AS $$
- SELECT public.get_form_bundle_internal((SELECT id FROM public.forms WHERE link=form_link),false);
+ SELECT public.get_form_bundle_internal(public.resolve_form_link_internal(form_link),false);
 $$;

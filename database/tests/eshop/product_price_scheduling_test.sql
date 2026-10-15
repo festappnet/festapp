@@ -15,6 +15,7 @@ BEGIN
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code) VALUES(occ,pt,'Ticket',450,'CZK') RETURNING id INTO prod;
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code) VALUES(occ,pt,'Other',100,'CZK') RETURNING id INTO other_prod;
  INSERT INTO public.forms(occasion,title,link,is_open) VALUES(occ,'Form',link,true) RETURNING id INTO fid;
+  PERFORM pg_temp.adopt_public_link_fixtures();
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  EXECUTE 'SET LOCAL ROLE authenticated';

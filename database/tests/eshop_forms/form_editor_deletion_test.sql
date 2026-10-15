@@ -19,6 +19,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',actor::text,true);
   PERFORM set_config('request.jwt.claim.role','authenticated',true);
   INSERT INTO public.forms(occasion,title,link) VALUES (occ,'Original',link) RETURNING id INTO form_id;
+  PERFORM public.reserve_public_link_internal('form',form_id,link,true);
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Answered') RETURNING id INTO answered;
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Unused') RETURNING id INTO unused;
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Late answer') RETURNING id INTO late_field;

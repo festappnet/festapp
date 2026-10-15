@@ -1137,7 +1137,14 @@ class _FormPageState extends State<FormPage> {
     }
     return CustomerOrderOverviewView(
       key: ValueKey((scope, _showOverview)),
-      load: () => _waitlist.overview(scope),
+      load: () async {
+        final result = await _waitlist.overview(scope);
+        final canonical = result.root['formLink'] as String?;
+        RouterService.canonicalizePublicLink(
+            'form', widget.formLink, canonical);
+        if (canonical != null) widget.formLink = canonical;
+        return result;
+      },
       offerInPage: !_showOverview,
       onContinue: _offerId == null || !_showOverview
           ? null
@@ -1301,6 +1308,11 @@ class _FormPageState extends State<FormPage> {
             token: _waitlistToken,
             offerId: _offerId,
             orderId: _waitlistOrderId);
+        final canonical = (_offerBundle!['form'] as Map?)?['link'] as String? ??
+            _offerBundle!['formLink'] as String?;
+        RouterService.canonicalizePublicLink(
+            'form', widget.formLink, canonical);
+        if (canonical != null) widget.formLink = canonical;
         if (_offerBundle!['form'] == null) {
           if (mounted)
             setState(() {
@@ -1323,6 +1335,8 @@ class _FormPageState extends State<FormPage> {
         return;
       }
 
+      RouterService.canonicalizePublicLink('form', widget.formLink, form!.link);
+      widget.formLink = form!.link;
       if (widget.formLink != null)
         await RightsService.updateAppData(formLink: widget.formLink);
 

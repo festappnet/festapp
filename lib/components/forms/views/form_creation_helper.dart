@@ -2,7 +2,6 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/services/utilities_all.dart';
 import 'form_public_link.dart';
 import '../form_strings.dart';
 import '../models/form_model.dart';
@@ -54,43 +53,22 @@ class FormCreationHelper {
     final formKey = GlobalKey<FormState>();
 
     String title = FormStrings.defaultFormTitle;
-    String link = "${FormStrings.defaultFormTitle}${DateTime.now().year}";
+    String link = '';
 
     final titleController = TextEditingController(text: title);
     final linkController = TextEditingController(text: link);
     final linkNotifier = ValueNotifier<String>(link);
 
-    bool isLinkManuallyChanged = false;
     String? linkError;
     bool isCreating = false;
 
     void validateLink(String? value) {
-      if (value == null || value.isEmpty) {
-        linkError = FormStrings.validationLinkRequired;
-      } else if (!Utilities.isValidUrl(value)) {
+      if (!isValidPublicSlug(value ?? '', allowEmpty: true)) {
         linkError = FormStrings.validationLinkInvalidChars;
       } else {
         linkError = null;
       }
     }
-
-    void updateLink() {
-      var processedTitle = Utilities.removeDiacritics(titleController.text);
-      if (processedTitle.isEmpty) return;
-
-      var firstWord = processedTitle.split(' ').first.toLowerCase();
-      var currentYear = DateTime.now().year;
-
-      link = "$firstWord$currentYear";
-      linkController.text = link;
-      linkNotifier.value = link;
-    }
-
-    titleController.addListener(() {
-      if (!isLinkManuallyChanged) {
-        updateLink();
-      }
-    });
 
     await showDialog(
       context: context,
@@ -135,7 +113,6 @@ class FormCreationHelper {
                         ),
                         onChanged: (value) {
                           setState(() {
-                            isLinkManuallyChanged = true;
                             link = value;
                             linkNotifier.value = value;
                             validateLink(value);
@@ -146,7 +123,6 @@ class FormCreationHelper {
                       ValueListenableBuilder<String>(
                         valueListenable: linkNotifier,
                         builder: (context, formLink, child) {
-                          if (formLink.isEmpty) return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: FormPublicLink(link: formLink),
@@ -171,7 +147,7 @@ class FormCreationHelper {
                           });
 
                           title = titleController.text.trim();
-                          link = linkController.text.trim();
+                          link = linkController.text;
 
                           try {
                             await DbForms.createNewForm(

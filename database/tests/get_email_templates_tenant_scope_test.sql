@@ -51,6 +51,7 @@ BEGIN
     (occasion, "user", is_editor_view)
   VALUES (v_own_occasion, v_user, true);
 
+  PERFORM pg_temp.adopt_public_link_fixtures();
   PERFORM set_config('request.jwt.claim.sub', v_user::text, true);
   PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
 

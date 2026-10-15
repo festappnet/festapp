@@ -28,6 +28,7 @@ BEGIN
     RETURNING id INTO v_occasion_id;
 
     -- 2. Success Case
+  PERFORM pg_temp.adopt_public_link_fixtures();
     v_result := get_occasion_seo_data(v_slug);
     PERFORM assert_equals((v_result->>'title'), 'SEO Test Event', 'Title should match');
     PERFORM assert_equals((v_result->>'org_title'), 'SEO Test Org', 'Org Title should match');

@@ -53,3 +53,21 @@ services, and lifecycle (Duplication/Deletion).
 - **Hybrid Operations**: Unlike pure SQL features, Occasion management often
   involves significant Dart-side orchestration, especially for **Files/Images**.
   Do not assume the SQL RPC does everything (it doesn't copy the binary files).
+
+## Public URL ownership
+
+SQL `public_links/registry.sql` owns current and historical public slugs. New
+items with a blank slug receive an independent cryptographic 8-character code.
+Explicit changes use lowercase ASCII letters/digits and single hyphens, up to
+80 characters; unchanged legacy links are retained exactly. Domain commands
+reserve URLs atomically with writes and receipts. Reservations survive deletion
+as tombstones. Aliases resolve to stable IDs under the existing permissions.
+
+Settings keep a separate server-confirmed link baseline: Copy uses the saved
+public URL, while an unsaved proposal is plain text. Loaded aliases replace the
+URL without adding history or discarding query/capability fragments. Unknown
+aliases require an online resolve. Occasion copy locale is captured once and
+persisted in the command/draft; SQL alone owns the localized copy title.
+
+Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
+New writes cannot claim those slugs; canonical links and titles are never bulk renamed.

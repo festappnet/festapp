@@ -53,6 +53,9 @@ BEGIN
     -- Variables retain their values while all writes in the block roll back.
     NULL;
   END;
+  configuration := jsonb_set(configuration,'{occasion,link}','""'::jsonb);
+  configuration := jsonb_set(configuration,'{forms}',coalesce((SELECT jsonb_agg(jsonb_set(f,'{link}','""'::jsonb))
+    FROM jsonb_array_elements(configuration->'forms') f),'[]'::jsonb));
   RETURN configuration;
 END $$;
 REVOKE ALL ON FUNCTION public.build_occasion_setup_configuration(bigint,uuid) FROM PUBLIC,anon,authenticated;
@@ -113,16 +116,25 @@ BEGIN
   IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
-  -- Retry a successfully committed identical save without changing its revision.
-  IF d.revision = p_expected_revision + 1 AND d.data = p_data AND d.current_step = p_step THEN
-    RETURN to_jsonb(d);
-  END IF;
-  IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
-  END IF;
+  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
+  p_data := p_data - 'finalizedOccasion' - 'finalizeResponse';
   IF p_data IS NULL OR jsonb_typeof(p_data) <> 'object' OR octet_length(p_data::text) > 262144 OR p_step IS NULL OR p_step NOT BETWEEN 0 AND 6 THEN
-    RAISE EXCEPTION 'Invalid draft' USING ERRCODE = '22023';
+    RAISE EXCEPTION 'Invalid draft' USING ERRCODE = '22023'; END IF;
+  IF d.data ? 'copy_locale' THEN p_data := jsonb_set(p_data,'{copy_locale}',d.data->'copy_locale'); END IF;
+  IF p_data ? 'copy_locale' AND p_data->>'sourceId' IS NOT NULL
+     AND coalesce((p_data->>'copy_title_edited')::boolean,false)=false AND coalesce(p_data->>'title','')='' THEN
+    IF NOT public.can_copy_occasion_source((p_data->>'sourceId')::bigint) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=(p_data->>'sourceId')::bigint AND organization=d.organization) THEN
+      RAISE insufficient_privilege USING MESSAGE='Copy source denied'; END IF;
+    IF d.revision=p_expected_revision+1 AND d.data->>'sourceId'=p_data->>'sourceId' THEN
+      p_data := jsonb_set(p_data,'{title}',d.data->'title');
+    ELSE
+      p_data := jsonb_set(p_data,'{title}',to_jsonb(public.copy_occasion_title_internal(
+        (SELECT title FROM public.occasions WHERE id=(p_data->>'sourceId')::bigint),p_data->>'copy_locale')));
+    END IF;
   END IF;
+  IF d.revision = p_expected_revision + 1 AND d.data = p_data AND d.current_step = p_step THEN RETURN to_jsonb(d); END IF;
+  IF d.revision IS DISTINCT FROM p_expected_revision THEN
+    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001'; END IF;
   UPDATE public.occasion_setup_drafts SET data = p_data, current_step = p_step,
     revision = revision + 1, updated_at = now() WHERE id = p_id RETURNING * INTO d;
   RETURN to_jsonb(d);

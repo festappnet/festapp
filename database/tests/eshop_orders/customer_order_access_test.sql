@@ -92,15 +92,13 @@ BEGIN
  command:=gen_random_uuid();
  r:=public.resolve_customer_order_access_v1(NULL,oid,NULL,command,next_delivery,(x->>'actor')::uuid,true);
  PERFORM assert_eq(public.get_customer_order_overview(view_token,oid)->>'code','403'::text,'reissue revokes old read');
- BEGIN PERFORM public.enqueue_order_overview_reissue_v1(oid,command,viewer,'{"ciphertext":"test"}',repeat('a',64)); RAISE EXCEPTION 'viewer emailed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- PERFORM public.enqueue_order_overview_reissue_v1(oid,command,(x->>'actor')::uuid,'{"ciphertext":"test"}',repeat('a',64));
- PERFORM public.enqueue_order_overview_reissue_v1(oid,command,(x->>'actor')::uuid,'{"ciphertext":"retry-nonce"}',repeat('a',64));
- PERFORM assert_eq((SELECT count(*) FROM email_messages WHERE order_id=oid AND code='ORDER_OVERVIEW'),1::bigint,'one gated redelivery on retry');
- PERFORM assert_true((SELECT public.email_intent_valid(m) FROM public.email_messages m WHERE order_id=oid AND code='ORDER_OVERVIEW'),'active reissue eligible in canonical gate');
+ -- Reissued links are reused in ordinary order email, without a standalone message.
+ PERFORM assert_eq(to_regprocedure('public.enqueue_order_overview_reissue_v1(bigint,uuid,uuid,jsonb,text)'),NULL::regprocedure,'retired standalone sender stays removed');
+ PERFORM assert_eq(public.get_order_email_overview_source_v1(oid,'regression@example.invalid',command)#>>'{source,tokenHash}',next_delivery->>'tokenHash','ordinary email reuses reissued source');
+ PERFORM assert_eq((SELECT count(*) FROM email_messages WHERE order_id=oid AND code='ORDER_OVERVIEW'),0::bigint,'reissue does not create a standalone email');
  UPDATE eshop.orders SET state='storno' WHERE id=oid;
- PERFORM assert_true((SELECT public.email_intent_valid(m) FROM public.email_messages m WHERE order_id=oid AND code='ORDER_OVERVIEW'),'cancelled history can be redelivered');
+ PERFORM assert_eq(public.get_order_email_overview_source_v1(oid,'regression@example.invalid',command)#>>'{source,tokenHash}',next_delivery->>'tokenHash','cancelled history keeps stable source');
  UPDATE eshop.orders SET state='waitlisted' WHERE id=oid;
- PERFORM assert_true((SELECT tracking_policy='disabled' AND prepared->>'ciphertext'='test' FROM email_messages WHERE order_id=oid AND code='ORDER_OVERVIEW'),'encrypted immutable redelivery without tracking');
  PERFORM assert_eq(public.resolve_customer_order_access_v1(NULL,oid,NULL,command,next_delivery,(x->>'actor')::uuid,true)->'source',r->'source','reissue replay preserves source');
  PERFORM assert_eq((SELECT count(*) FROM eshop.orders_history WHERE "order"=oid AND data->>'action'='order_overview_reissued'),1::bigint,'one audit entry');
  view_token:=repeat('4',64);
@@ -119,7 +117,7 @@ BEGIN
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'ended waiting bootstrapped'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='ended waiting bootstrapped' THEN RAISE; END IF; END;
  PERFORM assert_eq(public.get_customer_order_overview(view_token,oid)->>'code','200'::text,'ended waiting keeps independent view');
  UPDATE eshop.waitlist_capabilities SET expires_at=now()-interval '1 second' WHERE token_hash=next_delivery->>'tokenHash';
- PERFORM assert_true(NOT (SELECT public.email_intent_valid(m) FROM public.email_messages m WHERE order_id=oid AND code='ORDER_OVERVIEW'),'expired reissue fails send-time gate');
+ PERFORM assert_eq(public.get_order_email_overview_source_v1(oid,'regression@example.invalid',command),NULL::jsonb,'expired source is not silently renewed by email');
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'implicit renewal accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='implicit renewal accepted' THEN RAISE; END IF; END;
  UPDATE eshop.order_overview_sources SET expires_at=now()-interval '1 second'
  WHERE token_hash IN(SELECT token_hash FROM eshop.waitlist_capabilities WHERE order_id=oid AND kind='order_view');

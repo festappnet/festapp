@@ -6,7 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract interface class OccasionCommands {
   Future<OccasionModel> create(OccasionModel occasion);
   Future<OccasionModel> save(OccasionModel occasion);
-  Future<int> duplicate(int occasionId, {int? targetUnitId});
+  Future<int> duplicate(int occasionId,
+      {int? targetUnitId, String locale = 'en'});
   Future<void> delete(int occasionId);
   Future<Map<String, dynamic>> deleteService(
     int occasionId,
@@ -88,12 +89,14 @@ class SupabaseOccasionCommands implements OccasionCommands {
   }
 
   @override
-  Future<int> duplicate(int occasionId, {int? targetUnitId}) async {
+  Future<int> duplicate(int occasionId,
+      {int? targetUnitId, String locale = 'en'}) async {
     final response = ClientCommandResponse.from(await _transport.invoke(
       'duplicate_occasion_client_sync_v1',
       {
         'p_occasion': occasionId,
-        if (targetUnitId != null) 'p_target_unit': targetUnitId,
+        'p_target_unit': targetUnitId,
+        'p_locale': locale,
       },
     ));
     if (response.code != 200 || response.data['occasionId'] is! num) {

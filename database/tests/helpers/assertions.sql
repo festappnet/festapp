@@ -93,3 +93,24 @@ BEGIN
     RETURN ret_id;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Adopt direct-insert legacy fixtures explicitly before exercising real readers.
+-- Temporary and invoker-only: this helper cannot bypass application write guards.
+CREATE OR REPLACE FUNCTION pg_temp.adopt_public_link_fixtures()
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+ IF current_user <> 'postgres' THEN RAISE insufficient_privilege; END IF;
+ INSERT INTO public.occasion_link_reservations(slug,occasion)
+  SELECT o.link,CASE WHEN count(*)=1 THEN min(o.id) END FROM public.occasions o
+  WHERE coalesce(o.link,'')<>'' AND NOT EXISTS(
+   SELECT 1 FROM public.occasion_link_reservations r WHERE r.slug=o.link)
+  GROUP BY o.link;
+ INSERT INTO public.legacy_occasion_link_bindings(slug,organization,occasion)
+  SELECT o.link,o.organization,o.id FROM public.occasions o
+  JOIN public.occasion_link_reservations r ON r.slug=o.link
+  WHERE r.occasion IS NULL AND o.organization IS NOT NULL
+  ON CONFLICT DO NOTHING;
+ INSERT INTO public.form_link_reservations(slug,form)
+  SELECT f.link,f.id FROM public.forms f WHERE coalesce(f.link,'')<>''
+   AND NOT EXISTS(SELECT 1 FROM public.form_link_reservations r WHERE r.slug=f.link);
+END $$;

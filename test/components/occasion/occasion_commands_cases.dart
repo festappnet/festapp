@@ -142,6 +142,7 @@ void main() {
         expect(name, 'duplicate_occasion_client_sync_v1');
         expect(params['p_occasion'], 7);
         expect(params['p_target_unit'], 23);
+        expect(params['p_locale'], 'cs');
         return {
           'status': 'applied',
           'code': 200,
@@ -157,7 +158,7 @@ void main() {
         };
       }, maxAttempts: 1),
     );
-    expect(await commands.duplicate(7, targetUnitId: 23), 12);
+    expect(await commands.duplicate(7, targetUnitId: 23, locale: 'cs'), 12);
   });
 
   test('occasion create uses the unit-scoped canonical command', () async {

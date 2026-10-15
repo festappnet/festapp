@@ -11,9 +11,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  PERFORM assert_eq(jsonb_array_length(public.get_occasion_copy_units(source)),1,'only own destination');
- result:=public.duplicate_occasion_client_sync_v1(source,command,target); copied:=(result#>>'{data,occasionId}')::bigint;
- replay:=public.duplicate_occasion_client_sync_v1(source,command,target);
+ result:=public.duplicate_occasion_client_sync_v1(source,command,target,'cs'); copied:=(result#>>'{data,occasionId}')::bigint;
+ replay:=public.duplicate_occasion_client_sync_v1(source,command,target,'cs');
  PERFORM assert_eq(replay#>>'{data,occasionId}',copied::text,'same command replays copy');
+ PERFORM assert_true((SELECT title LIKE '% (kopie)' AND link ~ '^[23456789abcdefghjkmnpqrstuvwxyz]{8}$' FROM public.occasions WHERE id=copied),'demo copy is localized with short code');
  PERFORM assert_false(public.is_demo_occasion(copied),'copy is normal');
  PERFORM assert_true(EXISTS(SELECT 1 FROM public.occasions WHERE id=copied AND unit=target AND is_hidden AND NOT is_open AND NOT is_promoted AND occasion_hidden IS NULL),'copy starts hidden and clean');
  PERFORM assert_true(EXISTS(SELECT 1 FROM public.forms WHERE occasion=copied AND participant_capacity=24 AND waitlist_enabled AND NOT is_open AND bank_account IS NULL),'capacity copied without demo bank');

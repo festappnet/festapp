@@ -87,6 +87,7 @@ BEGIN
 
 
     -- 5. TEST RETRIEVAL: Use the frontend RPC
+  PERFORM pg_temp.adopt_public_link_fixtures();
     SELECT public.get_products_and_types_for_edit(v_occasion_link) INTO v_products_json;
     
     -- Extract the product from the JSON response

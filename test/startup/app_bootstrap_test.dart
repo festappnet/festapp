@@ -8,6 +8,12 @@ import 'package:fstapp/main.dart';
 import 'package:fstapp/startup/startup_failure_policy.dart';
 
 void main() {
+  test('occasion startup retains query and fragment before alias replacement',
+      () {
+    const path = '/old/reservations/forms/f/settings?x=%2F#anchor';
+    expect(initialRouteForUri(Uri.parse('https://preview.example$path')), path);
+  });
+
   test('order view fragment survives cold startup', () {
     final uri = Uri.parse(
         'https://example.invalid/form/example#order?order_id=1&token=synthetic');
