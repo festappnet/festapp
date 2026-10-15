@@ -287,7 +287,7 @@
     "labelFormLink": "Form Link",
     "helperFormLink": "Use only letters, numbers, and hyphens. This will be part of the URL.",
     "validationLinkRequired": "Link is required.",
-    "validationLinkInvalidChars": "Invalid characters. Use only letters, numbers, and hyphens.",
+    "validationLinkInvalidChars": "Use lowercase a-z, digits and single hyphens between words, up to 80 characters.",
     "validationLinkInUse": "Link already in use.",
     "labelDeadlineDays": "Payment Deadline (in days)",
     "helperDeadlineDays": "Set how many days a user has to pay for an order. Leave empty for no deadline.",
@@ -386,7 +386,11 @@
     "remindersOff": "Off",
     "remindersOn": "On",
     "occasionPaymentDefaultsHelp": "Defaults for all forms in this event. Individual forms can override them.",
-    "formPaymentDefaultsHelp": "This form inherits payment and reminder settings from the event’s Form feature. Overrides apply only to this form."
+    "formPaymentDefaultsHelp": "This form inherits payment and reminder settings from the event’s Form feature. Overrides apply only to this form.",
+    "savedPublicLink": "Current saved link",
+    "publicLinkPreview": "Unsaved link preview",
+    "automaticPublicLink": "A short link will be created when saved. You can enter a custom slug.",
+    "publicLinkHistoryHelp": "Previous addresses will continue to work."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -2565,7 +2569,9 @@
     "reloadConfirm": "Load the saved version and discard your unsaved changes?",
     "leave": "Save and return to list",
     "incomplete": "This draft stays private. Features, forms and seating plans will be added in the next steps.",
-    "deleteConfirm": "Delete this draft?"
+    "deleteConfirm": "Delete this draft?",
+    "createEvent": "Create event",
+    "finalizeFailed": "Creation could not be confirmed. Retry the same request."
   },
   "Waitlist": {
     "settings": "Capacity and waitlist",
@@ -2744,7 +2750,9 @@
     "copyHint": "The copy starts hidden, without participants or payments. Check dates, prices and your bank account before opening it.",
     "unavailable": "Demo events could not be loaded.",
     "noTarget": "You need an organization you can manage to create a copy.",
-    "back": "Back to your events"
+    "back": "Back to your events",
+    "intro": "Explore a complete event and create your own copy.",
+    "inspiration": "Get inspired by demo events"
   },
   "OrderOverview": {
     "title": "Order overview",

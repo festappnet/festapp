@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/services/utilities_all.dart';
+import 'package:fstapp/components/forms/views/form_public_link.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 
 import 'occasion_settings_strings.dart';
 
 class OccasionAdvancedSettings extends StatelessWidget {
   final TextEditingController linkController;
+  final String? savedLink;
   final TextEditingController replyToEmailController;
   final String? selectedTimezone;
   final List<String> allTimezones;
@@ -20,6 +22,7 @@ class OccasionAdvancedSettings extends StatelessWidget {
   const OccasionAdvancedSettings({
     super.key,
     required this.linkController,
+    this.savedLink,
     required this.replyToEmailController,
     required this.selectedTimezone,
     required this.allTimezones,
@@ -55,25 +58,21 @@ class OccasionAdvancedSettings extends StatelessWidget {
                   enabled: isEditingEnabled,
                   decoration: InputDecoration(
                     labelText: OccasionSettingsStrings.link,
+                    helperText: FormStrings.publicLinkHistoryHelp,
+                    helperMaxLines: 3,
                   ),
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(
-                        errorText: OccasionSettingsStrings.linkIsRequired),
-                  ]),
-                  onChanged: (val) {
-                    final fixed = Utilities.sanitizeFullUrl(val);
-                    if (fixed != val) {
-                      linkController.value = linkController.value.copyWith(
-                        text: fixed,
-                        selection:
-                            TextSelection.collapsed(offset: fixed.length),
-                      );
-                    }
-                    onLinkChanged(fixed);
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return OccasionSettingsStrings.linkIsRequired;
+                    if (value != savedLink && !isValidPublicSlug(value)) return FormStrings.validationLinkInvalidChars;
+                    return null;
                   },
-                  onSaved: (val) {
-                    onLinkSaved(Utilities.sanitizeFullUrl(val ?? ""));
-                  }),
+                  onChanged: onLinkChanged,
+                  onSaved: onLinkSaved),
+              const SizedBox(height: 12),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: linkController,
+                builder: (_, value, __) => PublicLink(
+                  link: value.text, savedLink: savedLink, isForm: false)),
               const SizedBox(height: 24),
               TextFormField(
                 controller: replyToEmailController,

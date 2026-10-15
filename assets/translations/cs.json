@@ -287,7 +287,7 @@
     "labelFormLink": "Odkaz formuláře",
     "helperFormLink": "Používejte pouze písmena, číslice a pomlčky. Bude součástí URL adresy.",
     "validationLinkRequired": "Odkaz je povinný.",
-    "validationLinkInvalidChars": "Neplatné znaky. Používejte pouze písmena, číslice a pomlčky.",
+    "validationLinkInvalidChars": "Použijte malá písmena a-z, číslice a jednotlivé pomlčky mezi slovy, nejvýše 80 znaků.",
     "validationLinkInUse": "Odkaz se již používá.",
     "labelDeadlineDays": "Splatnost platby (ve dnech)",
     "helperDeadlineDays": "Nastavte, kolik dní má uživatel na zaplacení objednávky. Pro neomezenou dobu ponechte prázdné.",
@@ -386,7 +386,11 @@
     "remindersOff": "Vypnuto",
     "remindersOn": "Zapnuto",
     "occasionPaymentDefaultsHelp": "Výchozí nastavení pro všechny formuláře této události. Jednotlivé formuláře je mohou přepsat.",
-    "formPaymentDefaultsHelp": "Formulář přebírá nastavení platby a připomínek z funkce Formulář na této události. Vlastní hodnoty platí jen pro tento formulář."
+    "formPaymentDefaultsHelp": "Formulář přebírá nastavení platby a připomínek z funkce Formulář na této události. Vlastní hodnoty platí jen pro tento formulář.",
+    "savedPublicLink": "Současný uložený odkaz",
+    "publicLinkPreview": "Náhled neuloženého odkazu",
+    "automaticPublicLink": "Krátký odkaz se vytvoří po uložení. Adresní název můžete zadat ručně.",
+    "publicLinkHistoryHelp": "Původní adresy budou dále fungovat."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -2566,7 +2570,9 @@
     "reloadConfirm": "Načíst uloženou verzi? Vaše neuložené změny se zahodí.",
     "leave": "Uložit a vrátit se do seznamu",
     "incomplete": "Koncept zůstává soukromý. Nastavení funkcí, formuláře a plánku přidáme v dalších krocích.",
-    "deleteConfirm": "Opravdu smazat tento rozpracovaný koncept?"
+    "deleteConfirm": "Opravdu smazat tento rozpracovaný koncept?",
+    "createEvent": "Vytvořit událost",
+    "finalizeFailed": "Vytvoření se nepodařilo potvrdit. Zkuste znovu stejný požadavek."
   },
   "Waitlist": {
     "settings": "Kapacita a náhradníci",
@@ -2745,7 +2751,9 @@
     "copyHint": "Kopie bude skrytá, bez účastníků a plateb. Před otevřením zkontrolujte termíny, ceny a vlastní účet.",
     "unavailable": "Ukázkové akce se nepodařilo načíst.",
     "noTarget": "Pro kopii potřebujete vlastní organizaci, kterou můžete spravovat.",
-    "back": "Zpět k vlastním akcím"
+    "back": "Zpět k vlastním akcím",
+    "intro": "Prohlédněte si hotovou akci a vytvořte si vlastní kopii.",
+    "inspiration": "Inspirujte se ukázkovými akcemi"
   },
   "OrderOverview": {
     "title": "Přehled objednávky",

@@ -21,7 +21,7 @@ BEGIN
     SELECT id
     INTO occasion_id
     FROM public.occasions
-    WHERE link = occasion_link;
+    WHERE id = public.resolve_occasion_link_internal(occasion_link);
 
     -- Check if occasion_link is valid
     IF occasion_id IS NULL THEN

@@ -77,6 +77,7 @@ BEGIN
     VALUES (v_occ_closed_id, get_user_id('gac_adminuser'), true);
 
     -- Share IDs with downstream test blocks
+  PERFORM pg_temp.adopt_public_link_fixtures();
     PERFORM set_config('test.gac_org_id', v_org_id::text, false);
     PERFORM set_config('test.gac_unit1_id', v_unit1_id::text, false);
     PERFORM set_config('test.gac_unit2_id', v_unit2_id::text, false);

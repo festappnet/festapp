@@ -99,6 +99,7 @@ BEGIN
  PERFORM assert_eq(r->>'code','200'::text,'partial settings save');
  PERFORM assert_true((SELECT participant_capacity=3 AND waitlist_enabled AND NOT show_remaining_capacity FROM forms WHERE id=f),'omitted settings preserved');
  UPDATE occasion_users SET is_editor_view=true WHERE occasion=(x->>'occasion')::bigint AND "user"=(x->>'actor')::uuid;
+  PERFORM pg_temp.adopt_public_link_fixtures();
  copied:=public.duplicate_form_to_occasion(f,x->>'link');
  PERFORM assert_true((SELECT participant_capacity=3 AND waitlist_enabled AND NOT show_remaining_capacity FROM forms WHERE id=copied),'copy preserves settings');
  PERFORM assert_eq((SELECT count(*) FROM eshop.orders WHERE form=copied),0::bigint,'copy does not copy live orders');

@@ -22,7 +22,6 @@ import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'form_public_link.dart';
@@ -84,6 +83,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   final _reminderDaysController = TextEditingController();
   late FormFeature _formFeature;
   String? _linkError;
+  String? _savedLink;
   bool _isLoading = true;
   bool get _canEdit => RightsService.canEditOccasion();
   bool get _hasChanges =>
@@ -179,12 +179,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (mounted && _form == null) {
       setState(() => _isLoading = true);
     }
+    final requestedLink = _formLink!;
     final bundle =
-        await (widget.loadBundle ?? DbForms.getFormForEdit)(_formLink!);
-    if (!mounted) return;
+        await (widget.loadBundle ?? DbForms.getFormForEdit)(requestedLink);
+    if (!mounted || requestedLink != _formLink) return;
 
     if (bundle != null) {
       _form = bundle.form;
+      _savedLink = _form!.link;
       _titleController.text = _form!.title ?? '';
       _linkController.text = _form!.link ?? '';
       _linkNotifier.value = _linkController.text;
@@ -238,7 +240,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     setState(() {
       if (value == null || value.isEmpty) {
         _linkError = FormStrings.validationLinkRequired;
-      } else if (!Utilities.isValidUrl(value)) {
+      } else if (value != _savedLink && !isValidPublicSlug(value)) {
         _linkError = FormStrings.validationLinkInvalidChars;
       } else {
         _linkError = null;
@@ -266,7 +268,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
     final trimmedTitle = _titleController.text.trim();
     _form!.title = trimmedTitle.isEmpty ? null : trimmedTitle;
-    _form!.link = _linkController.text.trim();
+    _form!.link = _linkController.text;
     _form!.data ??= {};
     if (_reminderMode == 'inherit') {
       _form!.data!.remove(FormModel.metaIsReminderEnabled);
@@ -311,7 +313,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
 
     try {
-      await (widget.saveForm ?? DbForms.updateForm)(_form!);
+      if (widget.saveForm != null) {
+        await widget.saveForm!(_form!);
+      } else {
+        _form = await DbForms.updateForm(_form!);
+      }
+      _savedLink = _form!.link;
       if (!mounted) return;
       ToastHelper.Show(
           currentContext, "${CommonStrings.saved}: ${_form?.title ?? ""}",
@@ -333,6 +340,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         widget.onDataUpdated?.call();
       }
     } catch (e) {
+      _form?.link = _savedLink;
       if (!mounted) return;
       var errorMessage = e.toString().replaceFirst("Exception: ", "");
       for (final code in [
@@ -682,6 +690,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       labelText: FormStrings.labelFormLink,
                                       border: const OutlineInputBorder(),
                                       errorText: _linkError,
+                                      helperText: FormStrings.publicLinkHistoryHelp,
                                     ),
                                     onChanged: _canEdit
                                         ? (value) {
@@ -693,12 +702,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ValueListenableBuilder<String>(
                                     valueListenable: _linkNotifier,
                                     builder: (context, formLink, child) {
-                                      if (formLink.isEmpty)
-                                        return const SizedBox.shrink();
+
                                       return Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12.0),
-                                        child: FormPublicLink(link: formLink),
+                                        child: FormPublicLink(link: formLink, savedLink: _savedLink),
                                       );
                                     },
                                   ),

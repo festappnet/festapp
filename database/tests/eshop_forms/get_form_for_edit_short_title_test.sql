@@ -43,6 +43,7 @@ BEGIN
     INSERT INTO public.forms (occasion, title, link, is_open)
     VALUES (v_occasion_id, 'Test Form', v_form_link, true)
     RETURNING id INTO v_form_id;
+    PERFORM public.reserve_public_link_internal('form',v_form_id,v_form_link,true);
 
     -- 2. CREATE Product Type
     INSERT INTO eshop.product_types (occasion, title, type)

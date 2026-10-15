@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint)
+CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint, p_locale text)
 RETURNS bigint
 SECURITY DEFINER
 SET search_path = public, extensions
@@ -40,13 +40,13 @@ BEGIN
     (created_at, updated_at, data, is_hidden, is_open, is_promoted, start_time, end_time, link, title, organization, services, unit, features, occasion_hidden, description)
   SELECT now(), now(), data, CASE WHEN v_demo THEN true ELSE is_hidden END,
          CASE WHEN v_demo THEN false ELSE is_open END, CASE WHEN v_demo THEN false ELSE is_promoted END, start_time, end_time,
-         link || '-copy-' || substring(md5(random()::text) from 1 for 8) AS link,
-         title || ' (Copy)', v_organization, services, v_target_unit, features, CASE WHEN v_demo THEN NULL ELSE occasion_hidden END, description
+         '' AS link,
+         public.copy_occasion_title_internal(title,p_locale), v_organization, services, v_target_unit, features, CASE WHEN v_demo THEN NULL ELSE occasion_hidden END, description
   FROM public.occasions
   WHERE id = oc
   RETURNING id INTO new_occ;
 
-  RAISE NOTICE 'New occasion id: %', new_occ;
+  UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',new_occ,NULL,true) WHERE id=new_occ;
 
   ------------------------------------------------------------------
   -- 2. Create temporary mapping tables (old id → new id)
@@ -359,9 +359,11 @@ BEGIN
               AND NOT EXISTS (SELECT 1 FROM eshop.unit_bank_accounts uba
                 WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)
               THEN false ELSE rec.is_open END,
-            replace(uuid_generate_v4()::text, '-', ''),
+            NULL,
             COALESCE(new_bp_id, rec.blueprint), rec.header, rec.header_off, now(), rec.title, rec.participant_capacity, rec.waitlist_enabled, rec.show_remaining_capacity, rec.waitlist_offer_duration_seconds)
     RETURNING id INTO v_new_id;
+
+    UPDATE public.forms SET link=public.reserve_public_link_internal('form',v_new_id,NULL,true) WHERE id=v_new_id;
 
     INSERT INTO tmp_forms (old_id, new_id)
     VALUES (rec.id, v_new_id);
@@ -408,3 +410,10 @@ SET search_path = public, extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
   FROM PUBLIC, anon, authenticated;
+
+REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
+RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
+ SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
+$$;
+REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;

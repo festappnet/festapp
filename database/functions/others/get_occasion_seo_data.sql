@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION get_occasion_seo_data(p_link_slug TEXT)
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER -- Runs with permissions of creator to access potentially restricted org data (for just title)
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
     v_result JSON;
@@ -14,14 +14,14 @@ BEGIN
     -- 1. Try to find occasion via Form Link
     SELECT occasion, header INTO v_occasion_id, v_form_header
     FROM public.forms
-    WHERE link = p_link_slug
+    WHERE id = public.resolve_form_link_internal(p_link_slug)
     LIMIT 1;
 
     -- 2. If not found, try to find occasion via Occasion Link
     IF v_occasion_id IS NULL THEN
         SELECT id INTO v_occasion_id
         FROM occasions
-        WHERE link = p_link_slug
+        WHERE id = public.resolve_occasion_link_internal(p_link_slug)
         LIMIT 1;
     END IF;
 

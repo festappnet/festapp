@@ -15,6 +15,7 @@ BEGIN
  INSERT INTO eshop.tickets(occasion,state,data) VALUES(oc,'waitlisted',jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(name_id::text,'Ada'),jsonb_build_object(surname_id::text,'Lovelace'),jsonb_build_object(hidden_id::text,'Hidden'),jsonb_build_object(foreign_id::text,'Foreign')))) RETURNING id INTO tid;
  INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(oid,tid);
  INSERT INTO eshop.waitlist_capabilities(token_hash,organization_id,form_id,order_id,kind) VALUES(encode(extensions.digest(token,'sha256'),'hex'),org,f,oid,'manage');
+  PERFORM pg_temp.adopt_public_link_fixtures();
  PERFORM set_config('request.jwt.claim.sub','',true);
  reply:=public.get_waitlist_offer_form(token,NULL,oid);
  ASSERT (reply->>'code')::int=200,'Authorized management context rejected';

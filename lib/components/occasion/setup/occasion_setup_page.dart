@@ -18,7 +18,8 @@ import 'package:fstapp/components/forms/models/form_model.dart';
 import 'package:fstapp/components/forms/views/create_or_copy_dialog.dart';
 import 'package:fstapp/components/forms/views/form_editor_content.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
-import 'package:fstapp/services/utilities_all.dart';
+import 'package:fstapp/components/forms/views/form_public_link.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 
 import 'occasion_form_draft.dart';
@@ -32,6 +33,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'occasion_setup_draft.dart';
+import 'package:fstapp/router_service.dart';
 import 'occasion_setup_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
@@ -54,8 +56,11 @@ class OccasionSetupPage extends StatefulWidget {
         futureFunction: () => OccasionSetupDrafts(Supabase.instance.client)
             .initializeDefaults(draft));
     if (initialized == null || !context.mounted) return;
-    await Navigator.of(context).push<void>(MaterialPageRoute(
+    final link = await Navigator.of(context).push<String>(MaterialPageRoute(
         builder: (_) => OccasionSetupPage(draft: initialized)));
+    if (link != null && context.mounted) {
+      await RouterService.navigateToOccasionAdministration(context, occasionLink: link);
+    }
   }
 
   @override
@@ -80,6 +85,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   bool _allowPop = false;
   bool _conflict = false;
   String? _error;
+  bool _finalizing = false;
+  String? _finalizeCommand;
+  OccasionSetupDraft? _finalizeDraft;
+  String? _finalizeError;
   Map<String, dynamic>? get _active => _data;
 
   @override
@@ -95,7 +104,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       'end': _stored.data['end_time'] ??
           DateTime.now().add(const Duration(days: 33)).toIso8601String(),
       'source': 'Od nuly',
-      'linkManuallyChanged': false,
       'copyProgram': false,
       'copyInformation': false,
       'copyEmails': false,
@@ -248,6 +256,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     final source = _sources.firstWhere((s) => _sourceLabel(s) == label);
     draft['sourceId'] = (source['occasion'] as Map)['id'];
+    draft.putIfAbsent('copy_locale', () => context.locale.languageCode);
+    draft.putIfAbsent('copy_title_edited', () => false);
     final ticket = ((source['occasion'] as Map)['features'] as List? ?? [])
         .whereType<Map>()
         .where((f) => f['code'] == FeatureConstants.ticket)
@@ -262,6 +272,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final forms = source['forms'] as List;
     if (forms.isNotEmpty) {
       draft['formDraft'] = jsonDecode(jsonEncode(forms.first));
+      (draft['formDraft'] as Map)['link'] = '';
       draft['formOrigin'] = (source['occasion'] as Map)['title'];
       draft['formEnabled'] = true;
       _adoptFormSettings(draft);
@@ -333,9 +344,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   void _change(void Function(Map<String, dynamic>) update,
       {bool changesConfiguration = false}) {
+    if (_finalizeCommand != null) return;
     setState(() {
       final oldTitle = _data['title'];
-      final oldLink = _data['link'];
       update(_data);
       if (_data['formDefaultsFollowEvent'] == true &&
           _data['formDraft'] is Map) {
@@ -345,10 +356,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           form['title'] = _data['title'];
           _inlineFormBundle?.form.title = _data['title'];
         }
-        if (_data['link'] != oldLink && (_data['link'] as String).isNotEmpty) {
-          form['link'] = _data['link'];
-          _inlineFormBundle?.form.link = _data['link'];
-        }
+
       }
       _restrictToSupportedFeatures(_data);
       if (changesConfiguration) _persistFormControls(_data);
@@ -387,6 +395,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       _dirty = false;
       try {
         _stored = await _store.save(_stored, snapshot, snapshot['step'] as int);
+        // Adopt server-owned copy title without overwriting typing during save.
+        if (_data['title'] == snapshot['title'] &&
+            _data['copy_title_edited'] != true &&
+            _stored.data['title'] != snapshot['title']) {
+          _data['title'] = _stored.data['title'];
+          _editEpoch++;
+        }
         _error = null;
       } catch (e) {
         _dirty = true;
@@ -400,7 +415,33 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return true;
   }
 
+  Future<void> _finalize() async {
+    if (_finalizing) return;
+    setState(() { _finalizing = true; _finalizeError = null; });
+    try {
+      if (_finalizeCommand == null) {
+        if (!await _flush() || !mounted) return;
+        _finalizeDraft = _stored;
+        _finalizeCommand = OccasionSetupDrafts.newId();
+      }
+      final link = await _store.finalize(_finalizeDraft!, _finalizeCommand!);
+      if (!mounted) return;
+      setState(() => _allowPop = true);
+      Navigator.of(context).pop(link);
+    } catch (_) {
+      if (mounted) setState(() => _finalizeError = OccasionSetupStrings.finalizeFailed);
+    } finally {
+      if (mounted) setState(() => _finalizing = false);
+    }
+  }
+
   Future<void> _leave() async {
+    if (_finalizing) return;
+    if (_finalizeCommand != null) {
+      setState(() => _allowPop = true);
+      Navigator.of(context).pop();
+      return;
+    }
     // Also persist the normalized full payload for an untouched new draft.
     _dirty = true;
     if (!await _flush() || !mounted) return;
@@ -450,7 +491,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         final start = DateTime.tryParse(d['start'] as String);
         final end = DateTime.tryParse(d['end'] as String);
         return (d['title'] as String).trim().isNotEmpty &&
-            Utilities.isValidUrl(d['link'] as String) &&
+            isValidPublicSlug(d['link'] as String, allowEmpty: true) &&
             start != null &&
             end != null &&
             !end.isBefore(start);
@@ -461,7 +502,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         final formData = d['formDraft'];
         if (formData is! Map) return false;
         return (formData['title'] as String? ?? '').trim().isNotEmpty &&
-            Utilities.isValidUrl(formData['link'] as String? ?? '') &&
+            isValidPublicSlug(formData['link'] as String? ?? '', allowEmpty: true) &&
             (formData['fields'] as List? ?? []).isNotEmpty;
       case 4:
         return AppConfig.isAppSupported
@@ -700,6 +741,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       _inlineFormBundle = null;
       draft['formDefaultsFollowEvent'] = false;
       draft['formDraft'] = serializeDraftForm(form);
+      (draft['formDraft'] as Map)['link'] = '';
       _adoptFormSettings(draft);
       draft['formOrigin'] =
           result is FormModel ? form.occasionModel?.title : null;
@@ -742,16 +784,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             InputDecoration(labelText: AdministrationStrings.titleLabel),
         onChanged: (value) => _change((x) {
           x['title'] = value;
-          if (x['linkManuallyChanged'] != true && value.trim().isNotEmpty) {
-            final firstWord = Utilities.removeDiacritics(value.trim())
-                .split(' ')
-                .first
-                .toLowerCase();
-            final year = DateTime.tryParse(x['end'] as String)?.year ??
-                DateTime.now().year;
-            x['link'] = '$firstWord$year';
-            _linkController.text = x['link'] as String;
-          }
+          x['copy_title_edited'] = true;
         }, changesConfiguration: true),
       ),
       const SizedBox(height: 14),
@@ -761,7 +794,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         decoration: InputDecoration(labelText: AdministrationStrings.linkLabel),
         onChanged: (value) => _change((x) {
           x['link'] = value;
-          x['linkManuallyChanged'] = true;
         }, changesConfiguration: true),
       ),
       const SizedBox(height: 18),
@@ -784,8 +816,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         }, changesConfiguration: true),
       ),
       const SizedBox(height: 16),
-      Text(AdministrationStrings.eventAvailableAt),
-      SelectableText('${AppConfig.webLink}/#/${d['link']}'),
+      PublicLink(link: d['link'] as String, isForm: false),
       const SizedBox(height: 14),
       _card(const Text(
           'Koncept zůstává skrytý a zavřený i po dokončení průvodce.')),
@@ -797,7 +828,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if ((d['title'] as String).trim().isEmpty) {
       issues.add(const MapEntry(1, 'Chybí název události.'));
     }
-    if (!Utilities.isValidUrl(d['link'] as String)) {
+    if (!isValidPublicSlug(d['link'] as String, allowEmpty: true)) {
       issues.add(const MapEntry(1, 'Odkaz události není platný.'));
     }
     final start = DateTime.tryParse(d['start'] as String);
@@ -813,7 +844,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       } else {
         final form = draftFormBundle(Map<String, dynamic>.from(formData));
         if ((form.form.title ?? '').trim().isEmpty ||
-            !Utilities.isValidUrl(form.form.link ?? '')) {
+            !isValidPublicSlug(form.form.link ?? '', allowEmpty: true)) {
           issues
               .add(const MapEntry(3, 'Doplň název a platný odkaz formuláře.'));
         }
@@ -958,7 +989,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           [
             _reviewRow(AdministrationStrings.titleLabel, d['title'] as String),
             _reviewRow(AdministrationStrings.linkLabel,
-                '${AppConfig.webLink}/#/${d['link']}'),
+                (d['link'] as String).isEmpty
+                    ? FormStrings.automaticPublicLink
+                    : publicLinkUrl(d['link'] as String, isForm: false)),
             _reviewRow(
                 CommonStrings.start, _dateForReview(d['start'] as String)),
             _reviewRow(CommonStrings.end, _dateForReview(d['end'] as String)),
@@ -1089,8 +1122,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             const Text(
                 'Koncept je neveřejný. Vytvořená událost zůstane skrytá a formulář zavřený. Zveřejnění je samostatný krok.'),
             const SizedBox(height: 8),
-            const Text(
-                'Před vytvořením události bude potřeba ověřit dostupnost odkazů a platební nastavení.'),
+            Text(FormStrings.automaticPublicLink),
           ],
           issues),
       if (d['reviewed'] != true) ...[
@@ -1118,6 +1150,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               _leave();
             },
             child: const Text('Uložit dokončený koncept')),
+        const SizedBox(height: 10),
+        ElevatedButton.icon(
+          onPressed: _finalizing || issues.isNotEmpty ? null : _finalize,
+          icon: const Icon(Icons.check),
+          label: Text(_finalizing ? OccasionSetupStrings.saving :
+              _finalizeCommand != null ? OccasionSetupStrings.retry : OccasionSetupStrings.createEvent)),
+        if (_finalizeError != null) Text(_finalizeError!),
       ],
     ]);
   }
@@ -1210,6 +1249,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 d, 'title', 'FeatureFormSettings.labelFormTitle'.tr()),
             const SizedBox(height: 10),
             _formTextField(d, 'link', 'FeatureFormSettings.labelFormLink'.tr()),
+            FormPublicLink(link: formBundle.form.link ?? ''),
             const SizedBox(height: 10),
             Text('$fields polí · $products produktů'),
             const SizedBox(height: 12),
@@ -1456,7 +1496,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         },
         child: Scaffold(
           appBar: AppBar(title: Text(AdministrationStrings.addNewEventTitle)),
-          body: _wizard(_data),
+          body: _finalizeCommand == null ? _wizard(_data) : Center(
+            child: Padding(padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                if (_finalizing) const CircularProgressIndicator(),
+                Text(_finalizeError ?? OccasionSetupStrings.saving),
+                if (!_finalizing) ...[
+                  ElevatedButton(onPressed: _finalize,
+                    child: Text(OccasionSetupStrings.retry)),
+                  TextButton(onPressed: _leave,
+                    child: Text(CommonStrings.back)),
+                ],
+              ]))),
         ),
       );
 }

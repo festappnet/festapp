@@ -32,7 +32,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE v_occasion bigint; v_wave eshop.product_price_waves%ROWTYPE;
 BEGIN
   SELECT o.id INTO STRICT v_occasion FROM public.occasions o JOIN public.user_info ui
-    ON ui.organization=o.organization WHERE o.link=p_occasion_link AND ui.id=auth.uid();
+    ON ui.organization=o.organization WHERE o.id=public.resolve_occasion_link_internal(p_occasion_link) AND ui.id=auth.uid();
   PERFORM public.check_product_wave_editor(v_occasion);
   IF p_change_time IS NULL OR NOT isfinite(p_change_time) OR p_change_time<=clock_timestamp() THEN
     RAISE invalid_parameter_value USING MESSAGE='FUTURE_TIME_REQUIRED'; END IF;
