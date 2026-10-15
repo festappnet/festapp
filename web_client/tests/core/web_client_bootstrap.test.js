@@ -127,3 +127,13 @@ test('retry rejects an HTML fallback instead of reloading into a broken module',
     assert.equal(reloads, 0);
     assert.equal(dom.window.document.querySelector('#web-client-startup button').disabled, false);
 });
+
+
+test('startup has an accessible spinner without visible loading text', t => {
+    const { dom } = boot();
+    t.after(() => dom.window.close());
+    const fallback = dom.window.document.getElementById('web-client-startup');
+    assert.ok(fallback.getAttribute('aria-label'));
+    assert.equal(fallback.querySelector('p').hidden, true);
+    assert.ok(fallback.querySelector('.startup-spinner'));
+});

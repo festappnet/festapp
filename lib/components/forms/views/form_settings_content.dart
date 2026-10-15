@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.dart';
@@ -17,7 +18,8 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/form_feature.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -29,18 +31,20 @@ import 'form_public_link.dart';
 import '../form_strings.dart';
 
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 
 class FormSettingsContent extends StatefulWidget {
   final String? formLink;
+  final ValueListenable<({int accountId, int revision})>? bankConnectionChanges;
   final Future<FormEditBundle?> Function(String)? loadBundle;
-  final Future<void> Function(FormModel)? saveForm;
+  final Future<void> Function(FormEditorDraft)? saveForm;
   final VoidCallback? onActionCompleted;
   final VoidCallback? onDataUpdated;
   const FormSettingsContent(
       {super.key,
       this.formLink,
+      this.bankConnectionChanges,
       this.onActionCompleted,
       this.onDataUpdated,
       this.loadBundle,
@@ -69,7 +73,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   }
 
   final _formKey = GlobalKey<FormState>();
-  FormModel? _form;
+  FormEditorDraft? _form;
   String? _formLink;
 
   final TextEditingController _titleController = TextEditingController();
@@ -102,7 +106,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   @override
   void initState() {
     super.initState();
-    DbBankAccounts.connectionChanges.addListener(_bankConnectionChanged);
+    _bankChanges = widget.bankConnectionChanges ??
+        DbBankAccounts.current.connectionChanges;
+    _bankChanges.addListener(_bankConnectionChanged);
     for (final controller in [
       _titleController,
       _linkController,
@@ -129,7 +135,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   @override
   void dispose() {
-    DbBankAccounts.connectionChanges.removeListener(_bankConnectionChanged);
+    _bankChanges.removeListener(_bankConnectionChanged);
     _bankSettingsLink.dispose();
     _titleController.dispose();
     _linkController.removeListener(_updateLinkPreview);
@@ -146,11 +152,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   }
 
   bool _refreshingBankAccounts = false;
+  late final ValueListenable<({int accountId, int revision})> _bankChanges;
 
   Future<void> _bankConnectionChanged() async {
     final form = _form;
     final link = _formLink;
-    final id = DbBankAccounts.connectionChanges.value.accountId;
+    final id = _bankChanges.value.accountId;
     if (!mounted ||
         _refreshingBankAccounts ||
         form == null ||
@@ -186,45 +193,48 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
     if (bundle != null) {
       _form = bundle.form;
-      _savedLink = _form!.link;
-      _titleController.text = _form!.title ?? '';
-      _linkController.text = _form!.link ?? '';
+      _savedLink = _form!.definition.link;
+      _titleController.text = _form!.definition.title ?? '';
+      _linkController.text = _form!.definition.link ?? '';
       _linkNotifier.value = _linkController.text;
       _linkController.removeListener(_updateLinkPreview);
       _linkController.addListener(_updateLinkPreview);
-      final reminderOverride =
-          _form!.data?[FormModel.metaIsReminderEnabled] as bool?;
+      final reminderOverride = _form!
+          .definition.data?[FormDefinition.metaIsReminderEnabled] as bool?;
       _reminderMode = reminderOverride == null
           ? 'inherit'
           : (reminderOverride ? 'enabled' : 'disabled');
-      final reminderSeconds =
-          _form!.data?[FormModel.metaReminderIntervalSeconds] as int?;
+      final reminderSeconds = _form!
+          .definition.data?[FormDefinition.metaReminderIntervalSeconds] as int?;
       _reminderDaysController.text =
           reminderSeconds == null ? '' : (reminderSeconds / 86400).toString();
 
-      final vsData =
-          _form!.data?[FormModel.metaVariableSymbol] as Map<String, dynamic>?;
-      _variableSymbolType = vsData?[FormModel.metaType] as String? ?? 'random';
+      final vsData = _form!.definition.data?[FormDefinition.metaVariableSymbol]
+          as Map<String, dynamic>?;
+      _variableSymbolType =
+          vsData?[FormDefinition.metaType] as String? ?? 'random';
       if (_variableSymbolType == 'sequence') {
-        final startNum = vsData?[FormModel.metaStartingNumber];
+        final startNum = vsData?[FormDefinition.metaStartingNumber];
         _startingNumberController.text = startNum?.toString() ?? '';
       } else {
         _startingNumberController.text = '';
       }
 
-      final msgData =
-          _form!.data?[FormModel.metaPaymentMessage] as Map<String, dynamic>?;
+      final msgData = _form!.definition.data?[FormDefinition.metaPaymentMessage]
+          as Map<String, dynamic>?;
       _paymentMessageType =
-          msgData?[FormModel.metaType] as String? ?? 'name_surname';
+          msgData?[FormDefinition.metaType] as String? ?? 'name_surname';
 
-      final savedTone = _form!.data?[FormHelper.metaCommunicationTone];
+      final savedTone =
+          _form!.definition.data?[FormMetadata.metaCommunicationTone];
       _communicationTone = savedTone == 'formal' || savedTone == 'informal'
           ? savedTone as String
           : 'inherit';
 
-      if (_form!.deadlineDurationSeconds != null &&
-          _form!.deadlineDurationSeconds! >= 0) {
-        final days = (_form!.deadlineDurationSeconds! / (24 * 3600)).round();
+      if (_form!.definition.deadlineDurationSeconds != null &&
+          _form!.definition.deadlineDurationSeconds! >= 0) {
+        final days =
+            (_form!.definition.deadlineDurationSeconds! / (24 * 3600)).round();
         _deadlineDaysController.text = days.toString();
       } else {
         _deadlineDaysController.text = '';
@@ -267,50 +277,50 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
 
     final trimmedTitle = _titleController.text.trim();
-    _form!.title = trimmedTitle.isEmpty ? null : trimmedTitle;
-    _form!.link = _linkController.text;
-    _form!.data ??= {};
+    _form!.definition = _form!.definition
+        .copyWith(title: trimmedTitle.isEmpty ? null : trimmedTitle);
+    _form!.definition = _form!.definition.copyWith(link: _linkController.text);
+    final metadata = <String, dynamic>{...?_form!.definition.data};
     if (_reminderMode == 'inherit') {
-      _form!.data!.remove(FormModel.metaIsReminderEnabled);
+      metadata.remove(FormDefinition.metaIsReminderEnabled);
     } else {
-      _form!.data![FormModel.metaIsReminderEnabled] =
+      metadata[FormDefinition.metaIsReminderEnabled] =
           _reminderMode == 'enabled';
     }
     if (reminderDays == null) {
-      _form!.data!.remove(FormModel.metaReminderIntervalSeconds);
+      metadata.remove(FormDefinition.metaReminderIntervalSeconds);
     } else {
-      _form!.data![FormModel.metaReminderIntervalSeconds] =
+      metadata[FormDefinition.metaReminderIntervalSeconds] =
           (reminderDays * 86400).round();
     }
 
     if (_variableSymbolType == 'sequence') {
       final startingNumber = int.tryParse(_startingNumberController.text);
-      _form!.data![FormModel.metaVariableSymbol] = {
-        FormModel.metaType: 'sequence',
-        FormModel.metaStartingNumber: startingNumber,
+      metadata[FormDefinition.metaVariableSymbol] = {
+        FormDefinition.metaType: 'sequence',
+        FormDefinition.metaStartingNumber: startingNumber,
       };
     } else {
-      _form!.data![FormModel.metaVariableSymbol] = {
-        FormModel.metaType: 'random',
+      metadata[FormDefinition.metaVariableSymbol] = {
+        FormDefinition.metaType: 'random',
       };
     }
 
-    _form!.data![FormModel.metaPaymentMessage] = {
-      FormModel.metaType: _paymentMessageType,
+    metadata[FormDefinition.metaPaymentMessage] = {
+      FormDefinition.metaType: _paymentMessageType,
     };
 
     if (_communicationTone == 'inherit') {
-      _form!.data!.remove(FormHelper.metaCommunicationTone);
+      metadata.remove(FormMetadata.metaCommunicationTone);
     } else {
-      _form!.data![FormHelper.metaCommunicationTone] = _communicationTone;
+      metadata[FormMetadata.metaCommunicationTone] = _communicationTone;
     }
 
     final days = int.tryParse(_deadlineDaysController.text);
-    if (days != null && days >= 0) {
-      _form!.deadlineDurationSeconds = days * 24 * 60 * 60;
-    } else {
-      _form!.deadlineDurationSeconds = null;
-    }
+    _form!.definition = _form!.definition.copyWith(
+      data: metadata,
+      deadlineDurationSeconds: days != null && days >= 0 ? days * 86400 : null,
+    );
 
     try {
       if (widget.saveForm != null) {
@@ -318,29 +328,29 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       } else {
         _form = await DbForms.updateForm(_form!);
       }
-      _savedLink = _form!.link;
+      _savedLink = _form!.definition.link;
       if (!mounted) return;
-      ToastHelper.Show(
-          currentContext, "${CommonStrings.saved}: ${_form?.title ?? ""}",
+      ToastHelper.Show(currentContext,
+          "${CommonStrings.saved}: ${_form?.definition.title ?? ""}",
           severity: ToastSeverity.Ok);
-      final renamed = _formLink != _form!.link;
+      final renamed = _formLink != _form!.definition.link;
       if (renamed) {
         setState(() {
-          _formLink = _form!.link;
+          _formLink = _form!.definition.link;
         });
       }
       await _loadData();
       if (renamed && mounted) {
         context.router.markUrlStateForReplace();
-        await context.router
-            .navigate(FormDetailRoute(formLink: _form!.link!, children: [
+        await context.router.navigate(
+            FormDetailRoute(formLink: _form!.definition.link!, children: [
           const FormTabsRoute(children: [FormSettingsRoute()])
         ]));
       } else {
         widget.onDataUpdated?.call();
       }
     } catch (e) {
-      _form?.link = _savedLink;
+      _form?.definition = _form!.definition.copyWith(link: _savedLink);
       if (!mounted) return;
       var errorMessage = e.toString().replaceFirst("Exception: ", "");
       for (final code in [
@@ -367,10 +377,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _deleteForm(BuildContext currentContext) async {
     if (!_canEdit) return;
     try {
-      await DbForms.deleteForm(_form!.id!);
+      await DbForms.deleteForm(_form!.definition.id!);
       if (!mounted) return;
       ToastHelper.Show(currentContext,
-          "${CommonStrings.deleted}: ${_form!.title ?? _form!.link}");
+          "${CommonStrings.deleted}: ${_form!.definition.title ?? _form!.definition.link}");
       widget.onActionCompleted?.call();
     } catch (e) {
       if (!mounted) return;
@@ -411,8 +421,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (_form == null) return {};
     final currencies = <String>{};
     for (var field in _form!.relatedFields) {
-      if (field.productType != null) {
-        for (var product in field.productType!.products ?? []) {
+      if (field.definition.productType != null) {
+        for (var product in field.definition.productType!.products ?? []) {
           if (product.currencyCode != null &&
               product.currencyCode!.isNotEmpty) {
             currencies.add(product.currencyCode!);
@@ -690,7 +700,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       labelText: FormStrings.labelFormLink,
                                       border: const OutlineInputBorder(),
                                       errorText: _linkError,
-                                      helperText: FormStrings.publicLinkHistoryHelp,
+                                      helperText:
+                                          FormStrings.publicLinkHistoryHelp,
                                     ),
                                     onChanged: _canEdit
                                         ? (value) {
@@ -702,11 +713,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ValueListenableBuilder<String>(
                                     valueListenable: _linkNotifier,
                                     builder: (context, formLink, child) {
-
                                       return Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12.0),
-                                        child: FormPublicLink(link: formLink, savedLink: _savedLink),
+                                        child: FormPublicLink(
+                                            link: formLink,
+                                            savedLink: _savedLink),
                                       );
                                     },
                                   ),
@@ -876,23 +888,27 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   if (RightsService.canEditOccasion())
                                     Center(
                                       child: Tooltip(
-                                        message: (_form?.canDelete ?? true)
+                                        message: (_form?.definition.canDelete ??
+                                                true)
                                             ? ""
                                             : FormStrings
                                                 .cannotDeleteFormWithResponses,
                                         child: TextButton(
-                                          onPressed: (_form?.canDelete ?? true)
+                                          onPressed: (_form
+                                                      ?.definition.canDelete ??
+                                                  true)
                                               ? () =>
                                                   _confirmDelete(innerContext)
                                               : null,
                                           child: Text(
                                             FormStrings.deleteFormTitle,
                                             style: TextStyle(
-                                                color:
-                                                    (_form?.canDelete ?? true)
-                                                        ? ThemeConfig.redColor(
-                                                            innerContext)
-                                                        : Colors.grey),
+                                                color: (_form?.definition
+                                                            .canDelete ??
+                                                        true)
+                                                    ? ThemeConfig.redColor(
+                                                        innerContext)
+                                                    : Colors.grey),
                                           ),
                                         ),
                                       ),

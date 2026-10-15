@@ -1,12 +1,19 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:trina_grid/trina_grid.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   group('group place ownership', () {
     test('hidden group place is a private group location', () {
       final place = PlaceModel(type: PlaceModel.groupType, isHidden: true);
@@ -82,8 +89,6 @@ void main() {
       final modelAtSaveBoundary =
           UserGroupInfoModel.fromPlutoJson(row.toJson());
       expect(modelAtSaveBoundary.place, same(selectedPlace));
-
-      expect(modelAtSaveBoundary.place?.id, selectedPlace.id);
 
       final modelAfterReload = UserGroupInfoModel.fromJson({
         Tb.user_group_info.id: groupModel.id,

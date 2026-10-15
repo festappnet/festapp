@@ -1,10 +1,11 @@
+import 'package:fstapp/services/time_helper.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 
 import 'package:fstapp/components/cleaning/models/cleaning_place_status.dart';
 import 'package:fstapp/components/inventory/models/user_inventory_bundle.dart'; // Added for UserInventoryBundle
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/speakers/speakers_bundle.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
@@ -16,12 +17,12 @@ import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/services/storage_helper.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/saved_program_pending_state.dart';
 
 import 'package:fstapp/components/activities/activity_model.dart';
 
-import '../components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import '../components/occasion/occasion_model.dart';
 
 List<int> resolveMyScheduleIds({
@@ -166,25 +167,23 @@ class OfflineDataService {
     return (await getMyScheduleData()).contains(id);
   }
 
-  static Future<void> updateEventsWithMySchedule(
+  static Future<List<EventModel>> updateEventsWithMySchedule(
       Iterable<EventModel> events) async {
-    var myScheduleIds = await getMyScheduleData();
-    for (var e in events) {
-      e.isInMySchedule = myScheduleIds.contains(e.id!);
-    }
+    final ids = await getMyScheduleData();
+    return events
+        .map((event) => event.copyWith(isInMySchedule: ids.contains(event.id!)))
+        .toList();
   }
 
-  static Future<void> updateEventsWithGroupName(
+  static Future<List<EventModel>> updateEventsWithGroupName(
       Iterable<EventModel> events) async {
-    var me = await getUserInfo();
-    if (me?.eventUserGroup != null) {
-      for (var e in events) {
-        if (e.isGroupEvent ?? false) {
-          e.title = me!.eventUserGroup!.title;
-          e.isMyGroupEvent = true;
-        }
-      }
-    }
+    final me = await getUserInfo();
+    final group = me?.eventUserGroup;
+    return events
+        .map((event) => group != null && (event.isGroupEvent ?? false)
+            ? event.copyWith(title: group.title, isMyGroupEvent: true)
+            : event)
+        .toList();
   }
 
   static Future<void> saveAllOccasions(List<OccasionModel> toSave) =>
@@ -293,7 +292,10 @@ class OfflineDataService {
   static Future<List<EventModel>> getAllEvents() =>
       ClientSyncRuntime.isV1Selected
           ? ClientSyncProjection.events()
-          : getAllOffline(eventsOfflineStorage, EventModel.fromJson);
+          : getAllOffline(
+              eventsOfflineStorage,
+              (json) =>
+                  EventModel.fromJson(json, timeContext: TimeHelper.eventTime));
 
   static Future<void> saveSpeakers(SpeakersBundle toSave) =>
       saveOffline(speakersOfflineStorage, toSave);

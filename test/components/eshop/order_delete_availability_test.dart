@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -20,7 +21,7 @@ class _OrderRow implements ITrinaRowModel {
   TrinaRow toTrinaRow(BuildContext context) => TrinaRow(cells: {
         'id': TrinaCell(value: id),
         'state': TrinaCell(value: order.state),
-        EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: order),
+        EshopColumnIds.ORDER_MODEL_REFERENCE: TrinaCell(value: order),
       });
   @override
   Future<void> deleteMethod(BuildContext context) async => deleted.add(id);
@@ -88,7 +89,7 @@ void main() {
               title: 'State', field: 'state', type: TrinaColumnType.text()),
           TrinaColumn(
               title: '',
-              field: EshopColumns.ORDER_MODEL_REFERENCE,
+              field: EshopColumnIds.ORDER_MODEL_REFERENCE,
               type: TrinaColumnType.text(),
               hide: true),
         ],

@@ -9,7 +9,8 @@ import '../../../services/dialog_helper.dart';
 import '../../forms/waitlist_commands.dart';
 import '../../forms/waitlist_strings.dart';
 import '../../forms/services/admin_offer_form_link.dart';
-import '../../forms/models/form_model.dart';
+import '../../forms/models/form_bundle.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import '../../forms/views/waitlist_offers_dialog.dart';
 import '../models/waitlist_summary_model.dart';
 import '../models/order_model.dart';
@@ -31,7 +32,7 @@ class WaitlistOrderDetail extends StatefulWidget {
   final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
       executeCommand;
   final Future<void> Function()? onChanged;
-  final Widget Function(FormModel, List<OrderModel>)? offerDialogBuilder;
+  final Widget Function(FormBundle, List<OrderModel>)? offerDialogBuilder;
   @override
   State<WaitlistOrderDetail> createState() => _WaitlistOrderDetailState();
 }
@@ -143,7 +144,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       RightsService.isEditorOrder() &&
       widget.order.isWaitlisted &&
       (widget.order.allowedActions == null || widget.order.allows('offer')) &&
-      widget.order.form?.waitlistEnabled == true &&
+      widget.order.form?.definition.waitlistEnabled == true &&
       _detail?['capacity']?['canSendOffers'] == true;
 
   Future<void> _offer() async {
@@ -177,8 +178,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
     if (name != null && name.isNotEmpty) return name;
     final count = (_detail?['tickets'] as List? ?? []).length;
     return count == 1
-        ? OrdersStrings.itemSingular
-        : '${OrdersStrings.itemSingular} ${index + 1}';
+        ? OrderItemStrings.itemSingular
+        : '${OrderItemStrings.itemSingular} ${index + 1}';
   }
 
   String _ticketStatus(dynamic ticket) => WaitlistStrings.text(
@@ -195,7 +196,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       (ticket) => ticket['id'] == slot['ticketId'],
     );
     return index < 0
-        ? OrdersStrings.itemSingular
+        ? OrderItemStrings.itemSingular
         : _ticketLabel(tickets[index], index);
   }
 
@@ -223,8 +224,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
         await widget.openOfferForm!(offer['id'] as String);
       } else {
         if (!await AdminOfferFormLink.open(
-              offerId: offer['id'] as String,
-            )) {
+          offerId: offer['id'] as String,
+        )) {
           throw StateError('Offer form could not be opened');
         }
       }

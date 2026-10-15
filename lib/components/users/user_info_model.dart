@@ -9,7 +9,7 @@ import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import '../occasion/occasion_model.dart';
 import '../groups/user_group_info_model.dart';
 

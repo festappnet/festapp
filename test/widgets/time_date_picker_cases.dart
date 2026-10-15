@@ -1,3 +1,4 @@
+import '../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,11 @@ Widget app(Widget child, {Locale locale = const Locale('cs')}) => MaterialApp(
     );
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   setUpAll(() => initializeDateFormatting('cs'));
 
   for (final entry in [

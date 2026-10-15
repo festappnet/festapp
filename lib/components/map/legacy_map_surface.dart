@@ -1,3 +1,4 @@
+import 'package:festapp_core/map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_map_animations/flutter_map_animations.dart';

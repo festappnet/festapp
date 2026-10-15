@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
@@ -77,6 +78,11 @@ Future<void> closeGrid(WidgetTester tester) async {
 }
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets('absent and blank help preserves the original columns',
       (tester) async {
     final columns = [column('Value', width: 30), column('Other', width: 30)];

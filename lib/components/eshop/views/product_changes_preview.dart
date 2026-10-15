@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/order_change_summary.dart';
-import '../models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
 import 'package:fstapp/services/utilities_all.dart';
 

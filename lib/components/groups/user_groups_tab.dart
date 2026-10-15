@@ -16,7 +16,7 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/map/map_page.dart';
 import 'package:trina_grid/trina_grid.dart';
 
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'group_strings.dart';
 import 'participants_management_dialog.dart';
 
@@ -69,7 +69,7 @@ class _UserGroupsTabState extends State<UserGroupsTab> {
       selectedPlace = null;
     } else if (result is UseCustomGroupLocationAction) {
       final title = row.cells[Tb.user_group_info.title]?.value as String?;
-      final customPlace = currentPlace?.isPrivateGroupLocation == true
+      var customPlace = currentPlace?.isPrivateGroupLocation == true
           ? currentPlace!
           : PlaceModel(
               title: title,
@@ -85,7 +85,7 @@ class _UserGroupsTabState extends State<UserGroupsTab> {
         MapEditorRoute(mode: PlaceMapEditorMode(customPlace)),
       );
       if (!mounted || coordinates == null) return;
-      customPlace.latLng = coordinates;
+      customPlace = customPlace.copyWith(latLng: coordinates);
       shouldSavePlace = true;
       selectedPlace = customPlace;
     } else {
@@ -274,11 +274,13 @@ class _UserGroupsTabState extends State<UserGroupsTab> {
           field: Tb.user_group_info.description,
           type: TrinaColumnType.text(defaultValue: null),
           renderer: (rendererContext) {
-            return DataGridHelper.buildHtmlEditorButton(context: context,
-              field: Tb.user_group_info.description, rendererContext: rendererContext,
-              occasionId: RightsService.currentOccasionId(),
-              loadContent: () async => rendererContext.row.cells[Tb.user_group_info.description]?.value as String?);
-
+            return DataGridHelper.buildHtmlEditorButton(
+                context: context,
+                field: Tb.user_group_info.description,
+                rendererContext: rendererContext,
+                occasionId: RightsService.currentOccasionId(),
+                loadContent: () async => rendererContext.row
+                    .cells[Tb.user_group_info.description]?.value as String?);
           },
         ),
         TrinaColumn(

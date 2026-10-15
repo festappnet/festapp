@@ -406,7 +406,8 @@ class RouterService {
     if (kIsWeb) {
       final currentUrl = _js.getCurrentUrl();
       final uri = Uri.parse(currentUrl);
-      final personal = uri.fragment.startsWith('waitlist?') || uri.fragment.startsWith('order?');
+      final personal = uri.fragment.startsWith('waitlist?') ||
+          uri.fragment.startsWith('order?');
       _js.pushState(personal ? currentUrl : '$currentUrl#$overlayTag');
     }
   }

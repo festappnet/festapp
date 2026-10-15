@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:fstapp/components/features/ticket_feature.dart';
@@ -7,6 +8,11 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   test('occasion save carries its loaded aggregate version', () async {
     late String functionName;
     late Map<String, dynamic> parameters;
@@ -15,6 +21,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -27,13 +40,6 @@ void main() {
               'is_promoted': false,
               'aggregate_version': 5,
             },
-          },
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -69,6 +75,13 @@ void main() {
       config =
           jsonDecode(jsonEncode(params['p_config'])) as Map<String, dynamic>;
       return {
+        'mutation': {
+          'commandId': '00000000-0000-4000-8000-000000000001',
+          'receiptId': '00000000-0000-4000-8000-000000000001',
+          'commitId': null,
+          'replayed': false,
+          'occurredAt': '2026-10-15T10:00:00Z'
+        },
         'status': 'applied',
         'code': 200,
         'data': {
@@ -80,13 +93,6 @@ void main() {
             'features': config!['features'],
             'aggregate_version': 2
           }
-        },
-        'mutation': {
-          'commandId': '00000000-0000-4000-8000-000000000001',
-          'receiptId': '00000000-0000-4000-8000-000000000001',
-          'commitId': null,
-          'replayed': false,
-          'occurredAt': '2026-10-07T10:00:00Z'
         },
         'sync': {'replacements': <Object>[]}
       };
@@ -111,18 +117,18 @@ void main() {
       ClientCommandTransport((name, params) async {
         calls.add(name);
         return {
-          'status': 'applied',
-          'code': 200,
-          'data': name.startsWith('duplicate')
-              ? {'occasionId': 12}
-              : <String, dynamic>{},
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
+          'status': 'applied',
+          'code': 200,
+          'data': name.startsWith('duplicate')
+              ? {'occasionId': 12}
+              : <String, dynamic>{},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -144,16 +150,16 @@ void main() {
         expect(params['p_target_unit'], 23);
         expect(params['p_locale'], 'cs');
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {'occasionId': 12},
-          'mutation': {
-            'commandId': params['p_command_id'],
-            'receiptId': params['p_command_id'],
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-13T10:00:00Z',
-          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -167,6 +173,13 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -178,13 +191,6 @@ void main() {
               'is_promoted': false,
               'aggregate_version': 1,
             },
-          },
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -206,16 +212,16 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         return {
-          'status': 'applied',
-          'code': 200,
-          'data': {'message': 'deleted'},
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
+          'status': 'applied',
+          'code': 200,
+          'data': {'message': 'deleted'},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -231,16 +237,16 @@ void main() {
       ClientCommandTransport((name, params) async {
         calls.add(name);
         return {
-          'status': 'applied',
-          'code': 200,
-          'data': <String, dynamic>{},
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
+          'status': 'applied',
+          'code': 200,
+          'data': <String, dynamic>{},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),

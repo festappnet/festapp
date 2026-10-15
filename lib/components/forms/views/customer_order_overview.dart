@@ -1,6 +1,6 @@
 import '../order_overview_strings.dart';
 import 'package:flutter/material.dart';
-import '../models/customer_order_overview.dart';
+import 'package:festapp_core/forms.dart';
 
 class CustomerOrderOverviewView extends StatefulWidget {
   const CustomerOrderOverviewView(

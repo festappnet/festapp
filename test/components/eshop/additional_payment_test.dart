@@ -1,8 +1,8 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
@@ -21,6 +21,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trina_grid/trina_grid.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 class _Translations extends AssetLoader {
   @override
   Future<Map<String, dynamic>> load(String path, Locale locale) async =>
@@ -29,6 +31,7 @@ class _Translations extends AssetLoader {
 }
 
 void main() {
+  WidgetEnvironmentFixture.register();
   TestWidgetsFlutterBinding.ensureInitialized();
   final payments = <Map<String, dynamic>>[];
   setUpAll(() async {
@@ -72,10 +75,11 @@ void main() {
   tearDownAll(() => Supabase.instance.dispose());
   setUp(() {
     payments.clear();
-    Localization.load(const Locale('cs'),
-        translations: Translations(
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-                as Map<String, dynamic>));
+                as Map<String, dynamic>);
     final previous = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}),
@@ -89,26 +93,29 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(EasyLocalization(
-        supportedLocales: const [Locale('cs')],
-        path: 'unused',
-        assetLoader: _Translations(),
-        child: Builder(
-            builder: (localized) => MaterialApp(
-                locale: localized.locale,
-                supportedLocales: localized.supportedLocales,
-                localizationsDelegates: localized.localizationDelegates,
-                home: Scaffold(
-                    body: Builder(
-                        builder: (context) => TrinaGrid(
-                              columns: EshopColumns.generateColumns(context, [
-                                EshopColumns.PAYMENT_INFO_PAID
-                              ], data: {
-                                'unitId': 9,
-                                EshopColumns.PAYMENT_INFO_PAID: refresh,
-                              }),
-                              rows: [order.toTrinaRow(context)],
-                            )))))));
+    await _environment.pumpWidget(
+        tester,
+        EasyLocalization(
+            supportedLocales: const [Locale('cs')],
+            path: 'unused',
+            assetLoader: _Translations(),
+            child: Builder(
+                builder: (localized) => MaterialApp(
+                    locale: localized.locale,
+                    supportedLocales: localized.supportedLocales,
+                    localizationsDelegates: localized.localizationDelegates,
+                    home: Scaffold(
+                        body: Builder(
+                            builder: (context) => TrinaGrid(
+                                  columns:
+                                      EshopColumns.generateColumns(context, [
+                                    EshopColumnIds.PAYMENT_INFO_PAID
+                                  ], data: {
+                                    'unitId': 9,
+                                    EshopColumnIds.PAYMENT_INFO_PAID: refresh,
+                                  }),
+                                  rows: [order.toTrinaRow(context)],
+                                )))))));
     await tester.pumpAndSettle();
   }
 
@@ -130,7 +137,7 @@ void main() {
     return order;
   }
 
-  testWidgets(
+  testWidgetsWithEnvironment(() => _environment,
       'fully paid sent order opens actual cash dialog and submits an additional payment',
       (tester) async {
     final order = paidOrder('sent', actions: {'view', 'edit', 'send'});
@@ -160,7 +167,7 @@ void main() {
   });
 
   for (final state in ['waitlisted', 'preparing_payment', 'storno']) {
-    testWidgets(
+    testWidgetsWithEnvironment(() => _environment,
         '$state remains protected even with editor role and edit metadata',
         (tester) async {
       await grid(tester, paidOrder(state, actions: {'view', 'edit', 'paid'}));
@@ -168,7 +175,8 @@ void main() {
       expect(payments, isEmpty);
     });
   }
-  testWidgets('read-only viewer cannot add payment to sent order',
+  testWidgetsWithEnvironment(
+      () => _environment, 'read-only viewer cannot add payment to sent order',
       (tester) async {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       occasionUser: OccasionUserModel.fromJson({'is_editor_order_view': true}),
@@ -177,7 +185,8 @@ void main() {
     expect(tester.widget<InkWell>(plus()).onTap, isNull);
     expect(payments, isEmpty);
   });
-  testWidgets('missing edit capability remains protected for an editor',
+  testWidgetsWithEnvironment(() => _environment,
+      'missing edit capability remains protected for an editor',
       (tester) async {
     await grid(tester, paidOrder('sent', actions: {'view', 'send'}));
     expect(tester.widget<InkWell>(plus()).onTap, isNull);

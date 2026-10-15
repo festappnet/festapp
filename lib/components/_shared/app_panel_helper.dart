@@ -270,41 +270,40 @@ class AppPanelHelper {
       child: Material(
         color: Colors.transparent,
         child: PopupMenuButton<_ActionMenuItem>(
-            position: PopupMenuPosition.under,
-            tooltip: CommonStrings.moreOptions,
-            color: theme.brightness == Brightness.dark
-                ? const Color(0xFF2D2D2D)
-                : Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            onSelected: (action) => action.onSelect(),
-            itemBuilder: (_) => availableActions
-                .where((action) => action != currentAction)
-                .map((action) => PopupMenuItem<_ActionMenuItem>(
-                      value: action,
-                      child: Row(children: [
-                        if (action.icon != null) ...[
-                          Icon(action.icon,
-                              size: 20,
-                              color: theme.colorScheme.onSurfaceVariant),
-                          const SizedBox(width: 12),
-                        ],
-                        Flexible(child: Text(action.label)),
-                      ]),
-                    ))
-                .toList(),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              InkWell(
-                hoverColor: hoverColor,
-                onTap: currentAction.onSelect,
-                child: visiblePart,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                child: Icon(Icons.arrow_drop_down, color: iconColor, size: 22),
-              ),
-            ]),
-          ),
+          position: PopupMenuPosition.under,
+          tooltip: CommonStrings.moreOptions,
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF2D2D2D)
+              : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          onSelected: (action) => action.onSelect(),
+          itemBuilder: (_) => availableActions
+              .where((action) => action != currentAction)
+              .map((action) => PopupMenuItem<_ActionMenuItem>(
+                    value: action,
+                    child: Row(children: [
+                      if (action.icon != null) ...[
+                        Icon(action.icon,
+                            size: 20,
+                            color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 12),
+                      ],
+                      Flexible(child: Text(action.label)),
+                    ]),
+                  ))
+              .toList(),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            InkWell(
+              hoverColor: hoverColor,
+              onTap: currentAction.onSelect,
+              child: visiblePart,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: Icon(Icons.arrow_drop_down, color: iconColor, size: 22),
+            ),
+          ]),
+        ),
       ),
     );
   }

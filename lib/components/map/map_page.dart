@@ -14,7 +14,7 @@ import 'package:fstapp/services/connectivity_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/map/map_page_helper.dart';
 import 'package:fstapp/components/map/counseling_hours_panel.dart';
-import 'package:fstapp/components/map/map_path_direction_layout.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/map/map_location_accuracy.dart';
 import 'package:fstapp/components/map/map_locate_coordinator.dart';
 import 'package:fstapp/components/map/map_offscreen_location_indicator.dart';
@@ -25,9 +25,7 @@ import 'package:fstapp/components/map/map_viewport_controller.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
 import 'package:fstapp/components/map/map_renderer_benchmark_override.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_style_assembler.dart';
-import 'package:fstapp/components/map/maplibre/maplibre_style_load_guard.dart';
 import 'package:fstapp/components/map/offline_map_bundle_manager.dart';
-import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
 import 'package:fstapp/components/map/offline_map_configuration.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/components/timeline/schedule_timeline.dart';
@@ -48,8 +46,6 @@ import 'package:fstapp/components/icons/icons_strings.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
 import 'package:fstapp/components/icons/db_place_types.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
-import 'package:fstapp/components/map/path_node.dart';
-import 'package:fstapp/components/map/gpx_importer.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/drop_file.dart';
 import 'package:cross_file/cross_file.dart';
@@ -59,7 +55,6 @@ import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/html/html_helper.dart';
-import 'place_model.dart';
 import 'package:fstapp/services/platform_helper.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -219,7 +214,9 @@ class _MapPageState extends State<MapPage>
   // Derived cleaning status + rating aggregate per toilet place id (empty unless
   // the cleaning feature is enabled). Colors the toilet pins for everyone.
   Map<int, CleaningPlaceStatus> _cleaningByPlace = {};
-  Map<int, List<CounselingHoursRange>> _counselingHoursByPlace = {};
+  MapPlaceProgram _placeProgram = const MapPlaceProgram();
+  Map<int, List<CounselingHoursRange>> get _counselingHoursByPlace =>
+      _placeProgram.counselingByPlace;
   final List<MapPlacePresentation> _places = [];
   final List<MapPlacePresentation> _selectedPlaces = [];
   MapPlacePresentation? focusedPlace;
@@ -423,10 +420,10 @@ class _MapPageState extends State<MapPage>
       await loadData();
     } else {
       if (placeModel.latLng.toString().isEmpty) {
-        placeModel.latLng = {
+        placeModel = placeModel.copyWith(latLng: {
           "lat": _mapFeature.defaultMapLocation.lat,
           "lng": _mapFeature.defaultMapLocation.lng
-        };
+        });
       }
       pageTitle = placeModel.title ?? AppConfig.mapTitle;
       addPlacesToMap([placeModel]);
@@ -1899,8 +1896,7 @@ class _MapPageState extends State<MapPage>
         if (loadOtherGroups) {
           var dbGroups = await DbGroups.getGroupsWithPlaces();
           onlineList = dbGroups.where((e) => e.place != null).map((e) {
-            e.place!.title = e.title;
-            return e.place!;
+            return e.place!.copyWith(title: e.title);
           }).toList();
         } else {
           onlineList = placesFromDb.where((p) => !(p.isHidden)).toList();
@@ -1959,8 +1955,7 @@ class _MapPageState extends State<MapPage>
 
   Future<void> addOfflineEventsToPlace(List<PlaceModel> places) async {
     final events = await OfflineDataService.getAllEvents();
-    _counselingHoursByPlace =
-        MapPageHelper.assignEventsToPlaces(places, events);
+    _placeProgram = MapPageHelper.assignEventsToPlaces(places, events);
   }
 
   Future<void> addEventsToPlace(List<PlaceModel> places) async {
@@ -1970,8 +1965,7 @@ class _MapPageState extends State<MapPage>
     }
     final events =
         await DbEvents.getAllEvents(RightsService.currentOccasionId()!, false);
-    _counselingHoursByPlace =
-        MapPageHelper.assignEventsToPlaces(places, events);
+    _placeProgram = MapPageHelper.assignEventsToPlaces(places, events);
   }
 
   bool _shouldShowPlaceTitle(int? placeId, int? currentFocusedPlaceId,
@@ -2080,9 +2074,10 @@ class _MapPageState extends State<MapPage>
       if (wcIconId != null &&
           place.type == CleaningStatusHelper.toiletPlaceTypeCode &&
           place.icon == null) {
-        place.icon = wcIconId;
+        place = place.copyWith(icon: wcIconId);
       }
-      var mapPlace = MapPlaceModel.fromPlaceModel(place);
+      var mapPlace = MapPlaceModel.fromPlaceModel(place,
+          events: _placeProgram.eventsByPlace[place.id] ?? const []);
       var pinColor = _cleaningPinColorFor(mapPlace);
       bool displayTitle = _shouldShowPlaceTitle(
           mapPlace.id, focusedPlaceId, editingPlaceId, placeIdsInSelectedGroup);

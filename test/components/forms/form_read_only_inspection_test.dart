@@ -1,10 +1,10 @@
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/eshop/models/product_type_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/widgets_editor/form_fields_generator.dart';
 import 'package:fstapp/components/forms/widgets_editor/product_detail_editor_dialog.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
@@ -27,10 +27,10 @@ void main() {
         occasion: 59,
         description: '<p>Standing admission</p>');
     final email =
-        FormFieldModel(id: 1, type: 'email', title: 'Contact', data: {});
+        FormFieldDraft(id: 1, type: 'email', title: 'Contact', data: {});
     final tickets =
-        FormFieldModel(id: 2, type: 'ticket', title: 'Participants', data: {});
-    final admission = FormFieldModel(
+        FormFieldDraft(id: 2, type: 'ticket', title: 'Participants', data: {});
+    final admission = FormFieldDraft(
         id: 3,
         type: 'product_type',
         isTicketField: true,
@@ -38,8 +38,7 @@ void main() {
             ProductTypeModel(id: 4, title: 'Tickets', products: [product]));
     final fields = [email, tickets, admission];
     final bundle = FormEditBundle(
-        form: FormModel(occasionId: 59, relatedFields: fields),
-        formFields: fields,
+        form: FormEditorDraft(occasionId: 59, relatedFields: fields),
         productTypes: [],
         products: [product],
         availableBankAccounts: []);
@@ -68,7 +67,7 @@ void main() {
             .enabled,
         isFalse);
     expect(product.maximum, 230);
-    expect(email.title, 'Contact');
+    expect(email.definition.title, 'Contact');
     expect(edits, 0);
     expect(tester.takeException(), isNull);
   });

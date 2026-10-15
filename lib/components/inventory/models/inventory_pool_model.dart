@@ -3,7 +3,7 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
-import '../../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 enum InventoryPoolType {
   accommodation,

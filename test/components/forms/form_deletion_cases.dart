@@ -1,12 +1,18 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/widgets_editor/form_fields_generator.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
+import 'package:festapp_core/eshop.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   for (final allowed in [true, false]) {
     testWidgets('saved field delete button respects usage: $allowed',
         (tester) async {
@@ -14,16 +20,15 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final field = FormFieldModel(
+      final field = FormFieldDraft(
           id: 4,
           type: 'text',
           title: 'Field',
           deletionAllowed: allowed,
           deleteBlockedReason: allowed ? null : 'responses');
-      final form = FormModel(occasionId: 59, relatedFields: [field]);
+      final form = FormEditorDraft(occasionId: 59, relatedFields: [field]);
       final bundle = FormEditBundle(
           form: form,
-          formFields: [field],
           productTypes: [],
           products: [],
           availableBankAccounts: []);
@@ -49,9 +54,12 @@ void main() {
   }
 
   test('server usage controls saved items; unknown usage fails closed', () {
-    expect(FormFieldModel().canDelete, isTrue);
-    expect(FormFieldModel(id: 1).canDelete, isFalse);
-    expect(FormFieldModel.fromJson({'id': 1, 'can_delete': true}).canDelete,
+    expect(FormFieldDraft().definition.canDelete, isTrue);
+    expect(FormFieldDraft(id: 1).definition.canDelete, isFalse);
+    expect(
+        FormFieldDraft.fromJson({'id': 1, 'can_delete': true})
+            .definition
+            .canDelete,
         isTrue);
     final product = ProductModel.fromJson({
       'id': 3,
@@ -65,11 +73,12 @@ void main() {
   });
 
   test('ticket removal stages nested deletions only in the save payload', () {
-    final ticket = FormFieldModel(id: 1, type: 'ticket');
-    final child = FormFieldModel(id: 2, isTicketField: true);
-    final freshChild = FormFieldModel(isTicketField: true);
-    final other = FormFieldModel(id: 3, type: 'text');
-    final form = FormModel(relatedFields: [ticket, child, freshChild, other]);
+    final ticket = FormFieldDraft(id: 1, type: 'ticket');
+    final child = FormFieldDraft(id: 2, isTicketField: true);
+    final freshChild = FormFieldDraft(isTicketField: true);
+    final other = FormFieldDraft(id: 3, type: 'text');
+    final form =
+        FormEditorDraft(relatedFields: [ticket, child, freshChild, other]);
     form.removeField(ticket);
     expect(form.relatedFields, [other]);
     expect(form.toEditedJson()['deleted_field_ids'], [1, 2]);

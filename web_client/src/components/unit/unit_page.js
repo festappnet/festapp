@@ -47,18 +47,25 @@ export class UnitPage extends Component {
             const button = document.createElement('button');
             button.type = 'button';
             button.textContent = UnitStrings.retry;
-            button.onclick = () => this.loadOccasions(this.orgId);
+            button.onclick = () => this.loadOccasions(this.orgId, this.unitId);
             status.appendChild(button);
         }
         this.host.prepend(status);
     }
 
-    async loadOccasions(orgId) {
+    async loadOccasions(orgId, unitId = null) {
+        this.unitId = unitId;
         this.orgId = orgId;
         const requestId = ++this.requestId;
-        this.showStatus(UnitStrings.loading);
+        this.host.querySelector('[data-catalog-status]')?.remove();
+        const status = document.createElement('div');
+        status.dataset.catalogStatus = '';
+        status.className = 'sp-loader';
+        status.setAttribute('role', 'status');
+        status.setAttribute('aria-label', UnitStrings.loading);
+        this.host.prepend(status);
         try {
-            const occasions = await DbOccasions.getPublicOccasions(orgId);
+            const occasions = await DbOccasions.getPublicOccasions(orgId, unitId);
             if (requestId !== this.requestId || !this.host.isConnected) return;
             this.allOccasions = occasions || [];
             this.hasLoaded = true;

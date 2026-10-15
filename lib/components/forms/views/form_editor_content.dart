@@ -1,14 +1,17 @@
 import '../waitlist_strings.dart';
 import 'form_capacity_settings.dart';
+import 'package:fstapp/components/forms/models/form_presentation.dart';
+import 'package:fstapp/services/time_helper.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/router_service.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/views/form_page.dart';
@@ -154,29 +157,33 @@ class _FormEditorContentState extends State<FormEditorContent>
     if (_bundle == null) return;
     final form = _bundle!.form;
 
-    if (form.startTime != null && form.endTime != null) {
-      if (form.endTime!.isBefore(form.startTime!)) {
+    if (form.definition.startTime != null && form.definition.endTime != null) {
+      if (form.definition.endTime!.isBefore(form.definition.startTime!)) {
         ToastHelper.Show(context, FormStrings.errorEndTimeBeforeStartTime,
             severity: ToastSeverity.NotOk);
         return;
       }
     }
 
-    form.relatedFields.sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+    form.relatedFields.sort(
+        (a, b) => (a.definition.order ?? 0).compareTo(b.definition.order ?? 0));
     for (int i = 0; i < form.relatedFields.length; i++) {
-      form.relatedFields[i].order = i;
+      form.relatedFields[i].definition =
+          form.relatedFields[i].definition.copyWith(order: i);
     }
 
     for (final field in form.relatedFields) {
-      if (field.isTicketField == true &&
-          field.type == FormHelper.fieldTypeProductType &&
-          field.productType != null &&
-          field.productType!.products != null) {
-        field.productType!.products!
-            .sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
-        for (int i = 0; i < field.productType!.products!.length; i++) {
-          field.productType!.products![i].order = i;
-        }
+      if (field.definition.isTicketField == true &&
+          field.definition.type == FormMetadata.fieldTypeProductType &&
+          field.definition.productType != null &&
+          field.definition.productType!.products != null) {
+        final products = [...field.definition.productType!.products!]
+          ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+        field.definition = field.definition.copyWith(
+            productType: field.definition.productType!.copyWith(products: [
+          for (var index = 0; index < products.length; index++)
+            products[index].copyWith(order: index),
+        ]));
       }
     }
 
@@ -191,7 +198,8 @@ class _FormEditorContentState extends State<FormEditorContent>
       await DbForms.updateForm(form);
       _htmlSave.markSaved();
       if (!mounted) return;
-      ToastHelper.Show(context, "${CommonStrings.saved}: ${form.link}",
+      ToastHelper.Show(
+          context, "${CommonStrings.saved}: ${form.definition.link}",
           severity: ToastSeverity.Ok);
       await loadData();
       widget.onDataUpdated?.call();
@@ -224,12 +232,13 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   List<String> get _availableFieldTypes {
     final existingTypes =
-        _bundle?.form.relatedFields.map((f) => f.type).toList() ?? [];
+        _bundle?.form.relatedFields.map((f) => f.definition.type).toList() ??
+            [];
     return FormHelper.fieldTypeIcons.keys.where((type) {
       if ([
-        FormHelper.fieldTypeText,
-        FormHelper.fieldTypeSelectOne,
-        FormHelper.fieldTypeSelectMany,
+        FormMetadata.fieldTypeText,
+        FormMetadata.fieldTypeSelectOne,
+        FormMetadata.fieldTypeSelectMany,
       ].contains(type)) {
         return true;
       }
@@ -267,8 +276,8 @@ class _FormEditorContentState extends State<FormEditorContent>
                       /*
                         (form.isOpen ?? true) ? FormStrings.formOpenMessage : FormStrings.formClosedMessage,
                         style: TextStyle(
-                            color: (form.isOpen ?? true) 
-                                ? Theme.of(context).primaryColor 
+                            color: (form.isOpen ?? true)
+                                ? Theme.of(context).primaryColor
                                 : ThemeConfig.redColor(context),
                             fontWeight: FontWeight.bold
                         ),
@@ -277,10 +286,11 @@ class _FormEditorContentState extends State<FormEditorContent>
                   ),
                 ),
                 Switch(
-                  value: _prototype ? false : form.isOpen ?? true,
+                  value: _prototype ? false : form.definition.isOpen ?? true,
                   onChanged: _canEdit && !_prototype
                       ? (val) => setState(() {
-                            form.isOpen = val;
+                            form.definition =
+                                form.definition.copyWith(isOpen: val);
                           })
                       : null,
                 ),
@@ -311,17 +321,21 @@ class _FormEditorContentState extends State<FormEditorContent>
                   Row(
                     children: [
                       Expanded(
-                        child: _buildDateTimeInput(
-                            FormStrings.labelStartTime, form.startTime, (date) {
+                        child: _buildDateTimeInput(FormStrings.labelStartTime,
+                            form.definition.startTime, (date) {
                           setState(() {
-                            form.startTime = date;
+                            form.definition = form.definition.withStartTimeUtc(
+                                (date)?.toUtcFromOccasionTime());
                             if (date == null) {
-                              form.enableCountdown = false;
+                              form.definition =
+                                  form.definition.withEnableCountdown(false);
                             } else {
-                              if (form.endTime == null ||
-                                  form.endTime!.isBefore(date)) {
-                                form.endTime =
-                                    date.add(const Duration(hours: 1));
+                              if (form.definition.endTime == null ||
+                                  form.definition.endTime!.isBefore(date)) {
+                                form.definition = form.definition
+                                    .withEndTimeUtc(date
+                                        .add(const Duration(hours: 1))
+                                        .toUtcFromOccasionTime());
                               }
                             }
                           });
@@ -330,21 +344,23 @@ class _FormEditorContentState extends State<FormEditorContent>
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildDateTimeInput(
-                            FormStrings.labelEndTime, form.endTime, (date) {
+                            FormStrings.labelEndTime, form.definition.endTime,
+                            (date) {
                           // Validation Logic: Prevent setting end time before start time
                           // Note: UI picker is now also restricted, but this double check is safe.
                           if (date != null &&
-                              form.startTime != null &&
-                              date.isBefore(form.startTime!)) {
+                              form.definition.startTime != null &&
+                              date.isBefore(form.definition.startTime!)) {
                             ToastHelper.Show(context,
                                 FormStrings.errorEndTimeBeforeStartTime,
                                 severity: ToastSeverity.NotOk);
                             return;
                           }
-                          setState(() => form.endTime = date);
+                          setState(() => form.definition = form.definition
+                              .withEndTimeUtc((date)?.toUtcFromOccasionTime()));
                         },
                             isEnd: true,
-                            minDate: form.startTime,
+                            minDate: form.definition.startTime,
                             enabled: _canEdit),
                       ),
                     ],
@@ -356,19 +372,23 @@ class _FormEditorContentState extends State<FormEditorContent>
                     title: Text(FormStrings.labelCountdownTimer,
                         style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(
-                      form.startTime == null
+                      form.definition.startTime == null
                           ? FormStrings.requiresStartTime
                           : FormStrings.countdownDescription,
                       style: TextStyle(
-                          color: form.startTime == null ? Colors.grey : null,
+                          color: form.definition.startTime == null
+                              ? Colors.grey
+                              : null,
                           fontSize: 12),
                     ),
-                    value: form.enableCountdown,
-                    onChanged: form.startTime != null && _canEdit
-                        ? (val) => setState(() => form.enableCountdown = val)
+                    value: form.definition.enableCountdown,
+                    onChanged: form.definition.startTime != null && _canEdit
+                        ? (val) => setState(() => form.definition =
+                            form.definition.withEnableCountdown(val))
                         : null,
                   ),
-                  if (form.enableCountdown && form.startTime != null) ...[
+                  if (form.definition.enableCountdown &&
+                      form.definition.startTime != null) ...[
                     const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
@@ -380,8 +400,9 @@ class _FormEditorContentState extends State<FormEditorContent>
                         children: [
                           _buildHtmlFieldPreview(
                             FormStrings.labelCountdownMessage,
-                            form.countdownTitle,
-                            (val) => setState(() => form.countdownTitle = val),
+                            form.definition.countdownTitle,
+                            (val) => setState(() => form.definition =
+                                form.definition.withCountdownTitle(val)),
                             defaultText: FormStrings.registrationStart,
                             showLabel: false,
                             minimal: true,
@@ -391,7 +412,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                           Transform.scale(
                             scale: 0.8,
                             child: CountdownWidget(
-                              targetTime: form.startTime!,
+                              targetTime: form.definition.startTime!,
                               onFinished: () {},
                               title: null,
                               compact: true,
@@ -414,8 +435,9 @@ class _FormEditorContentState extends State<FormEditorContent>
                 children: [
                   _buildHtmlFieldPreview(
                     FormStrings.labelMessageContent,
-                    form.headerOff,
-                    (val) => setState(() => form.headerOff = val),
+                    form.definition.headerOff,
+                    (val) => setState(() => form.definition =
+                        form.definition.copyWith(headerOff: val)),
                     helpText: FormStrings.helperClosedMessage,
                     defaultText: FormStrings.reservationUnavailableMessage,
                     showLabel: false,
@@ -519,23 +541,25 @@ class _FormEditorContentState extends State<FormEditorContent>
     );
   }
 
-  Widget _buildAvailabilityStatusBanner(FormModel form) {
+  Widget _buildAvailabilityStatusBanner(FormEditorDraft form) {
     String text;
     Color color;
     final now = DateTime.now();
 
-    if (!(form.isOpen ?? true)) {
+    if (!(form.definition.isOpen ?? true)) {
       text = FormStrings.formClosedMessage;
       color = ThemeConfig.redColor(context);
-    } else if (form.startTime != null && now.isBefore(form.startTime!)) {
+    } else if (form.definition.startTime != null &&
+        now.isBefore(form.definition.startTime!)) {
       text = FormStrings.scheduledWithTime(
-          DateFormat('dd.MM HH:mm').format(form.startTime!));
+          DateFormat('dd.MM HH:mm').format(form.definition.startTime!));
       color = ThemeConfig.redColor(context);
-    } else if (form.endTime != null && now.isAfter(form.endTime!)) {
+    } else if (form.definition.endTime != null &&
+        now.isAfter(form.definition.endTime!)) {
       text = FormStrings.endedWithTime(
-          DateFormat('dd.MM HH:mm').format(form.endTime!));
+          DateFormat('dd.MM HH:mm').format(form.definition.endTime!));
       color = ThemeConfig.redColor(context);
-    } else if (!_prototype && form.isWaitlist) {
+    } else if (!_prototype && form.definition.isWaitlist) {
       text = WaitlistStrings.formOpenWaitlistMessage;
       color = ThemeConfig.warningColor(context);
     } else {
@@ -601,7 +625,8 @@ class _FormEditorContentState extends State<FormEditorContent>
               enabled: enabled && !_prototype,
               fontSize: fontSize ?? 13,
               coordinator: _htmlSave,
-              owner: HtmlMediaOwner.occasion(_bundle!.form.occasionId),
+              owner:
+                  HtmlMediaOwner.occasion(_bundle!.form.definition.occasionId),
               onChanged: onChanged,
             ),
           ),
@@ -614,11 +639,11 @@ class _FormEditorContentState extends State<FormEditorContent>
     if (_bundle == null) return;
 
     final availableTypes = _availableFieldTypes;
-    final personalInfoTypes = FormHelper.personalInfoFields
+    final personalInfoTypes = FormMetadata.personalInfoFields
         .where((type) => availableTypes.contains(type))
         .toList();
     final otherTypes = availableTypes
-        .where((type) => !FormHelper.personalInfoFields.contains(type))
+        .where((type) => !FormMetadata.personalInfoFields.contains(type))
         .toList();
 
     String? finalSelectedType;
@@ -713,10 +738,10 @@ class _FormEditorContentState extends State<FormEditorContent>
   void _addFieldOfType(String type) {
     if (!mounted || _bundle == null) return;
     final form = _bundle!.form;
-    final newField = FormFieldModel(
+    final newField = FormFieldDraft(
       type: type,
       order: form.relatedFields.length,
-      isRequired: FormHelper.isAlwaysRequired(type),
+      isRequired: FormMetadata.isAlwaysRequired(type),
       isHidden: false,
       isTicketField: false,
     );
@@ -845,13 +870,14 @@ class _FormEditorContentState extends State<FormEditorContent>
                         ),
                         EditableHtmlField(
                           key: const ValueKey('form-header'),
-                          html: _bundle!.form.header,
+                          html: _bundle!.form.definition.header,
                           enabled: _canEdit && !_prototype,
                           coordinator: _htmlSave,
-                          owner:
-                              HtmlMediaOwner.occasion(_bundle!.form.occasionId),
-                          onChanged: (html) =>
-                              setState(() => _bundle!.form.header = html),
+                          owner: HtmlMediaOwner.occasion(
+                              _bundle!.form.definition.occasionId),
+                          onChanged: (html) => setState(() => _bundle!
+                                  .form.definition =
+                              _bundle!.form.definition.copyWith(header: html)),
                         ),
                         const SizedBox(height: 24),
                         Column(

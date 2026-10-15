@@ -35,7 +35,7 @@
       "path": "lib/components/schedule/db_events.dart",
       "command_modules": [
         "lib/components/schedule/attendance_commands.dart",
-        "lib/components/schedule/event_commands.dart",
+        "lib/components/schedule/supabase_event_commands.dart",
         "lib/components/schedule/exclusive_group_commands.dart",
         "lib/components/schedule/saved_program_commands.dart"
       ]

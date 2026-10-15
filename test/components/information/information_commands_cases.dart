@@ -14,6 +14,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -28,13 +35,6 @@ void main() {
                 'data': {'correct': 'answer'},
               },
             },
-          },
-          'mutation': {
-            'commandId': params['p_command_id'],
-            'receiptId': params['p_command_id'],
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -66,16 +66,16 @@ void main() {
       (name, params) async {
         functionName = name;
         return {
-          'status': 'applied',
-          'code': 200,
-          'data': {'domainCode': 200, 'correct': true, 'version': 3},
           'mutation': {
             'commandId': params['p_command_id'],
             'receiptId': params['p_command_id'],
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
+          'status': 'applied',
+          'code': 200,
+          'data': {'domainCode': 200, 'correct': true, 'version': 3},
           'sync': {'replacements': <Object>[]},
         };
       },

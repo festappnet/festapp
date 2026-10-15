@@ -1,4 +1,4 @@
-import 'package:fstapp/components/reception/reception_service.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ReceptionStrings {

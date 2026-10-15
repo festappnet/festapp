@@ -1,8 +1,14 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/widgets_view/payment_qr_card.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets('EUR QR card renders the RF payment reference', (tester) async {
     tester.view.physicalSize = const Size(900, 1100);
     tester.view.devicePixelRatio = 1;

@@ -3,14 +3,14 @@ import 'package:trina_grid/trina_grid.dart';
 
 import '../single_data_grid/single_data_grid_controller.dart';
 import '../single_data_grid/pluto_abstract.dart';
-import 'eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'models/order_model.dart';
 import 'models/orders_history_model.dart';
 import 'orders_strings.dart';
 
 class OrderGridFilters {
   static OrderModel? order(TrinaRow row) =>
-      row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
+      row.cells[EshopColumnIds.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
   // The canonical deletion command owns cleanup of ordinary and waiting orders.
   // A payment conversion in progress cannot be removed through the grid.
   static bool orderCanBeDeleted(TrinaRow row) {
@@ -22,7 +22,7 @@ class OrderGridFilters {
       order(row)?.canChangePayment ?? false;
 
   static bool historyCanBeDeleted(TrinaRow row) =>
-      (row.cells[EshopColumns.HISTORY_MODEL_REFERENCE]?.value
+      (row.cells[EshopColumnIds.HISTORY_MODEL_REFERENCE]?.value
               as OrderHistoryModel?)
           ?.isPersisted ??
       false;
@@ -35,12 +35,15 @@ class OrderGridFilters {
 
   static String? _orderState(TrinaRow row) {
     final order =
-        row.cells[EshopColumns.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
-    final history = row.cells[EshopColumns.HISTORY_MODEL_REFERENCE]?.value
+        row.cells[EshopColumnIds.ORDER_MODEL_REFERENCE]?.value as OrderModel?;
+    final history = row.cells[EshopColumnIds.HISTORY_MODEL_REFERENCE]?.value
         as OrderHistoryModel?;
     return order?.state ??
         history?.orderModel?.state ??
-        row.cells[EshopColumns.ORDER_STATE]?.value?.toString().split(';').first;
+        row.cells[EshopColumnIds.ORDER_STATE]?.value
+            ?.toString()
+            .split(';')
+            .first;
   }
 
   static bool orderIsNonCancelled(TrinaRow row) =>
@@ -48,7 +51,7 @@ class OrderGridFilters {
 
   static bool ticketIsNonCancelled(TrinaRow row) =>
       ![OrderModel.stornoState, OrderModel.waitlistedState].contains(row
-          .cells[EshopColumns.TICKET_STATE]?.value
+          .cells[EshopColumnIds.TICKET_STATE]?.value
           ?.toString()
           .split(';')
           .first) &&

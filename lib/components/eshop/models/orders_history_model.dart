@@ -1,7 +1,8 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_data_ticket_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
@@ -109,7 +110,7 @@ class OrderHistoryModel extends ITrinaRowModel {
     // The entire model is stored in a dedicated column to preserve the original data.
     // This is the most reliable way to get the model from a grid row.
     final model =
-        json[EshopColumns.HISTORY_MODEL_REFERENCE] as OrderHistoryModel;
+        json[EshopColumnIds.HISTORY_MODEL_REFERENCE] as OrderHistoryModel;
 
     // Because OrderHistoryModel is treated as immutable in the grid (update is disabled),
     // we simply return the original model reference. If fields were updatable,
@@ -209,11 +210,16 @@ class OrderHistoryModel extends ITrinaRowModel {
     }[data?['action']];
     if (key == null) return null;
     final parts = [WaitlistStrings.text(key)];
-    final count = data?['count'] ?? (data?['ticketIds'] is List ? (data!['ticketIds'] as List).length : null);
-    if (count is num && count > 1) parts.add('${WaitlistStrings.count}: $count');
+    final count = data?['count'] ??
+        (data?['ticketIds'] is List
+            ? (data!['ticketIds'] as List).length
+            : null);
+    if (count is num && count > 1)
+      parts.add('${WaitlistStrings.count}: $count');
     final expiry = DateTime.tryParse(data?['expiresAt']?.toString() ?? '');
     if (expiry != null) {
-      parts.add('${WaitlistStrings.expiresAt}: ${DateFormat('d. M. yyyy HH:mm').format(expiry.toOccasionTime())}');
+      parts.add(
+          '${WaitlistStrings.expiresAt}: ${DateFormat('d. M. yyyy HH:mm').format(expiry.toOccasionTime())}');
     }
     return parts.join(' · ');
   }
@@ -455,7 +461,7 @@ class OrderHistoryModel extends ITrinaRowModel {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "${OrdersStrings.itemSingular} $ticketSymbol",
+            "${OrderItemStrings.itemSingular} $ticketSymbol",
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
@@ -577,13 +583,17 @@ class OrderHistoryModel extends ITrinaRowModel {
         : data?['count'];
     final label = WaitlistStrings.text(lifecycle);
     // The count describes the affected tickets, not the whole order lifecycle.
-    final target = affected is num && affected > 0 ? '$label ($affected)' : label;
+    final target =
+        affected is num && affected > 0 ? '$label ($affected)' : label;
     final targetKey = lifecycle == 'offered'
         ? OrderModel.waitlistedState
-        : lifecycle == 'admitted' && const {
-            OrderModel.orderedState, OrderModel.paidState,
-            OrderModel.sentState, OrderModel.usedState,
-          }.contains(state)
+        : lifecycle == 'admitted' &&
+                const {
+                  OrderModel.orderedState,
+                  OrderModel.paidState,
+                  OrderModel.sentState,
+                  OrderModel.usedState,
+                }.contains(state)
             ? state!
             : 'history:$lifecycle';
     return '${OrderModel.waitlistedState};${OrderModel.stateToLocale(OrderModel.waitlistedState)} → $targetKey;$target';
@@ -622,30 +632,30 @@ class OrderHistoryModel extends ITrinaRowModel {
 
     return TrinaRow(
       cells: {
-        EshopColumns.HISTORY_ID: TrinaCell(value: id ?? 0),
-        EshopColumns.ORDER_SEQUENCE: TrinaCell(
+        EshopColumnIds.HISTORY_ID: TrinaCell(value: id ?? 0),
+        EshopColumnIds.ORDER_SEQUENCE: TrinaCell(
           value: orderSequence ?? orderModel?.orderSequence,
         ),
-        EshopColumns.HISTORY_ORDER_SYMBOL:
+        EshopColumnIds.HISTORY_ORDER_SYMBOL:
             TrinaCell(value: orderSymbol ?? orderModel?.orderSymbol ?? ""),
-        EshopColumns.ORDER_DATA:
+        EshopColumnIds.ORDER_DATA:
             TrinaCell(value: orderModel?.toCustomerData() ?? ""),
-        EshopColumns.ORDER_EMAIL: TrinaCell(
+        EshopColumnIds.ORDER_EMAIL: TrinaCell(
             value: orderModel?.data?[TbEshop.orders.data_email] ?? ""),
-        EshopColumns.HISTORY_CHANGED_AT: TrinaCell(
+        EshopColumnIds.HISTORY_CHANGED_AT: TrinaCell(
             value: createdAt != null
                 ? DateFormat('yyyy-MM-dd HH:mm')
                     .format(createdAt!.toOccasionTime())
                 : ""),
-        EshopColumns.HISTORY_CHANGED_BY: TrinaCell(
+        EshopColumnIds.HISTORY_CHANGED_BY: TrinaCell(
             value: createdBy?.toFullNameString() ?? OrdersStrings.systemUser),
-        EshopColumns.HISTORY_STATE: TrinaCell(value: stateCellFormat),
-        EshopColumns.HISTORY_PRICE: TrinaCell(value: priceText),
-        EshopColumns.HISTORY_CHANGES_SUMMARY:
+        EshopColumnIds.HISTORY_STATE: TrinaCell(value: stateCellFormat),
+        EshopColumnIds.HISTORY_PRICE: TrinaCell(value: priceText),
+        EshopColumnIds.HISTORY_CHANGES_SUMMARY:
             TrinaCell(value: _generateChangesSummaryString(context)),
-        EshopColumns.ORDER_FORM:
+        EshopColumnIds.ORDER_FORM:
             TrinaCell(value: orderModel?.form?.toString() ?? ""),
-        EshopColumns.HISTORY_MODEL_REFERENCE: TrinaCell(value: this),
+        EshopColumnIds.HISTORY_MODEL_REFERENCE: TrinaCell(value: this),
       },
     );
   }

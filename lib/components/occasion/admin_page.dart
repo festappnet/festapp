@@ -1,5 +1,6 @@
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/navigation/administration_loading_shell.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ import 'package:fstapp/components/single_data_grid/admin_page_helper.dart';
 
 @RoutePage()
 class AdminPage extends StatelessWidget {
-  static const ROUTE = 'admin';
+  static const ROUTE = NavigationPaths.admin;
   const AdminPage({super.key});
   @override
   Widget build(BuildContext context) {
@@ -33,8 +34,9 @@ class AdminPage extends StatelessWidget {
             });
             return const AdministrationLoadingShell(reservations: true);
           }
-          return AutoRouter(placeholder: (_) =>
-              const AdministrationLoadingShell(reservations: false));
+          return AutoRouter(
+              placeholder: (_) =>
+                  const AdministrationLoadingShell(reservations: false));
         });
   }
 }

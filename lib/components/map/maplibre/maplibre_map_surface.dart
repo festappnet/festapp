@@ -9,7 +9,7 @@ import 'package:fstapp/components/map/map_surface_model.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_scene_controller.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_place_icon_rasterizer.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_viewport_controller.dart';
-import 'package:fstapp/components/map/maplibre/maplibre_style_load_guard.dart';
+import 'package:festapp_core/map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:maplibre/maplibre.dart' as ml;
 import 'package:fstapp/services/app_logger.dart';

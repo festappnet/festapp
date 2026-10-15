@@ -74,8 +74,6 @@ class FixtureRouter extends RootStackRouter {
 
   @override
   List<AutoRoute> get routes => [
-        page(UnitAdminRoute.name, '/unit/:id/edit/occasions',
-            (_) => const Scaffold(body: Text('UNIT OCCASIONS'))),
         page(
             ReservationsRoute.name,
             '/:{occasionLink}/reservations',

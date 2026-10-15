@@ -1,19 +1,25 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets('waitlist grid row has no payment or reminder values',
       (tester) async {
     final order =
         OrderModel.fromJson({'id': 5, 'state': 'waitlisted', 'price': null});
     await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
       final row = order.toTrinaRow(context);
-      expect(row.cells[EshopColumns.PAYMENT_INFO_REMINDER_SENT]!.value, '');
-      expect(row.cells[EshopColumns.ORDER_PRICE]!.value, '');
+      expect(row.cells[EshopColumnIds.PAYMENT_INFO_REMINDER_SENT]!.value, '');
+      expect(row.cells[EshopColumnIds.ORDER_PRICE]!.value, '');
       return const SizedBox();
     })));
     expect(tester.takeException(), isNull);
@@ -22,7 +28,7 @@ void main() {
   test(
       'capacity settings preserve explicit null and mode-specific public limit',
       () {
-    final model = FormModel.fromJson({
+    final model = FormEditorDraft.fromJson({
       'id': 8,
       'registrationMode': 'regular',
       'participant_capacity': 20,
@@ -49,13 +55,14 @@ void main() {
         },
       ],
     });
-    expect(model.capacity!.remainingPublic, 2);
-    expect(FormHolder.fromFormFieldModel(model).getTicket()!.maxTickets, 2);
-    model.registrationMode = 'waitlist';
-    final waiting = FormHolder.fromFormFieldModel(model).getTicket()!;
+    expect(model.definition.capacity!.remainingPublic, 2);
+    expect(
+        FormHolder.fromDefinition(model.freeze()).getTicket()!.maxTickets, 2);
+    model.definition = model.definition.copyWith(registrationMode: 'waitlist');
+    final waiting = FormHolder.fromDefinition(model.freeze()).getTicket()!;
     expect(waiting.maxTickets, 4);
     expect(waiting.fields.map((f) => f.id), [2]);
-    model.participantCapacity = null;
+    model.definition = model.definition.copyWith(participantCapacity: null);
     expect(model.toEditedJson().containsKey('participant_capacity'), true);
     expect(model.toEditedJson()['participant_capacity'], null);
   });

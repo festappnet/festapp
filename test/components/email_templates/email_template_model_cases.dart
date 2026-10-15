@@ -1,7 +1,13 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   test('application links template exposes only appLinks', () {
     final usage = EmailTemplateModel(code: 'APP_LINKS').getUsageDetails();
     final substitutions = usage['subs'] as List<EmailTemplateSub>;

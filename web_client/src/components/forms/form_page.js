@@ -62,13 +62,13 @@ export class FormPage extends Component {
         // Also remove legacy widget just in case
         const widget = document.getElementById('floating-price-widget');
         if (widget) widget.remove();
-        
+
         // Remove FAB if exists
         if (this._fabBtn && !preserveEditButton) {
             this._fabBtn.remove();
             this._fabBtn = null;
         }
-        
+
         // Explicitly destroy Ticket Fields to remove listeners
         if (this.host) {
              const ticketFields = this.host.querySelectorAll('.ticket-field');
@@ -105,7 +105,7 @@ export class FormPage extends Component {
         window.scrollTo(0, 0);
 
         this.currentLink = link;
-        
+
         // Configuration
         this.onBack = this.onBack || (() => window.history.back()); // Default fallback
 
@@ -120,11 +120,11 @@ export class FormPage extends Component {
              console.error("FormPage: No host element!");
              return;
         }
-        
+
         // Keep visible content while an embedded browser waits for the RPC.
         this.renderLoading();
         // Containment for fixed children (Embedding Support)
-        this.host.style.transform = 'translate(0)'; 
+        this.host.style.transform = 'translate(0)';
         this.host.style.display = 'block';
 
         // Hide the main application container to prevent layout shifts
@@ -168,7 +168,7 @@ export class FormPage extends Component {
                 formModel = new FormModel(bundle.form);
                 formModel.offerBundle = bundle;
             } else formModel = await DbForms.getFormByLink(link);
-            
+
             if (!formModel) {
                 this.renderError(FormStrings.formNotFound);
                 return;
@@ -179,7 +179,7 @@ export class FormPage extends Component {
             this.currentLink = link;
             // 4. Apply Theme
             this.applyTheme(formModel);
-            
+
             // 5. Update SEO
             if (!this.waitlistScope) SeoService.updateMetaTags(formModel, window.location.href);
 
@@ -187,7 +187,7 @@ export class FormPage extends Component {
             // --- Availability Check Logic ---
             // Refactored to Service
             const statusResult = FormAvailabilityService.getStatus(formModel);
-            
+
             // Check URL params/Rules for preview
             const urlParams = new URLSearchParams(window.location.search);
             const isPreviewParam = urlParams.get('preview') === 'true';
@@ -204,7 +204,7 @@ export class FormPage extends Component {
 
             // 5. Render Form
             this.renderForm(formModel, showPreview);
-            
+
             // 6. Update Rights & Show Edit Button
             // Pass the form link as 'formLink' to match Flutter's behavior
             RightsService.updateAppData({ formLink: link }).then(() => {
@@ -409,7 +409,7 @@ export class FormPage extends Component {
         btn.className = 'fab-edit';
         // Material Edit Icon
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 17l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm635-498-57-57 57 57Zm-58 58L462-200H368v-94l329-329 57 57Z"/></svg>';
-        
+
         // CSS
         btn.style.position = 'fixed';
         btn.style.bottom = '24px';
@@ -432,11 +432,11 @@ export class FormPage extends Component {
              // Fallback to local link (form link)
              const context = RightsService.context;
              let occasionLink = context?.occasion?.link;
-             
+
              if (!occasionLink) {
                  occasionLink = link;
              }
-             
+
              const path = `/${occasionLink}/reservations`;
              await RouterService.navigateToFlutterRoute(path);
         };
@@ -446,8 +446,8 @@ export class FormPage extends Component {
     }
 
     renderLoading() {
-        this.host.innerHTML = '<div class="loading-spinner" role="status"></div>';
-        this.host.firstElementChild.textContent = CommonStrings.loading;
+        this.host.innerHTML = '<div class="sp-loader" role="status"></div>';
+        this.host.firstElementChild.setAttribute('aria-label', CommonStrings.loading);
     }
 
     renderError(message, onRetry) {
@@ -477,7 +477,7 @@ export class FormPage extends Component {
         const session = new FormSession(formModel);
         this.currentSession = session;
         prepareOfferSession(session, formModel);
-        
+
         // Subscribe to Validation Changes
         session.addEventListener('validation-changed', (e) => {
             FormValidator.renderErrors(this.host, e.detail);
@@ -489,7 +489,7 @@ export class FormPage extends Component {
             onSubmit: (form, model) => this.validateAndSubmit(form, model),
             onInput: (e, form, model) => {
                 if (e.type === 'input') FormValidator.handleInputValidation(e, form, session);
-                
+
                 // Optimized State Update
                 // If target has no name (e.g. Ticket Add/Remove button dispatch), refresh full structure
                 if (!e.target.name) {
@@ -500,14 +500,14 @@ export class FormPage extends Component {
                 }
             }
         });
-        
+
         if (formModel.registrationMode !== 'waitlist') new CurrencySelectorWidget(session, this.host);
         renderWaitlistControls(this, formModel);
         if (this.waitlistScope) this.attachOverview();
-        
-        
 
-        
+
+
+
         // Handle Currency Filtering
         session.addEventListener('state-changed', (e) => {
             const { currency, previousCurrency } = e.detail;
@@ -516,33 +516,33 @@ export class FormPage extends Component {
 
             // User Request: "deselect all products if you switch the currency"
             // We should aggressive deselect ALL products if the currency actually changed.
-            // But state-changed fires on PRICE updates too. 
-            // We need to know if CURRENCY changed. 
-            // The event detail only gives current currency. 
+            // But state-changed fires on PRICE updates too.
+            // We need to know if CURRENCY changed.
+            // The event detail only gives current currency.
             // We need to compare with a tracked previous state, or check if the event provides it.
             // Since we don't have 'previousCurrency' in the event detail yet...
             // Wait, we generate the event in FormSession.
-            
+
             // To be safe and compliant with "switch currency" implied action:
             // This listener hooks into `state-changed`. If we just uncheck everything every time state changes,
             // we kill partial selections during standard input. BAD.
-            
+
             // WE MUST CHECK IF CURRENCY CHANGED.
             // But `FormSession` emits `state-changed` with { currency, ... }.
             // We can store last seen currency in a local variable in this scope.
-            
+
         });
-        
+
         let lastSeenCurrency = session.state.currency;
 
         session.addEventListener('state-changed', (e) => {
              const { currency } = e.detail;
              const form = this.host.querySelector('form');
              if (!form) return;
-             
+
              const currencyChanged = lastSeenCurrency !== currency;
              lastSeenCurrency = currency;
-             
+
              // 1. Sync Standard Fields from Session (Replaces manual unchecking)
              // Iterate all standard inputs and match against session state
              const allInputs = form.querySelectorAll('input, select, textarea');
@@ -550,7 +550,7 @@ export class FormPage extends Component {
                  if (input.dataset.ticketId) return; // Skip ticket fields (handled by TicketFieldBuilder)
                  if (input.type === 'submit' || input.type === 'button' || input.type === 'hidden') return;
                  if (!input.name) return;
-                 
+
                  let lookupKey = input.name;
                  let isExpiry = false;
 
@@ -558,9 +558,9 @@ export class FormPage extends Component {
                      lookupKey = input.name.replace('_expiry', '');
                      isExpiry = true;
                  }
-                 
+
                  const val = session.state.fields.get(lookupKey);
-                 
+
                  // Apply Logic (Standard)
                  if (input.type === 'radio') {
                      const shouldCheck = val !== undefined && String(input.value) === String(val);
@@ -574,7 +574,7 @@ export class FormPage extends Component {
                       if (input.checked !== isChecked) input.checked = isChecked;
                  } else {
                      let expected = val !== undefined ? val : '';
-                     
+
                      // Handle Composite Objects (e.g. ID Document)
                      if (typeof expected === 'object' && expected !== null) {
                          // Check for ID Document structure
@@ -591,7 +591,7 @@ export class FormPage extends Component {
                          input.value = expected;
                      }
                  }
-                 
+
                  // Update "Clear Selection" Button Visibility
                  // This effectively handles "Reactive UI" for standard fields
                  const container = input.closest('.form-field-container');
@@ -606,16 +606,16 @@ export class FormPage extends Component {
 
              // 2. Visibility Logic (CSS)
              const allCurrencyElements = form.querySelectorAll('[data-currency]');
-             
+
              allCurrencyElements.forEach(el => {
                 const itemCurrency = el.getAttribute('data-currency');
-                
+
                 // Only toggle container-like elements, not inputs themselves (inputs are data-driven)
                 if (el.classList.contains('form-check') || el.classList.contains('dropdown-item') || el.classList.contains('option-card')) {
                      if (itemCurrency && itemCurrency !== currency) {
                          el.style.display = 'none';
                      } else {
-                         el.style.display = ''; 
+                         el.style.display = '';
                      }
                 }
              });
@@ -627,7 +627,7 @@ export class FormPage extends Component {
                  session.resetIncompatibleCurrencyFields(currency);
              }
         });
-        
+
         // Trigger initial update for the price widget
         setTimeout(() => {
             if (this.currentSession !== session) return;
@@ -637,7 +637,7 @@ export class FormPage extends Component {
                 // Parse the initial form state (e.g. default values) into the session
                 session.initialize(form);
                 if (formModel.offerBundle) prefillOfferFields(form, session);
-                
+
                 // Initial syncing
                 // If the session initialized with a currency (e.g. from logic), ensure filter runs.
                 // Disptach current state to trigger filter
@@ -666,7 +666,7 @@ export class FormPage extends Component {
 
 
     // --- Validation & Submit Logic ---
-    
+
     // Delegated to FormValidator
     handleInputValidation(e, form) {
          FormValidator.handleInputValidation(e, form, this.currentSession);
@@ -680,7 +680,7 @@ export class FormPage extends Component {
             const message = document.createElement('p'); message.setAttribute('role', 'alert'); message.textContent = WaitlistStrings.selectPeople; form.prepend(message); return;
         }
         const isValid = FormValidator.validateAndShowErrors(form, formModel, this.currentSession);
-        
+
         if (isValid) {
             this.handlePreview(form, formModel);
         }
@@ -697,9 +697,9 @@ export class FormPage extends Component {
     // --- DEBUG HELPER ---
     handlePreview(form, formModel) {
         // Native Validation Check
-        // Explicitly check native validity before proceeding, 
+        // Explicitly check native validity before proceeding,
         // as some browsers might not block onSubmit if preventDefault was called early?
-        // Actually, normally 'submit' event only fires if valid. 
+        // Actually, normally 'submit' event only fires if valid.
         // But we are calling this from our explicit handler.
         if (!form.reportValidity()) {
             return;
@@ -714,7 +714,7 @@ export class FormPage extends Component {
              try {
                  const priceData = this.calculateTotal(form, formModel);
                  const precalculatedPayload = this.currentSession ? this.currentSession.payload : null;
-                 
+
                  OrderPreview.show(form, formModel, priceData, (overlay, paymentType) => {
                      // On Confirm
                      this._pendingPaymentType = paymentType || null;
@@ -722,7 +722,7 @@ export class FormPage extends Component {
                  }, () => {
                      // On Close
                  }, precalculatedPayload);
-                 
+
              } catch (e) {
                  console.error('[FormPage] OrderPreview.show crashed:', e);
              }
@@ -730,14 +730,14 @@ export class FormPage extends Component {
              console.error('[FormPage] Failed to load OrderPreview module', err);
         });
     }
-    
+
     closePreview() {
         const overlay = document.getElementById('order-preview-overlay');
         if (overlay) {
             overlay.classList.remove('visible');
             setTimeout(() => {
-                overlay.remove(); 
-            }, 300); 
+                overlay.remove();
+            }, 300);
         }
     }
 
@@ -768,7 +768,7 @@ export class FormPage extends Component {
 
         // 2. Show Loader
         const loader = this.showFullScreenLoader();
-        
+
         // 3. Prepare Data
         const payload = this.currentSession ? this.currentSession.payload : FormDataReader.getPayload(form, formModel);
 
@@ -798,8 +798,8 @@ export class FormPage extends Component {
              await previewHistoryClosed;
 
              loader.remove();
-             document.body.style.overflow = ''; 
-             
+             document.body.style.overflow = '';
+
              if (result.success) {
                  if (formModel.registrationMode === 'waitlist' && result.data.orderOverviewUrl) {
                      try {
@@ -832,18 +832,18 @@ export class FormPage extends Component {
 
                  // Do not rebuild from the pre-submission capacity snapshot.
                  this.host?.replaceChildren();
-                 window.scrollTo(0, 0); 
+                 window.scrollTo(0, 0);
              }
-             
+
              if (!result.success && result.data?.errorCode === 'FORM_CAPACITY_EXCEEDED') await this.refreshCapacityChoice(formModel);
              this.showFullScreenResult(result.success, result.data, formModel);
-             
+
         }).catch(async e => {
              await previewHistoryClosed;
 
              // Preserve the stable error UI without logging capability-bearing transport errors.
              loader.remove();
-             document.body.style.overflow = ''; 
+             document.body.style.overflow = '';
              if (formModel.offerBundle) await this.refreshOffer(formModel);
              this.showFullScreenResult(false, e.data || { code: 999, errorCode: e.message }, formModel);
         });
@@ -867,7 +867,7 @@ export class FormPage extends Component {
             flex-direction: column;
             font-family: var(--font-family-base, sans-serif);
         `;
-        
+
         // Spinner
         loader.innerHTML = `
             <div class="spinner"></div>
@@ -875,10 +875,10 @@ export class FormPage extends Component {
                 ${CommonStrings.processing || 'Processing...'}
             </div>
         `;
-        
+
         document.body.appendChild(loader);
         document.body.style.overflow = 'hidden'; // Ensure scroll locked
-        
+
         // Ensure Spinner CSS
         if (!document.getElementById('spinner-style')) {
             const style = document.createElement('style');
@@ -899,7 +899,7 @@ export class FormPage extends Component {
             `;
             document.head.appendChild(style);
         }
-        
+
         return loader;
     }
 
@@ -924,7 +924,7 @@ export class FormPage extends Component {
         container.style.flexDirection = 'column';
         container.style.justifyContent = 'safe center'; /* Center short results without clipping tall results */
         container.style.alignItems = 'center'; /* Center Horizontally */
-        
+
         document.body.appendChild(container);
         document.body.style.overflow = 'hidden'; // Ensure scroll locked
 
@@ -932,7 +932,7 @@ export class FormPage extends Component {
         const cleanup = () => {
             container.remove();
             document.body.style.overflow = ''; // Restore scroll
-            
+
             if (success) {
                 const link = this.currentLink;
                 this.currentLink = null;

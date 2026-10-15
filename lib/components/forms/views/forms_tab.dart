@@ -5,7 +5,7 @@ import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
@@ -22,7 +22,7 @@ class FormsTab extends StatelessWidget {
 }
 
 class FormsListView extends StatefulWidget {
-  final Future<List<FormModel>> Function(String)? loadForms;
+  final Future<List<FormBundle>> Function(String)? loadForms;
   const FormsListView({super.key, this.loadForms});
 
   @override
@@ -30,7 +30,7 @@ class FormsListView extends StatefulWidget {
 }
 
 class _FormsTabState extends State<FormsListView> {
-  List<FormModel> _forms = [];
+  List<FormBundle> _forms = [];
   String? occasionLink;
   bool _isLoading = true;
   String? _loadError;
@@ -66,14 +66,14 @@ class _FormsTabState extends State<FormsListView> {
       if (!mounted || generation != _loadGeneration) return;
       _forms = forms;
       if (forms.length == 1 &&
-          forms.single.link?.isNotEmpty == true &&
+          forms.single.definition.link?.isNotEmpty == true &&
           context.routeData.queryParams.get('list')?.toString().toLowerCase() !=
               'true') {
         // Replace the selector so Back does not bounce through it again.
         context.router.markUrlStateForReplace();
         await context.router.replaceAll([
           FormDetailRoute(
-            formLink: forms.single.link!,
+            formLink: forms.single.definition.link!,
           ).copyWith(
               queryParams: context.router.root.urlState.uri.queryParametersAll)
         ]);
@@ -90,8 +90,8 @@ class _FormsTabState extends State<FormsListView> {
     }
   }
 
-  Future<void> _handleCardTap(FormModel form) async {
-    await context.router.push(FormDetailRoute(formLink: form.link!));
+  Future<void> _handleCardTap(FormBundle form) async {
+    await context.router.push(FormDetailRoute(formLink: form.definition.link!));
   }
 
   Future<void> _handleCreateNew() async {
@@ -100,7 +100,7 @@ class _FormsTabState extends State<FormsListView> {
         occasionLink: occasionLink!, onFormCreated: loadData);
   }
 
-  Future<void> _handleCreateCopy(FormModel form) async {
+  Future<void> _handleCreateCopy(FormBundle form) async {
     if (occasionLink == null) return;
     await FormCreationHelper.copyFormToOccasion(context, form,
         occasionLink: occasionLink!, onFormCreated: loadData);
@@ -165,22 +165,23 @@ class _FormsTabState extends State<FormsListView> {
         toolbarHeight: 44.0,
         automaticallyImplyLeading: false,
         actions: [
-          if (!RightsService.isDemoReadOnly) Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(FormStrings.createNewForm),
-              onPressed: _handleCreateNew,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(StylesConfig.commonRoundness),
+          if (!RightsService.isDemoReadOnly)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.add, size: 18),
+                label: Text(FormStrings.createNewForm),
+                onPressed: _handleCreateNew,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(StylesConfig.commonRoundness),
+                  ),
                 ),
               ),
             ),
-          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -209,7 +210,7 @@ class _FormsTabState extends State<FormsListView> {
 // NOTE: _CreateOrCopyFormDialog has been extracted to create_or_copy_dialog.dart.
 
 class FormCard extends StatelessWidget {
-  final FormModel form;
+  final FormBundle form;
   final VoidCallback onTap;
   final VoidCallback onCreateCopy;
 
@@ -268,22 +269,23 @@ class FormCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (!RightsService.isDemoReadOnly) PopupMenuButton<String>(
-                elevation: 0,
-                icon: Icon(Icons.more_vert,
-                    color: onSurfaceColor.withOpacity(0.7)),
-                onSelected: (value) {
-                  if (value == "create_copy") {
-                    onCreateCopy();
-                  }
-                },
-                itemBuilder: (BuildContext context) => [
-                  PopupMenuItem(
-                    value: "create_copy",
-                    child: Text(FormStrings.createCopy),
-                  ),
-                ],
-              ),
+              if (!RightsService.isDemoReadOnly)
+                PopupMenuButton<String>(
+                  elevation: 0,
+                  icon: Icon(Icons.more_vert,
+                      color: onSurfaceColor.withOpacity(0.7)),
+                  onSelected: (value) {
+                    if (value == "create_copy") {
+                      onCreateCopy();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    PopupMenuItem(
+                      value: "create_copy",
+                      child: Text(FormStrings.createCopy),
+                    ),
+                  ],
+                ),
               const SizedBox(width: 4),
               Expanded(
                 child: Column(
@@ -295,14 +297,14 @@ class FormCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          form.toString(),
+                          form.definition.toString(),
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (form.stats != null) ...[
+                        if (form.definition.stats != null) ...[
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 12.0,
@@ -310,19 +312,23 @@ class FormCard extends StatelessWidget {
                             children: [
                               _buildStat(context,
                                   icon: Icons.chat_bubble,
-                                  value: form.stats!.total.toString(),
+                                  value:
+                                      form.definition.stats!.total.toString(),
                                   tooltip: FormStrings.responses),
                               _buildStat(context,
                                   icon: Icons.check_circle_outline,
-                                  value: form.stats!.paidOrSent.toString(),
+                                  value: form.definition.stats!.paidOrSent
+                                      .toString(),
                                   tooltip: OrdersStrings.gridPaidOrSent),
                               _buildStat(context,
                                   icon: Icons.shopping_cart_outlined,
-                                  value: form.stats!.ordered.toString(),
+                                  value:
+                                      form.definition.stats!.ordered.toString(),
                                   tooltip: OrdersStrings.gridOrdered),
                               _buildStat(context,
                                   icon: Icons.cancel_outlined,
-                                  value: form.stats!.storno.toString(),
+                                  value:
+                                      form.definition.stats!.storno.toString(),
                                   tooltip: OrdersStrings.gridCancelled),
                             ],
                           )
@@ -333,21 +339,21 @@ class FormCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          form.isOpen == true
+                          form.definition.isOpen == true
                               ? Icons.check_circle
                               : Icons.cancel,
-                          color: form.isOpen == true
+                          color: form.definition.isOpen == true
                               ? ThemeConfig.greenColor(context)
                               : ThemeConfig.redColor(context),
                           size: 16,
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          form.isOpen == true
+                          form.definition.isOpen == true
                               ? FormStrings.statusOpen
                               : FormStrings.statusClosed,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: form.isOpen == true
+                            color: form.definition.isOpen == true
                                 ? ThemeConfig.greenColor(context)
                                 : ThemeConfig.redColor(context),
                             fontWeight: FontWeight.bold,

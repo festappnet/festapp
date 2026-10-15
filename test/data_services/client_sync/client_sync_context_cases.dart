@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_store.dart';
 
 void main() {
   test('offline bootstrap context survives serialization', () {

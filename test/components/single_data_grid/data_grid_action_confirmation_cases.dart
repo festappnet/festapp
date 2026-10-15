@@ -1,14 +1,20 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets('ticket row preserves labels, parent and edited note',
       (tester) async {
     await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
@@ -30,7 +36,7 @@ void main() {
         noteHidden: 'Original note',
       );
       final row = ticket.toTrinaRow(context);
-      row.cells[EshopColumns.TICKET_NOTE_HIDDEN]!.value = 'Edited note';
+      row.cells[EshopColumnIds.TICKET_NOTE_HIDDEN]!.value = 'Edited note';
       final restored = TicketModel.fromPlutoJson(row.toJson());
       expect(restored.toBasicString(), 'TICKET20 - Stůl 3, místo 2 - Vstupné');
       expect(restored.relatedOrder, same(order));

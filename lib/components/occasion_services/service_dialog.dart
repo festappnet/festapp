@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/inventory/views/place_search_dialog.dart';
 import 'package:fstapp/components/inventory/views/quick_search_dialog.dart';
 import 'package:fstapp/components/map/db_places.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/occasion_services/occasion_services_strings.dart';
 import 'package:fstapp/components/occasion_services/service_item_model.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';

@@ -1,10 +1,16 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   test('group editor bundle parses groups and existing places together', () {
     final groupTitle = GroupsStrings.newGroup;
     final placeTitle = GroupsStrings.choosePlace;

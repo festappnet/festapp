@@ -1,18 +1,18 @@
 // Form editor adapter for database-backed occasion setup drafts.
 import 'dart:convert';
 
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/eshop/models/product_type_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
-Map<String, dynamic> serializeDraftForm(FormModel form) {
+Map<String, dynamic> serializeDraftForm(FormEditorDraft form) {
   final data = form.toJson();
   data['fields'] = form.relatedFields.map((field) {
     final fieldData = field.toJson();
     fieldData[Tb.form_fields.product_type] = null;
-    fieldData[Tb.form_fields.product_type_data] = field.productType?.toJson();
+    fieldData[Tb.form_fields.product_type_data] =
+        field.definition.productType?.toJson();
     return fieldData;
   }).toList();
   return Map<String, dynamic>.from(
@@ -25,37 +25,42 @@ Map<String, dynamic> serializeDraftForm(FormModel form) {
 }
 
 FormEditBundle draftFormBundle(Map<String, dynamic> data) {
-  final form = FormModel.fromJson(Map<String, dynamic>.from(data));
-  form.occasionId = 0;
-  form.isOpen = false;
+  final form = FormEditorDraft.fromJson(Map<String, dynamic>.from(data));
+  form.definition = form.definition.copyWith(occasionId: 0);
+  form.definition = form.definition.copyWith(isOpen: false);
   form.availableBankAccounts = const [];
+  for (final field in form.relatedFields) {
+    final type = field.definition.productType;
+    if (type == null) continue;
+    field.definition = field.definition.copyWith(
+        productType: type.copyWith(products: [
+      for (final product in type.products ?? <ProductModel>[])
+        product.copyWith(
+            productTypeString: type.type,
+            productTypeId: type.id,
+            productTypeTitleString: type.title,
+            deletionAllowed: true),
+    ]));
+  }
   final productTypes = form.relatedFields
-      .map((field) => field.productType)
+      .map((field) => field.definition.productType)
       .whereType<ProductTypeModel>()
       .toList();
   final products =
       productTypes.expand((type) => type.products ?? <ProductModel>[]).toList();
-  for (final type in productTypes) {
-    for (final product in type.products ?? <ProductModel>[]) {
-      product.productTypeString = type.type;
-      product.productTypeId = type.id;
-      product.productTypeTitleString = type.title;
-      product.deletionAllowed = true;
-    }
-  }
   return FormEditBundle(
     form: form,
-    formFields: form.relatedFields,
     productTypes: productTypes,
     products: products,
     availableBankAccounts: const [],
   );
 }
 
-FormModel defaultDraftForm(Map<String, dynamic> configuration) {
+FormEditorDraft defaultDraftForm(Map<String, dynamic> configuration) {
   final forms = configuration['forms'] as List? ?? [];
   if (forms.isEmpty) throw StateError('Canonical form defaults are missing');
-  return FormModel.fromJson(
-      Map<String, dynamic>.from(jsonDecode(jsonEncode(forms.first))))
-    ..link = '';
+  final draft = FormEditorDraft.fromJson(
+      Map<String, dynamic>.from(jsonDecode(jsonEncode(forms.first))));
+  draft.definition = draft.definition.copyWith(link: '');
+  return draft;
 }

@@ -13,7 +13,7 @@ import 'package:fstapp/components/timeline/advanced_timeline_controller.dart';
 import 'package:fstapp/components/timeline/advanced_timeline_day_list.dart';
 import 'package:fstapp/components/timeline/advanced_timeline_view.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/_shared/async_reload_coordinator.dart';
 import 'package:fstapp/components/users/user_strings.dart';
@@ -23,7 +23,7 @@ import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/add_new_event_dialog.dart';
 import 'package:fstapp/components/schedule/event_edit_page.dart';
@@ -144,13 +144,14 @@ class _SchedulePageState extends State<SchedulePage>
     // Context bootstrap temporarily clears its projection. That is loading,
     // not an empty programme, and must not overwrite an existing calendar.
     final token = ClientSyncRuntime.mutationContextToken;
-    final catalog = await ClientSyncRuntime.readPublic(ClientSyncComponent.programCatalog);
+    final catalog =
+        await ClientSyncRuntime.readPublic(ClientSyncComponent.programCatalog);
     if (catalog == null) return;
-    final events = await OfflineDataService.getAllEvents();
+    var events = await OfflineDataService.getAllEvents();
     if (!ClientSyncRuntime.isCurrentMutationContext(token)) return;
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
-      await OfflineDataService.updateEventsWithMySchedule(events);
+      events = await OfflineDataService.updateEventsWithMySchedule(events);
     }
     final dots = events
         .filterRootEvents()
@@ -233,7 +234,7 @@ class _SchedulePageState extends State<SchedulePage>
 
   Future<void> _loadOfflineDataThenFast() async {
     if (_events.isEmpty) {
-      final offline = await OfflineDataService.getAllEvents();
+      var offline = await OfflineDataService.getAllEvents();
       _events = offline;
       _hasLoadedEvents = offline.isNotEmpty;
       for (var e in _events) {
@@ -248,7 +249,7 @@ class _SchedulePageState extends State<SchedulePage>
 
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
-      await OfflineDataService.updateEventsWithMySchedule(_events);
+      _events = await OfflineDataService.updateEventsWithMySchedule(_events);
       _dots = _events
           .filterRootEvents()
           .where((e) => !e.isCounselingSlot)
@@ -267,9 +268,10 @@ class _SchedulePageState extends State<SchedulePage>
 
     _lastQuickLoadTime = DateTime.now();
 
-    for (var e in fast) {
+    for (final entry in fast.asMap().entries) {
+      final e = entry.value;
       if (e.id != null && _eventDescriptions.containsKey(e.id!)) {
-        e.description = _eventDescriptions[e.id!];
+        fast[entry.key] = e.copyWith(description: _eventDescriptions[e.id!]);
       }
     }
 
@@ -277,9 +279,10 @@ class _SchedulePageState extends State<SchedulePage>
     _hasLoadedEvents = true;
     if (!AuthService.isLoggedIn()) {
       final saved = await OfflineDataService.getMyScheduleData();
-      for (var e in _events) {
-        e.isInMySchedule = e.id != null && saved.contains(e.id);
-      }
+      _events = _events
+          .map((event) => event.copyWith(
+              isInMySchedule: event.id != null && saved.contains(event.id)))
+          .toList();
     }
     _dots = _events
         .filterRootEvents()
@@ -305,7 +308,7 @@ class _SchedulePageState extends State<SchedulePage>
 
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
-      await OfflineDataService.updateEventsWithMySchedule(_events);
+      _events = await OfflineDataService.updateEventsWithMySchedule(_events);
     }
 
     _dots = _events

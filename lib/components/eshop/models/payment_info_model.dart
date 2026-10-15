@@ -1,5 +1,5 @@
-import 'package:fstapp/components/bank_accounts/bank_sync_warning.dart';
-export 'package:fstapp/components/bank_accounts/bank_sync_warning.dart';
+import 'package:festapp_core/eshop.dart';
+export 'package:festapp_core/eshop.dart' show BankSyncWarning, BankSyncContact;
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 
 class PaymentInfoModel {

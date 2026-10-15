@@ -1,26 +1,29 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_session.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/models/holder_models/field_holder.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
 import 'package:fstapp/components/forms/models/holder_models/ticket_holder.dart';
 import 'package:fstapp/components/forms/widgets_view/form_field_builders.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
-  setUpAll(() => Localization.load(const Locale('cs'),
-      translations: Translations(
+  WidgetEnvironmentFixture.register();
+  setUpAll(() => _environment = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations:
           jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-              as Map<String, dynamic>)));
+              as Map<String, dynamic>));
   for (final many in [false, true]) {
     for (final cards in [false, true]) {
-      testWidgets(
+      testWidgetsWithEnvironment(() => _environment,
           'default products enter initial ticket totals: many=$many cards=$cards',
           (tester) async {
         final product = FormOptionProductModel('20', 'Dinner',
@@ -46,20 +49,24 @@ void main() {
             id: 1, fieldType: 'ticket', maxTickets: 1, fields: [field]);
         final holder = FormHolder(fields: [ticket], isCardDesign: cards);
         final key = GlobalKey<FormBuilderState>();
-        final session =
-            FormSession(form: FormModel(), formHolder: holder, formKey: key);
+        final session = FormSession(
+            form: FormEditorDraft().toBundle(),
+            formHolder: holder,
+            formKey: key);
         addTearDown(session.dispose);
         holder.controller = FormHolderController(
             globalKey: key, updateTotalPrice: session.recalculateTotals);
-        await tester.pumpWidget(MaterialApp(
-            home: Scaffold(
-                body: FormBuilder(
-                    key: key,
-                    onChanged: session.recalculateTotals,
-                    child: Builder(
-                        builder: (context) =>
-                            FormFieldBuilders.buildTicketField(
-                                context, holder, ticket))))));
+        await _environment.pumpWidget(
+            tester,
+            MaterialApp(
+                home: Scaffold(
+                    body: FormBuilder(
+                        key: key,
+                        onChanged: session.recalculateTotals,
+                        child: Builder(
+                            builder: (context) =>
+                                FormFieldBuilders.buildTicketField(
+                                    context, holder, ticket))))));
         await tester.pumpAndSettle();
         expect(ticket.tickets.length, 1);
         expect(ticket.tickets.single.ticketKey.currentState!.instantValue['3'],

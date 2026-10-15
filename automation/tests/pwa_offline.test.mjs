@@ -333,6 +333,16 @@ try {
   const rootResponse = await dispatchFetch(rootNavigation, 'updating-tab');
   assert.equal(await rootResponse.text(), '<html>offline shell</html>',
     'a forced-occasion tenant must never open the generic event list at /');
+  for (const pathname of ['/unit/2', '/unit/2/']) {
+    const unitNavigation = new Request('https://app.test' + pathname);
+    Object.defineProperty(unitNavigation, 'mode', { value: 'navigate' });
+    const unitResponse = await dispatchFetch(unitNavigation, 'updating-tab');
+    assert.equal(await unitResponse.text(), '<html>generic event list</html>',
+      'unit catalogues must use the web client under an active offline worker');
+  }
+  const unitAdminNavigation = new Request('https://app.test/unit/2/edit');
+  Object.defineProperty(unitAdminNavigation, 'mode', { value: 'navigate' });
+  assert.equal(await (await dispatchFetch(unitAdminNavigation, 'updating-tab')).text(), '<html>offline shell</html>');
   const privacyNavigation = new Request('https://app.test/privacy');
   Object.defineProperty(privacyNavigation, 'mode', { value: 'navigate' });
   const privacyResponse = await dispatchFetch(privacyNavigation, 'updating-tab');

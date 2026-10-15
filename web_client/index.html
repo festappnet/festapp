@@ -91,6 +91,9 @@
             window.__FESTAPP_WEB_STARTUP_FAILURE__ = reason;
             const fallback = document.getElementById('web-client-startup');
             if (fallback) {
+                fallback.setAttribute('aria-label', startupCopy.failed);
+                fallback.querySelector('.startup-spinner').hidden = true;
+                fallback.querySelector('p').hidden = false;
                 fallback.querySelector('p').textContent = startupCopy.failed;
                 fallback.querySelector('button').hidden = false;
             }
@@ -160,16 +163,23 @@
             return false;
         };
     </script>
+    <style>
+        .startup-spinner{width:32px;height:32px;border:3px solid #ddd;border-top-color:#3879bc;border-radius:50%;animation:startup-spin .8s linear infinite}
+        .startup-spinner[hidden]{display:none}
+        @keyframes startup-spin{to{transform:rotate(360deg)}}
+        @media(prefers-reduced-motion:reduce){.startup-spinner{animation:none}}
+    </style>
 </head>
 <body>
     <div id="web-client-startup" role="status"
          style="position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;color:#333;font:16px sans-serif;padding:24px;text-align:center">
-        <p>Loading…</p>
+        <span class="startup-spinner" aria-hidden="true"></span>
+        <p hidden></p>
         <button hidden onclick="window.retryFestappWebClient()"
                 style="padding:12px 20px;font:inherit;cursor:pointer">Try again</button>
     </div>
     <script>
-        document.querySelector('#web-client-startup p').textContent = startupCopy.loading;
+        document.getElementById('web-client-startup').setAttribute('aria-label', startupCopy.loading);
         document.querySelector('#web-client-startup button').textContent = startupCopy.retry;
     </script>
     <div id="app" style="display: none;">

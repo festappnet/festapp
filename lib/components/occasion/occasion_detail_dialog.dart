@@ -1,3 +1,4 @@
+import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -7,7 +8,6 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/forms/views/form_page.dart';
 import 'package:fstapp/services/launch_url_service.dart';
-import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/styles/styles_config.dart';
@@ -37,7 +37,7 @@ class OccasionDetailDialog extends StatelessWidget {
     // Fallback to internal form page navigation.
     RouterService.navigate(
       context,
-      "${FormPage.ROUTE}/${occasion.form!.link!}",
+      "${FormPage.ROUTE}/${occasion.form!.definition.link!}",
     );
   }
 

@@ -25,26 +25,28 @@ class StorageHelper {
     }
   }
 
-  static Future<Database> _getDatabase([String? dbPath]) async {
+  static Future<Database> openDatabase([String? dbPath]) async {
     final path = dbPath ?? 'default.db';
     return _opener.get(path);
   }
 
+  static Future<void> closeDatabase(String dbPath) => _opener.close(dbPath);
+
   static Future<String?> get(String key, [String? dbPath]) async {
     final store = StoreRef.main();
-    final db = await _getDatabase(dbPath);
+    final db = await openDatabase(dbPath);
     return await store.record(key).get(db) as String?;
   }
 
   static Future<void> set(String key, String value, [String? dbPath]) async {
     final store = StoreRef.main();
-    final db = await _getDatabase(dbPath);
+    final db = await openDatabase(dbPath);
     await store.record(key).put(db, value);
   }
 
   static Future<void> remove(String key, [String? dbPath]) async {
     final store = StoreRef.main();
-    final db = await _getDatabase(dbPath);
+    final db = await openDatabase(dbPath);
     await store.record(key).delete(db);
   }
 
@@ -66,7 +68,7 @@ class StorageHelper {
     String? dbPath,
   ]) async {
     final store = StoreRef.main();
-    final db = await _getDatabase(dbPath);
+    final db = await openDatabase(dbPath);
     final keys =
         removePrefixes.isEmpty ? const <Object?>[] : await store.findKeys(db);
     await db.transaction((transaction) async {
@@ -86,7 +88,7 @@ class StorageHelper {
 
   static Future<List<String>> keys([String? dbPath]) async {
     final store = StoreRef.main();
-    final db = await _getDatabase(dbPath);
+    final db = await openDatabase(dbPath);
     return (await store.findKeys(db))
         .whereType<String>()
         .toList(growable: false);
@@ -94,7 +96,7 @@ class StorageHelper {
 
   static Future<void> removeByPrefix(String prefix, [String? dbPath]) async {
     final store = StoreRef.main();
-    final db = await _getDatabase(dbPath);
+    final db = await openDatabase(dbPath);
     final keys = await store.findKeys(db);
     await db.transaction((transaction) async {
       for (final key
@@ -108,7 +110,7 @@ class StorageHelper {
   static Future<void> removeByPrefixesAtomic(List<String> prefixes,
       [String? dbPath]) async {
     final store = StoreRef.main();
-    final db = await _getDatabase(dbPath);
+    final db = await openDatabase(dbPath);
     final keys = await store.findKeys(db);
     await db.transaction((transaction) async {
       for (final key in keys

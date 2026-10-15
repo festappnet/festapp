@@ -1,3 +1,4 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,8 +6,6 @@ import 'package:fstapp/app_router.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:auto_route/auto_route.dart';
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -18,6 +17,8 @@ import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:timezone/data/latest.dart' as tz;
+
+late WidgetEnvironmentFixture _environment;
 
 class _Router extends RootStackRouter {
   @override
@@ -45,18 +46,20 @@ class _Router extends RootStackRouter {
 }
 
 void main() {
+  WidgetEnvironmentFixture.register();
   const cover = 'https://img.festapp.net/images/59/original.jpg';
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await initializeDateFormatting('cs');
     tz.initializeTimeZones();
-    Localization.load(const Locale('cs'),
-        translations: Translations(
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-                as Map<String, dynamic>));
+                as Map<String, dynamic>);
   });
-  testWidgets(
+  testWidgetsWithEnvironment(() => _environment,
       'cover-only removal is an unsaved draft; discard restores its original without writes',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 1800);
@@ -67,14 +70,16 @@ void main() {
         OccasionLinkModel(unitUser: OccasionUserModel(isEditor: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
     final router = _Router();
-    await tester.pumpWidget(EasyLocalization(
-        supportedLocales: const [Locale('cs')],
-        startLocale: const Locale('cs'),
-        path: 'assets/translations',
-        child: MaterialApp.router(
-            routerConfig: router.config(
-                deepLinkBuilder: (_) =>
-                    const DeepLink.path('/example/settings')))));
+    await _environment.pumpWidget(
+        tester,
+        EasyLocalization(
+            supportedLocales: const [Locale('cs')],
+            startLocale: const Locale('cs'),
+            path: 'assets/translations',
+            child: MaterialApp.router(
+                routerConfig: router.config(
+                    deepLinkBuilder: (_) =>
+                        const DeepLink.path('/example/settings')))));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(

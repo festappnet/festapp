@@ -465,7 +465,9 @@ function cachedNavigationTarget(pathname) {
   if (pathname === '/' && FORCED_OCCASION_PATH) {
     return FLUTTER_ENTRY;
   }
-  if (pathname === '/' || pathname === '/order' || pathname.startsWith('/form/')) {
+  const unitPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  const unitCatalogue = unitPath.startsWith('/unit/') && /^[1-9][0-9]*$/.test(unitPath.slice(6));
+  if (pathname === '/' || pathname === '/order' || unitCatalogue || pathname.startsWith('/form/')) {
     return WEB_CLIENT_ENTRY;
   }
   return FLUTTER_ENTRY;

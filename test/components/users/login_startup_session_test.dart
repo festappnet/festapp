@@ -1,8 +1,7 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,17 +15,21 @@ import 'package:fstapp/components/users/views/login_page.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
+  WidgetEnvironmentFixture.register();
   TestWidgetsFlutterBinding.ensureInitialized();
   late Completer<http.Response> contextLoad;
   late List<String> requests;
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
-    Localization.load(const Locale('cs'),
-        translations: Translations(
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-                as Map<String, dynamic>));
+                as Map<String, dynamic>);
     contextLoad = Completer<http.Response>();
     requests = [];
     await Supabase.initialize(
@@ -71,10 +74,10 @@ void main() {
     }
   });
   tearDownAll(() async => Supabase.instance.dispose());
-  testWidgets(
+  testWidgetsWithEnvironment(() => _environment,
       'restored web session never renders the sign-in form while admin context loads',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: LoginPage()));
+    await _environment.pumpWidget(tester, const MaterialApp(home: LoginPage()));
     expect(find.text(UserStrings.signIn), findsNothing,
         reason:
             'a restored SDK session must not flash the signed-out login UI');
@@ -82,38 +85,39 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(
         requests.where((path) => path.startsWith('/auth/v1/token')), isEmpty);
-    await tester.pumpWidget(const SizedBox());
+    await _environment.pumpWidget(tester, const SizedBox());
     contextLoad.complete(http.Response('{}', 200));
     await tester.runAsync(() async {
       await Future<void>.delayed(Duration.zero);
     });
     await tester.pump(const Duration(seconds: 16));
   });
-  testWidgets('signed-out visitors can still open the sign-in form',
+  testWidgetsWithEnvironment(
+      () => _environment, 'signed-out visitors can still open the sign-in form',
       (tester) async {
     await tester.runAsync(
         () => Supabase.instance.client.auth.signOut(scope: SignOutScope.local));
-    await tester.pumpWidget(const MaterialApp(home: LoginPage()));
+    await _environment.pumpWidget(tester, const MaterialApp(home: LoginPage()));
     await tester.pump();
     expect(find.text(UserStrings.signIn), findsWidgets);
     expect(find.byType(TextFormField), findsWidgets);
-    await tester.pumpWidget(const SizedBox());
+    await _environment.pumpWidget(tester, const SizedBox());
     contextLoad.complete(http.Response('{}', 200));
     await tester.runAsync(() async {
       await Future<void>.delayed(Duration.zero);
     });
     await tester.pump(const Duration(seconds: 16));
   });
-  testWidgets(
+  testWidgetsWithEnvironment(() => _environment,
       'stalled authenticated navigation offers retry without showing login',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: LoginPage()));
+    await _environment.pumpWidget(tester, const MaterialApp(home: LoginPage()));
     await tester.pump(const Duration(seconds: 16));
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text(CommonStrings.retry), findsOneWidget);
     expect(find.text(UserStrings.signIn), findsNothing);
     expect(Supabase.instance.client.auth.currentSession, isNotNull);
-    await tester.pumpWidget(const SizedBox());
+    await _environment.pumpWidget(tester, const SizedBox());
     contextLoad.complete(http.Response('{}', 200));
     await tester.runAsync(() async {
       await Future<void>.delayed(Duration.zero);

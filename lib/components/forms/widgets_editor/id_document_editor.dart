@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/components/forms/models/holder_models/id_document_field_holder.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
@@ -9,8 +9,8 @@ class IdDocumentEditor {
       PersonFieldsStrings.expiryDate;
 
   static Widget buildIdDocumentReadOnly(
-      BuildContext context, FormFieldModel field) {
-    final data = field.data ?? {};
+      BuildContext context, FormFieldDraft field) {
+    final data = field.definition.data ?? {};
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -93,22 +93,34 @@ class IdDocumentEditor {
   }
 
   static Widget buildIdDocumentEditor(
-      BuildContext context, FormFieldModel field, int? occasionId,
+      BuildContext context, FormFieldDraft field, int? occasionId,
       {VoidCallback? onChanged}) {
-    field.data ??= {}; // Ensure data map exists
+    field.definition = field.definition
+        .copyWith(data: field.definition.data ?? {}); // Ensure data map exists
 
-    String initialExpiryLabel =
-        field.data![IdDocumentFieldHolder.metaExpiryDateLabel]?.toString() ??
-            "";
-    bool initialShowExpiry =
-        field.data![IdDocumentFieldHolder.metaShowExpiryDate] as bool? ?? false;
+    String initialExpiryLabel = field
+            .definition.data![IdDocumentFieldHolder.metaExpiryDateLabel]
+            ?.toString() ??
+        "";
+    bool initialShowExpiry = field.definition
+            .data![IdDocumentFieldHolder.metaShowExpiryDate] as bool? ??
+        false;
 
     // Ensure that field.data is populated with these initial/default values if they were missing.
     // This helps in persisting defaults if the editor for a new field is opened and saved without changes.
-    field.data![IdDocumentFieldHolder.metaShowExpiryDate] ??= initialShowExpiry;
+    field.definition = field.definition.copyWith(data: {
+      ...?field.definition.data,
+      IdDocumentFieldHolder.metaShowExpiryDate:
+          field.definition.data?[IdDocumentFieldHolder.metaShowExpiryDate] ??
+              (initialShowExpiry)
+    });
     if (initialShowExpiry) {
-      field.data![IdDocumentFieldHolder.metaExpiryDateLabel] ??=
-          initialExpiryLabel;
+      field.definition = field.definition.copyWith(data: {
+        ...?field.definition.data,
+        IdDocumentFieldHolder.metaExpiryDateLabel:
+            field.definition.data?[IdDocumentFieldHolder.metaExpiryDateLabel] ??
+                (initialExpiryLabel)
+      });
     }
 
     final TextEditingController expiryDateLabelController =
@@ -135,17 +147,24 @@ class IdDocumentEditor {
                   onChanged: (value) {
                     setState(() {
                       currentShowExpiryState = value;
-                      field.data![IdDocumentFieldHolder.metaShowExpiryDate] =
-                          value;
+                      field.definition = field.definition.copyWith(data: {
+                        ...?field.definition.data,
+                        IdDocumentFieldHolder.metaShowExpiryDate: value
+                      });
                       if (value) {
                         // If turning on, ensure expiryDateLabel in data & controller is populated
-                        String? existingLabel = field.data![
+                        String? existingLabel = field
+                                .definition
+                                .data![
                                     IdDocumentFieldHolder.metaExpiryDateLabel]
                                 ?.toString() ??
                             "";
                         expiryDateLabelController.text = existingLabel;
-                        field.data![IdDocumentFieldHolder.metaExpiryDateLabel] =
-                            existingLabel;
+                        field.definition = field.definition.copyWith(data: {
+                          ...?field.definition.data,
+                          IdDocumentFieldHolder.metaExpiryDateLabel:
+                              existingLabel
+                        });
                       }
                     });
                   },
@@ -161,8 +180,10 @@ class IdDocumentEditor {
                 ),
                 onChanged: (value) {
                   var toSave = value.trim().isEmpty ? null : value;
-                  field.data![IdDocumentFieldHolder.metaExpiryDateLabel] =
-                      toSave;
+                  field.definition = field.definition.copyWith(data: {
+                    ...?field.definition.data,
+                    IdDocumentFieldHolder.metaExpiryDateLabel: toSave
+                  });
                 },
               ),
             ],

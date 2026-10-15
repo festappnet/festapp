@@ -1,4 +1,4 @@
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'dart:convert';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:auto_route/auto_route.dart';

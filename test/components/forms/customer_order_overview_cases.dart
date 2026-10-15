@@ -1,6 +1,7 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/forms/models/customer_order_overview.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/views/customer_order_overview.dart';
 
 Map<String, dynamic> fixture({String ticketState = 'unused'}) => {
@@ -44,25 +45,10 @@ Map<String, dynamic> fixture({String ticketState = 'unused'}) => {
       ]
     };
 void main() {
-  test('view parser only accepts standalone query links', () {
-    final scope = CustomerOrderScope('a' * 64, 1);
-    expect(CustomerOrderScope.fromUri(scope.uri)!.orderId, 1);
-    expect(
-      CustomerOrderScope.fromUri(
-        Uri.parse('/form/test?order_id=1&token=${'a' * 64}'),
-      ),
-      isNull,
-    );
-    expect(
-      CustomerOrderScope.fromUri(
-        Uri.parse('/order#order?order_id=1&token=${'a' * 64}'),
-      ),
-      isNull,
-    );
-    expect(
-      () => CustomerOrderScope.fromUri(Uri.parse('/order?order_id=0&token=x')),
-      throwsStateError,
-    );
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
   });
   testWidgets(
       'partial overview keeps separate payment facts and refresh observes usage',

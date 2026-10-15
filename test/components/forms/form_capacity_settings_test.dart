@@ -1,15 +1,15 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'dart:convert';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/forms/models/form_capacity_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/views/form_capacity_settings.dart';
 import 'package:fstapp/components/forms/views/waitlist_offers_dialog.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
@@ -20,7 +20,10 @@ import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/theme_config.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
+  WidgetEnvironmentFixture.register();
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     final loader = FontLoader('Futura')
@@ -29,35 +32,39 @@ void main() {
     final icons = FontLoader('MaterialIcons')
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
-    Localization.load(const Locale('cs'),
-        translations: Translations(
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-                as Map<String, dynamic>));
+                as Map<String, dynamic>);
   });
-  Future<void> open(WidgetTester tester, FormModel form,
+  Future<void> open(WidgetTester tester, FormEditorDraft form,
       {double width = 800, double scale = 1}) async {
     tester.view.physicalSize = Size(width, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(RepaintBoundary(
-        key: const ValueKey('preview'),
-        child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: ThemeConfig.theme(brightness: Brightness.dark),
-            builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(context)
-                    .copyWith(textScaler: TextScaler.linear(scale)),
-                child: child!),
-            home: Scaffold(
-                body: FormCapacitySettings(
-                    form: form, canEdit: true, onChanged: () {})))));
+    await _environment.pumpWidget(
+        tester,
+        RepaintBoundary(
+            key: const ValueKey('preview'),
+            child: MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: ThemeConfig.theme(brightness: Brightness.dark),
+                builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(textScaler: TextScaler.linear(scale)),
+                    child: child!),
+                home: Scaffold(
+                    body: FormCapacitySettings(
+                        form: form, canEdit: true, onChanged: () {})))));
     await tester.tap(find.text(WaitlistStrings.settings));
     await tester.pumpAndSettle();
   }
 
   for (final tickets in [false, true]) {
-    testWidgets('capacity labels match ticket feature $tickets',
+    testWidgetsWithEnvironment(
+        () => _environment, 'capacity labels match ticket feature $tickets',
         (tester) async {
       final previous = RightsService.occasionLinkModelNotifier.value;
       addTearDown(
@@ -69,7 +76,7 @@ void main() {
             isPromoted: false,
             features: [TicketFeature(code: 'ticket', isEnabled: tickets)]),
       );
-      await open(tester, FormModel(participantCapacity: 10));
+      await open(tester, FormEditorDraft(participantCapacity: 10));
       expect(
           find.text(tickets
               ? WaitlistStrings.limitTickets
@@ -83,7 +90,8 @@ void main() {
   }
 
   for (final enabled in [false, true]) {
-    testWidgets('stored blueprint uses enabled feature $enabled', (
+    testWidgetsWithEnvironment(
+        () => _environment, 'stored blueprint uses enabled feature $enabled', (
       tester,
     ) async {
       final previous = RightsService.occasionLinkModelNotifier.value;
@@ -98,7 +106,7 @@ void main() {
           features: [SimpleFeature(code: 'blueprint', isEnabled: enabled)],
         ),
       );
-      final form = FormModel(blueprint: 42);
+      final form = FormEditorDraft(blueprint: 42);
       await open(tester, form);
       expect(
         find.byType(FormCapacityDialog),
@@ -114,15 +122,16 @@ void main() {
         await tester.enterText(find.byType(TextFormField).first, '50');
         await tester.tap(find.text(WaitlistStrings.applySettings));
         await tester.pumpAndSettle();
-        expect(form.participantCapacity, 50);
-        expect(form.blueprint, 42);
+        expect(form.definition.participantCapacity, 50);
+        expect(form.definition.blueprint, 42);
       }
     });
   }
 
-  testWidgets('cancel leaves draft untouched; apply updates serialized draft',
+  testWidgetsWithEnvironment(() => _environment,
+      'cancel leaves draft untouched; apply updates serialized draft',
       (tester) async {
-    final form = FormModel(participantCapacity: 100, data: {});
+    final form = FormEditorDraft(participantCapacity: 100, data: {});
     final before = jsonEncode(form.toEditedJson());
     await open(tester, form);
     await tester.enterText(find.byType(TextFormField).first, '120');
@@ -137,16 +146,16 @@ void main() {
     await tester.enterText(find.byType(TextFormField).last, '1,5');
     await tester.tap(find.text(WaitlistStrings.applySettings));
     await tester.pumpAndSettle();
-    expect(form.participantCapacity, 120);
-    expect(form.waitlistEnabled, isTrue);
-    expect(form.waitlistOfferDurationSeconds, 5400);
+    expect(form.definition.participantCapacity, 120);
+    expect(form.definition.waitlistEnabled, isTrue);
+    expect(form.definition.waitlistOfferDurationSeconds, 5400);
     expect(jsonEncode(form.toEditedJson()), isNot(before));
   });
 
-  testWidgets(
+  testWidgetsWithEnvironment(() => _environment,
       'active entries lock destructive changes and committed capacity validates',
       (tester) async {
-    final form = FormModel(
+    final form = FormEditorDraft(
         participantCapacity: 100,
         waitlistEnabled: true,
         capacity: FormCapacityModel.fromJson(
@@ -161,13 +170,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.text('CAPACITY_BELOW_COMMITTED')),
         findsOneWidget);
-    expect(form.participantCapacity, 100);
+    expect(form.definition.participantCapacity, 100);
   });
 
-  testWidgets(
+  testWidgetsWithEnvironment(() => _environment,
       'waiting priority reservations count toward occupancy and minimum capacity',
       (tester) async {
-    final form = FormModel(
+    final form = FormEditorDraft(
         participantCapacity: 11,
         waitlistEnabled: true,
         capacity: FormCapacityModel.fromJson({
@@ -177,17 +186,17 @@ void main() {
           'waitingPeople': 1,
           'heldForWaiting': 1
         }));
-    expect(form.capacity!.occupiedPlaces, 10);
+    expect(form.definition.capacity!.occupiedPlaces, 10);
     await open(tester, form);
     await tester.enterText(find.byType(TextFormField).first, '9');
     await tester.tap(find.text(WaitlistStrings.applySettings));
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.text('CAPACITY_BELOW_COMMITTED')),
         findsOneWidget);
-    expect(form.participantCapacity, 11);
+    expect(form.definition.participantCapacity, 11);
   });
 
-  testWidgets(
+  testWidgetsWithEnvironment(() => _environment,
       'occupancy includes all waiting registrations above capacity without inflating its minimum',
       (tester) async {
     final capacity = FormCapacityModel.fromJson({
@@ -199,38 +208,43 @@ void main() {
     });
     expect(capacity.occupiedPlaces, 11);
     expect(capacity.minimumCapacity, 10);
-    final form = FormModel(
+    final form = FormEditorDraft(
         participantCapacity: 10, waitlistEnabled: true, capacity: capacity);
     await open(tester, form);
     await tester.tap(find.text(WaitlistStrings.applySettings));
     await tester.pumpAndSettle();
     expect(find.text(WaitlistStrings.text('CAPACITY_BELOW_COMMITTED')),
         findsNothing);
-    expect(form.participantCapacity, 10);
-    await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-            body: FormCapacitySettings(
-                form: form, canEdit: false, onChanged: () {}))));
+    expect(form.definition.participantCapacity, 10);
+    await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: FormCapacitySettings(
+                    form: form, canEdit: false, onChanged: () {}))));
     expect(find.textContaining('Obsazenost: 11 z 10'), findsOneWidget);
   });
 
-  testWidgets('unlimited switch removes capacity and waitlist together',
+  testWidgetsWithEnvironment(() => _environment,
+      'unlimited switch removes capacity and waitlist together',
       (tester) async {
-    final form = FormModel(participantCapacity: 100, waitlistEnabled: true);
+    final form =
+        FormEditorDraft(participantCapacity: 100, waitlistEnabled: true);
     await open(tester, form);
     await tester.tap(find.text(WaitlistStrings.limitCapacity));
     await tester.pumpAndSettle();
     await tester.tap(find.text(WaitlistStrings.applySettings));
     await tester.pumpAndSettle();
-    expect(form.participantCapacity, isNull);
-    expect(form.waitlistEnabled, isFalse);
+    expect(form.definition.participantCapacity, isNull);
+    expect(form.definition.waitlistEnabled, isFalse);
   });
 
   for (final width in [320.0, 800.0]) {
-    testWidgets('dialog is scrollable at $width with large text',
+    testWidgetsWithEnvironment(
+        () => _environment, 'dialog is scrollable at $width with large text',
         (tester) async {
-      await open(
-          tester, FormModel(participantCapacity: 150, waitlistEnabled: true),
+      await open(tester,
+          FormEditorDraft(participantCapacity: 150, waitlistEnabled: true),
           width: width, scale: 2);
       expect(tester.takeException(), isNull);
       await tester.ensureVisible(find.text(WaitlistStrings.durationHours));
@@ -240,7 +254,7 @@ void main() {
   }
 
   for (final tickets in [false, true]) {
-    testWidgets(
+    testWidgetsWithEnvironment(() => _environment,
         'readonly capacity shows server counts with ticket mode $tickets',
         (tester) async {
       final previous = RightsService.occasionLinkModelNotifier.value;
@@ -252,18 +266,20 @@ void main() {
               isHidden: false,
               isPromoted: false,
               features: [TicketFeature(code: 'ticket', isEnabled: tickets)]));
-      final form = FormModel(
+      final form = FormEditorDraft(
           participantCapacity: 11,
           waitlistEnabled: true,
           stats: FormStatsModel(total: 80),
           capacity: FormCapacityModel.fromJson(
               {'occupiedPeople': 10, 'offeredPlaces': 1, 'limit': 11}));
-      await tester.pumpWidget(MaterialApp(
-          home: Scaffold(
-              body: FormCapacitySettings(
-                  form: form,
-                  canEdit: false,
-                  onChanged: () => fail('readonly draft changed')))));
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: FormCapacitySettings(
+                      form: form,
+                      canEdit: false,
+                      onChanged: () => fail('readonly draft changed')))));
       expect(find.textContaining('Obsazenost: 11 z 11'), findsOneWidget);
       expect(
           find.textContaining('${WaitlistStrings.capacity}: 12'), findsNothing);
@@ -271,7 +287,7 @@ void main() {
           find.textContaining(
               '${tickets ? 'Platné vstupenky' : 'Platné přihlášky'}:'),
           findsNothing);
-      expect(form.capacity!.occupiedPeople, 10);
+      expect(form.definition.capacity!.occupiedPeople, 10);
       expect(
           find.byWidgetPredicate(
               (widget) => widget is Text && widget.semanticsLabel != null),
@@ -283,23 +299,33 @@ void main() {
   }
 
   for (final mode in ['blueprint', 'disabled', 'enabled']) {
-    testWidgets('zero offer counts stay hidden ($mode)', (tester) async {
+    testWidgetsWithEnvironment(
+        () => _environment, 'zero offer counts stay hidden ($mode)',
+        (tester) async {
       final blueprint = mode == 'blueprint';
       final previous = RightsService.occasionLinkModelNotifier.value;
-      addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
+      addTearDown(
+          () => RightsService.occasionLinkModelNotifier.value = previous);
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-          occasion: OccasionModel(isOpen: true, isHidden: false, isPromoted: false,
-              features: [SimpleFeature(code: 'blueprint', isEnabled: blueprint)]));
-      final form = FormModel(
+          occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [
+            SimpleFeature(code: 'blueprint', isEnabled: blueprint)
+          ]));
+      final form = FormEditorDraft(
           blueprint: blueprint ? 5 : null,
           participantCapacity: blueprint ? null : 12,
           waitlistEnabled: mode == 'enabled',
           capacity: FormCapacityModel.fromJson(
               {'occupiedPeople': 11, 'offeredPlaces': 0}));
-      await tester.pumpWidget(MaterialApp(
-          home: Scaffold(
-              body: FormCapacitySettings(
-                  form: form, canEdit: true, onChanged: () {}))));
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: FormCapacitySettings(
+                      form: form, canEdit: true, onChanged: () {}))));
       expect(find.textContaining(': 11'), findsOneWidget);
       expect(find.textContaining(WaitlistStrings.offeredPlacesCount),
           findsNothing);
@@ -314,7 +340,8 @@ void main() {
     });
   }
 
-  testWidgets('admin occupancy includes server offer holds and their release',
+  testWidgetsWithEnvironment(() => _environment,
+      'admin occupancy includes server offer holds and their release',
       (tester) async {
     for (final offered in [1, 0]) {
       final capacity = FormCapacityModel.fromJson({
@@ -324,14 +351,16 @@ void main() {
         'limit': 11,
         'remainingPublic': 0,
       });
-      final form = FormModel(
+      final form = FormEditorDraft(
           participantCapacity: 11, waitlistEnabled: true, capacity: capacity);
-      await tester.pumpWidget(MaterialApp(
-          home: Scaffold(
-              body: Column(children: [
-        FormCapacitySettings(form: form, canEdit: false, onChanged: () {}),
-        WaitlistCapacitySummary(capacity: capacity),
-      ]))));
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: Column(children: [
+            FormCapacitySettings(form: form, canEdit: false, onChanged: () {}),
+            WaitlistCapacitySummary(capacity: capacity),
+          ]))));
       expect(find.textContaining('Obsazenost: ${10 + offered} z 11'),
           findsNWidgets(2));
       expect(capacity.occupiedPeople, 10);
@@ -339,9 +368,10 @@ void main() {
     }
   });
 
-  testWidgets('visual review artifact', (tester) async {
-    await open(
-        tester, FormModel(participantCapacity: 150, waitlistEnabled: true),
+  testWidgetsWithEnvironment(() => _environment, 'visual review artifact',
+      (tester) async {
+    await open(tester,
+        FormEditorDraft(participantCapacity: 150, waitlistEnabled: true),
         width: 600);
     if (Platform.environment['CAPACITY_UI_ARTIFACT'] case final path?) {
       final boundary = tester.renderObject<RenderRepaintBoundary>(

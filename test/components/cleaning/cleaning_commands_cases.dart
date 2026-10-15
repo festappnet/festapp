@@ -12,16 +12,16 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'status': 'applied',
-          'code': 200,
-          'data': {'duplicate': false, 'id': 11},
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
+          'status': 'applied',
+          'code': 200,
+          'data': {'duplicate': false, 'id': 11},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -45,16 +45,16 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         return {
-          'status': 'unchanged',
-          'code': 200,
-          'data': {'muted': true},
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
+          'status': 'unchanged',
+          'code': 200,
+          'data': {'muted': true},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),

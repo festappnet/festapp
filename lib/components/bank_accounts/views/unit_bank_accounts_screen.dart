@@ -1,5 +1,7 @@
 import 'package:fstapp/services/app_logger.dart';
 import 'unit_bank_account_card.dart';
+import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart'
+    show LinkDependencyException;
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
@@ -7,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
@@ -37,14 +39,15 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   @override
   void initState() {
     super.initState();
-    DbBankAccounts.connectionChanges.addListener(_bankConnectionChanged);
+    DbBankAccounts.current.connectionChanges
+        .addListener(_bankConnectionChanged);
     _loadData();
   }
 
   bool _refreshingConnections = false;
 
   void _bankConnectionChanged() {
-    final id = DbBankAccounts.connectionChanges.value.accountId;
+    final id = DbBankAccounts.current.connectionChanges.value.accountId;
     if (_unitAccounts.any((account) => account.id == id)) {
       _refreshConnections();
     }
@@ -56,7 +59,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     try {
       final accounts =
           await (BankAccountsLoadScope.maybeOf(context)?.load(true) ??
-              DbBankAccounts.getBankAccountsForUnit(widget.unitId));
+              DbBankAccounts.current.getBankAccountsForUnit(widget.unitId));
       if (mounted) setState(() => _unitAccounts = accounts);
     } catch (error) {
       AppLogger.error('Could not refresh bank account cards: $error');
@@ -67,7 +70,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
   @override
   void dispose() {
-    DbBankAccounts.connectionChanges.removeListener(_bankConnectionChanged);
+    DbBankAccounts.current.connectionChanges
+        .removeListener(_bankConnectionChanged);
     super.dispose();
   }
 
@@ -93,7 +97,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       // Share the initial list request with a routed detail; mutations refresh.
       final accounts =
           BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
-              DbBankAccounts.getBankAccountsForUnit(widget.unitId);
+              DbBankAccounts.current.getBankAccountsForUnit(widget.unitId);
       _hasLoaded = true;
       _unitAccounts = await accounts;
       // Get Organization ID (if admin)
@@ -115,8 +119,9 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<List<BankAccountModel>> _loadAvailableAccounts() async {
     final organizationAccounts = _organizationId == null
         ? <BankAccountModel>[]
-        : await DbBankAccounts.getBankAccountsForOrganization(_organizationId!);
-    final myAccounts = await DbBankAccounts.getMyAdminBankAccounts();
+        : await DbBankAccounts.current
+            .getBankAccountsForOrganization(_organizationId!);
+    final myAccounts = await DbBankAccounts.current.getMyAdminBankAccounts();
     final linkedIds = _unitAccounts.map((account) => account.id).toSet();
     final available = <int, BankAccountModel>{};
     for (final account in [...organizationAccounts, ...myAccounts]) {
@@ -249,8 +254,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
           int bankAccountId = selectedAccount.id;
           int priority =
               _unitAccounts.isEmpty ? 0 : _unitAccounts.last.priority + 1;
-          await DbBankAccounts.linkBankAccountToUnit(
-              widget.unitId, bankAccountId, priority);
+          await DbBankAccounts.current
+              .linkBankAccountToUnit(widget.unitId, bankAccountId, priority);
 
           await _loadData();
         } catch (e) {
@@ -293,9 +298,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<void> _performUnlink(BankAccountModel account, bool hard) async {
     setState(() => _isLoading = true);
     try {
-      await DbBankAccounts.linkBankAccountToUnit(
-          widget.unitId, account.id, null,
-          hard: hard);
+      await DbBankAccounts.current
+          .linkBankAccountToUnit(widget.unitId, account.id, null, hard: hard);
       await _loadData();
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -421,8 +425,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     // Update priorities in DB
     try {
       for (int i = 0; i < _unitAccounts.length; i++) {
-        await DbBankAccounts.linkBankAccountToUnit(
-            widget.unitId, _unitAccounts[i].id, i);
+        await DbBankAccounts.current
+            .linkBankAccountToUnit(widget.unitId, _unitAccounts[i].id, i);
       }
     } catch (e) {
       _showError('Error saving order: $e');

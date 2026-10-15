@@ -1,8 +1,9 @@
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/components/forms/models/form_presentation.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/order_overview_strings.dart';
-import '../models/customer_order_overview.dart';
 import 'customer_order_overview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/waitlist_commands.dart';
@@ -22,10 +23,9 @@ import 'package:fstapp/components/blueprint/seat_reservation/widgets/seat_reserv
 import 'package:fstapp/components/forms/views/reservation_page.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/services/app_logger.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/forms/form_session.dart';
-import 'package:fstapp/components/eshop/models/product_type_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
@@ -75,7 +75,7 @@ class _FormPageState extends State<FormPage> {
   final Map<int, FormTicketModel> _ticketDrafts = {};
   String? _waitlistMessage;
   bool _demoCompleted = false;
-  FormModel? _changedCapacityForm;
+  FormBundle? _changedCapacityForm;
   bool _isLoading = false;
   bool _formNotAvailable = false;
   FormFontCatalog? _fonts;
@@ -83,7 +83,7 @@ class _FormPageState extends State<FormPage> {
 
   Map<String, dynamic>? formResult;
   FormHolder? formHolder;
-  FormModel? form;
+  FormBundle? form;
   FormSession? formSession;
 
   final _formKey = GlobalKey<FormBuilderState>();
@@ -283,8 +283,8 @@ class _FormPageState extends State<FormPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         decoration: BoxDecoration(
-          color: form?.primaryColor != null
-              ? Color(form!.primaryColor!)
+          color: form?.definition.primaryColor != null
+              ? Color(form!.definition.primaryColor!)
               : Theme.of(context).primaryColor,
           borderRadius: BorderRadius.circular(8.0),
           boxShadow: [BoxShadow(blurRadius: 5, color: Colors.black26)],
@@ -352,8 +352,8 @@ class _FormPageState extends State<FormPage> {
     var valid = await FormHelper.saveValidateAndScroll(formHolder!);
     setState(() {});
     if (valid &&
-        !form!.demoSimulation &&
-        form!.isWaitlist &&
+        !form!.definition.demoSimulation &&
+        form!.definition.isWaitlist &&
         _offerBundle == null) {
       final confirmed = await DialogHelper.showConfirmationDialog(
           context, WaitlistStrings.title, WaitlistStrings.explanation);
@@ -362,7 +362,7 @@ class _FormPageState extends State<FormPage> {
       try {
         final data = FormHelper.getDataFromForm(formHolder!);
         final payload = <String, dynamic>{
-          'form': form!.key,
+          'form': form!.definition.key,
           'fields': data['fields'],
           'tickets': [
             for (final person in (data['ticket'] as List? ?? []))
@@ -384,7 +384,8 @@ class _FormPageState extends State<FormPage> {
         }
         final result = await _waitlist.command('register', payload);
         if (result['orderOverviewUrl'] is String) {
-          final scope = CustomerOrderScope.fromUri(Uri.parse(result['orderOverviewUrl']));
+          final scope =
+              CustomerOrderScope.fromUri(Uri.parse(result['orderOverviewUrl']));
           if (mounted)
             setState(() {
               _overviewScope = scope;
@@ -430,10 +431,10 @@ class _FormPageState extends State<FormPage> {
 
               // verification of _isOrderPreviewVisible in whenComplete will handle history sync.
               onClose: () => Navigator.of(context).pop(),
-              tone: form!.data?[FormHelper.metaCommunicationTone],
+              tone: form!.definition.data?[FormMetadata.metaCommunicationTone],
               hasTickets: FeatureService.isFeatureEnabled(
                   FeatureConstants.ticket,
-                  features: form!.occasionModel?.features),
+                  features: form!.occasion?.features),
             ),
           );
         },
@@ -466,8 +467,8 @@ class _FormPageState extends State<FormPage> {
 
     var data = FormHelper.getDataFromForm(formHolder!);
     data = FormHelper.replaceSpotWithId(data);
-    data[FormHelper.metaSecret] = form!.secret;
-    data[FormHelper.metaForm] = form!.key;
+    data[FormMetadata.metaSecret] = form!.definition.secret;
+    data[FormMetadata.metaForm] = form!.definition.key;
     if (formHolder!.paymentType != null) {
       data['payment_type'] = formHolder!.paymentType;
     }
@@ -479,7 +480,7 @@ class _FormPageState extends State<FormPage> {
       barrierLabel: "FinishOrderDialog",
       pageBuilder: (context, anim1, anim2) => FinishOrderScreen(
         overviewAvailable: _overviewScope != null,
-        occasionTitle: form!.occasionModel?.title ?? form!.title,
+        occasionTitle: form!.occasion?.title ?? form!.definition.title,
         orderFutureFunction: () async {
           if (_offerId != null) {
             try {
@@ -523,9 +524,9 @@ class _FormPageState extends State<FormPage> {
           Navigator.of(context).pop(); // Close the OrderPreview BottomSheet
           _scrollToTop();
         },
-        tone: form!.data?[FormHelper.metaCommunicationTone],
+        tone: form!.definition.data?[FormMetadata.metaCommunicationTone],
         hasTickets: FeatureService.isFeatureEnabled(FeatureConstants.ticket,
-            features: form!.occasionModel?.features),
+            features: form!.occasion?.features),
       ),
       transitionBuilder: (context, anim1, anim2, child) {
         return Theme(
@@ -550,18 +551,19 @@ class _FormPageState extends State<FormPage> {
     var form = this.form; // Use class member
 
     if (form != null) {
-      if (form.fontFamily != null && _fonts != null) {
+      if (form.definition.fontFamily != null && _fonts != null) {
         try {
           theme = theme.copyWith(
-            textTheme: _fonts!.getTextTheme(form.fontFamily!, theme.textTheme),
+            textTheme: _fonts!
+                .getTextTheme(form.definition.fontFamily!, theme.textTheme),
           );
         } catch (e) {
           AppLogger.error(e.toString());
         }
       }
 
-      int? primaryInt = form.primaryColor;
-      int? secondaryInt = form.secondaryColor;
+      int? primaryInt = form.definition.primaryColor;
+      int? secondaryInt = form.definition.secondaryColor;
 
       Color? primary = primaryInt != null ? Color(primaryInt) : null;
       Color? secondary = secondaryInt != null ? Color(secondaryInt) : null;
@@ -663,12 +665,14 @@ class _FormPageState extends State<FormPage> {
 
     if (form != null && _offerBundle == null) {
       final now = DateTime.now();
-      if (form!.startTime != null && now.isBefore(form!.startTime!)) {
+      if (form!.definition.startTime != null &&
+          now.isBefore(form!.definition.startTime!)) {
         isClosed = true;
         isBeforeStart = true;
-      } else if (form!.endTime != null && now.isAfter(form!.endTime!)) {
+      } else if (form!.definition.endTime != null &&
+          now.isAfter(form!.definition.endTime!)) {
         isClosed = true;
-      } else if (form!.isOpen == false) {
+      } else if (form!.definition.isOpen == false) {
         isClosed = true;
       }
     }
@@ -678,8 +682,9 @@ class _FormPageState extends State<FormPage> {
     bool canPreview = RightsService.isEditorOrderView();
     // Only allow preview if specifically requested AND user is editor
     bool showPreview = canPreview && isPreviewParam;
-    bool showCountdown =
-        isBeforeStart && (form?.enableCountdown ?? false) && !showPreview;
+    bool showCountdown = isBeforeStart &&
+        (form?.definition.enableCountdown ?? false) &&
+        !showPreview;
 
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -739,7 +744,7 @@ class _FormPageState extends State<FormPage> {
                     _buildWaitlistPeople(manage: true)
                   ]))));
     }
-    if (form?.registrationMode == 'full') {
+    if (form?.definition.registrationMode == 'full') {
       return Scaffold(
           body: Center(
               child: SingleChildScrollView(
@@ -748,8 +753,8 @@ class _FormPageState extends State<FormPage> {
         child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(children: [
-              if (form?.header != null)
-                HtmlView(html: form!.header!, isSelectable: true),
+              if (form?.definition.header != null)
+                HtmlView(html: form!.definition.header!, isSelectable: true),
               Text(WaitlistStrings.full),
             ])),
       ))));
@@ -764,8 +769,8 @@ class _FormPageState extends State<FormPage> {
 
     if (showCountdown) {
       bodyContent = CountdownWidget(
-        targetTime: form!.startTime!,
-        title: form!.countdownTitle ?? FormStrings.registrationStart,
+        targetTime: form!.definition.startTime!,
+        title: form!.definition.countdownTitle ?? FormStrings.registrationStart,
         onFinished: () {
           setState(() {
             // Re-evaluate state to show form
@@ -819,11 +824,12 @@ class _FormPageState extends State<FormPage> {
                                   return AutofillGroup(
                                     child: Column(
                                       children: [
-                                        if (form!.header != null)
+                                        if (form!.definition.header != null)
                                           Column(
                                             children: [
                                               HtmlView(
-                                                  html: form!.header!,
+                                                  html:
+                                                      form!.definition.header!,
                                                   isSelectable: true),
                                               const SizedBox(height: 16),
                                             ],
@@ -837,14 +843,14 @@ class _FormPageState extends State<FormPage> {
                                                     _applyChangedCapacity,
                                                 child: Text(
                                                     _changedCapacityForm!
+                                                            .definition
                                                             .isWaitlist
                                                         ? WaitlistStrings.text(
                                                             'regularToWaitlist')
                                                         : WaitlistStrings
                                                             .refresh)),
                                           ]),
-                                        if (_offerBundle == null &&
-                                            form!.isWaitlist)
+                                        if (form!.definition.isWaitlist)
                                           Text(
                                               '${WaitlistStrings.title}. ${WaitlistStrings.explanation}'),
                                         if (_offerBundle != null) ...[
@@ -852,27 +858,29 @@ class _FormPageState extends State<FormPage> {
                                           _buildWaitlistPeople(),
                                         ],
                                         if (_offerBundle == null &&
-                                            !form!.isWaitlist &&
-                                            form!.capacity?.showRemaining ==
+                                            form!.definition.capacity
+                                                    ?.showRemaining ==
                                                 true &&
-                                            form!.capacity?.remainingPublic !=
+                                            form!.definition.capacity
+                                                    ?.remainingPublic !=
                                                 null)
                                           Text(
-                                              '${WaitlistStrings.remaining}: ${form!.capacity!.remainingPublic}'),
+                                              '${WaitlistStrings.remaining}: ${form!.definition.capacity!.remainingPublic}'),
                                         ...FormHelper.getAllFormFields(
                                             context, _formKey, formHolder!),
                                         const SizedBox(height: 32),
                                         ButtonsHelper.primaryButton(
                                           context: context,
                                           onPressed: (_isLoading ||
-                                                  (!form!.isWaitlist &&
+                                                  (!form!.definition
+                                                          .isWaitlist &&
                                                       (formSession?.totalProducts ??
                                                               0) ==
                                                           0))
                                               ? null
                                               : () => _showOrderPreview(
                                                   scrollContext),
-                                          label: form!.isWaitlist
+                                          label: form!.definition.isWaitlist
                                               ? WaitlistStrings.register
                                               : (_offerId != null
                                                   ? WaitlistStrings.accept
@@ -896,7 +904,7 @@ class _FormPageState extends State<FormPage> {
               ),
             ),
             _buildSeatReservationOverlay(),
-            if (form?.isWaitlist != true) _buildPriceAndTicketInfo(),
+            if (form?.definition.isWaitlist != true) _buildPriceAndTicketInfo(),
           ],
         ),
       );
@@ -927,8 +935,8 @@ class _FormPageState extends State<FormPage> {
   }
 
   Widget _buildFormNotAvailableMessage() {
-    String notAvailableText = (form?.headerOff?.isNotEmpty ?? false)
-        ? form!.headerOff!
+    String notAvailableText = (form?.definition.headerOff?.isNotEmpty ?? false)
+        ? form!.definition.headerOff!
         : FormStrings.reservationUnavailableMessage;
     return Center(
       child: Container(
@@ -978,32 +986,32 @@ class _FormPageState extends State<FormPage> {
 
     for (var item in itemTypeModel.products!) {
       options.add({
-        FormOptionModel.metaOptionsName: item.title.toString(),
-        FormOptionModel.metaOptionsId: item.id.toString(),
-        FormOptionModel.metaOptionsPrice:
+        FormOptionDefinition.metaOptionsName: item.title.toString(),
+        FormOptionDefinition.metaOptionsId: item.id.toString(),
+        FormOptionDefinition.metaOptionsPrice:
             item.price ?? 0.0, // Include price in the options
       });
     }
 
     return {
-      FormHelper.metaType: FormHelper.fieldTypeSelectOne,
-      FormHelper.metaOptions: options,
-      FormHelper.metaLabel: itemTypeModel.title,
-      FormHelper.metaOptionsType: itemType,
+      FormMetadata.metaType: FormMetadata.fieldTypeSelectOne,
+      FormMetadata.metaOptions: options,
+      FormMetadata.metaLabel: itemTypeModel.title,
+      FormMetadata.metaOptionsType: itemType,
     };
   }
 
   Future<void> _applyChangedCapacity() async {
     final latest = _changedCapacityForm;
     if (latest == null || formHolder == null) return;
-    if (latest.isWaitlist &&
+    if (latest.definition.isWaitlist &&
         !await DialogHelper.showConfirmationDialog(
             context, WaitlistStrings.title, WaitlistStrings.explanation))
       return;
     if (!mounted) return;
     final previous = FormHelper.getDataFromForm(formHolder!);
     final oldController = formHolder!.controller;
-    final holder = FormHolder.fromFormFieldModel(latest)
+    final holder = FormHolder.fromDefinition(latest.definition)
       ..controller = oldController;
     for (final field in holder.fields) {
       for (final answer in previous['fields'] ?? []) {
@@ -1013,7 +1021,8 @@ class _FormPageState extends State<FormPage> {
     }
     final people = previous['ticket'] as List? ?? [];
     holder.getTicket()?.tickets = people.map((p) {
-      final fields = FormHolder.fromFormFieldModel(latest).getTicket()!.fields;
+      final fields =
+          FormHolder.fromDefinition(latest.definition).getTicket()!.fields;
       for (final field in fields) {
         for (final answer in p['fields'] ?? []) {
           if ((answer as Map).containsKey('${field.id}'))
@@ -1066,7 +1075,8 @@ class _FormPageState extends State<FormPage> {
   }
 
   FormTicketModel _personTicket(dynamic person) {
-    final fields = FormHolder.fromFormFieldModel(form!).getTicket()!.fields;
+    final fields =
+        FormHolder.fromDefinition(form!.definition).getTicket()!.fields;
     final answers = <String, dynamic>{};
     for (final field in person['answers']?['fields'] ?? []) {
       answers.addAll(Map<String, dynamic>.from(field));
@@ -1268,7 +1278,9 @@ class _FormPageState extends State<FormPage> {
       _offerId ??= widget.offerId;
       _waitlistOrderId ??= widget.waitlistOrderId;
       if (!continueOffer && _showOverview && _overviewScope != null) {
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
       if (_offerId != null || _waitlistOrderId != null) {
@@ -1290,7 +1302,7 @@ class _FormPageState extends State<FormPage> {
             });
           return;
         }
-        form = FormModel.fromJson(
+        form = FormBundle.fromJson(
             Map<String, dynamic>.from(_offerBundle!['form']));
         unawaited(_resolveOverviewAccess());
       } else
@@ -1303,13 +1315,14 @@ class _FormPageState extends State<FormPage> {
         return;
       }
 
-      RouterService.canonicalizePublicLink('form', widget.formLink, form!.link);
-      widget.formLink = form!.link;
+      RouterService.canonicalizePublicLink(
+          'form', widget.formLink, form!.definition.link);
+      widget.formLink = form!.definition.link;
       if (widget.formLink != null)
         await RightsService.updateAppData(formLink: widget.formLink);
 
       _fonts = null;
-      if (form!.fontFamily?.isNotEmpty == true) {
+      if (form!.definition.fontFamily?.isNotEmpty == true) {
         try {
           _fonts = await FormFontCatalog.load();
         } catch (error) {
@@ -1325,7 +1338,7 @@ class _FormPageState extends State<FormPage> {
       }
       if (!mounted) return;
 
-      formHolder = FormHolder.fromFormFieldModel(form!);
+      formHolder = FormHolder.fromDefinition(form!.definition);
       if (_offerBundle != null) {
         _selectedTicketIds.clear();
         _ticketDrafts.clear();
@@ -1347,11 +1360,10 @@ class _FormPageState extends State<FormPage> {
       });
 
       formHolder!.controller = FormHolderController(
-          demoSimulation: form!.demoSimulation,
-          secret: form!.secret,
-          blueprintId: form!.blueprint,
+          secret: form!.definition.secret,
+          blueprintId: form!.definition.blueprint,
           globalKey: _formKey,
-          formKey: form!.key!,
+          formKey: form!.definition.key!,
           updateTotalPrice: formSession!.recalculateTotals,
           showSeatReservation: _showSeatReservation,
           onCloseSeatReservation: _hideSeatReservation);

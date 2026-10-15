@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
@@ -9,7 +10,7 @@ import 'package:trina_grid/trina_grid.dart';
 import '../eshop_columns.dart';
 import 'order_model.dart';
 import '../../blueprint/blueprint_object_model.dart';
-import 'product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:intl/intl.dart';
 
 class TicketModel extends ITrinaRowModel {
@@ -75,45 +76,45 @@ class TicketModel extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     Map<String, TrinaCell> cells = {
-      EshopColumns.TICKET_ID: TrinaCell(value: id ?? 0),
-      EshopColumns.TICKET_MODEL_REFERENCE: TrinaCell(value: this),
-      EshopColumns.TICKET_CREATED_AT: TrinaCell(
+      EshopColumnIds.TICKET_ID: TrinaCell(value: id ?? 0),
+      EshopColumnIds.TICKET_MODEL_REFERENCE: TrinaCell(value: this),
+      EshopColumnIds.TICKET_CREATED_AT: TrinaCell(
           value: createdAt != null
               ? DateFormat('yyyy-MM-dd').format(createdAt!)
               : ""),
-      EshopColumns.TICKET_LAST_CHANGE: TrinaCell(
+      EshopColumnIds.TICKET_LAST_CHANGE: TrinaCell(
           value: updatedAt != null
               ? DateFormat('yyyy-MM-dd HH:mm').format(updatedAt!)
               : ""),
-      EshopColumns.TICKET_SYMBOL: TrinaCell(value: ticketSymbol ?? ""),
-      EshopColumns.TICKET_STATE: TrinaCell(
+      EshopColumnIds.TICKET_SYMBOL: TrinaCell(value: ticketSymbol ?? ""),
+      EshopColumnIds.TICKET_STATE: TrinaCell(
           value: OrderModel.formatState(state ?? OrderModel.orderedState)),
-      EshopColumns.TICKET_DOWNLOAD: TrinaCell(value: ""),
-      EshopColumns.TICKET_NOTE:
+      EshopColumnIds.TICKET_DOWNLOAD: TrinaCell(value: ""),
+      EshopColumnIds.TICKET_NOTE:
           TrinaCell(value: Utilities.removeTabsAndNewLines(note ?? "")),
-      EshopColumns.TICKET_NOTE_HIDDEN:
+      EshopColumnIds.TICKET_NOTE_HIDDEN:
           TrinaCell(value: Utilities.removeTabsAndNewLines(noteHidden ?? "")),
-      EshopColumns.ORDER_SEQUENCE: TrinaCell(
+      EshopColumnIds.ORDER_SEQUENCE: TrinaCell(
         value: relatedOrder?.orderSequence,
       ),
-      EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: relatedOrder),
-      EshopColumns.ORDER_SYMBOL:
+      EshopColumnIds.ORDER_MODEL_REFERENCE: TrinaCell(value: relatedOrder),
+      EshopColumnIds.ORDER_SYMBOL:
           TrinaCell(value: relatedOrder?.orderSymbol ?? ""),
-      EshopColumns.ORDER_DATA: TrinaCell(
+      EshopColumnIds.ORDER_DATA: TrinaCell(
           value: relatedOrder != null ? relatedOrder!.toCustomerData() : ""),
-      EshopColumns.TICKET_PRODUCTS: TrinaCell(
+      EshopColumnIds.TICKET_PRODUCTS: TrinaCell(
           value: relatedProducts != null
               ? relatedProducts!.map((p) => p.toBasicString()).join(" | ")
               : ""),
-      EshopColumns.TICKET_SPOT: TrinaCell(
+      EshopColumnIds.TICKET_SPOT: TrinaCell(
           value: relatedSpot != null ? relatedSpot?.toSpotString() : ""),
-      EshopColumns.TICKET_TOTAL_PRICE: TrinaCell(
+      EshopColumnIds.TICKET_TOTAL_PRICE: TrinaCell(
           value: totalPrice != null
               ? Utilities.formatPrice(context, totalPrice!,
                   currencyCode: relatedOrder?.currencyCode)
               : ""),
-      EshopColumns.TICKET_PRODUCTS_EDIT: TrinaCell(value: ""),
-      EshopColumns.TICKET_CONFIRM: TrinaCell(value: ""),
+      EshopColumnIds.TICKET_PRODUCTS_EDIT: TrinaCell(value: ""),
+      EshopColumnIds.TICKET_CONFIRM: TrinaCell(value: ""),
     };
 
     final productCells =
@@ -123,16 +124,17 @@ class TicketModel extends ITrinaRowModel {
   }
 
   static TicketModel fromPlutoJson(Map<String, dynamic> json) {
-    final original = json[EshopColumns.TICKET_MODEL_REFERENCE] as TicketModel?;
+    final original =
+        json[EshopColumnIds.TICKET_MODEL_REFERENCE] as TicketModel?;
     return TicketModel(
-        id: json[EshopColumns.TICKET_ID] == -1
+        id: json[EshopColumnIds.TICKET_ID] == -1
             ? null
-            : json[EshopColumns.TICKET_ID],
-        ticketSymbol: json[EshopColumns.TICKET_SYMBOL] as String?,
-        relatedOrder: json[EshopColumns.ORDER_MODEL_REFERENCE] as OrderModel?,
+            : json[EshopColumnIds.TICKET_ID],
+        ticketSymbol: json[EshopColumnIds.TICKET_SYMBOL] as String?,
+        relatedOrder: json[EshopColumnIds.ORDER_MODEL_REFERENCE] as OrderModel?,
         relatedSpot: original?.relatedSpot,
         relatedProducts: original?.relatedProducts,
-        noteHidden: json[EshopColumns.TICKET_NOTE_HIDDEN]);
+        noteHidden: json[EshopColumnIds.TICKET_NOTE_HIDDEN]);
   }
 
   @override

@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,11 @@ class _Row extends ITrinaRowModel {
 }
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets(
       'return reloads automatically; dirty grid retained and not fetched',
       (tester) async {

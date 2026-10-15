@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/counseling_feature.dart';
 import 'package:fstapp/components/features/feature.dart';
@@ -9,6 +10,11 @@ import 'package:fstapp/components/features/feature_service.dart';
 /// [FeatureService.isCounselingEnabled] is a pure feature check (decision R4),
 /// exercised here via injected feature lists (no RightsService context needed).
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   group('FeatureService.isCounselingEnabled', () {
     test('true when the counseling feature element is enabled', () {
       final features = [

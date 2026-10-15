@@ -1,0 +1,430 @@
+{
+  "date": "2026-10-15",
+  "scope": "All three dependency cuts, local only; no backend/commit/push/deploy",
+  "sourceSha256": "27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c",
+  "rawArtifacts": "/tmp/festapp-dependency-cuts/sealed/27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c",
+  "watchdog": {
+    "budgetBytes": 3000000000,
+    "sampleSeconds": 0.2,
+    "measure": "sum owned process RSS including watcher",
+    "termination": "SIGTERM process group; bounded wait; SIGKILL remaining group; reap leader",
+    "scriptSha256": "16a277916dc570b6a0be0dfc8f2108a5da598b8186adeaa6c492f8f05639050d"
+  },
+  "finalVerification": {
+    "command": [
+      "./automation/test_client.sh"
+    ],
+    "seconds": 29.92089379101526,
+    "peakOwnedRssBytesIncludingWatcher": 2520006656,
+    "budgetBytes": 3000000000,
+    "budgetExceeded": false,
+    "exitCode": 0,
+    "sourceSha256": "27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c",
+    "inputsUnchanged": true,
+    "runner": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 2.676007915986702,
+        "testSeconds": 2.282,
+        "cases": 154,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 33
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 2.4580397909739986,
+        "testSeconds": 1.943,
+        "cases": 78,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 25.844940292066894,
+        "testSeconds": 25.153,
+        "cases": 1082,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 10
+      },
+      "mode": "all",
+      "concurrency": 2,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": true,
+      "seconds": 29.8736432089936
+    }
+  },
+  "webCompile": {
+    "command": [
+      "fvm",
+      "flutter",
+      "build",
+      "web",
+      "--release",
+      "--base-href",
+      "/",
+      "--no-web-resources-cdn",
+      "--no-wasm-dry-run",
+      "--no-pub"
+    ],
+    "seconds": 45.388515915954486,
+    "peakOwnedRssBytesIncludingWatcher": 2681503744,
+    "budgetBytes": 3000000000,
+    "budgetExceeded": false,
+    "exitCode": 0,
+    "sourceSha256": "27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c",
+    "inputsUnchanged": true
+  },
+  "comparison": {
+    "previousWholeRunnerSeconds": 34.899634708010126,
+    "wholeRunnerSeconds": 29.8736432089936,
+    "runnerSecondsSaved": 5.025991499016527,
+    "previousExternalSeconds": 34.951519957976416,
+    "externalSecondsSaved": 5.030626166961156,
+    "singleWholeCommandUnder30s": true,
+    "stableMedianUnder30sEstablished": false,
+    "causalAttribution": "Single-run comparison; editor/parser/log effects were not isolated"
+  },
+  "inventory": {
+    "baselineCases": 1250,
+    "baselineUnchanged": true,
+    "cases": 1314,
+    "passed": 1313,
+    "skipped": 1,
+    "addedBefore": 51,
+    "addedNow": 13,
+    "addedTotal": 64,
+    "parserOriginalCasesMovedOnce": 2,
+    "newContracts": {
+      "featureEditors": 4,
+      "parserSemantics": 2,
+      "architectureGuard": 2,
+      "localizationFixture": 4,
+      "realRuntimeApplier": 1
+    }
+  },
+  "graphs": {
+    "beforeRaw": {
+      "lib/components/features/feature.dart": {
+        "appFiles": 699,
+        "paths": [
+          "/Users/miakh/source/festapp/lib/data_services/rights_service.dart",
+          "/Users/miakh/source/festapp/lib/app_router.dart"
+        ]
+      },
+      "lib/components/features/map_feature.dart": {
+        "appFiles": 699,
+        "paths": [
+          "/Users/miakh/source/festapp/lib/data_services/rights_service.dart",
+          "/Users/miakh/source/festapp/lib/app_router.dart"
+        ]
+      },
+      "lib/data_services/client_sync/client_command_response.dart": {
+        "appFiles": 699,
+        "paths": [
+          "/Users/miakh/source/festapp/lib/data_services/rights_service.dart",
+          "/Users/miakh/source/festapp/lib/app_router.dart"
+        ]
+      }
+    },
+    "beforeAtAppConfigSeam": {
+      "lib/components/features/feature.dart": {
+        "appFiles": 699,
+        "routerPath": [
+          "lib/components/features/feature.dart",
+          "lib/components/features/contract_feature.dart",
+          "lib/data_services/rights_service.dart",
+          "lib/router_service.dart",
+          "lib/app_router.dart"
+        ]
+      },
+      "lib/components/features/map_feature.dart": {
+        "appFiles": 699,
+        "routerPath": [
+          "lib/components/features/map_feature.dart",
+          "lib/components/features/feature.dart",
+          "lib/components/features/contract_feature.dart",
+          "lib/data_services/rights_service.dart",
+          "lib/router_service.dart",
+          "lib/app_router.dart"
+        ]
+      },
+      "lib/data_services/client_sync/client_command_response.dart": {
+        "appFiles": 699,
+        "routerPath": [
+          "lib/data_services/client_sync/client_command_response.dart",
+          "lib/data_services/client_sync/client_sync_runtime.dart",
+          "lib/components/occasion/occasion_link_model.dart",
+          "lib/components/users/occasion_user_model.dart",
+          "lib/data_services/rights_service.dart",
+          "lib/router_service.dart",
+          "lib/app_router.dart"
+        ]
+      }
+    },
+    "afterRaw": {
+      "lib/components/features/feature.dart": {
+        "appFiles": 711,
+        "routerPath": [
+          "lib/components/features/feature.dart",
+          "lib/components/features/form_feature.dart",
+          "lib/app_config.dart",
+          "lib/components/occasion/admin_page.dart",
+          "lib/components/navigation/occasion_administration_boundary.dart",
+          "lib/app_router.dart"
+        ]
+      },
+      "lib/components/features/map_feature.dart": {
+        "appFiles": 711,
+        "routerPath": [
+          "lib/components/features/map_feature.dart",
+          "lib/components/features/feature.dart",
+          "lib/components/features/form_feature.dart",
+          "lib/app_config.dart",
+          "lib/components/occasion/admin_page.dart",
+          "lib/components/navigation/occasion_administration_boundary.dart",
+          "lib/app_router.dart"
+        ]
+      },
+      "packages/festapp_core/lib/src/sync/client_command_response.dart": {
+        "appFiles": 0,
+        "routerPath": null
+      }
+    },
+    "afterAtAppConfigSeam": {
+      "lib/components/features/feature.dart": {
+        "appFiles": 31,
+        "routerPath": null
+      },
+      "lib/components/features/map_feature.dart": {
+        "appFiles": 31,
+        "routerPath": null
+      },
+      "packages/festapp_core/lib/src/sync/client_command_response.dart": {
+        "appFiles": 0,
+        "routerPath": null
+      }
+    },
+    "seamExplanation": "AppConfig is an explicit external stop only in the scoped guard/metric. Full AST closure still reaches router and grows 699 -> 711; it is not claimed eliminated."
+  },
+  "localizationLogs": {
+    "before": {
+      "printEvents": 10901,
+      "localizationEvents": 10868,
+      "debug": 3271,
+      "info": 146,
+      "warning": 7451
+    },
+    "after": {
+      "printEvents": 1220,
+      "localizationEvents": 836,
+      "debug": 22,
+      "info": 147,
+      "warning": 667,
+      "summaryEvents": 351,
+      "suppressedDebug": 3259,
+      "suppressedExpectedMissing": 7185
+    },
+    "policy": "Debug scoped to registered groups; expected missing keys only in declared uninitialized/default leaf suites and two empty Czech timeline groups. Mixed Google and real ticket catalogs stay strict; capture precedes filtering. Remaining warnings/errors are visible."
+  },
+  "flutterTiming": {
+    "summedLoadingWorkerSeconds": 15.1,
+    "summedBodyWorkerSeconds": 33.91,
+    "meanOccupiedSlots": 1.95,
+    "slots": 2
+  },
+  "checks": {
+    "targetedFeatureMapFormsTicketAndLogger": {
+      "passed": 160,
+      "receipt": "/tmp/festapp-dependency-cuts/sealed/27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c/targeted/receipt.json",
+      "note": "Same invocation failed to compile only the newly added runtime test; its constructor inputs were corrected and runtime fixture passed separately and in final run."
+    },
+    "runtimeFinal": {
+      "command": [
+        "fvm",
+        "flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/data_services/client_sync/client_sync_unit_cases.dart"
+      ],
+      "seconds": 4.649567250045948,
+      "peakOwnedRssBytesIncludingWatcher": 1988149248,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "a0f6bdaa0a82342aa930d6185b3214386f477f31118852c019dbe8e6868abe62",
+      "inputsUnchanged": true
+    },
+    "coreGuardAndParserContractsPassed": 14,
+    "reverseSessions": {
+      "passed": 1075,
+      "roots": 7,
+      "receipts": [
+        "/tmp/festapp-dependency-cuts/sealed/27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c/reverse/receipt.json",
+        "/tmp/festapp-dependency-cuts/sealed/27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c/reverse-legacy/receipt.json"
+      ],
+      "note": "First invocation passed all 6 existing roots but returned 1 for a mistyped seventh filename. Correct seventh root passed separately; no passing roots repeated."
+    },
+    "targetedAnalyze": "No errors/warnings after resolving unused and duplicate imports. Existing moved lint infos retained. Core parser and logger fixture analyze clean.",
+    "architectureGuard": "PASS, also in complete runner"
+  },
+  "deletionLedger": {
+    "featureBuildFormField": "Removed, all production UI and test tear-offs use dispatcher",
+    "contractLoadFromDescription": "Removed; single explicit defaults helper, unchanged guard/algorithm",
+    "appParserFile": "Deleted without shim",
+    "applyReplacementsMethod": "Removed, explicit app applier at all runtime call sites",
+    "oldParserCasesAndRegistration": "Deleted; original semantic names preserved once in core",
+    "ticketGlobalPrinterCapture": "Replaced by scoped observer; warning/error assertion retained"
+  },
+  "residualLimit": "Feature -> FormFeature -> AppConfig -> AdminPage -> OccasionAdministrationBoundary -> AppRouter. Fixing AppConfig composition remains outside this plan.",
+  "versions": "Application remains 0.20.1+485. This execution did not edit pubspec files, SQL, tenant configuration, auth composition, transport/retry or worker count.",
+  "ownedFiles": {
+    "automation/client_test_classification.json": "changed",
+    "automation/client_test_inventory.json": "changed",
+    "lib/data_services/client_sync/client_command_response.dart": "deleted",
+    "lib/components/unit/unit_commands.dart": "changed",
+    "lib/components/schedule/supabase_event_commands.dart": "changed",
+    "lib/components/schedule/exclusive_group_commands.dart": "changed",
+    "lib/components/schedule/attendance_commands.dart": "changed",
+    "lib/components/schedule/saved_program_commands.dart": "changed",
+    "lib/components/information/information_commands.dart": "changed",
+    "lib/components/forms/waitlist_commands.dart": "changed",
+    "lib/components/forms/supabase_form_commands.dart": "changed",
+    "lib/components/speakers/speaker_commands.dart": "changed",
+    "lib/components/features/import_feature.dart": "changed",
+    "lib/components/features/schedule_feature.dart": "changed",
+    "lib/components/features/deposit_feature.dart": "changed",
+    "lib/components/features/services_feature.dart": "changed",
+    "lib/components/features/counseling_feature.dart": "changed",
+    "lib/components/features/map_feature.dart": "changed",
+    "lib/components/features/feature_form.dart": "changed",
+    "lib/components/features/ticket_feature.dart": "changed",
+    "lib/components/features/contract_feature.dart": "changed",
+    "lib/components/features/companion_feature.dart": "changed",
+    "lib/components/features/feature.dart": "changed",
+    "lib/components/features/workshop_feature.dart": "changed",
+    "lib/components/features/form_feature.dart": "changed",
+    "lib/components/groups/group_commands.dart": "changed",
+    "lib/components/map/map_commands.dart": "changed",
+    "lib/components/news/news_commands.dart": "changed",
+    "lib/components/inventory/spot_commands.dart": "changed",
+    "lib/components/inventory/inventory_commands.dart": "changed",
+    "lib/components/users/profile_commands.dart": "changed",
+    "lib/components/icons/icon_commands.dart": "changed",
+    "lib/components/activities/activity_commands.dart": "changed",
+    "lib/components/cleaning/cleaning_commands.dart": "changed",
+    "lib/components/eshop/order_commands.dart": "changed",
+    "lib/components/eshop/supabase_eshop_commands.dart": "changed",
+    "lib/components/eshop/ticket_commands.dart": "changed",
+    "lib/components/occasion/occasion_commands.dart": "changed",
+    "lib/components/event_feedback/event_feedback_commands.dart": "changed",
+    "lib/components/users/companion/companion_commands.dart": "changed",
+    "packages/festapp_core/test/architecture_guard_test.dart": "changed",
+    "packages/festapp_core/lib/sync.dart": "changed",
+    "packages/festapp_core/tool/check_architecture.dart": "changed",
+    "docs/plans/flutter-test-dependency-cuts-plan-2026-10-15.md": "changed",
+    "test/support/register_client_suites.dart": "changed",
+    "test/startup/app_router_deep_link_cases.dart": "changed",
+    "test/services/dialog_helper_progress_cases.dart": "changed",
+    "test/widgets/time_date_picker_cases.dart": "changed",
+    "test/widgets/app_dialog_cases.dart": "changed",
+    "test/data_services/client_sync/client_sync_unit_cases.dart": "changed",
+    "test/data_services/client_sync/client_command_response_cases.dart": "deleted",
+    "test/support/fixtures/client_fixture_cases.dart": "changed",
+    "test/support/fixtures/README.md": "changed",
+    "test/components/email_delivery/email_delivery_indicator_cases.dart": "changed",
+    "test/components/email_delivery/email_delivery_history_cases.dart": "changed",
+    "test/components/unit/unit_context_switch_cases.dart": "changed",
+    "test/components/app_management/pwa_storage_advanced_settings_cases.dart": "changed",
+    "test/components/schedule/event_page_theme_cases.dart": "changed",
+    "test/components/schedule/light_timeline_initial_day_cases.dart": "changed",
+    "test/components/schedule/event_grid_record_cases.dart": "changed",
+    "test/components/schedule/schedule_initial_day_cases.dart": "changed",
+    "test/components/schedule/program_notification_settings_cases.dart": "changed",
+    "test/components/forms/customer_order_overview_cases.dart": "changed",
+    "test/components/forms/payment_qr_card_cases.dart": "changed",
+    "test/components/forms/order_finish_screen_cases.dart": "changed",
+    "test/components/forms/form_deletion_cases.dart": "changed",
+    "test/components/forms/waitlist_models_cases.dart": "changed",
+    "test/components/forms/waitlist_runtime_cases.dart": "changed",
+    "test/components/forms/form_editor_answer_preview_cases.dart": "changed",
+    "test/components/speakers/speaker_picker_field_cases.dart": "changed",
+    "test/components/speakers/speakers_mapping_cases.dart": "changed",
+    "test/components/single_data_grid/data_grid_action_confirmation_cases.dart": "changed",
+    "test/components/single_data_grid/data_grid_dirty_actions_cases.dart": "changed",
+    "test/components/single_data_grid/data_grid_column_header_cases.dart": "changed",
+    "test/components/single_data_grid/tab_refresh_cases.dart": "changed",
+    "test/components/single_data_grid/versioned_admin_models_cases.dart": "changed",
+    "test/components/bank_accounts/nested_dialog_cases.dart": "changed",
+    "test/components/features/counseling_gating_cases.dart": "changed",
+    "test/components/features/features_unit_cases.dart": "changed",
+    "test/components/features/companion_feature_cases.dart": "changed",
+    "test/components/features/services_feature_cases.dart": "changed",
+    "test/components/features/map_feature_cases.dart": "changed",
+    "test/components/email_templates/email_template_dialog_cases.dart": "changed",
+    "test/components/email_templates/email_template_model_cases.dart": "changed",
+    "test/components/html/rich_html_editor_lifecycle_cases.dart": "changed",
+    "test/components/shared/editor_action_bar_cases.dart": "changed",
+    "test/components/shared/copy_button_cases.dart": "changed",
+    "test/components/groups/group_place_assignment_cases.dart": "changed",
+    "test/components/groups/user_groups_editor_data_cases.dart": "changed",
+    "test/components/groups/group_place_dialog_cases.dart": "changed",
+    "test/components/ticket_layout/ticket_layout_saver_cases.dart": "changed",
+    "test/components/ticket_layout/ticket_layout_cases.dart": "changed",
+    "test/components/reception/reception_gating_cases.dart": "changed",
+    "test/components/search/global_search_dialog_cases.dart": "changed",
+    "test/components/map/map_page_helper_cases.dart": "changed",
+    "test/components/map/counseling_hours_panel_cases.dart": "changed",
+    "test/components/map/map_offscreen_location_indicator_cases.dart": "changed",
+    "test/components/map/map_description_popup_cases.dart": "changed",
+    "test/components/map/place_type_column_builder_cases.dart": "changed",
+    "test/components/news/news_form_page_layout_cases.dart": "changed",
+    "test/components/news/news_notification_audience_selector_cases.dart": "changed",
+    "test/components/news/news_send_confirmation_dialog_cases.dart": "changed",
+    "test/components/users/profile_legal_link_cases.dart": "changed",
+    "test/components/users/companion_dialog_cases.dart": "changed",
+    "test/components/users/companion_accommodation_field_cases.dart": "changed",
+    "test/components/users/companion_admin_dialog_cases.dart": "changed",
+    "test/components/users/import_helper_cases.dart": "changed",
+    "test/components/icons/upload_icon_dialog_cases.dart": "changed",
+    "test/components/client_changes/client_changes_tab_cases.dart": "changed",
+    "test/components/fonts/font_family_picker_cases.dart": "changed",
+    "test/components/eshop/product_grid_record_cases.dart": "changed",
+    "test/components/eshop/order_grid_filters_cases.dart": "changed",
+    "test/components/occasion/occasion_commands_cases.dart": "changed",
+    "test/components/occasion/occasion_media_copier_cases.dart": "changed",
+    "test/components/offline/offline_banner_layout_cases.dart": "changed",
+    "test/components/event_feedback/event_feedback_widget_cases.dart": "changed",
+    "test/components/event_feedback/event_feedback_admin_content_cases.dart": "changed",
+    "test/components/eshop/models/order_email_cell_cases.dart": "changed",
+    "test/components/eshop/views/add_cash_payment_dialog_cases.dart": "changed",
+    "lib/components/features/editors/import_feature_editor.dart": "added",
+    "lib/components/features/editors/deposit_feature_editor.dart": "added",
+    "lib/components/features/editors/schedule_feature_editor.dart": "added",
+    "lib/components/features/editors/contract_feature_defaults.dart": "added",
+    "lib/components/features/editors/map_feature_editor.dart": "added",
+    "lib/components/features/editors/form_feature_editor.dart": "added",
+    "lib/components/features/editors/workshop_feature_editor.dart": "added",
+    "lib/components/features/editors/contract_feature_editor.dart": "added",
+    "lib/components/features/editors/services_feature_editor.dart": "added",
+    "lib/components/features/editors/companion_feature_editor.dart": "added",
+    "lib/components/features/editors/counseling_feature_editor.dart": "added",
+    "lib/components/features/feature_settings_editor.dart": "added",
+    "lib/data_services/client_sync/client_command_replacements.dart": "added",
+    "packages/festapp_core/lib/src/sync/client_command_response.dart": "added",
+    "packages/festapp_core/test/sync/client_command_response_test.dart": "added",
+    "test/support/fixtures/localization_log_fixture.dart": "added",
+    "test/support/fixtures/localization_log_cases.dart": "added",
+    "test/data_services/client_sync/client_command_replacements_cases.dart": "added",
+    "test/components/features/feature_settings_editor_cases.dart": "added"
+  }
+}

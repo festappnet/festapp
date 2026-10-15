@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/app_management/language_model.dart';
-import 'package:fstapp/components/occasion/admin_page.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
 
 class AppConfig {
   static const int maxTicketsPerOrder = 20;
@@ -45,7 +45,7 @@ class AppConfig {
   static const String logoAsset = 'assets/icons/fstapplogo.svg';
   static const String darkLogoAsset = 'assets/icons/fstapplogo.dark.svg';
   static const String programLogoAsset = 'assets/icons/fstapplogo.svg';
-  static const String defaultAdministrationRoute = AdminPage.ROUTE;
+  static const String defaultAdministrationRoute = NavigationPaths.admin;
 
   static int organization = 1;
   //setup occasion id to force occasion

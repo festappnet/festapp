@@ -13,6 +13,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -26,13 +33,6 @@ void main() {
               ],
               'aggregate_version': 4,
             },
-          },
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };

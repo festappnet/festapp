@@ -41,13 +41,36 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
 **Key concept:** Tests run in a transaction and auto-rollback. Any data inserted
 during a test is undone automatically.
 
-### C. Flutter tests
+### C. Client tests
 
 ```bash
-fvm flutter test                         # Complete suite
-fvm flutter test test/components/forms   # One feature
+./automation/test_client.sh              # Complete Dart + Flutter client suite
+./automation/test_client.sh core         # Partial: portable package only
+./automation/test_client.sh flutter      # Partial: Flutter lane only
+(cd packages/festapp_core && fvm dart test test/sync) # One core area
+fvm dart test test_dart                  # Dart/VM adapters and SDK contracts, no engine
+fvm flutter test --concurrency=2 test/sessions/shared_czech_test.dart # One environment group
 fvm flutter test test/components/forms/default_values_cases.dart # One suite
 ```
+
+Resolve dependencies with `fvm flutter pub get` in the repository and
+`fvm dart pub get` in `packages/festapp_core` before running the client runner.
+The complete command runs the architecture check, core and native Dart adapters
+together, then Flutter, each exactly once. It checks semantic discovery against
+the migration inventory and propagates every
+failure. It works from any working directory and needs no backend credentials.
+Separate JSON results and lane timings are saved in a temporary directory; set
+`FESTAPP_CLIENT_RESULTS` to select an artifact directory. Dependencies are not
+resolved during measured test runs. `fvm flutter test` alone covers only the
+Flutter lane. Pure rules belong in the core package; application composition
+chooses their storage, network and platform adapters explicitly.
+
+The client runner uses at most two workers per lane (fewer on smaller CPU
+hosts). This cap follows measured memory peaks: three simultaneous shared-session compilations exceeded the local
+3 GB budget. For an explicit experiment, set `FESTAPP_CLIENT_CONCURRENCY=5`;
+only positive integers are accepted. Overrides can exceed the memory budget.
+Small compatible suites share an engine through `registerClientSuites`; verify
+both normal and `FESTAPP_FIXTURE_ORDER=reverse` group orders when changing them.
 
 Small suites in the same feature share a `<feature>_unit_test.dart` or
 `<feature>_widget_test.dart` entrypoint to avoid starting a Flutter engine for
@@ -64,6 +87,26 @@ in separate `*_test.dart` files. Shared suites must use local instances or
 restore any state they change; setup and teardown hooks belong inside their
 named group. Initialization that mutates shared state belongs in scoped hooks,
 not in the suite's `main()`.
+
+The exact remaining Flutter roots and reasons are listed in
+`automation/client_test_classification.json`; the architecture guard rejects
+missing/stale classifications, registration-time resource setup and private
+SDK fixture imports. Localized suites use the public widget/delegate fixture. Explicit
+physical-source moves and added parent groups preserve semantic test origins.
+Fixture contracts live in `test/support/fixtures/README.md`.
+
+For a comparable measurement after implementation is final:
+
+```bash
+python3 automation/benchmark_client.py --output /tmp/festapp-client-benchmark
+```
+
+This runs the complete command once to warm it and three times for the median,
+checks source/lock/tool inputs before and after every run, and records each
+lane, counts, SDK/host and sampled owned-process RSS. It fails on test/inventory
+errors or changed inputs; unmet performance targets remain explicit in JSON.
+The pre-existing loopback-only GoTrue SDK test is in `test_dart/integration`;
+it retains its explicit skip without its `FESTAPP_FIXTURE_*` environment.
 
 Use `--no-pub` for repeated local runs when dependencies are already resolved.
 

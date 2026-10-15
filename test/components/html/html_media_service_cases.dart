@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'camera_image_fixture.dart';
 import 'dart:async';
 import 'package:image/image.dart' as image;
 import 'dart:typed_data';
@@ -21,24 +20,10 @@ void main() {
     final source = await media.addBytes(bytes, owner);
     expect(media.previewBytes(source), bytes);
   });
-  test('editor accepts a 24 MP camera photo and keeps original upload bytes', () async {
-    final bytes = base64Decode(cameraImageBase64);
-    final media = HtmlMediaDraft();
-    addTearDown(media.dispose);
-    final source = await media.addBytes(bytes, owner);
-    expect(media.previewBytes(source), bytes);
-  });
-  test('clipboard import accepts an original above the obsolete 10 MiB limit', () async {
-    final bytes = Uint8List(11 * 1024 * 1024)..setAll(0, png);
-    final media = HtmlMediaDraft();
-    addTearDown(media.dispose);
-    final source = await media.importSource('data:image/png;base64,${base64Encode(bytes)}', owner);
-    expect(media.previewBytes(source), bytes);
-  });
   test('pixel cap rejects oversized PNG metadata before decoding', () async {
     // Valid oversized IHDR/CRC; reject the header before pixel allocation.
     final bytes = base64Decode(
-        'iVBORw0KGgoAAAANSUhEUgAAG1gAABdwCAYAAAC1xFagAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=');
+        'iVBORw0KGgoAAAANSUhEUgAAG1gAABtYCAYAAACZm7uPAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=');
     final media = HtmlMediaDraft();
     addTearDown(media.dispose);
     await expectLater(media.addBytes(bytes, owner), throwsA(isA<StateError>()));

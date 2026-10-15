@@ -4,7 +4,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
 import 'package:fstapp/components/inventory/views/place_search_dialog.dart';
 import 'package:fstapp/components/inventory/views/quick_search_dialog.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 class UseCustomGroupLocationAction {
   const UseCustomGroupLocationAction();

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/groups/group_commands.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
@@ -53,7 +53,7 @@ void main() {
         id: null, title: 'Original', place: place, participants: {});
     final first = DbGroups.saveWithCommands(commands, 7, model);
     model.title = 'New edit';
-    place.title = 'New place edit';
+    model.place = model.place!.copyWith(title: 'New place edit');
     release.complete();
     await first;
     expect(model.id, 42);

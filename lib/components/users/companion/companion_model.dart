@@ -1,5 +1,5 @@
-import 'package:fstapp/components/schedule/event_model.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/program.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 
 class CompanionModel {

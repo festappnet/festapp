@@ -53,28 +53,29 @@ class Main {
             if (!organizerIntent && await RouterService.handleInitialLoad()) {
                  RouterService.initPopStateListener();
                  window.markFestappAppReady?.();
-                 return; 
+                 return;
             }
-            
+
             // 3. Init UI Components
             // UserHeader is now a web component and auto-inits via tag in HTML
             const unitPage = new UnitPage('events-grid');
             unitPage.init('event-search');
             FeedbackFab.init('feedback-fab');
-    
+
             // 4. Initial Fetch
-            await unitPage.loadOccasions(AppConfig.organization);
+            const unitMatch = window.location.pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
+            await unitPage.loadOccasions(AppConfig.organization, unitMatch ? Number(unitMatch[1]) : null);
 
             // Complete startup after the catalogue update settles; SSR stays usable while pending.
             const app = document.getElementById('app');
             if (app) app.style.display = 'flex';
-            
+
             // Init PopState forভাগে logic
             RouterService.initPopStateListener();
             window.markFestappAppReady?.();
 
 
-            
+
         } catch (e) {
             console.error("Initialization Error:", e);
             window.failFestappWebClientStartup?.('web-initialization-error');

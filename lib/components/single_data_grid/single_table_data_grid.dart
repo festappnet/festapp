@@ -123,9 +123,11 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   }
 
   Color? _pendingRowColor(TrinaRow row) {
-    bool contains(Iterable<TrinaRow> rows) => rows.any((item) => item.key == row.key);
+    bool contains(Iterable<TrinaRow> rows) =>
+        rows.any((item) => item.key == row.key);
     if (contains(widget.controller.deletedRows)) return Colors.redAccent;
-    if (contains(widget.controller.updatedRows) || contains(widget.controller.newRows)) {
+    if (contains(widget.controller.updatedRows) ||
+        contains(widget.controller.newRows)) {
       return Colors.amber;
     }
     return null;
@@ -178,7 +180,7 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
               }
             }
             widget.controller.applyRowFilter();
-              widget.controller.stateManager.notifyListeners();
+            widget.controller.stateManager.notifyListeners();
           },
           onLoaded: (TrinaGridOnLoadedEvent event) {
             widget.controller.stateManager = event.stateManager;
@@ -191,7 +193,8 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
             setState(() {});
           },
           rowColorCallback: (rowContext) =>
-              _pendingRowColor(rowContext.row)?.withAlpha(77) ?? Colors.transparent,
+              _pendingRowColor(rowContext.row)?.withAlpha(77) ??
+              Colors.transparent,
           rowWrapper: (context, rowWidget, row, manager) => ListenableBuilder(
             listenable: manager,
             child: rowWidget,
@@ -201,7 +204,8 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
               return DecoratedBox(
                 key: ValueKey('grid-row-change-${row.key}'),
                 position: DecorationPosition.foreground,
-                decoration: BoxDecoration(border: Border(
+                decoration: BoxDecoration(
+                    border: Border(
                   left: BorderSide(color: color, width: 3),
                   bottom: BorderSide(color: color, width: 1),
                 )),

@@ -1,11 +1,17 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/components/forms/widgets_editor/form_fields_generator.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   for (final type in [
     'text',
     'email',
@@ -25,16 +31,15 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final field = FormFieldModel(
+      final field = FormFieldDraft(
           id: 204,
           type: type,
           title: 'Original title',
           data: {},
           isRequired: false);
-      final form = FormModel(occasionId: 59, relatedFields: [field]);
+      final form = FormEditorDraft(occasionId: 59, relatedFields: [field]);
       final bundle = FormEditBundle(
           form: form,
-          formFields: [field],
           productTypes: [],
           products: [],
           availableBankAccounts: []);
@@ -47,7 +52,7 @@ void main() {
       expect(find.byType(TextFormField), findsOneWidget);
       await tester.enterText(find.byType(TextFormField), 'Changed title');
       await tester.pump();
-      expect(field.title, 'Changed title');
+      expect(field.definition.title, 'Changed title');
       await tester.pumpWidget(const SizedBox());
     });
   }

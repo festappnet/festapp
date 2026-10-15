@@ -1,7 +1,7 @@
+import 'package:fstapp/services/time_helper.dart';
 import 'package:flutter/material.dart';
 
-import '../models/product_model.dart';
-import '../models/product_price_change.dart';
+import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
 import 'product_price_changes_dialog.dart';
 
@@ -19,6 +19,7 @@ class ProductPriceChangeCell extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final now = product.priceTime(TimeHelper.currentTime ?? DateTime.now());
     final plans = ProductPriceChange.pending(product.priceChanges);
     String summary =
         canEdit ? OrdersStrings.schedulePrice : OrdersStrings.priceChangesTitle;
@@ -33,7 +34,7 @@ class ProductPriceChangeCell extends StatelessWidget {
       }
       if (first.failureCode != null) {
         summary += ' · ${OrdersStrings.priceFailed}';
-      } else if (!first.time.isAfter(product.priceNow)) {
+      } else if (!first.time.isAfter(now)) {
         summary += ' · ${OrdersStrings.pricePending}';
       }
     }

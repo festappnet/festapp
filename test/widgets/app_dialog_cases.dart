@@ -1,3 +1,4 @@
+import '../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,11 @@ Future<void> openDialog(WidgetTester tester, WidgetBuilder builder,
 }
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   test('light and dark themes share the shape with native modal pickers', () {
     for (final brightness in Brightness.values) {
       final theme = ThemeConfig.theme(brightness: brightness);

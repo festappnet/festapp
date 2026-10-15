@@ -13,8 +13,9 @@ import '../../eshop/db_orders.dart';
 import 'package:flutter/material.dart';
 
 import '../../eshop/models/order_model.dart';
-import '../models/form_model.dart';
-import '../models/form_capacity_model.dart';
+import '../models/form_bundle.dart';
+import 'package:festapp_core/forms.dart';
+
 import '../waitlist_commands.dart';
 import '../waitlist_strings.dart';
 
@@ -56,14 +57,14 @@ class WaitlistOffersDialog extends StatefulWidget {
     this.loadPreview,
     this.executeCommand,
   });
-  final FormModel form;
+  final FormBundle form;
   final List<OrderModel> orders;
   final int? targetOrderId;
   final Set<int>? selectedOrderIds;
   final Future<Map<String, dynamic>> Function(int)? loadProposal;
   final Future<Map<String, dynamic>> Function(int)? loadPreview;
   final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
-  executeCommand;
+      executeCommand;
   @override
   State<WaitlistOffersDialog> createState() => _WaitlistOffersDialogState();
 }
@@ -94,10 +95,10 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     setState(() => _busy = true);
     try {
       final results = await Future.wait([
-        (widget.loadProposal ?? _commands.proposal)(widget.form.id!),
-        (widget.loadPreview ?? _commands.preview)(widget.form.id!),
-        if (widget.form.link != null)
-          DbOrders.getAllOrdersBundle(formLink: widget.form.link),
+        (widget.loadProposal ?? _commands.proposal)(widget.form.definition.id!),
+        (widget.loadPreview ?? _commands.preview)(widget.form.definition.id!),
+        if (widget.form.definition.link != null)
+          DbOrders.getAllOrdersBundle(formLink: widget.form.definition.link),
       ]);
       final proposal = results[0] as Map<String, dynamic>;
       _preview = results[1] as Map<String, dynamic>;
@@ -172,7 +173,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
       final result = await (widget.executeCommand ?? _commands.command)(
         'send',
         {
-          'formId': widget.form.id,
+          'formId': widget.form.definition.id,
           'revision': _proposal!['revision'],
           'recipients': recipients,
           'expiresAt': _expiresAt!.toUtc().toIso8601String(),
@@ -208,27 +209,27 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     final escape = const HtmlEscape().convert;
     final participantCount =
         order?.waitlistSummary?.counts.values.fold<int>(0, (a, b) => a + b) ??
-        count;
+            count;
     final participantWord = participantCount == 1
         ? 'osobu'
         : participantCount >= 2 && participantCount <= 4
-        ? 'osoby'
-        : 'osob';
+            ? 'osoby'
+            : 'osob';
     final placeWord = count == 1
         ? 'místo'
         : count >= 2 && count <= 4
-        ? 'místa'
-        : 'míst';
+            ? 'místa'
+            : 'míst';
     final expiry = _expiresAt == null
         ? ''
         : DateFormat('d. M. yyyy HH:mm')
-              .format(_expiresAt!.toOccasionTime(_expiryTimeZone))
-              .replaceAll(RegExp(r'\s'), '\u00a0');
+            .format(_expiresAt!.toOccasionTime(_expiryTimeZone))
+            .replaceAll(RegExp(r'\s'), '\u00a0');
     final toneSubstitutions = _preview?['toneSubstitutions'];
     String previewLabel(String key, String fallback) =>
         toneSubstitutions is Map && toneSubstitutions[key] is String
-        ? escape(toneSubstitutions[key] as String)
-        : escape(fallback);
+            ? escape(toneSubstitutions[key] as String)
+            : escape(fallback);
     final vars = <String, String>{
       for (final key in const [
         'waitlist_confirmation_heading',
@@ -262,9 +263,9 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
           '<a href="#">${previewLabel('waitlist_manage_button_label', WaitlistStrings.withdraw)}</a>',
     };
     String expand(String html) => html.replaceAllMapped(
-      RegExp(r'\{\{\s*(\w+)\s*\}\}'),
-      (m) => vars[m[1]] ?? m[0]!,
-    );
+          RegExp(r'\{\{\s*(\w+)\s*\}\}'),
+          (m) => vars[m[1]] ?? m[0]!,
+        );
     final body = expand(
       _preview?['instructionsTemplateHtml']?.toString() ??
           _preview?['template']?['html']?.toString() ??
@@ -285,8 +286,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     final count = _counts[id]!;
     final limit = _eligibleCounts[id]!;
     final selected = count > 0;
-    final canIncrease =
-        !_busy &&
+    final canIncrease = !_busy &&
         count < limit &&
         _total < capacity.offerablePlaces &&
         capacity.canSendOffers;
@@ -306,7 +306,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                 semanticLabel: label,
                 onChanged: !_busy && (selected || canIncrease)
                     ? (value) =>
-                          setState(() => _counts[id] = value == true ? 1 : 0)
+                        setState(() => _counts[id] = value == true ? 1 : 0)
                     : null,
               ),
               const SizedBox(width: 4),

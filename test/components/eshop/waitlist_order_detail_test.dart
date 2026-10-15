@@ -1,3 +1,7 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import '../../support/fixtures/widget_environment_fixture.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -7,8 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:timezone/data/latest.dart' as zones;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -19,12 +21,15 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:trina_grid/trina_grid.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
+  WidgetEnvironmentFixture.register();
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     final font = FontLoader('Futura')
@@ -35,13 +40,11 @@ void main() {
     await icons.load();
   });
   setUp(() {
-    Localization.load(
-      const Locale('cs'),
-      translations: Translations(
-        jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-            as Map<String, dynamic>,
-      ),
-    );
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
+            jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+                as Map<String, dynamic>);
     final previous = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = null;
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
@@ -57,7 +60,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     var loads = 0;
-    await tester.pumpWidget(
+    await _environment.pumpWidget(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: WaitlistOrderDetail(
@@ -107,7 +111,8 @@ void main() {
     expect(find.textContaining('Osoba 1'), findsNothing);
   }
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'withdrawn single ticket shows safe display name and no empty sections or actions',
     (tester) async {
       await open(
@@ -121,18 +126,20 @@ void main() {
     },
   );
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'single readonly waiting ticket uses canonical application label',
     (tester) async {
       expect(RightsService.isEditorOrder(), isFalse);
       await open(tester, lifecycle: 'waiting');
-      expect(find.text(OrdersStrings.itemSingular), findsOneWidget);
+      expect(find.text(OrderItemStrings.itemSingular), findsOneWidget);
       expect(
           find.text(WaitlistStrings.text('waitingForPlace')), findsOneWidget);
       expect(find.byType(Chip), findsNothing);
     },
   );
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'withdraw command refreshes canonical detail and parent active grid',
     (tester) async {
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
@@ -148,7 +155,8 @@ void main() {
         orderSymbol: 'REGISTRATION',
       );
       late StateSetter parentState;
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: StatefulBuilder(
             builder: (context, setState) {
@@ -240,7 +248,7 @@ void main() {
         OrderGridFilters.orderIsActive(
           TrinaRow(
             cells: {
-              EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: order),
+              EshopColumnIds.ORDER_MODEL_REFERENCE: TrinaCell(value: order),
             },
           ),
         ),
@@ -267,13 +275,15 @@ void main() {
         occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}),
       );
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'cancelling withdrawal confirmation sends no mutation and keeps waiting',
     (tester) async {
       editor();
       var mutations = 0;
       var refreshed = 0;
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: WaitlistOrderDetail(
@@ -317,16 +327,20 @@ void main() {
     },
   );
 
-  testWidgets('offer opens canonical preparation directly', (tester) async {
+  testWidgetsWithEnvironment(
+      () => _environment, 'offer opens canonical preparation directly',
+      (tester) async {
     editor();
     zones.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
-    final form = FormModel(id: 7, waitlistEnabled: true);
+    final form =
+        FormBundle(definition: FormDefinition(id: 7, waitlistEnabled: true));
     var opened = 0;
     var refreshed = 0;
     var offered = false;
     final order = OrderModel(id: 5, state: 'waitlisted', form: form);
-    await tester.pumpWidget(
+    await _environment.pumpWidget(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: WaitlistOrderDetail(
@@ -411,18 +425,21 @@ void main() {
     expect(find.text(WaitlistStrings.text('adminWithdraw')), findsOneWidget);
   });
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'server capacity denial disables offer without changing withdrawal eligibility',
     (tester) async {
       editor();
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: WaitlistOrderDetail(
               order: OrderModel(
                 id: 5,
                 state: 'waitlisted',
-                form: FormModel(id: 7, waitlistEnabled: true),
+                form: FormBundle(
+                    definition: FormDefinition(id: 7, waitlistEnabled: true)),
               ),
               loadDetail: (_) async => waitingDetail(canSendOffers: false),
             ),
@@ -459,13 +476,15 @@ void main() {
     },
   );
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'successful withdrawal stays completed when parent refresh fails',
     (tester) async {
       editor();
       var lifecycle = 'waiting';
       var mutations = 0;
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: WaitlistOrderDetail(
@@ -522,7 +541,8 @@ void main() {
     },
   );
   for (final count in [1, 2]) {
-    testWidgets(
+    testWidgetsWithEnvironment(
+      () => _environment,
       'withdraws $count selected tickets across offers only after confirmation',
       (tester) async {
         editor();
@@ -533,14 +553,16 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         final sent = <Map<String, dynamic>>[];
-        await tester.pumpWidget(
+        await _environment.pumpWidget(
+          tester,
           MaterialApp(
             home: Scaffold(
               body: WaitlistOrderDetail(
                 order: OrderModel(
                   id: 5,
                   state: 'waitlisted',
-                  form: FormModel(id: 7, waitlistEnabled: true),
+                  form: FormBundle(
+                      definition: FormDefinition(id: 7, waitlistEnabled: true)),
                 ),
                 loadDetail: (_) async => {
                   'tickets': [
@@ -636,7 +658,8 @@ void main() {
   }
 
   for (final size in [const Size(320, 760), const Size(1000, 800)]) {
-    testWidgets('offer detail adapts to $size and opens a separate form', (
+    testWidgetsWithEnvironment(() => _environment,
+        'offer detail adapts to $size and opens a separate form', (
       tester,
     ) async {
       editor();
@@ -649,7 +672,8 @@ void main() {
       final opened = <String>[];
       var loads = 0;
       final capture = GlobalKey();
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         RepaintBoundary(
           key: capture,
           child: MaterialApp(
@@ -734,12 +758,14 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
-  testWidgets('read-only pending offers never expose editor actions', (
+  testWidgetsWithEnvironment(() => _environment,
+      'read-only pending offers never expose editor actions', (
     tester,
   ) async {
     zones.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
-    await tester.pumpWidget(
+    await _environment.pumpWidget(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: WaitlistOrderDetail(
@@ -769,12 +795,14 @@ void main() {
     expect(find.text(WaitlistStrings.text('adminWithdraw')), findsNothing);
   });
 
-  testWidgets('failed detail load can refresh into an explicit empty state', (
+  testWidgetsWithEnvironment(() => _environment,
+      'failed detail load can refresh into an explicit empty state', (
     tester,
   ) async {
     editor();
     var loads = 0;
-    await tester.pumpWidget(
+    await _environment.pumpWidget(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: WaitlistOrderDetail(

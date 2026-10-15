@@ -9,10 +9,11 @@ import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'place_model.dart';
+import 'package:festapp_core/map.dart';
 
 class DbPlaces {
   static final _supabase = Supabase.instance.client;
+  static MapCommands get commands => _commands;
   static final MapCommands _commands = SupabaseMapCommands(_supabase);
 
   static Future<List<PlaceModel>> getMapPlaces() async {

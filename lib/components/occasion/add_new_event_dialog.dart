@@ -1,7 +1,8 @@
+import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
@@ -12,7 +13,7 @@ import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/components/occasion/occasion_home_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import '../map/place_picker_field.dart';
 
 class AddNewEventDialog {
@@ -148,19 +149,19 @@ class AddNewEventDialog {
                               if (formKey.currentState!.validate()) {
                                 formKey.currentState!.save();
                                 final newEvent = EventModel(
-                                  title: title,
-                                  place: places?.firstWhereOrNull(
-                                      (place) => place.id == placeId),
-                                  startTime: startDate!,
-                                  endTime: endDate!,
-                                  isHidden: false,
-                                  splitForMenWomen: false,
-                                  isSignedIn: false,
-                                  isGroupEvent: false,
-                                  parentEventIds: parentEvent != null
-                                      ? [parentEvent.id]
-                                      : null,
-                                );
+                                    title: title,
+                                    place: places?.firstWhereOrNull(
+                                        (place) => place.id == placeId),
+                                    startTime: startDate!,
+                                    endTime: endDate!,
+                                    isHidden: false,
+                                    splitForMenWomen: false,
+                                    isSignedIn: false,
+                                    isGroupEvent: false,
+                                    parentEventIds: parentEvent != null
+                                        ? [parentEvent.id]
+                                        : null,
+                                    timeContext: TimeHelper.eventTime);
                                 await DbEvents.updateEvent(newEvent);
                                 Navigator.of(context).pop();
                               }

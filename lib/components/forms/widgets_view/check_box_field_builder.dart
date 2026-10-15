@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart'; // Added for translation support.
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart'; // Importing product model.
+import 'package:festapp_core/forms.dart';
+import 'package:festapp_core/forms.dart'; // Importing product model.
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -16,7 +16,7 @@ class CheckboxFieldBuilder {
   static Widget buildSelectManyField(
     BuildContext context,
     FieldHolder fieldHolder,
-    List<FormOptionModel> optionsIn,
+    List<FormOptionDefinition> optionsIn,
     FormHolder formHolder,
   ) {
     if (!FormHelper.isCardDesign(formHolder, fieldHolder)) {
@@ -34,8 +34,8 @@ class CheckboxFieldBuilder {
   /// Resolves configured defaults (list of option titles or product IDs).
   /// Matches by option.title (select_many) OR option.id (product_type).
   /// Missing options are silently ignored.
-  static List<FormOptionModel> resolveDefaults(
-      FieldHolder fieldHolder, List<FormOptionModel> options) {
+  static List<FormOptionDefinition> resolveDefaults(
+      FieldHolder fieldHolder, List<FormOptionDefinition> options) {
     final raw = fieldHolder.defaultValue;
     final values = raw is String
         ? (raw.isEmpty ? <String>[] : raw.split(' | '))
@@ -51,7 +51,7 @@ class CheckboxFieldBuilder {
   static Widget _buildCardSelectManyField(
     BuildContext context,
     FieldHolder fieldHolder,
-    List<FormOptionModel> optionsIn,
+    List<FormOptionDefinition> optionsIn,
     FormHolder formHolder,
   ) {
     return FormHelper.buildCardWrapperDesign(
@@ -62,14 +62,14 @@ class CheckboxFieldBuilder {
           alignment: Alignment.topCenter,
           duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          child: FormBuilderField<List<FormOptionModel>>(
+          child: FormBuilderField<List<FormOptionDefinition>>(
             name: fieldHolder.id.toString(),
             validator: fieldHolder.isRequired
                 ? FormBuilderValidators.required(
                     errorText: CommonStrings.fieldCannotBeEmpty)
                 : null,
             initialValue: resolveDefaults(fieldHolder, optionsIn),
-            builder: (FormFieldState<List<FormOptionModel>> field) {
+            builder: (FormFieldState<List<FormOptionDefinition>> field) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -103,8 +103,8 @@ class CheckboxFieldBuilder {
 
   static Widget _buildOptionCard(
     BuildContext context,
-    FormFieldState<List<FormOptionModel>> field,
-    FormOptionModel o,
+    FormFieldState<List<FormOptionDefinition>> field,
+    FormOptionDefinition o,
     FormHolder formHolder,
   ) {
     // Determine if this option is a priced product and disabled.
@@ -169,11 +169,11 @@ class CheckboxFieldBuilder {
   }
 
   static void _toggleItemInFieldValue(
-    FormFieldState<List<FormOptionModel>> field,
-    FormOptionModel option,
+    FormFieldState<List<FormOptionDefinition>> field,
+    FormOptionDefinition option,
     bool isSelected,
   ) {
-    final newValue = List<FormOptionModel>.from(field.value ?? []);
+    final newValue = List<FormOptionDefinition>.from(field.value ?? []);
     if (isSelected) {
       newValue.remove(option);
     } else {
@@ -187,7 +187,7 @@ class CheckboxFieldBuilder {
 /// showing live error cues (red border and error text).
 class _BasicCheckboxFieldWidget extends StatefulWidget {
   final FieldHolder fieldHolder;
-  final List<FormOptionModel> optionsIn;
+  final List<FormOptionDefinition> optionsIn;
   final FormHolder formHolder;
 
   const _BasicCheckboxFieldWidget({
@@ -275,7 +275,7 @@ class _BasicCheckboxFieldWidgetState extends State<_BasicCheckboxFieldWidget> {
         );
       }
 
-      return FormBuilderFieldOption<FormOptionModel>(
+      return FormBuilderFieldOption<FormOptionDefinition>(
         value: o,
         child: labelWidget,
       );
@@ -284,7 +284,7 @@ class _BasicCheckboxFieldWidgetState extends State<_BasicCheckboxFieldWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FormBuilderCheckboxGroup<FormOptionModel>(
+        FormBuilderCheckboxGroup<FormOptionDefinition>(
           key: fieldKey,
           name: widget.fieldHolder.id.toString(),
           decoration: FormHelper.buildInputDecoration(

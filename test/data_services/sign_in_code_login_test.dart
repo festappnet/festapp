@@ -1,40 +1,32 @@
+import '../support/fixtures/root_supabase_fixture.dart';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final requests = <http.Request>[];
+  late RootSupabaseFixture fixture;
   var acceptsCode = false;
   setUpAll(() async {
-    SharedPreferences.setMockInitialValues({});
-    await Supabase.initialize(
-      url: 'https://fixture.invalid',
-      anonKey: 'fixture',
-      authOptions: const FlutterAuthClientOptions(
-          autoRefreshToken: false, localStorage: EmptyLocalStorage()),
-      httpClient: MockClient((request) async {
-        requests.add(request);
-        if (request.url.path == '/functions/v1/exchange-sign-in-code') {
-          return http.Response(
-              jsonEncode(
-                  acceptsCode ? {'refresh_token': 'fixture-refresh'} : {}),
-              200,
-              headers: {'content-type': 'application/json'});
-        }
-        // Stop at the Auth boundary; these tests create no session or user data.
+    fixture = await RootSupabaseFixture.open((request) async {
+      requests.add(request);
+      if (request.url.path == '/functions/v1/exchange-sign-in-code') {
         return http.Response(
-            '{"error":"invalid_grant","error_description":"fixture stop"}', 400,
+            jsonEncode(acceptsCode ? {'refresh_token': 'fixture-refresh'} : {}),
+            200,
             headers: {'content-type': 'application/json'});
-      }),
-    );
+      }
+      // Stop at the Auth boundary; these tests create no session or user data.
+      return http.Response(
+          '{"error":"invalid_grant","error_description":"fixture stop"}', 400,
+          headers: {'content-type': 'application/json'});
+    });
   });
-  tearDownAll(() async => Supabase.instance.dispose());
+  tearDownAll(() => fixture.dispose());
   setUp(() {
     requests.clear();
     acceptsCode = false;

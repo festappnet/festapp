@@ -4,7 +4,7 @@ import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'form_public_link.dart';
 import '../form_strings.dart';
-import '../models/form_model.dart';
+import '../models/form_bundle.dart';
 import 'create_or_copy_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -18,7 +18,7 @@ class FormCreationHelper {
         context: context,
         builder: (_) => CreateOrCopyFormDialog(existingForms: forms));
     if (!context.mounted || result == null) return;
-    if (result is FormModel) {
+    if (result is FormBundle) {
       await copyFormToOccasion(context, result,
           occasionLink: occasionLink, onFormCreated: onFormCreated);
     } else if (result == 'CREATE_NEW') {
@@ -27,12 +27,12 @@ class FormCreationHelper {
     }
   }
 
-  static Future<void> copyFormToOccasion(BuildContext context, FormModel form,
+  static Future<void> copyFormToOccasion(BuildContext context, FormBundle form,
       {required String occasionLink,
       required VoidCallback onFormCreated}) async {
     try {
       await DbForms.duplicateFormToOccasion(
-          sourceFormId: form.id!, targetOccasionLink: occasionLink);
+          sourceFormId: form.definition.id!, targetOccasionLink: occasionLink);
       if (!context.mounted) return;
       ToastHelper.Show(context, FormStrings.duplicateSuccess,
           severity: ToastSeverity.Ok);

@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,11 @@ import 'package:fstapp/components/forms/views/order_finish_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets(
       'overview close notifies once after route pop so the preview can close',
       (tester) async {

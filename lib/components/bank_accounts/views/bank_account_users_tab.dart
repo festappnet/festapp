@@ -2,7 +2,7 @@ import 'bank_account_dialog_scope.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/components/users/db_users.dart';
@@ -39,8 +39,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
   Future<void> _loadUsers() async {
     setState(() => _isLoadingUsers = true);
     try {
-      final users = await DbBankAccounts.getBankAccountUsers(widget.accountId,
-          unitId: widget.unitId);
+      final users = await DbBankAccounts.current
+          .getBankAccountUsers(widget.accountId, unitId: widget.unitId);
       if (mounted) {
         setState(() {
           _users = users;
@@ -215,8 +215,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
       String email, bool isAdmin, bool isSupport) async {
     setState(() => _isLoadingUsers = true);
     try {
-      await DbBankAccounts.updateBankAccountUser(
-          widget.accountId, email, isAdmin, isSupport);
+      await DbBankAccounts.current
+          .updateBankAccountUser(widget.accountId, email, isAdmin, isSupport);
       await _loadUsers();
     } catch (e) {
       _showError("${BankAccountStrings.errorUpdatingUser}: $e");
@@ -232,7 +232,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
         setState(() => _isLoadingUsers = false);
         return;
       }
-      await DbBankAccounts.removeBankAccountUser(widget.accountId, user.email!);
+      await DbBankAccounts.current
+          .removeBankAccountUser(widget.accountId, user.email!);
       await _loadUsers();
     } catch (e) {
       _showError("${BankAccountStrings.errorRemovingUser}: $e");

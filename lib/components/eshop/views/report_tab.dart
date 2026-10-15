@@ -1,7 +1,6 @@
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'report_text.dart';
-import '../models/report_period.dart';
-import '../models/report_exchange_rates.dart';
+import 'package:festapp_core/eshop.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -19,7 +18,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
-import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:fstapp/components/eshop/report_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
@@ -45,7 +43,8 @@ class ReportTab extends StatefulWidget {
 class _ReportTabState extends State<ReportTab> {
   bool _tabActive = true;
   bool _onlyValid = true;
-  OccasionReport? get _visibleReport => _onlyValid ? _report?.onlyValid() : _report;
+  OccasionReport? get _visibleReport =>
+      _onlyValid ? _report?.onlyValid() : _report;
   OccasionReport? _report;
   StreamSubscription<AuthState>? _authSubscription;
   String? _key, _link;
@@ -471,7 +470,8 @@ class _ReportTabState extends State<ReportTab> {
           }
           return Table(
             defaultColumnWidth: const FlexColumnWidth(),
-            defaultVerticalAlignment: TableCellVerticalAlignment.intrinsicHeight,
+            defaultVerticalAlignment:
+                TableCellVerticalAlignment.intrinsicHeight,
             columnWidths: {
               for (var i = 1; i < children.length * 2 - 1; i += 2)
                 i: const FixedColumnWidth(12),
@@ -687,10 +687,18 @@ class _ReportTabState extends State<ReportTab> {
                             toggled: _onlyValid,
                             child: TextButton.icon(
                               key: const ValueKey('reportValidityFilter'),
-                              onPressed: () => setState(() => _onlyValid = !_onlyValid),
-                              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                              icon: Icon(_onlyValid ? Icons.check_box_outlined : Icons.check_box_outline_blank, size: 18),
-                              label: Text(_onlyValid ? ReportStrings.onlyValid : ReportStrings.includingCancelled),
+                              onPressed: () =>
+                                  setState(() => _onlyValid = !_onlyValid),
+                              style: TextButton.styleFrom(
+                                  minimumSize: const Size(48, 48)),
+                              icon: Icon(
+                                  _onlyValid
+                                      ? Icons.check_box_outlined
+                                      : Icons.check_box_outline_blank,
+                                  size: 18),
+                              label: Text(_onlyValid
+                                  ? ReportStrings.onlyValid
+                                  : ReportStrings.includingCancelled),
                             ),
                           ),
                         TextButton.icon(

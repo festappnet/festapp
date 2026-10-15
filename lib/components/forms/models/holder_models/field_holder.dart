@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 
 class FieldHolder {
@@ -43,7 +42,7 @@ class FieldHolder {
 }
 
 class OptionsFieldHolder extends FieldHolder {
-  final List<FormOptionModel> options;
+  final List<FormOptionDefinition> options;
 
   OptionsFieldHolder({
     required super.fieldType,

@@ -10,18 +10,16 @@ Future<String> resolveStartupLanguage({
   String? defaultLanguage,
   Duration timeout = const Duration(seconds: 1),
 }) async {
-  final configured =
-      defaultLanguage ??
+  final configured = defaultLanguage ??
       AppConfig.availableLanguages().first.locale.languageCode;
   final fallback = startupLanguages.contains(configured) ? configured : 'en';
   try {
-    final saved =
-        await (readSavedLanguage ??
-                () async {
-                  final preferences = await SharedPreferences.getInstance();
-                  return preferences.getString('locale');
-                })()
-            .timeout(timeout);
+    final saved = await (readSavedLanguage ??
+            () async {
+              final preferences = await SharedPreferences.getInstance();
+              return preferences.getString('locale');
+            })()
+        .timeout(timeout);
     final language = saved?.toLowerCase().split(RegExp('[_-]')).first;
     return startupLanguages.contains(language) ? language! : fallback;
   } catch (_) {

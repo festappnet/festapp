@@ -1,3 +1,5 @@
+import 'package:fstapp/components/forms/models/form_bundle.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -13,8 +15,8 @@ import 'package:fstapp/components/blueprint/blueprint_group.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_editor_tab.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/views/create_or_copy_dialog.dart';
 import 'package:fstapp/components/forms/views/form_editor_content.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
@@ -59,7 +61,8 @@ class OccasionSetupPage extends StatefulWidget {
     final link = await Navigator.of(context).push<String>(MaterialPageRoute(
         builder: (_) => OccasionSetupPage(draft: initialized)));
     if (link != null && context.mounted) {
-      await RouterService.navigateToOccasionAdministration(context, occasionLink: link);
+      await RouterService.navigateToOccasionAdministration(context,
+          occasionLink: link);
     }
   }
 
@@ -187,10 +190,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return '${o['title']} ($formatted)';
   }
 
-  List<FormModel> get _sourceForms => [
+  List<FormEditorDraft> get _sourceForms => [
         for (final source in _sources)
           for (final raw in source['forms'] as List)
-            FormModel.fromJson(Map<String, dynamic>.from(raw))
+            FormEditorDraft.fromJson(Map<String, dynamic>.from(raw))
               ..occasionModel = OccasionModel.fromJson(
                   Map<String, dynamic>.from(source['occasion']))
       ];
@@ -293,8 +296,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['deadline'] =
         seconds == null ? '7' : (seconds / 86400).round().toString();
     final data = form['data'] as Map? ?? {};
-    draft['reminders'] = data[FormModel.metaIsReminderEnabled] == true;
-    final tone = data[FormHelper.metaCommunicationTone];
+    draft['reminders'] = data[FormDefinition.metaIsReminderEnabled] == true;
+    final tone = data[FormMetadata.metaCommunicationTone];
     draft['tone'] = tone == 'formal'
         ? 'FeatureFormSettings.toneFormal'.tr()
         : tone == 'informal'
@@ -311,14 +314,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       form['deadline_duration_seconds'] = days * 86400;
     }
     final data = Map<String, dynamic>.from(form['data'] as Map? ?? {});
-    data[FormModel.metaIsReminderEnabled] = draft['reminders'] == true;
+    data[FormDefinition.metaIsReminderEnabled] = draft['reminders'] == true;
     final tone = draft['tone'];
     if (tone == 'FeatureFormSettings.toneFormal'.tr()) {
-      data[FormHelper.metaCommunicationTone] = 'formal';
+      data[FormMetadata.metaCommunicationTone] = 'formal';
     } else if (tone == 'FeatureFormSettings.toneInformal'.tr()) {
-      data[FormHelper.metaCommunicationTone] = 'informal';
+      data[FormMetadata.metaCommunicationTone] = 'informal';
     } else {
-      data.remove(FormHelper.metaCommunicationTone);
+      data.remove(FormMetadata.metaCommunicationTone);
     }
     form['data'] = data;
   }
@@ -354,9 +357,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         if (_data['title'] != oldTitle &&
             (_data['title'] as String).isNotEmpty) {
           form['title'] = _data['title'];
-          _inlineFormBundle?.form.title = _data['title'];
+          _inlineFormBundle?.form.definition = _inlineFormBundle!
+              .form.definition
+              .copyWith(title: _data['title']);
         }
-
       }
       _restrictToSupportedFeatures(_data);
       if (changesConfiguration) _persistFormControls(_data);
@@ -417,7 +421,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Future<void> _finalize() async {
     if (_finalizing) return;
-    setState(() { _finalizing = true; _finalizeError = null; });
+    setState(() {
+      _finalizing = true;
+      _finalizeError = null;
+    });
     try {
       if (_finalizeCommand == null) {
         if (!await _flush() || !mounted) return;
@@ -429,7 +436,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       setState(() => _allowPop = true);
       Navigator.of(context).pop(link);
     } catch (_) {
-      if (mounted) setState(() => _finalizeError = OccasionSetupStrings.finalizeFailed);
+      if (mounted)
+        setState(() => _finalizeError = OccasionSetupStrings.finalizeFailed);
     } finally {
       if (mounted) setState(() => _finalizing = false);
     }
@@ -502,7 +510,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         final formData = d['formDraft'];
         if (formData is! Map) return false;
         return (formData['title'] as String? ?? '').trim().isNotEmpty &&
-            isValidPublicSlug(formData['link'] as String? ?? '', allowEmpty: true) &&
+            isValidPublicSlug(formData['link'] as String? ?? '',
+                allowEmpty: true) &&
             (formData['fields'] as List? ?? []).isNotEmpty;
       case 4:
         return AppConfig.isAppSupported
@@ -729,11 +738,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     final result = await showDialog<dynamic>(
       context: context,
-      builder: (context) => CreateOrCopyFormDialog(existingForms: _sourceForms),
+      builder: (context) => CreateOrCopyFormDialog(
+          existingForms: _sourceForms.map((form) => form.toBundle()).toList()),
     );
     if (!mounted || result == null) return;
-    final form = result is FormModel
-        ? result
+    final form = result is FormBundle
+        ? FormEditorDraft.fromBundle(result)
         : defaultDraftForm(
             Map<String, dynamic>.from(_data['defaultConfiguration'] as Map));
     _change((draft) {
@@ -744,12 +754,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       (draft['formDraft'] as Map)['link'] = '';
       _adoptFormSettings(draft);
       draft['formOrigin'] =
-          result is FormModel ? form.occasionModel?.title : null;
-      if (result is FormModel && form.blueprint != null) {
+          result is FormBundle ? form.occasionModel?.title : null;
+      if (result is FormBundle && form.definition.blueprint != null) {
         for (final source in _sources) {
           final plans = source['blueprints'] as List;
           final selected = plans
-              .where((p) => (p as Map)['id'] == form.blueprint)
+              .where((p) => (p as Map)['id'] == form.definition.blueprint)
               .firstOrNull;
           if (selected is Map) _applyBlueprint(draft, selected);
         }
@@ -767,8 +777,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       onChanged: (value) => _change((x) {
         x['formDefaultsFollowEvent'] = false;
         (x['formDraft'] as Map)[field] = value;
-        if (field == 'title') _inlineFormBundle?.form.title = value;
-        if (field == 'link') _inlineFormBundle?.form.link = value;
+        if (field == 'title')
+          _inlineFormBundle?.form.definition =
+              _inlineFormBundle!.form.definition.copyWith(title: value);
+        if (field == 'link')
+          _inlineFormBundle?.form.definition =
+              _inlineFormBundle!.form.definition.copyWith(link: value);
       }, changesConfiguration: true),
     );
   }
@@ -843,18 +857,19 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             .add(const MapEntry(3, 'Chybí formulář. Založ jej nebo převezmi.'));
       } else {
         final form = draftFormBundle(Map<String, dynamic>.from(formData));
-        if ((form.form.title ?? '').trim().isEmpty ||
-            !isValidPublicSlug(form.form.link ?? '', allowEmpty: true)) {
+        if ((form.form.definition.title ?? '').trim().isEmpty ||
+            !isValidPublicSlug(form.form.definition.link ?? '',
+                allowEmpty: true)) {
           issues
               .add(const MapEntry(3, 'Doplň název a platný odkaz formuláře.'));
         }
         if (form.form.relatedFields
-            .where((field) => field.isTicketField != true)
+            .where((field) => field.definition.isTicketField != true)
             .isEmpty) {
           issues.add(const MapEntry(3, 'Formulář nemá žádná pole.'));
         }
-        if (form.form.relatedFields
-                .any((field) => field.type == FormHelper.fieldTypeTicket) &&
+        if (form.form.relatedFields.any((field) =>
+                field.definition.type == FormMetadata.fieldTypeTicket) &&
             form.products.isEmpty) {
           issues
               .add(const MapEntry(3, 'Formulář se vstupenkami nemá produkty.'));
@@ -988,7 +1003,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           'Událost',
           [
             _reviewRow(AdministrationStrings.titleLabel, d['title'] as String),
-            _reviewRow(AdministrationStrings.linkLabel,
+            _reviewRow(
+                AdministrationStrings.linkLabel,
                 (d['link'] as String).isEmpty
                     ? FormStrings.automaticPublicLink
                     : publicLinkUrl(d['link'] as String, isForm: false)),
@@ -1029,19 +1045,20 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                       ? 'Nový formulář'
                       : 'Kopie z události ${d['formOrigin']}'),
               _reviewRow('FeatureFormSettings.labelFormTitle'.tr(),
-                  form.form.title ?? ''),
+                  form.form.definition.title ?? ''),
               _reviewRow('FeatureFormSettings.labelFormLink'.tr(),
-                  form.form.link ?? ''),
+                  form.form.definition.link ?? ''),
               _reviewRow('Stav', 'Zavřený'),
               Text(
-                  'Pole formuláře (${form.form.relatedFields.where((field) => field.isTicketField != true).length})',
+                  'Pole formuláře (${form.form.relatedFields.where((field) => field.definition.isTicketField != true).length})',
                   style: Theme.of(context).textTheme.titleSmall),
               for (final field in form.form.relatedFields
-                  .where((field) => field.isTicketField != true))
+                  .where((field) => field.definition.isTicketField != true))
                 _reviewRow(
-                    field.title ??
-                        FormHelper.fieldTypeToLocale(field.type ?? ''),
-                    '${FormHelper.fieldTypeToLocale(field.type ?? '')} · ${field.isRequired == true ? 'povinné' : 'nepovinné'}${field.isHidden == true ? ' · skryté' : ''}${field.options.isEmpty ? '' : ' · možnosti: ${field.options.map((option) => option.title).join(', ')}'}'),
+                    field.definition.title ??
+                        FormHelper.fieldTypeToLocale(
+                            field.definition.type ?? ''),
+                    '${FormHelper.fieldTypeToLocale(field.definition.type ?? '')} · ${field.definition.isRequired == true ? 'povinné' : 'nepovinné'}${field.definition.isHidden == true ? ' · skryté' : ''}${field.options.isEmpty ? '' : ' · možnosti: ${field.options.map((option) => option.title).join(', ')}'}'),
               const SizedBox(height: 6),
               Text('${CommonStrings.products} (${form.products.length})',
                   style: Theme.of(context).textTheme.titleSmall),
@@ -1109,8 +1126,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                       .map((group) => (group as Map)['title']?.toString() ?? '')
                       .join(', ')),
               _reviewRow('Místa', '$seatCount'),
-              _reviewRow(
-                  'Vazba na formulář', form?.form.title ?? 'Chybí formulář'),
+              _reviewRow('Vazba na formulář',
+                  form?.form.definition.title ?? 'Chybí formulář'),
             ],
           ],
           issues),
@@ -1152,10 +1169,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             child: const Text('Uložit dokončený koncept')),
         const SizedBox(height: 10),
         ElevatedButton.icon(
-          onPressed: _finalizing || issues.isNotEmpty ? null : _finalize,
-          icon: const Icon(Icons.check),
-          label: Text(_finalizing ? OccasionSetupStrings.saving :
-              _finalizeCommand != null ? OccasionSetupStrings.retry : OccasionSetupStrings.createEvent)),
+            onPressed: _finalizing || issues.isNotEmpty ? null : _finalize,
+            icon: const Icon(Icons.check),
+            label: Text(_finalizing
+                ? OccasionSetupStrings.saving
+                : _finalizeCommand != null
+                    ? OccasionSetupStrings.retry
+                    : OccasionSetupStrings.createEvent)),
         if (_finalizeError != null) Text(_finalizeError!),
       ],
     ]);
@@ -1231,7 +1251,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 draftFormBundle(Map<String, dynamic>.from(formData)))
             : null;
         final fields = formBundle?.form.relatedFields
-                .where((field) => field.isTicketField != true)
+                .where((field) => field.definition.isTicketField != true)
                 .length ??
             0;
         final products = formBundle?.products.length ?? 0;
@@ -1249,7 +1269,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 d, 'title', 'FeatureFormSettings.labelFormTitle'.tr()),
             const SizedBox(height: 10),
             _formTextField(d, 'link', 'FeatureFormSettings.labelFormLink'.tr()),
-            FormPublicLink(link: formBundle.form.link ?? ''),
+            FormPublicLink(link: formBundle.form.definition.link ?? ''),
             const SizedBox(height: 10),
             Text('$fields polí · $products produktů'),
             const SizedBox(height: 12),
@@ -1496,18 +1516,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         },
         child: Scaffold(
           appBar: AppBar(title: Text(AdministrationStrings.addNewEventTitle)),
-          body: _finalizeCommand == null ? _wizard(_data) : Center(
-            child: Padding(padding: const EdgeInsets.all(24),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                if (_finalizing) const CircularProgressIndicator(),
-                Text(_finalizeError ?? OccasionSetupStrings.saving),
-                if (!_finalizing) ...[
-                  ElevatedButton(onPressed: _finalize,
-                    child: Text(OccasionSetupStrings.retry)),
-                  TextButton(onPressed: _leave,
-                    child: Text(CommonStrings.back)),
-                ],
-              ]))),
+          body: _finalizeCommand == null
+              ? _wizard(_data)
+              : Center(
+                  child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        if (_finalizing) const CircularProgressIndicator(),
+                        Text(_finalizeError ?? OccasionSetupStrings.saving),
+                        if (!_finalizing) ...[
+                          ElevatedButton(
+                              onPressed: _finalize,
+                              child: Text(OccasionSetupStrings.retry)),
+                          TextButton(
+                              onPressed: _leave,
+                              child: Text(CommonStrings.back)),
+                        ],
+                      ]))),
         ),
       );
 }

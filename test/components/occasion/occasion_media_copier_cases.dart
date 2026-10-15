@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,11 @@ import 'package:fstapp/components/occasion/occasion_media_copier.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   test('duplicated occasion images are uploaded with one owner', () async {
     final ticket = TicketFeature(
       code: FeatureConstants.ticket,

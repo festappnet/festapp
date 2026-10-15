@@ -9,9 +9,9 @@ import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/map/db_places.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/speakers/admin/counseling_slot_dialog.dart';
 import 'package:fstapp/components/speakers/db_speakers.dart';
 import 'package:fstapp/components/speakers/speaker_model.dart';
@@ -205,15 +205,15 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       return;
     }
 
-    event
-      ..startTime = res.start
-      ..endTime = res.end
-      ..maxParticipants = res.capacity
-      ..place = _places.firstWhereOrNull((p) => p.id == res.placeId);
+    final draft = event.copyWith(
+        startTime: res.start,
+        endTime: res.end,
+        maxParticipants: res.capacity,
+        place: _places.firstWhereOrNull((place) => place.id == res.placeId));
 
     final saved = await ExceptionHandler.guard<EventModel>(
       context,
-      futureFunction: () => DbEvents.updateEvent(event),
+      futureFunction: () => DbEvents.updateEvent(draft),
     );
     if (saved != null && mounted) {
       _changed = true;
@@ -303,7 +303,8 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
                   try {
                     final bytes = await file.readAsBytes();
                     final url = await DbImages.uploadImage(
-                        bytes, RightsService.currentOccasionId(), null, profile: ImageUploadProfile.portrait);
+                        bytes, RightsService.currentOccasionId(), null,
+                        profile: ImageUploadProfile.portrait);
                     if (mounted) setState(() => _image = url);
                     return url;
                   } catch (e) {

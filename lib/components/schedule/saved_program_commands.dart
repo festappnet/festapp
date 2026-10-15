@@ -1,6 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -83,7 +83,8 @@ class SupabaseSavedProgramCommands implements SavedProgramCommands {
     // authoritative cache replacements must not bump the process-wide
     // projection epoch: OccasionHomePage keys its routed child by that epoch,
     // which would otherwise dispose and recreate the entire event detail.
-    await response.applyReplacements(
+    await applyClientCommandReplacements(
+      response,
       notifyProjection: false,
       expectedContextToken: contextToken,
     );

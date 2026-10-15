@@ -1,10 +1,13 @@
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'order_state_column_width.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import '../../forms/waitlist_strings.dart';
-import '../../forms/models/form_model.dart';
 import '../../forms/views/waitlist_offers_dialog.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +50,7 @@ bool canSaveOrderGridChanges({
 
 /// Waiting registrations remain available for offers when the Active filter hides them.
 List<OrderModel> waitingOrdersForOffers(
-        SingleDataGridController grid, List<FormModel> forms) =>
+        SingleDataGridController grid, List<FormBundle> forms) =>
     grid.rows
         .map(OrderGridFilters.order)
         .whereType<OrderModel>()
@@ -56,30 +59,30 @@ List<OrderModel> waitingOrdersForOffers(
             order.allows('offer') &&
             (order.waitlistSummary?.counts['waiting'] ?? 0) > 0 &&
             forms.any((form) =>
-                form.id == order.formId &&
-                form.waitlistEnabled &&
-                form.capacity?.canSendOffers == true &&
-                form.capacity!.offerablePlaces > 0))
+                form.definition.id == order.formId &&
+                form.definition.waitlistEnabled &&
+                form.definition.capacity?.canSendOffers == true &&
+                form.definition.capacity!.offerablePlaces > 0))
         .toList();
 
 List<OrderModel> checkedWaitingOrdersForOffers(
-    SingleDataGridController grid, List<FormModel> forms) {
+    SingleDataGridController grid, List<FormBundle> forms) {
   final eligible = waitingOrdersForOffers(grid, forms);
   final checked = grid.visibleCheckedRows.map(OrderGridFilters.order).toSet();
   return eligible.where(checked.contains).toList();
 }
 
 int availableWaitlistOffers(
-    List<FormModel> forms, Iterable<OrderModel> orders) {
+    List<FormBundle> forms, Iterable<OrderModel> orders) {
   var total = 0;
   for (final form in forms) {
-    final capacity = form.capacity;
-    if (!form.waitlistEnabled || capacity?.canSendOffers != true) {
+    final capacity = form.definition.capacity;
+    if (!form.definition.waitlistEnabled || capacity?.canSendOffers != true) {
       continue;
     }
     final waiting = orders
         .where((order) =>
-            order.formId == form.id &&
+            order.formId == form.definition.id &&
             order.isWaitlisted &&
             order.allows('offer'))
         .fold<int>(
@@ -95,9 +98,9 @@ int availableWaitlistOffers(
 Widget waitlistOffersToolbarButton(
   BuildContext context,
   SingleDataGridController<OrderModel> grid, {
-  required List<FormModel> forms,
+  required List<FormBundle> forms,
   required Future<void> Function() onRefresh,
-  Widget Function(FormModel, List<OrderModel>, Set<int>)? offerDialogBuilder,
+  Widget Function(FormBundle, List<OrderModel>, Set<int>)? offerDialogBuilder,
 }) {
   final count = availableWaitlistOffers(
       forms, grid.rows.map(OrderGridFilters.order).whereType<OrderModel>());
@@ -121,10 +124,10 @@ Widget waitlistOffersToolbarButton(
 /// The grid and widget tests use the same selection and canonical offer orchestration.
 DataGridAction createWaitlistOffersAction(
   BuildContext context, {
-  required List<FormModel> Function() forms,
+  required List<FormBundle> Function() forms,
   required SingleDataGridController<OrderModel>? Function() controller,
   required Future<void> Function() onRefresh,
-  Widget Function(FormModel, List<OrderModel>, Set<int>)? offerDialogBuilder,
+  Widget Function(FormBundle, List<OrderModel>, Set<int>)? offerDialogBuilder,
 }) =>
     DataGridAction(
       name: WaitlistStrings.send,
@@ -148,13 +151,13 @@ DataGridAction createWaitlistOffersAction(
         if (selected.isEmpty) return;
         final eligible = forms()
             .where((form) =>
-                form.waitlistEnabled &&
-                form.capacity?.canSendOffers == true &&
-                selected.any((order) => order.formId == form.id))
+                form.definition.waitlistEnabled &&
+                form.definition.capacity?.canSendOffers == true &&
+                selected.any((order) => order.formId == form.definition.id))
             .toList();
         final chosen = eligible.length == 1
             ? eligible.first
-            : await showDialog<FormModel>(
+            : await showDialog<FormBundle>(
                 context: context,
                 builder: (context) => AppSimpleDialog(
                         title: Text(WaitlistStrings.settings),
@@ -162,11 +165,14 @@ DataGridAction createWaitlistOffersAction(
                           for (final form in eligible)
                             SimpleDialogOption(
                                 onPressed: () => Navigator.pop(context, form),
-                                child: Text(form.title ?? form.link ?? '')),
+                                child: Text(form.definition.title ??
+                                    form.definition.link ??
+                                    '')),
                         ]));
         if (chosen == null || !context.mounted) return;
-        final recipients =
-            selected.where((order) => order.formId == chosen.id).toList();
+        final recipients = selected
+            .where((order) => order.formId == chosen.definition.id)
+            .toList();
         final selectedIds = recipients.map((order) => order.id!).toSet();
         await showDialog(
             context: context,
@@ -190,12 +196,13 @@ class _OrdersContentState extends State<OrdersContent> {
   @override
   void initState() {
     super.initState();
-    DbBankAccounts.connectionChanges.addListener(_bankConnectionChanged);
+    DbBankAccounts.current.connectionChanges
+        .addListener(_bankConnectionChanged);
   }
 
   Future<void> _bankConnectionChanged() async {
     final grid = controller;
-    final id = DbBankAccounts.connectionChanges.value.accountId;
+    final id = DbBankAccounts.current.connectionChanges.value.accountId;
     if (!mounted ||
         grid == null ||
         !grid.rows.any((row) =>
@@ -211,7 +218,8 @@ class _OrdersContentState extends State<OrdersContent> {
 
   @override
   void dispose() {
-    DbBankAccounts.connectionChanges.removeListener(_bankConnectionChanged);
+    DbBankAccounts.current.connectionChanges
+        .removeListener(_bankConnectionChanged);
     super.dispose();
   }
 
@@ -253,10 +261,11 @@ class _OrdersContentState extends State<OrdersContent> {
     if (!mounted) return;
 
     var forms = bundle.forms;
-    bool waitlistEnabled() => forms.any((form) => form.waitlistEnabled);
+    bool waitlistEnabled() =>
+        forms.any((form) => form.definition.waitlistEnabled);
     void updateWaitlistColumn(SingleDataGridController<OrderModel> grid) {
-      final column = grid.columns
-          .firstWhere((column) => column.field == EshopColumns.ORDER_WAITLIST);
+      final column = grid.columns.firstWhere(
+          (column) => column.field == EshopColumnIds.ORDER_WAITLIST);
       if (grid.isGridLoaded) {
         grid.stateManager.hideColumn(column, !waitlistEnabled());
       } else {
@@ -267,7 +276,7 @@ class _OrdersContentState extends State<OrdersContent> {
     void fitStateColumn(
         SingleDataGridController<OrderModel> grid, List<OrderModel> orders) {
       final column = grid.columns
-          .firstWhere((column) => column.field == EshopColumns.ORDER_STATE);
+          .firstWhere((column) => column.field == EshopColumnIds.ORDER_STATE);
       final requiredWidth = orderStateColumnWidth(context, orders);
       column.minWidth = requiredWidth;
       if (column.width >= requiredWidth) return;
@@ -279,9 +288,9 @@ class _OrdersContentState extends State<OrdersContent> {
     }
 
     // Check if any field across all forms is a non-ticket 'note' field.
-    final hasOrderNoteField = forms.any((form) => (form.relatedFields).any(
-        (field) =>
-            field.type == FormHelper.fieldTypeNote &&
+    final hasOrderNoteField = forms.any((form) =>
+        (form.definition.relatedFields).any((field) =>
+            field.type == FormMetadata.fieldTypeNote &&
             (field.isTicketField ?? false) == false));
 
     var formFeat =
@@ -289,47 +298,78 @@ class _OrdersContentState extends State<OrdersContent> {
 
     // Start with the base list of columns
     List<String> columnIdentifiers = [
-      EshopColumns.ORDER_ID,
-      EshopColumns.ORDER_SEQUENCE,
-      EshopColumns.ORDER_SYMBOL,
-      EshopColumns.ORDER_DATA,
-      EshopColumns.ORDER_EMAIL,
+      EshopColumnIds.ORDER_ID,
+      EshopColumnIds.ORDER_SEQUENCE,
+      EshopColumnIds.ORDER_SYMBOL,
+      EshopColumnIds.ORDER_DATA,
+      EshopColumnIds.ORDER_EMAIL,
       if (!FeatureService.isFeatureEnabled(FeatureConstants.ticket))
-        EshopColumns.TICKET_PRODUCTS,
-      EshopColumns.ORDER_CREATED_AT,
-      EshopColumns.ORDER_STATE,
-      EshopColumns.ORDER_WAITLIST,
+        EshopColumnIds.TICKET_PRODUCTS,
+      EshopColumnIds.ORDER_CREATED_AT,
+      EshopColumnIds.ORDER_STATE,
+      EshopColumnIds.ORDER_WAITLIST,
       if (FeatureService.isFeatureEnabled(FeatureConstants.contract))
-        EshopColumns.ORDER_CONTRACT_DOWNLOAD,
-      EshopColumns.ORDER_PRICE,
-      EshopColumns.PAYMENT_INFO_PAID,
-      EshopColumns.PAYMENT_INFO_RETURNED,
-      EshopColumns.PAYMENT_INFO_VARIABLE_SYMBOL,
-      if (hasOrderNoteField) EshopColumns.ORDER_DATA_NOTE,
-      EshopColumns.ORDER_NOTE_HIDDEN,
+        EshopColumnIds.ORDER_CONTRACT_DOWNLOAD,
+      EshopColumnIds.ORDER_PRICE,
+      EshopColumnIds.PAYMENT_INFO_PAID,
+      EshopColumnIds.PAYMENT_INFO_RETURNED,
+      EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL,
+      if (hasOrderNoteField) EshopColumnIds.ORDER_DATA_NOTE,
+      EshopColumnIds.ORDER_NOTE_HIDDEN,
       if (formFeat?.isEnabled == true && (formFeat?.reminderIsEnabled ?? false))
-        EshopColumns.PAYMENT_INFO_REMINDER_SENT,
-      EshopColumns.PAYMENT_INFO_DEADLINE,
+        EshopColumnIds.PAYMENT_INFO_REMINDER_SENT,
+      EshopColumnIds.PAYMENT_INFO_DEADLINE,
       if (FeatureService.isFeatureEnabled(FeatureConstants.deposit))
-        EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE,
-      EshopColumns.ORDER_EMAIL_DELIVERY,
-      EshopColumns.ORDER_TRANSACTIONS,
-      EshopColumns.ORDER_OVERVIEW,
-      EshopColumns.ORDER_HISTORY,
+        EshopColumnIds.PAYMENT_INFO_DEPOSIT_DEADLINE,
+      EshopColumnIds.ORDER_EMAIL_DELIVERY,
+      EshopColumnIds.ORDER_TRANSACTIONS,
+      EshopColumnIds.ORDER_HISTORY,
     ];
 
     // Conditionally add the form column if there are multiple forms
     if (forms.length > 1) {
-      final symbolIndex = columnIdentifiers.indexOf(EshopColumns.ORDER_SYMBOL);
-      columnIdentifiers.insert(symbolIndex + 1, EshopColumns.ORDER_FORM);
+      final symbolIndex =
+          columnIdentifiers.indexOf(EshopColumnIds.ORDER_SYMBOL);
+      columnIdentifiers.insert(symbolIndex + 1, EshopColumnIds.ORDER_FORM);
     }
 
     // Create the controller with the final column list
     List<OrderModel>? firstLoadOrders = bundle.orders;
 
+    final sendOffersAction = DataGridAction(
+      name: WaitlistStrings.send,
+      requiresSelection: false,
+      action: (SingleDataGridController singleDataGrid, [_]) async {
+        final eligible =
+            forms.where((f) => f.definition.waitlistEnabled).toList();
+        final chosen = eligible.length == 1
+            ? eligible.first
+            : await showDialog<dynamic>(
+                context: context,
+                builder: (context) => AppSimpleDialog(
+                      title: Text(WaitlistStrings.settings),
+                      children: [
+                        for (final f in eligible)
+                          SimpleDialogOption(
+                              onPressed: () => Navigator.pop(context, f),
+                              child: Text(f.definition.title ??
+                                  f.definition.link ??
+                                  ''))
+                      ],
+                    ));
+        if (chosen == null || !mounted) return;
+        await showDialog(
+            context: context,
+            builder: (_) =>
+                WaitlistOffersDialog(form: chosen, orders: bundle.orders));
+        await refreshData();
+      },
+      isEnabled: RightsService.isEditorOrder,
+    );
+
     final newController = SingleDataGridController<OrderModel>(
       columnHelp: {
-        EshopColumns.PAYMENT_INFO_RETURNED: OrdersStrings.gridReturnedHelp
+        EshopColumnIds.PAYMENT_INFO_RETURNED: OrdersStrings.gridReturnedHelp
       },
       context: context,
       additionalFilterEnabled: true,
@@ -354,9 +394,11 @@ class _OrdersContentState extends State<OrdersContent> {
             await DbOrders.getOrdersTabData(occasionLink: occasionLink!);
         bundle = newBundle;
         forms = newBundle.forms;
-        if (mounted && controller != null) {
-          updateWaitlistColumn(controller!);
-          fitStateColumn(controller!, newBundle.orders);
+        final actions = controller?.headerChildren;
+        actions?.removeWhere((action) => identical(action, sendOffersAction));
+        if (RightsService.isEditorOrder() &&
+            forms.any((f) => f.definition.waitlistEnabled)) {
+          actions?.insert(0, sendOffersAction);
         }
         return newBundle.orders;
       },
@@ -376,6 +418,9 @@ class _OrdersContentState extends State<OrdersContent> {
         isAddActionPossible: () => false,
       ),
       headerChildren: [
+        if (RightsService.isEditorOrder() &&
+            forms.any((f) => f.definition.waitlistEnabled))
+          sendOffersAction,
         DataGridAction(
           name: CommonStrings.cancel,
           requiresSelection: true,
@@ -388,7 +433,7 @@ class _OrdersContentState extends State<OrdersContent> {
                   false),
         ),
         DataGridAction(
-          name: OrdersStrings.sendActionText,
+          name: OrderItemStrings.sendActionText,
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               sendTicketsOrConfirmations(singleDataGrid),
@@ -401,9 +446,8 @@ class _OrdersContentState extends State<OrdersContent> {
         ),
       ],
       columns: EshopColumns.generateColumns(context, columnIdentifiers, data: {
-        EshopColumns.ORDER_WAITLIST: refreshData,
-        EshopColumns.ORDER_TRANSACTIONS: refreshData,
-        EshopColumns.PAYMENT_INFO_PAID: refreshData,
+        EshopColumnIds.ORDER_TRANSACTIONS: refreshData,
+        EshopColumnIds.PAYMENT_INFO_PAID: refreshData,
         "unitId": unitId,
       }),
     );
@@ -454,7 +498,7 @@ class _OrdersContentState extends State<OrdersContent> {
       var confirm = await DataGridActionConfirmation.show<OrderModel>(
         context: context,
         title: CommonStrings.cancel,
-        message: OrdersStrings.cancelOrdersConfirmationText,
+        message: OrderItemStrings.cancelOrdersConfirmationText,
         items: selected,
         itemsLabel: OrdersStrings.ordersTab,
         confirmButtonText: CommonStrings.cancel,
@@ -535,11 +579,11 @@ class _OrdersContentState extends State<OrdersContent> {
         selectedFull.where((o) => checkedIds.contains(o.id)).toList();
     var confirm = await DataGridActionConfirmation.show<OrderModel>(
       context: context,
-      title: OrdersStrings.sendActionText,
-      message: OrdersStrings.sendActionConfirmationText,
+      title: OrderItemStrings.sendActionText,
+      message: OrderItemStrings.sendActionConfirmationText,
       items: sending,
       itemsLabel: OrdersStrings.ordersTab,
-      confirmButtonText: OrdersStrings.sendActionText,
+      confirmButtonText: OrderItemStrings.sendActionText,
     );
 
     if (confirm && mounted) {

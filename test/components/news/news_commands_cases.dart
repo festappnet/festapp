@@ -12,6 +12,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -22,13 +29,6 @@ void main() {
               'created_at': '2026-08-03T10:00:00Z',
               'views': 0,
             },
-          },
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -64,6 +64,13 @@ void main() {
         versions.add(parameters['p_expected_version']);
         ids.add(parameters['p_command_id']);
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': versions.length == 1 ? 'conflict' : 'applied',
           'code': versions.length == 1 ? 409 : 200,
           'data': {
@@ -73,13 +80,6 @@ void main() {
               'message': versions.length == 1 ? serverMessage : 'Edited',
               'created_at': '2026-08-03T10:00:00Z'
             }
-          },
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -107,6 +107,13 @@ void main() {
         ClientCommandTransport((_, parameters) async {
       attempts++;
       return {
+        'mutation': {
+          'commandId': '00000000-0000-4000-8000-000000000001',
+          'receiptId': '00000000-0000-4000-8000-000000000001',
+          'commitId': null,
+          'replayed': false,
+          'occurredAt': '2026-10-15T10:00:00Z'
+        },
         'status': 'conflict',
         'code': 409,
         'data': {
@@ -116,13 +123,6 @@ void main() {
             'message': 'Original',
             'created_at': '2026-08-03T10:00:00Z'
           }
-        },
-        'mutation': {
-          'commandId': '00000000-0000-4000-8000-000000000001',
-          'receiptId': '00000000-0000-4000-8000-000000000001',
-          'commitId': null,
-          'replayed': false,
-          'occurredAt': '2026-10-07T10:00:00Z'
         },
         'sync': {'replacements': <Object>[]}
       };
@@ -147,6 +147,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -158,13 +165,6 @@ void main() {
               'views': 0,
             },
             'notificationQueued': true,
-          },
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };

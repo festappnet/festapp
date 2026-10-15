@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:festapp_core/forms.dart';
 import '../waitlist_strings.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +7,6 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
-import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/forms/models/holder_models/id_document_field_holder.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
@@ -102,7 +103,7 @@ class FormFieldBuilders {
         }
       });
     }
-    if (ticket.fields.none((f) => f.fieldType == FormHelper.fieldTypeSpot)) {
+    if (ticket.fields.none((f) => f.fieldType == FormMetadata.fieldTypeSpot)) {
       if (ticket.tickets.isEmpty &&
           !ticket.fixedTickets &&
           ticket.maxTickets > 0) {
@@ -213,7 +214,7 @@ class FormFieldBuilders {
                               child: Align(
                                 alignment: Alignment.center,
                                 child: buildTitleWidget(
-                                  "${OrdersStrings.itemSingular} ${i + 1}",
+                                  "${OrderItemStrings.itemSingular} ${i + 1}",
                                   false,
                                   context,
                                 ),
@@ -245,7 +246,8 @@ class FormFieldBuilders {
                                 formHolder,
                                 ticket.tickets[i].ticketValues
                                     .where((f) =>
-                                        f.fieldType != FormHelper.fieldTypeSpot)
+                                        f.fieldType !=
+                                        FormMetadata.fieldTypeSpot)
                                     .toList()),
                           ),
                         ),
@@ -277,7 +279,7 @@ class FormFieldBuilders {
       ]),
       builder: (FormFieldState<BlueprintSeat?> field) {
         BlueprintSeat? seat = field.value;
-        textController.text = seat?.seat?.toString() ?? FormHelper.metaEmpty;
+        textController.text = seat?.seat?.toString() ?? FormMetadata.metaEmpty;
         return TextField(
           controller: textController,
           focusNode: focusNode,

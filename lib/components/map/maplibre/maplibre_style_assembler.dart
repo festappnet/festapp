@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fstapp/components/map/offline_map_bundle_manager.dart';
-import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
-import 'package:fstapp/components/map/maplibre/maplibre_style_optimizer.dart';
+import 'package:festapp_core/map.dart';
 
 class MapLibreStyleAssembler {
   static Future<String> assemble({

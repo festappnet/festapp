@@ -1,5 +1,7 @@
+import 'package:fstapp/components/forms/models/form_bundle.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
-import 'package:fstapp/components/forms/models/form_capacity_model.dart';
+
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +12,7 @@ import 'package:fstapp/components/eshop/models/payment_info_model.dart';
 import 'package:fstapp/components/eshop/models/waitlist_summary_model.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:fstapp/components/eshop/views/orders_content.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/views/waitlist_offers_dialog.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -101,14 +103,21 @@ void main() {
   late SingleDataGridController<OrderModel> grid;
   var refreshed = 0;
   Future<void> open(WidgetTester tester, List<OrderModel> orders,
-      {List<FormModel>? forms}) async {
+      {List<FormBundle>? forms}) async {
     refreshed = 0;
-    final configured =
-        forms ?? [FormModel(id: 7, title: 'Form seven', waitlistEnabled: true)];
-    for (final form in configured) {
-      form.capacity ??= FormCapacityModel.fromJson(
-          {'canSendOffers': true, 'offerablePlaces': 8});
-    }
+    var configured = forms ??
+        [
+          FormBundle(
+              definition: FormDefinition(
+                  id: 7, title: 'Form seven', waitlistEnabled: true))
+        ];
+    configured = configured
+        .map((form) => form.withDefinition(form.definition.copyWith(
+              capacity: form.definition.capacity ??
+                  FormCapacityModel.fromJson(
+                      {'canSendOffers': true, 'offerablePlaces': 8}),
+            )))
+        .toList();
     tester.view.physicalSize = const Size(1600, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -157,7 +166,7 @@ void main() {
                       loadData: () async => orders,
                       fromPlutoJson: OrderModel.fromPlutoJson,
                       firstColumnType: DataGridFirstColumn.check,
-                      idColumn: EshopColumns.ORDER_ID,
+                      idColumn: EshopColumnIds.ORDER_ID,
                       additionalFilterEnabled: true,
                       additionalRowPredicate: OrderGridFilters.orderIsActive,
                       actionsExtended: DataGridActionsController(
@@ -172,15 +181,15 @@ void main() {
                       columns: [
                         TrinaColumn(
                             title: 'ID',
-                            field: EshopColumns.ORDER_ID,
+                            field: EshopColumnIds.ORDER_ID,
                             type: TrinaColumnType.number()),
                         TrinaColumn(
                             title: 'Symbol',
-                            field: EshopColumns.ORDER_SYMBOL,
+                            field: EshopColumnIds.ORDER_SYMBOL,
                             type: TrinaColumnType.text()),
                         TrinaColumn(
                             title: 'Note',
-                            field: EshopColumns.ORDER_NOTE_HIDDEN,
+                            field: EshopColumnIds.ORDER_NOTE_HIDDEN,
                             type: TrinaColumnType.text())
                       ]);
                   return SingleTableDataGrid(grid);
@@ -195,13 +204,13 @@ void main() {
       matching: find.byType(ElevatedButton));
   Future<void> check(WidgetTester tester, int id) async {
     final target = grid.rows
-        .singleWhere((row) => row.cells[EshopColumns.ORDER_ID]!.value == id);
+        .singleWhere((row) => row.cells[EshopColumnIds.ORDER_ID]!.value == id);
     if (!grid.stateManager.rows.contains(target)) {
       grid.toggleAdditionalFilter(false);
     }
     grid.stateManager.setRowChecked(
         grid.rows.singleWhere(
-            (row) => row.cells[EshopColumns.ORDER_ID]!.value == id),
+            (row) => row.cells[EshopColumnIds.ORDER_ID]!.value == id),
         true);
     grid.stateManager.notifyListeners();
     await tester.pumpAndSettle();
@@ -269,9 +278,15 @@ void main() {
       order(8, form: 8),
       order(9, form: 8)
     ], forms: [
-      FormModel(id: 7, title: 'Form seven', waitlistEnabled: true),
-      FormModel(id: 8, title: 'Form eight', waitlistEnabled: true),
-      FormModel(id: 10, title: 'Unselected form', waitlistEnabled: true)
+      FormBundle(
+          definition: FormDefinition(
+              id: 7, title: 'Form seven', waitlistEnabled: true)),
+      FormBundle(
+          definition: FormDefinition(
+              id: 8, title: 'Form eight', waitlistEnabled: true)),
+      FormBundle(
+          definition: FormDefinition(
+              id: 10, title: 'Unselected form', waitlistEnabled: true))
     ]);
     await check(tester, 5);
     await check(tester, 8);
@@ -316,11 +331,12 @@ void main() {
     await open(tester, [
       order(5)
     ], forms: [
-      FormModel(
-          id: 7,
-          waitlistEnabled: true,
-          capacity: FormCapacityModel.fromJson(
-              {'canSendOffers': false, 'offerablePlaces': 0}))
+      FormBundle(
+          definition: FormDefinition(
+              id: 7,
+              waitlistEnabled: true,
+              capacity: FormCapacityModel.fromJson(
+                  {'canSendOffers': false, 'offerablePlaces': 0})))
     ]);
     expect(toolbar(), findsNothing);
   });
@@ -343,13 +359,13 @@ void main() {
     await open(tester, [order(5)]);
     await check(tester, 5);
     final row = grid.rows.single;
-    row.cells[EshopColumns.ORDER_NOTE_HIDDEN]!.value = 'unsaved draft';
+    row.cells[EshopColumnIds.ORDER_NOTE_HIDDEN]!.value = 'unsaved draft';
     row.setState(TrinaRowState.updated);
     grid.updatedRows.add(row);
     grid.stateManager.notifyListeners();
     await tester.pumpAndSettle();
     expect(tester.widget<ElevatedButton>(toolbar()).onPressed, isNull);
-    expect(row.cells[EshopColumns.ORDER_NOTE_HIDDEN]!.value, 'unsaved draft');
+    expect(row.cells[EshopColumnIds.ORDER_NOTE_HIDDEN]!.value, 'unsaved draft');
     expect(grid.updatedRows, contains(row));
     expect(proposalCalls, isEmpty);
   });

@@ -1,11 +1,10 @@
+import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/order_product_ticket_model.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -24,7 +23,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OccasionEditorData {
   final List<OccasionUserModel> users;
-  final List<FormModel> forms;
+  final List<FormBundle> forms;
   final Map<String, List<ServiceItemModel>> services;
   OccasionEditorData({
     required this.users,
@@ -38,8 +37,8 @@ class OccasionUsersBundle {
   final Map<int, TicketModel> tickets;
   final Map<int, OrderProductTicketModel> orderProductTickets;
   final Map<int, OrderModel> orders;
-  final Map<int, FormModel> forms;
-  final Map<int, FormFieldModel> formFields;
+  final Map<int, FormBundle> forms;
+  final Map<int, FormFieldDefinition> formFields;
 
   OccasionUsersBundle({
     required this.users,
@@ -80,8 +79,8 @@ class DbUsers {
     if (payload.isSuccess) {
       final users = List<OccasionUserModel>.from(
           payload.users.map((x) => OccasionUserModel.fromJson(x)));
-      final forms =
-          List<FormModel>.from(payload.forms.map((x) => FormModel.fromJson(x)));
+      final forms = List<FormBundle>.from(
+          payload.forms.map((x) => FormBundle.fromJson(x)));
       final services = <String, List<ServiceItemModel>>{
         for (final type in [
           DbOccasions.serviceTypeAccommodation,
@@ -93,7 +92,7 @@ class DbUsers {
           ),
       };
 
-      final formMap = {for (var form in forms) form.key: form};
+      final formMap = {for (var form in forms) form.definition.key: form};
       final usersById = {for (final user in users) user.user: user};
 
       for (final status in invitationStatuses is List
@@ -171,13 +170,23 @@ class DbUsers {
     final orders = (json['orders'] as Map<String, dynamic>).map(
         (key, value) => MapEntry(int.parse(key), OrderModel.fromJson(value)));
     final forms = (json['forms'] as Map<String, dynamic>).map(
-        (key, value) => MapEntry(int.parse(key), FormModel.fromJson(value)));
+        (key, value) => MapEntry(int.parse(key), FormBundle.fromJson(value)));
     final formFields = (json['form_fields'] as Map<String, dynamic>).map(
         (key, value) =>
-            MapEntry(int.parse(key), FormFieldModel.fromJson(value)));
+            MapEntry(int.parse(key), FormFieldDefinition.fromJson(value)));
 
     // 2. Link the parsed models together
-    final formMapByKey = {for (var f in forms.values) f.key: f};
+    final fieldsByForm = groupBy(formFields.values, (field) => field.form);
+    for (final entry in forms.entries.toList()) {
+      final added = fieldsByForm[entry.key];
+      if (added != null)
+        forms[entry.key] = entry.value.withDefinition(entry.value.definition
+            .copyWith(relatedFields: [
+          ...entry.value.definition.relatedFields,
+          ...added
+        ]));
+    }
+    final formMapByKey = {for (var f in forms.values) f.definition.key: f};
     final optsByTicketId =
         groupBy(orderProductTickets.values, (opt) => opt.ticketId);
 
@@ -203,12 +212,6 @@ class DbUsers {
       }
     }
 
-    for (final field in formFields.values) {
-      if (field.form != null && forms.containsKey(field.form)) {
-        forms[field.form]!.relatedFields.add(field);
-      }
-    }
-
     // 3. **UPDATED**: Enhance user data with info from their order form in a single pass.
     for (final user in users.values) {
       final order = user.ticket?.relatedOrder;
@@ -231,10 +234,10 @@ class DbUsers {
 
         // Check for birth_date if not already present on the user model
         if (user.birthDate == null) {
-          if (formFieldModel.type == FormHelper.fieldTypeBirthDate) {
+          if (formFieldModel.type == FormMetadata.fieldTypeBirthDate) {
             final date = DateTime.tryParse(fieldValue as String);
             if (date != null) user.birthDate = date;
-          } else if (formFieldModel.type == FormHelper.fieldTypeBirthYear) {
+          } else if (formFieldModel.type == FormMetadata.fieldTypeBirthYear) {
             final year = int.tryParse(fieldValue.toString());
             if (year != null) user.birthDate = DateTime(year);
           }
@@ -242,7 +245,7 @@ class DbUsers {
 
         // Check for the group feature field if not already present
         if (user.groupFeatureAnswer == null &&
-            formFieldModel.data?[FormHelper.isGroupFeatureField] == true) {
+            formFieldModel.data?[FormMetadata.isGroupFeatureField] == true) {
           user.groupFeatureAnswer = fieldValue.toString();
         }
 

@@ -1,7 +1,6 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
@@ -9,11 +8,15 @@ import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
 import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
-  setUpAll(() => Localization.load(const Locale('cs'),
-      translations: Translations(
+  WidgetEnvironmentFixture.register();
+  setUpAll(() => _environment = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations:
           jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-              as Map<String, dynamic>)));
+              as Map<String, dynamic>));
   final catalog = DemoCatalog(hasOwnWork: true, items: [
     for (final entry in ['ball', 'concert', 'weekend'].indexed)
       DemoOccasion.fromJson({
@@ -27,7 +30,7 @@ void main() {
       }),
   ]);
   for (final own in [false, true]) {
-    testWidgets(
+    testWidgetsWithEnvironment(() => _environment,
         'demo cards follow current Unit occasions, not account-wide work ($own)',
         (tester) async {
       tester.view.physicalSize = const Size(1200, 700);
@@ -36,13 +39,15 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       DemoOccasion? opened;
       DemoOccasion? copied;
-      await tester.pumpWidget(MaterialApp(
-          home: Scaffold(
-              body: DemoOccasionsSection(
-                  hasOwnOccasions: own,
-                  load: () async => catalog,
-                  onOpen: (item) async => opened = item,
-                  onCreateCopy: (item) async => copied = item))));
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: DemoOccasionsSection(
+                      hasOwnOccasions: own,
+                      load: () async => catalog,
+                      onOpen: (item) async => opened = item,
+                      onCreateCopy: (item) async => copied = item))));
       await tester.pumpAndSettle();
       expect(find.text(DemoOccasionStrings.heading), findsOneWidget);
       expect(

@@ -1,8 +1,7 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -14,7 +13,10 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/theme_config.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
+  WidgetEnvironmentFixture.register();
   setUpAll(() async {
     final loader = FontLoader(ThemeConfig.fontFamily)
       ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'));
@@ -22,15 +24,17 @@ void main() {
     await (FontLoader('MaterialIcons')
           ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
         .load();
-    Localization.load(const Locale('cs'),
-        translations: Translations(
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-                as Map<String, dynamic>));
+                as Map<String, dynamic>);
   });
   for (final dark in [false, true]) {
     for (final width in [320.0, 390.0]) {
       for (final scale in [1.0, 2.0]) {
-        testWidgets('mobile demo panel stays on one row: $dark/$width/$scale',
+        testWidgetsWithEnvironment(() => _environment,
+            'mobile demo panel stays on one row: $dark/$width/$scale',
             (tester) async {
           tester.view.devicePixelRatio = 1;
           tester.view.physicalSize = Size(width, 240);
@@ -47,23 +51,25 @@ void main() {
           addTearDown(
               () => RightsService.occasionLinkModelNotifier.value = null);
           final frame = GlobalKey();
-          await tester.pumpWidget(MaterialApp(
-              theme: ThemeConfig.theme(
-                  brightness: dark ? Brightness.dark : Brightness.light),
-              home: MediaQuery(
-                  data: MediaQueryData(
-                      size: Size(width, 240),
-                      textScaler: TextScaler.linear(scale)),
-                  child: RepaintBoundary(
-                      key: frame,
-                      child: DemoOccasionOverlay(
-                          child: Scaffold(
-                              body: Container(
-                                  color: dark
-                                      ? const Color(0xff111111)
-                                      : const Color(0xffeeeeee)),
-                              bottomNavigationBar:
-                                  const SizedBox(height: 48)))))));
+          await _environment.pumpWidget(
+              tester,
+              MaterialApp(
+                  theme: ThemeConfig.theme(
+                      brightness: dark ? Brightness.dark : Brightness.light),
+                  home: MediaQuery(
+                      data: MediaQueryData(
+                          size: Size(width, 240),
+                          textScaler: TextScaler.linear(scale)),
+                      child: RepaintBoundary(
+                          key: frame,
+                          child: DemoOccasionOverlay(
+                              child: Scaffold(
+                                  body: Container(
+                                      color: dark
+                                          ? const Color(0xff111111)
+                                          : const Color(0xffeeeeee)),
+                                  bottomNavigationBar:
+                                      const SizedBox(height: 48)))))));
           await tester.pumpAndSettle();
           final back = find.widgetWithIcon(IconButton, Icons.arrow_back);
           final more = find.byType(PopupMenuButton<String>);

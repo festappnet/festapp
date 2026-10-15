@@ -1,5 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum AttendanceAction { signIn, signOut }
@@ -42,7 +43,7 @@ class SupabaseAttendanceCommands implements AttendanceCommands {
       'p_action': action == AttendanceAction.signIn ? 'sign_in' : 'sign_out',
     });
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final data = response.data;
     return AttendanceCommandResult(
       code: response.code,

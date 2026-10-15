@@ -1,10 +1,7 @@
-import 'product_price_wave.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-
-import 'product_model.dart';
-import 'product_type_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 
 class ProductsEditBundle {
   final List<ProductModel> products;
@@ -12,7 +9,7 @@ class ProductsEditBundle {
   final List<ProductTypeModel> productTypes;
   final List<InventoryPoolModel> inventoryPools;
   final List<InventoryContextModel> inventoryContexts;
-  final List<FormModel> forms;
+  final List<FormBundle> forms;
 
   ProductsEditBundle({
     required this.products,
