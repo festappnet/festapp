@@ -406,15 +406,11 @@
     "surname": "Nachname"
   },
   "FeatureOrders": {
-    "bankSyncWarningEnable": "Aktivieren Sie die Synchronisierung in den Bankkontoeinstellungen.",
-    "bankSyncWarningManage": "Prüfen Sie die Synchronisierung in den Bankkontoeinstellungen.",
-    "bankSyncWarningOpenSettings": "Bankkontoeinstellungen",
-    "bankSyncWarningSettingsUnavailable": "Das Konto wurde nicht gefunden oder Sie dürfen es nicht verwalten.",
-    "bankSyncWarningContactShort": "Kontaktieren Sie einen Bankkonto-Administrator:",
+    "bankSyncWarningContactShort": "Kontakt:",
     "bankSyncPaymentPaused": "Die Banksynchronisierung für das Empfängerkonto dieser Zahlung ist ausgeschaltet.",
     "bankSyncWarningTitle": "Automatischer Zahlungsabgleich nicht verfügbar",
     "bankSyncWarningHelp": "Die Zahlung kann bereits eingegangen sein, ohne dieser Bestellung zugeordnet zu sein. Prüfen Sie den Kontoauszug, bevor Sie eine Zahlungserinnerung senden.",
-    "bankSyncWarningContact": "Kontaktieren Sie einen Bankkonto-Administrator:",
+    "bankSyncWarningContact": "Bitten Sie einen Kontoadministrator, die Synchronisierung zu prüfen:",
     "bankSyncWarningFallback": "Bitten Sie den Veranstalter, den Kontoadministrator zu kontaktieren.",
     "bankSyncWarningReasons": {
       "not_configured": "Die automatische Synchronisierung ist nicht eingerichtet.",

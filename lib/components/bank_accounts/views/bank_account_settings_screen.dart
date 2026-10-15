@@ -22,8 +22,7 @@ import 'package:fstapp/components/bank_accounts/views/bank_account_users_tab.dar
 import 'package:timeago/timeago.dart' as timeago;
 
 class BankAccountSettingsScreen extends StatefulWidget {
-  final int? unitId;
-  final bool connectionOnly;
+  final int unitId;
   final int? organizationId;
   final BankAccountModel account;
   final bool readOnly;
@@ -34,27 +33,14 @@ class BankAccountSettingsScreen extends StatefulWidget {
 
   const BankAccountSettingsScreen({
     super.key,
-    required int unitId,
+    required this.unitId,
     this.organizationId,
     required this.account,
     this.readOnly = false,
     this.isDialog = false,
     this.routed = false,
     this.onUpdated,
-  })  : unitId = unitId,
-        connectionOnly = false;
-
-  /// Account administrators can open connection settings without unit rights.
-  const BankAccountSettingsScreen.connection({
-    super.key,
-    required this.account,
-  })  : unitId = null,
-        organizationId = null,
-        readOnly = false,
-        isDialog = false,
-        routed = false,
-        onUpdated = null,
-        connectionOnly = true;
+  });
 
   @override
   State<BankAccountSettingsScreen> createState() =>
@@ -467,8 +453,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   }
 
   void _initTabController() {
-    if (!widget.routed && !widget.connectionOnly)
-      _tabController = TabController(length: 3, vsync: this);
+    if (!widget.routed) _tabController = TabController(length: 3, vsync: this);
   }
 
   void _showError(String message, {String? title}) {
@@ -702,22 +687,11 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       );
   Widget _users(BuildContext context) => BankAccountUsersTab(
         accountId: _account.id,
-        unitId: widget.unitId!,
+        unitId: widget.unitId,
         isReadOnly: _isReadOnly,
       );
   @override
   Widget build(BuildContext context) {
-    if (widget.connectionOnly) {
-      return NavigationDraftBoundary(
-        isDirty: () => _hasDraft,
-        child: Scaffold(
-          appBar: AppBar(
-              title: Text(_account.title ??
-                  BankAccountStrings.bankAccountSettingsTitle)),
-          body: _connection(context),
-        ),
-      );
-    }
     if (widget.routed) {
       return NavigationDraftBoundary(
         isDirty: () => _hasDraft,
