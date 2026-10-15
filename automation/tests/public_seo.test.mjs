@@ -229,3 +229,16 @@ test('unit catalogue uses the web shell and requests only its unit; admin routes
   const admin = await worker.fetch(request('/unit/2/edit'), env);
   assert.equal(await admin.text(), 'flutter app');
 });
+
+test('unit catalogue exposes escaped organizer identity in HTML even without JavaScript', async t => {
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    assert.deepEqual(JSON.parse(options.body), { p_organization_id: 3, p_unit_id: 939 });
+    return Response.json({ title: 'Pořadatel <script>bad</script>', occasions: [] });
+  });
+  const response = await worker.fetch(request('/unit/939'), env);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.ok(html.includes('<section id="unit-introduction" class="unit-introduction"><h1>Pořadatel &lt;script&gt;bad&lt;/script&gt;</h1>'));
+  assert.ok(html.includes('<title>Pořadatel &lt;script&gt;bad&lt;/script&gt; | vstupenky.online</title>'));
+  assert.ok(!html.includes('<script>bad</script>'));
+});

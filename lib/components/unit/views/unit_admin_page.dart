@@ -17,7 +17,8 @@ import 'package:fstapp/components/unit/views/occasions_screen.dart';
 import 'package:fstapp/components/navigation/unit_administration_access.dart';
 import 'package:fstapp/components/unit/views/quotes_tab.dart';
 import 'package:fstapp/components/unit/views/unit_users_screen.dart';
-import 'package:fstapp/router_service.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/components/unit/views/unit_settings_screen.dart';
 import 'package:fstapp/components/email_templates/views/email_templates_tab.dart';
 import '../../occasion/occasion_model.dart';
@@ -451,8 +452,13 @@ class UnitAdministrationTabsPage extends StatelessWidget {
                       body: UnitAdministrationBody(
                           tabs: tabs, controller: controller, child: child),
                       floatingActionButton: FloatingActionButton(
-                          onPressed: () => RouterService.navigate(
-                              context, 'unit/${scope.unit.id}'),
+                          onPressed: () => LaunchUrlService.openExternalUrl(
+                              Uri.parse(AppConfig.webLink)
+                                  .replace(
+                                      path: '/unit/${scope.unit.id}',
+                                      query: '',
+                                      fragment: '')
+                                  .toString()),
                           child: const Icon(Icons.remove_red_eye_rounded))))
             ]));
   }

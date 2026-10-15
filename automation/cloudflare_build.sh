@@ -111,7 +111,7 @@ function occasionHref(occasion) {
   return IS_APP_SUPPORTED && slug ? `/${encodeURIComponent(slug)}/event` : null;
 }
 
-async function publicOccasions(env, unitId = null) {
+async function publicCatalogue(env, unitId = null) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error("Public catalog is not configured");
   const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_available_occasions`, {
     method: "POST",
@@ -122,7 +122,11 @@ async function publicOccasions(env, unitId = null) {
   });
   if (!rpc.ok) throw new Error(`Public catalog HTTP ${rpc.status}`);
   const data = await rpc.json();
-  return extractPublicOccasions(data);
+  return { title: typeof data?.title === "string" ? data.title : null, occasions: extractPublicOccasions(data) };
+}
+
+async function publicOccasions(env, unitId = null) {
+  return (await publicCatalogue(env, unitId)).occasions;
 }
 
 // SHARED_CATALOG_CLASSIFICATION
@@ -132,7 +136,12 @@ async function handleHome(request, env) {
   let html = await base.text();
   try {
     const unitMatch = new URL(request.url).pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
-    const occasions = await publicOccasions(env, unitMatch ? Number(unitMatch[1]) : null);
+    const { occasions, title } = await publicCatalogue(env, unitMatch ? Number(unitMatch[1]) : null);
+    if (unitMatch && title) {
+      html = html.replace(/<section id="unit-introduction"[^>]*>[\s\S]*?<\/section>/,
+        () => `<section id="unit-introduction" class="unit-introduction"><h1>${escapeHtml(title)}</h1><p>Akce a vstupenky tohoto pořadatele</p></section>`);
+      html = html.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${escapeHtml(title)} | ${escapeHtml(SITE_NAME)}</title>`);
+    }
     const groups = classifyOccasions(occasions);
     const date = value => {
       if (!value || !Number.isFinite(new Date(value).getTime())) return "";

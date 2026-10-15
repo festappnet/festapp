@@ -4,7 +4,7 @@ import { OccasionModel } from './occasion_model.js';
 
 export class DbOccasions {
 
-    static async getPublicOccasions(organizationId, unitId = null) {
+    static async getPublicCatalogue(organizationId, unitId = null) {
         const client = SupabaseService.getClient();
         if (!client) throw new Error("Supabase client not initialized");
 
@@ -18,6 +18,9 @@ export class DbOccasions {
             throw error;
         }
 
-        return extractPublicOccasions(data).map(json => OccasionModel.fromJson(json));
+        return {
+            title: typeof data?.title === 'string' ? data.title : null,
+            occasions: extractPublicOccasions(data).map(json => OccasionModel.fromJson(json)),
+        };
     }
 }

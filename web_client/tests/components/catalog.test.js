@@ -35,7 +35,7 @@ test('failed refresh preserves SSR links, safely renders error and retry updates
     LocalizationService.currentLocale = 'cs';
     const page = fixture();
     let fail = true;
-    t.mock.method(DbOccasions, 'getPublicOccasions', async () => { if (fail) throw new Error('<img src=x onerror=alert(1)>'); return []; });
+    t.mock.method(DbOccasions, 'getPublicCatalogue', async () => { if (fail) throw new Error('<img src=x onerror=alert(1)>'); return { occasions: [] }; });
     await page.loadOccasions(3);
     assert.ok(document.querySelector('a[href="/form/server"]'));
     assert.equal(document.querySelector('img'), null);
@@ -51,7 +51,7 @@ test('past events stay visible before and after search, with distinct empty sear
     for (const locale of ['cs', 'en']) {
         LocalizationService.currentLocale = locale;
         const page = fixture();
-        t.mock.method(DbOccasions, 'getPublicOccasions', async () => [{ title: 'Historická akce', link: 'past', start_time: '2020-01-01', end_time: '2020-01-02' }]);
+        t.mock.method(DbOccasions, 'getPublicCatalogue', async () => ({ occasions: [{ title: 'Historická akce', link: 'past', start_time: '2020-01-01', end_time: '2020-01-02' }] }));
         await page.loadOccasions(3);
         assert.equal(document.querySelector('details'), null);
         assert.ok(document.querySelector('section.catalog-archive a[href="/form/past"]'));
@@ -67,8 +67,8 @@ test('past events stay visible before and after search, with distinct empty sear
 });
 test('disposed catalogue ignores a late response', async t => {
     const page = fixture(); let resolve;
-    t.mock.method(DbOccasions, 'getPublicOccasions', () => new Promise(done => { resolve = done; }));
-    const pending = page.loadOccasions(3); page.clear(); resolve([]); await pending;
+    t.mock.method(DbOccasions, 'getPublicCatalogue', () => new Promise(done => { resolve = done; }));
+    const pending = page.loadOccasions(3); page.clear(); resolve({ occasions: [] }); await pending;
     assert.equal(document.querySelector('#catalog').children.length, 0);
 });
 
@@ -125,13 +125,28 @@ test('large multi-year archive shows year headings and every completed card with
 test('unit catalogue passes its scope to the RPC and preserves it for retry', async t => {
     const page = fixture();
     const calls = [];
-    t.mock.method(DbOccasions, 'getPublicOccasions', async (...args) => {
+    t.mock.method(DbOccasions, 'getPublicCatalogue', async (...args) => {
         calls.push(args);
         if (calls.length === 1) throw new Error('offline');
-        return [];
+        return { occasions: [] };
     });
     await page.loadOccasions(1, 2);
     document.querySelector('[data-catalog-status] button').click();
     await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(calls, [[1, 2], [1, 2]]);
+});
+
+ test('unit identity survives catalogue rendering, search and empty results as plain text', async t => {
+    const page = fixture();
+    document.body.insertAdjacentHTML('afterbegin', '<section id="unit-introduction" hidden><h1></h1><p></p></section>');
+    t.mock.method(DbOccasions, 'getPublicCatalogue', async () => ({title: 'Pořadatel <img src=x>', occasions: []}));
+    await page.loadOccasions(1, 939);
+    const introduction = document.getElementById('unit-introduction');
+    assert.equal(introduction.hidden, false);
+    assert.equal(introduction.querySelector('h1').textContent, 'Pořadatel <img src=x>');
+    assert.equal(introduction.querySelector('img'), null);
+    page.filter('missing');
+    assert.equal(introduction.hidden, false);
+    await page.loadOccasions(1);
+    assert.equal(introduction.hidden, true);
 });

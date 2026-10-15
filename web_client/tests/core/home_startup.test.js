@@ -18,7 +18,7 @@ test('server catalogue remains visible while cards load, then startup completes'
     const { OccasionCard } = await import('../../src/components/occasion/occasion_card.js');
     let deliver;
     const pending = new Promise(resolve => { deliver = resolve; });
-    t.mock.method(DbOccasions, 'getPublicOccasions', () => pending);
+    t.mock.method(DbOccasions, 'getPublicCatalogue', () => pending);
     t.mock.method(OccasionCard, 'create', occasion => {
         const card = document.createElement('a');
         card.className = 'occasion-card';
@@ -49,7 +49,7 @@ test('server catalogue remains visible while cards load, then startup completes'
     assert.equal(ready, false, 'loading cards does not prematurely mark application ready');
     assert.ok(document.querySelector('#events-grid ul'), 'server links remain usable while loading');
     assert.equal(document.getElementById('app').style.display, 'flex');
-    deliver([{ title: 'Card event', start_time: '2099-01-01', end_time: '2099-01-02' }]);
+    deliver({ occasions: [{ title: 'Card event', start_time: '2099-01-01', end_time: '2099-01-02' }] });
     await startup;
     assert.equal(ready, true);
     assert.equal(document.getElementById('app').style.display, 'flex');

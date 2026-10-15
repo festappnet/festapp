@@ -65,9 +65,16 @@ export class UnitPage extends Component {
         status.setAttribute('aria-label', UnitStrings.loading);
         this.host.prepend(status);
         try {
-            const occasions = await DbOccasions.getPublicOccasions(orgId, unitId);
+            const catalogue = await DbOccasions.getPublicCatalogue(orgId, unitId);
             if (requestId !== this.requestId || !this.host.isConnected) return;
-            this.allOccasions = occasions || [];
+            this.allOccasions = catalogue.occasions;
+            const heading = document.getElementById('unit-introduction');
+            if (heading) {
+                heading.hidden = !unitId || !catalogue.title;
+                heading.querySelector('h1').textContent = unitId ? catalogue.title || '' : '';
+                heading.querySelector('p').textContent = UnitStrings.organizerEvents;
+            }
+            if (unitId && catalogue.title) document.title = `${catalogue.title} | ${window.location.hostname}`;
             this.hasLoaded = true;
             const query = new URLSearchParams(window.location.search).get('q');
             if (query && this.searchInput && !this.searchInput.value) this.searchInput.value = query;
