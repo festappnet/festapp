@@ -1,16 +1,16 @@
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_option_draft.dart';
 
-import 'default_value_helper.dart';
+import 'package:festapp_core/forms.dart';
 import 'option_editor_dialog.dart';
 import 'description_tooltip.dart';
 
 class SelectOneEditor {
   static Widget buildSelectOneReadOnly(
-      BuildContext context, FormFieldModel field) {
+      BuildContext context, FormFieldDraft field) {
     final options = field.options;
     if (options.isEmpty) {
       return Text(
@@ -18,7 +18,7 @@ class SelectOneEditor {
         style: Theme.of(context).textTheme.bodyMedium,
       );
     }
-    final currentDefault = DefaultValueHelper.readString(field);
+    final currentDefault = DefaultValueHelper.readString(field.definition.data);
     return Column(
       children: options.map((option) {
         return Row(
@@ -49,7 +49,7 @@ class SelectOneEditor {
   }
 
   static Widget buildSelectOneEditor(
-      BuildContext context, FormFieldModel field, int? occasionId,
+      BuildContext context, FormFieldDraft field, int? occasionId,
       {VoidCallback? onChanged}) {
     final optionsController = TextEditingController();
     return StatefulBuilder(builder: (ctx, updateLocal) {
@@ -58,7 +58,8 @@ class SelectOneEditor {
         onChanged?.call();
       }
 
-      final currentDefault = DefaultValueHelper.readString(field);
+      final currentDefault =
+          DefaultValueHelper.readString(field.definition.data);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -71,7 +72,7 @@ class SelectOneEditor {
           ),
           const SizedBox(height: 8),
           Column(
-            children: field.options.map((FormOptionModel formOption) {
+            children: field.options.map((FormOptionDraft formOption) {
               final optionController =
                   TextEditingController(text: formOption.title);
               return Row(
@@ -80,7 +81,9 @@ class SelectOneEditor {
                     value: formOption.title,
                     groupValue: currentDefault,
                     onChanged: (value) {
-                      DefaultValueHelper.write(field, value);
+                      field.definition = field.definition.copyWith(
+                          data: DefaultValueHelper.write(
+                              field.definition.data, value));
                       setLocal(() {});
                     },
                   ),
@@ -100,7 +103,9 @@ class SelectOneEditor {
                       onChanged: (value) {
                         final oldTitle = formOption.title;
                         formOption.title = value;
-                        DefaultValueHelper.rename(field, oldTitle, value);
+                        field.definition = field.definition.copyWith(
+                            data: DefaultValueHelper.rename(
+                                field.definition.data, oldTitle, value));
                       },
                     ),
                   ),
@@ -135,7 +140,9 @@ class SelectOneEditor {
                     onPressed: () {
                       final removedTitle = formOption.title;
                       field.options.remove(formOption);
-                      DefaultValueHelper.remove(field, removedTitle);
+                      field.definition = field.definition.copyWith(
+                          data: DefaultValueHelper.remove(
+                              field.definition.data, removedTitle));
                       setLocal(() {});
                     },
                   ),
@@ -150,7 +157,9 @@ class SelectOneEditor {
                 icon: const Icon(Icons.clear, size: 16),
                 label: Text(FormStrings.clearDefaultSelection),
                 onPressed: () {
-                  DefaultValueHelper.write(field, null);
+                  field.definition = field.definition.copyWith(
+                      data: DefaultValueHelper.write(
+                          field.definition.data, null));
                   setLocal(() {});
                 },
               ),
@@ -172,7 +181,7 @@ class SelectOneEditor {
                 icon: const Icon(Icons.add),
                 onPressed: () {
                   if (optionsController.text.isNotEmpty) {
-                    final newOption = FormOptionModel(
+                    final newOption = FormOptionDraft(
                       optionsController.text,
                       optionsController.text,
                     );

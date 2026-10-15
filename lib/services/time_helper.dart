@@ -1,3 +1,4 @@
+import 'package:festapp_core/program.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/services/time_utils/platform_timezone_universal.dart';
@@ -6,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 class TimeHelper {
   static DateTime? currentTime;
+  static OccasionTimeContext get eventTime => OccasionTimeContext(tz.local);
   static TimeZoneUniversal timeZoneUniversal = TimeZoneUniversal();
 
   static void Function()? toggleTimeTravel;
@@ -46,7 +48,6 @@ class TimeHelper {
         targetLocation); // Uses conditionally imported method
 
     DateTime nowInTz = tz.TZDateTime.now(tz.local);
-
   }
 
   static List<String> getAvailableTimezoneNames() {
@@ -144,9 +145,7 @@ class TimeHelper {
         if (tzDateTime.timeZoneOffset == systemUtcOffset) {
           return locationName;
         }
-      } catch (e) {
-
-      }
+      } catch (e) {}
     }
 
     return "UTC";
@@ -190,62 +189,15 @@ extension DateTimeExtension on DateTime {
     return DateFormat("EEEE", context.locale.languageCode).format(this);
   }
 
-  DateTime toOccasionTime([String? targetTimezoneName]) {
-    final tz.Location location;
-    if (targetTimezoneName != null) {
-      location = tz.getLocation(targetTimezoneName);
-    } else {
-      location = tz.local;
-    }
+  DateTime toOccasionTime([String? targetTimezoneName]) =>
+      OccasionTimeContext(targetTimezoneName == null
+              ? tz.local
+              : tz.getLocation(targetTimezoneName))
+          .toOccasionTime(this);
 
-    if (this is tz.TZDateTime) {
-      return tz.TZDateTime.from(this, location);
-    }
-
-    if (isUtc) {
-      var ntv = tz.TZDateTime.from(this, location);
-      return ntv;
-    } else {
-      return tz.TZDateTime(
-        location,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-        millisecond,
-        microsecond,
-      );
-    }
-  }
-
-  DateTime toUtcFromOccasionTime([String? sourceTimezoneName]) {
-    if (this is tz.TZDateTime) {
-      return (this as tz.TZDateTime).toUtc();
-    }
-
-    if (isUtc) {
-      return this;
-    } else {
-      final tz.Location location;
-      if (sourceTimezoneName != null) {
-        location = tz.getLocation(sourceTimezoneName);
-      } else {
-        location = tz.local;
-      }
-      final dateTimeInSourceLocation = tz.TZDateTime(
-        location,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-        millisecond,
-        microsecond,
-      );
-      return dateTimeInSourceLocation.toUtc();
-    }
-  }
+  DateTime toUtcFromOccasionTime([String? sourceTimezoneName]) =>
+      OccasionTimeContext(sourceTimezoneName == null
+              ? tz.local
+              : tz.getLocation(sourceTimezoneName))
+          .toUtc(this);
 }

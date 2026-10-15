@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_option_draft.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'description_tooltip.dart';
 
 class SexEditor {
   static Widget buildSexFieldReadOnly(
-      BuildContext context, FormFieldModel field) {
+      BuildContext context, FormFieldDraft field) {
     final options = [
-      FormOptionModel(UserInfoModel.sexes[0], FormHelper.maleLabel()),
-      FormOptionModel(UserInfoModel.sexes[1], FormHelper.femaleLabel()),
+      FormOptionDraft(UserInfoModel.sexes[0], FormHelper.maleLabel()),
+      FormOptionDraft(UserInfoModel.sexes[1], FormHelper.femaleLabel()),
     ];
     return Column(
       children: options.map((option) {

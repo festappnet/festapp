@@ -1,6 +1,4 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:fstapp/components/features/feature_constants.dart';
-import 'package:fstapp/components/features/feature_service.dart';
 
 class OrdersStrings {
   static String get bankSyncPaymentPaused =>
@@ -178,57 +176,6 @@ class OrdersStrings {
       'FeatureOrders.stornoCompletedItem'
           .tr(namedArgs: {'item': item}); // "Storno completed for {item}."
 
-  /// Returns "Tickets" or "Applications" based on whether the ticket feature is enabled.
-  static String get itemsPlural {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return tickets;
-    }
-    return applications;
-  }
-
-  /// Returns "Ticket" or "Application" based on whether the ticket feature is enabled.
-  static String get itemSingular {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return ticket;
-    }
-    return application;
-  }
-
-  /// Returns "Send tickets" or "Send confirmations" based on whether the ticket feature is enabled.
-  static String get sendActionText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.sendTickets'.tr(); // "Send tickets"
-    }
-    return 'FeatureOrders.sendConfirmations'.tr(); // "Send confirmations"
-  }
-
-  /// Returns confirmation text for cancelling orders, with or without mentioning tickets.
-  static String get cancelOrdersConfirmationText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.cancelOrdersAndTicketsConfirmation'
-          .tr(); // "Do you want to cancel orders and all included tickets? The customer will receive an email about this cancellation."
-    }
-    return 'FeatureOrders.cancelOrdersConfirmation'
-        .tr(); // "Do you want to cancel orders? The customer will receive an email about this cancellation."
-  }
-
-  static String get itemSymbol {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.ticketSymbol'.tr(); // "Ticket Symbol"
-    }
-    return 'FeatureOrders.applicationSymbol'.tr(); // "Application Symbol"
-  }
-
-  /// Returns confirmation text for sending tickets/confirmations.
-  static String get sendActionConfirmationText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.sendTicketsToOrdersConfirmation'
-          .tr(); // "Do you want to send the tickets to orders?"
-    }
-    return 'FeatureOrders.sendConfirmationsToOrdersConfirmation'
-        .tr(); // "Do you want to send the confirmations to orders?"
-  }
-
   // --- Scan Page Specific ---
   // (Scan-specific labels moved to ScanStrings in lib/components/scan/scan_strings.dart)
   static String get scanInstructionsAppUser =>
@@ -300,21 +247,6 @@ class OrdersStrings {
           namedArgs: {'error': error}); // "Error resetting password: {error}"
 
   // Tickets Tab
-  static String get scanActionText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.scanTickets'.tr(); // "Scan tickets"
-    }
-    return 'FeatureOrders.scanEntries'.tr(); // "Scan applications"
-  }
-
-  static String get cancelItemsConfirmationText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.cancelTicketsConfirmation'
-          .tr(); // "Do you want to cancel the selected tickets?"
-    }
-    return 'FeatureOrders.cancelItemsConfirmation'
-        .tr(); // "Do you want to cancel the selected items?"
-  }
 
   // --- Order Grid Columns ---
   static String get gridId => 'OrderGridColumns.id'.tr(); // "Id"
@@ -343,10 +275,7 @@ class OrdersStrings {
   static String get gridOrderSequenceHelp =>
       "OrderGridColumns.orderSequenceHelp".tr();
   static String get validOrders => "OrderGridColumns.validOrders".tr();
-  static String get validTickets =>
-      FeatureService.isFeatureEnabled(FeatureConstants.ticket)
-          ? "OrderGridColumns.validTickets".tr()
-          : "OrderGridColumns.validApplications".tr();
+
   static String get gridOrderSymbol =>
       'OrderGridColumns.orderSymbol'.tr(); // "Order Symbol"
   static String get gridCustomer =>

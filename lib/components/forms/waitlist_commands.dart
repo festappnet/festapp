@@ -1,6 +1,7 @@
-import 'models/customer_order_overview.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -40,8 +41,11 @@ class WaitlistCommands {
       })));
 
   Future<String> adminOverviewUrl(int orderId) async {
-    final response = await client.functions.invoke('customer-order-access', body: {
-      'admin': true, 'orderId': orderId, 'commandId': const Uuid().v4(),
+    final response =
+        await client.functions.invoke('customer-order-access', body: {
+      'admin': true,
+      'orderId': orderId,
+      'commandId': const Uuid().v4(),
     });
     if (response.data?['code'] != 200 || response.data?['url'] is! String) {
       throw StateError('INVALID_CAPABILITY');
@@ -105,7 +109,7 @@ class WaitlistCommands {
     final response = ClientCommandResponse.from(raw);
     _pending.remove(identity);
     if (response.code != 200) throw WaitlistCommandException(response.data);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return response.data;
   }
 }

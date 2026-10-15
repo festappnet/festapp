@@ -1,3 +1,4 @@
+import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -7,8 +8,7 @@ import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 import '../db_eshop.dart';
 import '../models/product_edit_bundle.dart';
-import '../models/product_model.dart';
-import '../models/product_price_wave.dart';
+import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
 import 'product_price_changes_dialog.dart';
 
@@ -132,6 +132,7 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final localNow = TimeHelper.currentTime ?? DateTime.now();
     final waves = ProductPriceWave.columns(bundle.priceWaves, bundle.products);
     return AppDialog.fullscreen(
       dismissible: !busy,
@@ -275,7 +276,8 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
                                             onOpen: widget.canEdit &&
                                                     !busy &&
                                                     waves[i].time.isAfter(
-                                                          product.priceNow,
+                                                          product.priceTime(
+                                                              localNow),
                                                         ) &&
                                                     waves[i]
                                                             .prices(product)

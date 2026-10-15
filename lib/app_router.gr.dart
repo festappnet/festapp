@@ -12,6 +12,7 @@
 import 'dart:async' as _i73;
 
 import 'package:auto_route/auto_route.dart' as _i71;
+import 'package:festapp_core/eshop.dart' as _i74;
 import 'package:flutter/foundation.dart' as _i75;
 import 'package:flutter/material.dart' as _i72;
 import 'package:fstapp/components/activities/volunteers_section_page.dart'
@@ -20,8 +21,6 @@ import 'package:fstapp/components/app_management/install_page.dart' as _i24;
 import 'package:fstapp/components/app_management/instance_install_page.dart'
     as _i25;
 import 'package:fstapp/components/app_management/settings_page.dart' as _i57;
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart'
-    as _i74;
 import 'package:fstapp/components/bank_accounts/views/bank_account_navigation_page.dart'
     as _i3;
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart'
@@ -42,7 +41,7 @@ import 'package:fstapp/components/eshop/views/orders_tab.dart' as _i37;
 import 'package:fstapp/components/eshop/views/products_section_page.dart'
     as _i45;
 import 'package:fstapp/components/eshop/views/report_section_page.dart' as _i47;
-import 'package:fstapp/components/forms/models/form_model.dart' as _i76;
+import 'package:fstapp/components/forms/models/form_bundle.dart' as _i76;
 import 'package:fstapp/components/forms/views/form_page.dart' as _i14;
 import 'package:fstapp/components/forms/views/form_tab.dart' as _i13;
 import 'package:fstapp/components/forms/views/forms_navigation_page.dart'
@@ -576,7 +575,7 @@ class FormDetailRoute extends _i71.PageRouteInfo<FormDetailRouteArgs> {
   FormDetailRoute({
     _i72.Key? key,
     required String formLink,
-    _i73.Future<List<_i76.FormModel>> Function(String)? loadForms,
+    _i73.Future<List<_i76.FormBundle>> Function(String)? loadForms,
     List<_i71.PageRouteInfo>? children,
   }) : super(
           FormDetailRoute.name,
@@ -615,7 +614,7 @@ class FormDetailRouteArgs {
 
   final String formLink;
 
-  final _i73.Future<List<_i76.FormModel>> Function(String)? loadForms;
+  final _i73.Future<List<_i76.FormBundle>> Function(String)? loadForms;
 
   @override
   String toString() {

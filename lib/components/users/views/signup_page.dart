@@ -1,9 +1,10 @@
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/users/widgets/google_login_panel.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/router_service.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/users/user_strings.dart';
@@ -69,13 +70,14 @@ class _SignupPageState extends State<SignupPage> {
   Map<String, dynamic>? fieldsData;
   FormHolder? formHolder;
 
-  List<FormFieldModel> entryForm = [
-    FormFieldModel(id: 1, type: FormHelper.fieldTypeName, isRequired: true),
-    FormFieldModel(id: 2, type: FormHelper.fieldTypeSurname, isRequired: true),
-    FormFieldModel(id: 3, type: FormHelper.fieldTypeSex),
-    FormFieldModel(id: 4, type: FormHelper.fieldTypeEmail, isRequired: true),
-    FormFieldModel(id: 5, type: FormHelper.fieldTypeCity, isRequired: true),
-    FormFieldModel(id: 6, type: FormHelper.fieldTypeBirthYear),
+  List<FormFieldDraft> entryForm = [
+    FormFieldDraft(id: 1, type: FormMetadata.fieldTypeName, isRequired: true),
+    FormFieldDraft(
+        id: 2, type: FormMetadata.fieldTypeSurname, isRequired: true),
+    FormFieldDraft(id: 3, type: FormMetadata.fieldTypeSex),
+    FormFieldDraft(id: 4, type: FormMetadata.fieldTypeEmail, isRequired: true),
+    FormFieldDraft(id: 5, type: FormMetadata.fieldTypeCity, isRequired: true),
+    FormFieldDraft(id: 6, type: FormMetadata.fieldTypeBirthYear),
   ];
 
   final _formKey = GlobalKey<FormBuilderState>();
@@ -98,9 +100,9 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    var formModel = FormModel();
+    var formModel = FormEditorDraft();
     formModel.relatedFields = entryForm;
-    formHolder = FormHolder.fromFormFieldModel(formModel);
+    formHolder = FormHolder.fromDefinition(formModel.freeze());
     formHolder!.controller = FormHolderController(globalKey: _formKey);
     return Scaffold(
       appBar: AppBar(
@@ -168,7 +170,7 @@ class _SignupPageState extends State<SignupPage> {
                                         var data = FormHelper.getDataFromForm(
                                             formHolder!, true);
                                         fieldsData = Map<String, dynamic>.from(
-                                            data[FormHelper.metaFields]);
+                                            data[FormMetadata.metaFields]);
                                         fieldsData![AuthService.metaLang] =
                                             EasyLocalization.of(context)
                                                 ?.locale

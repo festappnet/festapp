@@ -1,5 +1,4 @@
 // ticket_feature.dart
-import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 import 'feature.dart';
@@ -71,9 +70,6 @@ class TicketFeature extends Feature {
     if (layout != null) data[FeatureConstants.ticketLayout] = layout!;
     return data;
   }
-
-  @override
-  Widget buildFormField(BuildContext context) => const SizedBox.shrink();
 
   Map<String, dynamic>? layout;
   Map<String, dynamic>? _savedLayout;

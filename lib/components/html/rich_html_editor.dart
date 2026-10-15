@@ -656,7 +656,8 @@ class _DraftImageBuilder extends ImageComponentBuilder {
         opacity: model.opacity,
         imageBuilder: (_, source) {
           final bytes = controller.media.previewBytes(source);
-          if (bytes != null) return HtmlImagePreview(bytes, fit: BoxFit.contain);
+          if (bytes != null)
+            return HtmlImagePreview(bytes, fit: BoxFit.contain);
           if (source.startsWith('data:image/'))
             return HtmlImagePreview(UriData.parse(source).contentAsBytes(),
                 fit: BoxFit.contain);

@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-import '../models/occasion_report_model.dart';
+import 'package:festapp_core/eshop.dart';
 import '../report_strings.dart';
 
 /// Localized display and export of the same report snapshot, without a new RPC.

@@ -233,7 +233,10 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
     if (!background) {
         host._overviewSnapshot = null;
         host.replaceChildren(); host.setAttribute('aria-busy', 'true');
-        line(host, 'p', overviewText('loading'));
+        const loading = line(host, 'div', '');
+    loading.className = 'sp-loader';
+    loading.setAttribute('role', 'status');
+    loading.setAttribute('aria-label', overviewText('loading'));
     }
     let unavailable = false;
     try {

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/schedule/event_presentation.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
@@ -7,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
 import 'package:fstapp/components/information/info_page.dart';
 import 'package:fstapp/components/map/map_navigation.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/event_page.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/search/db_search.dart';

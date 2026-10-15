@@ -1,14 +1,13 @@
+import 'sembast_client_sync_storage.dart';
+import 'package:fstapp/services/storage_helper.dart';
+import 'supabase_private_sync_remote.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_projection_tracker.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_remote.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_service.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_store.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/occasion_media_cache.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -54,7 +53,9 @@ class ClientSyncRuntime {
   static DateTime? lastSuccess(SyncFreshnessClass type) =>
       state.value?.classes[type]?.lastSuccess;
   static ClientSyncStore get store => _store;
-  static final ClientSyncStore _store = ClientSyncStore();
+  static final ClientSyncStore _store = ClientSyncStore(
+      storage: SembastClientSyncStorage(
+          () => StorageHelper.openDatabase('client_sync_v1.db')));
 
   static void configure(
     SupabaseClient supabase, {

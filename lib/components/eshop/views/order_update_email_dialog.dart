@@ -1,7 +1,7 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import '../models/order_change_summary.dart';
+import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
 import 'product_changes_preview.dart';
 

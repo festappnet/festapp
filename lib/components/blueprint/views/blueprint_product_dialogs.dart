@@ -5,7 +5,7 @@ import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_group.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
@@ -83,7 +83,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           // Get details from an existing spot product
           final existingProduct = _spotProducts.first;
 
-          final newProduct = ProductModel(
+          var newProduct = ProductModel(
             title: newTitle,
             price: newPrice,
             currencyCode: existingProduct.currencyCode,
@@ -94,7 +94,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
 
           // Call DB to create, get new ID
           final newId = await DbEshop.updateProduct(newProduct);
-          newProduct.id = newId;
+          newProduct = newProduct.copyWith(id: newId);
 
           setState(() {
             widget.blueprint.products ??= [];
@@ -110,14 +110,16 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           final originalProduct = widget.blueprint.products
               ?.firstWhereOrNull((p) => p.id == product.id);
           if (originalProduct != null) {
-            originalProduct.title = newTitle;
-            originalProduct.price = newPrice;
+            final updatedProduct =
+                originalProduct.copyWith(title: newTitle, price: newPrice);
             // productTypeId and productTypeString are not changing
 
             // Call DB to update
-            await DbEshop.updateProduct(originalProduct);
+            await DbEshop.updateProduct(updatedProduct);
 
             setState(() {
+              final index = widget.blueprint.products!.indexOf(originalProduct);
+              widget.blueprint.products![index] = updatedProduct;
               // Refresh local list
               _spotProducts = widget.blueprint.spotProducts;
               _sortProducts();

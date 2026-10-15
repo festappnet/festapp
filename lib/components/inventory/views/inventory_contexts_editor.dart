@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
 import 'package:fstapp/theme_config.dart';
@@ -155,8 +155,8 @@ class InventoryContextsEditor extends StatelessWidget {
                 ? null
                 : () {
                     final assignableProducts = allProducts
-                        .where((p) => p.includedInventories.any((ic) =>
-                            ic.inventoryContext!.id! == contextModel.id))
+                        .where((p) => p.includedInventories.any(
+                            (ic) => ic.inventoryContextId == contextModel.id))
                         .toList();
                     onEditProduct(contextModel, assignableProducts);
                   },

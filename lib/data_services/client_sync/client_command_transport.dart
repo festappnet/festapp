@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 
 import 'package:http/http.dart' as http;

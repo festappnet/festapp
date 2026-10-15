@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:fstapp/components/reception/login_qr_payload.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 LoginQrPayload? loginQrFromBarcodes(Iterable<Barcode> barcodes) {

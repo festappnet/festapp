@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/exclusive_events_cell.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
@@ -45,13 +45,12 @@ class _ExclusivityContentState extends State<ExclusivityContent> {
 
   /// The cell keeps storing a comma-separated id list (the grid's save format);
   /// only the rendering and editing are name-based.
-  static List<int> _parseIds(dynamic cellValue) =>
-      cellValue
-          .toString()
-          .split(",")
-          .map((e) => int.tryParse(e.trim()))
-          .whereType<int>()
-          .toList();
+  static List<int> _parseIds(dynamic cellValue) => cellValue
+      .toString()
+      .split(",")
+      .map((e) => int.tryParse(e.trim()))
+      .whereType<int>()
+      .toList();
 
   void _initController() {
     controller ??= SingleDataGridController<ExclusiveGroupModel>(

@@ -13,7 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
 
 class _Translations extends AssetLoader {
@@ -25,8 +25,8 @@ class _Translations extends AssetLoader {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  SharedPreferences.setMockInitialValues({});
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     final loader = FontLoader('Roboto');
     loader.addFont(Future.value(ByteData.sublistView(
         File('test/fixtures/ticket_fonts/Roboto.ttf').readAsBytesSync())));

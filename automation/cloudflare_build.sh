@@ -111,13 +111,13 @@ function occasionHref(occasion) {
   return IS_APP_SUPPORTED && slug ? `/${encodeURIComponent(slug)}/event` : null;
 }
 
-async function publicOccasions(env) {
+async function publicOccasions(env, unitId = null) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error("Public catalog is not configured");
   const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_available_occasions`, {
     method: "POST",
     headers: { "content-type": "application/json", apikey: env.SUPABASE_ANON_KEY,
       authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
-    body: JSON.stringify({ p_organization_id: env.ORGANIZATION_ID || 1, p_unit_id: null }),
+    body: JSON.stringify({ p_organization_id: env.ORGANIZATION_ID || 1, p_unit_id: unitId }),
     signal: AbortSignal.timeout(2500),
   });
   if (!rpc.ok) throw new Error(`Public catalog HTTP ${rpc.status}`);
@@ -131,7 +131,8 @@ async function handleHome(request, env) {
   const base = await serveAsset(env, request, WEB_CLIENT_INDEX);
   let html = await base.text();
   try {
-    const occasions = await publicOccasions(env);
+    const unitMatch = new URL(request.url).pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
+    const occasions = await publicOccasions(env, unitMatch ? Number(unitMatch[1]) : null);
     const groups = classifyOccasions(occasions);
     const date = value => {
       if (!value || !Number.isFinite(new Date(value).getTime())) return "";
@@ -202,7 +203,8 @@ ${organizerEntry}
 </urlset>`;
 
   try {
-    const occasions = await publicOccasions(env);
+    const unitMatch = new URL(request.url).pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
+    const occasions = await publicOccasions(env, unitMatch ? Number(unitMatch[1]) : null);
     if (occasions.length === 0) return new Response(fallback, { headers: xmlHeaders });
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
@@ -381,7 +383,7 @@ async function routeRequest(request, env) {
       return new Response(response.body, { status: response.status, headers });
     }
 
-    if (WEB_CLIENT_EXACT.has(path)) {
+    if (WEB_CLIENT_EXACT.has(path) || /^\/unit\/[1-9]\d*\/?$/.test(path)) {
       return handleHome(request, env);
     }
 

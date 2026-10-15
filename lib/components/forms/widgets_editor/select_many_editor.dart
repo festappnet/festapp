@@ -1,16 +1,16 @@
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_option_draft.dart';
 
-import 'default_value_helper.dart';
+import 'package:festapp_core/forms.dart';
 import 'option_editor_dialog.dart';
 import 'description_tooltip.dart';
 
 class SelectManyEditor {
   static Widget buildSelectManyReadOnly(
-      BuildContext context, FormFieldModel field) {
+      BuildContext context, FormFieldDraft field) {
     final options = field.options;
     if (options.isEmpty) {
       return Text(
@@ -18,7 +18,7 @@ class SelectManyEditor {
         style: Theme.of(context).textTheme.bodyMedium,
       );
     }
-    final defaults = DefaultValueHelper.readList(field);
+    final defaults = DefaultValueHelper.readList(field.definition.data);
     return Column(
       children: options.map((option) {
         return Row(
@@ -44,7 +44,7 @@ class SelectManyEditor {
   }
 
   static Widget buildSelectManyEditor(
-      BuildContext context, FormFieldModel field, int? occasionId,
+      BuildContext context, FormFieldDraft field, int? occasionId,
       {VoidCallback? onChanged}) {
     final optionsController = TextEditingController();
     return StatefulBuilder(builder: (ctx, updateLocal) {
@@ -53,7 +53,7 @@ class SelectManyEditor {
         onChanged?.call();
       }
 
-      final defaults = DefaultValueHelper.readList(field);
+      final defaults = DefaultValueHelper.readList(field.definition.data);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -66,7 +66,7 @@ class SelectManyEditor {
           ),
           const SizedBox(height: 8),
           Column(
-            children: field.options.map((FormOptionModel formOption) {
+            children: field.options.map((FormOptionDraft formOption) {
               final optionController =
                   TextEditingController(text: formOption.title);
               return Row(
@@ -74,8 +74,11 @@ class SelectManyEditor {
                   Checkbox(
                     value: defaults.contains(formOption.title),
                     onChanged: (val) {
-                      DefaultValueHelper.toggleInList(
-                          field, formOption.title, val ?? false);
+                      field.definition = field.definition.copyWith(
+                          data: DefaultValueHelper.toggleInList(
+                              field.definition.data,
+                              formOption.title,
+                              val ?? false));
                       setLocal(() {});
                     },
                   ),
@@ -95,7 +98,9 @@ class SelectManyEditor {
                       onChanged: (value) {
                         final oldTitle = formOption.title;
                         formOption.title = value;
-                        DefaultValueHelper.rename(field, oldTitle, value);
+                        field.definition = field.definition.copyWith(
+                            data: DefaultValueHelper.rename(
+                                field.definition.data, oldTitle, value));
                       },
                     ),
                   ),
@@ -130,7 +135,9 @@ class SelectManyEditor {
                     onPressed: () {
                       final removedTitle = formOption.title;
                       field.options.remove(formOption);
-                      DefaultValueHelper.remove(field, removedTitle);
+                      field.definition = field.definition.copyWith(
+                          data: DefaultValueHelper.remove(
+                              field.definition.data, removedTitle));
                       setLocal(() {});
                     },
                   ),
@@ -155,7 +162,7 @@ class SelectManyEditor {
                 icon: const Icon(Icons.add),
                 onPressed: () {
                   if (optionsController.text.isNotEmpty) {
-                    final newOption = FormOptionModel(
+                    final newOption = FormOptionDraft(
                       optionsController.text,
                       optionsController.text,
                     );

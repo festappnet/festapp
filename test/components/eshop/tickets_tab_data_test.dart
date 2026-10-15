@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
@@ -56,8 +57,8 @@ void main() {
     expect(withdrawn.state, 'storno');
     final gridRows = rows
         .map((ticket) => TrinaRow(cells: {
-              EshopColumns.TICKET_ID: TrinaCell(value: ticket.id),
-              EshopColumns.TICKET_STATE: TrinaCell(value: ticket.state),
+              EshopColumnIds.TICKET_ID: TrinaCell(value: ticket.id),
+              EshopColumnIds.TICKET_STATE: TrinaCell(value: ticket.state),
             }))
         .toList();
     expect(gridRows, hasLength(3),
@@ -65,7 +66,7 @@ void main() {
     expect(
         gridRows
             .where(OrderGridFilters.ticketIsNonCancelled)
-            .map((row) => row.cells[EshopColumns.TICKET_ID]!.value),
+            .map((row) => row.cells[EshopColumnIds.TICKET_ID]!.value),
         [1]);
     expect(canDownloadTicket(waiting.state), isFalse);
     expect(canToggleTicketUsage(withdrawn.state), isFalse);

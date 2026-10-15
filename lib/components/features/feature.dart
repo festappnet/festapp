@@ -1,5 +1,4 @@
 // feature.dart
-import 'package:flutter/material.dart';
 import 'companion_feature.dart';
 import 'deposit_feature.dart';
 import 'feature_constants.dart';
@@ -72,7 +71,6 @@ abstract class Feature {
 
   /// Builds the form field widget for this feature.
   /// This should be implemented by features that have configurable settings.
-  Widget buildFormField(BuildContext context);
 }
 
 /// A simple feature without extra properties and no settings form.
@@ -97,11 +95,6 @@ class SimpleFeature extends Feature {
       FeatureConstants.metaCode: code,
       FeatureConstants.metaIsEnabled: isEnabled,
     };
-  }
-
-  @override
-  Widget buildFormField(BuildContext context) {
-    return Container();
   }
 }
 

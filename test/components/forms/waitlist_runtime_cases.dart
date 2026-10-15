@@ -1,5 +1,6 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/holder_models/field_holder.dart';
@@ -10,6 +11,11 @@ import 'package:fstapp/components/forms/widgets_view/form_field_builders.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets(
       'offer reuses runtime fields and keeps numeric ticket IDs with their answers',
       (tester) async {
@@ -35,17 +41,21 @@ void main() {
             isRequired: false,
             title: 'Choices',
             options: [
-              FormOptionModel('a', 'A'),
-              FormOptionModel('b', 'B'),
-              FormOptionModel('c', 'C')
+              FormOptionDefinition('a', 'A'),
+              FormOptionDefinition('b', 'B'),
+              FormOptionDefinition('c', 'C')
             ],
             value: [
               'A'
             ])
           ..defaultValue = saved;
     OptionsFieldProductHolder emptyProduct() => OptionsFieldProductHolder(
-      id: 113, fieldType: 'product_type', isRequired: false, title: 'Optional admission',
-      productOptions: [], selectionType: OptionsFieldProductSelectionType.selectOne);
+        id: 113,
+        fieldType: 'product_type',
+        isRequired: false,
+        title: 'Optional admission',
+        productOptions: [],
+        selectionType: OptionsFieldProductSelectionType.selectOne);
     final ticket =
         TicketHolder(fieldType: 'ticket', id: 1, maxTickets: 2, fields: [
       name(''),
@@ -104,7 +114,8 @@ void main() {
     expect(data['ticket'][0]['fields'].any((f) => f['112'] == 'B | C'), isTrue);
     expect(data['ticket'][1]['fields'].any((f) => f['112'] == 'A'), isFalse);
     for (final item in data['ticket']) {
-      expect(item['fields'].any((f) => (f as Map).containsKey('product_type')), isFalse);
+      expect(item['fields'].any((f) => (f as Map).containsKey('product_type')),
+          isFalse);
     }
     expect(tester.takeException(), isNull);
   });

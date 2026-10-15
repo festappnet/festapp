@@ -117,13 +117,13 @@ run_with_timeout() {
     local timeout=$1
     shift
     local cmd="$@"
-    
+
     echo "Running with timeout ${timeout}s: $cmd"
-    
+
     # Start command in background
     eval "$cmd" &
     local pid=$!
-    
+
     local count=0
     while kill -0 $pid 2>/dev/null; do
         if [ $count -ge $timeout ]; then
@@ -136,7 +136,7 @@ run_with_timeout() {
         sleep 1
         count=$((count+1))
     done
-    
+
     wait $pid
     return $?
 }
@@ -152,7 +152,7 @@ if [ "$RUN_WEB" = true ]; then
         run_with_timeout 60 "npm test"
         res=$?
         set -e
-        
+
         if [ $res -ne 0 ]; then
             echo "⚠️  WARNING: Web Client Tests Failed or Timed Out."
             failed_suites=$((failed_suites + 1))
@@ -187,23 +187,11 @@ if [ "$RUN_FLUTTER" = true ]; then
     echo ""
     echo ">>> Flutter Tests..."
     cd "$PROJECT_ROOT"
-    
-    # Check if fvm is installed/used
-    if command -v fvm &> /dev/null; then
-        FLUTTER_CMD="fvm flutter"
-    else
-        FLUTTER_CMD="flutter"
-    fi
-    
-    set +e
-    $FLUTTER_CMD test
-    res=$?
-    set -e
-    
-    if [ $res -ne 0 ]; then
-        echo "⚠️  WARNING: Flutter Tests Failed."
+
+    if ! "$SCRIPT_DIR/test_client.sh" all; then
         failed_suites=$((failed_suites + 1))
     fi
+
 fi
 
 # 3b. Run Deno Edge Function Tests
@@ -214,14 +202,14 @@ if [ "$RUN_DB" = true ] || [ "$RUN_INTEGRATION" = true ]; then
     echo ">>> Deno Edge Function Tests..."
 
     node automation/hetzner-supabase/merge/edge-function-test-coverage.mjs >/dev/null
-    
+
     if command -v deno &> /dev/null; then
         # Both naming conventions are established in this repository. Keep the
         # paths explicit so unrelated TypeScript files never become tests.
         DENO_TEST_FILES=$(find supabase/functions -type f \
           \( -name "test_*.ts" -o -name "*_test.ts" \) \
           -not -path "*/node_modules/*" | sort)
-        
+
         if [ -n "$DENO_TEST_FILES" ]; then
              echo "Found Deno tests: $DENO_TEST_FILES"
              # Run without --allow-all to be safe.
@@ -230,10 +218,10 @@ if [ "$RUN_DB" = true ] || [ "$RUN_INTEGRATION" = true ]; then
              deno test --allow-env --allow-net --allow-read $DENO_TEST_FILES
              res=$?
              set -e
-             
+
              if [ $res -ne 0 ]; then
                 echo "⚠️  WARNING: Deno Tests Failed."
-                exit 1 
+                exit 1
              fi
         else
              echo "No Deno tests found."
@@ -292,6 +280,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
         fi
     done
 
+    python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_client_contract_test.py'
     node "$SCRIPT_DIR/tests/font_config.test.mjs"
 
     echo "Running canonical PWA storage and recovery contract tests..."

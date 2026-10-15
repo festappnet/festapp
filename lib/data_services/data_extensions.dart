@@ -1,9 +1,9 @@
 import 'package:collection/collection.dart' as data_extensions;
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
 
-import '../components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 extension DataExtension on int? {
   int safeInt() => this ?? 0;

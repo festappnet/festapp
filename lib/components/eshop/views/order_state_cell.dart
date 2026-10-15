@@ -1,8 +1,9 @@
+import 'order_bank_sync_warning.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/theme_config.dart';
 import '../models/order_model.dart';
 import '../orders_strings.dart';
-import 'order_bank_sync_warning.dart';
+import 'package:festapp_core/eshop.dart';
 
 class OrderStateCell extends StatelessWidget {
   final String label;

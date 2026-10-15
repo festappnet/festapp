@@ -2,7 +2,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/map/place_picker_field.dart';
 import 'package:fstapp/components/speakers/speakers_strings.dart';
 import 'package:fstapp/data_services/synchro_service.dart';

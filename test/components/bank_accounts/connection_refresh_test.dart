@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_connection_tab.dart';
 
 class _Translations extends AssetLoader {
@@ -15,8 +15,8 @@ class _Translations extends AssetLoader {
 }
 
 void main() {
+  setUpAll(() async { SharedPreferences.setMockInitialValues({}); await EasyLocalization.ensureInitialized(); });
   TestWidgetsFlutterBinding.ensureInitialized();
-  SharedPreferences.setMockInitialValues({});
   testWidgets(
       'active connection refreshes bank facts, hidden or disposed panel does not poll',
       (tester) async {

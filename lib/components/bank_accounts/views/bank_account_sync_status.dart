@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import '../bank_account_strings.dart';
-import '../bank_sync_warning.dart';
+import 'package:festapp_core/eshop.dart';
 import '../../eshop/orders_strings.dart';
 import 'bank_sync_warning_button.dart';
 

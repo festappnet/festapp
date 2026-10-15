@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/components/inventory/views/quick_search_dialog.dart';
 
-import '../../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 class PlaceSearchDialog extends StatelessWidget {
   final List<PlaceModel> allPlaces;

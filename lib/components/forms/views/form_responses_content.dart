@@ -1,6 +1,7 @@
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import '../models/form_model.dart';
+import '../models/form_bundle.dart';
 import '../waitlist_strings.dart';
 import 'waitlist_offers_dialog.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +9,7 @@ import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -23,8 +24,8 @@ class FormResponsesContent extends StatefulWidget {
 }
 
 class _FormResponsesContentState extends State<FormResponsesContent> {
-  List<FormFieldModel>? formFieldModels;
-  FormModel? _capacityForm;
+  List<FormFieldDefinition>? formFieldModels;
+  FormBundle? _capacityForm;
   List<OrderModel> _orders = [];
   String? _formLink; // Renamed to avoid confusion
   SingleDataGridController<FormResponseModel>? controller;
@@ -52,8 +53,9 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
             final bundle = await DbOrders.getAllOrdersBundle(formLink: link);
             if (mounted && link == _formLink) {
               setState(() {
-                _capacityForm =
-                    bundle.forms.where((form) => form.link == link).firstOrNull;
+                _capacityForm = bundle.forms
+                    .where((form) => form.definition.link == link)
+                    .firstOrNull;
                 _orders = bundle.orders;
               });
             }
@@ -73,8 +75,8 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
             context,
             columnIdentifiers,
             data: {
-              EshopColumns.RESPONSES: formFieldModels,
-              EshopColumns.TICKET_PRODUCTS_EXTENDED:
+              EshopColumnIds.RESPONSES: formFieldModels,
+              EshopColumnIds.TICKET_PRODUCTS_EXTENDED:
                   EshopColumns.productCategories,
             },
           ),
@@ -94,17 +96,18 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
     if (controller == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    final capacity = _capacityForm?.capacity;
-    final canSendOffers =
-        _capacityForm?.waitlistEnabled == true && RightsService.isEditorOrder();
+    final capacity = _capacityForm?.definition.capacity;
+    final canSendOffers = _capacityForm?.definition.waitlistEnabled == true &&
+        RightsService.isEditorOrder();
     return Column(children: [
-      if (capacity != null && (capacity.enabled || canSendOffers))
+      if (_capacityForm?.definition.capacity case final capacity?)
         Padding(
             padding: const EdgeInsets.all(16),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (capacity.enabled) WaitlistCapacitySummary(capacity: capacity),
-              if (canSendOffers)
+              if (_capacityForm!.definition.waitlistEnabled &&
+                  RightsService.isEditorOrder())
                 TextButton(
                     onPressed: () async {
                       await showDialog(
@@ -120,10 +123,11 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
   }
 
   static List<String> columnIdentifiers = [
-    EshopColumns.ORDER_ID,
-    EshopColumns.ORDER_SYMBOL,
-    EshopColumns.TICKET_PRODUCTS_EXTENDED,
-    EshopColumns.ORDER_STATE,
-    EshopColumns.RESPONSES
+    EshopColumnIds.ORDER_ID,
+    EshopColumnIds.ORDER_SYMBOL,
+    EshopColumnIds.TICKET_PRODUCTS_EXTENDED,
+    EshopColumnIds.ORDER_STATE,
+    EshopColumnIds.ORDER_WAITLIST,
+    EshopColumnIds.RESPONSES
   ];
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 /// Read-only profile value that becomes a place link when a map place exists.
 class ProfilePlaceField extends StatelessWidget {

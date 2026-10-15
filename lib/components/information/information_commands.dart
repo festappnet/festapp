@@ -1,6 +1,7 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 
@@ -110,7 +111,7 @@ class SupabaseInformationCommands implements InformationCommands {
 
   Future<InformationCommandResult> _decode(Object? raw) async {
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final data = response.data;
     final version = (data['version'] as num?)?.toInt() ?? 0;
     final entity = data['information'];

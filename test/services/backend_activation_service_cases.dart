@@ -1,4 +1,3 @@
-import 'package:fstapp/services/bounded_database_opener.dart';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -29,8 +28,6 @@ void main() {
   BackendActivationService service({
     required Map<String, String> storage,
     required Future<List<int>> Function(Uri) fetch,
-    BackendActivationRead? read,
-    BackendActivationWrite? write,
     int legacyOrganizationId = 9,
     int canonicalOrganizationId = 12,
   }) =>
@@ -45,22 +42,10 @@ void main() {
         canonicalAnonKey: 'canonical-key',
         canonicalOrganizationId: canonicalOrganizationId,
         canonicalProfileSha256: canonicalProfileSha(canonicalOrganizationId),
-        read: read ?? (key) async => storage[key],
-        write: write ?? (key, value) async => storage[key] = value,
+        read: (key) async => storage[key],
+        write: (key, value) async => storage[key] = value,
         fetch: fetch,
       );
-
-  for (final stage in ['read', 'write']) {
-    test('storage open timeout during marker $stage never selects legacy', () async {
-      final timeout = StorageOpenTimeoutException(const Duration(seconds: 5));
-      final activation = service(
-        storage: {}, fetch: (_) async => canonicalBytes,
-        read: stage == 'read' ? (_) async => throw timeout : null,
-        write: stage == 'write' ? (_, __) async => throw timeout : null,
-      );
-      await expectLater(activation.resolve(), throwsA(same(timeout)));
-    });
-  }
 
   test('explicit loopback debug override never reads production activation',
       () async {

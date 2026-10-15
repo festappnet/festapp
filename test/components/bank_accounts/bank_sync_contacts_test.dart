@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/bank_accounts/bank_sync_warning.dart';
+import 'package:festapp_core/eshop.dart';
 
 void main() {
   test('same delivery address deduplicates migrated identities and trims text',

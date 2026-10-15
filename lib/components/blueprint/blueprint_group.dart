@@ -1,5 +1,5 @@
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 
 class BlueprintGroupModel {
   static const String metaId = "id";

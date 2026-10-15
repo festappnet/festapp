@@ -1,6 +1,6 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
 import 'package:fstapp/components/forms/models/holder_models/id_document_data.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/widgets_view/option_field_helper.dart';
@@ -16,7 +16,6 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import '../models/holder_models/form_holder.dart';
 import '../models/holder_models/ticket_holder.dart';
-import '../../eshop/orders_strings.dart';
 
 class OrderPreviewScreen extends StatefulWidget {
   final FormHolder formHolder;
@@ -192,7 +191,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
   // Builds a list of info rows for the personal data section.
   List<Widget> _buildDataSection(BuildContext context) {
     final dataFields = widget.formHolder.fields.where((field) {
-      return field.fieldType != FormHelper.fieldTypeTicket;
+      return field.fieldType != FormMetadata.fieldTypeTicket;
     }).toList();
 
     final List<Widget> infoRows = [];
@@ -216,7 +215,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
 
   Widget _buildTicketsSection(BuildContext context) {
     final ticketHolder = widget.formHolder.fields.firstWhere(
-      (field) => field.fieldType == FormHelper.fieldTypeTicket,
+      (field) => field.fieldType == FormMetadata.fieldTypeTicket,
     ) as TicketHolder;
 
     return Column(
@@ -228,8 +227,8 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
 
         ticketInfoRows.add(Text(
           ticketHolder.tickets.length > 1
-              ? "${OrdersStrings.itemSingular} $ticketIndex"
-              : OrdersStrings.itemSingular,
+              ? "${OrderItemStrings.itemSingular} $ticketIndex"
+              : OrderItemStrings.itemSingular,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontSize: 16 * OrderPreviewScreen.fontSizeFactor,
                 fontWeight: FontWeight.bold,
@@ -260,7 +259,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
           String s;
           String? priceText;
           var value = entry.getValue(ticket.ticketKey);
-          if (value is FormOptionModel) {
+          if (value is FormOptionDefinition) {
             s = OptionFieldHelper.buildOptionTitle(context, value);
             priceText = OptionFieldHelper.buildPriceText(context, value);
             final metaText =
@@ -415,7 +414,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
     if (!FeatureService.isFeatureEnabled(FeatureConstants.deposit))
       return false;
     final ticketHolder = widget.formHolder.fields.firstWhereOrNull(
-      (field) => field.fieldType == FormHelper.fieldTypeTicket,
+      (field) => field.fieldType == FormMetadata.fieldTypeTicket,
     ) as TicketHolder?;
     if (ticketHolder == null) return false;
     for (final ticket in ticketHolder.tickets) {
@@ -439,7 +438,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
   double _calculateDepositTotal() {
     double total = 0;
     final ticketHolder = widget.formHolder.fields.firstWhereOrNull(
-      (field) => field.fieldType == FormHelper.fieldTypeTicket,
+      (field) => field.fieldType == FormMetadata.fieldTypeTicket,
     ) as TicketHolder?;
     if (ticketHolder == null) return total;
     for (final ticket in ticketHolder.tickets) {

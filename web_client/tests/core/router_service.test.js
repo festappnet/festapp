@@ -23,7 +23,7 @@ test('RouterService.normalizeUrl', async (t) => {
     // Dynamic import to ensure global.window is set before module evaluation
     const { RouterService } = await import('../../src/services/router_service.js');
     const { AppConfig } = await import('../../src/app_config.js');
-    
+
     // Setup Mock Config
     const originalLink = AppConfig.webLink;
     const originalCompatible = AppConfig.compatibleUrls;
@@ -248,7 +248,7 @@ test('RouterService.handleInitialLoad', async (t) => {
 
     // Dynamic import inside each test block if we need fresh mocks,
     // but modules are cached. We will just use the imported classes and mock global state.
-    
+
     // Ensure we have the classes
     const { RouterService } = await import('../../src/services/router_service.js');
     const { AppConfig } = await import('../../src/app_config.js');
@@ -279,26 +279,26 @@ test('RouterService.handleInitialLoad', async (t) => {
         AppConfig.isAppSupported = false;
         global.window.location.pathname = '/';
         global.window.location.href = 'https://vstupenky.online/';
-        
+
         let redirected = false;
         global.window.location.replace = (url) => { redirected = true; };
-        
+
         const handled = await RouterService.handleInitialLoad();
-        
+
         assert.strictEqual(redirected, false);
-        assert.strictEqual(handled, false); 
+        assert.strictEqual(handled, false);
     });
 
     await t.test('should redirect /login to flutter.html always', async () => {
         AppConfig.isAppSupported = false;
         global.window.location.pathname = '/login';
         global.window.location.href = 'https://vstupenky.online/login';
-        
+
         let redirectUrl = '';
         global.window.location.replace = (url) => { redirectUrl = url; };
-        
+
         const handled = await RouterService.handleInitialLoad();
-        
+
         assert.strictEqual(handled, true);
         assert.ok(redirectUrl.includes('auth_bridge.html'));
         assert.ok(redirectUrl.includes('redirect=%2Flogin'));
@@ -347,16 +347,16 @@ test('RouterService.handleInitialLoad', async (t) => {
         AppConfig.isAppSupported = false;
         global.window.location.pathname = '/unknown-path';
         global.window.location.href = 'https://vstupenky.online/unknown-path';
-        
+
         let historyReplaced = false;
         let replacePath = '';
-        global.window.history.replaceState = (_, __, p) => { 
-            historyReplaced = true; 
-            replacePath = p; 
+        global.window.history.replaceState = (_, __, p) => {
+            historyReplaced = true;
+            replacePath = p;
         };
-        
+
         const handled = await RouterService.handleInitialLoad();
-        
+
         // Should handle it by returning true (stopping main app load)
         assert.strictEqual(handled, true);
         assert.strictEqual(historyReplaced, true);
@@ -392,9 +392,9 @@ test('RouterService.handleInitialLoad', async (t) => {
 
     await t.test('should redirect Root to Occasion Link (conference2024) even if Unit ID (9) exists', async () => {
         AppConfig.isAppSupported = true;
-        
+
         RightsService.updateAppData = async () => {};
-        
+
         // Mock Data reflecting RPC result
         const originalCurrentLink = Object.getOwnPropertyDescriptor(RightsService, 'currentLink');
         Object.defineProperty(RightsService, 'currentLink', { get: () => 'conference2024' });
@@ -404,7 +404,7 @@ test('RouterService.handleInitialLoad', async (t) => {
 
         global.window.location.pathname = '/';
         global.window.location.href = 'https://vstupenky.online/';
-        
+
         let redirectUrl = '';
         global.window.location.replace = (url) => { redirectUrl = url; };
 
@@ -420,7 +420,7 @@ test('RouterService.handleInitialLoad', async (t) => {
 
     await t.test('should redirect Root to Occasion Link when AppSupported=true and Link found', async () => {
         AppConfig.isAppSupported = true;
-        
+
         // Mock RightsService Update
         RightsService.updateAppData = async () => {};
         // Mock Getters
@@ -429,7 +429,7 @@ test('RouterService.handleInitialLoad', async (t) => {
 
         global.window.location.pathname = '/';
         global.window.location.href = 'https://vstupenky.online/';
-        
+
         let redirectUrl = '';
         global.window.location.replace = (url) => { redirectUrl = url; };
 
@@ -445,9 +445,9 @@ test('RouterService.handleInitialLoad', async (t) => {
 
     await t.test('should redirect Root to Unit ID when AppSupported=true, No Link, but Unit found', async () => {
         AppConfig.isAppSupported = true;
-        
+
         RightsService.updateAppData = async () => {};
-        
+
         const originalCurrentLink = Object.getOwnPropertyDescriptor(RightsService, 'currentLink');
         Object.defineProperty(RightsService, 'currentLink', { get: () => null });
 
@@ -456,7 +456,7 @@ test('RouterService.handleInitialLoad', async (t) => {
 
         global.window.location.pathname = '/';
         global.window.location.href = 'https://vstupenky.online/';
-        
+
         let redirectUrl = '';
         global.window.location.replace = (url) => { redirectUrl = url; };
 
@@ -471,21 +471,12 @@ test('RouterService.handleInitialLoad', async (t) => {
         if (originalCurrentUnit) Object.defineProperty(RightsService, 'currentUnit', originalCurrentUnit);
     });
 
-    await t.test('should Redirect to Flutter at /unit/123 when AppSupported=true', async () => {
+    await t.test('unit catalogue stays in the Web Client when AppSupported=true', async () => {
         AppConfig.isAppSupported = true;
-        
         global.window.location.pathname = '/unit/123';
         global.window.location.href = 'https://vstupenky.online/unit/123';
-        
-        let redirectUrl = '';
-        global.window.location.replace = (url) => { redirectUrl = url; };
-
-        // Expect it to redirect because /unit/ is in flutterRoutes know
         const handled = await RouterService.handleInitialLoad();
-        
-        assert.strictEqual(handled, true);
-        assert.ok(redirectUrl.includes('auth_bridge.html'));
-        assert.ok(redirectUrl.includes('redirect=%2Funit%2F123'));
+        assert.equal(handled, false);
     });
 
     await t.test('should sanitize incoming URL with query params on load', async () => {

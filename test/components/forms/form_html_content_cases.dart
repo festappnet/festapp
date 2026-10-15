@@ -1,14 +1,13 @@
+import 'package:festapp_core/forms.dart';
 import 'dart:typed_data';
 import 'package:image/image.dart' as image;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_option_draft.dart';
 import 'package:fstapp/components/forms/models/holder_models/birth_date_field_holder.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/eshop/models/product_type_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/html/html_media_service.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 
@@ -30,16 +29,16 @@ void main() {
     final src = await coordinator.media
         .addBytes(png, const HtmlMediaOwner.occasion(12));
     final html = '<img src="$src" alt="Test">';
-    final option = FormOptionModel('one', 'One', description: html);
+    final option = FormOptionDraft('one', 'One', description: html);
     final product = ProductModel(description: html);
     final type = ProductTypeModel(description: html, products: [product]);
-    final field = FormFieldModel(
+    final field = FormFieldDraft(
         description: html,
         options: [option],
         productType: type,
-        type: FormHelper.fieldTypeBirthDate,
+        type: FormMetadata.fieldTypeBirthDate,
         data: {BirthDateFieldHolder.metaMessage: html});
-    final form = FormModel(
+    final form = FormEditorDraft(
         occasionId: 12,
         header: html,
         headerOff: html,
@@ -47,26 +46,29 @@ void main() {
           field
         ],
         data: {
-          FormModel.metaSchedule: {FormModel.metaCountdownTitle: html},
-          FormModel.metaPaymentMessage: {'type': 'name_surname'},
+          FormDefinition.metaSchedule: {
+            FormDefinition.metaCountdownTitle: html
+          },
+          FormDefinition.metaPaymentMessage: {'type': 'name_surname'},
           'unrelated': html
         });
     await prepareFormHtml(form, coordinator);
     for (final value in [
-      form.header,
-      form.headerOff,
-      form.countdownTitle,
-      field.description,
+      form.definition.header,
+      form.definition.headerOff,
+      form.definition.countdownTitle,
+      field.definition.description,
       option.description,
-      product.description,
-      type.description,
-      field.data[BirthDateFieldHolder.metaMessage]
+      field.definition.productType!.products!.single.description,
+      field.definition.productType!.description,
+      field.definition.data[BirthDateFieldHolder.metaMessage]
     ]) {
       expect(value, contains('https://assets.test/form.png'));
       expect(value, isNot(contains('html-draft.invalid')));
     }
     expect(uploads, 1);
-    expect(form.data![FormModel.metaPaymentMessage], {'type': 'name_surname'});
-    expect(form.data!['unrelated'], html);
+    expect(form.definition.data![FormDefinition.metaPaymentMessage],
+        {'type': 'name_surname'});
+    expect(form.definition.data!['unrelated'], html);
   });
 }

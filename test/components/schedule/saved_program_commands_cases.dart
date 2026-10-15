@@ -12,17 +12,17 @@ void main() {
         expect(name, 'set_saved_program_client_sync_v1');
         parameters = params;
         return {
-          'status': 'unchanged',
-          'code': 200,
-          'data': {
-            'saved': [4, 9, 21],
-          },
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
+          'status': 'unchanged',
+          'code': 200,
+          'data': {
+            'saved': [4, 9, 21],
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -43,17 +43,17 @@ void main() {
     final commands = SupabaseSavedProgramCommands.withTransport(
       ClientCommandTransport((_, __) async {
         return {
-          'status': 'applied',
-          'code': 200,
-          'data': {
-            'saved': [9, 21],
-          },
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
+          'status': 'applied',
+          'code': 200,
+          'data': {
+            'saved': [9, 21],
           },
           'sync': {
             'replacements': [

@@ -4,11 +4,11 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/timeline/schedule_tab_view.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/_shared/async_reload_coordinator.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
@@ -82,8 +82,8 @@ class _ScheduleBasicPageState extends State<ScheduleBasicPage>
   }
 
   Future<void> _reloadProjectedEvents() async {
-    final events = await OfflineDataService.getAllEvents();
-    await OfflineDataService.updateEventsWithGroupName(events);
+    var events = await OfflineDataService.getAllEvents();
+    events = await OfflineDataService.updateEventsWithGroupName(events);
     await loadPlacesForEvents(
         events, (_) async => OfflineDataService.getAllPlaces());
     final dots = events
@@ -115,8 +115,8 @@ class _ScheduleBasicPageState extends State<ScheduleBasicPage>
 
   Future<void> _loadOfflineDataThenFast() async {
     if (_events.isEmpty) {
-      final offline = await OfflineDataService.getAllEvents();
-      await OfflineDataService.updateEventsWithGroupName(offline);
+      var offline = await OfflineDataService.getAllEvents();
+      offline = await OfflineDataService.updateEventsWithGroupName(offline);
       await loadPlacesForEvents(
           offline, (ids) async => (await OfflineDataService.getAllPlaces()));
 
@@ -144,9 +144,10 @@ class _ScheduleBasicPageState extends State<ScheduleBasicPage>
       false,
     );
 
-    for (var e in fast) {
+    for (final entry in fast.asMap().entries) {
+      final e = entry.value;
       if (e.id != null && _eventDescriptions.containsKey(e.id!)) {
-        e.description = _eventDescriptions[e.id!];
+        fast[entry.key] = e.copyWith(description: _eventDescriptions[e.id!]);
       }
     }
 
@@ -196,9 +197,10 @@ class _ScheduleBasicPageState extends State<ScheduleBasicPage>
     var places = await fetchPlaces(placeIds);
     var placesById = {for (var place in places) place.id: place};
 
-    for (var event in events) {
+    for (final entry in events.asMap().entries) {
+      final event = entry.value;
       if (event.place?.id != null && placesById.containsKey(event.place!.id)) {
-        event.place = placesById[event.place!.id];
+        events[entry.key] = event.copyWith(place: placesById[event.place!.id]);
       }
     }
   }

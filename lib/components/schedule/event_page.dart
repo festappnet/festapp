@@ -1,3 +1,5 @@
+import 'package:fstapp/components/schedule/event_type_colors.dart';
+import 'package:fstapp/components/schedule/event_presentation.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
@@ -10,8 +12,7 @@ import 'package:fstapp/components/features/schedule_feature.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/timeline/light_timeline_view.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
-import 'package:fstapp/components/schedule/event_participants_access.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/event_page_theme.dart';
 import 'package:fstapp/components/schedule/saved_program_ui.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
@@ -539,7 +540,7 @@ class _EventPageState extends State<EventPage> {
   Color _headerForeground() {
     // Image banners always carry a dark scrim, so their content is white.
     if (_headerImageUrl() != null) return Colors.white;
-    final Color base = ThemeConfig.eventTypeToColor(context, _event?.type);
+    final Color base = EventTypeColors.background(_event?.type);
     return HSLColor.fromColor(base).lightness > 0.6
         ? Colors.black
         : Colors.white;
@@ -558,7 +559,7 @@ class _EventPageState extends State<EventPage> {
   /// Background tint of the pinned/collapsed bar: a very light shade of the
   /// event's base colour (light grey for untyped, a pale type tint otherwise).
   Color _collapsedTint() {
-    final Color base = ThemeConfig.eventTypeToColor(context, _event?.type);
+    final Color base = EventTypeColors.background(_event?.type);
     return EventPageTheme.collapsedTint(
       base,
       Theme.of(context).brightness,
@@ -1030,7 +1031,7 @@ class _EventPageState extends State<EventPage> {
   /// event's base color.
   Widget _buildAddButton(BuildContext context) {
     final Color fill = _headerForeground();
-    final Color glyph = ThemeConfig.eventTypeToColor(context, _event?.type);
+    final Color glyph = EventTypeColors.background(_event?.type);
     return Material(
       color: fill,
       shape: const CircleBorder(),
@@ -1279,7 +1280,7 @@ class _EventPageState extends State<EventPage> {
     if (event?.id == null) return;
     final eventId = event!.id!;
     final mutationRevision = ++_savedProgramMutationRevision;
-    event.isInMySchedule = saved;
+    _event = event.copyWith(isInMySchedule: saved);
     _isUpdatingSavedProgram = true;
     _syncSavedProgramUi();
     if (event.isCancelled) setState(() {});
@@ -1296,12 +1297,13 @@ class _EventPageState extends State<EventPage> {
     }
 
     if (!result.wasApplied) {
-      event.isInMySchedule = await OfflineDataService.isEventSaved(eventId);
+      final confirmedSaved = await OfflineDataService.isEventSaved(eventId);
       if (!mounted ||
           _event?.id != eventId ||
           mutationRevision != _savedProgramMutationRevision) {
         return;
       }
+      _event = _event!.copyWith(isInMySchedule: confirmedSaved);
     }
     _isUpdatingSavedProgram = false;
     _savedProgramMutationRevision++;
@@ -1456,33 +1458,37 @@ class _EventPageState extends State<EventPage> {
   Future<void> loadOfflineData(int id) async {
     final savedProgramRevisionAtLoadStart = _savedProgramMutationRevision;
     var allEvents = await OfflineDataService.getAllEvents();
-    var event = allEvents.firstWhereOrNull((element) => element.id == id);
-    if (event != null) {
+    final cachedEvent =
+        allEvents.firstWhereOrNull((element) => element.id == id);
+    if (cachedEvent != null) {
+      var event = cachedEvent;
       if ((event.isGroupEvent ?? false) && AuthService.isLoggedIn()) {
         var userInfo = await OfflineDataService.getUserInfo();
         if (userInfo?.eventUserGroup != null) {
-          event.title = userInfo!.eventUserGroup!.title;
-          event.isMyGroupEvent = true;
-          event.description = userInfo.eventUserGroup!.description;
-          event.place = userInfo.eventUserGroup!.place;
+          event = event.copyWith(title: userInfo!.eventUserGroup!.title);
+          event = event.copyWith(isMyGroupEvent: true);
+          event =
+              event.copyWith(description: userInfo.eventUserGroup!.description);
+          event = event.copyWith(place: userInfo.eventUserGroup!.place);
           _groupInfoModel = userInfo.eventUserGroup;
         }
       } else {
         if (event.place?.id != null) {
           var place = (await OfflineDataService.getAllPlaces())
               .firstWhereOrNull((element) => element.id == event.place!.id);
-          event.place = place;
+          event = event.copyWith(place: place);
         } else {
-          event.place = null;
+          event = event.copyWith(place: null);
         }
         final loadedSaved = await OfflineDataService.isEventSaved(id);
-        event.isInMySchedule = reconcileLoadedSavedProgramState(
+        event = event.copyWith(
+            isInMySchedule: reconcileLoadedSavedProgramState(
           incoming: loadedSaved,
           visible: _event?.id == id ? _event?.isInMySchedule : null,
           mutationInFlight: _isUpdatingSavedProgram,
           loadRevision: savedProgramRevisionAtLoadStart,
           currentRevision: _savedProgramMutationRevision,
-        );
+        ));
       }
 
       var childEvents = allEvents
@@ -1492,14 +1498,16 @@ class _EventPageState extends State<EventPage> {
       // The subprogram rows show the place — resolve the children's id-only
       // offline places to full models, same as the parent's place above.
       var offlinePlaces = await OfflineDataService.getAllPlaces();
-      for (var child in childEvents) {
-        if (child.place?.id != null) {
-          child.place =
-              offlinePlaces.firstWhereOrNull((p) => p.id == child.place!.id) ??
-                  child.place;
-        }
-      }
-      event.childEvents = childEvents;
+      childEvents = childEvents
+          .map((child) => child.place?.id == null
+              ? child
+              : child.copyWith(
+                  place: offlinePlaces.firstWhereOrNull(
+                          (place) => place.id == child.place!.id) ??
+                      child.place,
+                ))
+          .toList();
+      event = event.copyWith(childEvents: childEvents);
       _childDots.clear();
       _childDots.addAll(
           event.childEvents.map((e) => TimeBlockItem.fromEventModelAsChild(e)));
@@ -1530,9 +1538,9 @@ class _EventPageState extends State<EventPage> {
         if (mounted) RouterService.goBack(context);
         return;
       }
-      event.description = group.description;
-      event.title = group.title;
-      event.place = group.place;
+      event = event.copyWith(description: group.description);
+      event = event.copyWith(title: group.title);
+      event = event.copyWith(place: group.place);
       _groupInfoModel = group;
       _setLoadedEvent(event);
       if (mounted) setState(() {});
@@ -1541,7 +1549,7 @@ class _EventPageState extends State<EventPage> {
 
     var currentParticipants =
         await DbEvents.getParticipantsPerEventCount(eventId);
-    event.currentParticipants = currentParticipants;
+    event = event.copyWith(currentParticipants: currentParticipants);
     _setLoadedEvent(event);
     _childDots.clear();
     _childDots.addAll(
@@ -1562,7 +1570,7 @@ class _EventPageState extends State<EventPage> {
     if (!didSignIn || participant != null || !mounted) return;
 
     setState(() {
-      _event!.updateCurrentUserRegistration(isRegistered: true);
+      _event = _event!.withCurrentUserRegistration(isRegistered: true);
     });
   }
 

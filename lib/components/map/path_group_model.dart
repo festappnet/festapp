@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/map/db_places.dart';
-import 'package:fstapp/components/map/path_node.dart';
+import 'package:festapp_core/map.dart';
 import 'package:trina_grid/trina_grid.dart';
 
 class PathGroupsModel extends ITrinaRowModel {

@@ -15,7 +15,7 @@ import 'package:fstapp/components/schedule/event_edit_page.dart';
 import 'package:fstapp/components/map/map_navigation.dart';
 import 'package:fstapp/components/map/public_map_session.dart';
 import 'package:fstapp/router_service.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -120,7 +120,8 @@ class _MySchedulePageState extends State<MySchedulePage> {
       if (loaded == null) return;
       data = loaded;
       if (!mounted || loadRevision != _loadRevision) return;
-      for (var e in data.events) {
+      for (final entry in data.events.asMap().entries) {
+        final e = entry.value;
         if (e.id != null) {
           _eventAndActivitiesDescriptions[e.id!] = e.description;
         }
@@ -135,10 +136,12 @@ class _MySchedulePageState extends State<MySchedulePage> {
       if (loaded == null) return;
       data = loaded;
       if (!mounted || loadRevision != _loadRevision) return;
-      for (var e in data.events) {
+      for (final entry in data.events.asMap().entries) {
+        final e = entry.value;
         if (e.id != null &&
             _eventAndActivitiesDescriptions.containsKey(e.id!)) {
-          e.description = _eventAndActivitiesDescriptions[e.id!];
+          data.events[entry.key] =
+              e.copyWith(description: _eventAndActivitiesDescriptions[e.id!]);
         }
       }
       for (var e in data.activities) {
@@ -177,8 +180,10 @@ class _MySchedulePageState extends State<MySchedulePage> {
   Future<void> loadDataOffline() async {
     final loadRevision = ++_loadRevision;
     var offlineEvents = await OfflineDataService.getAllEvents();
-    await OfflineDataService.updateEventsWithMySchedule(offlineEvents);
-    await OfflineDataService.updateEventsWithGroupName(offlineEvents);
+    offlineEvents =
+        await OfflineDataService.updateEventsWithMySchedule(offlineEvents);
+    offlineEvents =
+        await OfflineDataService.updateEventsWithGroupName(offlineEvents);
     var userInfo = await OfflineDataService.getUserInfo();
 
     final myEvents = offlineEvents

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
-import 'package:fstapp/components/bank_accounts/bank_sync_warning.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 

@@ -1,14 +1,15 @@
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
-import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/html/html_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/html/html_view.dart';
 
-import '../models/form_field_model.dart';
+import '../models/form_field_draft.dart';
 import '../widgets_view/form_helper.dart';
 import 'birth_date_editor.dart';
 import 'description_with_edit.dart';
@@ -50,7 +51,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     super.initState();
     // Use the form from the bundle
     final topLevelFields = widget.bundle.form.relatedFields
-        .where((f) => f.isTicketField != true)
+        .where((f) => f.definition.isTicketField != true)
         .toList();
     if (topLevelFields.isNotEmpty) {
       selectedIndex = 0;
@@ -65,7 +66,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   Widget _buildFieldsList() {
     // Use the form from the bundle
     final topLevelFields = widget.bundle.form.relatedFields
-        .where((f) => f.isTicketField != true)
+        .where((f) => f.definition.isTicketField != true)
         .toList();
 
     return ReorderableListView.builder(
@@ -86,15 +87,16 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
 
           // Use the form from the bundle
           final form = widget.bundle.form;
-          final updatedList = <FormFieldModel>[];
+          final updatedList = <FormFieldDraft>[];
           updatedList.addAll(topLevelFields);
           updatedList.addAll(
-            form.relatedFields.where((f) => f.isTicketField == true),
+            form.relatedFields.where((f) => f.definition.isTicketField == true),
           );
           form.relatedFields = updatedList;
 
           for (int i = 0; i < form.relatedFields.length; i++) {
-            form.relatedFields[i].order = i;
+            form.relatedFields[i].definition =
+                form.relatedFields[i].definition.copyWith(order: i);
           }
 
           if (selectedIndex == oldIndex) {
@@ -112,14 +114,17 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   Widget _buildFieldItem(
     BuildContext context,
     int index,
-    FormFieldModel field,
-    List<FormFieldModel> displayList,
+    FormFieldDraft field,
+    List<FormFieldDraft> displayList,
   ) {
     final isSelected = (selectedIndex == index);
-    final effectiveOpacity = (field.isHidden ?? false) ? kHiddenOpacity : 1.0;
+    final effectiveOpacity =
+        (field.definition.isHidden ?? false) ? kHiddenOpacity : 1.0;
 
     return GestureDetector(
-      key: field.id != null ? ValueKey(field.id) : ObjectKey(field),
+      key: field.definition.id != null
+          ? ValueKey(field.definition.id)
+          : ObjectKey(field),
       onTap: () {
         if (!isSelected) {
           setState(() {
@@ -152,10 +157,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     );
   }
 
-  Widget _buildFieldItemNonSelected(FormFieldModel field) {
-    final icon = FormHelper.fieldTypeIcons[field.type];
-    final bool hidden = field.isHidden ?? false;
-    final requiredStar = (field.isRequired ?? false)
+  Widget _buildFieldItemNonSelected(FormFieldDraft field) {
+    final icon = FormHelper.fieldTypeIcons[field.definition.type];
+    final bool hidden = field.definition.isHidden ?? false;
+    final requiredStar = (field.definition.isRequired ?? false)
         ? TextSpan(
             text: ' *',
             style: TextStyle(color: ThemeConfig.redColor(context)),
@@ -171,9 +176,9 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
           );
-    final displayTitle = (field.title?.isNotEmpty ?? false)
-        ? field.title!
-        : FormHelper.fieldTypeToLocale(field.type!);
+    final displayTitle = (field.definition.title?.isNotEmpty ?? false)
+        ? field.definition.title!
+        : FormHelper.fieldTypeToLocale(field.definition.type!);
 
     final fieldContent = _buildAnswerWidget(context, field, false);
 
@@ -202,10 +207,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
           ],
         ),
         const SizedBox(height: 8),
-        if (!HtmlHelper.isHtmlEmptyOrNull(field.description))
+        if (!HtmlHelper.isHtmlEmptyOrNull(field.definition.description))
           Column(
             children: [
-              HtmlView(html: field.description!, fontSize: 14),
+              HtmlView(html: field.definition.description!, fontSize: 14),
               const SizedBox(height: 16),
             ],
           ),
@@ -215,18 +220,18 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   }
 
   Widget _buildFieldItemSelected(
-    FormFieldModel field,
-    List<FormFieldModel> displayList,
+    FormFieldDraft field,
+    List<FormFieldDraft> displayList,
     int index,
   ) {
     if (!widget.editingEnabled || RightsService.isDemoReadOnly) {
       return _buildFieldItemNonSelected(field);
     }
-    final isTicket = field.type == FormHelper.fieldTypeTicket;
+    final isTicket = field.definition.type == FormMetadata.fieldTypeTicket;
     final String defaultDescription = CommonStrings.description;
     final form = widget.bundle.form;
     void deleteField() {
-      if (!field.canDelete) return;
+      if (!field.definition.canDelete) return;
       _refresh(() {
         displayList.remove(field);
         form.removeField(field);
@@ -248,13 +253,13 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
           Row(
             children: [
               Icon(
-                FormHelper.fieldTypeIcons[FormHelper.fieldTypeTicket],
+                FormHelper.fieldTypeIcons[FormMetadata.fieldTypeTicket],
                 size: 24,
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 8),
               Text(
-                OrdersStrings.itemSingular,
+                OrderItemStrings.itemSingular,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
@@ -270,27 +275,29 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 ),
             decoration: InputDecoration(
               border: const UnderlineInputBorder(),
-              hintText: FormHelper.fieldTypeToLocale(field.type ?? ''),
+              hintText:
+                  FormHelper.fieldTypeToLocale(field.definition.type ?? ''),
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
             ),
-            initialValue: field.title,
+            initialValue: field.definition.title,
             onChanged: (value) {
-              field.title = value;
+              field.definition = field.definition.copyWith(title: value);
               widget.onChanged?.call();
             },
           ),
-          if (!HtmlHelper.isHtmlEmptyOrNull(field.description))
+          if (!HtmlHelper.isHtmlEmptyOrNull(field.definition.description))
             Column(
               children: [
                 DescriptionWithEdit(
-                  description: field.description!,
+                  description: field.definition.description!,
                   defaultDescription: defaultDescription,
                   onDescriptionChanged: (newDescription) {
                     _refresh(() {
-                      field.description = newDescription;
+                      field.definition = field.definition
+                          .copyWith(description: newDescription);
                     });
                   },
-                  occasionId: form.occasionId!,
+                  occasionId: form.definition.occasionId!,
                 ),
                 const SizedBox(height: 16),
               ],
@@ -298,216 +305,237 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         ],
         _buildAnswerWidget(context, field, true),
         const SizedBox(height: 16),
-        if (!RightsService.isDemoReadOnly) _FieldControlsBar(
-          controls: [
-            if (!isTicket && field.type != FormHelper.fieldTypeEmail)
-              SizedBox(
-                width: 150,
-                child: PopupMenuButton<String>(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(FormHelper.fieldTypeIcons[field.type]),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            FormHelper.fieldTypeToLocale(field.type!),
-                            overflow: TextOverflow.ellipsis,
+        if (!RightsService.isDemoReadOnly)
+          _FieldControlsBar(
+            controls: [
+              if (!isTicket &&
+                  field.definition.type != FormMetadata.fieldTypeEmail)
+                SizedBox(
+                  width: 150,
+                  child: PopupMenuButton<String>(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                              FormHelper.fieldTypeIcons[field.definition.type]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              FormHelper.fieldTypeToLocale(
+                                  field.definition.type!),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    itemBuilder: (context) => _availableFieldTypes
+                        .map(
+                          (entry) => PopupMenuItem(
+                            value: entry,
+                            child: Row(
+                              children: [
+                                Icon(FormHelper.fieldTypeIcons[entry]),
+                                const SizedBox(width: 8),
+                                Text(FormHelper.fieldTypeToLocale(entry)),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onSelected: (newType) => _refresh(() {
+                      if (!((field.definition.type ==
+                                  FormMetadata.fieldTypeSelectOne ||
+                              field.definition.type ==
+                                  FormMetadata.fieldTypeSelectMany) &&
+                          (newType == FormMetadata.fieldTypeSelectOne ||
+                              newType == FormMetadata.fieldTypeSelectMany))) {
+                        field.definition =
+                            field.definition.copyWith(data: null);
+                        field.options.clear();
+                      }
+                      field.definition =
+                          field.definition.copyWith(type: newType);
+                      if ((field.definition.title?.isEmpty ?? true)) {
+                        field.definition = field.definition.copyWith(
+                            title: FormHelper.fieldTypeToLocale(newType));
+                      }
+                      if (FormMetadata.isAlwaysRequired(newType)) {
+                        field.definition =
+                            field.definition.copyWith(isRequired: true);
+                      }
+                    }),
                   ),
-                  itemBuilder: (context) => _availableFieldTypes
-                      .map(
-                        (entry) => PopupMenuItem(
-                          value: entry,
-                          child: Row(
-                            children: [
-                              Icon(FormHelper.fieldTypeIcons[entry]),
-                              const SizedBox(width: 8),
-                              Text(FormHelper.fieldTypeToLocale(entry)),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onSelected: (newType) => _refresh(() {
-                    if (!((field.type == FormHelper.fieldTypeSelectOne ||
-                            field.type == FormHelper.fieldTypeSelectMany) &&
-                        (newType == FormHelper.fieldTypeSelectOne ||
-                            newType == FormHelper.fieldTypeSelectMany))) {
-                      field.data = null;
-                      field.options.clear();
-                    }
-                    field.type = newType;
-                    if ((field.title?.isEmpty ?? true)) {
-                      field.title = FormHelper.fieldTypeToLocale(newType);
-                    }
-                    if (FormHelper.isAlwaysRequired(newType)) {
-                      field.isRequired = true;
-                    }
-                  }),
                 ),
-              ),
-            if (isTicket)
+              if (isTicket)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      CommonStrings.note,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(width: 4),
+                    TicketEditorWidgets.buildTicketNoteCheckbox(
+                      context,
+                      form,
+                      () {
+                        _refresh(() {});
+                      },
+                    ),
+                  ],
+                ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    CommonStrings.note,
+                    FormStrings.requiredLabel,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(width: 4),
-                  TicketEditorWidgets.buildTicketNoteCheckbox(
-                    context,
-                    form,
-                    () {
-                      _refresh(() {});
-                    },
+                  Checkbox(
+                    value: FormMetadata.isAlwaysRequired(
+                            field.definition.type ?? '') ||
+                        (field.definition.isRequired ?? false),
+                    onChanged: FormMetadata.isAlwaysRequired(
+                            field.definition.type ?? '')
+                        ? null
+                        : (value) => _refresh(() => field.definition =
+                            field.definition.copyWith(isRequired: value)),
                   ),
                 ],
               ),
-            Row(
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    FormStrings.show,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Switch(
+                    value: !(field.definition.isHidden ?? false),
+                    onChanged:
+                        (field.definition.type == FormMetadata.fieldTypeEmail ||
+                                isTicket)
+                            ? null
+                            : (value) => _refresh(() => field.definition =
+                                field.definition.copyWith(isHidden: !value)),
+                  ),
+                ],
+              ),
+            ],
+            buildActions: (isCompact) => Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  FormStrings.requiredLabel,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Checkbox(
-                  value: FormHelper.isAlwaysRequired(field.type ?? '') ||
-                      (field.isRequired ?? false),
-                  onChanged: FormHelper.isAlwaysRequired(field.type ?? '')
-                      ? null
-                      : (value) => _refresh(() => field.isRequired = value),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  FormStrings.show,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Switch(
-                  value: !(field.isHidden ?? false),
-                  onChanged:
-                      (field.type == FormHelper.fieldTypeEmail || isTicket)
-                          ? null
-                          : (value) => _refresh(() => field.isHidden = !value),
-                ),
-              ],
-            ),
-          ],
-          buildActions: (isCompact) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Popup Menu (Description & Deposit)
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == "add_description") {
-                    _refresh(() {
-                      if (HtmlHelper.isHtmlEmptyOrNull(field.description)) {
-                        field.description = defaultDescription;
-                      }
-                    });
-                  } else if (value == "delete_field") {
-                    deleteField();
-                  } else if (value == "show_deposit_description") {
-                    _refresh(() {
-                      field.data ??= {};
-                      var current = field
-                              .data![TicketHolder.metaShowDepositDescription] ??
-                          true;
-                      field.data![TicketHolder.metaShowDepositDescription] =
-                          !current;
-                    });
-                  }
-                },
-                itemBuilder: (context) {
-                  List<PopupMenuEntry<String>> items = [];
-                  // Add Description Option
-                  items.add(
-                    PopupMenuItem<String>(
-                      value: "add_description",
-                      child: Text(FormStrings.addDescription),
-                    ),
-                  );
-
-                  // Ticket Specific Options
-                  if (isTicket) {
-                    bool showDeposit =
-                        field.data?[TicketHolder.metaShowDepositDescription] ??
+                // Popup Menu (Description & Deposit)
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == "add_description") {
+                      _refresh(() {
+                        if (HtmlHelper.isHtmlEmptyOrNull(
+                            field.definition.description)) {
+                          field.definition = field.definition
+                              .copyWith(description: defaultDescription);
+                        }
+                      });
+                    } else if (value == "delete_field") {
+                      deleteField();
+                    } else if (value == "show_deposit_description") {
+                      _refresh(() {
+                        field.definition = field.definition
+                            .copyWith(data: field.definition.data ?? {});
+                        var current = field.definition.data![
+                                TicketHolder.metaShowDepositDescription] ??
                             true;
-                    items.add(const PopupMenuDivider());
-                    items.add(
-                      CheckedPopupMenuItem<String>(
-                        value: "show_deposit_description",
-                        checked: showDeposit,
-                        child: Text(FormStrings.showDepositDescription),
-                      ),
-                    );
-                  }
-                  if (isCompact) {
-                    items.add(const PopupMenuDivider());
+                        field.definition = field.definition.copyWith(data: {
+                          ...?field.definition.data,
+                          TicketHolder.metaShowDepositDescription: !current
+                        });
+                      });
+                    }
+                  },
+                  itemBuilder: (context) {
+                    List<PopupMenuEntry<String>> items = [];
+                    // Add Description Option
                     items.add(
                       PopupMenuItem<String>(
-                        value: "delete_field",
-                        enabled: field.canDelete,
-                        child: Tooltip(
-                          message: field.canDelete
-                              ? CommonStrings.delete
-                              : FormStrings.deletionReason(
-                                  field.deleteBlockedReason,
-                                ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.delete_outline),
-                              const SizedBox(width: 12),
-                              Text(CommonStrings.delete),
-                            ],
-                          ),
-                        ),
+                        value: "add_description",
+                        child: Text(FormStrings.addDescription),
                       ),
                     );
-                  }
-                  return items;
-                },
-                icon: const Icon(Icons.more_vert),
-              ),
-              if (!isCompact)
-                IconButton(
-                  tooltip: field.canDelete
-                      ? CommonStrings.delete
-                      : FormStrings.deletionReason(field.deleteBlockedReason),
-                  icon: const Icon(Icons.delete),
-                  onPressed: field.canDelete ? deleteField : null,
+
+                    // Ticket Specific Options
+                    if (isTicket) {
+                      bool showDeposit = field.definition
+                              .data?[TicketHolder.metaShowDepositDescription] ??
+                          true;
+                      items.add(const PopupMenuDivider());
+                      items.add(
+                        CheckedPopupMenuItem<String>(
+                          value: "show_deposit_description",
+                          checked: showDeposit,
+                          child: Text(FormStrings.showDepositDescription),
+                        ),
+                      );
+                    }
+                    if (isCompact) {
+                      items.add(const PopupMenuDivider());
+                      items.add(
+                        PopupMenuItem<String>(
+                          value: "delete_field",
+                          enabled: field.definition.canDelete,
+                          child: Tooltip(
+                            message: field.definition.canDelete
+                                ? CommonStrings.delete
+                                : FormStrings.deletionReason(
+                                    field.definition.deleteBlockedReason,
+                                  ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.delete_outline),
+                                const SizedBox(width: 12),
+                                Text(CommonStrings.delete),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return items;
+                  },
+                  icon: const Icon(Icons.more_vert),
                 ),
-            ],
+                if (!isCompact)
+                  IconButton(
+                    tooltip: field.definition.canDelete
+                        ? CommonStrings.delete
+                        : FormStrings.deletionReason(
+                            field.definition.deleteBlockedReason),
+                    icon: const Icon(Icons.delete),
+                    onPressed: field.definition.canDelete ? deleteField : null,
+                  ),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
 
   Widget _buildAnswerWidget(
     BuildContext context,
-    FormFieldModel field,
+    FormFieldDraft field,
     bool isEditable,
   ) {
     final form = widget.bundle.form;
-    switch (field.type) {
-      case FormHelper.fieldTypeTicket:
+    switch (field.definition.type) {
+      case FormMetadata.fieldTypeTicket:
         return isEditable
             ? TicketEditorWidgets.buildTicketEditor(
                 context,
@@ -523,41 +551,41 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 form,
                 field,
               );
-      case FormHelper.fieldTypeSelectOne:
+      case FormMetadata.fieldTypeSelectOne:
         return isEditable
             ? SelectOneEditor.buildSelectOneEditor(
                 context,
                 field,
-                form.occasionId,
+                form.definition.occasionId,
                 onChanged: widget.onChanged,
               )
             : SelectOneEditor.buildSelectOneReadOnly(context, field);
-      case FormHelper.fieldTypeSelectMany:
+      case FormMetadata.fieldTypeSelectMany:
         return isEditable
             ? SelectManyEditor.buildSelectManyEditor(
                 context,
                 field,
-                form.occasionId,
+                form.definition.occasionId,
                 onChanged: widget.onChanged,
               )
             : SelectManyEditor.buildSelectManyReadOnly(context, field);
-      case FormHelper.fieldTypeSex:
+      case FormMetadata.fieldTypeSex:
         return SexEditor.buildSexFieldReadOnly(context, field);
-      case FormHelper.fieldTypeBirthDate:
+      case FormMetadata.fieldTypeBirthDate:
         return isEditable
             ? BirthDateEditor.buildBirthDateEditor(
                 context,
                 field,
-                form.occasionId,
+                form.definition.occasionId,
                 onChanged: widget.onChanged,
               )
             : BirthDateEditor.buildBirthDateReadOnly(context, field);
-      case FormHelper.fieldTypeIdDocument:
+      case FormMetadata.fieldTypeIdDocument:
         return isEditable
             ? IdDocumentEditor.buildIdDocumentEditor(
                 context,
                 field,
-                form.occasionId,
+                form.definition.occasionId,
                 onChanged: widget.onChanged,
               )
             : IdDocumentEditor.buildIdDocumentReadOnly(context, field);
@@ -593,13 +621,13 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
 
   List<String> get _availableFieldTypes {
     final existingTypes =
-        widget.bundle.form.relatedFields.map((f) => f.type).toList();
+        widget.bundle.form.relatedFields.map((f) => f.definition.type).toList();
     return FormHelper.fieldTypeIcons.keys.where((type) {
       if ([
-        FormHelper.fieldTypeText,
-        FormHelper.fieldTypeSelectOne,
-        FormHelper.fieldTypeSelectMany,
-        FormHelper.fieldTypePhone,
+        FormMetadata.fieldTypeText,
+        FormMetadata.fieldTypeSelectOne,
+        FormMetadata.fieldTypeSelectMany,
+        FormMetadata.fieldTypePhone,
       ].contains(type)) {
         return true;
       }

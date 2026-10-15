@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
-import '../models/form_model.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import '../../features/feature_service.dart';
 import '../../features/feature_constants.dart';
 import '../waitlist_strings.dart';
@@ -15,15 +17,15 @@ class FormCapacitySettings extends StatelessWidget {
       required this.form,
       required this.canEdit,
       required this.onChanged});
-  final FormModel form;
+  final FormEditorDraft form;
   final bool canEdit;
   final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final blueprint = form.blueprint != null &&
+    final blueprint = form.definition.blueprint != null &&
         FeatureService.isFeatureEnabled(FeatureConstants.blueprint);
-    final snapshot = form.capacity;
+    final snapshot = form.definition.capacity;
     final occupancy = !blueprint && snapshot?.limit != null
         ? WaitlistStrings.text('occupancy')
             .replaceAll('{occupied}', '${snapshot!.occupiedPlaces}')
@@ -31,21 +33,21 @@ class FormCapacitySettings extends StatelessWidget {
         : null;
     final settingsSummary = blueprint
         ? WaitlistStrings.blueprintCapacity
-        : form.participantCapacity == null
+        : form.definition.participantCapacity == null
             ? WaitlistStrings.unlimited
-            : '${occupancy ?? '${WaitlistStrings.capacity}: ${form.participantCapacity}'}\n'
-                '${(form.waitlistEnabled ? WaitlistStrings.waitlistOn : WaitlistStrings.waitlistOff)}';
+            : '${occupancy ?? '${WaitlistStrings.capacity}: ${form.definition.participantCapacity}'}\n'
+                '${(form.definition.waitlistEnabled ? WaitlistStrings.waitlistOn : WaitlistStrings.waitlistOff)}';
     final showOffers = !blueprint &&
-        form.participantCapacity != null &&
-        form.waitlistEnabled &&
-        (form.capacity?.offeredPlaces ?? 0) > 0;
-    final counts = form.capacity == null
+        form.definition.participantCapacity != null &&
+        form.definition.waitlistEnabled &&
+        (form.definition.capacity?.offeredPlaces ?? 0) > 0;
+    final counts = form.definition.capacity == null
         ? null
         : [
             if (occupancy == null)
-              '${OrdersStrings.validTickets}: ${form.capacity!.occupiedPeople}',
+              '${OrderItemStrings.validTickets}: ${form.definition.capacity!.occupiedPeople}',
             if (showOffers)
-              '${WaitlistStrings.offeredPlacesCount}: ${form.capacity!.offeredPlaces}',
+              '${WaitlistStrings.offeredPlacesCount}: ${form.definition.capacity!.offeredPlaces}',
           ].join('\n');
     final summary = [settingsSummary, if (counts != null) counts].join('\n');
     return ListTile(
@@ -70,7 +72,7 @@ class FormCapacitySettings extends StatelessWidget {
 
 class FormCapacityDialog extends StatefulWidget {
   const FormCapacityDialog({super.key, required this.form});
-  final FormModel form;
+  final FormEditorDraft form;
   @override
   State<FormCapacityDialog> createState() => _FormCapacityDialogState();
 }
@@ -83,18 +85,19 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
   late bool _waitlist;
   late bool _showRemaining;
   bool get _blocked =>
-      (widget.form.capacity?.waitingPeople ?? 0) > 0 ||
-      (widget.form.capacity?.offeredPlaces ?? 0) > 0;
+      (widget.form.definition.capacity?.waitingPeople ?? 0) > 0 ||
+      (widget.form.definition.capacity?.offeredPlaces ?? 0) > 0;
 
   @override
   void initState() {
     super.initState();
-    _limited = widget.form.participantCapacity != null;
-    _waitlist = widget.form.waitlistEnabled;
-    _showRemaining = widget.form.showRemainingCapacity;
+    _limited = widget.form.definition.participantCapacity != null;
+    _waitlist = widget.form.definition.waitlistEnabled;
+    _showRemaining = widget.form.definition.showRemainingCapacity;
     _capacity = TextEditingController(
-        text: widget.form.participantCapacity?.toString() ?? '');
-    final hours = (widget.form.waitlistOfferDurationSeconds ?? 86400) / 3600;
+        text: widget.form.definition.participantCapacity?.toString() ?? '');
+    final hours =
+        (widget.form.definition.waitlistOfferDurationSeconds ?? 86400) / 3600;
     _hours = TextEditingController(
         text: hours == hours.roundToDouble()
             ? hours.toInt().toString()
@@ -112,12 +115,13 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
 
   void _apply() {
     if (!_key.currentState!.validate()) return;
-    widget.form.participantCapacity =
-        _limited ? int.parse(_capacity.text) : null;
-    widget.form.waitlistEnabled = _limited && _waitlist;
-    widget.form.showRemainingCapacity = _showRemaining;
-    widget.form.waitlistOfferDurationSeconds =
-        _limited && _waitlist ? (_duration! * 3600).round() : null;
+    widget.form.definition = widget.form.definition.copyWith(
+      participantCapacity: _limited ? int.tryParse(_capacity.text) : null,
+      waitlistEnabled: _limited && _waitlist,
+      showRemainingCapacity: _showRemaining,
+      waitlistOfferDurationSeconds:
+          _limited && _waitlist ? (_duration! * 3600).round() : null,
+    );
     Navigator.of(context).pop(true);
   }
 
@@ -155,12 +159,15 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                             setState(() => _limited = value)),
                                 if (_limited) ...[
                                   const SizedBox(height: 16),
-                                  if (widget.form.capacity != null) ...[
+                                  if (widget.form.definition.capacity !=
+                                      null) ...[
                                     Text(
-                                        '${OrdersStrings.validTickets}: ${widget.form.capacity!.occupiedPeople}'),
-                                    if (widget.form.capacity!.offeredPlaces > 0)
+                                        '${OrderItemStrings.validTickets}: ${widget.form.definition.capacity!.occupiedPeople}'),
+                                    if (widget.form.definition.capacity!
+                                            .offeredPlaces >
+                                        0)
                                       Text(
-                                          '${WaitlistStrings.offeredPlacesCount}: ${widget.form.capacity!.offeredPlaces}'),
+                                          '${WaitlistStrings.offeredPlacesCount}: ${widget.form.definition.capacity!.offeredPlaces}'),
                                     const SizedBox(height: 12),
                                   ],
                                   TextFormField(
@@ -186,7 +193,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                           return WaitlistStrings.positiveNumber;
                                         }
                                         if (number <
-                                            (widget.form.capacity
+                                            (widget.form.definition.capacity
                                                     ?.minimumCapacity ??
                                                 0)) {
                                           return WaitlistStrings.text(

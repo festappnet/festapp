@@ -16,14 +16,16 @@ void main() {
       ],
     };
     final form = defaultDraftForm(configuration);
-    form.title = 'Edited';
-    form.relatedFields.first.title = 'Contact';
+    form.definition = form.definition.copyWith(title: 'Edited');
+    form.relatedFields.first.definition =
+        form.relatedFields.first.definition.copyWith(title: 'Contact');
     final restored = draftFormBundle(serializeDraftForm(form)).form;
-    expect(restored.title, 'Edited');
-    expect(restored.relatedFields.first.title, 'Contact');
-    expect(restored.relatedFields.first.isRequired, true);
-    expect(restored.deadlineDurationSeconds, 259200);
-    expect(defaultDraftForm(configuration).title, 'Canonical title');
-    expect(defaultDraftForm(configuration).relatedFields.first.title, isNull);
+    expect(restored.definition.title, 'Edited');
+    expect(restored.relatedFields.first.definition.title, 'Contact');
+    expect(restored.relatedFields.first.definition.isRequired, true);
+    expect(restored.definition.deadlineDurationSeconds, 259200);
+    expect(defaultDraftForm(configuration).definition.title, 'Canonical title');
+    expect(defaultDraftForm(configuration).relatedFields.first.definition.title,
+        isNull);
   });
 }

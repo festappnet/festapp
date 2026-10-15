@@ -1,5 +1,6 @@
 /// Stable path segments shared by declarations and presentation metadata.
 abstract final class NavigationPaths {
+  static const admin = 'admin';
   static const bankAccounts = 'bank-accounts';
   static const blueprint = 'blueprint';
   static const changes = 'changes';

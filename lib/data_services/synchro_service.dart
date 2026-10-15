@@ -11,7 +11,7 @@ import 'package:fstapp/components/news/db_news.dart';
 import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/app_config_rpc.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/occasion/link_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';

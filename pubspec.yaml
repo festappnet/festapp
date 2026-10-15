@@ -28,6 +28,8 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  festapp_core:
+    path: packages/festapp_core
   flutter_web_plugins:
     sdk: flutter
   flutter:
@@ -127,6 +129,9 @@ dependencies:
   path: any
   timeago: ^3.7.1
 dev_dependencies:
+  shared_preferences: 2.5.5 # Existing locked version, public widget fixtures.
+  supabase: 2.16.2 # Same locked client re-exported by supabase_flutter, for VM SDK contracts.
+  test: ^1.31.1
   auto_route_generator: ^10.3.0
   build_runner: ^2.11.0
   flutter_launcher_icons: ^0.14.3

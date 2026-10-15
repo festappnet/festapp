@@ -3,7 +3,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/cleaning/cleaning_status.dart';
 import 'package:fstapp/components/cleaning/cleaning_strings.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:trina_grid/trina_grid.dart';
 

@@ -1,5 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/news/news_model.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -114,12 +115,12 @@ class SupabaseNewsCommands implements NewsCommands {
         (response.status != 'applied' && response.status != 'unchanged')) {
       throw StateError('News marker mutation failed');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 
   Future<NewsCommandResult> _decode(Object? raw) async {
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final version = (response.data['version'] as num?)?.toInt() ?? 0;
     final entity = response.data['news'];
     return NewsCommandResult(

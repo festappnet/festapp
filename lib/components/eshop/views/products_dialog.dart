@@ -1,7 +1,7 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -111,7 +111,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
       setState(() {
         final pIndex = _current.indexWhere((p) => p.id == product.id);
         if (pIndex != -1) {
-          _current[pIndex].price = newPrice;
+          _current[pIndex] = _current[pIndex].copyWith(price: newPrice);
           _recalc();
         }
       });
@@ -147,9 +147,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
     }
   }
 
-  bool get _hasUnsavedChanges => !const ListEquality<(int?, double?)>().equals(
-      _orig.map((p) => (p.id, p.price)).toList(),
-      _current.map((p) => (p.id, p.price)).toList());
+  bool get _hasUnsavedChanges => !sameProductSelection(_orig, _current);
 
   Future<void> _showSendUpdateConfirmDialog() async {
     if (!_canEdit || _hasUnsavedChanges) return;

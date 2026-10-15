@@ -11,7 +11,7 @@ import 'package:fstapp/components/occasion/occasion_home_page.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/map/db_places.dart';
@@ -100,7 +100,7 @@ class _TimetablePageState extends State<TimetablePage>
     _events =
         await DbEvents.getAllEvents(RightsService.currentOccasionId()!, false);
     if (!AuthService.isLoggedIn()) {
-      await OfflineDataService.updateEventsWithMySchedule(_events);
+      _events = await OfflineDataService.updateEventsWithMySchedule(_events);
     }
 
     var placeIds = _events
@@ -175,8 +175,8 @@ class _TimetablePageState extends State<TimetablePage>
       _events = await OfflineDataService.getAllEvents();
     }
 
-    await OfflineDataService.updateEventsWithMySchedule(_events);
-    await OfflineDataService.updateEventsWithGroupName(_events);
+    _events = await OfflineDataService.updateEventsWithMySchedule(_events);
+    _events = await OfflineDataService.updateEventsWithGroupName(_events);
 
     var items = _events.map((e) => TimeBlockItem.fromEventModel(e)).toList();
 

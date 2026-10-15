@@ -1,11 +1,11 @@
+import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_ticket_model.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/widgets_view/option_field_helper.dart';
@@ -13,7 +13,7 @@ import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
 import 'package:fstapp/components/forms/models/holder_models/ticket_holder.dart';
 
 class FormSession extends ChangeNotifier {
-  final FormModel form;
+  final FormBundle form;
   final FormHolder formHolder;
   final GlobalKey<FormBuilderState> formKey;
 
@@ -100,7 +100,7 @@ class FormSession extends ChangeNotifier {
     }
 
     for (var field in formHolder.fields) {
-      if (field.fieldType == FormHelper.fieldTypeProductType) {
+      if (field.fieldType == FormMetadata.fieldTypeProductType) {
         var selectedOption = field.getValue(formHolder.controller!.globalKey);
         if (selectedOption is FormOptionProductModel) {
           totalPrice += selectedOption.price;
@@ -123,7 +123,7 @@ class FormSession extends ChangeNotifier {
         var tickets = FormHelper.getFieldData(formKey, field) ?? [];
 
         for (var ticketData in tickets) {
-          for (var ticketField in ticketData[FormHelper.metaFields]) {
+          for (var ticketField in ticketData[FormMetadata.metaFields]) {
             for (var fValue in ticketField.values) {
               if (fValue is FormOptionProductModel) {
                 totalProducts++;

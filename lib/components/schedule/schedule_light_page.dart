@@ -4,12 +4,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/_shared/async_reload_coordinator.dart';
 import 'package:fstapp/components/users/user_strings.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/my_schedule_page.dart';
 import 'package:fstapp/components/schedule/timetable_page.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -83,8 +83,8 @@ class _ScheduleLightPageState extends State<ScheduleLightPage>
   }
 
   Future<void> _reloadProjectedEvents() async {
-    final events = await OfflineDataService.getAllEvents();
-    await OfflineDataService.updateEventsWithGroupName(events);
+    var events = await OfflineDataService.getAllEvents();
+    events = await OfflineDataService.updateEventsWithGroupName(events);
     await _loadPlacesForEvents(
         events, (_) async => OfflineDataService.getAllPlaces());
     final dots = events
@@ -116,8 +116,8 @@ class _ScheduleLightPageState extends State<ScheduleLightPage>
 
   Future<void> _loadOfflineThenFast() async {
     if (_events.isEmpty) {
-      final offline = await OfflineDataService.getAllEvents();
-      await OfflineDataService.updateEventsWithGroupName(offline);
+      var offline = await OfflineDataService.getAllEvents();
+      offline = await OfflineDataService.updateEventsWithGroupName(offline);
       await _loadPlacesForEvents(
           offline, (_) async => await OfflineDataService.getAllPlaces());
       _events = offline;
@@ -134,9 +134,10 @@ class _ScheduleLightPageState extends State<ScheduleLightPage>
 
     final fast =
         await DbEvents.getAllEvents(RightsService.currentOccasionId()!, false);
-    for (var e in fast) {
+    for (final entry in fast.asMap().entries) {
+      final e = entry.value;
       if (e.id != null && _eventDescriptions.containsKey(e.id!)) {
-        e.description = _eventDescriptions[e.id!];
+        fast[entry.key] = e.copyWith(description: _eventDescriptions[e.id!]);
       }
     }
     _events = fast;
@@ -175,9 +176,10 @@ class _ScheduleLightPageState extends State<ScheduleLightPage>
     if (placeIds.isEmpty) return;
     final places = await fetchPlaces(placeIds);
     final byId = {for (final p in places) p.id: p};
-    for (final e in events) {
+    for (final entry in events.asMap().entries) {
+      final e = entry.value;
       if (e.place?.id != null && byId.containsKey(e.place!.id)) {
-        e.place = byId[e.place!.id];
+        events[entry.key] = e.copyWith(place: byId[e.place!.id]);
       }
     }
   }

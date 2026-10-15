@@ -276,6 +276,11 @@ Future<Uint8List> _validateAndNormalize(Uint8List bytes) async {
     if (!header.contains('ftyp') ||
         !RegExp('heic|heix|hevc|hevx|mif1').hasMatch(header)) rethrow;
   }
+  final headers = image_headers.findDecoderForData(bytes)?.startDecode(bytes);
+  if (headers != null &&
+      headers.width * headers.height > HtmlMediaDraft.maxPixels) {
+    throw StateError('Image exceeds 40 MP');
+  }
   final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
   ui.ImageDescriptor? descriptor;
   ui.Codec? codec;
@@ -305,8 +310,12 @@ Future<Uint8List> _validateAndNormalize(Uint8List bytes) async {
     final longerEdge = width > height ? width : height;
     final previewScale = HtmlImagePreview.maxDecodeEdge / longerEdge;
     codec = await descriptor.instantiateCodec(
-      targetWidth: format != null && previewScale < 1 ? (width * previewScale).round().clamp(1, width) : null,
-      targetHeight: format != null && previewScale < 1 ? (height * previewScale).round().clamp(1, height) : null,
+      targetWidth: format != null && previewScale < 1
+          ? (width * previewScale).round().clamp(1, width)
+          : null,
+      targetHeight: format != null && previewScale < 1
+          ? (height * previewScale).round().clamp(1, height)
+          : null,
     );
     image = (await codec.getNextFrame()).image;
     if (format != null) return bytes;

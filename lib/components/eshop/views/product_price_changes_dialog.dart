@@ -1,3 +1,4 @@
+import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
@@ -9,8 +10,7 @@ import 'package:fstapp/widgets/time_data_range_picker.dart';
 import 'package:fstapp/services/utilities_all.dart';
 
 import '../db_eshop.dart';
-import '../models/product_model.dart';
-import '../models/product_price_change.dart';
+import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
 
 String priceChangeText(String template, List<String> values) {
@@ -187,6 +187,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
   }
 
   Future<void> submit() async {
+    final now = product.priceTime(TimeHelper.currentTime ?? DateTime.now());
     final amount = double.tryParse(price.text.replaceAll(',', '.'));
     final instants = candidates;
     final instant = instants.length == 1
@@ -196,7 +197,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
         !amount.isFinite ||
         amount < 0 ||
         instant == null ||
-        !instant.isAfter(product.priceNow)) {
+        !instant.isAfter(now)) {
       setState(
         () => error = instants.isEmpty && wallTime != null
             ? OrdersStrings.priceMissingTime
@@ -299,6 +300,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final now = product.priceTime(TimeHelper.currentTime ?? DateTime.now());
     final instants = candidates;
     final amount = double.tryParse(price.text.replaceAll(',', '.'));
     final instant = instants.length == 1 ? instants.first : offsetChoice;
@@ -313,7 +315,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
     for (final plan in plans) {
       final label =
           '${scheduledPrice(context, previous, product.currencyCode)} → ${scheduledPrice(context, plan.price, product.currencyCode)}';
-      final overdue = !plan.time.isAfter(product.priceNow);
+      final overdue = !plan.time.isAfter(now);
       children.add(
         Card(
           child: Padding(
@@ -329,8 +331,7 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
                   Text(OrdersStrings.pricePending),
                 if (overdue &&
                     plan.failureCode == null &&
-                    product.priceNow.difference(plan.time) >
-                        const Duration(minutes: 2))
+                    now.difference(plan.time) > const Duration(minutes: 2))
                   Text(OrdersStrings.priceDelayed),
                 if (previous != product.price)
                   Text(OrdersStrings.priceExpected),

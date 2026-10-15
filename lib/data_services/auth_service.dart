@@ -13,7 +13,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
 import 'package:fstapp/data_services/auth_refresh_recovery.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -22,7 +22,7 @@ import 'package:fstapp/services/notification_helper.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import '../components/users/logout_flow.dart';
 
 class AuthService {
@@ -74,8 +74,8 @@ class AuthService {
     if (RegExp(r'^\d{6}$').hasMatch(password)) {
       String? refreshToken;
       try {
-        final response = await _supabase.functions
-            .invoke('exchange-sign-in-code', body: {
+        final response =
+            await _supabase.functions.invoke('exchange-sign-in-code', body: {
           'email': AppConfig.removeUserPrefix(email),
           'code': password,
           'organization': AppConfig.organization

@@ -257,11 +257,12 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
           // 5. Persist the changes to the database.
           await DbOccasions.updateOccasion(occasion!);
-          if (mounted) setState(() {
-            _savedLink = occasion!.link;
-            _linkValue = occasion!.link;
-            _linkController.text = occasion!.link ?? "";
-          });
+          if (mounted)
+            setState(() {
+              _savedLink = occasion!.link;
+              _linkValue = occasion!.link;
+              _linkController.text = occasion!.link ?? "";
+            });
           _htmlSave.markSaved();
           _snapshot.accept(_draft);
 

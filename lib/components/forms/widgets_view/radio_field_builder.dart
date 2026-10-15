@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/theme_config.dart';
 import '../form_strings.dart';
@@ -9,7 +9,6 @@ import '../models/holder_models/field_holder.dart';
 import '../models/holder_models/form_holder.dart';
 import 'form_helper.dart';
 import 'option_field_helper.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 
 /// Builds a single-select field (radio). Decides whether to show
@@ -21,7 +20,7 @@ class RadioFieldBuilder {
   static Widget buildRadioField(
     BuildContext context,
     FieldHolder fieldHolder,
-    List<FormOptionModel> optionsIn,
+    List<FormOptionDefinition> optionsIn,
     FormHolder formHolder,
   ) {
     return _CurrencyFilteredRadioField(
@@ -31,11 +30,11 @@ class RadioFieldBuilder {
     );
   }
 
-  /// Resolves the configured default to a matching FormOptionModel.
+  /// Resolves the configured default to a matching FormOptionDefinition.
   /// Matches by option.title (select_one stores titles) OR option.id
   /// (product_type stores product IDs). Returns null if no match.
-  static FormOptionModel? resolveDefault(
-      FieldHolder fieldHolder, List<FormOptionModel> options) {
+  static FormOptionDefinition? resolveDefault(
+      FieldHolder fieldHolder, List<FormOptionDefinition> options) {
     final raw = fieldHolder.defaultValue;
     if (raw is! String || raw.isEmpty) return null;
     for (final o in options) {
@@ -48,7 +47,7 @@ class RadioFieldBuilder {
   static Widget _buildBasicRadioField(
     BuildContext context,
     FieldHolder fieldHolder,
-    List<FormOptionModel> optionsIn,
+    List<FormOptionDefinition> optionsIn,
     FormHolder formHolder,
   ) {
     return _BasicRadioFieldWidget(
@@ -63,7 +62,7 @@ class RadioFieldBuilder {
   static Widget _buildCardDesignRadioField(
     BuildContext context,
     FieldHolder fieldHolder,
-    List<FormOptionModel> optionsIn,
+    List<FormOptionDefinition> optionsIn,
     FormHolder formHolder,
   ) {
     // If there are no options to display for the current filter, show a message.
@@ -79,7 +78,7 @@ class RadioFieldBuilder {
         alignment: Alignment.topCenter,
         duration: Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        child: FormBuilderField<FormOptionModel?>(
+        child: FormBuilderField<FormOptionDefinition?>(
           key: ValueKey(fieldHolder.id.toString() +
               optionsIn.toString()), // Add key to force rebuild
           name: fieldHolder.id.toString(),
@@ -146,8 +145,8 @@ class RadioFieldBuilder {
   /// Builds a single card with a radio button for the given option.
   static Widget _buildRadioOptionCard(
     BuildContext context,
-    FormFieldState<FormOptionModel?> field,
-    FormOptionModel o,
+    FormFieldState<FormOptionDefinition?> field,
+    FormOptionDefinition o,
     FormHolder formHolder,
   ) {
     // If the option is a product option and is disabled, mark it accordingly.
@@ -170,10 +169,12 @@ class RadioFieldBuilder {
         formHolder.getTicket()?.showDepositDescription ?? true;
     if (showDepositInfo &&
         FeatureService.isDepositChoiceAvailable() &&
-        o is FormOptionProductModel && o.depositAmount != null) {
+        o is FormOptionProductModel &&
+        o.depositAmount != null) {
       final depositText = OptionFieldHelper.buildDepositText(context, o);
-      effectiveDescription = "<span style='font-weight: bold;'>$depositText</span>"
-        "${effectiveDescription != null ? "<br>$effectiveDescription" : ""}";
+      effectiveDescription =
+          "<span style='font-weight: bold;'>$depositText</span>"
+          "${effectiveDescription != null ? "<br>$effectiveDescription" : ""}";
     }
 
     final optionCard = OptionFieldHelper.buildOptionCard(
@@ -182,7 +183,7 @@ class RadioFieldBuilder {
       title: effectiveTitle,
       priceText: OptionFieldHelper.buildPriceText(context, o),
       description: effectiveDescription,
-      leading: Radio<FormOptionModel>(
+      leading: Radio<FormOptionDefinition>(
         value: o,
         groupValue: field.value,
         onChanged: isDisabled
@@ -209,7 +210,7 @@ class RadioFieldBuilder {
 /// A wrapper widget that handles currency filtering for radio fields.
 class _CurrencyFilteredRadioField extends StatefulWidget {
   final FieldHolder fieldHolder;
-  final List<FormOptionModel> optionsIn;
+  final List<FormOptionDefinition> optionsIn;
   final FormHolder formHolder;
 
   const _CurrencyFilteredRadioField({
@@ -292,7 +293,7 @@ class _CurrencyFilteredRadioFieldState
 
   @override
   Widget build(BuildContext context) {
-    List<FormOptionModel> filteredOptions;
+    List<FormOptionDefinition> filteredOptions;
 
     // Filter options based on the selected currency
     if (_selectedCurrency == null) {
@@ -342,7 +343,7 @@ class _CurrencyFilteredRadioFieldState
 // Private StatefulWidget that implements the basic radio field with the remove button.
 class _BasicRadioFieldWidget extends StatefulWidget {
   final FieldHolder fieldHolder;
-  final List<FormOptionModel> optionsIn;
+  final List<FormOptionDefinition> optionsIn;
   final FormHolder formHolder;
 
   const _BasicRadioFieldWidget({
@@ -385,10 +386,11 @@ class _BasicRadioFieldWidgetState extends State<_BasicRadioFieldWidget> {
               children: [
                 Expanded(child: Text(effectiveTitle, style: style)),
                 const SizedBox(width: 8),
-                Text(priceText, style: style.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDisabled ? null : Theme.of(context).primaryColor,
-                )),
+                Text(priceText,
+                    style: style.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDisabled ? null : Theme.of(context).primaryColor,
+                    )),
               ],
             )
           : Text(effectiveTitle, style: style);
@@ -397,16 +399,22 @@ class _BasicRadioFieldWidgetState extends State<_BasicRadioFieldWidget> {
           widget.formHolder.getTicket()?.showDepositDescription ?? true;
       if (showDepositInfo &&
           FeatureService.isDepositChoiceAvailable() &&
-          o is FormOptionProductModel && o.depositAmount != null) {
+          o is FormOptionProductModel &&
+          o.depositAmount != null) {
         final depositText = OptionFieldHelper.buildDepositText(context, o);
         labelWidget = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             labelWidget,
             const SizedBox(height: 2),
-            Text(depositText, style: style.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-              fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(depositText,
+                style: style.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
           ],
         );
       }
@@ -429,7 +437,7 @@ class _BasicRadioFieldWidgetState extends State<_BasicRadioFieldWidget> {
         );
       }
 
-      return FormBuilderFieldOption<FormOptionModel>(
+      return FormBuilderFieldOption<FormOptionDefinition>(
         value: o,
         child: labelWidget,
       );
@@ -438,7 +446,7 @@ class _BasicRadioFieldWidgetState extends State<_BasicRadioFieldWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FormBuilderRadioGroup<FormOptionModel>(
+        FormBuilderRadioGroup<FormOptionDefinition>(
           key: _radioGroupKey,
           // Re-create the widget when options change to reset state correctly
           name: widget.fieldHolder.id.toString(),

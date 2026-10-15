@@ -1,8 +1,8 @@
+import 'package:festapp_core/map.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/map/map_scene.dart';
-import 'package:fstapp/components/map/place_model.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:latlong2/latlong.dart';
@@ -26,11 +26,20 @@ class CounselingHoursRange {
   });
 }
 
+/// Application projection of program data onto map places. Core map values
+/// never own event objects or create a dependency back into program.
+class MapPlaceProgram {
+  const MapPlaceProgram(
+      {this.eventsByPlace = const {}, this.counselingByPlace = const {}});
+  final Map<int, List<EventModel>> eventsByPlace;
+  final Map<int, List<CounselingHoursRange>> counselingByPlace;
+}
+
 class MapPageHelper {
   static bool hasMeaningfulPlaceDescription(String? description) =>
       !HtmlHelper.isHtmlEmptyOrNull(description);
 
-  static Map<int, List<CounselingHoursRange>> assignEventsToPlaces(
+  static MapPlaceProgram assignEventsToPlaces(
     List<PlaceModel> places,
     List<EventModel> events,
   ) {
@@ -40,15 +49,16 @@ class MapPageHelper {
         .toList()
         .sortEvents();
     final counselingByPlace = <int, List<CounselingHoursRange>>{};
+    final eventsByPlace = <int, List<EventModel>>{};
     final counselingEntriesByDay = <DateTime, EventModel>{};
     for (final entry
         in publicEvents.where((event) => event.isCounselingEntry)) {
       counselingEntriesByDay.putIfAbsent(_eventDay(entry), () => entry);
     }
     for (final place in places) {
-      place.events
-        ..clear()
-        ..addAll(visibleEvents.where((event) => event.place?.id == place.id));
+      if (place.id != null)
+        eventsByPlace[place.id!] = List.unmodifiable(
+            visibleEvents.where((event) => event.place?.id == place.id));
       final placeId = place.id;
       if (placeId == null) continue;
       final slots = publicEvents.where(
@@ -73,7 +83,9 @@ class MapPageHelper {
         ..sort((a, b) => a.start.compareTo(b.start));
       if (ranges.isNotEmpty) counselingByPlace[placeId] = ranges;
     }
-    return counselingByPlace;
+    return MapPlaceProgram(
+        eventsByPlace: Map.unmodifiable(eventsByPlace),
+        counselingByPlace: Map.unmodifiable(counselingByPlace));
   }
 
   static DateTime _eventDay(EventModel event) {
@@ -154,7 +166,16 @@ class MapPageHelper {
         // map segment (List<PathNode>) -> List<LatLng>: place refs are looked
         // up in placesList, free points use their inline coordinates.
         final pts = List<LatLng>.from(
-          segment.map((node) => node.resolve(placesList)).whereType<LatLng>(),
+          segment
+              .map((node) => node.resolve((id) {
+                    final place =
+                        placesList.firstWhereOrNull((place) => place.id == id);
+                    return place == null
+                        ? null
+                        : MapCoordinate(place.getLat(), place.getLng());
+                  }))
+              .whereType<MapCoordinate>()
+              .map((point) => LatLng(point.latitude, point.longitude)),
         );
         if (pts.length < 2) continue;
 

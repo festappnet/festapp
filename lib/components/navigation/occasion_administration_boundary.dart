@@ -35,6 +35,7 @@ class RightsAdministrationAccess implements AdministrationAccess {
           : RightsService.canSeeAdministration());
   @override
   Future<bool> load(String link, {required bool reservations}) async {
+    if (loadedLink == link) return canAccess(reservations: reservations);
     await RightsService.updateAppData(link: link, refreshOffline: false);
     final allowed = loadedLink != null && canAccess(reservations: reservations);
     if (allowed) {

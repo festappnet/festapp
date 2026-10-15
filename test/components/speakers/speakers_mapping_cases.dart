@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -7,6 +8,11 @@ import 'package:fstapp/components/speakers/speaker_model.dart';
 import 'package:fstapp/components/speakers/speakers_bundle.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   group('SpeakersBundle.fromJson', () {
     final bundle = SpeakersBundle.fromJson({
       'speakers': [
@@ -121,7 +127,8 @@ void main() {
     test('defaults: disabled, type "counseling", limit 1', () {
       final f = CounselingFeature(code: FeatureConstants.counseling);
       expect(f.isEnabled, isFalse);
-      expect(f.counselingEventType, FeatureConstants.counselingDefaultEventType);
+      expect(
+          f.counselingEventType, FeatureConstants.counselingDefaultEventType);
       expect(f.maxActiveBookings, 1);
     });
 

@@ -50,7 +50,7 @@ export class RouterService {
         // For backwards compatibility or default behavior
         return RouterService.navigateToForm(link);
     }
-    
+
     static async navigateToForm(link) {
         const cleanLink = link.split('?')[0];
         const path = `${RouterService.FORM_PATH_PREFIX}${cleanLink}`;
@@ -89,7 +89,7 @@ export class RouterService {
         const url = RouterService.getAdminUrl(unitId);
         await RouterService.navigateToFlutterRoute(url);
     }
-    
+
     static async navigateToHandover() {
         const url = RouterService.getHandoverUrl();
         await RouterService.navigateToFlutterRoute(url);
@@ -122,7 +122,7 @@ export class RouterService {
     static pushState(path) {
         window.history.pushState({}, '', path);
     }
-    
+
     static pushOverlayState(hash) {
         // Personal capabilities must survive reload while an overlay is open.
         // Keep only the overlay name in state, never copy capability data.
@@ -132,11 +132,11 @@ export class RouterService {
             window.history.pushState({}, '', `${window.location.pathname}#${hash}`);
         }
     }
-    
+
     static goBackProgrammatically() {
         window.history.back();
     }
-    
+
     static flutterRoutes = [
         '/reset-password',
         '/forgot-password',
@@ -158,6 +158,7 @@ export class RouterService {
         // The callback owns its continuation dialog until the user finishes or
         // cancels. App-supported tenants must not hand it off to Flutter.
         if (window.location.pathname === '/google-auth') return true;
+        if (/^\/unit\/[1-9]\d*\/?$/.test(window.location.pathname)) return false;
         let path = window.location.pathname;
         const fullUrl = window.location.href;
 
@@ -280,30 +281,30 @@ export class RouterService {
              // 1. Handover Strategy:
              // If we are at /transfer in the Web Client, it means we need to perform the handover to Flutter.
              // (In Production, the server handles this, but in Localhost/SPA navigation, we handle it here).
-             
+
              // Special Case: Reset Password via Email Link
              // Links look like: .../resetPassword?token=...
-             if (path.startsWith('/reset-password') || fullUrl.includes('reset-password') || 
+             if (path.startsWith('/reset-password') || fullUrl.includes('reset-password') ||
                  path.startsWith('/resetPassword') || fullUrl.includes('resetPassword')) {
-                 
+
                  // Flutter Parity: Use Regex to extract exact token string as Flutter does.
                  // Regex: token=(?<token>[^&]+)
                  const tokenMatch = fullUrl.match(/token=([^&]+)/);
-                 
+
                  if (tokenMatch && tokenMatch[1]) {
                      // 1. Split hash if present (Flutter's regex captures it if not & terminated, but UUIDs don't have it)
                      // 2. Trim whitespace just in case
                      const rawToken = tokenMatch[1].split('#')[0].trim();
-                     
-                     
-                     const { LoginModal } = await import('../components/users/login_modal.js'); 
-                     
+
+
+                     const { LoginModal } = await import('../components/users/login_modal.js');
+
                      const modal = document.createElement('login-modal');
                      document.body.appendChild(modal);
                      // Set directly
                      modal.resetToken = rawToken;
-                     
-                     return true; 
+
+                     return true;
                  }
              }
 
@@ -322,7 +323,7 @@ export class RouterService {
                  const { SupabaseService } = await import('./supabase_service.js');
                  const { data } = await SupabaseService.getClient().auth.getSession();
                  let sessionFragment = '';
-                 
+
                  if (data?.session) {
                      const { access_token, refresh_token } = data.session;
                      if (access_token && refresh_token) {
@@ -433,7 +434,7 @@ export class RouterService {
     static initPopStateListener() {
         window.addEventListener('popstate', async (event) => {
             const path = window.location.pathname;
-            
+
             // Ignore hash changes (SPA overlays)
             if (path === RouterService._lastPath) {
                 return;
@@ -443,13 +444,13 @@ export class RouterService {
             if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
                  const link = RouterService.getFormLink(path);
                  const { FormPage } = await import('../components/forms/form_page.js');
-                 new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically }); 
+                 new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically });
             } else {
-                 window.location.reload(); 
+                 window.location.reload();
             }
         });
     }
-    
+
     static get onPopState() {
         return {
             listen: (callback) => {

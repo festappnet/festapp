@@ -1,10 +1,11 @@
+import 'package:fstapp/components/map/offline_map_bundle_verifier.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/map/offline_map_file_downloader.dart';
 import 'package:http/http.dart' as http;
 
@@ -295,7 +296,7 @@ class OfflineMapBundleManager {
     final manifest = OfflineMapBundleManifest.parse(
       Map<String, dynamic>.from(decoded as Map),
     );
-    await manifest.verifyBundle(directory);
+    await verifyOfflineMapBundle(manifest, directory);
     return OfflineMapBundleInstallation._(
       directory: directory,
       manifest: manifest,
@@ -315,7 +316,7 @@ class OfflineMapBundleManager {
         'Immutable bundle version conflicts with the downloaded manifest.',
       );
     }
-    await manifest.verifyBundle(target);
+    await verifyOfflineMapBundle(manifest, target);
     return OfflineMapBundleInstallation._(
       directory: target,
       manifest: manifest,

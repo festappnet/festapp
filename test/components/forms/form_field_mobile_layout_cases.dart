@@ -1,49 +1,50 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/widgets_editor/form_fields_generator.dart';
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
+  WidgetEnvironmentFixture.register();
   setUpAll(() {
-    Localization.load(
-      const Locale('cs'),
-      translations: Translations(
-        jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-            as Map<String, dynamic>,
-      ),
-    );
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
+            jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+                as Map<String, dynamic>);
   });
 
   for (final width in [320.0, 390.0, 600.0, 1000.0]) {
-    testWidgets('field actions stay accessible in one row at width $width', (
+    testWidgetsWithEnvironment(() => _environment,
+        'field actions stay accessible in one row at width $width', (
       tester,
     ) async {
       tester.view.physicalSize = Size(width, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final field = FormFieldModel(
+      final field = FormFieldDraft(
         id: 4,
         type: 'text',
         title: 'Poznámka',
         deletionAllowed: true,
       );
-      final form = FormModel(occasionId: 59, relatedFields: [field]);
+      final form = FormEditorDraft(occasionId: 59, relatedFields: [field]);
       final bundle = FormEditBundle(
         form: form,
-        formFields: [field],
         productTypes: [],
         products: [],
         availableBankAccounts: [],
       );
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
@@ -81,7 +82,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(visibilitySwitch);
       await tester.pump();
-      expect(field.isHidden, isTrue);
+      expect(field.definition.isHidden, isTrue);
       expect(tester.getRect(action), rect);
       await tester.tap(action);
       if (isCompact) {
@@ -101,29 +102,30 @@ void main() {
       expect(form.deletedFieldIds, {4});
     });
   }
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'mobile delete menu explains why a used field cannot be deleted',
     (tester) async {
       tester.view.physicalSize = const Size(390, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final field = FormFieldModel(
+      final field = FormFieldDraft(
         id: 4,
         type: 'text',
         title: 'Poznámka',
         deletionAllowed: false,
         deleteBlockedReason: 'responses',
       );
-      final form = FormModel(occasionId: 59, relatedFields: [field]);
-      await tester.pumpWidget(
+      final form = FormEditorDraft(occasionId: 59, relatedFields: [field]);
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
               child: FormFieldsGenerator(
                 bundle: FormEditBundle(
                   form: form,
-                  formFields: [field],
                   productTypes: [],
                   products: [],
                   availableBankAccounts: [],

@@ -36,7 +36,8 @@ test('form loading never leaves an empty page while the request is pending', asy
         const loading = RouterService.handleInitialLoad().then(() => { handled = true; });
         await requestStarted;
         assert.equal(handled, false, 'startup must not report ready before rendering the form');
-        assert.match(document.getElementById('form-page-container').textContent, /Načítání/);
+        assert.equal(document.getElementById('form-page-container').textContent, '');
+        assert.ok(document.querySelector('#form-page-container .sp-loader[role="status"][aria-label]'));
         finish(null);
         await loading;
         assert.match(document.getElementById('form-page-container').textContent, /nenalezen/);
@@ -76,4 +77,18 @@ test('form loading never leaves an empty page while the request is pending', asy
         }));
         await assert.rejects(DbForms.getFormByLink('test'), /Failed to fetch/);
     });
+});
+
+
+test('unavailable and countdown forms replace the pending loading indicator', async t => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('<main><div class="sp-loader" role="status"></div></main>');
+    const previous = globalThis.document;
+    globalThis.document = dom.window.document;
+    t.after(() => { globalThis.document = previous; dom.window.close(); });
+    const { FormAvailabilityService } = await import('../../src/components/forms/form_availability_service.js');
+    const host = document.querySelector('main');
+    assert.equal(FormAvailabilityService.renderStatus(host, {}, { status: 'CLOSED' }), true);
+    assert.equal(host.querySelector('[role="status"]'), null);
+    assert.ok(host.querySelector('.not-available-widget'));
 });

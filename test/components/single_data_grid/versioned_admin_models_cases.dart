@@ -1,3 +1,4 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
@@ -8,6 +9,11 @@ import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   testWidgets('remaining versioned admin grids preserve optimistic versions',
       (tester) async {
     const expectedAggregateVersion = 13;

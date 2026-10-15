@@ -12,6 +12,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -20,13 +27,6 @@ void main() {
               'name': 'Alex',
               'event_ids': <int>[],
             },
-          },
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
           },
           'sync': {'replacements': <Object>[]},
         };
@@ -50,16 +50,16 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'status': 'applied',
-          'code': 200,
-          'data': <String, dynamic>{},
           'mutation': {
             'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
-            'occurredAt': '2026-10-07T10:00:00Z'
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
+          'status': 'applied',
+          'code': 200,
+          'data': <String, dynamic>{},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),

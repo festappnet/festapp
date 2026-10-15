@@ -1,4 +1,4 @@
-import 'package:fstapp/components/eshop/models/report_exchange_rates.dart';
+import 'package:festapp_core/eshop.dart';
 // Isolated report smoke harness. Uses synthetic data and never contacts a backend.
 import 'dart:convert';
 import 'dart:typed_data';
@@ -7,7 +7,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/views/report_tab.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
-import 'occasion_report_fixture.dart';
+import '../../../packages/festapp_core/test/support/occasion_report_fixture.dart';
 import 'package:fstapp/theme_config.dart';
 
 void main() async {

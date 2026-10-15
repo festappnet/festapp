@@ -143,7 +143,7 @@ main {
 }
 .search-input {
     width: 100%;
-    padding: 12px 16px 12px 48px;
+    padding: 12px 64px 12px 48px;
     border-radius: var(--radius-sm);
     border: 1px solid #ddd;
     font-size: 16px;
@@ -152,10 +152,14 @@ main {
     background-color: var(--bg-input, #fff); /* Ensure explicit background */
     color: var(--text-color, #333);
 }
+.search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
 .search-input:focus {
     border-color: var(--accent-color);
     border-width: 2px;
-    padding: 11px 15px 11px 47px;
+    padding: 11px 63px 11px 47px;
 }
 .search-icon {
     position: absolute;

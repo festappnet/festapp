@@ -211,3 +211,21 @@ test('retired personal form query links return gone without redirect or data loo
     assert.equal(response.headers.get('cache-control'),'no-store');
   }
 });
+
+
+test('unit catalogue uses the web shell and requests only its unit; admin routes keep Flutter', async t => {
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    assert.deepEqual(JSON.parse(options.body), { p_organization_id: 3, p_unit_id: 2 });
+    return Response.json({ occasions: [occasions[0]] });
+  });
+  for (const path of ['/unit/2', '/unit/2/']) {
+    const response = await worker.fetch(request(path), env);
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.ok(html.includes('id="event-search"'));
+    assert.ok(html.includes('/form/camp-registration'));
+    assert.ok(!html.includes('href="/program/event"'));
+  }
+  const admin = await worker.fetch(request('/unit/2/edit'), env);
+  assert.equal(await admin.text(), 'flutter app');
+});

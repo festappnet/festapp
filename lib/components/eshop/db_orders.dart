@@ -5,11 +5,11 @@ import 'package:collection/collection.dart';
 
 import 'package:fstapp/components/blueprint/get_orders_helper.dart';
 import 'package:fstapp/components/eshop/models/orders_history_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/order_commands.dart';
 import 'package:fstapp/components/eshop/models/order_product_ticket_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
@@ -20,7 +20,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ReservationsBundle {
   final List<OrderModel> orders;
-  final List<FormModel> forms;
+  final List<FormBundle> forms;
 
   ReservationsBundle({
     required this.orders,
@@ -214,9 +214,11 @@ class DbOrders {
           .toList();
 
       order.relatedTickets = relatedTickets;
-      order.form = forms?.firstWhereOrNull((f) => f.id == order.formId);
+      order.form =
+          forms?.firstWhereOrNull((f) => f.definition.id == order.formId);
       if (order.form == null && order.formKey != null) {
-        order.form = forms?.firstWhereOrNull((f) => f.key == order.formKey);
+        order.form =
+            forms?.firstWhereOrNull((f) => f.definition.key == order.formKey);
       }
       order.relatedHistory = historyMap[order.id];
 

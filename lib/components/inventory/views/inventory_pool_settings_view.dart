@@ -4,7 +4,7 @@ import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
@@ -21,7 +21,7 @@ import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
-import '../../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'inventory_contexts_editor.dart';
 import 'inventory_strings.dart';
 import 'place_search_dialog.dart';

@@ -1,5 +1,5 @@
 import 'package:fstapp/router_service.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
@@ -22,7 +22,7 @@ import 'package:fstapp/styles/styles_config.dart';
 @RoutePage()
 class FormDetailPage extends StatefulWidget {
   final String formLink;
-  final Future<List<FormModel>> Function(String)? loadForms;
+  final Future<List<FormBundle>> Function(String)? loadForms;
   const FormDetailPage(
       {super.key,
       @PathParam('formLink') required this.formLink,
@@ -36,7 +36,7 @@ class _FormDetailPageState extends State<FormDetailPage> {
   bool _failed = false;
   int _generation = 0;
   String? _link;
-  List<FormModel> _forms = [];
+  List<FormBundle> _forms = [];
   String? _canonicalFormLink;
   @override
   void didChangeDependencies() {
@@ -63,7 +63,7 @@ class _FormDetailPageState extends State<FormDetailPage> {
     final generation = ++_generation;
     final link = _link!;
     try {
-      final List<FormModel> objects;
+      final List<FormBundle> objects;
       var canonical = widget.formLink;
       if (widget.loadForms != null) {
         objects = await widget.loadForms!(link);
@@ -94,8 +94,8 @@ class _FormDetailPageState extends State<FormDetailPage> {
       setState(() {
         _forms = objects;
         _ready = RightsService.currentLink == link &&
-            objects
-                .any((f) => f.link == (_canonicalFormLink ?? widget.formLink));
+            objects.any((f) =>
+                f.definition.link == (_canonicalFormLink ?? widget.formLink));
         _failed = !_ready;
       });
     } catch (_) {
@@ -136,27 +136,29 @@ class _FormDetailPageState extends State<FormDetailPage> {
                 toolbarHeight: 44,
                 title: _buildBreadcrumbs(),
                 actions: [
-                  if (!RightsService.isDemoReadOnly) Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 6, horizontal: 4),
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.add, size: 18),
-                        label: Text(FormStrings.createNewForm),
-                        onPressed: () => RetainedDraftGuard.instance.leaveOwner(
-                            context,
-                            () => FormCreationHelper.showCreateOrCopyFormDialog(
-                                context,
-                                occasionLink: _link!,
-                                onFormCreated: _back)),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            foregroundColor:
-                                Theme.of(context).colorScheme.onPrimary,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    StylesConfig.commonRoundness))),
-                      )),
+                  if (!RightsService.isDemoReadOnly)
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 6, horizontal: 4),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(FormStrings.createNewForm),
+                          onPressed: () => RetainedDraftGuard.instance
+                              .leaveOwner(
+                                  context,
+                                  () => FormCreationHelper
+                                      .showCreateOrCopyFormDialog(context,
+                                          occasionLink: _link!,
+                                          onFormCreated: _back)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      StylesConfig.commonRoundness))),
+                        )),
                   const SizedBox(width: 8),
                 ]),
             body: AutoRouter(key: ValueKey(widget.formLink))));
@@ -164,9 +166,9 @@ class _FormDetailPageState extends State<FormDetailPage> {
 
   Widget _buildBreadcrumbs() {
     final color = Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
-    final selected = _forms.firstWhere(
-        (form) => form.link == (_canonicalFormLink ?? widget.formLink));
-    final title = Text(selected.toString(),
+    final selected = _forms.firstWhere((form) =>
+        form.definition.link == (_canonicalFormLink ?? widget.formLink));
+    final title = Text(selected.definition.toString(),
         style: TextStyle(
             fontSize: 16,
             color: color,
@@ -197,16 +199,17 @@ class _FormDetailPageState extends State<FormDetailPage> {
                     resetNestedTabs(context.router, FormDetailRoute.name),
                 child: title)
           else
-            PopupMenuButton<FormModel>(
+            PopupMenuButton<FormBundle>(
                 elevation: 0,
                 onSelected: (form) {
-                  if (form.link == (_canonicalFormLink ?? widget.formLink)) {
+                  if (form.definition.link ==
+                      (_canonicalFormLink ?? widget.formLink)) {
                     resetNestedTabs(context.router, FormDetailRoute.name);
                   } else {
                     RetainedDraftGuard.instance.leaveOwner(
                         context,
                         () => context.router.navigate(FormDetailRoute(
-                                formLink: form.link!,
+                                formLink: form.definition.link!,
                                 children: const [
                                   FormTabsRoute(children: [FormEditorRoute()])
                                 ])));
@@ -218,8 +221,8 @@ class _FormDetailPageState extends State<FormDetailPage> {
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(form.toString()),
-                              if (form.id == selected.id)
+                              Text(form.definition.toString()),
+                              if (form.definition.id == selected.definition.id)
                                 Icon(Icons.check,
                                     color:
                                         Theme.of(context).colorScheme.primary),

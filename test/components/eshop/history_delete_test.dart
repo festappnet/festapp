@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -22,7 +23,9 @@ class _Translations extends AssetLoader {
 }
 
 void main() {
-  testWidgets('manager history grid deletes real cancelled history, not current-state projections', (tester) async {
+  testWidgets(
+      'manager history grid deletes real cancelled history, not current-state projections',
+      (tester) async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     zones.initializeTimeZones();
@@ -46,17 +49,17 @@ void main() {
           context: context,
           loadData: () async => records,
           fromPlutoJson: OrderHistoryModel.fromPlutoJson,
-          idColumn: EshopColumns.HISTORY_ID,
+          idColumn: EshopColumnIds.HISTORY_ID,
           firstColumnType: DataGridFirstColumn.delete,
           actionsExtended: DataGridActionsController(
             isAddActionPossible: () => false,
             canDeleteRow: OrderGridFilters.historyCanBeDeleted,
           ),
           columns: EshopColumns.generateColumns(context, [
-            EshopColumns.HISTORY_ID,
-            EshopColumns.HISTORY_MODEL_REFERENCE,
-            EshopColumns.HISTORY_ORDER_SYMBOL,
-            EshopColumns.HISTORY_STATE,
+            EshopColumnIds.HISTORY_ID,
+            EshopColumnIds.HISTORY_MODEL_REFERENCE,
+            EshopColumnIds.HISTORY_ORDER_SYMBOL,
+            EshopColumnIds.HISTORY_STATE,
           ]),
         );
         return Scaffold(body: SingleTableDataGrid(grid));
@@ -75,7 +78,8 @@ void main() {
     expect(order.state, 'storno');
     expect(grid.deletedRows, isNot(contains(grid.rows.last)));
     expect(tester.takeException(), isNull);
-    final context = tester.element(find.byType(SingleTableDataGrid<OrderHistoryModel>));
+    final context =
+        tester.element(find.byType(SingleTableDataGrid<OrderHistoryModel>));
     await expectLater(records.last.deleteMethod(context), throwsStateError);
   });
 }

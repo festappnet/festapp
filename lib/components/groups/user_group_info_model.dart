@@ -8,7 +8,7 @@ import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:trina_grid/trina_grid.dart';
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'group_participant_model.dart';
 
 class UserGroupInfoModel extends ITrinaRowModel {
@@ -170,12 +170,16 @@ class UserGroupInfoModel extends ITrinaRowModel {
     aggregateVersion = saved.aggregateVersion;
     persistedPlaceId = saved.placeId ?? saved.place?.id;
     persistedPlaceWasPrivate = saved.place?.isPrivateGroupLocation ?? false;
-    if (identical(place, submittedPlace) &&
+    final currentPlace = place;
+    // Immutable edits replace snapshots. Reconcile the group-owned private
+    // location by its submitted identity while retaining the latest fields.
+    if (currentPlace?.isPrivateGroupLocation == true &&
         submittedPlace?.isPrivateGroupLocation == true &&
         saved.place?.isPrivateGroupLocation == true &&
-        (submittedPlace!.id == null || submittedPlace.id == saved.place!.id)) {
-      submittedPlace.id = saved.place!.id;
-      submittedPlace.aggregateVersion = saved.place!.aggregateVersion;
+        (currentPlace!.id == submittedPlace!.id ||
+            currentPlace.id == saved.place!.id)) {
+      place = currentPlace.copyWith(
+          id: saved.place!.id, aggregateVersion: saved.place!.aggregateVersion);
     }
     placeId = place?.id;
   }

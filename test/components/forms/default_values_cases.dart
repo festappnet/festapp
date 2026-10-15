@@ -1,21 +1,20 @@
+import 'package:festapp_core/forms.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
 import 'package:fstapp/components/forms/models/holder_models/field_holder.dart';
 import 'package:fstapp/components/forms/widgets_view/check_box_field_builder.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/widgets_view/radio_field_builder.dart';
 
 void main() {
   group('RadioFieldBuilder.resolveDefault (select_one)', () {
     final options = [
-      FormOptionModel('0', 'Yes'),
-      FormOptionModel('1', 'No'),
-      FormOptionModel('2', 'Maybe'),
+      FormOptionDefinition('0', 'Yes'),
+      FormOptionDefinition('1', 'No'),
+      FormOptionDefinition('2', 'Maybe'),
     ];
 
     OptionsFieldHolder holderWith(dynamic defaultValue) => OptionsFieldHolder(
           id: 1,
-          fieldType: FormHelper.fieldTypeSelectOne,
+          fieldType: FormMetadata.fieldTypeSelectOne,
           isRequired: false,
           options: options,
           value: defaultValue,
@@ -58,14 +57,14 @@ void main() {
 
   group('CheckboxFieldBuilder.resolveDefaults (select_many)', () {
     final options = [
-      FormOptionModel('0', 'A'),
-      FormOptionModel('1', 'B'),
-      FormOptionModel('2', 'C'),
+      FormOptionDefinition('0', 'A'),
+      FormOptionDefinition('1', 'B'),
+      FormOptionDefinition('2', 'C'),
     ];
 
     OptionsFieldHolder holderWith(dynamic defaultValue) => OptionsFieldHolder(
           id: 2,
-          fieldType: FormHelper.fieldTypeSelectMany,
+          fieldType: FormMetadata.fieldTypeSelectMany,
           isRequired: false,
           options: options,
           value: defaultValue,

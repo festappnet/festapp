@@ -1,3 +1,4 @@
+import 'package:fstapp/components/schedule/event_type_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/theme_config.dart';
@@ -35,8 +36,7 @@ class _TimetableEventWidgetState extends State<TimetableEventWidget> {
     } else if (isActivity) {
       stripColor = Theme.of(context).primaryColor;
     } else {
-      stripColor =
-          ThemeConfig.eventTypeToColorTimetable(context, widget.item.eventType);
+      stripColor = EventTypeColors.background(widget.item.eventType);
     }
 
     // --- Main Content Background ---

@@ -1,7 +1,7 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/services/time_helper.dart';
@@ -147,7 +147,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
     final changedBy =
         item.createdBy?.toFullNameString() ?? OrdersStrings.systemUser;
     final trinaRow = item.toTrinaRow(context);
-    final stateCellFormat = trinaRow.cells[EshopColumns.HISTORY_STATE]!.value;
+    final stateCellFormat = trinaRow.cells[EshopColumnIds.HISTORY_STATE]!.value;
 
     final previousRecord = item.previousHistoryRecord;
     final priceHasChanged =

@@ -1,3 +1,5 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -5,20 +7,21 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:fstapp/components/forms/views/waitlist_offers_dialog.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/waitlist_summary_model.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:timezone/data/latest.dart' as zones;
 import 'package:timezone/timezone.dart' as tz;
 
+late WidgetEnvironmentFixture _environment;
+
 void main() {
+  WidgetEnvironmentFixture.register();
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     final font = FontLoader('Futura')
@@ -29,25 +32,25 @@ void main() {
     await icons.load();
   });
   setUp(() {
-    Localization.load(
-      const Locale('cs'),
-      translations: Translations(
-        jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-            as Map<String, dynamic>,
-      ),
-    );
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
+            jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+                as Map<String, dynamic>);
     zones.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
   });
   for (final count in [1, 2, 5]) {
-    testWidgets(
+    testWidgetsWithEnvironment(
+      () => _environment,
       'focused offer sends only selected registration and expands inherited preview for$count',
       (tester) async {
         tester.view.physicalSize = const Size(1200, 1600);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        final form = FormModel(id: 7, waitlistEnabled: true);
+        final form = FormBundle(
+            definition: FormDefinition(id: 7, waitlistEnabled: true));
         final selected = OrderModel(
           id: 5,
           formId: 7,
@@ -65,7 +68,8 @@ void main() {
           orderSymbol: 'OTHER6',
         );
         final sent = <Map<String, dynamic>>[];
-        await tester.pumpWidget(
+        await _environment.pumpWidget(
+          tester,
           MaterialApp(
             home: Scaffold(
               body: Builder(
@@ -222,13 +226,15 @@ void main() {
     );
   }
   for (final succeeds in [true, false]) {
-    testWidgets('send closes with confirmation only on success: $succeeds', (
+    testWidgetsWithEnvironment(() => _environment,
+        'send closes with confirmation only on success: $succeeds', (
       tester,
     ) async {
       bool? result;
       var proposalLoads = 0;
       final sentRevisions = <int>[];
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: Builder(
@@ -238,7 +244,7 @@ void main() {
                   result = await showDialog<bool>(
                     context: context,
                     builder: (_) => WaitlistOffersDialog(
-                      form: FormModel(id: 7),
+                      form: FormBundle(definition: FormDefinition(id: 7)),
                       loadProposal: (_) async => {
                         'revision': ++proposalLoads,
                         'serverTime': '2026-10-13T12:00:00Z',
@@ -296,7 +302,8 @@ void main() {
     });
   }
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'RPC timezone controls preview, picker defaults and UTC submission independently of global timezone',
     (tester) async {
       tester.view.physicalSize = const Size(1200, 1600);
@@ -305,7 +312,8 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final sent = <Map<String, dynamic>>[];
       expect(tz.local.name, 'Europe/Prague');
-      await tester.pumpWidget(
+      await _environment.pumpWidget(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: Builder(
@@ -314,7 +322,7 @@ void main() {
                 onPressed: () => showDialog<bool>(
                   context: context,
                   builder: (_) => WaitlistOffersDialog(
-                    form: FormModel(id: 7),
+                    form: FormBundle(definition: FormDefinition(id: 7)),
                     loadProposal: (_) async => {
                       'revision': 1,
                       'serverTime': '2027-01-01T01:30:00Z',
@@ -398,7 +406,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final sent = <Map<String, dynamic>>[];
-    await tester.pumpWidget(
+    await _environment.pumpWidget(
+      tester,
       RepaintBoundary(
         key: const ValueKey('offer-artifact'),
         child: MaterialApp(
@@ -416,7 +425,7 @@ void main() {
                 onPressed: () => showDialog<bool>(
                   context: context,
                   builder: (_) => WaitlistOffersDialog(
-                    form: FormModel(id: 7),
+                    form: FormBundle(definition: FormDefinition(id: 7)),
                     selectedOrderIds: selectedOrderIds,
                     orders: [
                       OrderModel(
@@ -488,7 +497,8 @@ void main() {
     return sent;
   }
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'bounds use waiting count, permit reallocating zero proposals and cap the sum',
     (tester) async {
       final sent = await openBounds(tester);
@@ -529,7 +539,8 @@ void main() {
     },
   );
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'selection scope excludes other orders and no selection cannot send',
     (tester) async {
       final sent = await openBounds(
@@ -554,7 +565,8 @@ void main() {
     },
   );
 
-  testWidgets(
+  testWidgetsWithEnvironment(
+    () => _environment,
     'capacity reduced suggestion is not mistaken for eligible limit',
     (tester) async {
       await openBounds(tester, capacity: 1, firstLimit: 5);
@@ -577,7 +589,8 @@ void main() {
   );
 
   for (final badCount in [-1, 3]) {
-    testWidgets('invalid server count $badCount cannot be sent',
+    testWidgetsWithEnvironment(
+        () => _environment, 'invalid server count $badCount cannot be sent',
         (tester) async {
       final sent = await openBounds(tester, firstCount: badCount);
       expect(find.byType(FilledButton), findsNothing);
@@ -592,7 +605,8 @@ void main() {
     (width: 1000.0, brightness: Brightness.dark, scale: 1.0),
     (width: 320.0, brightness: Brightness.light, scale: 2.0),
   ]) {
-    testWidgets(
+    testWidgetsWithEnvironment(
+      () => _environment,
       'actual theme layout ${variant.width} ${variant.brightness} scale ${variant.scale}',
       (tester) async {
         await openBounds(

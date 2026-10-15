@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/components/activities/activity_model.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:intl/intl.dart';
 

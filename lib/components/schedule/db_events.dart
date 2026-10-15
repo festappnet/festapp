@@ -9,13 +9,13 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/workshop_feature.dart';
 import 'package:fstapp/components/activities/activity_model.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/event_commands.dart';
+import 'package:fstapp/components/schedule/supabase_event_commands.dart';
 import 'package:fstapp/components/schedule/attendance_commands.dart';
 import 'package:fstapp/components/schedule/saved_program_commands.dart';
-import 'package:fstapp/components/schedule/saved_program_mutation_coordinator.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/speakers/speakers_strings.dart';
 import 'package:fstapp/components/schedule/exclusive_group_model.dart';
@@ -33,7 +33,7 @@ import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'get_events_helper.dart';
 
 class DbEvents {
@@ -44,7 +44,8 @@ class DbEvents {
     currentScope: _currentSavedProgramScope,
     persist: _persistSavedProgram,
   );
-  static EventCommands get _commands => SupabaseEventCommands(_supabase);
+  static EventCommands get commands => SupabaseEventCommands(_supabase,
+      useClientSyncDelete: () => ClientSyncRuntime.isV1Selected);
   static AttendanceCommands get _attendanceCommands =>
       SupabaseAttendanceCommands(_supabase);
   static SavedProgramCommands get _savedProgramCommands =>
@@ -88,11 +89,11 @@ class DbEvents {
         .order(Tb.events.start_time, ascending: true)
         .order(Tb.events.max_participants, ascending: false);
 
-    var remoteEvents = List<EventModel>.from(
-        dataEventUsersSaved.map((x) => EventModel.fromJson(x)));
-    for (var element in remoteEvents) {
-      element.isInMySchedule = true;
-    }
+    var remoteEvents = List<EventModel>.from(dataEventUsersSaved
+        .map((x) => EventModel.fromJson(x, timeContext: TimeHelper.eventTime)));
+    remoteEvents = remoteEvents
+        .map((element) => element.copyWith(isInMySchedule: true))
+        .toList();
     var toReturn = EventModel.CreateEventModelSet();
     toReturn.addAll(remoteEvents);
     return toReturn;
@@ -115,11 +116,11 @@ class DbEvents {
         .eq(Tb.events.occasion, RightsService.currentOccasionId()!)
         .order(Tb.events.start_time, ascending: true)
         .order(Tb.events.max_participants, ascending: false);
-    var localEvents =
-        List<EventModel>.from(localData.map((x) => EventModel.fromJson(x)));
-    for (var element in localEvents) {
-      element.isInMySchedule = true;
-    }
+    var localEvents = List<EventModel>.from(localData
+        .map((x) => EventModel.fromJson(x, timeContext: TimeHelper.eventTime)));
+    localEvents = localEvents
+        .map((element) => element.copyWith(isInMySchedule: true))
+        .toList();
     var toReturn = EventModel.CreateEventModelSet();
     toReturn.addAll(localEvents);
     return toReturn;
@@ -136,8 +137,9 @@ class DbEvents {
       params: {'p_occasion_id': occasionId},
     );
 
-    return List<EventModel>.from(
-        data.map((x) => EventModel.fromJson(x as Map<String, dynamic>)));
+    return List<EventModel>.from(data.map((x) => EventModel.fromJson(
+        x as Map<String, dynamic>,
+        timeContext: TimeHelper.eventTime)));
   }
 
   static Future<EventModel> getEvent(int eventId,
@@ -155,19 +157,19 @@ class DbEvents {
       final body = (response as Map).cast<String, dynamic>();
       final data = (body['data'] as Map).cast<String, dynamic>();
       event = EventModel.fromCommandJson(
-        (data['event'] as Map).cast<String, dynamic>(),
-        (data['version'] as num).toInt(),
-      );
+          (data['event'] as Map).cast<String, dynamic>(),
+          (data['version'] as num).toInt(),
+          timeContext: TimeHelper.eventTime);
       final placeId = event.place?.id;
       if (placeId != null) {
         for (final place in await OfflineDataService.getAllPlaces()) {
           if (place.id == placeId) {
-            event.place = place;
+            event = event.copyWith(place: place);
             break;
           }
         }
       }
-      event.occasionId = RightsService.currentOccasionId();
+      event = event.copyWith(occasionId: RightsService.currentOccasionId());
     } else {
       var data = await _supabase
           .from(Tb.events.table)
@@ -175,14 +177,16 @@ class DbEvents {
               "${Tb.events.id},${Tb.events.updated_at},${Tb.events.occasion},${Tb.events.title},${Tb.events.description},${Tb.events.start_time},${Tb.events.end_time},${Tb.events.max_participants},${Tb.events.split_for_men_women},${Tb.events.is_group_event},${Tb.events.is_hidden},${Tb.events.type},${Tb.events.data},${Tb.places.table}(${Tb.places.id}, ${Tb.places.title}),$withParentSelect")
           .eq(Tb.events.id, eventId)
           .single();
-      event = EventModel.fromJson(data);
+      event = EventModel.fromJson(data, timeContext: TimeHelper.eventTime);
     }
 
     if (AuthService.isLoggedIn()) {
-      event.isInMySchedule = await isEventSaved(event.id!);
-      event.isSignedIn = await DbEvents.isCurrentUserSignedToEvent(event.id!);
+      event = event.copyWith(isInMySchedule: await isEventSaved(event.id!));
+      event = event.copyWith(
+          isSignedIn: await DbEvents.isCurrentUserSignedToEvent(event.id!));
     } else {
-      event.isInMySchedule = await OfflineDataService.isEventSaved(event.id!);
+      event = event.copyWith(
+          isInMySchedule: await OfflineDataService.isEventSaved(event.id!));
     }
 
     if (event.childEventIds != null) {
@@ -198,13 +202,16 @@ class DbEvents {
           .inFilter(Tb.events.id, event.childEventIds!)
           .eq(Tb.events.is_hidden, false);
 
-      event.childEvents = List<EventModel>.from(
-          childEventsData.map((x) => EventModel.fromJson(x))).sortEvents();
+      event = event.copyWith(
+          childEvents: List<EventModel>.from(childEventsData.map((x) =>
+                  EventModel.fromJson(x, timeContext: TimeHelper.eventTime)))
+              .sortEvents());
 
-      await loadIsCurrentUserSignedIn(event.childEvents);
+      event = event.copyWith(
+          childEvents: await loadIsCurrentUserSignedIn(event.childEvents));
     }
     if ((event.isGroupEvent ?? false) && RightsService.hasGroup()) {
-      event.isMyGroupEvent = true;
+      event = event.copyWith(isMyGroupEvent: true);
     }
 
     return event;
@@ -222,15 +229,19 @@ class DbEvents {
     };
   }
 
-  static Future<void> loadIsCurrentUserSignedIn(List<EventModel> events) async {
+  static Future<List<EventModel>> loadIsCurrentUserSignedIn(
+      List<EventModel> events) async {
     final summaries =
         await _getAttendanceSummary(events.map((event) => event.id!).toList());
-    for (final event in events) {
-      final summary = summaries[event.id];
-      event.isSignedIn = summary?['is_signed_in'] == true;
-      event.currentParticipants =
-          (summary?['participant_count'] as num?)?.toInt() ?? 0;
-    }
+    return events
+        .map((event) => event.copyWith(
+              isSignedIn: summaries[event.id]?['is_signed_in'] == true,
+              currentParticipants:
+                  (summaries[event.id]?['participant_count'] as num?)
+                          ?.toInt() ??
+                      0,
+            ))
+        .toList();
   }
 
   static Future<List<UserInfoModel>> getParticipantsPerEvent(
@@ -593,8 +604,9 @@ class DbEvents {
 
   static Future<EventModel> updateEvent(EventModel event) async {
     // Editor commands are canonical even when the occasion uses legacy readers.
-    event.occasionId ??= RightsService.currentOccasionId();
-    final result = await _commands.save(event);
+    event = event.copyWith(
+        occasionId: event.occasionId ?? RightsService.currentOccasionId());
+    final result = await commands.save(event);
     if (result.status == EventCommandStatus.conflict) {
       throw StateError('Event was changed by another editor');
     }
@@ -604,49 +616,13 @@ class DbEvents {
     return result.event!;
   }
 
-  static Future<void> updateEventFromDataGrid(EventModel event) async {
-    // The command saves parent links and roles atomically with the event.
-    await updateEvent(event);
-  }
-
-  static Future<void> removeEventFromSaved(EventModel updatedEvent) async {
-    await _supabase
-        .from(Tb.event_users_saved.table)
-        .delete()
-        .eq(Tb.event_users_saved.event, updatedEvent.id!);
-  }
-
-  static Future<void> removeEventFromEventGroups(
-      EventModel updatedEvent) async {
-    await _supabase
-        .from(Tb.event_groups.table)
-        .delete()
-        .eq(Tb.event_groups.event_child, updatedEvent.id!);
-  }
-
   static Future<void> deleteEvent(EventModel data) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      data.occasionId ??= RightsService.currentOccasionId();
-      final result = await _commands.delete(data);
-      if (result.status == EventCommandStatus.conflict) {
-        throw StateError('Event was changed by another editor');
-      }
-      if (result.status == EventCommandStatus.rejected) {
-        throw StateError('Event deletion was rejected');
-      }
-      return;
-    }
-    // Editor-guarded server-side delete that unbinds sign-ups and other child
-    // rows (event_users, event_users_saved, exclusive/roles/groups) atomically,
-    // so events with attendees — including counseling slots — delete cleanly.
-    final res =
-        await _supabase.rpc('delete_event', params: {'p_event': data.id});
-    final code = (res is Map && res['code'] != null)
-        ? (res['code'] as num).toInt()
-        : null;
-    if (code != 200) {
-      throw Exception('delete_event failed with code $code');
-    }
+    final result = await commands.delete(data.copyWith(
+        occasionId: data.occasionId ?? RightsService.currentOccasionId()));
+    if (result.status == EventCommandStatus.conflict)
+      throw StateError('Event was changed by another editor');
+    if (result.status == EventCommandStatus.rejected)
+      throw StateError('Event deletion was rejected');
   }
 
   /// Lightweight id/title/time list of all occasion events (hidden included),
@@ -657,8 +633,9 @@ class DbEvents {
     if (res['code'] != 200) {
       throw Exception('get_events_catalog failed with code ${res['code']}');
     }
-    return List<EventModel>.from((res['data'] as List)
-        .map((x) => EventModel.fromJson((x as Map).cast<String, dynamic>())));
+    return List<EventModel>.from((res['data'] as List).map((x) =>
+        EventModel.fromJson((x as Map).cast<String, dynamic>(),
+            timeContext: TimeHelper.eventTime)));
   }
 
   static Future<List<ExclusiveGroupModel>> getAllExclusiveGroups() async {
@@ -849,33 +826,37 @@ class DbEvents {
     // instantiate and populate each EventModel
     final events = <EventModel>[];
     for (var eJson in eventsJson) {
-      final ev = EventModel.fromJson(eJson);
+      var ev = EventModel.fromJson(eJson, timeContext: TimeHelper.eventTime);
       // override place with full model if available
       if (ev.place?.id != null) {
-        ev.place = placeById[ev.place!.id];
+        ev = ev.copyWith(place: placeById[ev.place!.id]);
       }
       // assign child/parent IDs
-      ev.childEventIds =
-          groupsByParent[ev.id!]?.map((g) => g.eventChild).toList();
-      ev.parentEventIds =
-          parentsByChild[ev.id!]?.map((g) => g.eventParent).toList();
+      ev = ev.copyWith(
+          childEventIds:
+              groupsByParent[ev.id!]?.map((g) => g.eventChild).toList());
+      ev = ev.copyWith(
+          parentEventIds:
+              parentsByChild[ev.id!]?.map((g) => g.eventParent).toList());
       // assign roles and counts
-      ev.eventRolesIds = rolesByEvent[ev.id!];
-      ev.currentParticipants = usersByEvent[ev.id!];
-      ev.currentUsersSaved = savedByEvent[ev.id!];
+      ev = ev.copyWith(eventRolesIds: rolesByEvent[ev.id!]);
+      ev = ev.copyWith(currentParticipants: usersByEvent[ev.id!]);
+      ev = ev.copyWith(currentUsersSaved: savedByEvent[ev.id!]);
       events.add(ev);
     }
 
-    for (var e in events) {
-      var children = events
-          .where((ev) => ev.parentEventIds?.contains(e.id) ?? false)
-          .toList();
-      e.childEvents = children;
-    }
+    final linkedEvents = attachEventChildren(events, {
+      for (final event in events)
+        if (event.id != null)
+          event.id!: [
+            for (final child in events)
+              if (child.parentEventIds?.contains(event.id) ?? false) child.id!,
+          ],
+    });
 
     // sort by start time, for example
-    events.sort((a, b) => a.startTime.compareTo(b.startTime));
-    return events;
+    linkedEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return linkedEvents;
   }
 
   // In YourServiceClass or relevant class containing getMyEventsAndActivities
@@ -929,28 +910,29 @@ class DbEvents {
     final usersByEvent = {for (var u in usersCountList) u.eventId: u.count};
     final savedByEvent = {for (var s in usersSavedList) s.eventId: s.count};
 
-    for (var ev in events) {
-      if (ev.place?.id != null) {
-        ev.place = placeById[ev.place!.id];
-      }
-
-      ev.childEventIds =
-          groupsByParent[ev.id!]?.map((g) => g.eventChild).toList();
-      ev.parentEventIds =
-          parentsByChild[ev.id!]?.map((g) => g.eventParent).toList();
-
-      for (var e in events) {
-        var children = events
-            .where((ev) => ev.parentEventIds?.contains(e.id) ?? false)
-            .toList();
-        e.childEvents = children;
-      }
-
-      ev.currentParticipants = usersByEvent[ev.id!];
-      ev.currentUsersSaved = savedByEvent[ev.id!];
-    }
-
-    events = events.sortEvents();
+    events = events
+        .map((event) => event.copyWith(
+              place: event.place?.id != null
+                  ? placeById[event.place!.id]
+                  : event.place,
+              childEventIds: groupsByParent[event.id!]
+                  ?.map((group) => group.eventChild)
+                  .toList(),
+              parentEventIds: parentsByChild[event.id!]
+                  ?.map((group) => group.eventParent)
+                  .toList(),
+              currentParticipants: usersByEvent[event.id!],
+              currentUsersSaved: savedByEvent[event.id!],
+            ))
+        .toList();
+    events = attachEventChildren(events, {
+      for (final event in events)
+        if (event.id != null)
+          event.id!: [
+            for (final child in events)
+              if (child.parentEventIds?.contains(event.id) ?? false) child.id!,
+          ],
+    }).sortEvents();
 
     // ---- ACTIVITY PROCESSING ----
     final List<ActivityEventModel> activityRelatedEvents =

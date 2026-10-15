@@ -1,11 +1,17 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/map/place_type_column_builder.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:trina_grid/trina_grid.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   test('places grid always exposes every configured place type', () {
     final column = buildPlaceTypeColumn(
       placeTypes: [

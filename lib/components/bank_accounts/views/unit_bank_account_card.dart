@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/drag_handle_dots.dart';
-import '../bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import '../bank_account_strings.dart';
 import 'bank_account_sync_status.dart';
 

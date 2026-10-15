@@ -1,9 +1,15 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_saver.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   test('direct save persists only artwork and updates the parent version',
       () async {
     final oldLayout = <String, dynamic>{'schemaVersion': 1, 'templates': {}};

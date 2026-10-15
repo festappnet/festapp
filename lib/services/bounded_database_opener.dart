@@ -26,6 +26,16 @@ class BoundedDatabaseOpener {
     return _pending.putIfAbsent(path, () => _openBounded(path));
   }
 
+  Future<void> close(String path) async {
+    final pending = _pending[path];
+    if (pending != null) {
+      try {
+        await pending;
+      } catch (_) {/* Failed opens own late cleanup. */}
+    }
+    await _databases.remove(path)?.close();
+  }
+
   Future<Database> _openBounded(String path) {
     var expired = false;
     final opening =

@@ -1,6 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 
 ClientCommandResponse response(
         {int revision = 2, Object payload = const {'a': 1, 'b': 2}}) =>

@@ -120,3 +120,18 @@ test('large multi-year archive shows year headings and every completed card with
     assert.equal(document.querySelector('.catalog-archive h3'), null);
     assert.equal(document.querySelectorAll('.catalog-archive a').length, 9);
 });
+
+
+test('unit catalogue passes its scope to the RPC and preserves it for retry', async t => {
+    const page = fixture();
+    const calls = [];
+    t.mock.method(DbOccasions, 'getPublicOccasions', async (...args) => {
+        calls.push(args);
+        if (calls.length === 1) throw new Error('offline');
+        return [];
+    });
+    await page.loadOccasions(1, 2);
+    document.querySelector('[data-catalog-status] button').click();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(calls, [[1, 2], [1, 2]]);
+});

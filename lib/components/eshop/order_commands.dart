@@ -1,4 +1,5 @@
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,7 +25,7 @@ class SupabaseOrderCommands implements OrderCommands {
     if (response.code != 200) {
       throw StateError('Order cancellation was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 
   @override
@@ -36,6 +37,6 @@ class SupabaseOrderCommands implements OrderCommands {
     if (response.code != 200) {
       throw StateError('Order deletion was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 }

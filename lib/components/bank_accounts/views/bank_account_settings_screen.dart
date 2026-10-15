@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:fstapp/components/bank_accounts/bank_sync_error.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
@@ -13,12 +13,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
-import 'package:fstapp/components/bank_accounts/logic/iban_utils.dart';
-import 'package:fstapp/components/bank_accounts/data/cz_banks.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_general_tab.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_connection_tab.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_users_tab.dart';
@@ -154,7 +151,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     if (_isLoadingConnection || !mounted || (background && _isSaving)) return;
     _isLoadingConnection = true;
     Future<void> load() async {
-      final connection = await DbBankAccounts.getConnection(_account.id);
+      final connection =
+          await DbBankAccounts.current.getConnection(_account.id);
       if (mounted && connection != null) {
         setState(() {
           _account = _account.copyWith(bankSync: connection);
@@ -200,8 +198,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     }
     setState(() => _isSaving = true);
     try {
-      await DbBankAccounts.manage(_account.id, 'create',
-          values: {'mode': mode});
+      await DbBankAccounts.current
+          .manage(_account.id, 'create', values: {'mode': mode});
       await _loadBankSyncConnection();
     } on BankSyncError catch (error) {
       if (mounted) _showError(BankAccountStrings.syncError(error.code));
@@ -221,8 +219,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
       _isChangingSynchronization = true;
     });
     try {
-      final result = await DbBankAccounts.manage(
-          _account.id, enabled ? 'resume' : 'suspend');
+      final result = await DbBankAccounts.current
+          .manage(_account.id, enabled ? 'resume' : 'suspend');
       if (enabled) {
         _refreshAfterSynchronization();
         if (mounted && result['sync_pending'] == true) {
@@ -379,7 +377,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         pairingCode: _pairingCode,
         bankSync: _account.bankSync,
       );
-      final newId = await DbBankAccounts.updateBankAccount(
+      final newId = await DbBankAccounts.current.updateBankAccount(
         updatedAccount,
         unitId: widget.unitId,
         organizationId: widget.organizationId,
@@ -492,7 +490,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   Future<void> _saveToken() async {
     setState(() => _isSaving = true);
     try {
-      await DbBankAccounts.updateBankAccountToken(
+      await DbBankAccounts.current.updateBankAccountToken(
         _account.id,
         _tokenController.text,
         _expiryDate,
@@ -561,7 +559,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
 
     setState(() => _isSaving = true);
     try {
-      final newToken = await DbBankAccounts.regenerateBankAccountPairingCode(
+      final newToken =
+          await DbBankAccounts.current.regenerateBankAccountPairingCode(
         _account.id,
       );
       setState(() {

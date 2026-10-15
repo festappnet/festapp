@@ -1,9 +1,15 @@
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/services_feature.dart';
 
 void main() {
+  // This suite intentionally uses untranslated key fallback (no catalog).
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   group('ServicesFeature defaults', () {
     test('new feature defaults to stay mode with both sub-types allowed', () {
       final f = ServicesFeature(code: FeatureConstants.services);

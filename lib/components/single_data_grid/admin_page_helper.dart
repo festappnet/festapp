@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -5,7 +6,6 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
-import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -79,7 +79,7 @@ class AdministrationTabs {
   static RoutedTabDefinition get tickets => RoutedTabDefinition(
       slug: NavigationPaths.tickets,
       route: const TicketsSectionRoute(),
-      label: OrdersStrings.itemsPlural,
+      label: OrderItemStrings.itemsPlural,
       icon: Icons.local_activity);
   static RoutedTabDefinition get orders => RoutedTabDefinition(
       slug: NavigationPaths.orders,

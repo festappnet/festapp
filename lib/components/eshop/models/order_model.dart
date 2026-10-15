@@ -3,14 +3,14 @@ import '../../forms/waitlist_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
@@ -97,7 +97,7 @@ class OrderModel extends ITrinaRowModel {
   Map<String, dynamic>? emailDelivery;
 
   // Relating to top-level DB tables
-  FormModel? form;
+  FormBundle? form;
   List<TicketModel>? relatedTickets;
   List<BlueprintObjectModel>? relatedSpots;
   List<ProductModel>? relatedProducts;
@@ -290,15 +290,15 @@ class OrderModel extends ITrinaRowModel {
 
   static OrderModel fromPlutoJson(Map<String, dynamic> json) {
     return OrderModel(
-        id: json[EshopColumns.ORDER_ID] == -1
+        id: json[EshopColumnIds.ORDER_ID] == -1
             ? null
-            : json[EshopColumns.ORDER_ID],
-        orderSymbol: json[EshopColumns.ORDER_SYMBOL] as String?,
+            : json[EshopColumnIds.ORDER_ID],
+        orderSymbol: json[EshopColumnIds.ORDER_SYMBOL] as String?,
         data: {
-          'name': json[EshopColumns.ORDER_DATA] as String?,
-          'email': json[EshopColumns.ORDER_EMAIL] as String?,
+          'name': json[EshopColumnIds.ORDER_DATA] as String?,
+          'email': json[EshopColumnIds.ORDER_EMAIL] as String?,
         },
-        noteHidden: json[EshopColumns.ORDER_NOTE_HIDDEN]);
+        noteHidden: json[EshopColumnIds.ORDER_NOTE_HIDDEN]);
   }
 
   Map<String, dynamic> toJson() => {
@@ -320,42 +320,42 @@ class OrderModel extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     return TrinaRow(cells: {
-      EshopColumns.ORDER_WAITLIST:
+      EshopColumnIds.ORDER_WAITLIST:
           TrinaCell(value: waitlistSummary?.label ?? ''),
-      EshopColumns.ORDER_ID: TrinaCell(value: id ?? 0),
-      EshopColumns.ORDER_SEQUENCE: TrinaCell(value: orderSequence),
-      EshopColumns.ORDER_SYMBOL: TrinaCell(value: orderSymbol ?? ""),
-      EshopColumns.ORDER_PRICE: TrinaCell(
+      EshopColumnIds.ORDER_ID: TrinaCell(value: id ?? 0),
+      EshopColumnIds.ORDER_SEQUENCE: TrinaCell(value: orderSequence),
+      EshopColumnIds.ORDER_SYMBOL: TrinaCell(value: orderSymbol ?? ""),
+      EshopColumnIds.ORDER_PRICE: TrinaCell(
           value: price != null
               ? Utilities.formatPrice(context, price!,
                   currencyCode: currencyCode)
               : ""),
-      EshopColumns.ORDER_STATE:
+      EshopColumnIds.ORDER_STATE:
           TrinaCell(value: OrderModel.formatState(state ?? orderedState)),
-      EshopColumns.PAYMENT_INFO_AMOUNT: TrinaCell(
+      EshopColumnIds.PAYMENT_INFO_AMOUNT: TrinaCell(
           value: paymentInfoModel?.amount != null
               ? Utilities.formatPrice(context, paymentInfoModel!.amount!,
                   currencyCode: paymentInfoModel!.currencyCode)
               : ""),
-      EshopColumns.PAYMENT_INFO_PAID: TrinaCell(
+      EshopColumnIds.PAYMENT_INFO_PAID: TrinaCell(
           value: paymentInfoModel?.paid != null
               ? Utilities.formatPrice(context, paymentInfoModel!.paid!,
                   currencyCode: paymentInfoModel!.currencyCode)
               : ""),
-      EshopColumns.PAYMENT_INFO_ID: TrinaCell(value: paymentInfo ?? 0),
-      EshopColumns.PAYMENT_INFO_RETURNED: TrinaCell(
+      EshopColumnIds.PAYMENT_INFO_ID: TrinaCell(value: paymentInfo ?? 0),
+      EshopColumnIds.PAYMENT_INFO_RETURNED: TrinaCell(
           value: paymentInfoModel?.returned != null
               ? Utilities.formatPrice(context, paymentInfoModel!.returned!,
                   currencyCode: paymentInfoModel!.currencyCode)
               : ""),
-      EshopColumns.PAYMENT_INFO_VARIABLE_SYMBOL:
+      EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL:
           TrinaCell(value: paymentInfoModel?.variableSymbol ?? 0),
-      EshopColumns.PAYMENT_INFO_DEADLINE: TrinaCell(
+      EshopColumnIds.PAYMENT_INFO_DEADLINE: TrinaCell(
         value: paymentInfoModel?.deadline != null
             ? DateFormat('yyyy-MM-dd').format(paymentInfoModel!.deadline!)
             : "",
       ),
-      EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE: TrinaCell(
+      EshopColumnIds.PAYMENT_INFO_DEPOSIT_DEADLINE: TrinaCell(
         value: paymentInfoModel?.depositDeadline != null
             ? DateFormat('yyyy-MM-dd')
                 .format(paymentInfoModel!.depositDeadline!)
@@ -364,28 +364,28 @@ class OrderModel extends ITrinaRowModel {
                 ? OrdersStrings.gridDepositOnSiteLabel
                 : ""),
       ),
-      EshopColumns.ORDER_CREATED_AT: TrinaCell(
+      EshopColumnIds.ORDER_CREATED_AT: TrinaCell(
           value: createdAt != null
               ? DateFormat('yyyy-MM-dd').format(createdAt!)
               : ""),
-      EshopColumns.ORDER_DATA: TrinaCell(value: toCustomerData()),
-      EshopColumns.ORDER_EMAIL:
+      EshopColumnIds.ORDER_DATA: TrinaCell(value: toCustomerData()),
+      EshopColumnIds.ORDER_EMAIL:
           TrinaCell(value: data?[TbEshop.orders.data_email] ?? ""),
-      EshopColumns.TICKET_PRODUCTS: TrinaCell(
+      EshopColumnIds.TICKET_PRODUCTS: TrinaCell(
           value: relatedProducts != null
               ? relatedProducts!.map((p) => p.toBasicString()).join(" | ")
               : ""),
-      EshopColumns.ORDER_DATA_NOTE: TrinaCell(value: toCustomerNote()),
-      EshopColumns.ORDER_NOTE_HIDDEN: TrinaCell(value: noteHidden ?? ""),
-      EshopColumns.ORDER_EMAIL_DELIVERY: TrinaCell(value: emailDelivery),
-      EshopColumns.ORDER_OVERVIEW: TrinaCell(value: ""),
-      EshopColumns.ORDER_HISTORY: TrinaCell(value: ""),
-      EshopColumns.ORDER_TRANSACTIONS: TrinaCell(value: ""),
-      EshopColumns.ORDER_FORM: TrinaCell(value: form?.toString() ?? ""),
-      EshopColumns.PAYMENT_INFO_REMINDER_SENT:
+      EshopColumnIds.ORDER_DATA_NOTE: TrinaCell(value: toCustomerNote()),
+      EshopColumnIds.ORDER_NOTE_HIDDEN: TrinaCell(value: noteHidden ?? ""),
+      EshopColumnIds.ORDER_EMAIL_DELIVERY: TrinaCell(value: emailDelivery),
+      EshopColumnIds.ORDER_OVERVIEW: TrinaCell(value: ""),
+      EshopColumnIds.ORDER_HISTORY: TrinaCell(value: ""),
+      EshopColumnIds.ORDER_TRANSACTIONS: TrinaCell(value: ""),
+      EshopColumnIds.ORDER_FORM: TrinaCell(value: form?.toString() ?? ""),
+      EshopColumnIds.PAYMENT_INFO_REMINDER_SENT:
           TrinaCell(value: paymentInfoModel?.isReminderSent.toString() ?? ''),
-      EshopColumns.ORDER_CONTRACT_DOWNLOAD: TrinaCell(value: ""),
-      EshopColumns.ORDER_MODEL_REFERENCE: TrinaCell(value: this),
+      EshopColumnIds.ORDER_CONTRACT_DOWNLOAD: TrinaCell(value: ""),
+      EshopColumnIds.ORDER_MODEL_REFERENCE: TrinaCell(value: this),
     });
   }
 

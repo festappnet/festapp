@@ -1,7 +1,6 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:easy_localization/src/localization.dart';
-import 'package:easy_localization/src/translations.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/html/html_strings.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -19,6 +18,8 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/views/occasions_screen.dart';
 import 'package:super_editor/super_editor.dart';
+
+late WidgetEnvironmentFixture _environment;
 
 class _UnitOccasionRouter extends RootStackRouter {
   final coordinator = HtmlSaveCoordinator();
@@ -81,26 +82,31 @@ class _UnitOccasionRouter extends RootStackRouter {
 }
 
 void main() {
+  WidgetEnvironmentFixture.register();
   setUpAll(() async {
     await initializeDateFormatting();
-    Localization.load(const Locale('cs'),
-        translations: Translations(
+    _environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-                as Map<String, dynamic>));
+                as Map<String, dynamic>);
   });
   for (final edit in [null, false, true]) {
-    testWidgets('unit occasion card prompts only for user edits ($edit)',
+    testWidgetsWithEnvironment(() => _environment,
+        'unit occasion card prompts only for user edits ($edit)',
         (tester) async {
       tester.view.physicalSize = const Size(1200, 1000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final router = _UnitOccasionRouter();
-      await tester.pumpWidget(MaterialApp.router(
-          routerConfig: router.config(
-        deepLinkBuilder: (_) =>
-            const DeepLink.path('/unit/8/edit/email-templates'),
-      )));
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp.router(
+              routerConfig: router.config(
+            deepLinkBuilder: (_) =>
+                const DeepLink.path('/unit/8/edit/email-templates'),
+          )));
       await tester.pumpAndSettle();
       RichHtmlEditorController? controller;
       if (edit != null) {
@@ -148,7 +154,7 @@ void main() {
         expect(find.text(HtmlStrings.discardDraft), findsNothing);
         expect(find.text('FESTIVAL ORDERS'), findsOneWidget);
       }
-      await tester.pumpWidget(const SizedBox.shrink());
+      await _environment.pumpWidget(tester, const SizedBox.shrink());
       router.dispose();
       router.coordinator.dispose();
     });
