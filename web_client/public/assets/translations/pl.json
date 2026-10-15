@@ -768,7 +768,7 @@
     "storno": "Anulowano",
     "not_required_yet": "Płatność jeszcze nie jest wymagana",
     "free": "Bez płatności",
-    "unpaid": "Nieopłacone",
+    "unpaid": "Oczekuje na płatność",
     "partially_paid": "Częściowo opłacone",
     "deposit_paid": "Zaliczka opłacona",
     "fully_paid": "W pełni opłacone",
@@ -821,6 +821,15 @@
     "tickets": "Bilety",
     "ticket": "Bilet",
     "registrations": "Zgłoszenia",
-    "registration": "Zgłoszenie"
+    "registration": "Zgłoszenie",
+    "submittedDetails": "Podane dane",
+    "answer": "Odpowiedź",
+    "added": "Dodano",
+    "removed": "Usunięto",
+    "changed": "Zmieniono",
+    "changedTo": "Teraz",
+    "confirmation_sent": "Potwierdzenie wysłane",
+    "waitlist_entered": "Dodano do listy oczekujących",
+    "withinDeadline": "W terminie płatności"
   }
 }

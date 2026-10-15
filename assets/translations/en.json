@@ -2781,7 +2781,7 @@
     "storno": "Cancelled",
     "not_required_yet": "No payment required yet",
     "free": "No payment required",
-    "unpaid": "Unpaid",
+    "unpaid": "Awaiting payment",
     "partially_paid": "Partially paid",
     "deposit_paid": "Deposit paid",
     "fully_paid": "Fully paid",
@@ -2834,6 +2834,15 @@
     "tickets": "Tickets",
     "ticket": "Ticket",
     "registrations": "Registrations",
-    "registration": "Registration"
+    "registration": "Registration",
+    "submittedDetails": "Submitted details",
+    "answer": "Answer",
+    "added": "Added",
+    "removed": "Removed",
+    "changed": "Changed",
+    "changedTo": "Now",
+    "confirmation_sent": "Confirmation sent",
+    "waitlist_entered": "Added to the waiting list",
+    "withinDeadline": "Within the payment deadline"
   }
 }
