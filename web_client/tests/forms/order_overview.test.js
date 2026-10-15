@@ -57,9 +57,10 @@ test('history and received transactions include changes without interpreting ref
     const host = setup(t), data = fixture();
     data.timeline = [{ kind: 'order_changed', at: data.serverTime, previousTotal: 1000, total: 1500, currency: 'CZK', itemsChanged: true, itemsBefore: [{ title: 'Old', price: 1000 }], itemsAfter: [{ title: 'New', price: 1500 }] }];
     data.orders[0].payment.transactions = [{ kind: 'payment_received', amount: 300, currency: 'CZK', date: '2026-10-15' }, { kind: 'refund', amount: -100, currency: 'CZK', date: null }];
+    data.timeline.push(...data.orders[0].payment.transactions.map(t => ({...t, at: data.serverTime})));
     renderOrderOverview(host, data);
-    assert.equal(host.querySelectorAll('.overview-transactions li').length, 2);
-    assert.match(host.textContent, /transactions \(1\)/);
+    assert.equal(host.querySelector('.overview-transactions'), null);
+    assert.match(host.querySelector('.overview-history-card').textContent, /payment_received.*refund/);
     assert.match(host.textContent, /Old/); assert.match(host.textContent, /New/);
     assert.ok(host.querySelector('.overview-timeline time'));
 });
@@ -148,7 +149,7 @@ test('single registration shows one heading, collapsed answers and no ticket wor
     assert.match(host.querySelector('.overview-people h3').textContent,/T123/);
 });
 
-test('payments show recorded timestamps consistently in the list and history',t=>{
+test('payments show exact timestamps once in history',t=>{
     const host=setup(t),data=fixture();
     data.timeline=[{kind:'payment_received',at:'2026-10-15T19:30:31Z',timeKind:'recorded',amount:300,currency:'CZK'}];
     data.orders[0].payment.transactions=[{kind:'payment_received',recordedAt:'2026-10-15T19:30:31Z',date:'2026-10-15',amount:300,currency:'CZK'}];
@@ -158,7 +159,7 @@ test('payments show recorded timestamps consistently in the list and history',t=
     assert.match(timestamp.textContent,/\d{1,2}:\d{2}/);
     assert.doesNotMatch(timestamp.textContent,/recordedAt|Zaevidováno/);
     assert.ok(host.querySelector('.overview-history-card'));
-    assert.equal(host.querySelector('.overview-transactions small').textContent,timestamp.textContent);
+    assert.equal(host.querySelector('.overview-transactions'),null);
 });
 
 test('one order has its reference in the status heading and a standalone paid status',t=>{
@@ -193,7 +194,7 @@ test('refresh preserves each disclosure by identity and keeps newly added answer
  assert.equal(host.querySelector('[data-overview-key="answers:ticket:99"]').open,false);
 });
 
-test('overview groups contacts, admissions and total while payments follow history', t=>{
+test('overview groups contacts, admissions and total with history last', t=>{
  const host=setup(t),data=fixture();data.people=[data.people[1]];
  data.orders[0].answers=[{type:'name',value:'Jane'},{type:'surname',value:'Doe'},{type:'email',value:'jane@example.invalid'},{type:'phone',value:'+420 123 456 789'},{type:'note',value:'Extra details'}];
  data.orders[0].items=[{ticketId:2,title:'Dinner',price:100,currency:'CZK'}];
@@ -209,5 +210,28 @@ test('overview groups contacts, admissions and total while payments follow histo
  assert.equal(card.querySelector('.overview-customer').compareDocumentPosition(card.querySelector('.overview-people')) & 4,4);
  assert.equal(card.querySelector('.overview-people').compareDocumentPosition(card.querySelector('.overview-order-total')) & 4,4);
  assert.equal(card.querySelector('.overview-transactions'),null);
- assert.equal(host.querySelector('.overview-history-card').nextElementSibling.className,'overview-payments-card');
+ assert.equal(host.lastElementChild.className,'overview-history-card');
+ assert.equal(host.querySelector('.overview-payments-card'),null);
+});
+
+test('usage summary counts issued tickets without granting admission controls', t=>{
+ const host=setup(t),data=fixture();
+ data.orders[0].tickets=Array.from({length:8},(_,id)=>({id,displayStatus:id<7?'used':'unused'}));
+ data.orders[0].tickets.push({id:9,displayStatus:'cancelled'},{id:10,displayStatus:'awaiting_payment'});
+ renderOrderOverview(host,data);
+ assert.match(host.querySelector('.overview-status .overview-usage').textContent,/7 \/ 8/);
+ assert.equal(host.querySelector('button,input'),null);
+ data.root.hasTickets=false;renderOrderOverview(host,data);
+ assert.equal(host.querySelector('.overview-usage'),null);
+});
+test('history distinguishes each bank, cash and unknown movement safely', t=>{
+ const host=setup(t),data=fixture();
+ data.timeline=[{kind:'payment_received',at:data.serverTime,amount:200,currency:'CZK',paymentMethod:'bank',recipientAccount:'<b>123/0100</b>'},{kind:'payment_received',at:data.serverTime,amount:100,currency:'CZK',paymentMethod:'cash'},{kind:'refund',at:data.serverTime,amount:-50,currency:'CZK'}];
+ renderOrderOverview(host,data);
+ const entries=host.querySelectorAll('.overview-timeline > li');
+ assert.match(entries[0].textContent,/bankPayment.*123\/0100/);
+ assert.equal(entries[0].querySelector('b'),null);
+ assert.match(entries[1].textContent,/cashPayment/);
+ assert.doesNotMatch(entries[2].textContent,/cashPayment|bankPayment/);
+ assert.equal(entries.length,4);
 });
