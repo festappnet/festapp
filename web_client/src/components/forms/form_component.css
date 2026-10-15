@@ -689,6 +689,7 @@ body.dark-mode .surcharge-info {
 .overview-people, .overview-transactions { list-style: none; padding: 0; margin: 0; }
 .overview-people > li, .overview-transactions li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-block-end: 1px solid var(--border-color, #8885); }
 .overview-people > li:last-child, .overview-transactions > li:last-child { border-block-end: 0; }
+.overview-transactions strong { white-space: nowrap; flex-shrink: 0; }
 .overview-transactions small { display: block; margin-block-start: 4px; }
 .order-overview-card, .overview-history-card, .overview-payments-card {
     padding: clamp(18px, 3vw, 28px);
