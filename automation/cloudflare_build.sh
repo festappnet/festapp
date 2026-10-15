@@ -134,8 +134,9 @@ async function publicOccasions(env, unitId = null) {
 async function handleHome(request, env) {
   const base = await serveAsset(env, request, WEB_CLIENT_INDEX);
   let html = await base.text();
+  const unitMatch = new URL(request.url).pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
+  if (unitMatch) html = html.replace(/<!-- ORGANIZERS_NAV_START -->[\s\S]*?<!-- ORGANIZERS_NAV_END -->/, '');
   try {
-    const unitMatch = new URL(request.url).pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
     const { occasions, title } = await publicCatalogue(env, unitMatch ? Number(unitMatch[1]) : null);
     if (unitMatch && title) {
       html = html.replace(/<section id="unit-introduction"[^>]*>[\s\S]*?<\/section>/,
