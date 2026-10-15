@@ -29,11 +29,6 @@ export function overviewEmailSubstitutions(url: string | null, lang = 'cs') {
   };
 }
 export function includeOrderOverview(prepared: PreparedEmail, url: string | null, lang = 'cs') {
-  if (!prepared.html.includes('name="format-detection"')) {
-    const meta = '<meta name="format-detection" content="telephone=no,email=no,address=no,date=no">';
-    prepared.html = /<head[\s>]/i.test(prepared.html)
-      ? prepared.html.replace(/(<head[^>]*>)/i, `$1${meta}`) : meta + prepared.html;
-  }
   const substitutions = overviewEmailSubstitutions(url, lang);
   if (url && !prepared.html.includes(`href="${substitutions.order_overview_url}"`)) {
     const link = `<div style="margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left"><p style="margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5">${overviewCopy(lang).description}</p>${substitutions.order_overview_button}</div>`;
