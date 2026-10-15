@@ -2755,6 +2755,8 @@
     "weekend": "Weekend"
   },
   "OrderOverview": {
+    "unavailableTitle": "Order unavailable",
+    "unavailable": "The order may have been deleted or the link is no longer valid. If you need help, contact the event organizer.",
     "title": "Order overview",
     "updated": "Updated",
     "downloadTicket": "Download PDF",
