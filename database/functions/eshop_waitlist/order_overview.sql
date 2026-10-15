@@ -30,6 +30,10 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  'reference',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN
   CASE WHEN currency_code='EUR' THEN creditor_reference ELSE variable_symbol::text END END,
  'referenceKind',CASE WHEN currency_code='EUR' THEN 'RF' ELSE 'VS' END,
+ 'transactions',(SELECT coalesce(jsonb_agg(jsonb_build_object(
+  'date',t.date::date,'amount',t.amount,'currency',trim(t.currency),
+  'kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
+  ORDER BY t.date NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
  'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
  FROM due;
 $$;
@@ -72,7 +76,40 @@ BEGIN
   SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
   WHERE s.ticket_id=x.ticket AND s.resulting_order_id=x."order" AND s.outcome='accepted' AND w.order_id=root.id AND w.form_id=f.id))
  THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- SELECT jsonb_build_object('code',200,'root',jsonb_build_object('id',root.id,'symbol',root.order_symbol,'title',occ.title,'formLink',f.link,'hasTickets',EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(occ.features,'[]')) feature WHERE feature->>'code'='ticket' AND feature->>'is_enabled'='true')),
+ SELECT jsonb_build_object('code',200,'root',jsonb_build_object('id',root.id,'symbol',root.order_symbol,'createdAt',root.created_at,'state',root.state,'title',occ.title,'formLink',f.link,'hasTickets',EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(occ.features,'[]')) feature WHERE feature->>'code'='ticket' AND feature->>'is_enabled'='true')),
+ 'timeline',(SELECT coalesce(jsonb_agg(event ORDER BY happened,sort_key),'[]') FROM (
+  SELECT root.created_at happened,'0' sort_key,jsonb_build_object('kind','registration_received','at',root.created_at,'symbol',root.order_symbol) event
+  UNION ALL
+  SELECT w.created_at,'1'||w.id::text,jsonb_build_object('kind','places_offered','at',w.created_at)
+  FROM eshop.waitlist_offers w WHERE w.order_id=root.id AND w.form_id=f.id
+  UNION ALL
+  SELECT s.updated_at,'2'||s.id::text,jsonb_build_object('kind','offer_'||s.outcome,'at',s.updated_at)
+  FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
+  WHERE w.order_id=root.id AND w.form_id=f.id AND s.form_id=f.id AND s.outcome IN ('accepted','declined','cancelled','expired')
+  UNION ALL
+  SELECT h.created_at,'3'||h.id::text,jsonb_build_object(
+   'kind',CASE WHEN h.state IS DISTINCT FROM h.previous_state THEN 'order_'||h.state ELSE 'order_changed' END,
+   'at',h.created_at,'symbol',h.order_symbol,'previousState',h.previous_state,'state',h.state,
+   'previousTotal',CASE WHEN h.price IS DISTINCT FROM h.previous_price AND h.previous_state IS NOT NULL THEN h.previous_price END,
+   'total',h.price,'currency',h.currency_code,
+   'itemsChanged',h.previous_state IS NOT NULL AND h.items IS DISTINCT FROM h.previous_items,
+   'itemsBefore',CASE WHEN h.previous_state IS NOT NULL AND h.items IS DISTINCT FROM h.previous_items THEN h.previous_items END,
+   'itemsAfter',CASE WHEN h.previous_state IS NOT NULL AND h.items IS DISTINCT FROM h.previous_items THEN h.items END,
+   'detailsChanged',h.previous_state IS NOT NULL AND h.details IS DISTINCT FROM h.previous_details)
+  FROM (SELECT snapshots.*,lag(state) OVER w previous_state,lag(price) OVER w previous_price,
+   lag(items) OVER w previous_items,lag(details) OVER w previous_details FROM (
+    SELECT h.id,h.created_at,h."order",h.state,h.price,coalesce(h.currency_code,o.currency_code) currency_code,o.order_symbol,
+     (SELECT coalesce(jsonb_agg(jsonb_build_object('title',p->>'title','price',p->'price') ORDER BY t->>'id',p->>'id'),'[]')
+      FROM jsonb_array_elements(coalesce(h.data->'tickets','[]')) t
+      CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p) items,
+     jsonb_build_object('fields',coalesce(h.data->'fields',h.data#>'{input_data,fields}'),'tickets',
+      (SELECT jsonb_agg(jsonb_build_object('id',t->'id','fields',t->'fields') ORDER BY t->>'id') FROM jsonb_array_elements(coalesce(h.data->'tickets','[]')) t)) details
+    FROM eshop.orders_history h JOIN eshop.orders o ON o.id=h."order" WHERE h."order"=ANY(ids)
+      AND h.state IN ('ordered','paid','sent','storno') AND (h.price IS NOT NULL OR h.data ? 'tickets')
+   ) snapshots WINDOW w AS (PARTITION BY "order" ORDER BY created_at,id)) h
+  WHERE h.state IS DISTINCT FROM h.previous_state OR h.price IS DISTINCT FROM h.previous_price
+   OR h.items IS DISTINCT FROM h.previous_items OR h.details IS DISTINCT FROM h.previous_details
+ ) events),
  'serverTime',statement_timestamp(),'accessExpiresAt',cap.expires_at,'actions',jsonb_build_array('refresh'),
  'people',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,f.id),
   'effectiveLifecycle',CASE WHEN (SELECT state FROM eshop.orders WHERE id=x."order")='preparing_payment' THEN 'preparing' ELSE public.get_effective_waitlist_ticket_lifecycle_internal(t.id) END,'currentOrderId',x."order") ORDER BY t.id),'[]')

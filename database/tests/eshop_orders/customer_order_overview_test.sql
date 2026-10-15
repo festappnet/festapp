@@ -120,6 +120,26 @@ BEGIN
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'completed manage bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='completed manage bootstrap' THEN RAISE; END IF; END;
  PERFORM assert_eq(public.get_order_email_overview_source_v1(child,'regression@example.invalid',gen_random_uuid())->'source',source->'source','split child email reuses root token');
  SELECT payment_info INTO pid FROM eshop.orders WHERE id=child;
+ -- Customer projection exposes only matched movement facts and recorded changes.
+ INSERT INTO eshop.transactions(bank_account_id,payment_info,amount,currency,date,transaction_type,counter_account_name,comment)
+ VALUES((SELECT bank_account FROM eshop.payment_info WHERE id=pid),pid,250,'CZK','2026-10-14','manual','PRIVATE PAYER','PRIVATE NOTE'),
+       ((SELECT bank_account FROM eshop.payment_info WHERE id=pid),pid,-50,'CZK','2026-10-15','return','PRIVATE PAYER','PRIVATE NOTE'),
+       ((SELECT bank_account FROM eshop.payment_info WHERE id=pid),NULL,999,'CZK','2026-10-15','manual','UNRELATED','UNRELATED');
+ INSERT INTO eshop.orders_history("order",state,price,currency_code,data,created_at)
+ VALUES(child,'ordered',100,'CZK','{"tickets":[{"id":1,"products":[{"id":1,"title":"Before","price":100}]}]}',now()+interval '1 second'),
+       (child,'ordered',200,'CZK','{"tickets":[{"id":1,"products":[{"id":1,"title":"After","price":200}]}],"note_hidden":"PRIVATE NOTE"}',now()+interval '2 seconds');
+ r:=public.get_customer_order_overview(view_token,oid);
+ PERFORM assert_eq((SELECT jsonb_array_length(o#>'{payment,transactions}') FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child),2,'only matched transactions');
+ PERFORM assert_true(NOT r::text LIKE '%PRIVATE%' AND NOT r::text LIKE '%UNRELATED%','transaction and history private fields excluded');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'kind'='order_changed' AND (e->>'previousTotal')::numeric=100 AND (e->>'total')::numeric=200 AND e->>'itemsChanged'='true'),'recorded edits retain before and after');
+ BEGIN PERFORM public.get_order_overview_admin_context(child); RAISE EXCEPTION 'anonymous admin access';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
+ PERFORM assert_eq(public.get_order_overview_admin_context(child)->>'orderId',child::text,'authorized grid access');
+ DELETE FROM public.occasion_users WHERE occasion=(y->>'occasion')::bigint AND "user"=(x->>'actor')::uuid;
+ BEGIN PERFORM public.get_order_overview_admin_context(other); RAISE EXCEPTION 'cross tenant admin access';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE eshop.bank_accounts SET account_number='CZ6508000000192000145399' WHERE id=(SELECT bank_account FROM eshop.payment_info WHERE id=pid);
  UPDATE eshop.payment_info SET amount=1000,deposit_amount=300,paid=300,deposit_deadline=now()-interval '1 day',deadline=now()+interval '1 day' WHERE id=pid;
  UPDATE eshop.orders SET state='paid',price=1000 WHERE id=child;
