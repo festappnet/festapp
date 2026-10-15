@@ -174,7 +174,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         if (event.amount != null) line(entry, 'p', money(event.amount, event.currency));
         if (event.paymentMethod === 'cash') line(entry, 'p', overviewText('cashPayment'));
         else if (event.paymentMethod === 'bank') {
-            line(entry, 'p', `${overviewText('bankPayment')}${event.recipientAccount ? ` · ${overviewText('account')}: ${event.recipientAccount}` : ''}`);
+            line(entry, 'p', `${overviewText('bankPayment')}${event.recipientAccount ? ` · ${overviewText('recipientAccount')}: ${event.recipientAccount}` : ''}`);
         }
         if (event.previousState && event.previousState !== event.state) line(entry, 'p', `${overviewText(event.previousState)} → ${overviewText(event.state)}`);
         if (event.previousTotal != null) line(entry, 'p', `${overviewText('previousTotal')}: ${money(event.previousTotal, event.currency)} → ${overviewText('newTotal')}: ${money(event.total, event.currency)}`);

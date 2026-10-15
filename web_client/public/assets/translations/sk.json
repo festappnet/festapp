@@ -756,6 +756,7 @@
     "usedTickets": "Použité vstupenky",
     "cashPayment": "Hotovosť",
     "bankPayment": "Bankový prevod",
+    "recipientAccount": "Cieľový účet",
     "refresh": "Obnoviť",
     "loading": "Načítavanie prehľadu",
     "failed": "Prehľad sa nepodarilo aktualizovať. Skúste to znova.",
