@@ -3,6 +3,7 @@ register('../css_loader.mjs', import.meta.url);
 import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import { readFileSync } from 'node:fs';
 import { classifyOccasions, extractPublicOccasions, groupPastOccasionsByYear } from '../../src/components/occasion/catalog.js';
 let UnitPage, DbOccasions, OccasionCard, LocalizationService;
 before(async () => {
@@ -149,4 +150,19 @@ test('unit catalogue passes its scope to the RPC and preserves it for retry', as
     assert.equal(introduction.hidden, false);
     await page.loadOccasions(1);
     assert.equal(introduction.hidden, true);
+});
+
+ test('organizer navigation stays hidden on unit pages despite its flex layout', async t => {
+    const page = fixture();
+    const style = document.createElement('style');
+    style.textContent = readFileSync(new URL('../../src/components/unit/unit_page.css', import.meta.url), 'utf8');
+    document.head.appendChild(style);
+    t.after(() => style.remove());
+    document.body.insertAdjacentHTML('afterbegin', '<nav class="catalog-navigation"><a href="/pro-poradatele">Pro pořadatele</a></nav>');
+    t.mock.method(DbOccasions, 'getPublicCatalogue', async () => ({ occasions: [] }));
+    const navigation = document.querySelector('.catalog-navigation');
+    await page.loadOccasions(3, 15);
+    assert.equal(window.getComputedStyle(navigation).display, 'none');
+    await page.loadOccasions(3);
+    assert.equal(window.getComputedStyle(navigation).display, 'flex');
 });
