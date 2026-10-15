@@ -690,7 +690,14 @@ body.dark-mode .surcharge-info {
 .overview-people > li, .overview-transactions li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-block-end: 1px solid var(--border-color, #8885); }
 .overview-people > li:last-child, .overview-transactions > li:last-child { border-block-end: 0; }
 .overview-transactions small { display: block; margin-block-start: 4px; }
-.order-overview-card { padding-block: 24px; border-block: 1px solid var(--border-color, #8885); }
+.order-overview-card, .overview-history-card {
+    padding: clamp(18px, 3vw, 28px);
+    border: 1px solid var(--border-color, #8885);
+    border-radius: 16px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+.order-overview-card > :last-child, .overview-history-card > :last-child { margin-block-end: 0; }
 .overview-amounts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin: 24px 0; }
 .overview-amounts dd { margin: 8px 0 0; font-size: 1.5rem; font-weight: 700; }
 .overview-payment-details { margin-block: 24px; }
