@@ -5,7 +5,7 @@ import { PublicOrderStrings } from './public_order_strings.js';
 export function renderPaymentDetails(paymentHost, paymentQr, { occasionTitle = '', orderSymbol, expanded = false } = {}) {
     const style = document.createElement('style');
     style.textContent = `                .result-payment-details { width: 100%; margin: 0 0 20px; }
-                .result-payment-card { border-radius: var(--radius-md, 15px); padding: 16px; background: var(--card-bg, #fff); box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: left; }
+                .result-payment-card { box-sizing: border-box; border-radius: var(--radius-md, 15px); padding: 16px; background: var(--card-bg, #fff); box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: left; }
                 .result-payment-label { display: block; color: var(--text-color); opacity: .72; font-size: .8rem; letter-spacing: .05em; text-transform: uppercase; }
                 .result-payment-total { display: block; margin: 3px 0 6px; font-size: 2rem; line-height: 1.1; }
                 .result-payment-more { margin-top: 16px; border-top: 1px solid var(--input-border, #ddd); text-align: left; }
