@@ -464,7 +464,7 @@ function cachedNavigationTarget(pathname) {
 
 function isFlutterExecutable(pathname) {
   return pathname === FLUTTER_MAIN || pathname === '/main.dart.js' ||
-    /^\\/main\\.dart\\.js_\\d+\\.part\\.js$/.test(pathname) ||
+    /^\\/main\\.dart\\.(?:[0-9][0-9A-Za-z.+-]*\\.)?js_\\d+\\.part\\.js$/.test(pathname) ||
     pathname === '/flutter.js' ||
     pathname === '/flutter_bootstrap.js';
 }

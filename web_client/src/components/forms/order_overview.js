@@ -56,8 +56,20 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     const participants = line(people, 'ul', ''); participants.className = 'overview-people';
     data.people.forEach((person, i) => {
         const row = line(participants, 'li', '');
-        line(row, 'span', person.label || `${itemLabel} ${i + 1}`);
-        line(row, 'strong', overviewText(person.effectiveLifecycle));
+        const content = line(row, 'div', '');
+        line(content, 'strong', person.label || `${itemLabel} ${i + 1}`);
+        const order = data.orders.find(order => order.id === person.currentOrderId);
+        const ticket = order?.tickets?.find(ticket => ticket.id === person.id);
+        const items = (order?.items || []).filter(item => String(item.ticketId) === String(person.id));
+        if (items.length) {
+            const products = line(content, 'ul', ''); products.className = 'overview-ticket-items';
+            for (const item of items) line(products, 'li', `${item.title || ''}: ${money(item.price, item.currency || order.currency)}`);
+        }
+        // Payment belongs to the whole order; individual admissions only show
+        // waitlist outcomes or their actual usage/cancellation state.
+        const status = ticket?.displayStatus === 'cancelled' || (data.root.hasTickets && ['used', 'unused'].includes(ticket?.displayStatus)) ? ticket.displayStatus : null;
+        if (status) line(row, 'span', overviewText(status));
+        else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(row, 'span', overviewText(person.effectiveLifecycle));
     });
     for (const order of data.orders) {
         const card = section(host, `${overviewText('orderReference')} ${order.symbol}`, 'order-overview-card');
@@ -79,7 +91,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
                         payload: presentation?.qrPayload,
                         reference_kind: payment.referenceKind,
                         reference: presentation?.referenceDisplay || payment.reference,
-                    }, { occasionTitle: data.root.title, orderSymbol: order.symbol, expanded: true });
+                    }, { occasionTitle: data.root.title, orderSymbol: order.symbol });
                 } else {
                     fact(instructions, overviewText('dueNow'), money(payment.dueNow, order.currency));
                     fact(instructions, overviewText('account'), payment.publicAccount);
@@ -101,15 +113,12 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
                 }
             }
         }
-        if (order.items?.length) {
-            const details = line(card, 'details', ''); line(details, 'summary', overviewText('items'));
-            for (const item of order.items) line(details, 'p', `${item.title || ''}: ${money(item.price, item.currency)}`);
-        }
-        for (const [i, ticket] of (data.root.hasTickets === false ? [] : order.tickets || []).entries()) line(card, 'p', `${ticket.label || `${itemLabel} ${i + 1}`} - ${overviewText(ticket.displayStatus)}`);
+
     }
     const history = section(host, overviewText('history'));
     const timeline = line(history, 'ol', ''); timeline.className = 'overview-timeline';
     for (const event of data.timeline || []) {
+        if (data.root.hasTickets && event.kind === 'registration_received') continue;
         const entry = line(timeline, 'li', '');
         line(entry, 'strong', overviewText(event.kind));
         const time = line(entry, 'time', date(event.at)); time.dateTime = event.at;
