@@ -28,6 +28,43 @@ void main() {
                 as Map<String, dynamic>);
   });
 
+  for (final depositEnabled in [false, true]) {
+    testWidgetsWithEnvironment(() => _environment,
+        'deposit description menu requires enabled deposit feature: $depositEnabled',
+        (tester) async {
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [
+            SimpleFeature(code: FeatureConstants.ticket, isEnabled: true),
+            SimpleFeature(
+                code: FeatureConstants.deposit, isEnabled: depositEnabled),
+          ]));
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final ticket = FormFieldDraft(type: FormMetadata.fieldTypeTicket);
+      final form = FormEditorDraft(occasionId: 59, relatedFields: [ticket]);
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: SingleChildScrollView(
+                      child: Builder(
+                          builder: (context) =>
+                              TicketEditorWidgets.buildTicketEditor(
+                                  context, form, ticket, [], () {}))))));
+      final menu = find.byType(PopupMenuButton<String>);
+      expect(menu, depositEnabled ? findsOneWidget : findsNothing);
+      if (depositEnabled) {
+        await tester.tap(menu);
+        await tester.pumpAndSettle();
+        expect(find.text(FormStrings.showDepositDescription), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final hasExistingSpotField in [false, true]) {
     testWidgetsWithEnvironment(() => _environment,
         'disabling blueprint shows seats alongside meals; existing field: $hasExistingSpotField',
