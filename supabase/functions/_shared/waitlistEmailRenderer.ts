@@ -76,11 +76,10 @@ export function waitlistCapabilityUrl(
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname);
   if (
     (base.protocol !== "https:" && !(base.protocol === "http:" && local)) ||
-    base.username || base.password || base.search || base.hash ||
-    !context.formLink || /[\r\n]/.test(context.formLink)
+    base.username || base.password || base.search || base.hash
   ) throw new Error("waitlist_email_origin_invalid");
   const url = new URL(
-    `form/${encodeURIComponent(context.formLink)}`,
+    "/order",
     `${base.href.replace(/\/$/, "")}/`,
   );
   const parameters = new URLSearchParams(

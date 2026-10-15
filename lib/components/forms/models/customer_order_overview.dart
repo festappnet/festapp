@@ -18,22 +18,26 @@ class CustomerOrderScope {
   const CustomerOrderScope(this.token, this.orderId);
   final String token;
   final int orderId;
-  static CustomerOrderScope? fromUri(Uri uri) => uri.queryParameters.containsKey('token') && uri.queryParameters['waitlist'] != '1'
-      ? fromFragment('order?${uri.query}')
-      : fromFragment(uri.fragment);
-  static CustomerOrderScope? fromFragment(String fragment) {
-    if (!fragment.startsWith('order?')) return null;
-    final params = Uri.splitQueryString(fragment.substring(6));
+  static CustomerOrderScope? fromUri(Uri uri) {
+    if (uri.path != '/order' ||
+        uri.hasFragment ||
+        uri.queryParameters['waitlist'] == '1')
+      return null;
+    final params = uri.queryParameters;
     final token = params['token'] ?? '';
     final id = int.tryParse(params['order_id'] ?? '');
-    if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(token) || id == null || id <= 0) {
+    if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(token) ||
+        id == null ||
+        id <= 0 ||
+        uri.queryParametersAll['token']?.length != 1 ||
+        uri.queryParametersAll['order_id']?.length != 1) {
       throw StateError('INVALID_CAPABILITY');
     }
     return CustomerOrderScope(token, id);
   }
 
-  String get fragment => 'order?${Uri(queryParameters: {
-            'order_id': '$orderId',
-            'token': token
-          }).query}';
+  Uri get uri => Uri(
+    path: '/order',
+    queryParameters: {'order_id': '$orderId', 'token': token},
+  );
 }

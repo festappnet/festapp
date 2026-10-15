@@ -1,17 +1,13 @@
 import { renderOverviewProducts, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
 import { renderPaymentDetails } from './payment_details.js';
 import { presentPayment } from '../../../../supabase/functions/_shared/paymentPresentation.ts';
-import { formLinkFromPath, replaceResolvedPublicLink } from '../../services/public_link.js';
 import { LocalizationService } from '../../services/localization_service.js';
 export const overviewText = key => LocalizationService.tr(`OrderOverview.${key}`);
-export function parseOrderFragment(fragment) {
-    if (!fragment?.startsWith('#order?')) return null;
-    return parseOrderLocation({ search: fragment.slice(6) });
-}
 export function parseOrderLocation(location) {
+    if (location.pathname !== '/order' || location.hash) return null;
     const params = new URLSearchParams(location.search || '');
     if (params.get('waitlist') === '1') return null;
-    if (!params.has('order_id') && !params.has('token')) return parseOrderFragment(location.hash);
+    if (!params.has('order_id') && !params.has('token')) return null;
     const token = params.get('token');
     const id = params.get('order_id');
     if (params.getAll('token').length !== 1 || params.getAll('order_id').length !== 1 ||
@@ -185,8 +181,6 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
     try {
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
-        if (offerInPage) replaceResolvedPublicLink('form', formLinkFromPath(window.location.pathname), data.root?.formLink);
-        else if (scope.token && scope.orderId) window.history.replaceState(window.history.state, '', `/order${orderOverviewSearch(scope)}`);
         const snapshot = JSON.stringify({ ...data, serverTime: null });
         // Keep expanded details and keyboard focus stable when nothing changed.
         // A focused control may be in use: defer replacing it until the next poll.

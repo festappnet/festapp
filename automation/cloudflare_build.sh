@@ -355,6 +355,13 @@ async function routeRequest(request, env) {
       return response;
     }
 
+    if (path.startsWith("/form/") &&
+        ["order_id", "offer_id", "token", "waitlist"].some(key => url.searchParams.has(key))) {
+      return new Response("Tento odkaz již není podporován.", { status: 410, headers: {
+        "content-type": "text/plain; charset=utf-8", "cache-control": "no-store",
+        "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow",
+      }});
+    }
     if (path.startsWith("/form/")) return handleForm(request, env, path);
 
     // OAuth handoffs must reach the correct adapter and never enter HTML caches.

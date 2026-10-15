@@ -224,6 +224,25 @@ assert.equal(reloads, 3);
 assert.equal(unregistered, 0);
 assert.deepEqual(deletedCaches, []);
 
+// Another tab can activate the verified registration while this page still has
+// the previous controller. A navigation uses the active worker, so do not no-op.
+navigator.serviceWorker.controller = { state: 'activated' };
+const beforeReloads = reloads;
+assert.equal(await window.cutOverToVersion(workerVersion), true);
+assert.equal(reloads, beforeReloads + 1);
+assert.equal(unregistered, 0);
+
+// If an explicit update cannot activate a worker, navigate through the network
+// without deleting caches or silently leaving the click ineffective.
+registration.active = null;
+registration.waiting = null;
+registration.installing = null;
+await refresh.listeners.click();
+assert.equal(unregistered, 1);
+assert.match(replacedLocation, /festapp-recovery=/);
+assert.deepEqual(deletedCaches, []);
+assert.equal(refresh.disabled, false);
+
 context.localStorage.setItem('flutter.locale', '"en"');
 navigator.language = 'cs';
 windowListeners.get('festapp-update-available')({ detail: { version: '3.0.0+3', reason: 'legacy-cache' } });
