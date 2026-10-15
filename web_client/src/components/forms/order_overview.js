@@ -1,3 +1,5 @@
+import { renderPaymentDetails } from './payment_details.js';
+import { presentPayment } from '../../../../supabase/functions/_shared/paymentPresentation.ts';
 import { formLinkFromPath, replaceResolvedPublicLink } from '../../services/public_link.js';
 import { LocalizationService } from '../../services/localization_service.js';
 export const overviewText = key => LocalizationService.tr(`OrderOverview.${key}`);
@@ -49,11 +51,12 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
     else if (!offerInPage && activeOffer) line(summary, 'p', overviewText('offerEmail'));
 
-    const people = section(host, overviewText('people'));
+    const itemLabel = overviewText(data.root.hasTickets ? 'ticket' : 'registration');
+    const people = section(host, overviewText(data.root.hasTickets ? 'tickets' : 'registrations'));
     const participants = line(people, 'ul', ''); participants.className = 'overview-people';
     data.people.forEach((person, i) => {
         const row = line(participants, 'li', '');
-        line(row, 'span', person.label || `${overviewText('participant')} ${i + 1}`);
+        line(row, 'span', person.label || `${itemLabel} ${i + 1}`);
         line(row, 'strong', overviewText(person.effectiveLifecycle));
     });
     for (const order of data.orders) {
@@ -67,11 +70,23 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
             for (const key of ['returned', 'overpaid']) if (payment[key] > 0) fact(amounts, overviewText(key), money(payment[key], order.currency));
             if (payment.instructionsAvailable) {
                 const instructions = line(card, 'dl', ''); instructions.className = 'overview-payment-details';
-                fact(instructions, overviewText('dueNow'), money(payment.dueNow, order.currency));
+                if (payment.qrPayment && payment.dueNow > 0) {
+                    const paymentHost = line(card, 'div', '');
+                    let presentation;
+                    try { presentation = presentPayment(payment.qrPayment); } catch { /* Manual bank details remain available if QR data is invalid. */ }
+                    renderPaymentDetails(paymentHost, {
+                        ...payment.qrPayment,
+                        payload: presentation?.qrPayload,
+                        reference_kind: payment.referenceKind,
+                        reference: presentation?.referenceDisplay || payment.reference,
+                    }, { occasionTitle: data.root.title, orderSymbol: order.symbol, expanded: true });
+                } else {
+                    fact(instructions, overviewText('dueNow'), money(payment.dueNow, order.currency));
+                    fact(instructions, overviewText('account'), payment.publicAccount);
+                    fact(instructions, payment.referenceKind, payment.reference);
+                }
                 fact(instructions, overviewText('dueAt'), payment.dueAt ? date(payment.dueAt) : overviewText('onSite'));
                 if (payment.overdue) line(card, 'p', overviewText('overdue'));
-                fact(instructions, overviewText('account'), payment.publicAccount);
-                fact(instructions, payment.referenceKind, payment.reference);
             }
             const transactions = payment.transactions || [];
             line(card, 'h3', `${overviewText('transactions')} (${transactions.filter(t => t.kind === 'payment_received').length})`);
@@ -90,7 +105,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
             const details = line(card, 'details', ''); line(details, 'summary', overviewText('items'));
             for (const item of order.items) line(details, 'p', `${item.title || ''}: ${money(item.price, item.currency)}`);
         }
-        for (const [i, ticket] of (data.root.hasTickets === false ? [] : order.tickets || []).entries()) line(card, 'p', `${ticket.label || `${overviewText('participant')} ${i + 1}`} - ${overviewText(ticket.displayStatus)}`);
+        for (const [i, ticket] of (data.root.hasTickets === false ? [] : order.tickets || []).entries()) line(card, 'p', `${ticket.label || `${itemLabel} ${i + 1}`} - ${overviewText(ticket.displayStatus)}`);
     }
     const history = section(host, overviewText('history'));
     const timeline = line(history, 'ol', ''); timeline.className = 'overview-timeline';
@@ -109,7 +124,9 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     }
     const current = line(timeline, 'li', ''); current.className = 'overview-timeline-current';
     line(current, 'strong', overviewText('currentStatus'));
-    line(current, 'p', overviewText(waiting ? activeOffer ? 'offerReady' : 'waitingExplanation' : 'statusAbove'));
+    if (waiting) line(current, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
+    for (const order of data.orders) line(current, 'p', `${data.orders.length > 1 ? `${order.symbol}: ` : ''}${overviewText(order.state === 'storno' ? 'cancelled' : order.payment?.status || order.state)}`);
+    if (!waiting && !data.orders.length) line(current, 'p', overviewText('withdrawn'));
 }
 
 export function stopOrderOverview(host) {
@@ -150,7 +167,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
             const opened = [...host.querySelectorAll('details')].map(detail => detail.open);
             renderOrderOverview(host, data,
                 onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage);
-            [...host.querySelectorAll('details')].forEach((detail, i) => { detail.open = opened[i] || false; });
+            [...host.querySelectorAll('details')].forEach((detail, i) => { if (i < opened.length) detail.open = opened[i]; });
             host._overviewSnapshot = snapshot;
         }
         const timestamp = host.querySelector('.overview-updated');

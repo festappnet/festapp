@@ -817,6 +817,10 @@
     "newTotal": "Neuer Betrag",
     "itemsChanged": "Positionen geändert",
     "detailsChanged": "Bestelldaten wurden aktualisiert.",
-    "gridOverview": "Übersicht"
+    "gridOverview": "Übersicht",
+    "tickets": "Tickets",
+    "ticket": "Ticket",
+    "registrations": "Anmeldungen",
+    "registration": "Anmeldung"
   }
 }
