@@ -45,6 +45,11 @@ class EventFeedbackWidget extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function(int eventId)?
       loadCachedFeedbackOverride;
 
+  /// Matches the cache read seam without requiring platform storage in UI tests.
+  @visibleForTesting
+  final Future<void> Function(int eventId, Map<String, dynamic>? feedback)?
+      saveCachedFeedbackOverride;
+
   /// Keeps a stale connectivity signal or a wedged request from leaving the
   /// feedback section in an endless loading state.
   final Duration loadTimeout;
@@ -59,6 +64,7 @@ class EventFeedbackWidget extends StatefulWidget {
     this.loadFeedbackOverride,
     this.isOfflineOverride,
     this.loadCachedFeedbackOverride,
+    this.saveCachedFeedbackOverride,
     this.loadTimeout = const Duration(seconds: 12),
   });
 
@@ -113,9 +119,10 @@ class _EventFeedbackWidgetState extends State<EventFeedbackWidget> {
       // Keep the offline "already sent" cache in sync with the live answer
       // (null clears a stale entry after a deletion elsewhere). Fire-and-
       // forget: a cache write must never block or break the UI.
-      unawaited(
-          OfflineDataService.saveMyEventFeedback(widget.eventId, fb?.toJson())
-              .catchError((_) {}));
+      unawaited((widget.saveCachedFeedbackOverride ??
+                  OfflineDataService.saveMyEventFeedback)(
+              widget.eventId, fb?.toJson())
+          .catchError((_) {}));
       if (!mounted) return;
       setState(() {
         _existing = fb;

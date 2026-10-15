@@ -110,6 +110,8 @@ else
     done
 fi
 
+failed_suites=0
+
 # Function to run command with timeout (Mac compatible)
 run_with_timeout() {
     local timeout=$1
@@ -153,6 +155,7 @@ if [ "$RUN_WEB" = true ]; then
         
         if [ $res -ne 0 ]; then
             echo "⚠️  WARNING: Web Client Tests Failed or Timed Out."
+            failed_suites=$((failed_suites + 1))
         fi
     else
         echo "Error: web_client directory not found at $WEB_CLIENT_DIR"
@@ -199,6 +202,7 @@ if [ "$RUN_FLUTTER" = true ]; then
     
     if [ $res -ne 0 ]; then
         echo "⚠️  WARNING: Flutter Tests Failed."
+        failed_suites=$((failed_suites + 1))
     fi
 fi
 
@@ -250,12 +254,17 @@ if [ "$RUN_INTEGRATION" = true ]; then
         echo "Running Integration Tests (Vitest)..."
         cd "$WORKER_TEST_DIR"
         set +e
-        npx vitest run tests/integration/ 2>&1
+        if [ ! -x node_modules/.bin/vitest ]; then
+            echo "ERROR: image-worker test dependencies are missing; run npm ci --prefix workers/image-worker."
+            exit 1
+        fi
+        npm run test:integration 2>&1
         res=$?
         set -e
         cd "$PROJECT_ROOT"
         if [ $res -ne 0 ]; then
             echo "⚠️  WARNING: Integration Tests Failed."
+            failed_suites=$((failed_suites + 1))
         fi
     else
         echo "⚠️  SKIPPING Integration Tests: Missing DATABASE_URL."
@@ -287,6 +296,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
 
     echo "Running canonical PWA storage and recovery contract tests..."
     node --test \
+      "$SCRIPT_DIR/tests/test_all_status.test.mjs" \
       "$SCRIPT_DIR/tests/image_service_preflight.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_manifest.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_reconcile.test.mjs" \
@@ -309,5 +319,9 @@ fi
 
 echo ""
 echo "=================================================="
+if [ "$failed_suites" -gt 0 ]; then
+    echo "FAILED: $failed_suites test suite(s)."
+    exit 1
+fi
 echo "Done."
 echo "=================================================="

@@ -12,19 +12,21 @@ void main() {
     ConnectivityService.debugSetInterfaceOffline(true);
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(
             size: Size(390, 844),
             padding: EdgeInsets.only(top: 47),
           ),
           child: Scaffold(
-            body: Column(children: [OfflineBanner()]),
+            body: Column(
+                children: [OfflineBanner(loadLastSyncedAt: () async => null)]),
           ),
         ),
       ),
     );
 
+    await tester.pumpAndSettle(const Duration(milliseconds: 1));
     expect(tester.getSize(find.byType(OfflineBanner)).height, lessThan(40));
   });
 }

@@ -158,7 +158,7 @@ const flush = async () => {
 };
 
 const banner = (window) => window.document.getElementById(BANNER_ID);
-const messageText = (window) => banner(window)?.firstChild?.textContent;
+const messageText = (window) => banner(window)?.firstChild?.firstChild?.textContent;
 const button = (window, action) =>
     window.document.querySelector(`[data-festapp-update-action="${action}"]`);
 
@@ -220,6 +220,8 @@ describe('festapp_update_prompt.js', () => {
         }));
 
         assert.strictEqual(messageText(window), 'Aplikace je připravená k obnovení.');
+        assert.strictEqual(window.document.querySelector('[data-festapp-startup-diagnostic]').textContent,
+            'Kód pro podporu: 1.0.0+1 / S00');
         assert.strictEqual(button(window, 'reload').textContent, 'Obnovit');
     });
 

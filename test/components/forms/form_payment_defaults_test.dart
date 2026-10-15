@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/theme_config.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -43,17 +44,18 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+            occasionUser: OccasionUserModel(isEditor: true),
             occasion: OccasionModel(
                 isOpen: true,
                 isHidden: false,
                 isPromoted: false,
                 features: [
-              FormFeature(
-                  code: 'form',
-                  reminderIsEnabled: defaultEnabled,
-                  reminderIntervalSeconds: 86400,
-                  deadlineDurationSeconds: 604800)
-            ]));
+                  FormFeature(
+                      code: 'form',
+                      reminderIsEnabled: defaultEnabled,
+                      reminderIntervalSeconds: 86400,
+                      deadlineDurationSeconds: 604800)
+                ]));
         addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
         final form = FormModel(link: 'test', title: 'Original', data: {
           if (override != null) FormModel.metaIsReminderEnabled: override,

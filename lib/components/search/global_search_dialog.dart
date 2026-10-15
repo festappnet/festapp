@@ -29,13 +29,16 @@ import 'package:fstapp/theme_config.dart';
 class GlobalSearchDialog extends StatefulWidget {
   final Future<List<SearchResultModel>> Function(String query) search;
   final Future<SpeakersBundle?> Function() loadSpeakers;
+  final Future<List<EventModel>> Function() loadEvents;
 
   const GlobalSearchDialog({
     super.key,
     Future<List<SearchResultModel>> Function(String query)? search,
     Future<SpeakersBundle?> Function()? loadSpeakers,
+    Future<List<EventModel>> Function()? loadEvents,
   })  : search = search ?? DbSearch.search,
-        loadSpeakers = loadSpeakers ?? OfflineDataService.getSpeakers;
+        loadSpeakers = loadSpeakers ?? OfflineDataService.getSpeakers,
+        loadEvents = loadEvents ?? OfflineDataService.getAllEvents;
 
   /// Guards against stacking dialogs when opened repeatedly (e.g. Ctrl+F
   /// pressed while the search is already showing).
@@ -96,7 +99,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
 
   Future<void> _loadEvents() async {
     try {
-      final events = await OfflineDataService.getAllEvents();
+      final events = await widget.loadEvents();
       if (!mounted) return;
       setState(() {
         _eventsById

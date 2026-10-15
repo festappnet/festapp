@@ -90,6 +90,10 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
 # forward migrations are executed here.
 supabase migration up --db-url "$DATABASE_URL" --include-all >/dev/null
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_ROOT/supabase/seed.sql" >/dev/null
+# Demo contract tests use the same versioned synthetic fixtures as the application.
+# This bootstrap is pinned to the disposable localhost database above.
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -v demo_organization=1 \
+  -f "$PROJECT_ROOT/automation/seed_demo_occasions.sql" >/dev/null
 
 # Persist the disposable identity for guarded mutation/concurrency test runners.
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -v disposable_project="$LOCAL_PROJECT_ID" <<'SQL' >/dev/null
