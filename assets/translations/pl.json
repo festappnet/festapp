@@ -891,7 +891,11 @@
     "newTotal": "Nowa kwota",
     "itemsChanged": "Zmieniono pozycje",
     "detailsChanged": "Dane zamówienia zostały zaktualizowane.",
-    "gridOverview": "Przegląd"
+    "gridOverview": "Przegląd",
+    "tickets": "Bilety",
+    "ticket": "Bilet",
+    "registrations": "Zgłoszenia",
+    "registration": "Zgłoszenie"
   },
   "OccasionSetup": {
     "createEvent": "Utwórz wydarzenie",

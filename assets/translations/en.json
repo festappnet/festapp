@@ -2830,6 +2830,10 @@
     "newTotal": "New total",
     "itemsChanged": "Items changed",
     "detailsChanged": "Order details were updated.",
-    "gridOverview": "Overview"
+    "gridOverview": "Overview",
+    "tickets": "Tickets",
+    "ticket": "Ticket",
+    "registrations": "Registrations",
+    "registration": "Registration"
   }
 }

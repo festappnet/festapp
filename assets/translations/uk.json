@@ -1070,7 +1070,11 @@
     "newTotal": "Нова сума",
     "itemsChanged": "Позиції змінено",
     "detailsChanged": "Дані замовлення оновлено.",
-    "gridOverview": "Огляд"
+    "gridOverview": "Огляд",
+    "tickets": "Квитки",
+    "ticket": "Квиток",
+    "registrations": "Заявки",
+    "registration": "Заявка"
   },
   "OccasionSetup": {
     "createEvent": "Створити подію",

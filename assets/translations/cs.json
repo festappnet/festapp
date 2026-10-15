@@ -2831,6 +2831,10 @@
     "newTotal": "Nová cena",
     "itemsChanged": "Změna položek",
     "detailsChanged": "Údaje objednávky byly aktualizovány.",
-    "gridOverview": "Přehled"
+    "gridOverview": "Přehled",
+    "tickets": "Vstupenky",
+    "ticket": "Vstupenka",
+    "registrations": "Přihlášky",
+    "registration": "Přihláška"
   }
 }

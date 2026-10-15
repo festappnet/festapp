@@ -84,3 +84,29 @@ test('automatic refresh pauses in hidden tabs, resumes on return and stops on cl
     stopOrderOverview(host); assert.equal(timers.size, 0);
     doc.dispatchEvent(new win.Event('visibilitychange')); assert.equal(calls, 3);
 });
+
+for (const hasTickets of [false, true]) test(`overview uses feature terminology: tickets=${hasTickets}`, t => {
+    const host = setup(t), data = fixture(); data.root.hasTickets = hasTickets;
+    data.people = [{ effectiveLifecycle: 'admitted' }]; data.offers = [];
+    data.orders[0].payment.status = 'unpaid';
+    renderOrderOverview(host, data);
+    assert.match(host.querySelector('.overview-people').parentElement.querySelector('h2').textContent, hasTickets ? /tickets/ : /registrations/);
+    assert.match(host.querySelector('.overview-people').textContent, hasTickets ? /ticket 1/ : /registration 1/);
+    assert.match(host.querySelector('.overview-timeline-current').textContent, /unpaid/);
+    assert.doesNotMatch(host.textContent, /statusAbove|participant|people/);
+});
+for (const currency of ['CZK', 'EUR']) test(`overview shares visible payable QR and removes it after full payment: ${currency}`, async t => {
+    const host = setup(t), data = fixture(); data.orders[0].currency = currency;
+    const payment = data.orders[0].payment;
+    payment.qrPayment = { amount: 700, currency_code: currency, account_number: 'CZ6508000000192000145399', variable_symbol: '123', creditor_name: 'Example', creditor_reference: 'RF18539007547034' };
+    renderOrderOverview(host, data);
+    for (let i=0;i<30 && !host.querySelector('.result-payment-qr');i++) await new Promise(resolve => setTimeout(resolve,20));
+    assert.match(host.querySelector('.result-payment-qr')?.src || '', /^data:image\/png;base64,/);
+    assert.equal(host.querySelector('.result-payment-more').open, true);
+    assert.match(host.querySelector('.result-payment-total').textContent, /700/);
+    assert.equal(host.querySelector('.result-download').href, host.querySelector('.result-payment-qr').src);
+    payment.status = 'fully_paid'; payment.instructionsAvailable = false; payment.dueNow = 0; payment.qrPayment = null;
+    renderOrderOverview(host, data);
+    assert.equal(host.querySelector('.result-payment-qr'), null);
+    assert.match(host.querySelector('.overview-timeline-current').textContent, /fully_paid/);
+});
