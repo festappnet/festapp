@@ -1,3 +1,4 @@
+import { FieldPreviewFactory } from './previews/field_preview_factory.js';
 import { formFieldTitle } from './form_field_labels.js';
 import { LocalizationService } from '../../services/localization_service.js';
 const tr = key => LocalizationService.tr(`OrderOverview.${key}`);
@@ -42,7 +43,9 @@ export function renderOverviewAnswers(host, answers = [], key) {
     const values = node(details, 'dl', '');
     for (const answer of answers) {
         node(values, 'dt', formFieldTitle(answer) || tr('answer'));
-        const value = Array.isArray(answer.value) ? answer.value.join(', ') : String(answer.value ?? '');
+        const value = answer.type === 'id_document'
+            ? FieldPreviewFactory.format(answer, answer.value, {}).value
+            : Array.isArray(answer.value) ? answer.value.join(', ') : String(answer.value ?? '');
         node(values, 'dd', value);
     }
 }
