@@ -1,3 +1,4 @@
+import 'holder_models/id_document_data.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +6,6 @@ import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:trina_grid/trina_grid.dart';
 
@@ -120,7 +120,10 @@ class FormResponseModel extends ITrinaRowModel {
         continue;
       } else if (f.type == FormMetadata.fieldTypeIdDocument) {
         var val = fields![f.id.toString()];
-        cells[f.id.toString()] = TrinaCell(value: val?.toString() ?? "");
+        cells[f.id.toString()] = TrinaCell(
+            value: val is Map<String, dynamic>
+                ? IdDocumentData.fromJson(val).toPreviewString(context: context)
+                : val?.toString() ?? "");
         continue;
       } else if (f.type == FormMetadata.fieldTypeBirthDate) {
         // Parse ISO datetime string into a DateTime object.
