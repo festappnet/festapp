@@ -112,23 +112,27 @@ class AdministrationTabs {
       label: ClientChangesStrings.title,
       icon: Icons.history);
 
-  static List<RoutedTabDefinition> get administration => [
-        info,
-        if (!AppConfig.isAllUnit) events,
-        places,
-        speakers,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.userGroups))
-          groups,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.game)) game,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.services)) service,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.volunteers))
-          volunteers,
-        emailTemplates,
-        users,
-        if (RightsService.isManager() || RightsService.isAdmin()) changes,
-        if (RightsService.isUnitEditor() || RightsService.isDemoReadOnly)
-          settings
-      ];
+  static List<RoutedTabDefinition> get administration =>
+      AppConfig.isAppSupported
+          ? [
+              info,
+              if (!AppConfig.isAllUnit) events,
+              places,
+              speakers,
+              if (FeatureService.isFeatureEnabled(FeatureConstants.userGroups))
+                groups,
+              if (FeatureService.isFeatureEnabled(FeatureConstants.game)) game,
+              if (FeatureService.isFeatureEnabled(FeatureConstants.services))
+                service,
+              if (FeatureService.isFeatureEnabled(FeatureConstants.volunteers))
+                volunteers,
+              emailTemplates,
+              users,
+              if (RightsService.isManager() || RightsService.isAdmin()) changes,
+              if (RightsService.isUnitEditor() || RightsService.isDemoReadOnly)
+                settings
+            ]
+          : const [];
   static List<RoutedTabDefinition> get reservations => [
         orders,
         tickets,

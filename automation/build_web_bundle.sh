@@ -98,7 +98,8 @@ fi
 rm -f build/web/flutter_service_worker.js
 VERSION="$(grep -m1 '^VERSION=' automation/project.conf | cut -d= -f2 | tr -d '[:space:]')"
 FORCED_OCCASION="$(grep -m1 '^FORCE_OCCASION_LINK=' automation/project.conf | cut -d= -f2- | tr -d '\"' | tr -d "'" | tr -d '[:space:]')"
-node automation/generate_pwa_service_worker.mjs build/web "$VERSION" "$FORCED_OCCASION"
+APP_SUPPORTED="$(sed -n 's/^IS_APP_SUPPORTED=//p' automation/project.conf | tr -d '[:space:]')"
+node automation/generate_pwa_service_worker.mjs build/web "$VERSION" "$FORCED_OCCASION" "$APP_SUPPORTED"
 node automation/check_pwa_shell_budget.mjs build/web automation/project.conf
 
 # Cloudflare adds its edge router before running the same verifier. Static

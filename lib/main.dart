@@ -22,7 +22,6 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_endpoint_service.dart';
-import 'package:fstapp/components/occasion/occasion_home_page.dart';
 import 'package:fstapp/services/connectivity_service.dart';
 import 'package:fstapp/services/health_tracking_http_client.dart';
 import 'package:fstapp/services/platform_helper.dart';
@@ -87,10 +86,10 @@ String initialRouteForUri(Uri uri) {
       : uri.path;
   // Personal form capabilities belong in the fragment. Reconstructing only
   // path/query would replace the browser URL before FormPage can read its scope.
-  final personalFragment = path.startsWith('/form/') &&
-          uri.fragment.startsWith('waitlist?')
-      ? '#${uri.fragment}'
-      : '';
+  final personalFragment =
+      path.startsWith('/form/') && uri.fragment.startsWith('waitlist?')
+          ? '#${uri.fragment}'
+          : '';
   return '$path${uri.hasQuery ? '?${uri.query}' : ''}$personalFragment';
 }
 
@@ -200,7 +199,8 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
           phase: WebBootstrapBridge.startupPhase,
           language: _failureLanguage!,
           storageOpenFailed: _storageOpenFailed,
-          onRetry: widget.onRetry ?? (kIsWeb ? WebBootstrapBridge.retryStartup : null),
+          onRetry: widget.onRetry ??
+              (kIsWeb ? WebBootstrapBridge.retryStartup : null),
         ),
       );
     }
@@ -563,7 +563,7 @@ class _MyAppState extends State<MyApp> {
         ],
         supportedLocales: context.supportedLocales,
         locale: context.locale,
-        title: OccasionHomePage.homePageTitle,
+        title: AppConfig.appName,
         theme: theme,
         darkTheme: darkTheme,
       ),

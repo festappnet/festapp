@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "baseline-disabled",
+    "raw": 10960139,
+    "brotliQ9": 2477147
+  },
+  {
+    "variant": "disabled-without-public-routes",
+    "raw": 10534373,
+    "brotliQ9": 2383532
+  }
+]

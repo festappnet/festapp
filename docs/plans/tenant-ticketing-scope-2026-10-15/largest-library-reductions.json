@@ -1,0 +1,212 @@
+[
+  {
+    "uri": "package:fstapp/components/activities/activities_content.dart",
+    "before": 61536,
+    "after": 0,
+    "saved": 61536
+  },
+  {
+    "uri": "package:fstapp/components/map/map_page.dart",
+    "before": 50248,
+    "after": 0,
+    "saved": 50248
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_n.dart",
+    "before": 1354031,
+    "after": 1304297,
+    "saved": 49734
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_p.dart",
+    "before": 1006897,
+    "after": 969445,
+    "saved": 37452
+  },
+  {
+    "uri": "package:fstapp/components/schedule/event_page.dart",
+    "before": 31012,
+    "after": 0,
+    "saved": 31012
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_s.dart",
+    "before": 809100,
+    "after": 779247,
+    "saved": 29853
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_a.dart",
+    "before": 745547,
+    "after": 718423,
+    "saved": 27124
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_b.dart",
+    "before": 663357,
+    "after": 638974,
+    "saved": 24383
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_m.dart",
+    "before": 655120,
+    "after": 630929,
+    "saved": 24191
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_c.dart",
+    "before": 593463,
+    "after": 571417,
+    "saved": 22046
+  },
+  {
+    "uri": "package:fstapp/components/schedule/schedule_content.dart",
+    "before": 20141,
+    "after": 0,
+    "saved": 20141
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_r.dart",
+    "before": 527537,
+    "after": 508023,
+    "saved": 19514
+  },
+  {
+    "uri": "package:fstapp/components/users/views/user_page.dart",
+    "before": 19195,
+    "after": 0,
+    "saved": 19195
+  },
+  {
+    "uri": "package:flutter_map/src/gestures/map_interactive_viewer.dart",
+    "before": 17791,
+    "after": 0,
+    "saved": 17791
+  },
+  {
+    "uri": "package:fstapp/components/reception/reception_page.dart",
+    "before": 17598,
+    "after": 0,
+    "saved": 17598
+  },
+  {
+    "uri": "package:fstapp/components/timeline/light_timeline_view.dart",
+    "before": 16603,
+    "after": 0,
+    "saved": 16603
+  },
+  {
+    "uri": "package:fstapp/components/speakers/counseling_picker.dart",
+    "before": 16096,
+    "after": 0,
+    "saved": 16096
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_l.dart",
+    "before": 429637,
+    "after": 413835,
+    "saved": 15802
+  },
+  {
+    "uri": "package:fstapp/components/schedule/schedule_page.dart",
+    "before": 15622,
+    "after": 0,
+    "saved": 15622
+  },
+  {
+    "uri": "package:fstapp/components/schedule/event_edit_page.dart",
+    "before": 14621,
+    "after": 0,
+    "saved": 14621
+  },
+  {
+    "uri": "package:fstapp/app_router.gr.dart",
+    "before": 33970,
+    "after": 19491,
+    "saved": 14479
+  },
+  {
+    "uri": "package:flutter/src/widgets/nested_scroll_view.dart",
+    "before": 14357,
+    "after": 0,
+    "saved": 14357
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_g.dart",
+    "before": 388311,
+    "after": 374068,
+    "saved": 14243
+  },
+  {
+    "uri": "package:fstapp/components/schedule/db_events.dart",
+    "before": 24563,
+    "after": 10594,
+    "saved": 13969
+  },
+  {
+    "uri": "package:fstapp/components/timeline/advanced_timeline_day_list.dart",
+    "before": 13789,
+    "after": 0,
+    "saved": 13789
+  },
+  {
+    "uri": "package:fstapp/components/speakers/admin/speaker_editor_dialog.dart",
+    "before": 13278,
+    "after": 0,
+    "saved": 13278
+  },
+  {
+    "uri": "package:fstapp/components/activities/users_panel.dart",
+    "before": 12783,
+    "after": 0,
+    "saved": 12783
+  },
+  {
+    "uri": "package:fstapp/components/cleaning/cleaning_page.dart",
+    "before": 12677,
+    "after": 0,
+    "saved": 12677
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_k.dart",
+    "before": 318838,
+    "after": 307130,
+    "saved": 11708
+  },
+  {
+    "uri": "package:fstapp/components/occasion_services/service_dialog.dart",
+    "before": 11663,
+    "after": 0,
+    "saved": 11663
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_t.dart",
+    "before": 308973,
+    "after": 297657,
+    "saved": 11316
+  },
+  {
+    "uri": "package:fstapp/components/icons/icons_management_widget.dart",
+    "before": 10982,
+    "after": 0,
+    "saved": 10982
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_f.dart",
+    "before": 292296,
+    "after": 281563,
+    "saved": 10733
+  },
+  {
+    "uri": "package:flutter/src/material/navigation_bar.dart",
+    "before": 9882,
+    "after": 0,
+    "saved": 9882
+  },
+  {
+    "uri": "package:fstapp/components/schedule/my_schedule_page.dart",
+    "before": 9749,
+    "after": 0,
+    "saved": 9749
+  }
+]

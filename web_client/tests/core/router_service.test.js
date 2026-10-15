@@ -318,9 +318,30 @@ test('RouterService.handleInitialLoad', async (t) => {
             assert.equal(await RouterService.handleInitialLoad(), true);
             const bridge = new URL(redirectUrl, 'https://vstupenky.online');
             const params = new URLSearchParams(bridge.hash.slice(1) || bridge.search);
-            assert.equal(params.get('redirect'), path);
+            const expected = path.startsWith('/event-a/admin/')
+                ? '/event-a/reservations?day=2026-10-03' : path;
+            assert.equal(params.get('redirect'), expected);
         });
     }
+
+    await t.test('app-supported tenants preserve content administration links', async () => {
+        const originalUpdate = RightsService.updateAppData;
+        RightsService.updateAppData = async () => {};
+        AppConfig.isAppSupported = true;
+        const target = '/event-a/admin/info/information';
+        global.window.location.pathname = target;
+        global.window.location.href = `https://vstupenky.online${target}`;
+        let redirectUrl = '';
+        global.window.location.replace = url => { redirectUrl = url; };
+        try {
+            assert.equal(await RouterService.handleInitialLoad(), true);
+            const bridge = new URL(redirectUrl, 'https://vstupenky.online');
+            const params = new URLSearchParams(bridge.hash.slice(1) || bridge.search);
+            assert.equal(params.get('redirect'), target);
+        } finally {
+            RightsService.updateAppData = originalUpdate;
+        }
+    });
 
     await t.test('should redirect unknown path to Home when isAppSupported=false', async () => {
         AppConfig.isAppSupported = false;

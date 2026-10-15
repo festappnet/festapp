@@ -1,0 +1,152 @@
+[
+  {
+    "uri": "package:fstapp/components/schedule/event_page.dart",
+    "before": 31012,
+    "after": 0,
+    "saved": 31012
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_n.dart",
+    "before": 1354031,
+    "after": 1329542,
+    "saved": 24489
+  },
+  {
+    "uri": "package:fstapp/components/users/views/user_page.dart",
+    "before": 19195,
+    "after": 0,
+    "saved": 19195
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_p.dart",
+    "before": 1006897,
+    "after": 988453,
+    "saved": 18444
+  },
+  {
+    "uri": "package:fstapp/components/timeline/light_timeline_view.dart",
+    "before": 16603,
+    "after": 0,
+    "saved": 16603
+  },
+  {
+    "uri": "package:fstapp/components/speakers/counseling_picker.dart",
+    "before": 16096,
+    "after": 0,
+    "saved": 16096
+  },
+  {
+    "uri": "package:fstapp/components/schedule/schedule_page.dart",
+    "before": 15622,
+    "after": 0,
+    "saved": 15622
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_s.dart",
+    "before": 809100,
+    "after": 794394,
+    "saved": 14706
+  },
+  {
+    "uri": "package:flutter/src/widgets/nested_scroll_view.dart",
+    "before": 14357,
+    "after": 0,
+    "saved": 14357
+  },
+  {
+    "uri": "package:fstapp/components/timeline/advanced_timeline_day_list.dart",
+    "before": 13789,
+    "after": 0,
+    "saved": 13789
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_a.dart",
+    "before": 745547,
+    "after": 732184,
+    "saved": 13363
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_b.dart",
+    "before": 663357,
+    "after": 651349,
+    "saved": 12008
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_m.dart",
+    "before": 655120,
+    "after": 643205,
+    "saved": 11915
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_c.dart",
+    "before": 593463,
+    "after": 582604,
+    "saved": 10859
+  },
+  {
+    "uri": "package:flutter/src/material/navigation_bar.dart",
+    "before": 9882,
+    "after": 0,
+    "saved": 9882
+  },
+  {
+    "uri": "package:fstapp/components/schedule/my_schedule_page.dart",
+    "before": 9749,
+    "after": 0,
+    "saved": 9749
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_r.dart",
+    "before": 527537,
+    "after": 517923,
+    "saved": 9614
+  },
+  {
+    "uri": "package:fstapp/components/occasion/occasion_home_page.dart",
+    "before": 9045,
+    "after": 0,
+    "saved": 9045
+  },
+  {
+    "uri": "package:fstapp/components/schedule/db_events.dart",
+    "before": 24563,
+    "after": 16082,
+    "saved": 8481
+  },
+  {
+    "uri": "package:flutter_localizations/src/l10n/generated_material_localizations.dart",
+    "before": 331892,
+    "after": 323481,
+    "saved": 8411
+  },
+  {
+    "uri": "package:fstapp/components/event_feedback/event_feedback_widget.dart",
+    "before": 8297,
+    "after": 0,
+    "saved": 8297
+  },
+  {
+    "uri": "package:fstapp/components/schedule/schedule_light_page.dart",
+    "before": 8186,
+    "after": 0,
+    "saved": 8186
+  },
+  {
+    "uri": "package:fstapp/components/schedule/schedule_basic_page.dart",
+    "before": 7987,
+    "after": 0,
+    "saved": 7987
+  },
+  {
+    "uri": "package:google_fonts/src/google_fonts_parts/part_l.dart",
+    "before": 429637,
+    "after": 421854,
+    "saved": 7783
+  },
+  {
+    "uri": "package:fstapp/components/timetable/timetable.dart",
+    "before": 7693,
+    "after": 0,
+    "saved": 7693
+  }
+]
