@@ -2,6 +2,23 @@ import {assertEquals,assertThrows} from 'jsr:@std/assert@1';
 import {indexProductCatalog,normalizeTicketData,sampleData,formatProduct} from './ticketRenderData.ts';
 import {preset,validateLayout,type Template} from './ticketLayout.ts';
 import {rawCatalog,productTemplate} from '../../../test/fixtures/ticket_layout/products.ts';
+Deno.test('ticket rendering preserves product and seat selection across SQL result permutations',()=>{
+ const catalog=indexProductCatalog(rawCatalog,7),template=productTemplate();
+ const opts=[
+  {id:8,product:1,spot_group_title:'Later group',spot_title:'8'},
+  {id:1,product:2,spot_group_title:'First group',spot_title:'1'},
+  {id:2,product:3},
+ ];
+ const ticket={occasion:7,ticket_symbol:'test-order-independent',state:'paid',price:123,currency_code:'CZK',note:'Public note',order_product_ticket:opts};
+ const expected=normalizeTicketData(ticket,{id:7},{},catalog,template);
+ assertEquals(expected.spotGroup,'Stůl: First group');
+ assertEquals(expected.vip,'VIP menu: Skrytá historická večeře');
+ for(const indexes of [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]]) {
+  const reordered={...ticket,order_product_ticket:indexes.map(i=>opts[i])};
+  assertEquals(normalizeTicketData(reordered,{id:7},{},catalog,template),expected);
+  assertEquals(reordered.order_product_ticket,indexes.map(i=>opts[i]),'renderer must not mutate SQL input');
+ }
+});
 Deno.test('ID contract preserves deterministic historical selection and hides private notes',()=>{
  const catalog=indexProductCatalog(rawCatalog,7),t=productTemplate();
  validateLayout({schemaVersion:3,templates:{wide:t}});
