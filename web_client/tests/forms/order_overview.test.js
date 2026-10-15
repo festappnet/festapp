@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { loadOrderOverview, parseOrderFragment, parseOrderLocation, renderOrderOverview } from '../../src/components/forms/order_overview.js';
+import { loadOrderOverview, parseOrderFragment, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
 import { WaitlistCommands } from '../../src/components/forms/waitlist_commands.js';
 const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT' }, serverTime: '2026-10-15T12:00:00Z',
     people: [{ id: 1, label: 'Waiting', effectiveLifecycle: 'offered' }, { id: 2, label: 'Accepted', effectiveLifecycle: 'admitted' }],
@@ -16,10 +16,10 @@ test('view fragment distinct from write scope and validates root', () => {
     for (const id of ['0','-1','NaN','9007199254740993']) assert.throws(() => parseOrderFragment(`#order?order_id=${id}&token=${'a'.repeat(64)}`));
 });
 test('partial overview renders separate payment facts and no write controls', t => {
-    const host = setup(t); renderOrderOverview(host, fixture(), () => {});
+    const host = setup(t); renderOrderOverview(host, fixture());
     assert.equal(host.querySelector('script'), null);
     assert.match(host.textContent, /300,00\s*Kč/); assert.match(host.textContent, /700,00\s*Kč/);
-    assert.equal(host.querySelectorAll('button').length, 1);
+    assert.equal(host.querySelectorAll('button').length, 0);
     assert.equal(host.querySelector('input'), null);
     assert.equal(host.querySelector('img,canvas'), null);
 });
@@ -55,9 +55,32 @@ test('history and received transactions include changes without interpreting ref
     const host = setup(t), data = fixture();
     data.timeline = [{ kind: 'order_changed', at: data.serverTime, previousTotal: 1000, total: 1500, currency: 'CZK', itemsChanged: true, itemsBefore: [{ title: 'Old', price: 1000 }], itemsAfter: [{ title: 'New', price: 1500 }] }];
     data.orders[0].payment.transactions = [{ kind: 'payment_received', amount: 300, currency: 'CZK', date: '2026-10-15' }, { kind: 'refund', amount: -100, currency: 'CZK', date: null }];
-    renderOrderOverview(host, data, () => {});
+    renderOrderOverview(host, data);
     assert.equal(host.querySelectorAll('.overview-transactions li').length, 2);
     assert.match(host.textContent, /transactions \(1\)/);
     assert.match(host.textContent, /Old/); assert.match(host.textContent, /New/);
     assert.ok(host.querySelector('.overview-timeline time'));
+});
+
+test('automatic refresh pauses in hidden tabs, resumes on return and stops on cleanup', async t => {
+    const host = setup(t), doc = host.ownerDocument, win = doc.defaultView;
+    let visibility = 'visible', calls = 0, nextId = 0;
+    host.getClientRects = () => [{}];
+    Object.defineProperty(doc, 'visibilityState', { get: () => visibility });
+    const timers = new Map();
+    win.setTimeout = (callback, delay) => { assert.equal(delay, 30000); timers.set(++nextId, callback); return nextId; };
+    win.clearTimeout = id => timers.delete(id);
+    const commands = { overview: async () => { calls++; return fixture(); } };
+    await loadOrderOverview(host, commands, {});
+    assert.equal(calls, 1); assert.equal(timers.size, 1);
+    const heading = host.querySelector('h1');
+    const tick = [...timers.values()][0]; await tick();
+    assert.equal(calls, 2); assert.equal(host.querySelector('h1'), heading, 'unchanged reads do not rebuild content');
+    visibility = 'hidden'; doc.dispatchEvent(new win.Event('visibilitychange'));
+    assert.equal(timers.size, 0); assert.equal(calls, 2);
+    visibility = 'visible'; doc.dispatchEvent(new win.Event('visibilitychange'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(calls, 3); assert.equal(timers.size, 1);
+    stopOrderOverview(host); assert.equal(timers.size, 0);
+    doc.dispatchEvent(new win.Event('visibilitychange')); assert.equal(calls, 3);
 });
