@@ -51,7 +51,18 @@ test('an order capability canonicalizes from its own bundle without public form 
     const page = host();
     page.waitlistCommands = { overview: async () => ({code:200, root:{title:'Order',formLink:'current'}, people:[],offers:[],orders:[],serverTime:new Date().toISOString()}) };
     await page.init('old');
-    assert.equal(window.location.pathname,'/form/current');
+    assert.equal(window.location.pathname,'/order');
     assert.equal(new URLSearchParams(window.location.search).get('token'), 'b'.repeat(64));
     assert.equal(page.currentLink,'current');
+});
+
+test('standalone order route loads only its capability, without a form slug', async () => {
+ window.history.replaceState(null,'','/order?order_id=17&token='+'b'.repeat(64));
+ DbForms.getFormByLink=async()=>{throw new Error('must not load public form');};
+ const page=host();
+ page.waitlistCommands={overview:async()=>({code:200,root:{title:'Order',formLink:'current'},people:[],offers:[],orders:[],serverTime:new Date().toISOString()})};
+ await page.init(null);
+ assert.equal(window.location.pathname,'/order');
+ assert.equal(page.currentLink,'current');
+ assert.ok(page.host.classList.contains('order-overview'));
 });

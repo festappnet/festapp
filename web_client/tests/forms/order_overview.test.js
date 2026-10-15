@@ -90,8 +90,8 @@ for (const hasTickets of [false, true]) test(`overview uses feature terminology:
     data.people = [{ effectiveLifecycle: 'admitted' }]; data.offers = [];
     data.orders[0].payment.status = 'unpaid';
     renderOrderOverview(host, data);
-    assert.match(host.querySelector('.overview-people').parentElement.querySelector('h2').textContent, hasTickets ? /tickets/ : /registrations/);
-    assert.match(host.querySelector('.overview-people').textContent, hasTickets ? /ticket 1/ : /registration 1/);
+    assert.match(host.querySelector('.overview-people').parentElement.querySelector('h2').textContent, hasTickets ? /ticket/ : /registration/);
+    assert.equal(host.querySelector('.overview-people h3'), null);
     assert.match(host.querySelector('.overview-timeline-current').textContent, /unpaid/);
     assert.doesNotMatch(host.textContent, /statusAbove|participant|people/);
 });
@@ -125,9 +125,62 @@ for (const hasTickets of [true, false]) test(`items stay with their admission, p
     assert.doesNotMatch(rows[0].textContent, /Product 2|awaiting_payment|admitted/);
     assert.match(rows[1].textContent, /Product 2/);
     assert.equal(host.querySelector('.order-overview-card').textContent.includes('Product'), false);
-    assert.equal(host.querySelector('.overview-timeline').textContent.includes('registration_received'), !hasTickets);
+    assert.equal(host.querySelector('.overview-timeline').textContent.includes('registration_received'), false);
     assert.match(host.querySelector('.overview-timeline').textContent, /order_ordered/);
     data.orders[0].tickets[0].displayStatus = 'used';
     renderOrderOverview(host, data);
     assert.equal(host.querySelector('.overview-people').textContent.includes('OrderOverview.used'), hasTickets);
+});
+
+test('single registration shows one heading, collapsed answers and no ticket wording', t => {
+    const host = setup(t), data = fixture(); data.root.hasTickets = false;
+    data.people = [{id:2,currentOrderId:2,effectiveLifecycle:'admitted',symbol:'T123',answers:[{title:'Diet',value:'<b>vegetarian</b>'}]}];
+    data.timeline = [{kind:'registration_received',at:data.serverTime},{kind:'order_sent',at:data.serverTime}];
+    renderOrderOverview(host,data);
+    assert.equal(host.querySelector('.overview-people h3'),null);
+    assert.equal(host.querySelector('.overview-answers').open,false);
+    assert.equal(host.querySelector('.overview-answers b'),null);
+    assert.match(host.textContent,/confirmation_sent/);
+    assert.doesNotMatch(host.textContent,/T123|registration_received|order_sent/);
+    data.root.hasTickets=true;
+    renderOrderOverview(host,data);
+    assert.match(host.querySelector('.overview-people h3').textContent,/T123/);
+});
+
+test('payment timeline uses only the recorded calendar date and amount',t=>{
+    const host=setup(t),data=fixture();
+    data.timeline=[{kind:'payment_received',at:'2026-10-15',dateOnly:true,amount:300,currency:'CZK'}];
+    renderOrderOverview(host,data);
+    assert.doesNotMatch(host.querySelector('.overview-timeline time').textContent,/:/);
+    assert.match(host.querySelector('.overview-timeline').textContent,/300,00/);
+});
+
+test('payment status distinguishes awaiting, overdue and completed without an overdue warning for paid orders',t=>{
+ const host=setup(t),data=fixture(),p=data.orders[0].payment;
+ p.status='unpaid';p.dueAt='2026-10-18T12:00Z';p.overdue=false;
+ renderOrderOverview(host,data);
+ assert.match(host.querySelector('.overview-status').textContent,/withinDeadline/);
+ p.overdue=true;renderOrderOverview(host,data);
+ assert.ok(host.querySelector('.overview-status .overview-state-overdue'));
+ p.status='fully_paid';renderOrderOverview(host,data);
+ assert.ok(host.querySelector('.overview-status .overview-state-complete'));
+ assert.equal(host.querySelector('.overview-status .overview-state-deadline'),null);
+});
+
+test('legacy form capability resolves to independent order URL without changing token',async t=>{
+ const host=setup(t),scope={orderId:1,token:'a'.repeat(64)};
+ await loadOrderOverview(host,{overview:async()=>fixture()},scope);
+ assert.equal(window.location.pathname,'/order');
+ assert.equal(new URLSearchParams(window.location.search).get('token'),scope.token);
+});
+
+test('refresh preserves each disclosure by identity and keeps newly added answers collapsed', async t=>{
+ const host=setup(t),data=fixture();data.people[0].answers=[{title:'Name',value:'A'}];
+ const commands={overview:async()=>data};
+ await loadOrderOverview(host,commands,{});
+ host.querySelector('.overview-answers').open=true;
+ data.people.unshift({id:99,effectiveLifecycle:'waiting',answers:[{title:'Name',value:'B'}]});
+ await loadOrderOverview(host,commands,{},null,false,true);
+ assert.equal(host.querySelector('[data-overview-key="answers:ticket:1"]').open,true);
+ assert.equal(host.querySelector('[data-overview-key="answers:ticket:99"]').open,false);
 });
