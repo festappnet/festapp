@@ -44,7 +44,7 @@ function renderOrderState(host, order, includeReference = true, hasTickets = fal
     const text = line(row, 'div', '');
     if (includeReference) line(text, 'p', `${overviewText('orderReference')} ${order.symbol}`).className = 'overview-state-reference';
     line(text, 'p', overviewText(state));
-    if (payment && (payment.returned > 0 || (cancelled && payment.received > 0))) {
+    if (payment?.returned > 0) {
         line(text, 'p', `${overviewText('returned')}: ${money(payment.returned ?? 0, order.currency)}`).className = 'overview-refunded';
     }
     const admissions = (order.tickets || []).filter(ticket => ['used', 'unused'].includes(ticket.displayStatus));
