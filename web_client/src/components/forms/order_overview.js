@@ -235,6 +235,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         host.replaceChildren(); host.setAttribute('aria-busy', 'true');
         line(host, 'p', overviewText('loading'));
     }
+    let unavailable = false;
     try {
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
@@ -260,16 +261,23 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         const timestamp = host.querySelector('.overview-updated');
         if (timestamp && snapshot === host._overviewSnapshot) timestamp.textContent = `${overviewText('updated')}: ${date(data.serverTime)}`;
         return data;
-    } catch {
+    } catch (error) {
         if (host._overviewGeneration !== generation) return;
+        unavailable = error.message === 'OVERVIEW_UNAVAILABLE';
         host._overviewSnapshot = null;
-        host.replaceChildren(); line(host, 'p', overviewText('failed')).setAttribute('role', 'alert');
+        host.replaceChildren();
+        if (unavailable) {
+            line(host, 'h1', overviewText('unavailableTitle'));
+            line(host, 'p', overviewText('unavailable')).setAttribute('role', 'alert');
+            return;
+        }
+        line(host, 'p', overviewText('failed')).setAttribute('role', 'alert');
         const retry = line(host, 'button', LocalizationService.tr('Common.retry')); retry.type = 'button';
         retry.onclick = () => loadOrderOverview(host, commands, scope, onContinue, offerInPage);
     } finally {
         if (host._overviewGeneration === generation) {
             host.removeAttribute('aria-busy');
-            scheduleOverviewRefresh(host, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, true));
+            if (!unavailable) scheduleOverviewRefresh(host, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, true));
         }
     }
 }

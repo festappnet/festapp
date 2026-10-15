@@ -295,3 +295,18 @@ test('download transport sends the capability and ticket ID in a POST body',asyn
     renderOrderOverview(host, data);
     assert.equal(host.querySelector('.overview-payment-link'), null);
  });
+
+test('unavailable order clears stale details and offers organizer guidance without retry polling', async t => {
+    const host = setup(t);
+    await loadOrderOverview(host, { overview: async () => fixture() }, {});
+    const commands = new WaitlistCommands({ rpc: async () => ({ data: { code: 403, errorCode: 'INVALID_CAPABILITY' }, error: null }) });
+    await loadOrderOverview(host, commands, {});
+    assert.equal(host.textContent.includes('CHILD'), false);
+    assert.match(host.querySelector('h1').textContent, /unavailableTitle/);
+    assert.match(host.querySelector('[role=alert]').textContent, /unavailable/);
+    assert.equal(host.querySelector('button'), null);
+});
+test('overview transport failures remain retryable and do not imply a deleted order', async () => {
+    const commands = new WaitlistCommands({ rpc: async () => ({ data: null, error: { message: 'offline' } }) });
+    await assert.rejects(commands.overview({}), /OVERVIEW_LOAD_FAILED/);
+});
