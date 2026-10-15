@@ -172,7 +172,6 @@ class _NavigationDraftBoundaryState extends State<NavigationDraftBoundary> {
           'FormDetailRoute',
           'InventoryPoolDetailRoute',
           'BankAccountDetailRoute',
-          'BankAccountConnectionSettingsRoute',
           'AdminRoute',
           'ReservationsRoute',
           'UnitAdminRoute'

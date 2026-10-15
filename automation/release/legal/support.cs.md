@@ -1,13 +1,7 @@
-# Podpora – Festapp
+# Podpora – Hvězda Mořská
 
-## Technická podpora
+Technické potíže s mobilní nebo webovou aplikací popište na `info@festapp.net`. Uveďte platformu (iOS, Android nebo web), model zařízení, verzi systému, verzi aplikace a stručný postup, po kterém problém nastal. Neposílejte heslo, přihlašovací kód, celý QR kód vstupenky ani jednorázový odkaz ke smazání účtu.
 
-Technické potíže popište na `info@festapp.net`. Uveďte stránku, na které problém nastal, používaný prohlížeč a stručný postup, po kterém se problém projevil. Neposílejte heslo, přihlašovací kód, celý QR kód vstupenky ani jednorázový odkaz ke smazání účtu.
+Dotazy k pouti, objednávce, platbě, cestovní smlouvě nebo programu vyřizuje CK Hvězda Mořská s.r.o. na `info@hvezdamorska.cz` nebo +420 733 356 244. Další kontakty jsou na <https://hvezdamorska.cz/kontakty/>.
 
-## Kontakt na pořadatele
-
-Dotazy k programu, účasti na táboře či kurzu, přihlášce, objednávce, platbě, vstupence nebo pravidlům konkrétní akce vyřizuje její pořadatel; kontakt je uveden u akce nebo objednávky.
-
-## Právní informace
-
-Další informace najdete v dokumentech <https://vstupenky.online/privacy/>, <https://vstupenky.online/privacy/choices/> a <https://vstupenky.online/terms/>.
+Zásady ochrany osobních údajů jsou na <https://hvezdamorska.festapp.net/privacy/>, volby a smazání účtu na <https://hvezdamorska.festapp.net/privacy/choices/> a podmínky používání aplikace na <https://hvezdamorska.festapp.net/terms/>.
