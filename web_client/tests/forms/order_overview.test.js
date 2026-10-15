@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { loadOrderOverview, parseOrderFragment, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
 import { WaitlistCommands } from '../../src/components/forms/waitlist_commands.js';
-const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT' }, serverTime: '2026-10-15T12:00:00Z',
-    people: [{ id: 1, label: 'Waiting', effectiveLifecycle: 'offered' }, { id: 2, label: 'Accepted', effectiveLifecycle: 'admitted' }],
+const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT', hasTickets: true }, serverTime: '2026-10-15T12:00:00Z',
+    people: [{ id: 1, label: 'Waiting', effectiveLifecycle: 'offered' }, { id: 2, currentOrderId: 2, label: 'Accepted', effectiveLifecycle: 'admitted' }],
     offers: [{ pendingPlaces: 1, effectiveStatus: 'pending', expiresAt: '2026-10-16T12:00:00Z' }],
     orders: [{ id: 2, symbol: 'CHILD', state: 'paid', total: 1000, currency: 'CZK', items: [],
         payment: { status: 'deposit_paid', received: 300, totalOutstanding: 700, dueNow: 700, returned: 0, overpaid: 0, instructionsAvailable: true, publicAccount: '123/0100', referenceKind: 'VS', reference: '123' },
@@ -95,18 +95,39 @@ for (const hasTickets of [false, true]) test(`overview uses feature terminology:
     assert.match(host.querySelector('.overview-timeline-current').textContent, /unpaid/);
     assert.doesNotMatch(host.textContent, /statusAbove|participant|people/);
 });
-for (const currency of ['CZK', 'EUR']) test(`overview shares visible payable QR and removes it after full payment: ${currency}`, async t => {
+for (const currency of ['CZK', 'EUR']) test(`overview shares collapsed payable QR and removes it after full payment: ${currency}`, async t => {
     const host = setup(t), data = fixture(); data.orders[0].currency = currency;
     const payment = data.orders[0].payment;
     payment.qrPayment = { amount: 700, currency_code: currency, account_number: 'CZ6508000000192000145399', variable_symbol: '123', creditor_name: 'Example', creditor_reference: 'RF18539007547034' };
     renderOrderOverview(host, data);
     for (let i=0;i<30 && !host.querySelector('.result-payment-qr');i++) await new Promise(resolve => setTimeout(resolve,20));
     assert.match(host.querySelector('.result-payment-qr')?.src || '', /^data:image\/png;base64,/);
-    assert.equal(host.querySelector('.result-payment-more').open, true);
+    assert.equal(host.querySelector('.result-payment-more').open, false);
     assert.match(host.querySelector('.result-payment-total').textContent, /700/);
     assert.equal(host.querySelector('.result-download').href, host.querySelector('.result-payment-qr').src);
     payment.status = 'fully_paid'; payment.instructionsAvailable = false; payment.dueNow = 0; payment.qrPayment = null;
     renderOrderOverview(host, data);
     assert.equal(host.querySelector('.result-payment-qr'), null);
     assert.match(host.querySelector('.overview-timeline-current').textContent, /fully_paid/);
+});
+
+for (const hasTickets of [true, false]) test(`items stay with their admission, payment belongs to order: ${hasTickets}`, t => {
+    const host = setup(t), data = fixture(); data.root.hasTickets = hasTickets;
+    data.people = [1, 2].map(id => ({ id, currentOrderId: 10, effectiveLifecycle: 'admitted' }));
+    data.orders[0].id = 10;
+    data.orders[0].tickets = [1, 2].map(id => ({ id, displayStatus: 'awaiting_payment' }));
+    data.orders[0].items = [1, 2].map(id => ({ ticketId: id, title: `Product ${id}`, price: 100, currency: 'CZK' }));
+    data.timeline = [{ kind: 'registration_received', at: data.serverTime }, { kind: 'order_ordered', at: data.serverTime }];
+    renderOrderOverview(host, data);
+    const rows = host.querySelectorAll('.overview-people > li');
+    assert.equal(rows.length, 2);
+    assert.match(rows[0].textContent, /Product 1/);
+    assert.doesNotMatch(rows[0].textContent, /Product 2|awaiting_payment|admitted/);
+    assert.match(rows[1].textContent, /Product 2/);
+    assert.equal(host.querySelector('.order-overview-card').textContent.includes('Product'), false);
+    assert.equal(host.querySelector('.overview-timeline').textContent.includes('registration_received'), !hasTickets);
+    assert.match(host.querySelector('.overview-timeline').textContent, /order_ordered/);
+    data.orders[0].tickets[0].displayStatus = 'used';
+    renderOrderOverview(host, data);
+    assert.equal(host.querySelector('.overview-people').textContent.includes('OrderOverview.used'), hasTickets);
 });

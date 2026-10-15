@@ -19,7 +19,7 @@ export function shouldPrecache(relativePath) {
     return false;
   }
   return !(/^main\.dart\..+\.js$/.test(name) &&
-    !/^main\.dart\.js_\d+\.part\.js$/.test(name));
+    !/^main\.dart\.(?:[0-9][0-9A-Za-z.+-]*\.)?js_\d+\.part\.js$/.test(name));
 }
 
 export function deploymentUrl(url) {
@@ -72,7 +72,15 @@ export async function collectPwaShellManifest(buildDir) {
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
-  const files = await collectFiles(buildDir);
+  const collected = await collectFiles(buildDir);
+  const filesWithImmutableChunks = new Set(collected.map(entry => entry.url));
+  const files = collected.filter(entry => {
+    if (!/^\/main\.dart\..*js_\d+\.part\.js$/.test(entry.url)) return true;
+    // Keep only this release's chunk when its immutable alias exists.
+    const suffix = entry.url.match(/js_(\d+\.part\.js)$/)[1];
+    const immutable = `${flutterMain}_${suffix}`;
+    return !filesWithImmutableChunks.has(immutable) || entry.url === immutable;
+  });
   if (flutterMain !== '/main.dart.js') {
     // Flutter HTML requests the immutable name. Cache exactly that executable,
     // rather than an unused mutable copy with identical bytes.
@@ -104,7 +112,7 @@ export async function collectPwaShellManifest(buildDir) {
     url === flutterMain ||
     installCriticalNames.has(url.split('?')[0]) ||
     /^\/festapp_(?:update_prompt|flutter_bootstrap_guard|pwa_bridge)\.[0-9][0-9A-Za-z.+-]*\.js$/.test(url) ||
-    /^\/main\.dart\.js_\d+\.part\.js$/.test(url.split('?')[0]));
+    /^\/main\.dart\.(?:[0-9][0-9A-Za-z.+-]*\.)?js_\d+\.part\.js$/.test(url.split('?')[0]));
   const total = (resources) => resources.reduce(
     (sum, url) => sum + (byUrl.get(url)?.bytes ?? 0), 0);
 

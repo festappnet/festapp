@@ -73,6 +73,12 @@ for (const script of [
     `Flutter support script ${script} is not bound to this release`);
 }
 assert.ok(versionedMain.equals(main), 'versioned and canonical main bundles differ');
+for (const [chunk] of main.toString().matchAll(/main\.dart\.[^"'\s]+\.part\.js/g)) {
+  assert.ok(chunk.startsWith(`${manifest.main}_`), `Mutable deferred library: ${chunk}`);
+  const content = await readFile(path.join(buildDir, chunk), 'utf8');
+  assert.ok(content.includes('$__dart_deferred_initializers__'), `Invalid deferred library: ${chunk}`);
+}
+
 
 const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]

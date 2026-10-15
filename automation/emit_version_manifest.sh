@@ -39,7 +39,7 @@ fi
 # Cloudflare/Netlify serve the JSON verbatim; the "+" in the build number is not
 # URL-safe as a filename, so the stamped copy uses "-" (0.19.33+273 -> ...33-273).
 VERSIONED_MAIN="main.dart.${VERSION//+/-}.js"
-cp "${BUILD_DIR}/main.dart.js" "${BUILD_DIR}/${VERSIONED_MAIN}"
+
 
 # The Flutter-generated HTML and bootstrap otherwise load the mutable
 # /main.dart.js URL. Cloudflare Pages gives static assets a four-hour browser
@@ -51,6 +51,21 @@ node - "$BUILD_DIR" "$VERSIONED_MAIN" "$VERSION" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
 const [buildDir, versionedMain, version] = process.argv.slice(2);
+// Deferred libraries must have the same immutable release identity as main.
+// A cache-busted main with a cached, mutable font chunk fails Dart's hash check.
+const chunks = fs.readdirSync(buildDir).filter(name => /^main\.dart\.js_\d+\.part\.js$/.test(name));
+const names = new Map(chunks.map(name => [name, name.replace('main.dart.js_', `${versionedMain}_`)]));
+const stampImports = source => {
+  for (const [original, immutable] of names) source = source.replaceAll(original, immutable);
+  return source;
+};
+for (const [original, immutable] of names) {
+  fs.writeFileSync(path.join(buildDir, immutable), stampImports(fs.readFileSync(path.join(buildDir, original), 'utf8')));
+}
+const main = stampImports(fs.readFileSync(path.join(buildDir, 'main.dart.js'), 'utf8'));
+fs.writeFileSync(path.join(buildDir, 'main.dart.js'), main);
+fs.writeFileSync(path.join(buildDir, versionedMain), main);
+
 for (const relative of ['index.html', 'flutter_bootstrap.js']) {
   const file = path.join(buildDir, relative);
   if (!fs.existsSync(file)) {
