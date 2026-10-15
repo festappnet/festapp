@@ -24,6 +24,7 @@ export function shouldPrecache(relativePath) {
 
 export function deploymentUrl(url) {
   if (url === '/flutter') return '/flutter?pwa-cache=1';
+  if (url === '/organizers-page') return '/pro-poradatele';
   if (url === '/webclient') return '/webclient?pwa-cache=1';
   return url.endsWith('/index.html') ? url.slice(0, -'index.html'.length) : url;
 }
@@ -88,7 +89,7 @@ export async function collectPwaShellManifest(buildDir) {
 
   const knownResources = [...byUrl.keys()];
   const standaloneDocuments = knownResources.filter((url) =>
-    url !== '/' && (url.endsWith('/') || url === '/organizers-page'));
+    url !== '/' && (url.endsWith('/') || url === '/pro-poradatele'));
   const standaloneDocumentSet = new Set(standaloneDocuments);
   const installCriticalNames = new Set([
     '/flutter.js', '/flutter_bootstrap.js', '/main.dart.js',
