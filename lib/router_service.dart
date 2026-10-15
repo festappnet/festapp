@@ -1,3 +1,4 @@
+import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/services/last_administration_context.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
@@ -28,6 +29,39 @@ class RouterService {
   static const subpage = "subpage";
   static const linkPath = "/:$link";
   static String currentOccasionLink = "";
+
+  // One pending startup navigation, consumed after the successful online
+  // context load. This is not persisted or reused as an alias cache.
+  static ({String requested, String canonical})? _initialCanonicalOccasion;
+
+  static String consumeCanonicalInitialPath(String path) {
+    final pending = _initialCanonicalOccasion;
+    _initialCanonicalOccasion = null;
+    return pending == null
+        ? path
+        : canonicalPublicPath(
+            path, 'occasion', pending.requested, pending.canonical);
+  }
+
+  static void canonicalizePublicLink(
+      String kind, String? requested, String? canonical) {
+    if (requested == null || canonical == null || requested == canonical)
+      return;
+    if (router.navigatorKey.currentContext == null && kind == 'occasion') {
+      _initialCanonicalOccasion = (requested: requested, canonical: canonical);
+      return;
+    }
+    final current = router.urlState.uri.toString();
+    final target = canonicalPublicPath(current, kind, requested, canonical);
+    if (target == current) return;
+    // Reuse the existing route matches and their mounted pages. Updating the
+    // browser address alone would let the next tab navigation restore the alias.
+    final matches = router.matcher.match(target, includePrefixMatches: false);
+    if (matches != null) {
+      router.markUrlStateForReplace();
+      unawaited(router.navigateAll(matches));
+    }
+  }
 
   //todo temporary fix
   static String getCurrentLink() => currentOccasionLink.isNotEmpty

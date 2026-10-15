@@ -155,7 +155,11 @@
     "occasionPaymentDefaultsHelp": "Predvolené nastavenia pre všetky formuláre tejto udalosti. Jednotlivé formuláre ich môžu prepísať.",
     "formPaymentDefaultsHelp": "Formulár preberá nastavenia platby a pripomienok z funkcie Formulár na tejto udalosti. Vlastné hodnoty platia len pre tento formulár.",
     "labelShowPaymentQr": "Zobraziť QR platbu po objednávke",
-    "helperShowPaymentQr": "Po dokončení objednávky zobrazí platobný QR kód a údaje priamo na potvrdzovacej obrazovke."
+    "helperShowPaymentQr": "Po dokončení objednávky zobrazí platobný QR kód a údaje priamo na potvrdzovacej obrazovke.",
+    "savedPublicLink": "Aktuálny uložený odkaz",
+    "publicLinkPreview": "Náhľad neuloženého odkazu",
+    "automaticPublicLink": "Krátky odkaz sa vytvorí po uložení. Názov adresy môžete zadať ručne.",
+    "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať."
   },
   "FeatureTicket": {
     "scanCameraInstruction": "Namierte kameru na kód účastníka na overenie vstupu.",
@@ -894,5 +898,9 @@
     "itemsChanged": "Zmena položiek",
     "detailsChanged": "Údaje objednávky boli aktualizované.",
     "gridOverview": "Prehľad"
+  },
+  "OccasionSetup": {
+    "createEvent": "Vytvoriť udalosť",
+    "finalizeFailed": "Vytvorenie sa nepodarilo potvrdiť. Skúste znova rovnakú požiadavku."
   }
 }

@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.duplicate_form_to_occasion(
+CREATE OR REPLACE FUNCTION public.duplicate_form_to_occasion_internal_v1(
     source_form_id BIGINT,
     target_occasion_link TEXT
 )
@@ -23,10 +23,12 @@ DECLARE
 BEGIN
     -- Step 1: Resolve the target occasion ID and its organization ID from its link.
     SELECT id, organization INTO target_occasion_id, target_organization_id
-    FROM public.occasions WHERE link = target_occasion_link;
+    FROM public.occasions WHERE id = public.resolve_occasion_link_internal(target_occasion_link);
     IF target_occasion_id IS NULL THEN
         RAISE EXCEPTION 'Target occasion not found for link: %', target_occasion_link;
     END IF;
+
+    PERFORM public.check_occasion_writable(target_occasion_id);
 
     -- Step 2: Get the source occasion and unit IDs for permission checking.
     SELECT f.occasion, o.unit
@@ -64,36 +66,25 @@ BEGIN
         RAISE EXCEPTION 'Insufficient permissions to create a form in the target occasion.';
     END IF;
 
-    -- Step 5: Generate a unique link for the new form within the same organization.
-    -- Try to use the target occasion's link first. If it's taken within the same organization, append a random hash.
-    IF EXISTS (
-        SELECT 1
-        FROM public.forms f
-        JOIN public.occasions o ON f.occasion = o.id
-        WHERE f.link = target_occasion_link AND o.organization = target_organization_id
-    ) THEN
-        v_new_form_link := target_occasion_link || '-' || substring(md5(random()::text) from 1 for 8);
-    ELSE
-        v_new_form_link := target_occasion_link;
-    END IF;
-
     -- Step 6: Copy the main form record to the target occasion.
     INSERT INTO public.forms (title, data, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds)
     SELECT
-        title || ' (Copy)',
+        public.copy_occasion_title_internal(title,'en'),
         data,
         target_occasion_id,
         type,
         bank_account,
         deadline_duration_seconds,
         is_open,
-        v_new_form_link, -- Use the generated unique link
+        NULL,
         blueprint,
         header,
         header_off,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds
     FROM public.forms
     WHERE id = source_form_id
     RETURNING id INTO new_form_id;
+
+    UPDATE public.forms SET link=public.reserve_public_link_internal('form',new_form_id,NULL,true) WHERE id=new_form_id;
 
     -- Step 7: Loop through each field of the source form and perform a deep copy.
     FOR form_field_record IN
@@ -140,3 +131,10 @@ BEGIN
     RETURN new_form_id;
 END;
 $$;
+REVOKE ALL ON FUNCTION public.duplicate_form_to_occasion_internal_v1(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.duplicate_form_to_occasion(source_form_id bigint,target_occasion_link text)
+RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT (public.duplicate_form_to_occasion_client_sync_v1(source_form_id,target_occasion_link,gen_random_uuid())#>>'{data,formId}')::bigint;
+$$;
+REVOKE ALL ON FUNCTION public.duplicate_form_to_occasion(bigint,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.duplicate_form_to_occasion(bigint,text) TO authenticated;

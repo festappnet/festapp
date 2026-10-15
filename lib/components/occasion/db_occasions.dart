@@ -170,30 +170,37 @@ class DbOccasions {
   }
 
   static Future<void> updateOccasion(OccasionModel occasionModel) async {
+    final OccasionModel saved;
     if (ClientSyncRuntime.isV1Selected) {
-      final saved = occasionModel.id == null
+      saved = occasionModel.id == null
           ? await _commands.create(occasionModel)
           : await _commands.save(occasionModel);
-      occasionModel.id = saved.id;
-      occasionModel.aggregateVersion = saved.aggregateVersion;
-      occasionModel.features = saved.features;
-      occasionModel.markTicketLayoutSaved();
-      return;
+    } else {
+      final result = await _supabase.rpc('update_occasion',
+          params: {'input_data': occasionModel.toSaveJson()});
+      if (result['code'] != 200 || result['occasion'] is! Map) {
+        throw StateError('Occasion save was rejected');
+      }
+      saved =
+          OccasionModel.fromJson(Map<String, dynamic>.from(result['occasion']));
     }
-    final Map<String, dynamic> occasionJson = occasionModel.toSaveJson();
-    await _supabase.rpc("update_occasion_203", params: {
-      "input_data": occasionJson,
-    });
+    occasionModel.id = saved.id;
+    occasionModel.link = saved.link;
+    occasionModel.aggregateVersion = saved.aggregateVersion;
+    occasionModel.features = saved.features;
     occasionModel.markTicketLayoutSaved();
   }
 
   /// Returns false only when the event exists but its media could not be copied.
-  static Future<bool> duplicateOccasion(int oc, {int? targetUnitId}) async {
+  static Future<bool> duplicateOccasion(int oc,
+      {int? targetUnitId, String locale = 'en'}) async {
     final ocId = ClientSyncRuntime.isV1Selected
-        ? await _commands.duplicate(oc, targetUnitId: targetUnitId)
+        ? await _commands.duplicate(oc,
+            targetUnitId: targetUnitId, locale: locale)
         : await _supabase.rpc("duplicate_occasion", params: {
             'oc': oc,
-            if (targetUnitId != null) 'p_target_unit': targetUnitId,
+            'p_target_unit': targetUnitId,
+            'p_locale': locale,
           }) as int;
 
     try {
@@ -214,12 +221,14 @@ class DbOccasions {
   static Future<({int occasionId, bool mediaCopied})> duplicateDemoOccasion(
       int source,
       {required int targetUnitId,
-      required String commandId}) async {
+      required String commandId,
+      String locale = 'en'}) async {
     final response =
         await _supabase.rpc('duplicate_occasion_client_sync_v1', params: {
       'p_occasion': source,
       'p_target_unit': targetUnitId,
       'p_command_id': commandId,
+      'p_locale': locale,
     });
     final id = (response['data']['occasionId'] as num).toInt();
     var ready = false;

@@ -15,7 +15,7 @@ BEGIN
     SELECT id
     INTO v_occasion_id
     FROM public.occasions
-    WHERE link = occasion_link
+    WHERE id = public.resolve_occasion_link_internal(occasion_link)
       AND organization=(SELECT organization FROM public.user_info WHERE id=auth.uid());
 
     -- Step 2: If no occasion is found, return a 404 'Not Found' error.

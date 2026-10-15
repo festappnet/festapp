@@ -84,13 +84,14 @@ String initialRouteForUri(Uri uri) {
   final path = uri.path == '/' && AppConfig.forceOccasionLink != null
       ? '/${AppConfig.forceOccasionLink}'
       : uri.path;
-  // Personal form capabilities belong in the fragment. Reconstructing only
-  // path/query would replace the browser URL before FormPage can read its scope.
-  final personalFragment = path.startsWith('/form/') &&
-          (uri.fragment.startsWith('waitlist?') || uri.fragment.startsWith('order?'))
-      ? '#${uri.fragment}'
-      : '';
-  return '$path${uri.hasQuery ? '?${uri.query}' : ''}$personalFragment';
+  // Public aliases retain their fragment during cold startup as well as later
+  // canonical replacements. Standalone auth/settings routes keep their contract.
+  final segments = Uri.parse(path).pathSegments;
+  final publicPath = path.startsWith('/form/') ||
+      (segments.isNotEmpty &&
+          !AppRouter.getRootLinks().contains(segments.first));
+  final fragment = publicPath && uri.hasFragment ? '#${uri.fragment}' : '';
+  return '$path${uri.hasQuery ? '?${uri.query}' : ''}$fragment';
 }
 
 bool isUnitAdminStartupRoute(Uri uri) {
@@ -484,8 +485,12 @@ class _MyAppState extends State<MyApp> {
       return DeepLink.path('/login', includePrefixMatches: false);
     }
     if (platformDeepLink.initial) {
+      final canonical =
+          RouterService.consumeCanonicalInitialPath(widget.initialRoute);
+      if (canonical != widget.initialRoute)
+        RouterService.router.markUrlStateForReplace();
       return DeepLink.path(
-        widget.initialRoute,
+        canonical,
         includePrefixMatches: false,
       );
     }

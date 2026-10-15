@@ -10,7 +10,7 @@ BEGIN
     -- Get occasion ID from form link
     SELECT f.occasion INTO occasion_id
     FROM public.forms f
-    WHERE f.link = form_link;
+    WHERE f.id = public.resolve_form_link_internal(form_link);
 
     -- Check if order/occasion exists
     IF occasion_id IS NULL THEN

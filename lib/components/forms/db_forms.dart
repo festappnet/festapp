@@ -58,12 +58,27 @@ class DbForms {
     );
   }
 
-  static Future<List<FormModel>> getAllFormsByOccasionLink(
-      String occasionLink) async {
-    final response = await _supabase
-        .rpc('get_forms_by_link', params: {'occasion_link': occasionLink});
+  static Future<List<FormModel>> getAllFormsByOccasionLink(String occasionLink,
+      {String? formLink}) async {
+    final response = await _supabase.rpc('get_forms_by_link', params: {
+      'occasion_link': occasionLink,
+      if (formLink != null) 'form_link': formLink,
+    });
 
     return List<FormModel>.from(response.map((f) => FormModel.fromJson(f)));
+  }
+
+  static Future<({List<FormModel> forms, String canonical})> getFormsForRoute(
+      String occasionLink, String formLink) async {
+    final rows = await _supabase.rpc('get_forms_by_link',
+        params: {'occasion_link': occasionLink, 'form_link': formLink}) as List;
+    final resolved = rows.where((row) => row['requested_link'] == formLink);
+    return (
+      forms: rows
+          .map((row) => FormModel.fromJson(Map<String, dynamic>.from(row)))
+          .toList(),
+      canonical: resolved.isEmpty ? formLink : resolved.first['link'] as String
+    );
   }
 
   /// Fetches all forms for a given occasion, including their nested form fields.
@@ -111,21 +126,17 @@ class DbForms {
     }
   }
 
-  static Future<void> updateForm(FormModel form) async {
+  static Future<FormModel> updateForm(FormModel form) async {
+    final Map<String, dynamic> response;
     if (ClientSyncRuntime.isV1Selected) {
-      await _commands.save(form.toEditedJson());
-      return;
+      response = await _commands.save(form.toEditedJson());
+    } else {
+      response = Map<String, dynamic>.from(await _supabase
+          .rpc('update_form', params: {'input_data': form.toEditedJson()}));
+      if (response['code'] != 200) throw Exception(response['message']);
     }
-    final response = await _supabase.rpc(
-      'update_form',
-      params: {
-        'input_data': form.toEditedJson(),
-      },
-    );
-
-    if (response["code"] != 200) {
-      throw Exception(response["message"]);
-    }
+    form.link = response['link'] as String;
+    return form;
   }
 
   static Future<void> deleteForm(int formId) async {

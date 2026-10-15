@@ -15,7 +15,7 @@ BEGIN
     SELECT o.id
     INTO v_occasion_id
     FROM public.occasions o
-    WHERE o.link = p_occasion_link
+    WHERE o.id = public.resolve_occasion_link_internal(p_occasion_link)
       AND o.organization = (
         SELECT ui.organization
         FROM public.user_info ui

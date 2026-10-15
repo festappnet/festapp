@@ -101,79 +101,14 @@ BEGIN
         END IF;
 
         IF NOT public.is_service_role() AND NOT (public.get_is_editor_on_unit(occasion_unit) OR public.get_is_editor_on_occasion(occasion_id)) THEN RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
-        -- Validate the link field, which must be unique within the same organization
-        link_param := input_data->>'link';
-        IF link_param IS NULL OR link_param = '' THEN
-            RAISE EXCEPTION '%',
-                JSONB_BUILD_OBJECT('code', 4013, 'message', 'Missing link in input data')::TEXT;
-        END IF;
-
-        -- Determine if we are creating a new form or updating an existing one
-        form_id := NULLIF(input_data->>'id', '')::BIGINT;
-
+        form_id := NULLIF(input_data->>'id','')::bigint;
         IF form_id IS NULL THEN
-            -- New form: ensure link uniqueness via a join to occasions
-            SELECT 1
-              INTO conflict_check
-              FROM public.forms f
-              JOIN public.occasions o ON f.occasion = o.id
-             WHERE o.organization = occasion_org
-               AND f.link = link_param
-             LIMIT 1;
-
-            IF conflict_check IS NOT NULL THEN
-                RAISE EXCEPTION '%',
-                    JSONB_BUILD_OBJECT(
-                        'code', 4014,
-                        'message', 'Link is already used by another form in the same organization'
-                    )::TEXT;
-            END IF;
-
-            INSERT INTO public.forms (
-                created_at,
-                occasion,
-                link
-            )
-            VALUES (
-                now_ts,
-                occasion_id,
-                link_param
-            )
-            RETURNING id INTO form_id;
+          INSERT INTO public.forms(created_at,occasion) VALUES(now_ts,occasion_id) RETURNING id INTO form_id;
+          link_param := public.reserve_public_link_internal('form',form_id,input_data->>'link',true);
         ELSE
-            -- Existing form: ensure form belongs to the occasion and link is still unique
-            IF NOT EXISTS (
-                SELECT 1
-                FROM public.forms
-                WHERE id = form_id
-                  AND occasion = occasion_id
-            ) THEN
-                RAISE EXCEPTION '%',
-                    JSONB_BUILD_OBJECT(
-                        'code', 4005,
-                        'message', 'Form does not exist or does not match the given occasion',
-                        'form_id', form_id
-                    )::TEXT;
-            END IF;
-
-            PERFORM 1 FROM public.forms f WHERE f.id = form_id FOR UPDATE;
-
-            SELECT 1
-              INTO conflict_check
-              FROM public.forms f
-              JOIN public.occasions o ON f.occasion = o.id
-             WHERE o.organization = occasion_org
-               AND f.link = link_param
-               AND f.id <> form_id
-             LIMIT 1;
-
-            IF conflict_check IS NOT NULL THEN
-                RAISE EXCEPTION '%',
-                    JSONB_BUILD_OBJECT(
-                        'code', 4014,
-                        'message', 'Link is already used by another form in the same organization'
-                    )::TEXT;
-            END IF;
+          IF NOT EXISTS (SELECT 1 FROM public.forms WHERE id=form_id AND occasion=occasion_id) THEN
+            RAISE invalid_parameter_value USING MESSAGE='Form does not match occasion'; END IF;
+          link_param := public.reserve_public_link_internal('form',form_id,input_data->>'link',false);
         END IF;
 
         -- Explicit removals are part of this save transaction, never inferred from
@@ -656,6 +591,7 @@ BEGIN
             'code', 200,
             'message', 'Form updated successfully',
             'form_id', form_id,
+            'link', link_param,
             'form_fields', form_fields_data
         );
 

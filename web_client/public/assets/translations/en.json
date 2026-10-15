@@ -286,7 +286,7 @@
     "labelFormLink": "Form Link",
     "helperFormLink": "Use only letters, numbers, and hyphens. This will be part of the URL.",
     "validationLinkRequired": "Link is required.",
-    "validationLinkInvalidChars": "Invalid characters. Use only letters, numbers, and hyphens.",
+    "validationLinkInvalidChars": "Use lowercase a-z, digits and single hyphens between words, up to 80 characters.",
     "validationLinkInUse": "Link already in use.",
     "labelDeadlineDays": "Payment Deadline (in days)",
     "helperDeadlineDays": "Set how many days a user has to pay for an order. Leave empty for no deadline.",
@@ -385,7 +385,12 @@
     "remindersOff": "Off",
     "remindersOn": "On",
     "occasionPaymentDefaultsHelp": "Defaults for all forms in this event. Individual forms can override them.",
-    "formPaymentDefaultsHelp": "This form inherits payment and reminder settings from the event’s Form feature. Overrides apply only to this form."
+    "formPaymentDefaultsHelp": "This form inherits payment and reminder settings from the event’s Form feature. Overrides apply only to this form.",
+    "savedPublicLink": "Current saved link",
+    "publicLinkPreview": "Unsaved link preview",
+    "automaticPublicLink": "A short link will be created when saved. You can enter a custom slug.",
+    "publicLinkHistoryHelp": "Previous addresses will continue to work.",
+    "fontLoadFailed": "Could not load fonts. Please try again."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -438,7 +443,8 @@
     "paymentReference": "Payment reference",
     "shortTitleHelp": "Name printed on the ticket, for example for dinner. If empty, the full product name is used.",
     "maxHelp": "Maximum number of units of this product that can be ordered. An empty value or 0 means no limit.",
-    "validApplications": "Valid applications"
+    "validApplications": "Valid applications",
+    "returnedHelp": "To register a payment as refunded, send it back using the same variable symbol as the original payment."
   },
   "FormsFeature": {
     "showDepositDescription": "Show deposit / surcharge note on products",
@@ -684,7 +690,22 @@
     "waveEmptyPrice": "Empty price = unchanged",
     "noWaves": "No price waves yet.",
     "waveNow": "Current",
-    "waveHiddenState": "Hidden"
+    "waveHiddenState": "Hidden",
+    "bankSyncWarningContactShort": "Contact:",
+    "bankSyncPaymentPaused": "Bank synchronization is off for the account receiving this payment.",
+    "bankSyncWarningTitle": "Automatic payment matching is unavailable",
+    "bankSyncWarningHelp": "Payment may already have reached the account without being matched to this order. Check the bank statement before sending a payment reminder.",
+    "bankSyncWarningContact": "Ask a bank account administrator to check synchronization:",
+    "bankSyncWarningFallback": "Ask the organizer to contact the bank account administrator.",
+    "bankSyncWarningReasons": {
+      "not_configured": "Automatic synchronization is not configured.",
+      "suspended": "Automatic synchronization is paused.",
+      "bank_error": "Bank synchronization encountered an error.",
+      "stale": "Bank payments have not been updated recently.",
+      "token_missing": "The bank access token is missing.",
+      "email_missing": "Bank email reception is not configured."
+    },
+    "noOrders": "There are no orders yet."
   },
   "UserColumns": {
     "id": "Id",
@@ -1759,7 +1780,13 @@
     "connect_email": "Connect bank email",
     "missingAccountForCurrencies": "No bank account is configured for {}.",
     "addAccountForPayments": "To accept payments, add an account supporting these currencies in organization settings.",
-    "askManagerForPaymentAccount": "To accept payments, ask your organization administrator to add an account supporting these currencies."
+    "askManagerForPaymentAccount": "To accept payments, ask your organization administrator to add an account supporting these currencies.",
+    "synchronizationPending": "Synchronization is enabled. The next bank fetch is waiting for the bank cooldown.",
+    "automaticSynchronization": "Automatic synchronization",
+    "synchronizationEnabled": "On",
+    "synchronizationPaused": "Off",
+    "synchronizationChanging": "Updating synchronization",
+    "emailBankUnsupported": "Bank email integration is currently available only for Fio banka and Air Bank. You can use this account to record payments manually."
   },
   "FeatureContract": {
     "title": "Contract",
@@ -2466,7 +2493,8 @@
     "elementLimit": "A ticket can contain at most 32 elements",
     "draftProducts": "Edit product fields after creating the event.",
     "replacementProducts": "Using this template replaces the layout and removes product fields: {count}",
-    "productType": "Product group"
+    "productType": "Product group",
+    "hiddenProduct": "Group is no longer offered"
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transactions with a currency different from their order are excluded from the chart",
@@ -2541,7 +2569,9 @@
     "reloadConfirm": "Load the saved version and discard your unsaved changes?",
     "leave": "Save and return to list",
     "incomplete": "This draft stays private. Features, forms and seating plans will be added in the next steps.",
-    "deleteConfirm": "Delete this draft?"
+    "deleteConfirm": "Delete this draft?",
+    "createEvent": "Create event",
+    "finalizeFailed": "Creation could not be confirmed. Retry the same request."
   },
   "Waitlist": {
     "settings": "Capacity and waitlist",
@@ -2715,11 +2745,14 @@
     "badge": "Demo",
     "view": "Explore demo",
     "readOnly": "Demo event - read only",
-    "copy": "Create your own copy",
+    "copy": "Create a copy of this event",
     "copyHint": "The copy starts hidden, without participants or payments. Check dates, prices and your bank account before opening it.",
     "unavailable": "Demo events could not be loaded.",
     "noTarget": "You need an organization you can manage to create a copy.",
-    "back": "Back to your events"
+    "back": "Back to your events",
+    "ball": "Ball",
+    "concert": "Concert",
+    "weekend": "Weekend"
   },
   "OrderOverview": {
     "title": "Order overview",

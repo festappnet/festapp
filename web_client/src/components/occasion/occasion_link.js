@@ -1,3 +1,4 @@
+import { publicFormPath, publicOccasionPath } from '../../services/public_link.js';
 // A real destination for crawlers, keyboard navigation and opening a new tab.
 // Plain clicks may still show the existing occasion dialog.
 export function getOccasionHref(occasion) {
@@ -12,8 +13,8 @@ export function getOccasionHref(occasion) {
             } catch { /* Invalid external links fall back to the internal form. */ }
         }
         const slug = (occasion.form?.link || occasion.link || '').split('?')[0].replace(/^\/+|\/+$/g, '');
-        return slug ? `/form/${encodeURIComponent(slug)}` : null;
+        return slug ? publicFormPath(slug) : null;
     }
     const slug = (occasion.link || '').split('?')[0].replace(/^\/+|\/+$/g, '');
-    return slug ? `/${encodeURIComponent(slug)}/event` : null;
+    return slug ? publicOccasionPath(slug) : null;
 }

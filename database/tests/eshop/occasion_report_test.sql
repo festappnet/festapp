@@ -14,6 +14,7 @@ BEGIN
   INSERT INTO public.occasions(title,link,start_time,end_time,organization,unit)
     VALUES('Other','report-other',now(),now(),org,unit_id) RETURNING id INTO other_occ;
   INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(occ,u,true);
+  PERFORM pg_temp.adopt_public_link_fixtures();
   PERFORM set_config('request.jwt.claim.sub',u::text,true);
   SET LOCAL ROLE authenticated;
   r:=public.get_report_ws('report-metrics');

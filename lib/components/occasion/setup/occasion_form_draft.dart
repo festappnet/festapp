@@ -56,5 +56,6 @@ FormModel defaultDraftForm(Map<String, dynamic> configuration) {
   final forms = configuration['forms'] as List? ?? [];
   if (forms.isEmpty) throw StateError('Canonical form defaults are missing');
   return FormModel.fromJson(
-      Map<String, dynamic>.from(jsonDecode(jsonEncode(forms.first))));
+      Map<String, dynamic>.from(jsonDecode(jsonEncode(forms.first))))
+    ..link = '';
 }

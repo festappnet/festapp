@@ -155,7 +155,11 @@
     "occasionPaymentDefaultsHelp": "Standardwerte für alle Formulare dieser Veranstaltung. Einzelne Formulare können sie überschreiben.",
     "formPaymentDefaultsHelp": "Dieses Formular übernimmt Zahlungs- und Erinnerungseinstellungen aus der Formularfunktion der Veranstaltung. Eigene Werte gelten nur für dieses Formular.",
     "labelShowPaymentQr": "Zahlungs-QR nach Bestellung anzeigen",
-    "helperShowPaymentQr": "Zeigt nach der Bestellung den Zahlungs-QR-Code und die Daten direkt auf dem Bestätigungsbildschirm an."
+    "helperShowPaymentQr": "Zeigt nach der Bestellung den Zahlungs-QR-Code und die Daten direkt auf dem Bestätigungsbildschirm an.",
+    "savedPublicLink": "Aktuell gespeicherter Link",
+    "publicLinkPreview": "Vorschau des ungespeicherten Links",
+    "automaticPublicLink": "Ein kurzer Link wird beim Speichern erstellt. Sie können einen eigenen Adressnamen eingeben.",
+    "publicLinkHistoryHelp": "Bisherige Adressen funktionieren weiterhin."
   },
   "FeatureTicket": {
     "scanCameraInstruction": "Richten Sie die Kamera auf den Code des Teilnehmers, um den Eintritt zu überprüfen.",
@@ -888,5 +892,9 @@
     "itemsChanged": "Positionen geändert",
     "detailsChanged": "Bestelldaten wurden aktualisiert.",
     "gridOverview": "Übersicht"
+  },
+  "OccasionSetup": {
+    "createEvent": "Veranstaltung erstellen",
+    "finalizeFailed": "Die Erstellung konnte nicht bestätigt werden. Wiederholen Sie dieselbe Anfrage."
   }
 }

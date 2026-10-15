@@ -21,6 +21,7 @@ BEGIN
  INSERT INTO eshop.payment_info(id,bank_account,variable_symbol,amount,currency_code) VALUES(pi,bank,971510,100,'CZK');
  INSERT INTO eshop.orders(occasion,order_sequence,order_symbol,state,data,price,currency_code,payment_info,form)
  VALUES(oc,public.next_order_sequence(oc),public.generate_order_symbol(),'ordered','{}',100,'CZK',pi,form_id);
+  PERFORM pg_temp.adopt_public_link_fixtures();
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  SET LOCAL ROLE authenticated;

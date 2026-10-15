@@ -14,7 +14,7 @@ BEGIN
     SELECT id
     INTO v_occasion_id
     FROM public.occasions
-    WHERE link = occasion_link
+    WHERE id = public.resolve_occasion_link_internal(occasion_link)
       AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
 
     -- Step 2: If no occasion is found, throw a 'no_data_found' exception.
@@ -78,3 +78,16 @@ BEGIN
     RETURN forms_data;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.get_forms_by_link(occasion_link text, form_link text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE forms jsonb; target bigint;
+BEGIN
+ forms := public.get_forms_by_link(occasion_link);
+ target := public.resolve_form_link_internal(form_link);
+ RETURN (SELECT coalesce(jsonb_agg(f || CASE WHEN (f->>'id')::bigint=target
+   THEN jsonb_build_object('requested_link',form_link) ELSE '{}'::jsonb END),'[]')
+   FROM jsonb_array_elements(forms) f);
+END $$;
+REVOKE ALL ON FUNCTION public.get_forms_by_link(text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_forms_by_link(text,text) TO authenticated;

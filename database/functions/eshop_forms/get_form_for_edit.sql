@@ -26,7 +26,7 @@ BEGIN
         v_unit_id
     FROM public.forms f
     JOIN public.occasions o ON f.occasion = o.id
-    WHERE f.link = form_link;
+    WHERE f.id = public.resolve_form_link_internal(form_link);
 
     IF v_form_id IS NULL THEN
         RETURN jsonb_build_object('code', 404, 'message', 'Form not found for the provided link.');
