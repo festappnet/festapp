@@ -1,4 +1,5 @@
 import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
+import { PublicOrderStrings } from './public_order_strings.js';
 import { renderPaymentDetails } from './payment_details.js';
 import { presentPayment } from '../../../../supabase/functions/_shared/paymentPresentation.ts';
 import { LocalizationService } from '../../services/localization_service.js';
@@ -55,6 +56,7 @@ function renderOrderState(host, order, includeReference = true, hasTickets = fal
     if (payment?.instructionsAvailable && payment.dueAt && !complete && !cancelled) {
         line(text, 'p', `${overviewText(overdue ? 'overdue' : 'withinDeadline')} · ${overviewText('dueAt')}: ${date(payment.dueAt)}`).className = 'overview-state-deadline';
     }
+    return text;
 }
 export function renderOrderOverview(host, data, onContinue, offerInPage = false, onDownload = null) {
     host.replaceChildren(); host.classList.add('order-overview');
@@ -69,7 +71,8 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         line(summary, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
         if (!data.orders.length) line(summary, 'p', overviewText('not_required_yet'));
     }
-    for (const order of data.orders) renderOrderState(summary, order, !singleOrder, data.root.hasTickets);
+    const paymentLinks = new Map();
+    for (const order of data.orders) paymentLinks.set(order.id, renderOrderState(summary, order, !singleOrder, data.root.hasTickets));
     if (!waiting && !data.orders.length) line(summary, 'p', overviewText('withdrawn'));
     for (const offer of data.offers.filter(o => o.pendingPlaces > 0)) line(summary, 'p', `${overviewText('offeredPlaces')}: ${offer.pendingPlaces} · ${overviewText('validUntil')}: ${date(offer.expiresAt)}`);
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
@@ -141,6 +144,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
             }
             if (payment.instructionsAvailable) {
                 const instructions = line(card, 'dl', ''); instructions.className = 'overview-payment-details';
+                let paymentTarget = instructions;
                 if (payment.qrPayment && payment.dueNow > 0) {
                     const paymentHost = line(card, 'div', '');
                     let presentation;
@@ -151,11 +155,26 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
                         reference_kind: payment.referenceKind,
                         reference: presentation?.referenceDisplay || payment.reference,
                     }, { occasionTitle: data.root.title, orderSymbol: order.symbol });
+                    paymentTarget = paymentHost.querySelector('details');
                     paymentHost.querySelector('details').dataset.overviewKey = `payment:${order.id}`;
                 } else {
                     fact(instructions, overviewText('dueNow'), money(payment.dueNow, order.currency));
                     fact(instructions, overviewText('account'), payment.publicAccount);
                     fact(instructions, payment.referenceKind, payment.reference);
+                }
+                if (payment.dueNow > 0 && order.state !== 'storno' && !['fully_paid', 'free', 'cancelled'].includes(payment.status)) {
+                    paymentTarget.id = `overview-payment-${order.id}`;
+                    const link = line(paymentLinks.get(order.id), 'a', PublicOrderStrings.showPaymentOptions);
+                    link.href = `#${paymentTarget.id}`;
+                    link.className = 'overview-payment-link';
+                    link.onclick = event => {
+                        event.preventDefault();
+                        if (paymentTarget.tagName === 'DETAILS') paymentTarget.open = true;
+                        const focusTarget = paymentTarget.querySelector('summary') || paymentTarget;
+                        if (focusTarget === paymentTarget) focusTarget.tabIndex = -1;
+                        focusTarget.focus({ preventScroll: true });
+                        paymentTarget.scrollIntoView({ block: 'start', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+                    };
                 }
                 fact(instructions, overviewText('dueAt'), payment.dueAt ? date(payment.dueAt) : overviewText('onSite'));
                 if (payment.overdue) line(card, 'p', overviewText('overdue'));

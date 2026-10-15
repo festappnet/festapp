@@ -778,3 +778,6 @@ body.dark-mode .surcharge-info {
 .overview-ticket-download:focus-visible { outline: 2px solid var(--primary-color, #1565c0); outline-offset: 2px; }
 .overview-ticket-download:disabled { cursor: wait; opacity: .65; }
 @media (max-width: 480px) { .order-overview button.overview-ticket-download { min-height: 44px; } }
+
+.overview-payment-link { display: inline-block; margin-block-start: 8px; color: var(--primary-color, #1565c0); text-underline-offset: 3px; }
+.overview-payment-details, .order-overview .result-payment-more { scroll-margin-block-start: 24px; }
