@@ -6,6 +6,12 @@ import {
   MetaSurchargeAmount,
 } from "./metaSurcharge.ts";
 
+export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
+const escapeContact = (value: unknown) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+// Invisible separators prevent mail clients from turning contact text into actions.
+const emailContact = (value: unknown) => escapeContact(value).replaceAll('@', '&#8203;@&#8203;').replaceAll('.', '.&#8203;');
+const phoneContact = (value: unknown) => escapeContact(value).replace(/(\d)(?=\d)/g, '$1&#8203;');
+
 export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string): string {
     const { name, surname, email, phone, note } = orderData;
 
@@ -42,10 +48,10 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         personalInfoHtml += `<div style="margin-bottom:4px;">${tr.name}: <strong>${fullName}</strong></div>`;
     }
     if (email) {
-        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.email}: <strong>${email}</strong></div>`;
+        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.email}: <strong>${emailContact(email)}</strong></div>`;
     }
     if (phone) {
-        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.phone}: <strong>${phone}</strong></div>`;
+        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.phone}: <strong>${phoneContact(phone)}</strong></div>`;
     }
     if (note) {
         personalInfoHtml += `<div style="margin-top:8px;">${tr.orderNote}: <div><em>${note}</em></div></div>`;
@@ -155,6 +161,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             ${personalInfoHtml}
             ${ticketsDetails}
             ${totalSection}
+            ${ORDER_OVERVIEW_LINK_SLOT}
         </div>`;
 }
 /** Metadata-only read adapter for retained confirmation/replay snapshots.

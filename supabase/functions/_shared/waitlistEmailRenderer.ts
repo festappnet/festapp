@@ -1,3 +1,4 @@
+import { overviewEmailSubstitutions, includeOrderOverview } from './orderEmailOverview.ts';
 import { openOrderOverviewUrl } from "./customerOrderAccess.ts";
 import {
   type DeliverEmailInput,
@@ -205,8 +206,7 @@ export async function renderWaitlistEmail(
   }
   const substitutions: Record<string, string | number> = {
     ...Object.fromEntries(toneKeys.map((key) => [key, escapeHtml(context.toneSubstitutions![key])])),
-    order_overview_url: escapeHtml(overviewUrl),
-    order_overview_button: overviewUrl ? button(escapeHtml(overviewUrl), "Přehled objednávky") : "",
+    ...overviewEmailSubstitutions(overviewUrl),
     order_symbol: escapeHtml(context.orderSymbol),
     occasion_title: escapeHtml(source.occasionTitle),
     participant_count: offer
@@ -237,12 +237,7 @@ export async function renderWaitlistEmail(
       substitutions,
       replyTo: context.replyTo,
     });
-  // Existing inherited templates need not add the new variable to deliver access.
-  if (overviewUrl && !prepared.html.includes(`href="${escapeHtml(overviewUrl)}"`)) {
-    const link = `<p>${button(escapeHtml(overviewUrl), "Přehled objednávky")}</p>`;
-    prepared.html = /<\/body>/i.test(prepared.html)
-      ? prepared.html.replace(/<\/body>/i, `${link}</body>`) : prepared.html + link;
-  }
+  if (overviewUrl) includeOrderOverview(prepared, overviewUrl);
   return {
     prepared,
     postAction: {
