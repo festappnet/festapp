@@ -553,11 +553,15 @@
     "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka."
   },
   "FeatureOrders": {
-    "bankSyncWarningContactShort": "Kontaktujte:",
+    "bankSyncWarningEnable": "Zapněte synchronizaci v nastavení bankovního účtu.",
+    "bankSyncWarningManage": "Zkontrolujte synchronizaci v nastavení bankovního účtu.",
+    "bankSyncWarningOpenSettings": "Nastavení bankovního účtu",
+    "bankSyncWarningSettingsUnavailable": "Účet nebyl nalezen nebo nemáte oprávnění k jeho správě.",
+    "bankSyncWarningContactShort": "Kontaktujte správce bankovního účtu:",
     "bankSyncPaymentPaused": "Synchronizace bankovního účtu pro tuto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párování plateb nefunguje",
     "bankSyncWarningHelp": "Platba již mohla dorazit na účet, ale zatím není přiřazena k objednávce. Před připomenutím platby ověřte výpis z účtu.",
-    "bankSyncWarningContact": "Požádejte správce bankovního účtu o kontrolu synchronizace:",
+    "bankSyncWarningContact": "Kontaktujte správce bankovního účtu:",
     "bankSyncWarningFallback": "Požádejte organizátora, aby kontaktoval správce bankovního účtu.",
     "bankSyncWarningReasons": {
       "not_configured": "Automatická synchronizace není nastavena.",

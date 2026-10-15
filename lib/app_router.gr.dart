@@ -162,6 +162,69 @@ class BankAccountConnectionRoute extends _i71.PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [_i3.BankAccountConnectionSettingsPage]
+class BankAccountConnectionSettingsRoute
+    extends _i71.PageRouteInfo<BankAccountConnectionSettingsRouteArgs> {
+  BankAccountConnectionSettingsRoute({
+    _i72.Key? key,
+    required String accountId,
+    List<_i71.PageRouteInfo>? children,
+  }) : super(
+          BankAccountConnectionSettingsRoute.name,
+          args: BankAccountConnectionSettingsRouteArgs(
+            key: key,
+            accountId: accountId,
+          ),
+          rawPathParams: {'accountId': accountId},
+          initialChildren: children,
+        );
+
+  static const String name = 'BankAccountConnectionSettingsRoute';
+
+  static _i71.PageInfo page = _i71.PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<BankAccountConnectionSettingsRouteArgs>(
+        orElse: () => BankAccountConnectionSettingsRouteArgs(
+          accountId: pathParams.getString('accountId'),
+        ),
+      );
+      return _i3.BankAccountConnectionSettingsPage(
+        key: args.key,
+        accountId: args.accountId,
+      );
+    },
+  );
+}
+
+class BankAccountConnectionSettingsRouteArgs {
+  const BankAccountConnectionSettingsRouteArgs({
+    this.key,
+    required this.accountId,
+  });
+
+  final _i72.Key? key;
+
+  final String accountId;
+
+  @override
+  String toString() {
+    return 'BankAccountConnectionSettingsRouteArgs{key: $key, accountId: $accountId}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! BankAccountConnectionSettingsRouteArgs) return false;
+    return key == other.key && accountId == other.accountId;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ accountId.hashCode;
+}
+
+/// generated route for
 /// [_i3.BankAccountDetailPage]
 class BankAccountDetailRoute
     extends _i71.PageRouteInfo<BankAccountDetailRouteArgs> {
