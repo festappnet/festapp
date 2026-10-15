@@ -89,6 +89,7 @@ const HANDOFF_BOOTSTRAP_CACHE_NAMES = new Set([
   'festapp-app-shell-0.20.223+707',
   'festapp-app-shell-0.20.224+708',
   'festapp-app-shell-0.20.225+709',
+  'festapp-app-shell-0.20.226+710',
   'festapp-app-shell-0.20.185+669',
   'festapp-app-shell-0.20.186+670',
   'festapp-app-shell-0.20.187+671',
