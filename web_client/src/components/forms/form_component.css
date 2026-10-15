@@ -685,13 +685,13 @@ body.dark-mode .surcharge-info {
 .overview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-block-start: 24px; font-size: .875rem; }
 .order-overview button:not(.result-copy) { font: inherit; padding: 10px 18px; min-height: 44px; border: 1px solid currentColor; border-radius: 8px; color: inherit; background: transparent; cursor: pointer; }
 .order-overview button:not(.result-copy):hover { background: var(--hover-color, #8882); }
-.overview-status { border-inline-start: 4px solid var(--primary-color, #1565c0); background: var(--hover-color, #8882); padding: 20px 24px; border-radius: 0 8px 8px 0; }
+.overview-status { border-inline-start: 4px solid var(--primary-color, #1565c0); background: var(--card-bg, #ffffff); padding: 20px 24px; border-radius: 0 8px 8px 0; }
 .overview-people, .overview-transactions { list-style: none; padding: 0; margin: 0; }
 .overview-people > li, .overview-transactions li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-block-end: 1px solid var(--border-color, #8885); }
 .overview-people > li:last-child, .overview-transactions > li:last-child { border-block-end: 0; }
 .overview-transactions strong { white-space: nowrap; flex-shrink: 0; }
 .overview-transactions small { display: block; margin-block-start: 4px; }
-.order-overview-card, .overview-history-card, .overview-payments-card {
+.order-overview-card, .overview-history-card {
     padding: clamp(18px, 3vw, 28px);
     border: 1px solid var(--border-color, #8885);
     border-radius: 16px;
@@ -756,7 +756,7 @@ body.dark-mode .surcharge-info {
 .overview-state-icon { width: 28px; height: 28px; fill: currentColor; flex-shrink: 0; }
 
 .order-overview .overview-event-title { margin: 0 0 24px; font-size: 1.25rem; }
-.order-overview .overview-updated { font-size: .8125rem; margin: 8px 0 24px; }
+.order-overview .overview-updated { text-align: end; font-size: .8125rem; margin: 8px 0 24px; }
 .overview-customer { margin: 0 0 24px; padding-block-start: 16px; border-block-start: 1px solid var(--border-color, #8885); }
 .overview-customer > div { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-block: 6px; }
 .overview-customer dd { margin: 0; overflow-wrap: anywhere; min-width: 0; }
@@ -769,3 +769,5 @@ body.dark-mode .surcharge-info {
 .overview-order-total { border-block-start: 1px solid var(--border-color, #8885); margin: 16px 0 0; padding-block-start: 20px; }
 .overview-order-total > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 16px; font-size: 1.25rem; font-weight: 700; }
 .overview-order-total dd { margin: 0; }
+
+.overview-usage { font-size: .875rem; }
