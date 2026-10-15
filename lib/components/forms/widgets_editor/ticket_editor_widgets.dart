@@ -265,26 +265,28 @@ class TicketEditorWidgets {
               },
             ),
           ),
-          const SizedBox(width: 8),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
-              if (value == 'deposit') {
-                ticketField.definition = ticketField.definition.copyWith(data: {
-                  ...?ticketField.definition.data,
-                  TicketHolder.metaShowDepositDescription: !showDeposit
-                });
-                refresh();
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              CheckedPopupMenuItem<String>(
-                value: 'deposit',
-                checked: showDeposit,
-                child: Text(FormStrings.showDepositDescription),
-              ),
-            ],
-          ),
+          if (FeatureService.isFeatureEnabled(FeatureConstants.deposit)) ...[
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'deposit') {
+                  ticketField.definition = ticketField.definition.copyWith(data: {
+                    ...?ticketField.definition.data,
+                    TicketHolder.metaShowDepositDescription: !showDeposit
+                  });
+                  refresh();
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                CheckedPopupMenuItem<String>(
+                  value: 'deposit',
+                  checked: showDeposit,
+                  child: Text(FormStrings.showDepositDescription),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

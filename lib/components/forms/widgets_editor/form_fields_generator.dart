@@ -1,4 +1,6 @@
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/features/feature_constants.dart';
+import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
@@ -472,7 +474,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                     );
 
                     // Ticket Specific Options
-                    if (isTicket) {
+                    if (isTicket &&
+                        FeatureService.isFeatureEnabled(FeatureConstants.deposit)) {
                       bool showDeposit = field.definition
                               .data?[TicketHolder.metaShowDepositDescription] ??
                           true;
