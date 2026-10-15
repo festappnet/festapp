@@ -7,6 +7,13 @@ export class RouterService {
 
     static FORM_PATH_PREFIX = '/form/';
 
+    static hasPersonalOrderLink() {
+        const params = new URLSearchParams(window.location.search);
+        return window.location.pathname.startsWith(RouterService.FORM_PATH_PREFIX) &&
+            (params.has('order_id') || params.has('token') || params.get('waitlist') === '1' ||
+             window.location.hash.startsWith('#waitlist?') || window.location.hash.startsWith('#order?'));
+    }
+
     static getFormLink(path) {
         if (!path.startsWith(RouterService.FORM_PATH_PREFIX)) return null;
         const segment = path.substring(RouterService.FORM_PATH_PREFIX.length).split('/')[0];
@@ -121,8 +128,8 @@ export class RouterService {
     
     static pushOverlayState(hash) {
         // Personal capabilities must survive reload while an overlay is open.
-        // The browser owns the fragment; keep only the overlay name in state.
-        if ((window.location.hash.startsWith('#waitlist?') || window.location.hash.startsWith('#order?'))) {
+        // Keep only the overlay name in state, never copy capability data.
+        if (RouterService.hasPersonalOrderLink()) {
             window.history.pushState({ overlay: hash }, '', window.location.href);
         } else {
             window.history.pushState({}, '', `${window.location.pathname}#${hash}`);
@@ -340,7 +347,7 @@ export class RouterService {
              const hasPreview = window.location.search && window.location.search.includes('preview=true');
              const hasSearch = window.location.search && (window.location.search.includes('?q=') || window.location.search.includes('&q='));
 
-             if (!hasPreview && !hasSearch && !(window.location.hash.startsWith('#waitlist?') || window.location.hash.startsWith('#order?')) && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
+             if (!hasPreview && !hasSearch && !RouterService.hasPersonalOrderLink() && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
                   window.history.replaceState(null, '', path);
                   RouterService._lastPath = path; // Sync tracker
              }

@@ -1,3 +1,7 @@
+import '../forms/waitlist_commands.dart';
+import '../forms/order_overview_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import 'models/ticket_model.dart';
 import '../forms/waitlist_strings.dart';
@@ -111,6 +115,7 @@ class EshopColumns {
   static const String ORDER_CREATED_AT = "orderCreatedAt";
   static const String ORDER_DATA_NOTE = "orderDataNote";
   static const String ORDER_NOTE_HIDDEN = "orderDataNoteHidden";
+  static const String ORDER_OVERVIEW = "orderOverview";
   static const String ORDER_HISTORY = "orderHistory";
   static const String ORDER_TRANSACTIONS = "orderTransactions";
 
@@ -767,6 +772,28 @@ class EshopColumns {
                 !OrderGridFilters.orderIsNonCancelled(row),
             type: TrinaColumnType.text(),
             width: 200,
+          ),
+        ],
+        ORDER_OVERVIEW: [
+          TrinaColumn(
+            title: OrderOverviewStrings.text('gridOverview'),
+            field: ORDER_OVERVIEW,
+            type: TrinaColumnType.text(),
+            width: 90,
+            readOnly: true,
+            enableEditingMode: false,
+            enableSorting: false,
+            renderer: (rendererContext) => IconButton(
+              tooltip: OrderOverviewStrings.text('title'),
+              icon: const Icon(Icons.open_in_new),
+              onPressed: () => ExceptionHandler.guard(context,
+                defaultErrorMessage: OrderOverviewStrings.text('failed'),
+                futureFunction: () async {
+                  final id = rendererContext.row.cells[ORDER_ID]!.value as int;
+                  final url = await WaitlistCommands().adminOverviewUrl(id);
+                  await LaunchUrlService.openExternalUrl(url);
+                }),
+            ),
           ),
         ],
         ORDER_HISTORY: [
