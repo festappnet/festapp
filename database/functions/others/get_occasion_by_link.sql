@@ -1,5 +1,5 @@
 -- Create a function to get occasion by link and check for active orders
-CREATE OR REPLACE FUNCTION get_occasion_by_link(link_param text)
+CREATE OR REPLACE FUNCTION public.get_occasion_by_link(link_param text)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -10,10 +10,14 @@ DECLARE
     has_orders boolean;
     result jsonb;
 BEGIN
-    -- 1. Fetch the occasion record
-    SELECT * INTO occ_record
-    FROM public.occasions
-    WHERE link = link_param;
+    -- Legacy links may repeat across tenants after the canonical merge.
+    -- This RPC supplies editor data, so resolve only inside the caller's tenant.
+    SELECT o.* INTO occ_record
+    FROM public.occasions o
+    WHERE o.link = link_param
+      AND o.organization = (
+          SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid()
+      );
 
     -- Return null if not found
     IF occ_record IS NULL THEN
@@ -22,6 +26,12 @@ BEGIN
 
     IF public.is_demo_occasion(occ_record.id) AND NOT public.can_read_demo_occasion(occ_record.id) THEN
         RAISE insufficient_privilege USING MESSAGE='Demo access denied';
+    END IF;
+
+    IF NOT (public.get_is_editor_view_on_occasion(occ_record.id)
+        OR public.get_is_manager_on_occasion(occ_record.id)
+        OR public.get_is_admin_on_occasion(occ_record.id)) THEN
+        RAISE insufficient_privilege USING MESSAGE='occasion editor view required';
     END IF;
 
     -- 2. Check for active orders
