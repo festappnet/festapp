@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,4 +60,51 @@ void main() {
     expect(find.text(UnitStrings.clearAppLanding), findsNothing);
     expect(find.text(UnitStrings.setAppLanding), findsNothing);
   });
+  for (final brightness in Brightness.values) {
+    testWidgets('full occasion title on hover in $brightness', (tester) async {
+      const title =
+          'Helpni víkendovka v komunitě s přípravou programu a společným setkáním všech dobrovolníků';
+      var opened = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: brightness),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 320,
+                height: 130,
+                child: OccasionEditCard(
+                  occasion: OccasionModel(
+                    title: title,
+                    isOpen: true,
+                    isHidden: false,
+                    isPromoted: false,
+                  ),
+                  onTap: () => opened = true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(find.text(title)));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(title), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text(title), findsNWidgets(2));
+      final bubble = tester.getRect(find.text(title).last);
+      expect(bubble.width, lessThanOrEqualTo(360));
+      expect(bubble.height, greaterThan(35));
+      await tester.tap(find.text(title).first);
+      expect(opened, isTrue);
+      await mouse.moveTo(Offset.zero);
+      await tester.pumpAndSettle();
+      expect(find.text(title), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

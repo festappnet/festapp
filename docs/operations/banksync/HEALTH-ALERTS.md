@@ -31,9 +31,17 @@ database and selected organization as psql variables. Production activation for 
 release is limited to organization 3 (festapptickets).
 
 For enabled connections, a bank error, missing token/email configuration, disabled
-remote ingress/polling, or no successful API pull for 30 minutes creates a health
-incident. After at least 10 minutes of observed failure, one warning per account
-administrator is enqueued through the existing global email gateway. Incident
+remote ingress/polling, or a fresh remote health observation confirming no
+successful API pull for 30 minutes creates a health incident. The last-pull time
+stored in Festapp is a snapshot, updated by explicit synchronization/status reads
+or the configured health monitor. It is not updated by transaction webhooks.
+The `stale` diagnosis requires a health observation less than 10 minutes old;
+an absent or expired observation means the current polling state is unknown,
+so an old local timestamp alone must not claim that synchronization failed.
+This guard applies to the `stale` diagnosis; explicit configuration, suspension
+and recorded bank errors retain their own checks. A fresh successful bank pull
+clears staleness even if no new transactions were found. After at least 10 minutes
+of observed failure, one warning per account administrator is enqueued through the existing global email gateway. Incident
 identity, queue deduplication and the notification timestamp suppress repeats.
 A healthy observation starts a new notification window for any later outage.
 Intentionally paused connections do not generate warning mail. Queued warnings

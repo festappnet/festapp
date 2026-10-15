@@ -23,7 +23,11 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
     WHEN c.mode='api' AND h.token_present IS FALSE THEN 'token_missing'
     WHEN h.ingest_enabled IS FALSE OR (c.mode='api' AND h.polling_enabled IS FALSE) THEN 'bank_error'
     WHEN c.last_error IS NOT NULL OR c.state='degraded' THEN 'bank_error'
-    WHEN c.mode='api' AND COALESCE(c.bank_pull_at,c.created_at)<now()-interval '30 minutes' THEN 'stale'
+    -- bank_pull_at is a local copy of BankSync's successful pull timestamp.
+    -- Only a fresh remote health observation can prove that polling stalled;
+    -- an unmonitored or expired snapshot is not evidence of a bank failure.
+    WHEN c.mode='api' AND h.checked_at>now()-interval '10 minutes'
+      AND COALESCE(c.bank_pull_at,c.created_at)<now()-interval '30 minutes' THEN 'stale'
     ELSE NULL END
   FROM eshop.bank_sync_connections c LEFT JOIN eshop.bank_sync_health h ON h.connection_id=c.id
   WHERE c.id=p_connection_id;
@@ -44,7 +48,10 @@ BEGIN
     'email',public.get_user_delivery_email(ui.id)) ORDER BY ui.name,ui.surname,ui.id),'[]'::jsonb)
     INTO v_contacts FROM eshop.bank_account_users bau JOIN public.user_info ui ON ui.id=bau."user"
     WHERE bau.bank_account=p_bank_account_id AND bau.is_admin;
-  RETURN jsonb_build_object('code',v_code,'bank_account_title',v_title,'contacts',v_contacts);
+  RETURN jsonb_build_object('code',v_code,'bank_account_title',v_title,'contacts',v_contacts,
+    'bank_account_id',p_bank_account_id,'is_admin',EXISTS (
+      SELECT 1 FROM eshop.bank_account_users bau WHERE bau.bank_account=p_bank_account_id
+        AND bau."user"=auth.uid() AND bau.is_admin));
 END;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_warning(bigint) FROM PUBLIC,anon,authenticated,service_role;

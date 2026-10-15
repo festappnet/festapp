@@ -18,6 +18,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM assert_true(EXISTS(SELECT 1 FROM public.get_bank_sync_health_targets(v_org) WHERE connection_id=v_conn),'scoped account monitored');
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.get_bank_sync_health_targets(1) WHERE connection_id=v_conn),'other tenant not monitored');
+ -- An old local snapshot without a health observation does not prove that
+ -- the independently polling BankSync service has stopped.
+ UPDATE eshop.bank_sync_connections SET bank_pull_at=now()-interval '45 minutes' WHERE id=v_conn;
+ PERFORM assert_true(public.bank_sync_warning(v_bank) IS NULL,'unmonitored local snapshot is not proof of stalled polling');
  PERFORM public.record_bank_sync_health(v_org,v_conn,now(),NULL,true,true,true);
  PERFORM assert_true(public.bank_sync_warning(v_bank) IS NULL,'healthy bank has no warning');
  PERFORM assert_true(public.bank_sync_warning(v_cash) IS NULL,'cash has no bank warning');
@@ -49,6 +53,13 @@ BEGIN
  UPDATE eshop.bank_sync_connections SET state='connected',last_error=NULL,bank_pull_at=now()-interval '31 minutes' WHERE id=v_conn;
  PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,NULL,true,true,true);
  PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','stale','silent stalled polling is detected');
+ UPDATE eshop.bank_sync_connections SET receiver_commit_at=now() WHERE id=v_conn;
+ PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','stale','a payment receipt does not replace a bank health check');
+ UPDATE eshop.bank_sync_health SET checked_at=now()-interval '11 minutes' WHERE connection_id=v_conn;
+ PERFORM assert_true(public.bank_sync_warning(v_bank) IS NULL,'expired health observation does not prove stalled polling');
+ PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,NULL,true,true,true);
+ PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','stale','fresh remote observation can confirm stalled polling again');
+
  PERFORM public.record_bank_sync_health(v_org,v_conn,now(),NULL,true,true,false);
  PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','token_missing','missing token is explained');
  UPDATE eshop.bank_sync_connections SET mode='email',pairing_code=NULL WHERE id=v_conn;
