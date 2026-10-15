@@ -398,8 +398,7 @@ class _FormPageState extends State<FormPage> {
         }
         final result = await _waitlist.command('register', payload);
         if (result['orderOverviewUrl'] is String) {
-          final scope = CustomerOrderScope.fromFragment(
-              Uri.parse(result['orderOverviewUrl']).fragment);
+          final scope = CustomerOrderScope.fromUri(Uri.parse(result['orderOverviewUrl']));
           if (mounted)
             setState(() {
               _overviewScope = scope;

@@ -132,7 +132,7 @@ Deno.test("confirmation renders committed identity, safe text and inherited wrap
   assert.match(result.prepared.html, /data-wrapper="inherited"/);
   assert.match(result.prepared.html, /&lt;script&gt;/);
   assert.doesNotMatch(result.prepared.html, /<script>/);
-  assert.match(result.prepared.html, /#waitlist\?order_id=101&amp;token=/);
+  assert.match(result.prepared.html, /\?order_id=101&amp;token=/);
   assert.match(result.prepared.html, /referrerpolicy="no-referrer"/);
   assert.deepEqual(result.postAction, { tracking_policy: "disabled" });
   assert.deepEqual(calls, ["context", "resolver"]);
@@ -236,9 +236,9 @@ Deno.test("links permit trusted localhost previews and reject credentialed or un
     webLink: "http://localhost:5173",
   }, selected);
   const url = new URL(local);
-  assert.equal(url.search, "");
+  assert.equal(url.hash, "");
   assert.equal(url.pathname, "/form/synthetic-form");
-  assert.match(url.hash, /^#waitlist\?order_id=101&token=/);
+  assert.match(url.search, /^\?order_id=101&token=/);
   for (
     const webLink of [
       "http://public.example.invalid",
@@ -404,7 +404,7 @@ Deno.test("new inherited email receives overview link while immutable v1 stays u
     f.row.data.content_hash = await sha256Text(JSON.stringify(selected));
     f.context.overviewSource = await prepareOrderOverviewSource(source);
     const rendered = await renderWaitlistEmail(f.row, { ...f.dependencies, open: async () => selected });
-    assert.match(rendered.prepared.html, /#order\?order_id=101&amp;token=[a-f0-9]{64}/);
+    assert.match(rendered.prepared.html, /\?order_id=101&amp;token=[a-f0-9]{64}/);
     assert.equal(rendered.postAction.tracking_policy, "disabled");
   } finally {
     if (previous === undefined) Deno.env.delete("EMAIL_PAYLOAD_KEY"); else Deno.env.set("EMAIL_PAYLOAD_KEY", previous);

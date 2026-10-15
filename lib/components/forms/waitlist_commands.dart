@@ -39,6 +39,16 @@ class WaitlistCommands {
         'p_order_id': scope.orderId,
       })));
 
+  Future<String> adminOverviewUrl(int orderId) async {
+    final response = await client.functions.invoke('customer-order-access', body: {
+      'admin': true, 'orderId': orderId, 'commandId': const Uuid().v4(),
+    });
+    if (response.data?['code'] != 200 || response.data?['url'] is! String) {
+      throw StateError('INVALID_CAPABILITY');
+    }
+    return response.data['url'] as String;
+  }
+
   Future<CustomerOrderScope> overviewAccess(
       {String? token, String? offerId, int? orderId}) async {
     final response =
@@ -49,8 +59,7 @@ class WaitlistCommands {
       'commandId': const Uuid().v4(),
     });
     if (response.data?['code'] != 200) throw StateError('INVALID_CAPABILITY');
-    final scope = CustomerOrderScope.fromFragment(
-        Uri.parse(response.data['url']).fragment);
+    final scope = CustomerOrderScope.fromUri(Uri.parse(response.data['url']));
     if (scope == null) throw StateError('INVALID_CAPABILITY');
     return scope;
   }
