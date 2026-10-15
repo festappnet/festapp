@@ -207,7 +207,7 @@ class EmailTemplateModel {
             code: 'order_overview_url',
             description: OrderOverviewStrings.text('title'),
             defaultValue:
-                'https://example.invalid/form/example#order?order_id=1&token=preview'),
+                'https://example.invalid/order?order_id=1&token=preview'),
         EmailTemplateSub(
             code: 'order_overview_button',
             description: OrderOverviewStrings.text('title'),
@@ -237,7 +237,7 @@ class EmailTemplateModel {
             code: 'manage_waitlist_url',
             description: EmailTemplatesStrings.subManageWaitlistUrl,
             defaultValue:
-                'https://example.invalid/form/example#waitlist?order_id=1&token=preview'),
+                'https://example.invalid/order?waitlist=1&order_id=1&token=preview'),
         EmailTemplateSub(
             code: 'manage_waitlist_button',
             description: EmailTemplatesStrings.subManageWaitlistButton,
@@ -265,7 +265,7 @@ class EmailTemplateModel {
           code: 'offer_url',
           description: EmailTemplatesStrings.subOfferUrl,
           defaultValue:
-              'https://example.invalid/form/example#waitlist?offer_id=preview&token=preview'),
+              'https://example.invalid/order?waitlist=1&offer_id=preview&token=preview'),
       EmailTemplateSub(
           code: 'offer_button',
           description: EmailTemplatesStrings.subOfferButton,
