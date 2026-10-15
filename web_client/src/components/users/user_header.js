@@ -17,8 +17,8 @@ export class UserHeader extends HTMLElement {
     }
 
     connectedCallback() {
-        // Initial render (empty or skeleton?)
-        if (document.body.dataset.page !== 'organizers') this.innerHTML = '';
+        // Moving the same header between the app and an overview reconnects it.
+        // Keep its rendered navigation; rights updates own subsequent rendering.
         
         // Listen to context changes
         RightsService.addListener(this._handleContextChange);
