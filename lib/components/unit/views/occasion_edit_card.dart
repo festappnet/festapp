@@ -142,13 +142,50 @@ class OccasionEditCard extends StatelessWidget {
                       ],
                     ]),
                     const SizedBox(height: 4),
-                    Text(
-                      occasion.title ?? '',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    Tooltip(
+                      message: occasion.title ?? '',
+                      waitDuration: const Duration(milliseconds: 350),
+                      exitDuration: const Duration(milliseconds: 100),
+                      showDuration: const Duration(seconds: 8),
+                      preferBelow: false,
+                      constraints: BoxConstraints(
+                        maxWidth: (MediaQuery.sizeOf(context).width - 32).clamp(
+                          0.0,
+                          360.0,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x24000000),
+                            blurRadius: 16,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      textStyle: theme.textTheme.bodyMedium?.copyWith(
+                        color: onSurfaceColor,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
+                      child: Text(
+                        occasion.title ?? '',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (occasion.stats != null) ...[
                       if (FeatureService.isFeatureEnabled(FeatureConstants.form,
