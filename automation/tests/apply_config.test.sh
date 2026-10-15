@@ -491,6 +491,19 @@ assert_not_file "$TMP_ROOT/web_client/public/backend-activation.json"
 assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String backendActivationTenantId = '';"
 assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String backendActivationCanonicalProfileSha256 = '';"
 
+# A ticket-only tenant must never launch an unavailable forced program URL.
+node - "$TMP_ROOT/automation/project.conf" <<'NODE'
+const fs = require('fs');
+const config = process.argv[2];
+fs.writeFileSync(config, fs.readFileSync(config, 'utf8').replace(/^IS_APP_SUPPORTED=.*$/m, 'IS_APP_SUPPORTED=false'));
+NODE
+./automation/apply_config.sh > "$TMP_ROOT/apply-ticket-only.log" 2>&1
+assert_contains "$TMP_ROOT/lib/app_config.dart" 'static const bool isAppSupported = false;'
+assert_contains "$TMP_ROOT/web_client/src/app_config.js" 'static isAppSupported = false;'
+for manifest in "$TMP_ROOT/web/site.webmanifest" "$TMP_ROOT/web_client/public/site.webmanifest"; do
+    assert_contains "$manifest" '"start_url": "/"'
+done
+
 for invalid_url in \
     'https://user:pass@api.example.com' \
     'https://api.example.com/rest/v1' \

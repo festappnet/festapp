@@ -261,6 +261,17 @@ for (const [key, dartName] of [
   );
 }
 const expectedIsAllUnit = configValue('WEB_IS_ALL_UNIT');
+const expectedIsAppSupported = configValue('IS_APP_SUPPORTED');
+assert.match(
+  flutterConfig,
+  new RegExp(`static const bool isAppSupported = ${expectedIsAppSupported};`),
+  'generated Flutter isAppSupported differs from project.conf',
+);
+assert.match(
+  worker,
+  new RegExp(`const IS_APP_SUPPORTED = ${expectedIsAppSupported};`),
+  'service worker public occasion policy differs from project.conf',
+);
 assert.match(
   flutterConfig,
   new RegExp(`static const bool isAllUnit = ${expectedIsAllUnit};`),
@@ -289,6 +300,11 @@ assert.equal(
 );
 if (target === 'cloudflare') {
   const edgeWorker = await readFile(path.join(buildDir, '_worker.js'), 'utf8');
+  assert.match(
+    edgeWorker,
+    new RegExp(`const IS_APP_SUPPORTED = ${expectedIsAppSupported};`),
+    'edge worker public occasion policy differs from project.conf',
+  );
   assert.equal(
     parseForcedPath(edgeWorker, 'edge worker'),
     expectedForcedPath,

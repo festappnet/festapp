@@ -1,5 +1,6 @@
 import { AppConfig } from '../app_config.js';
 import { prepareFlutterRuntime } from './flutter_runtime_handoff.js';
+import { unsupportedOccasionAppRedirect } from './public_occasion_routes.js';
 
 
 export class RouterService {
@@ -22,12 +23,17 @@ export class RouterService {
     }
 
     static async navigateToOccasionApp(link) {
+        if (!AppConfig.isAppSupported) {
+            RouterService.openExternalUrl('/', { inCurrentWindow: true });
+            return;
+        }
         await RouterService.navigateToFlutterRoute(
             RouterService.getOccasionAppPath(link),
         );
     }
 
     static getOccasionAppPath(link) {
+        if (!AppConfig.isAppSupported) return '/';
         const cleanLink = link.split('?')[0].replace(/^\/+|\/+$/g, '');
         return `/${cleanLink}/event`;
     }
@@ -86,6 +92,16 @@ export class RouterService {
     }
 
     static async navigateToFlutterRoute(url) {
+        if (!AppConfig.isAppSupported) {
+            const target = new URL(url, window.location.origin);
+            const redirect = target.origin === window.location.origin
+                ? unsupportedOccasionAppRedirect(target.pathname) : null;
+            if (redirect === '/') {
+                RouterService.openExternalUrl(redirect, { inCurrentWindow: true });
+                return;
+            }
+            if (redirect) url = redirect;
+        }
         await prepareFlutterRuntime();
         RouterService.openExternalUrl(url, { inCurrentWindow: true });
     }
@@ -143,6 +159,16 @@ export class RouterService {
 
         // 0. Normalize URL
         path = RouterService.normalizeUrl(fullUrl);
+
+        if (!AppConfig.isAppSupported) {
+            const redirect = unsupportedOccasionAppRedirect(path);
+            if (redirect === '/') {
+                window.history.replaceState(null, '', '/');
+                RouterService._lastPath = '/';
+                return true;
+            }
+            if (redirect) path = redirect;
+        }
 
         // 1. Identify Route Type
         // Web Client Routes: / (Home), /index.html, /form/...

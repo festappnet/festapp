@@ -280,16 +280,21 @@ class RouterService {
   /// The routed entry page loads and checks the occasion after navigation.
   static Future<void> navigateToOccasionByLink(
       BuildContext context, String link) async {
-    await RouterService.navigate(context, "/$link/${AdminPage.ROUTE}");
+    final section =
+        AppConfig.isAppSupported ? AdminPage.ROUTE : ReservationsPage.ROUTE;
+    await RouterService.navigate(context, "/$link/$section");
   }
 
   /// The routed reservation boundary owns its context load and access check.
   static Future<void> navigateToOccasionReservationsByLink(
       BuildContext context, String link,
       {Map<String, String>? queryParameters}) async {
-    await RouterService.navigate(context, Uri(
-        path: "/$link/${ReservationsPage.ROUTE}",
-        queryParameters: queryParameters).toString());
+    await RouterService.navigate(
+        context,
+        Uri(
+                path: "/$link/${ReservationsPage.ROUTE}",
+                queryParameters: queryParameters)
+            .toString());
   }
 
   /// Preserve the nearest administration ancestor when changing occasions.
@@ -452,7 +457,7 @@ class RouterService {
               link: parts.first, force: true, refreshOffline: false);
           return RightsService.currentUser()?.id == userId &&
               RightsService.currentLink == parts.first &&
-              (parts.last == 'reservations'
+              (parts.last == 'reservations' || !AppConfig.isAppSupported
                   ? RightsService.canSeeReservations()
                   : RightsService.canSeeAdministration());
         } catch (_) {

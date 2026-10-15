@@ -49,6 +49,8 @@ const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
 const SITE_NAME = "Festapp"; // replaced from project.conf after generation
+const IS_APP_SUPPORTED = true; // replaced from project.conf after generation
+// PUBLIC_OCCASION_ROUTE_POLICY
 
 // Web client SPA routes (form list handled by /form/<slug> below).
 const WEB_CLIENT_EXACT = new Set(["/"]);
@@ -104,7 +106,7 @@ function occasionHref(occasion) {
     return slug ? `/form/${encodeURIComponent(slug)}` : null;
   }
   const slug = (occasion.link || "").split("?")[0].replace(/^\/+|\/+$/g, "");
-  return slug ? `/${encodeURIComponent(slug)}/event` : null;
+  return IS_APP_SUPPORTED && slug ? `/${encodeURIComponent(slug)}/event` : null;
 }
 
 async function publicOccasions(env) {
@@ -282,6 +284,11 @@ async function routeRequest(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    const appRedirect = !IS_APP_SUPPORTED ? unsupportedOccasionAppRedirect(path) : null;
+    if (appRedirect) {
+      return Response.redirect(new URL(appRedirect, url).toString(), 302);
+    }
+
     if (path === "/backend-activation.json" && request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -411,10 +418,16 @@ import sys
 worker_path, config_path = sys.argv[1:]
 source = pathlib.Path(worker_path).read_text(encoding="utf-8")
 config = pathlib.Path(config_path).read_text(encoding="utf-8")
+app_supported = re.search(r'^IS_APP_SUPPORTED=(true|false)\s*$', config, re.MULTILINE)
+if not app_supported:
+    raise SystemExit("IS_APP_SUPPORTED must be true or false")
+source = source.replace('const IS_APP_SUPPORTED = true;', 'const IS_APP_SUPPORTED = ' + app_supported.group(1) + ';', 1)
+policy = pathlib.Path('web_client/src/services/public_occasion_routes.js').read_text(encoding="utf-8")
+source = source.replace('// PUBLIC_OCCASION_ROUTE_POLICY', policy.replace('export function ', 'function '), 1)
 match = re.search(r"^FORCE_OCCASION_LINK=(.*)$", config, re.MULTILINE)
 occasion_link = match.group(1).strip().strip('"').strip("'") if match else ""
 occasion_link = occasion_link.strip().strip("/")
-replacement = json.dumps(f"/{occasion_link}/event" if occasion_link else None)
+replacement = json.dumps(f"/{occasion_link}/event" if occasion_link and app_supported.group(1) == 'true' else None)
 name_match = re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
 site_name = name_match.group(1).strip().strip('"').strip("'") if name_match else 'Festapp'
 source = source.replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = ' + json.dumps(site_name, ensure_ascii=False) + ';', 1)

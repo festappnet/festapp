@@ -472,7 +472,7 @@ echo "✔ Generated account deletion page"
 # Generate the installable PWA identity from the same brand source.
 for PWA_MANIFEST in "$PROJECT_ROOT/web/site.webmanifest" "$PROJECT_ROOT/web_client/public/site.webmanifest"; do
     if [ -f "$PWA_MANIFEST" ] && [ -n "$APP_NAME" ] && [ -n "$APP_DESCRIPTION" ]; then
-        node -e 'const fs=require("fs");const p=process.argv[1];const m=JSON.parse(fs.readFileSync(p,"utf8"));const slug=process.argv[5].replace(/^\/+|\/+$/g,"");const start=slug?"/"+slug+"/event":"/";m.name=process.argv[2];m.short_name=process.argv[3];m.description=process.argv[4];m.id="/";m.start_url=start;m.scope="/";fs.writeFileSync(p,JSON.stringify(m,null,2)+"\n")' "$PWA_MANIFEST" "$APP_NAME" "$APP_TITLE_SHORT" "$APP_DESCRIPTION" "$FORCE_OCCASION_LINK"
+        node -e 'const fs=require("fs");const p=process.argv[1];const m=JSON.parse(fs.readFileSync(p,"utf8"));const slug=process.argv[5].replace(/^\/+|\/+$/g,"");const start=slug&&process.argv[6]==="true"?"/"+slug+"/event":"/";m.name=process.argv[2];m.short_name=process.argv[3];m.description=process.argv[4];m.id="/";m.start_url=start;m.scope="/";fs.writeFileSync(p,JSON.stringify(m,null,2)+"\n")' "$PWA_MANIFEST" "$APP_NAME" "$APP_TITLE_SHORT" "$APP_DESCRIPTION" "$FORCE_OCCASION_LINK" "$IS_APP_SUPPORTED"
         echo "✔ Updated PWA manifest: $PWA_MANIFEST"
     fi
 done

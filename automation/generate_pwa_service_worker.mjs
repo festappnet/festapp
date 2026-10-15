@@ -3,14 +3,20 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { collectPwaShellManifest } from './lib/pwa_shell_manifest.mjs';
+import { isPublicOccasionAppPath, unsupportedOccasionAppRedirect } from '../web_client/src/services/public_occasion_routes.js';
 
 const buildDir = path.resolve(process.argv[2] || 'build/web');
 const version = process.argv[3];
 const forcedOccasionLink = (process.argv[4] || '').trim().replace(/^\/+|\/+$/g, '');
+const appSupported = process.argv[5] ?? 'true';
+if (!['true', 'false'].includes(appSupported)) {
+  throw new Error('app-supported must be true or false');
+}
+const isAppSupported = appSupported === 'true';
 
 if (!version) {
   throw new Error(
-    'Usage: generate_pwa_service_worker.mjs <build-dir> <version> [forced-occasion-link]',
+    'Usage: generate_pwa_service_worker.mjs <build-dir> <version> [forced-occasion-link] [app-supported]',
   );
 }
 if (forcedOccasionLink && !/^[a-zA-Z0-9_-]+$/.test(forcedOccasionLink)) {
@@ -37,7 +43,10 @@ const CORE_URLS = ${JSON.stringify(coreAssets, null, 2)};
 const FLUTTER_ENTRY = ${JSON.stringify(flutterEntry)};
 const FLUTTER_MAIN = ${JSON.stringify(manifest.flutterMain)};
 const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
-const FORCED_OCCASION_PATH = ${JSON.stringify(forcedOccasionLink ? `/${forcedOccasionLink}/event` : null)};
+const IS_APP_SUPPORTED = ${JSON.stringify(isAppSupported)};
+${isPublicOccasionAppPath.toString()}
+${unsupportedOccasionAppRedirect.toString()}
+const FORCED_OCCASION_PATH = ${JSON.stringify(isAppSupported && forcedOccasionLink ? `/${forcedOccasionLink}/event` : null)};
 const STANDALONE_DOCUMENT_PATHS = new Set(${JSON.stringify(standaloneDocuments, null, 2)});
 const PRECACHE_PATHS = new Set(PRECACHE_URLS.map((url) =>
   new URL(url, self.location.origin).pathname));
@@ -526,6 +535,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
+
+  if (request.mode === 'navigate' && !IS_APP_SUPPORTED) {
+    const redirect = unsupportedOccasionAppRedirect(url.pathname);
+    if (redirect) {
+      event.respondWith(Response.redirect(new URL(redirect, url).toString(), 302));
+      return;
+    }
+  }
 
   // Google handoffs are online proofs. Never cache them or substitute a
   // different platform's shell, even when an older shell is available offline.
