@@ -37,9 +37,9 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
   'variable_symbol',variable_symbol,'creditor_reference',creditor_reference) END,
  'referenceKind',CASE WHEN currency_code='EUR' THEN 'RF' ELSE 'VS' END,
  'transactions',(SELECT coalesce(jsonb_agg(jsonb_build_object(
-  'date',t.date::date,'amount',t.amount,'currency',trim(t.currency),
+  'date',t.date::date,'recordedAt',t.created_at,'amount',t.amount,'currency',trim(t.currency),
   'kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
-  ORDER BY t.date NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
+  ORDER BY t.created_at NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
  'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
  FROM due;
 $$;
@@ -114,9 +114,9 @@ BEGIN
   FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
   WHERE w.order_id=root.id AND w.form_id=f.id AND s.form_id=f.id AND s.outcome IN ('accepted','declined','cancelled','expired')
   UNION ALL
-  SELECT t.date::date::timestamptz,'4'||t.id::text,jsonb_build_object('kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END,
-   'at',t.date::date,'dateOnly',true,'amount',t.amount,'currency',trim(t.currency),'symbol',o.order_symbol)
-  FROM eshop.orders o JOIN eshop.transactions t ON t.payment_info=o.payment_info WHERE o.id=ANY(ids) AND t.date IS NOT NULL
+  SELECT t.created_at,'4'||t.id::text,jsonb_build_object('kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END,
+   'at',t.created_at,'timeKind','recorded','amount',t.amount,'currency',trim(t.currency),'symbol',o.order_symbol)
+  FROM eshop.orders o JOIN eshop.transactions t ON t.payment_info=o.payment_info WHERE o.id=ANY(ids) AND t.created_at IS NOT NULL
   UNION ALL
   SELECT h.created_at,'3'||h.id::text,jsonb_build_object(
    'kind',CASE WHEN h.state IS DISTINCT FROM h.previous_state THEN 'order_'||h.state ELSE 'order_changed' END,
