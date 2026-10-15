@@ -155,12 +155,17 @@ printf "const supabaseUrl = '%s'; const anonKey = '%s'; const authKey = 'sb-%s-a
   "$CONFIG_SUPABASE_URL" "$CONFIG_ANON_KEY" "$CONFIG_PROJECT_REF" \
   "$CONFIG_CANONICAL_URL" "$CONFIG_CANONICAL_KEY" "$CONFIG_CANONICAL_PROFILE_SHA" \
   > "$BUILD_DIR/web-assets/app.js"
+printf 'deferredPartUris:["main.dart.js_1.part.js"]\n' >> "$BUILD_DIR/main.dart.js"
+printf '// $__dart_deferred_initializers__ font catalog chunk\n' > "$BUILD_DIR/main.dart.js_1.part.js"
 cp "$PROJECT_ROOT/automation/emit_version_manifest.sh" "$TMP_ROOT/automation/emit_version_manifest.sh"
 chmod +x "$TMP_ROOT/automation/emit_version_manifest.sh"
 
 "$TMP_ROOT/automation/emit_version_manifest.sh" "$BUILD_DIR" "1.2.3+456" > "$TMP_ROOT/emit.log" 2>&1 || {
     echo "  FAIL: emit_version_manifest.sh exited non-zero. Log:"; cat "$TMP_ROOT/emit.log"; fail=1;
 }
+assert_file    "$BUILD_DIR/main.dart.1.2.3-456.js_1.part.js"
+assert_contains "$BUILD_DIR/main.dart.1.2.3-456.js" 'main.dart.1.2.3-456.js_1.part.js'
+assert_not_contains "$BUILD_DIR/main.dart.1.2.3-456.js" '"main.dart.js_1.part.js"'
 assert_file    "$BUILD_DIR/festapp-version.json"
 assert_file    "$BUILD_DIR/main.dart.1.2.3-456.js"   # '+' becomes '-' in the filename
 assert_contains "$BUILD_DIR/festapp-version.json" '"version":"1.2.3+456"'
