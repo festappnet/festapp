@@ -149,3 +149,16 @@ ticket backfill. Waiting tickets have no valid admission symbol, products or fin
 Offers bind directly to ticket IDs, and acceptance reuses those IDs through the
 existing order finalizer. Offer status is derived from offer slots, not mirrored
 into an independent person state.
+
+## Public links
+
+`database/functions/public_links/` owns globally unique form/occasion slug
+reservations (separate namespaces), cryptographic allocation and copy titles.
+`forms.link`/`occasions.link` remain canonical. Historical reservations point
+directly to IDs and survive deletion as tombstones. All writers use the same
+transactional allocator, never an application trigger; direct table writes are
+revoked. Existing readers resolve IDs before applying their existing access
+checks. Clients replace only resolved slugs and copy only saved public URLs.
+
+Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
+New writes cannot claim those slugs; canonical links and titles are never bulk renamed.

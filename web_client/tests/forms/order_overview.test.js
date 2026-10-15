@@ -9,7 +9,7 @@ const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</scrip
     orders: [{ id: 2, symbol: 'CHILD', state: 'paid', total: 1000, currency: 'CZK', items: [],
         payment: { status: 'deposit_paid', received: 300, totalOutstanding: 700, dueNow: 700, returned: 0, overpaid: 0, instructionsAvailable: true, publicAccount: '123/0100', referenceKind: 'VS', reference: '123' },
         tickets: [{ id: 2, label: 'Accepted', displayStatus: 'unused' }] }] });
-function setup(t) { const dom = new JSDOM('<main></main>'); globalThis.document = dom.window.document; t.after(() => dom.window.close()); return document.querySelector('main'); }
+function setup(t) { const dom = new JSDOM('<main></main>', { url: 'https://tickets.invalid/form/example' }); globalThis.window = dom.window; globalThis.document = dom.window.document; t.after(() => dom.window.close()); return document.querySelector('main'); }
 test('view fragment distinct from write scope and validates root', () => {
     assert.equal(parseOrderFragment('#waitlist?token=bad'), null);
     assert.deepEqual(parseOrderFragment(`#order?order_id=12&token=${'a'.repeat(64)}`), { orderId: 12, token: 'a'.repeat(64) });

@@ -14,7 +14,7 @@ BEGIN
     -- This RPC supplies editor data, so resolve only inside the caller's tenant.
     SELECT o.* INTO occ_record
     FROM public.occasions o
-    WHERE o.link = link_param
+    WHERE o.id = public.resolve_occasion_link_internal(link_param)
       AND o.organization = (
           SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid()
       );

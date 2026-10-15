@@ -10,6 +10,7 @@ BEGIN
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Wave products','spot') RETURNING id INTO pt;
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code,is_hidden) VALUES(occ,pt,'First',450,'CZK',false) RETURNING id INTO prod;
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code,is_hidden) VALUES(occ,pt,'Second',100,'CZK',false) RETURNING id INTO prod2;
+  PERFORM pg_temp.adopt_public_link_fixtures();
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  EXECUTE 'SET LOCAL ROLE authenticated';
  w1:=public.create_product_price_wave(link,now()+interval '10 days');

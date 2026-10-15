@@ -38,13 +38,13 @@ BEGIN
         SELECT id
         INTO v_occasion_id
         FROM public.occasions
-        WHERE link = p_occasion_link
+        WHERE id = public.resolve_occasion_link_internal(p_occasion_link)
           AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
     ELSE
         SELECT occasion, id
         INTO v_occasion_id, v_form_id
         FROM public.forms
-        WHERE link = p_form_link
+        WHERE id = public.resolve_form_link_internal(p_form_link)
           AND occasion IN (SELECT o.id FROM public.occasions o WHERE o.organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid()));
     END IF;
 

@@ -6,7 +6,7 @@ BEGIN
   WITH scope AS MATERIALIZED (
     SELECT o.id, o.title FROM public.occasions o
     JOIN public.user_info u ON u.organization = o.organization AND u.id = auth.uid()
-    WHERE o.link = occasion_link AND public.get_is_editor_order_view_on_occasion(o.id)
+    WHERE o.id = public.resolve_occasion_link_internal(occasion_link) AND public.get_is_editor_order_view_on_occasion(o.id)
   ), orders_scope AS MATERIALIZED (
     SELECT o.* FROM eshop.orders o JOIN scope s ON s.id = o.occasion
   ), payments AS MATERIALIZED (

@@ -99,7 +99,31 @@ class _EarlyCompletionCalendarRouter extends FixtureRouter {
   Future<dynamic> commitPending() => super.navigate(pendingRoute!);
 }
 
+class _AliasAccess extends Access {
+  @override
+  Future<bool> load(String link, {required bool reservations}) async {
+    if (identity == link) return allowed;
+    requests.add(link);
+    identity = link == 'old' ? 'current' : link;
+    notifyListeners();
+    return allowed;
+  }
+}
+
 void main() {
+  testWidgets('an authorized occasion alias preserves its admin tab and query',
+      (tester) async {
+    final access = _AliasAccess();
+    final router = FixtureRouter(access);
+    await mount(
+        tester, router, '/old/reservations/orders/history?filter=one#anchor');
+    expect(router.currentUrl,
+        '/current/reservations/orders/history?filter=one#anchor');
+    expect(find.text('HISTORY CONTENT'), findsOneWidget);
+    expect(find.text('Access denied'), findsNothing);
+    expect(access.requests, ['old']);
+  });
+
   testWidgets(
       'loading calendar preserves the requested URL until real days arrive',
       (tester) async {

@@ -1,3 +1,4 @@
+import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/last_administration_context.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
@@ -35,12 +36,12 @@ class RightsAdministrationAccess implements AdministrationAccess {
   @override
   Future<bool> load(String link, {required bool reservations}) async {
     await RightsService.updateAppData(link: link, refreshOffline: false);
-    final allowed = loadedLink == link && canAccess(reservations: reservations);
+    final allowed = loadedLink != null && canAccess(reservations: reservations);
     if (allowed) {
       await LastAdministrationContext.instance.remember(
           AppConfig.organization,
           RightsService.currentUser()?.id,
-          '/$link/${reservations ? 'reservations' : 'admin'}');
+          '/$loadedLink/${reservations ? 'reservations' : 'admin'}');
     }
     return allowed;
   }
@@ -169,6 +170,22 @@ class _OccasionAdministrationBoundaryState
       final allowed =
           await widget.access.load(link, reservations: widget.reservations);
       if (!mounted || generation != _generation) return;
+      final canonical = widget.access.loadedLink;
+      if (allowed && canonical != null && canonical != link) {
+        final current = _root!.urlState.uri.toString();
+        final target =
+            canonicalPublicPath(current, 'occasion', link, canonical);
+        if (target != current) {
+          final matches =
+              _root!.matcher.match(target, includePrefixMatches: false);
+          if (matches != null) {
+            _root!.markUrlStateForReplace();
+            await _root!.navigateAll(matches);
+          }
+        }
+        return;
+      }
+
       setState(() {
         final ready = allowed && widget.access.loadedLink == link;
         _ready = _ready || ready;

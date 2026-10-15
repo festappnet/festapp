@@ -94,16 +94,18 @@ class RightsService {
     if (needsUpdate) {
       LinkModel model =
           LinkModel(occasionLink: link, unitId: unitId, formLink: formLink);
-      if (unitId == null) {
-        var occasionLink = link ?? RouterService.currentOccasionLink;
-        if (occasionLink.isEmpty) {
-          model = LinkModel.extractOccasionLink(Uri.base.toString());
-        }
-      }
-
-      // A tenant landing occasion must not replace an explicit admin context.
       if (unitId == null &&
           (link == null || link.isEmpty) &&
+          (formLink == null || formLink.isEmpty)) {
+        model = LinkModel.extractOccasionLink(
+            RouterService.getCurrentBrowserUri().toString());
+      }
+
+      // Resolve an explicit public/admin path before applying a tenant landing
+      // default, including when an older context was restored from offline data.
+      if (unitId == null &&
+          (model.occasionLink?.isEmpty ?? true) &&
+          (model.formLink?.isEmpty ?? true) &&
           AppConfig.forceOccasionLink != null) {
         model.occasionLink = AppConfig.forceOccasionLink;
       }
@@ -122,6 +124,8 @@ class RightsService {
         throw Exception("Cannot continue. Access denied or not found.");
       }
 
+      RouterService.canonicalizePublicLink(
+          'occasion', model.occasionLink, checkedObject.occasion?.link);
       // This is the key change: update the notifier's value,
       // which will automatically alert any listening widgets.
       occasionLinkModelNotifier.value = checkedObject;

@@ -1,3 +1,4 @@
+import 'package:fstapp/router_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/organization/organization_model.dart';
@@ -9,6 +10,17 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 
 void main() {
+  test('online startup resolution canonicalizes once before the router mounts',
+      () {
+    RouterService.canonicalizePublicLink('occasion', 'old', 'current');
+    expect(
+        RouterService.consumeCanonicalInitialPath(
+            '/old/admin/forms/f/settings?x=%2f#anchor'),
+        '/current/admin/forms/f/settings?x=%2f#anchor');
+    expect(
+        RouterService.consumeCanonicalInitialPath('/old/event'), '/old/event');
+  });
+
   test(
       'cleared landing opens unit cards or organization cards, never a null route',
       () {

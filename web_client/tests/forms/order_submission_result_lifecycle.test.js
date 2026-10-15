@@ -139,7 +139,8 @@ for (const viewFails of [false, true]) {
     assert.equal(registrations, 1);
     assert.equal(reads, 1);
     assert.ok(document.querySelector('.fullscreen-result-overlay .success-color'), 'committed registration stays successful');
-    assert.equal(window.location.hash, `#order?order_id=12&token=${token}`);
+    assert.equal(window.location.search, `?order_id=12&token=${token}`);
+    assert.equal(window.location.hash, '');
     assert.equal(JSON.stringify(window.history.state).includes(token), false);
     assert.ok(viewFails ? page.host.querySelector('[role=alert]') : page.host.textContent.includes('REGISTERED'));
     document.querySelector('.btn-back-to-form').click();
