@@ -1,6 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class OrdersStrings {
+  static String get bankSyncWarningEnable =>
+      'FeatureOrders.bankSyncWarningEnable'.tr();
+  static String get bankSyncWarningManage =>
+      'FeatureOrders.bankSyncWarningManage'.tr();
+  static String get bankSyncWarningOpenSettings =>
+      'FeatureOrders.bankSyncWarningOpenSettings'.tr();
+  static String get bankSyncWarningSettingsUnavailable =>
+      'FeatureOrders.bankSyncWarningSettingsUnavailable'.tr();
   static String get bankSyncPaymentPaused =>
       'FeatureOrders.bankSyncPaymentPaused'.tr();
   static String get bankSyncWarningTitle =>

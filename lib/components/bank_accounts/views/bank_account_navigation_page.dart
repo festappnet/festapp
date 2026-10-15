@@ -1,3 +1,4 @@
+import '../../eshop/orders_strings.dart';
 import 'package:fstapp/app_router.gr.dart';
 
 import 'bank_accounts_load_scope.dart';
@@ -183,4 +184,71 @@ class _BankAccountDetailPageState extends State<BankAccountDetailPage> {
             ),
     );
   }
+}
+
+/// This account-owned entry point does not require organization/unit management.
+@RoutePage()
+class BankAccountConnectionSettingsPage extends StatefulWidget {
+  final String accountId;
+  const BankAccountConnectionSettingsPage(
+      {super.key, @pathParam required this.accountId});
+  @override
+  State<BankAccountConnectionSettingsPage> createState() =>
+      _BankAccountConnectionSettingsPageState();
+}
+
+class _BankAccountConnectionSettingsPageState
+    extends State<BankAccountConnectionSettingsPage> {
+  BankAccountModel? _account;
+  bool _failed = false;
+  int _generation = 0;
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(BankAccountConnectionSettingsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.accountId != widget.accountId) _load();
+  }
+
+  Future<void> _load() async {
+    final generation = ++_generation;
+    setState(() {
+      _account = null;
+      _failed = false;
+    });
+    try {
+      final id = int.tryParse(widget.accountId);
+      if (id == null || id <= 0) throw const FormatException('invalid_account');
+      final accounts = await DbBankAccounts.current.getMyAdminBankAccounts();
+      BankAccountModel? account;
+      for (final candidate in accounts) {
+        // The server RPC returns only accounts administered by this user.
+        if (candidate.id == id) account = candidate.copyWith(isAdmin: true);
+      }
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _account = account;
+        _failed = account == null;
+      });
+    } catch (_) {
+      if (mounted && generation == _generation) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _account != null
+      ? BankAccountSettingsScreen.connection(
+          key: ValueKey(_account!.id), account: _account!)
+      : Scaffold(
+          appBar:
+              AppBar(title: Text(BankAccountStrings.bankAccountSettingsTitle)),
+          body: Center(
+              child: _failed
+                  ? Text(OrdersStrings.bankSyncWarningSettingsUnavailable)
+                  : const CircularProgressIndicator()),
+        );
 }
