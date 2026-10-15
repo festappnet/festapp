@@ -89,19 +89,29 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
             line(header, 'h3', `${itemLabel}${symbol ? ` ${symbol}` : data.people.length > 1 ? ` ${index}` : ''}`);
             const ticket = order?.tickets?.find(ticket => ticket.id === person.id);
             const status = ticket?.displayStatus === 'cancelled' || (data.root.hasTickets && ['used', 'unused'].includes(ticket?.displayStatus)) ? ticket.displayStatus : null;
-            if (status) line(header, 'span', overviewText(status)).className = 'overview-admission-status';
-            else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(header, 'span', overviewText(person.effectiveLifecycle)).className = 'overview-admission-status';
+            const actions = line(header, 'div', ''); actions.className = 'overview-admission-actions';
+            if (status) line(actions, 'span', overviewText(status)).className = 'overview-admission-status';
+            else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(actions, 'span', overviewText(person.effectiveLifecycle)).className = 'overview-admission-status';
             if (onDownload && data.root.hasTickets && ['paid', 'sent', 'used'].includes(order?.state) && ['used', 'unused'].includes(ticket?.displayStatus)) {
-                const download = line(header, 'button', overviewText('downloadTicket'));
+                const download = line(actions, 'button', '');
                 download.type = 'button'; download.className = 'overview-ticket-download';
+                download.setAttribute('aria-label', `${overviewText('downloadTicket')} · ${symbol || itemLabel}`);
+                download.title = overviewText('downloadTicket');
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true');
+                const path = document.createElementNS(icon.namespaceURI, 'path');
+                path.setAttribute('d', 'M11 3h2v10l3.5-3.5 1.4 1.4L12 16.8l-5.9-5.9 1.4-1.4L11 13V3ZM5 17v3h14v-3h2v5H3v-5Z');
+                icon.appendChild(path); download.appendChild(icon);
+                const label = line(download, 'span', 'PDF');
                 download.onclick = async () => {
-                    download.disabled = true; download.textContent = overviewText('downloadingTicket');
+                    download.disabled = true; label.textContent = overviewText('downloadingTicket');
+                    download.setAttribute('aria-busy', 'true');
                     content.querySelector('.overview-download-error')?.remove();
                     try { await onDownload(ticket.id, person.symbol || ticket.id); }
                     catch {
                         const error = line(content, 'p', overviewText('downloadFailed'));
                         error.className = 'overview-download-error'; error.setAttribute('role', 'alert');
-                    } finally { download.disabled = false; download.textContent = overviewText('downloadTicket'); }
+                    } finally { download.disabled = false; label.textContent = 'PDF'; download.removeAttribute('aria-busy'); }
                 };
             }
             if (person.label) line(content, 'p', person.label);
