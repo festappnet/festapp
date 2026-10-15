@@ -2503,7 +2503,7 @@
     "compareCurrencies": "Všechny měny v CZK",
     "currencyComparisonHelp": "Orientační přepočet všech dnů posledním dostupným kurzem ČNB, zaokrouhlený na haléře za den a měnu. Datum kurzu:",
     "orderTimeline": "Jak přibývaly objednávky",
-    "orderTimelineHelp": "Počet nově vytvořených objednávek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague.",
+    "orderTimelineHelp": "Počet nově vytvořených objednávek za den, včetně později stornovaných. Nejde o počet unikátních lidí.",
     "paymentTimeline": "Kdy přicházely platby",
     "paymentTimelineHelp": "Kladné zaevidované transakce podle data platby, včetně částečných úhrad nezaplacených objednávek. Vratky jsou oddělené. Starší platby bez transakčního záznamu v grafu nejsou; souhrn proto může být vyšší.",
     "daily": "Po dnech",
@@ -2551,7 +2551,7 @@
     "product": "Produkt",
     "count": "Počet",
     "applicationTimeline": "Jak přibývaly přihlášky",
-    "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague.",
+    "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí.",
     "onlyValid": "Pouze platné",
     "includingCancelled": "Včetně stornovaných"
   },

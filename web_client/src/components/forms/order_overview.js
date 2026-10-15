@@ -45,7 +45,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
         line(summary, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
         if (!data.orders.length) line(summary, 'p', overviewText('not_required_yet'));
     }
-    for (const order of data.orders) line(summary, 'p', `${order.symbol}: ${overviewText(order.state === 'storno' ? 'cancelled' : order.payment?.status || order.state)}`);
+    for (const order of data.orders) line(summary, 'p', `${overviewText('orderReference')} ${order.symbol}: ${overviewText(order.state === 'storno' ? 'cancelled' : order.payment?.status || order.state)}`);
     if (!waiting && !data.orders.length) line(summary, 'p', overviewText('withdrawn'));
     for (const offer of data.offers.filter(o => o.pendingPlaces > 0)) line(summary, 'p', `${overviewText('offeredPlaces')}: ${offer.pendingPlaces} · ${overviewText('validUntil')}: ${date(offer.expiresAt)}`);
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
@@ -134,7 +134,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     const current = line(timeline, 'li', ''); current.className = 'overview-timeline-current';
     line(current, 'strong', overviewText('currentStatus'));
     if (waiting) line(current, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
-    for (const order of data.orders) line(current, 'p', `${data.orders.length > 1 ? `${order.symbol}: ` : ''}${overviewText(order.state === 'storno' ? 'cancelled' : order.payment?.status || order.state)}`);
+    for (const order of data.orders) line(current, 'p', `${data.orders.length > 1 ? `${overviewText('orderReference')} ${order.symbol}: ` : ''}${overviewText(order.state === 'storno' ? 'cancelled' : order.payment?.status || order.state)}`);
     if (!waiting && !data.orders.length) line(current, 'p', overviewText('withdrawn'));
 }
 
