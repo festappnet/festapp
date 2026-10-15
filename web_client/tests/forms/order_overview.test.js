@@ -310,3 +310,12 @@ test('overview transport failures remain retryable and do not imply a deleted or
     const commands = new WaitlistCommands({ rpc: async () => ({ data: null, error: { message: 'offline' } }) });
     await assert.rejects(commands.overview({}), /OVERVIEW_LOAD_FAILED/);
 });
+
+test('overview displays identity document number and formatted expiry', t => {
+ const host=setup(t), data=fixture();
+ data.orders[0].answers=[{type:'id_document',title:'Passport',value:{id_document_number:'AB123456',id_document_expiry_date:'2031-06-30'}}];
+ renderOrderOverview(host,data);
+ const answer=host.querySelector('.overview-answers dd').textContent;
+ assert.match(answer,/AB123456/); assert.match(answer,/2031/);
+ assert.doesNotMatch(answer,/\[object Object\]|id_document_/);
+});

@@ -275,4 +275,30 @@ BEGIN
  PERFORM assert_true(NOT has_function_privilege('anon','public.customer_order_answers_internal(bigint,jsonb,boolean)','EXECUTE'),'answer helper is private');
 END $$;
 
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); field bigint; result jsonb;
+ document jsonb:='{"id_document_number":"AB123456","id_document_expiry_date":"2031-06-30","private":"SECRET"}';
+BEGIN
+ INSERT INTO form_fields(form,type,title,is_ticket_field,is_hidden)
+ VALUES((x->>'form')::bigint,'id_document','Passport',false,false) RETURNING id INTO field;
+ result:=public.customer_order_answers_internal((x->>'form')::bigint,
+  jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(field::text,document))),false);
+ PERFORM assert_eq(jsonb_array_length(result),1,'identity document is included');
+ PERFORM assert_eq(result#>'{0,value}',document-'private','only document number and expiry are exposed');
+ PERFORM assert_eq(public.customer_order_answers_internal((x->>'form')::bigint,
+  jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(field::text,document))),true),'[]'::jsonb,'document scope is respected');
+ PERFORM assert_eq(public.customer_order_answers_internal((x->>'form')::bigint,
+  jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(field::text,jsonb_build_object('id_document_number','AB123456')))),false)#>>'{0,value,id_document_number}',
+  'AB123456'::text,'document without optional expiry is included');
+ PERFORM assert_eq(public.customer_order_answers_internal((x->>'form')::bigint,
+  jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(field::text,'LEGACY123'))),false)#>>'{0,value}',
+  'LEGACY123'::text,'legacy number-only document is included');
+ PERFORM assert_eq(public.customer_order_answers_internal((x->>'form')::bigint,
+  jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(field::text,jsonb_build_object('id_document_number',jsonb_build_object('private','SECRET'))))),false),
+  '[]'::jsonb,'nested document number is excluded');
+ UPDATE form_fields SET is_hidden=true WHERE id=field;
+ PERFORM assert_eq(public.customer_order_answers_internal((x->>'form')::bigint,
+  jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(field::text,document))),false),'[]'::jsonb,'hidden document is excluded');
+END $$;
+
 ROLLBACK;
