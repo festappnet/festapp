@@ -171,6 +171,7 @@ BEGIN
   PERFORM pg_temp.enrich_demo_examples(p_org);
   PERFORM pg_temp.refresh_demo_artwork(p_org);
   PERFORM pg_temp.refresh_demo_titles(p_org);
+  PERFORM pg_temp.refresh_demo_ball_prices(p_org);
   RETURN;
  END IF;
  INSERT INTO public.units(title,organization) VALUES('Ukázkový pořadatel',p_org) RETURNING id INTO un;
@@ -397,4 +398,5 @@ BEGIN
  PERFORM pg_temp.enrich_demo_examples(p_org);
   PERFORM pg_temp.refresh_demo_artwork(p_org);
   PERFORM pg_temp.refresh_demo_titles(p_org);
+  PERFORM pg_temp.refresh_demo_ball_prices(p_org);
 END $fixture$;
