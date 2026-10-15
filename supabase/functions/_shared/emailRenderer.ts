@@ -78,11 +78,11 @@ export async function renderQueuedEmail(
           occasion: row.occasion,
           unit: row.unit,
         },
-        substitutions: { occasionTitle: occasion.title, orderSymbol: order.order_symbol, ...overviewEmailSubstitutions(overviewUrl) },
+        substitutions: { occasionTitle: occasion.title, orderSymbol: order.order_symbol, ...overviewEmailSubstitutions(overviewUrl, row.data?.lang) },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
         attachments,
-      }), overviewUrl),
+      }), overviewUrl, row.data?.lang),
       postAction: { ...(overviewUrl ? { tracking_policy: "disabled" } : {}), ticket_ids: tickets.map((t: any) => t.id) },
     };
   }
@@ -112,13 +112,13 @@ export async function renderQueuedEmail(
       occasion: row.occasion,
       unit: row.unit,
     },
-    substitutions: { ...rendered.subs, ...overviewEmailSubstitutions(overviewUrl) },
+    substitutions: { ...rendered.subs, ...overviewEmailSubstitutions(overviewUrl, row.data?.lang) },
     attachments: rendered.attachments ?? [],
     replyTo: rendered.reply_to,
     from: `${rendered.sender || "Festapp"} | Festapp <${
       Deno.env.get("DEFAULT_EMAIL")
     }>`,
-  }), overviewUrl);
+  }), overviewUrl, row.data?.lang);
   return {
     prepared,
     postAction: {
