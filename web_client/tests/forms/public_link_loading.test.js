@@ -34,26 +34,21 @@ test('an alias resolves once and does not recreate the form session on canonical
     assert.equal(loads,1);
     assert.equal(window.location.pathname + window.location.search + window.location.hash, '/form/current?x=%2f#personal');
 });
-test('a terminal offer uses its authorized canonical link without public form loading', async () => {
-    window.history.replaceState(null,'','/form/old#waitlist?token=' + 'a'.repeat(64) + '&offer_id=00000000-0000-4000-8000-000000000001');
-    DbForms.getFormByLink = async () => { throw new Error('public loader must not run'); };
-    const page = host();
-    page.waitlistCommands = { read: async () => ({ code:200, form:null, formLink:'current', pendingCount:0 }) };
-    await page.init('old');
-    assert.equal(window.location.pathname,'/form/current');
-    assert.equal(window.location.hash.includes('token=' + 'a'.repeat(64)),true);
-    assert.equal(page.currentLink,'current');
+test('retired personal form URLs fail without resolving or loading customer data', async () => {
+ for (const suffix of ['?order_id=17&token='+'b'.repeat(64), '#order?order_id=17&token='+'b'.repeat(64), '#waitlist?order_id=17&token='+'b'.repeat(64)]) {
+  window.history.replaceState(null,'','/form/old'+suffix);
+  DbForms.getFormByLink=async()=>{throw new Error('public loader must not run');};
+  const page=host();let error;
+  page.renderError=value=>{error=value;};
+  page.waitlistCommands={overview:async()=>{throw new Error('overview must not run');}};
+  await page.init('old');assert.ok(error);assert.equal(window.location.pathname,'/form/old');
+ }
 });
-
-test('an order capability canonicalizes from its own bundle without public form access', async () => {
-    window.history.replaceState(null,'','/form/old?x=1#order?token=' + 'b'.repeat(64) + '&order_id=17');
-    DbForms.getFormByLink = async () => { throw new Error('public loader must not run'); };
-    const page = host();
-    page.waitlistCommands = { overview: async () => ({code:200, root:{title:'Order',formLink:'current'}, people:[],offers:[],orders:[],serverTime:new Date().toISOString()}) };
-    await page.init('old');
-    assert.equal(window.location.pathname,'/order');
-    assert.equal(new URLSearchParams(window.location.search).get('token'), 'b'.repeat(64));
-    assert.equal(page.currentLink,'current');
+test('terminal offer loads on standalone order route without public form loading', async () => {
+ window.history.replaceState(null,'','/order?waitlist=1&token='+'a'.repeat(64)+'&offer_id=00000000-0000-4000-8000-000000000001');
+ DbForms.getFormByLink=async()=>{throw new Error('public loader must not run');};
+ const page=host();page.waitlistCommands={read:async()=>({code:200,form:null,formLink:'current',pendingCount:0})};
+ await page.init(null);assert.equal(window.location.pathname,'/order');assert.equal(page.currentLink,'current');
 });
 
 test('standalone order route loads only its capability, without a form slug', async () => {

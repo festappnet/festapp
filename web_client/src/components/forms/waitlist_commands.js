@@ -2,9 +2,10 @@ import { LocalizationService } from '../../services/localization_service.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 
 // Capability and payload never enter browser storage, URLs, logs, or sync caches.
-export function parseWaitlistFragment(fragment) {
-    if (!fragment?.startsWith('#waitlist?')) return null;
-    const p = new URLSearchParams(fragment.slice(10));
+export function parseWaitlistLocation(location) {
+    if (location.pathname !== '/order' || location.hash) return null;
+    const p = new URLSearchParams(location.search);
+    if (p.get('waitlist') !== '1') return null;
     const token = p.get('token');
     const offerId = p.get('offer_id');
     const orderId = p.get('order_id');

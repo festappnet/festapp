@@ -202,3 +202,12 @@ test('independent customer overview serves private web shell without resolving a
  assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
  assert.notEqual(await response.text(),'flutter app');
 });
+
+test('retired personal form query links return gone without redirect or data lookup', async t => {
+  t.mock.method(globalThis, 'fetch', async () => {throw new Error('no customer/form lookup');});
+  for (const query of ['order_id=1&token=secret','offer_id=offer&admin=1','waitlist=1&token=secret']) {
+    const response=await productionWorker.fetch(new Request('https://vstupenky.online/form/test?'+query),env);
+    assert.equal(response.status,410);assert.equal(response.headers.get('location'),null);
+    assert.equal(response.headers.get('cache-control'),'no-store');
+  }
+});

@@ -126,7 +126,7 @@ for (const viewFails of [false, true]) {
     const token = 'a'.repeat(64);
     page.waitlistCommands = {
       command: async () => { registrations++; return {code: 200, order: {id: 12},
-        orderOverviewUrl: `https://example.test/form/test#order?order_id=12&token=${token}`}; },
+        orderOverviewUrl: `https://example.test/order?order_id=12&token=${token}`}; },
       overview: async scope => {
         reads++;
         assert.deepEqual(scope, {orderId: 12, token});

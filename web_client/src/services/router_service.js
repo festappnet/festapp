@@ -9,10 +9,7 @@ export class RouterService {
     static FORM_PATH_PREFIX = '/form/';
 
     static hasPersonalOrderLink() {
-        const params = new URLSearchParams(window.location.search);
-        return window.location.pathname.startsWith(RouterService.FORM_PATH_PREFIX) &&
-            (params.has('order_id') || params.has('token') || params.get('waitlist') === '1' ||
-             window.location.hash.startsWith('#waitlist?') || window.location.hash.startsWith('#order?'));
+        return window.location.pathname === '/order';
     }
 
     static getFormLink(path) { return formLinkFromPath(path); }
@@ -434,16 +431,6 @@ export class RouterService {
     static _lastPath = window.location.pathname;
 
     static initPopStateListener() {
-        window.addEventListener('hashchange', (event) => {
-            const previous = new URL(event.oldURL);
-            const current = new URL(event.newURL);
-            if (current.pathname.startsWith(RouterService.FORM_PATH_PREFIX) &&
-                previous.hash !== current.hash &&
-                ([previous.hash, current.hash].some(hash => hash.startsWith('#waitlist?') || hash.startsWith('#order?')))) {
-                // A different personal capability is a fresh form session.
-                window.location.reload();
-            }
-        });
         window.addEventListener('popstate', async (event) => {
             const path = window.location.pathname;
             

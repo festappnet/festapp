@@ -108,6 +108,9 @@ export async function collectPwaShellManifest(buildDir) {
   ]);
   const coreResources = knownResources.filter((url) =>
     url === flutterEntry || url === webClientEntry ||
+    // Every lazy web module belongs to the same immutable build. Open forms
+    // must still open their seat selector after a newer deployment replaces assets.
+    (url.startsWith('/web-assets/') && /\.(?:js|css)$/.test(url)) ||
     standaloneDocumentSet.has(url) ||
     url === flutterMain ||
     installCriticalNames.has(url.split('?')[0]) ||

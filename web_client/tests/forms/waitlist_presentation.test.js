@@ -440,7 +440,7 @@ test('terminal outcomes reuse order result without waiting promise and preserve 
 test('terminal back action removes capability and fetches fresh normal form capacity', async t => {
     const d=dom();const [{FormPage},{DbForms},{RightsService},{SeoService}]=await Promise.all([
         import('../../src/components/forms/form_page.js'),import('../../src/components/forms/db_forms.js'),import('../../src/services/rights_service.js'),import('../../src/services/seo_service.js')]);
-    window.history.replaceState(null,'','/form/test?lang=cs#waitlist?token='+ 'a'.repeat(64)+'&offer_id=11111111-1111-1111-1111-111111111111');
+    window.history.replaceState(null,'','/order?lang=cs&waitlist=1&token='+ 'a'.repeat(64)+'&offer_id=11111111-1111-1111-1111-111111111111');
     t.mock.method(RightsService,'updateAppData',async()=>{});t.mock.method(RightsService,'canSeeReservations',()=>false);t.mock.method(SeoService,'updateMetaTags',()=>{});
     let requests=0;t.mock.method(DbForms,'getFormByLink',async link=>{assert.equal(link,'test');requests++;return new FormModel({registrationMode:'waitlist',capacity:{limit:12,occupiedPeople:12,remainingPublic:0},fields});});
     const page=new FormPage('host');page.currentLink='test';page.waitlistScope={offerId:'old'};page.applyTheme=()=>{};
