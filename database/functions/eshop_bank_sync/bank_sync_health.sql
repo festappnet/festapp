@@ -23,7 +23,11 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
     WHEN c.mode='api' AND h.token_present IS FALSE THEN 'token_missing'
     WHEN h.ingest_enabled IS FALSE OR (c.mode='api' AND h.polling_enabled IS FALSE) THEN 'bank_error'
     WHEN c.last_error IS NOT NULL OR c.state='degraded' THEN 'bank_error'
-    WHEN c.mode='api' AND COALESCE(c.bank_pull_at,c.created_at)<now()-interval '30 minutes' THEN 'stale'
+    -- bank_pull_at is a local copy of BankSync's successful pull timestamp.
+    -- Only a fresh remote health observation can prove that polling stalled;
+    -- an unmonitored or expired snapshot is not evidence of a bank failure.
+    WHEN c.mode='api' AND h.checked_at>now()-interval '10 minutes'
+      AND COALESCE(c.bank_pull_at,c.created_at)<now()-interval '30 minutes' THEN 'stale'
     ELSE NULL END
   FROM eshop.bank_sync_connections c LEFT JOIN eshop.bank_sync_health h ON h.connection_id=c.id
   WHERE c.id=p_connection_id;
