@@ -156,7 +156,9 @@ test('payments show recorded timestamps consistently in the list and history',t=
     renderOrderOverview(host,data);
     const timestamp=host.querySelector('.overview-timeline time');
     assert.equal(timestamp.dateTime,'2026-10-15T19:30:31Z');
-    assert.match(timestamp.textContent,/recordedAt:.*\d{1,2}:\d{2}/);
+    assert.match(timestamp.textContent,/\d{1,2}:\d{2}/);
+    assert.doesNotMatch(timestamp.textContent,/recordedAt|Zaevidováno/);
+    assert.ok(host.querySelector('.overview-history-card'));
     assert.equal(host.querySelector('.overview-transactions small').textContent,timestamp.textContent);
 });
 

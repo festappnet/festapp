@@ -2786,7 +2786,7 @@
     "deposit_paid": "Deposit paid",
     "fully_paid": "The order is paid",
     "awaiting_payment": "Awaiting payment",
-    "unused": "Unused",
+    "unused": "Valid",
     "used": "Used",
     "ordered": "Ordered",
     "paid": "Confirmed as paid",
