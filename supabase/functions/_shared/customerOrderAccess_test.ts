@@ -9,11 +9,12 @@ Deno.test("overview encrypted source binds root and tenant without leaking token
   try {
     const source = await prepareOrderOverviewSource(context);
     const url = new URL(await openOrderOverviewUrl(context, source));
-    assert.equal(url.pathname, "/form/test"); assert.equal(url.hash, "");
+    assert.equal(url.pathname, "/order"); assert.equal(url.hash, "");
     assert.match(url.search, /^\?order_id=12&token=[0-9a-f]{64}$/);
+    assert.equal(await openOrderOverviewUrl({ ...context, formLink: "renamed" }, source), url.href);
     const token = new URLSearchParams(url.search).get("token")!;
     assert.equal(JSON.stringify(source).includes(token), false);
-    for (const changed of [{ organization: 9 }, { orderId: 99 }, { formLink: "other" }, { recipient: "other@example.invalid" }]) {
+    for (const changed of [{ organization: 9 }, { orderId: 99 }, { recipient: "other@example.invalid" }]) {
       await assert.rejects(() => openOrderOverviewUrl({ ...context, ...changed }, source));
     }
     await assert.rejects(() => openOrderOverviewUrl(context, { ...source, contentHash: "f".repeat(64) }));

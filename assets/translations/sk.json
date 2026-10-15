@@ -848,7 +848,7 @@
     "storno": "Zrušené",
     "not_required_yet": "Zatiaľ nič neplatíte",
     "free": "Bez platby",
-    "unpaid": "Zatiaľ neuhradené",
+    "unpaid": "Čaká na úhradu",
     "partially_paid": "Čiastočne uhradené",
     "deposit_paid": "Záloha uhradená",
     "fully_paid": "Plne uhradené",
@@ -901,7 +901,16 @@
     "tickets": "Vstupenky",
     "ticket": "Vstupenka",
     "registrations": "Prihlášky",
-    "registration": "Prihláška"
+    "registration": "Prihláška",
+    "submittedDetails": "Zadané údaje",
+    "answer": "Odpoveď",
+    "added": "Pridané",
+    "removed": "Odstránené",
+    "changed": "Upravené",
+    "changedTo": "Po zmene",
+    "confirmation_sent": "Potvrdenie odoslané",
+    "waitlist_entered": "Zaradené na čakaciu listinu",
+    "withinDeadline": "V termíne úhrady"
   },
   "OccasionSetup": {
     "createEvent": "Vytvoriť udalosť",

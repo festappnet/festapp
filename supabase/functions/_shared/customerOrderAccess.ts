@@ -12,7 +12,7 @@ export async function openOrderOverviewUrl(context: Context, source: {
   if (plain.version !== 1 || plain.purpose !== "order_overview" ||
     plain.organization !== context.organization || plain.occasion !== context.occasion ||
     (context.recipient !== undefined && plain.recipient !== context.recipient) ||
-    plain.unit !== context.unit || plain.formLink !== context.formLink ||
+    plain.unit !== context.unit ||
     (plain.orderId !== undefined && plain.orderId !== context.orderId) ||
     !/^[a-f0-9]{64}$/.test(plain.token) ||
     await sha256Text(plain.token) !== source.tokenHash ||
@@ -23,7 +23,7 @@ export async function openOrderOverviewUrl(context: Context, source: {
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname);
   if ((base.protocol !== "https:" && !(base.protocol === "http:" && local)) ||
     base.username || base.password || base.search || base.hash) throw new Error("INVALID_OVERVIEW_ORIGIN");
-  const url = new URL(`form/${encodeURIComponent(context.formLink)}`, `${base.href.replace(/\/$/, "")}/`);
+  const url = new URL("order", `${base.href.replace(/\/$/, "")}/`);
   url.search = new URLSearchParams({ order_id: String(context.orderId), token: plain.token }).toString();
   return url.href;
 }

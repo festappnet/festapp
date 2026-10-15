@@ -192,3 +192,13 @@ test('server archive stays visible and groups large multi-year archives', async 
   assert.ok(html.indexOf('<h3>2025') < html.indexOf('<h3>2024'));
   for (const occasion of past) assert.ok(html.includes(occasion.title));
 });
+
+test('independent customer overview serves private web shell without resolving a form', async t => {
+ t.mock.method(globalThis,'fetch',async()=>{throw new Error('order shell must not query public form metadata');});
+ const response=await worker.fetch(request('/order?order_id=1&token=secret'),env);
+ assert.equal(response.status,200);
+ assert.equal(response.headers.get('cache-control'),'no-store');
+ assert.equal(response.headers.get('referrer-policy'),'no-referrer');
+ assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
+ assert.notEqual(await response.text(),'flutter app');
+});

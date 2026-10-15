@@ -768,7 +768,7 @@
     "storno": "Storniert",
     "not_required_yet": "Noch keine Zahlung erforderlich",
     "free": "Keine Zahlung erforderlich",
-    "unpaid": "Unbezahlt",
+    "unpaid": "Wartet auf Zahlung",
     "partially_paid": "Teilweise bezahlt",
     "deposit_paid": "Anzahlung bezahlt",
     "fully_paid": "Vollständig bezahlt",
@@ -821,6 +821,15 @@
     "tickets": "Tickets",
     "ticket": "Ticket",
     "registrations": "Anmeldungen",
-    "registration": "Anmeldung"
+    "registration": "Anmeldung",
+    "submittedDetails": "Angegebene Daten",
+    "answer": "Antwort",
+    "added": "Hinzugefügt",
+    "removed": "Entfernt",
+    "changed": "Geändert",
+    "changedTo": "Jetzt",
+    "confirmation_sent": "Bestätigung versendet",
+    "waitlist_entered": "Zur Warteliste hinzugefügt",
+    "withinDeadline": "Innerhalb der Zahlungsfrist"
   }
 }
