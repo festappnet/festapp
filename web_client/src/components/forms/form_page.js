@@ -1,4 +1,4 @@
-import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, overviewText } from './order_overview.js';
+import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, stopOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
 import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
@@ -49,6 +49,10 @@ export class FormPage extends Component {
     }
 
     cleanup({ preserveEditButton = false } = {}) {
+        if (this.host) {
+            stopOrderOverview(this.host);
+            this.host.querySelectorAll('.order-overview').forEach(stopOrderOverview);
+        }
         if (this.currentPriceWidget) {
             this.currentPriceWidget.destroy();
             this.currentPriceWidget = null;
