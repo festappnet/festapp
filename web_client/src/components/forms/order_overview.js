@@ -1,4 +1,4 @@
-import { renderOverviewProducts, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
+import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
 import { renderPaymentDetails } from './payment_details.js';
 import { presentPayment } from '../../../../supabase/functions/_shared/paymentPresentation.ts';
 import { LocalizationService } from '../../services/localization_service.js';
@@ -50,11 +50,8 @@ function renderOrderState(host, order, includeReference = true) {
 }
 export function renderOrderOverview(host, data, onContinue, offerInPage = false) {
     host.replaceChildren(); host.classList.add('order-overview');
-    line(host, 'p', overviewText('title')).className = 'overview-eyebrow';
-    line(host, 'h1', data.root.title || overviewText('title'));
-    line(host, 'p', `${overviewText('orderReference')}: ${data.root.symbol}`).className = 'overview-reference';
-    const toolbar = line(host, 'div', ''); toolbar.className = 'overview-toolbar';
-    line(toolbar, 'span', `${overviewText('updated')}: ${date(data.serverTime)}`).className = 'overview-updated';
+    line(host, 'h1', `${overviewText('title')} ${data.root.symbol}`);
+    line(host, 'p', data.root.title || '').className = 'overview-event-title';
 
     const waiting = data.people.some(p => ['waiting', 'offered', 'offer_expired', 'offer_declined', 'offer_cancelled'].includes(p.effectiveLifecycle));
     const activeOffer = data.offers.some(o => o.pendingPlaces > 0);
@@ -70,33 +67,46 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
     else if (!offerInPage && activeOffer) line(summary, 'p', overviewText('offerEmail'));
 
+    line(host, 'p', `${overviewText('updated')}: ${date(data.serverTime)}`).className = 'overview-updated';
+
     const itemLabel = overviewText(data.root.hasTickets ? 'ticket' : 'registration');
-    const people = section(host, overviewText(data.people.length === 1 ? (data.root.hasTickets ? 'ticket' : 'registration') : (data.root.hasTickets ? 'tickets' : 'registrations')));
-    const participants = line(people, 'ul', ''); participants.className = 'overview-people';
-    data.people.forEach((person, i) => {
-        const row = line(participants, 'li', '');
-        const content = line(row, 'div', '');
-        const symbol = data.root.hasTickets && person.symbol;
-        if (data.people.length > 1 || symbol) line(content, 'h3', `${itemLabel} ${symbol || i + 1}`);
-        if (person.label) line(content, 'p', person.label);
-        const order = data.orders.find(order => order.id === person.currentOrderId);
-        const ticket = order?.tickets?.find(ticket => ticket.id === person.id);
-        const items = (order?.items || []).filter(item => String(item.ticketId) === String(person.id));
-        if (items.length) renderOverviewProducts(content, items, order.currency, money);
-        renderOverviewAnswers(content, person.answers, `ticket:${person.id}`);
-        // Payment belongs to the whole order; individual admissions only show
-        // waitlist outcomes or their actual usage/cancellation state.
-        const status = ticket?.displayStatus === 'cancelled' || (data.root.hasTickets && ['used', 'unused'].includes(ticket?.displayStatus)) ? ticket.displayStatus : null;
-        if (status) line(row, 'span', overviewText(status));
-        else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(row, 'span', overviewText(person.effectiveLifecycle));
-    });
+    const paymentSections = [];
+    const renderAdmissions = (card, people, order) => {
+        const participants = line(card, 'ul', ''); participants.className = 'overview-people';
+        for (const person of people) {
+            const row = line(participants, 'li', '');
+            const content = line(row, 'div', '');
+            const header = line(content, 'div', ''); header.className = 'overview-admission-header';
+            const symbol = data.root.hasTickets && person.symbol;
+            const index = data.people.indexOf(person) + 1;
+            line(header, 'h3', `${itemLabel}${symbol ? ` ${symbol}` : data.people.length > 1 ? ` ${index}` : ''}`);
+            const ticket = order?.tickets?.find(ticket => ticket.id === person.id);
+            const status = ticket?.displayStatus === 'cancelled' || (data.root.hasTickets && ['used', 'unused'].includes(ticket?.displayStatus)) ? ticket.displayStatus : null;
+            if (status) line(header, 'span', overviewText(status)).className = 'overview-admission-status';
+            else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(header, 'span', overviewText(person.effectiveLifecycle)).className = 'overview-admission-status';
+            if (person.label) line(content, 'p', person.label);
+            renderOverviewAnswers(content, person.answers, `ticket:${person.id}`);
+            const items = (order?.items || []).filter(item => String(item.ticketId) === String(person.id));
+            if (items.length) renderOverviewProducts(content, items, order.currency, money);
+        }
+    };
+    const pendingPeople = data.people.filter(person => !data.orders.some(order => String(order.id) === String(person.currentOrderId)));
+    if (pendingPeople.length) {
+        const pending = section(host, `${overviewText('orderDetails')} ${data.root.symbol}`, 'order-overview-card');
+        renderAdmissions(pending, pendingPeople);
+    }
     for (const order of data.orders) {
         const card = section(host, `${overviewText('orderDetails')} ${order.symbol}`, 'order-overview-card');
-        const amounts = line(card, 'dl', ''); amounts.className = 'overview-amounts';
-        fact(amounts, overviewText('total'), money(order.total, order.currency));
-        renderOverviewAnswers(card, order.answers, `order:${order.id}`);
+        renderOverviewCustomer(card, order.answers, `order:${order.id}`);
+        renderAdmissions(card, data.people.filter(person => String(person.currentOrderId) === String(order.id)), order);
+        const total = line(card, 'dl', ''); total.className = 'overview-order-total';
+        fact(total, overviewText('total'), money(order.total, order.currency));
         const payment = order.payment;
         if (payment) {
+            const payments = section(document.createDocumentFragment(), `${overviewText('transactions')} (${(payment.transactions || []).filter(t => t.kind === 'payment_received').length})`, 'overview-payments-card');
+            if (data.orders.length > 1) line(payments, 'p', `${overviewText('orderReference')} ${order.symbol}`);
+            paymentSections.push(payments);
+            const amounts = line(payments, 'dl', ''); amounts.className = 'overview-amounts';
             fact(amounts, overviewText('received'), money(payment.received, order.currency));
             fact(amounts, overviewText('totalOutstanding'), money(payment.totalOutstanding, order.currency));
             for (const key of ['returned', 'overpaid']) if (payment[key] > 0) fact(amounts, overviewText(key), money(payment[key], order.currency));
@@ -122,10 +132,9 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
                 if (payment.overdue) line(card, 'p', overviewText('overdue'));
             }
             const transactions = payment.transactions || [];
-            line(card, 'h3', `${overviewText('transactions')} (${transactions.filter(t => t.kind === 'payment_received').length})`);
-            if (!transactions.length) line(card, 'p', overviewText('noTransactions'));
+            if (!transactions.length) line(payments, 'p', overviewText('noTransactions'));
             else {
-                const list = line(card, 'ul', ''); list.className = 'overview-transactions';
+                const list = line(payments, 'ul', ''); list.className = 'overview-transactions';
                 for (const transaction of transactions) {
                     const row = line(list, 'li', '');
                     const description = line(row, 'span', overviewText(transaction.kind));
@@ -155,6 +164,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     if (waiting) line(current, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
     for (const order of data.orders) renderOrderState(current, order, data.orders.length > 1);
     if (!waiting && !data.orders.length) line(current, 'p', overviewText('withdrawn'));
+    for (const payments of paymentSections) host.appendChild(payments);
 }
 
 export function stopOrderOverview(host) {

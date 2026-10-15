@@ -92,8 +92,7 @@ for (const hasTickets of [false, true]) test(`overview uses feature terminology:
     data.people = [{ effectiveLifecycle: 'admitted' }]; data.offers = [];
     data.orders[0].payment.status = 'unpaid';
     renderOrderOverview(host, data);
-    assert.match(host.querySelector('.overview-people').parentElement.querySelector('h2').textContent, hasTickets ? /ticket/ : /registration/);
-    assert.equal(host.querySelector('.overview-people h3'), null);
+    assert.match(host.querySelector('.overview-people h3').textContent, hasTickets ? /ticket/ : /registration/);
     assert.match(host.querySelector('.overview-timeline-current').textContent, /unpaid/);
     assert.doesNotMatch(host.textContent, /statusAbove|participant|people/);
 });
@@ -126,7 +125,7 @@ for (const hasTickets of [true, false]) test(`items stay with their admission, p
     assert.match(rows[0].textContent, /Product 1/);
     assert.doesNotMatch(rows[0].textContent, /Product 2|awaiting_payment|admitted/);
     assert.match(rows[1].textContent, /Product 2/);
-    assert.equal(host.querySelector('.order-overview-card').textContent.includes('Product'), false);
+    assert.equal(host.querySelector('.order-overview-card').textContent.includes('Product'), true);
     assert.equal(host.querySelector('.overview-timeline').textContent.includes('registration_received'), false);
     assert.match(host.querySelector('.overview-timeline').textContent, /order_ordered/);
     data.orders[0].tickets[0].displayStatus = 'used';
@@ -139,7 +138,7 @@ test('single registration shows one heading, collapsed answers and no ticket wor
     data.people = [{id:2,currentOrderId:2,effectiveLifecycle:'admitted',symbol:'T123',answers:[{title:'Diet',value:'<b>vegetarian</b>'}]}];
     data.timeline = [{kind:'registration_received',at:data.serverTime},{kind:'order_sent',at:data.serverTime}];
     renderOrderOverview(host,data);
-    assert.equal(host.querySelector('.overview-people h3'),null);
+    assert.match(host.querySelector('.overview-people h3').textContent,/registration/);
     assert.equal(host.querySelector('.overview-answers').open,false);
     assert.equal(host.querySelector('.overview-answers b'),null);
     assert.match(host.textContent,/confirmation_sent/);
@@ -192,4 +191,23 @@ test('refresh preserves each disclosure by identity and keeps newly added answer
  await loadOrderOverview(host,commands,{},null,false,true);
  assert.equal(host.querySelector('[data-overview-key="answers:ticket:1"]').open,true);
  assert.equal(host.querySelector('[data-overview-key="answers:ticket:99"]').open,false);
+});
+
+test('overview groups contacts, admissions and total while payments follow history', t=>{
+ const host=setup(t),data=fixture();data.people=[data.people[1]];
+ data.orders[0].answers=[{type:'name',value:'Jane'},{type:'surname',value:'Doe'},{type:'email',value:'jane@example.invalid'},{type:'phone',value:'+420 123 456 789'},{type:'note',value:'Extra details'}];
+ data.orders[0].items=[{ticketId:2,title:'Dinner',price:100,currency:'CZK'}];
+ renderOrderOverview(host,data);
+ assert.equal(host.querySelector('h1').textContent,'OrderOverview.title ROOT');
+ assert.equal(host.querySelector('.overview-event-title').textContent,data.root.title);
+ assert.equal(host.querySelector('.overview-status').nextElementSibling.className,'overview-updated');
+ const card=host.querySelector('.order-overview-card');
+ assert.equal(card.querySelector('.overview-customer strong').textContent,'Jane Doe');
+ assert.equal(card.querySelector('.overview-customer a').getAttribute('href'),'mailto:jane@example.invalid');
+ assert.equal(card.querySelector('.overview-answers').open,false);
+ assert.match(card.querySelector('.overview-people').textContent,/Dinner/);
+ assert.equal(card.querySelector('.overview-customer').compareDocumentPosition(card.querySelector('.overview-people')) & 4,4);
+ assert.equal(card.querySelector('.overview-people').compareDocumentPosition(card.querySelector('.overview-order-total')) & 4,4);
+ assert.equal(card.querySelector('.overview-transactions'),null);
+ assert.equal(host.querySelector('.overview-history-card').nextElementSibling.className,'overview-payments-card');
 });
