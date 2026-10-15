@@ -1,4 +1,4 @@
-import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, overviewText } from './order_overview.js';
+import { parseOrderFragment, loadOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
 import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
@@ -96,7 +96,6 @@ export class FormPage extends Component {
         // Check for existing instance to prevent duplicates or state leaks
         if (options.onBack) this.onBack = options.onBack;
 
-        this.setOverviewLayout(false);
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
@@ -129,13 +128,11 @@ export class FormPage extends Component {
 
         try {
             // 3. Fetch Data
-            this.waitlistScope = parseWaitlistFragment(new URLSearchParams(window.location.search).get('waitlist') === '1' ? `#waitlist?${window.location.search.slice(1)}` : window.location.hash);
+            this.waitlistScope = parseWaitlistFragment(window.location.hash);
             this.waitlistCommands ||= new WaitlistCommands();
-            const viewScope = parseOrderLocation(window.location);
+            const viewScope = parseOrderFragment(window.location.hash);
             if (viewScope) {
-                this.setOverviewLayout(true);
                 this.overviewScope = viewScope;
-                if (window.location.hash.startsWith('#order?')) window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
                 this.host.replaceChildren();
                 await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
                     this.continuationScope ? () => this.continueOverviewOffer() : null);
@@ -206,28 +203,14 @@ export class FormPage extends Component {
         }
     }
 
-    setOverviewLayout(enabled) {
-        this.host.classList.toggle('order-overview-page', enabled);
-        if (!enabled) this.host.classList.remove('order-overview');
-        const header = document.getElementById('universal-header');
-        const app = document.getElementById('app');
-        if (!header || !app) return;
-        header.classList.remove('header-hidden');
-        if (enabled) this.host.before(header);
-        else app.prepend(header);
-    }
-
     async attachOverview() {
         const scope = this.waitlistScope;
-        // Admin offer previews already use the authenticated offer bundle.
-        // They have no customer capability and must not mint one just to render.
-        if (!scope?.token) return;
-        const section = document.createElement('section'); section.className = 'order-overview'; this.host.prepend(section);
+        const section = document.createElement('section'); this.host.prepend(section);
         const load = async () => {
             section.replaceChildren();
             try {
                 const url = await this.waitlistCommands.overviewAccess(scope);
-                const viewScope = parseOrderLocation(new URL(url));
+                const viewScope = parseOrderFragment(new URL(url).hash);
                 if (!section.isConnected) return;
                 this.overviewScope = viewScope;
                 await loadOrderOverview(section, this.waitlistCommands, viewScope, null, true);
@@ -282,7 +265,6 @@ export class FormPage extends Component {
     }
 
     renderWaitlistOutcome(outcome, bundle) {
-        this.setOverviewLayout(true);
         const model = new FormModel({ ...bundle?.form, data: { ...bundle?.form?.data, communication_tone: bundle?.form?.data?.communication_tone || bundle?.communicationTone } });
         model.registrationMode = 'waitlist';
         model.occasionTitle = bundle?.occasionTitle || model.occasionTitle;
@@ -301,7 +283,6 @@ export class FormPage extends Component {
     }
 
     renderWaitlistManagement(bundle) {
-        this.setOverviewLayout(true);
         this.waitlistBundle = bundle;
         const tone = bundle.form ? new FormModel(bundle.form).communicationTone : null;
         const terminal = ['declined', 'cancelled', 'expired', 'accepted'].includes(bundle.offerStatus) ? bundle.offerStatus
@@ -453,7 +434,6 @@ export class FormPage extends Component {
     }
 
     renderForm(formModel, showPreview) {
-        this.setOverviewLayout(false);
         if (formModel.offerBundle) this.waitlistBundle = formModel.offerBundle;
         this.currentPriceWidget?.destroy();
         this.currentPriceWidget = null;
@@ -789,8 +769,8 @@ export class FormPage extends Component {
                      try {
                          const link = this.currentLink;
                          const url = new URL(result.data.orderOverviewUrl);
-                         const viewScope = parseOrderLocation(url);
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
+                         parseOrderFragment(url.hash);
+                         window.history.replaceState({}, '', `${window.location.pathname}${url.hash}`);
                          this.currentLink = null;
                          await this.init(link);
                      } catch {
@@ -804,7 +784,8 @@ export class FormPage extends Component {
                      const link = this.currentLink;
                      if (this.overviewScope) {
                          this.continuationScope = this.waitlistScope;
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(this.overviewScope)}`);
+                         const fragment = `order?${new URLSearchParams({ order_id: String(this.overviewScope.orderId), token: this.overviewScope.token })}`;
+                         window.history.replaceState({}, '', `${window.location.pathname}#${fragment}`);
                      }
                      this.currentLink = null;
                      await this.init(link);

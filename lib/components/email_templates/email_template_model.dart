@@ -202,7 +202,7 @@ class EmailTemplateModel {
   );
 
   /// Mapping of template codes to their available substitutions.
-  static List<EmailTemplateSub> get orderOverviewSubs => [
+  static List<EmailTemplateSub> get waitlistSubs => [
         EmailTemplateSub(
             code: 'order_overview_url',
             description: OrderOverviewStrings.text('title'),
@@ -213,10 +213,6 @@ class EmailTemplateModel {
             description: OrderOverviewStrings.text('title'),
             defaultValue:
                 '<a href="https://example.invalid/form/example">Order overview</a>'),
-      ];
-
-  static List<EmailTemplateSub> get waitlistSubs => [
-        ...orderOverviewSubs,
         EmailTemplateSub(
             code: 'order_symbol',
             description: OrdersStrings.gridOrderSymbol,
@@ -246,6 +242,14 @@ class EmailTemplateModel {
       ];
 
   static final Map<String, List<EmailTemplateSub>> substitutionDefinitions = {
+    'ORDER_OVERVIEW': waitlistSubs
+        .where((sub) => [
+              'order_symbol',
+              'occasion_title',
+              'order_overview_url',
+              'order_overview_button'
+            ].contains(sub.code))
+        .toList(),
     'waitlist_confirmation': waitlistSubs,
     'waitlist_offer': [
       ...waitlistSubs,
@@ -294,7 +298,6 @@ class EmailTemplateModel {
     ],
     'ACCOUNT_DELETION_COMPLETE': [appNameSub],
     'TICKET_ORDER_CONFIRMATION': [
-      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       amountSub,
@@ -306,7 +309,6 @@ class EmailTemplateModel {
       fullOrderSub,
     ],
     'TICKET_ORDER_UPDATE': [
-      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       fullOrderSub,
@@ -314,7 +316,6 @@ class EmailTemplateModel {
       balanceReasoningSub,
     ],
     'TICKET_ORDER_PAYMENT_DONE': [
-      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       fullOrderSub,
@@ -322,7 +323,6 @@ class EmailTemplateModel {
       amountSub,
     ],
     'TICKET_ORDER_REMINDER': [
-      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       balanceReasoningSub,
@@ -333,7 +333,6 @@ class EmailTemplateModel {
       remainingTimeSub,
     ],
     'TICKET_ORDER_STORNO': [
-      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       amountSub,

@@ -1,4 +1,3 @@
-import { orderEmailOverviewUrl, overviewEmailSubstitutions, includeOrderOverview } from './orderEmailOverview.ts';
 import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
@@ -68,9 +67,8 @@ export async function renderQueuedEmail(
         });
       }
     }
-    const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
     return {
-      prepared: includeOrderOverview(await renderEmail({
+      prepared: await renderEmail({
         to: row.recipient,
         templateCode: row.code,
         context: {
@@ -78,12 +76,12 @@ export async function renderQueuedEmail(
           occasion: row.occasion,
           unit: row.unit,
         },
-        substitutions: { occasionTitle: occasion.title, orderSymbol: order.order_symbol, ...overviewEmailSubstitutions(overviewUrl) },
+        substitutions: { occasionTitle: occasion.title, orderSymbol: order.order_symbol },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
         attachments,
-      }), overviewUrl),
-      postAction: { ...(overviewUrl ? { tracking_policy: "disabled" } : {}), ticket_ids: tickets.map((t: any) => t.id) },
+      }),
+      postAction: { ticket_ids: tickets.map((t: any) => t.id) },
     };
   }
   const handlers: Record<string, any> = {
@@ -103,8 +101,7 @@ export async function renderQueuedEmail(
     data: { ...row.data, orderId: row.order_id, requestSecret: secret },
   }, null);
   // Server context and snapshotted recipient are authoritative, never live replacement recipient.
-  const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
-  const prepared = includeOrderOverview(await renderEmail({
+  const prepared = await renderEmail({
     to: row.recipient,
     templateCode: row.code,
     context: {
@@ -112,17 +109,17 @@ export async function renderQueuedEmail(
       occasion: row.occasion,
       unit: row.unit,
     },
-    substitutions: { ...rendered.subs, ...overviewEmailSubstitutions(overviewUrl) },
+    substitutions: rendered.subs,
     attachments: rendered.attachments ?? [],
     replyTo: rendered.reply_to,
     from: `${rendered.sender || "Festapp"} | Festapp <${
       Deno.env.get("DEFAULT_EMAIL")
     }>`,
-  }), overviewUrl);
+  });
   return {
     prepared,
     postAction: {
-      tracking_policy: overviewUrl ? "disabled" : safeClickTracking(
+      tracking_policy: safeClickTracking(
           prepared.html,
           (Deno.env.get("EMAIL_SAFE_CLICK_ORIGINS") ?? "").split(",").filter(
             Boolean,

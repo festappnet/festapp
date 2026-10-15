@@ -66,7 +66,8 @@ function escapeHtml(value: unknown): string {
     .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
-/** Only a trusted tenant setting supplies the base. Personal pages prohibit referrers. */
+/** Only a trusted tenant setting supplies the base. Bearer data stays in the
+ * fragment, which browsers do not send to the form host or in Referer headers. */
 export function waitlistCapabilityUrl(
   context: WaitlistRenderContext,
   source: WaitlistEmailSource,
@@ -88,8 +89,7 @@ export function waitlistCapabilityUrl(
       ? { offer_id: offerId, token: source.token }
       : { order_id: String(context.orderId), token: source.token },
   );
-  parameters.set('waitlist', '1');
-  url.search = parameters.toString();
+  url.hash = `waitlist?${parameters}`;
   return url.href;
 }
 
