@@ -818,6 +818,9 @@
   "OrderOverview": {
     "title": "Bestellübersicht",
     "updated": "Aktualisiert",
+    "usedTickets": "Verwendete Tickets",
+    "cashPayment": "Barzahlung",
+    "bankPayment": "Banküberweisung",
     "refresh": "Aktualisieren",
     "loading": "Übersicht wird geladen",
     "failed": "Die Übersicht konnte nicht aktualisiert werden. Bitte erneut versuchen.",

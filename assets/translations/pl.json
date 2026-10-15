@@ -818,6 +818,9 @@
   "OrderOverview": {
     "title": "Przegląd zamówienia",
     "updated": "Zaktualizowano",
+    "usedTickets": "Wykorzystane bilety",
+    "cashPayment": "Gotówka",
+    "bankPayment": "Przelew bankowy",
     "refresh": "Odśwież",
     "loading": "Wczytywanie przeglądu",
     "failed": "Nie udało się odświeżyć przeglądu. Spróbuj ponownie.",

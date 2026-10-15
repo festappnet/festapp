@@ -824,6 +824,9 @@
   "OrderOverview": {
     "title": "Prehľad objednávky",
     "updated": "Aktualizované",
+    "usedTickets": "Použité vstupenky",
+    "cashPayment": "Hotovosť",
+    "bankPayment": "Bankový prevod",
     "refresh": "Obnoviť",
     "loading": "Načítavanie prehľadu",
     "failed": "Prehľad sa nepodarilo aktualizovať. Skúste to znova.",

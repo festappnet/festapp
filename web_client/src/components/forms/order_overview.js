@@ -27,7 +27,7 @@ function section(host, title, className = '') {
 function fact(list, label, value) {
     const row = line(list, 'div', ''); line(row, 'dt', label); line(row, 'dd', value);
 }
-function renderOrderState(host, order, includeReference = true) {
+function renderOrderState(host, order, includeReference = true, hasTickets = false) {
     const payment = order.payment;
     const state = order.state === 'storno' ? 'cancelled' : payment?.status || order.state;
     const complete = ['fully_paid', 'free'].includes(state);
@@ -44,6 +44,11 @@ function renderOrderState(host, order, includeReference = true) {
     const text = line(row, 'div', '');
     if (includeReference) line(text, 'p', `${overviewText('orderReference')} ${order.symbol}`).className = 'overview-state-reference';
     line(text, 'p', overviewText(state));
+    const admissions = (order.tickets || []).filter(ticket => ['used', 'unused'].includes(ticket.displayStatus));
+    if (hasTickets && order.state !== 'storno' && admissions.length) {
+        const used = admissions.filter(ticket => ticket.displayStatus === 'used').length;
+        line(text, 'p', `${overviewText('usedTickets')}: ${used} / ${admissions.length}`).className = 'overview-usage';
+    }
     if (payment?.instructionsAvailable && payment.dueAt && !complete && !cancelled) {
         line(text, 'p', `${overviewText(overdue ? 'overdue' : 'withinDeadline')} · ${overviewText('dueAt')}: ${date(payment.dueAt)}`).className = 'overview-state-deadline';
     }
@@ -61,7 +66,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
         line(summary, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
         if (!data.orders.length) line(summary, 'p', overviewText('not_required_yet'));
     }
-    for (const order of data.orders) renderOrderState(summary, order, !singleOrder);
+    for (const order of data.orders) renderOrderState(summary, order, !singleOrder, data.root.hasTickets);
     if (!waiting && !data.orders.length) line(summary, 'p', overviewText('withdrawn'));
     for (const offer of data.offers.filter(o => o.pendingPlaces > 0)) line(summary, 'p', `${overviewText('offeredPlaces')}: ${offer.pendingPlaces} · ${overviewText('validUntil')}: ${date(offer.expiresAt)}`);
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
@@ -70,7 +75,6 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     line(host, 'p', `${overviewText('updated')}: ${date(data.serverTime)}`).className = 'overview-updated';
 
     const itemLabel = overviewText(data.root.hasTickets ? 'ticket' : 'registration');
-    const paymentSections = [];
     const renderAdmissions = (card, people, order) => {
         const participants = line(card, 'ul', ''); participants.className = 'overview-people';
         for (const person of people) {
@@ -103,13 +107,12 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
         fact(total, overviewText('total'), money(order.total, order.currency));
         const payment = order.payment;
         if (payment) {
-            const payments = section(document.createDocumentFragment(), `${overviewText('transactions')} (${(payment.transactions || []).filter(t => t.kind === 'payment_received').length})`, 'overview-payments-card');
-            if (data.orders.length > 1) line(payments, 'p', `${overviewText('orderReference')} ${order.symbol}`);
-            paymentSections.push(payments);
-            const amounts = line(payments, 'dl', ''); amounts.className = 'overview-amounts';
-            fact(amounts, overviewText('received'), money(payment.received, order.currency));
-            fact(amounts, overviewText('totalOutstanding'), money(payment.totalOutstanding, order.currency));
-            for (const key of ['returned', 'overpaid']) if (payment[key] > 0) fact(amounts, overviewText(key), money(payment[key], order.currency));
+            if (payment.totalOutstanding > 0 || payment.returned > 0 || payment.overpaid > 0) {
+                const amounts = line(card, 'dl', ''); amounts.className = 'overview-amounts';
+                fact(amounts, overviewText('received'), money(payment.received, order.currency));
+                fact(amounts, overviewText('totalOutstanding'), money(payment.totalOutstanding, order.currency));
+                for (const key of ['returned', 'overpaid']) if (payment[key] > 0) fact(amounts, overviewText(key), money(payment[key], order.currency));
+            }
             if (payment.instructionsAvailable) {
                 const instructions = line(card, 'dl', ''); instructions.className = 'overview-payment-details';
                 if (payment.qrPayment && payment.dueNow > 0) {
@@ -131,17 +134,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
                 fact(instructions, overviewText('dueAt'), payment.dueAt ? date(payment.dueAt) : overviewText('onSite'));
                 if (payment.overdue) line(card, 'p', overviewText('overdue'));
             }
-            const transactions = payment.transactions || [];
-            if (!transactions.length) line(payments, 'p', overviewText('noTransactions'));
-            else {
-                const list = line(payments, 'ul', ''); list.className = 'overview-transactions';
-                for (const transaction of transactions) {
-                    const row = line(list, 'li', '');
-                    const description = line(row, 'span', overviewText(transaction.kind));
-                    line(description, 'small', transaction.recordedAt ? date(transaction.recordedAt) : overviewText('dateUnknown'));
-                    line(row, 'strong', money(transaction.amount, transaction.currency));
-                }
-            }
+
         }
 
     }
@@ -153,6 +146,10 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
         line(entry, 'strong', overviewText(event.kind === 'order_sent' && !data.root.hasTickets ? 'confirmation_sent' : event.kind));
         const time = line(entry, 'time', date(event.at)); time.dateTime = event.at;
         if (event.amount != null) line(entry, 'p', money(event.amount, event.currency));
+        if (event.paymentMethod === 'cash') line(entry, 'p', overviewText('cashPayment'));
+        else if (event.paymentMethod === 'bank') {
+            line(entry, 'p', `${overviewText('bankPayment')}${event.recipientAccount ? ` · ${overviewText('account')}: ${event.recipientAccount}` : ''}`);
+        }
         if (event.previousState && event.previousState !== event.state) line(entry, 'p', `${overviewText(event.previousState)} → ${overviewText(event.state)}`);
         if (event.previousTotal != null) line(entry, 'p', `${overviewText('previousTotal')}: ${money(event.previousTotal, event.currency)} → ${overviewText('newTotal')}: ${money(event.total, event.currency)}`);
         if (event.itemsChanged) renderOverviewChanges(entry, event, itemLabel, data.people, money, data.root.hasTickets);
@@ -162,9 +159,8 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
     const current = line(timeline, 'li', ''); current.className = 'overview-timeline-current';
     line(current, 'strong', overviewText('currentStatus'));
     if (waiting) line(current, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
-    for (const order of data.orders) renderOrderState(current, order, data.orders.length > 1);
+    for (const order of data.orders) renderOrderState(current, order, data.orders.length > 1, data.root.hasTickets);
     if (!waiting && !data.orders.length) line(current, 'p', overviewText('withdrawn'));
-    for (const payments of paymentSections) host.appendChild(payments);
 }
 
 export function stopOrderOverview(host) {

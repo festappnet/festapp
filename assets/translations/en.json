@@ -2757,6 +2757,9 @@
   "OrderOverview": {
     "title": "Order overview",
     "updated": "Updated",
+    "usedTickets": "Tickets used",
+    "cashPayment": "Cash",
+    "bankPayment": "Bank transfer",
     "refresh": "Refresh",
     "loading": "Loading overview",
     "failed": "Could not update the overview. Please retry.",

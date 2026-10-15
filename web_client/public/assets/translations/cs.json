@@ -2758,6 +2758,9 @@
   "OrderOverview": {
     "title": "Přehled objednávky",
     "updated": "Aktualizováno",
+    "usedTickets": "Použité vstupenky",
+    "cashPayment": "Hotovost",
+    "bankPayment": "Bankovní převod",
     "refresh": "Obnovit",
     "loading": "Načítání přehledu",
     "failed": "Přehled se nepodařilo aktualizovat. Zkuste to znovu.",
