@@ -688,6 +688,7 @@ body.dark-mode .surcharge-info {
 .overview-status { border-inline-start: 4px solid var(--primary-color, #1565c0); background: var(--hover-color, #8882); padding: 20px 24px; border-radius: 0 8px 8px 0; }
 .overview-people, .overview-transactions { list-style: none; padding: 0; margin: 0; }
 .overview-people > li, .overview-transactions li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-block-end: 1px solid var(--border-color, #8885); }
+.overview-people > li:last-child { border-block-end: 0; }
 .overview-transactions small { display: block; margin-block-start: 4px; }
 .order-overview-card { padding-block: 24px; border-block: 1px solid var(--border-color, #8885); }
 .overview-amounts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin: 24px 0; }
