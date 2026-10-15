@@ -35,4 +35,21 @@ void main() {
     ]);
     expect(warning.uniqueContacts.single.name, 'Jane Admin');
   });
+  test(
+      'management action uses explicit account-admin authority and preserves account id',
+      () {
+    final viewer = BankSyncWarning.fromJson({
+      'code': 'suspended',
+      'contacts': [
+        {'name': 'Me'}
+      ]
+    });
+    expect(viewer.isAdmin, isFalse);
+    final admin = BankSyncWarning.fromJson(
+        {'code': 'suspended', 'bank_account_id': 42, 'is_admin': true});
+    expect(admin.isAdmin, isTrue);
+    expect(admin.bankAccountId, 42);
+    expect(BankSyncWarning.fromJson(admin.toJson()).bankAccountId, 42);
+    expect(BankSyncWarning.fromJson(admin.toJson()).isAdmin, isTrue);
+  });
 }
