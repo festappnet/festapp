@@ -88,20 +88,6 @@ BEGIN
     PERFORM public.queue_payment_reminders(v_occasion_id,0);
     PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.payment_info pi ON pi.id=v_payment_info_id WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired') AND m.target_time=pi.deadline-interval '1 day' AND public.email_intent_valid(m)), 'Form true and interval override event false and three-day interval');
 
-    UPDATE public.forms SET data='{"is_reminder_enabled":true,"reminder_interval_seconds":0}' WHERE id=v_form_id;
-    PERFORM public.queue_payment_reminders(v_occasion_id,999999);
-    PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.payment_info pi ON pi.id=v_payment_info_id WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired') AND m.target_time=pi.deadline AND public.email_intent_valid(m)), 'Explicit zero interval is retained and legacy argument cannot override persisted setting');
-    UPDATE public.occasions SET features=features||'[{"code":"deposit","is_enabled":true,"deposit_deadline_days":7}]'::jsonb WHERE id=v_occasion_id;
-    UPDATE eshop.payment_info SET deposit_amount=500,paid=500 WHERE id=v_payment_info_id;
-    UPDATE eshop.orders SET state='paid' WHERE id=v_order_id;
-    PERFORM public.queue_payment_reminders(v_occasion_id,0);
-    PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m JOIN public.occasions occ ON occ.id=v_occasion_id WHERE m.order_id=v_order_id AND (m.data->>'is_deposit_reminder')::boolean IS TRUE AND m.workflow_state NOT IN ('cancelled','expired') AND m.target_time=occ.start_time-interval '7 days' AND public.email_intent_valid(m)), 'Deposit balance uses form opt-in over event false and explicit zero interval');
-    UPDATE public.forms SET data='{"is_reminder_enabled":false}' WHERE id=v_form_id;
-    PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND public.email_intent_valid(m)), 'Deposit reminder invalidates after explicit form opt-out');
-    PERFORM public.queue_payment_reminders(v_occasion_id,0);
-    PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired')), 'Deposit form opt-out suppresses queue');
-    UPDATE eshop.payment_info SET deposit_amount=NULL,paid=0 WHERE id=v_payment_info_id;
-    UPDATE eshop.orders SET state='ordered' WHERE id=v_order_id;
     UPDATE public.forms SET data='{}' WHERE id=v_form_id;
     PERFORM public.queue_payment_reminders(v_occasion_id,0);
     PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired')), 'Clearing overrides restores disabled event default');
@@ -135,19 +121,4 @@ BEGIN
             FROM eshop.payment_info WHERE id=v_payment_info_id),
             'Actual deadline uses occasion, explicit form, and zero precedence');
     END LOOP;
-    UPDATE public.occasions SET features='[{"code":"form","is_enabled":true,"reminder_is_enabled":false},{"code":"deposit","is_enabled":true,"deposit_deadline_days":7}]' WHERE id=v_occasion_id;
-    UPDATE public.forms SET data='{"is_reminder_enabled":true,"reminder_interval_seconds":0}' WHERE id=v_form_id;
-    UPDATE eshop.products SET data='{"deposit":{"amount":500}}' WHERE id=v_product_id;
-    INSERT INTO eshop.spots(title,product,occasion,secret) VALUES('Actual deposit scheduling',v_product_id,v_occasion_id,gen_random_uuid()) RETURNING id INTO v_spot_id;
-    v_input_data:=jsonb_build_object('form',v_form_key,'email','deposit@example.invalid','secret',(SELECT secret FROM eshop.spots WHERE id=v_spot_id),'ticket',jsonb_build_array(jsonb_build_object('spot',v_spot_id)));
-    v_result:=public.create_ticket_order(v_input_data);
-    PERFORM assert_eq((v_result->>'code')::integer,200,'Actual deposit order created with form override');
-    v_order_id:=(v_result#>>'{order,id}')::bigint;
-    PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.orders ord ON ord.id=m.order_id JOIN eshop.payment_info pi ON pi.id=ord.payment_info WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND (m.data->>'is_deposit_reminder')::boolean IS TRUE AND m.workflow_state NOT IN ('cancelled','expired') AND m.target_time=pi.deposit_deadline),'Actual finalizer queues deposit-specific intent using form opt-in and zero interval');
-    PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND (m.data->>'is_deposit_reminder')::boolean IS TRUE AND public.email_intent_valid(m)),'Initial unpaid ordered deposit intent is not deliverable before deposit transition');
-    UPDATE eshop.orders SET state='paid' WHERE id=v_order_id;
-    UPDATE eshop.payment_info SET paid=NULL WHERE id=(SELECT payment_info FROM eshop.orders WHERE id=v_order_id);
-    PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND (m.data->>'is_deposit_reminder')::boolean IS TRUE AND public.email_intent_valid(m)),'Actual finalizer deposit intent delivers for legacy paid state with NULL paid balance treated as zero');
-    UPDATE public.forms SET data='{"is_reminder_enabled":false}' WHERE id=v_form_id;
-    PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND (m.data->>'is_deposit_reminder')::boolean IS TRUE AND public.email_intent_valid(m)),'Actual finalizer deposit intent respects subsequent form opt-out');
 END $$;

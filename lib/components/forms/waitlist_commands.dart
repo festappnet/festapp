@@ -1,3 +1,4 @@
+import 'models/customer_order_overview.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:fstapp/data_services/client_sync/client_command_response.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -29,6 +30,29 @@ class WaitlistCommands {
     }));
     if (result['code'] != 200) throw StateError('INVALID_CAPABILITY');
     return result;
+  }
+
+  Future<CustomerOrderOverview> overview(CustomerOrderScope scope) async =>
+      CustomerOrderOverview(Map<String, dynamic>.from(
+          await client.rpc('get_customer_order_overview', params: {
+        'p_token': scope.token,
+        'p_order_id': scope.orderId,
+      })));
+
+  Future<CustomerOrderScope> overviewAccess(
+      {String? token, String? offerId, int? orderId}) async {
+    final response =
+        await client.functions.invoke('customer-order-access', body: {
+      'token': token,
+      'offerId': offerId,
+      'orderId': orderId,
+      'commandId': const Uuid().v4(),
+    });
+    if (response.data?['code'] != 200) throw StateError('INVALID_CAPABILITY');
+    final scope = CustomerOrderScope.fromFragment(
+        Uri.parse(response.data['url']).fragment);
+    if (scope == null) throw StateError('INVALID_CAPABILITY');
+    return scope;
   }
 
   Future<Map<String, dynamic>> preview(int formId) async =>

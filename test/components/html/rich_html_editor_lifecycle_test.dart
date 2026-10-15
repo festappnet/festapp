@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/html/html_strings.dart';
+
 import 'package:image/image.dart' as test_image;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
@@ -616,6 +619,49 @@ void main() {
       },
     );
   }
+  testWidgets('modal Escape works before editor focus and close stays right',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => RichHtmlEditorDialog.show(context,
+                initialHtml: '<p>Original</p>'),
+            child: const Text('Open'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(find.byIcon(Icons.close)).dx,
+        greaterThan(tester.getCenter(find.byIcon(Icons.open_in_full)).dx));
+    final controller =
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    expect(controller.focusNode.hasFocus, isFalse);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(RichHtmlEditorDialog), findsNothing);
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    final draft =
+        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    insert(draft, ' draft');
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text(HtmlStrings.discardDraft), findsOneWidget);
+    await tester.tap(find.text(CommonStrings.ok));
+    await tester.pumpAndSettle();
+    expect(find.byType(RichHtmlEditorDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('modal editor expands and returns with its draft and caret', (
     tester,
   ) async {

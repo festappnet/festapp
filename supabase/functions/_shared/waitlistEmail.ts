@@ -15,7 +15,7 @@ export type WaitlistEmailContext = {
 };
 
 export type WaitlistEmailSource = WaitlistEmailContext & {
-  version: 1;
+  version: 1 | 2;
   templateCode: "waitlist_confirmation" | "waitlist_offer";
   token: string;
 };
@@ -48,10 +48,11 @@ export async function prepareWaitlistDelivery(
   ).join("");
   const source: WaitlistEmailSource = {
     ...context,
-    version: 1,
+    version: 2,
     templateCode,
     token,
   };
+  const overview = templateCode === "waitlist_confirmation" ? await prepareOrderOverviewSource(context, seal) : null;
   return {
     ...(context.orderId ? { orderId: context.orderId } : {}),
     recipient: context.recipient,
@@ -59,5 +60,19 @@ export async function prepareWaitlistDelivery(
     tokenHash: await sha256Text(token),
     contentHash: await sha256Text(JSON.stringify(source)),
     sealed: await seal(source),
+    ...(overview ? { overview } : {}),
   };
+}
+
+export type OrderOverviewSource = WaitlistEmailContext & {
+  version: 1;
+  purpose: "order_overview";
+  token: string;
+};
+
+export async function prepareOrderOverviewSource(context: WaitlistEmailContext, seal = sealEmail) {
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(32)),
+    byte => byte.toString(16).padStart(2, "0")).join("");
+  const source: OrderOverviewSource = { ...context, version: 1, purpose: "order_overview", token };
+  return { tokenHash: await sha256Text(token), contentHash: await sha256Text(JSON.stringify(source)), sealed: await seal(source) };
 }

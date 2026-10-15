@@ -1,8 +1,8 @@
 --- a/automation/project.conf
 +++ b/automation/project.conf
 @@ -15,9 +15,9 @@
-
-
+ 
+ 
  # Application Configuration
 -APP_NAME="Festapp"
 -APP_TITLE_SHORT="Festapp"

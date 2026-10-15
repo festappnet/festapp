@@ -1,6 +1,9 @@
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/components/forms/order_overview_strings.dart';
+import '../models/customer_order_overview.dart';
+import 'customer_order_overview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/waitlist_commands.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
@@ -62,6 +65,10 @@ class FormPage extends StatefulWidget {
 class _FormPageState extends State<FormPage> {
   final _waitlist = WaitlistCommands();
   Map<String, dynamic>? _offerBundle;
+  CustomerOrderScope? _overviewScope;
+  bool _showOverview = false;
+  bool _overviewAccessFailed = false;
+  String? _loadedCapabilityFragment;
   String? _offerId;
   int? _waitlistOrderId;
   String? _waitlistToken;
@@ -105,6 +112,19 @@ class _FormPageState extends State<FormPage> {
 
     // This ensures that if the widget rebuilds (e.g., from pop state),
     // we don't re-trigger the data load, but we do re-subscribe the listener.
+    final fragment = context.routeData.fragment;
+    if (_dependenciesInitialized &&
+        fragment != _loadedCapabilityFragment &&
+        (fragment.startsWith('order?') || fragment.startsWith('waitlist?'))) {
+      _offerId = null;
+      _waitlistOrderId = null;
+      _waitlistToken = null;
+      _overviewScope = null;
+      _offerBundle = null;
+      _waitlistMessage = null;
+      _showOverview = false;
+      loadData();
+    }
     if (_dependenciesInitialized) {
       _popStateSubscription?.cancel();
       _popStateSubscription = RouterService.onPopState.listen(_handlePopState);
@@ -135,6 +155,7 @@ class _FormPageState extends State<FormPage> {
       // The history is popped, and the overlay is already closing.
       // We just reset the flag and do nothing.
       _isClosingProgrammatically = false;
+      _replaceOverviewUrl();
       return;
     }
 
@@ -376,6 +397,17 @@ class _FormPageState extends State<FormPage> {
             payload[field.fieldType] = field.getValue(_formKey);
         }
         final result = await _waitlist.command('register', payload);
+        if (result['orderOverviewUrl'] is String) {
+          final scope = CustomerOrderScope.fromFragment(
+              Uri.parse(result['orderOverviewUrl']).fragment);
+          if (mounted)
+            setState(() {
+              _overviewScope = scope;
+              _showOverview = scope != null;
+            });
+          _replaceOverviewUrl();
+          return;
+        }
         if (mounted)
           setState(() {
             _waitlistMessage =
@@ -432,7 +464,7 @@ class _FormPageState extends State<FormPage> {
   }
 
   void _scrollToTop() {
-    _scrollController.jumpTo(0.0);
+    if (_scrollController.hasClients) _scrollController.jumpTo(0.0);
   }
 
   Future<void> _sendOrder() async {
@@ -461,6 +493,7 @@ class _FormPageState extends State<FormPage> {
       barrierDismissible: false, // Disable dismissing by tapping outside
       barrierLabel: "FinishOrderDialog",
       pageBuilder: (context, anim1, anim2) => FinishOrderScreen(
+        overviewAvailable: _overviewScope != null,
         occasionTitle: form!.occasionModel?.title ?? form!.title,
         orderFutureFunction: () async {
           if (_offerId != null) {
@@ -493,10 +526,15 @@ class _FormPageState extends State<FormPage> {
           // TicketHolder might need manual reset or re-loadData will handle it.
           // formSession updateSeats([]) is effectively clearing it.
           // But since we use TicketHolder, we should reload data.
-          await loadData();
-          formSession!.recalculateTotals();
+          if (_offerId != null && _overviewScope != null) {
+            if (mounted) setState(() => _showOverview = true);
+          } else {
+            await loadData();
+            formSession?.recalculateTotals();
+          }
         },
         onSuccess: () async {
+          if (!mounted) return;
           Navigator.of(context).pop(); // Close the OrderPreview BottomSheet
           _scrollToTop();
         },
@@ -662,6 +700,11 @@ class _FormPageState extends State<FormPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    if (_showOverview && _overviewScope != null) {
+      return Scaffold(
+          body:
+              SafeArea(child: SingleChildScrollView(child: _buildOverview())));
+    }
     if (_fontLoadFailed) {
       return Scaffold(
         body: Center(
@@ -706,7 +749,10 @@ class _FormPageState extends State<FormPage> {
           body: SingleChildScrollView(
               child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: _buildWaitlistPeople(manage: true))));
+                  child: Column(children: [
+                    _buildOverview(),
+                    _buildWaitlistPeople(manage: true)
+                  ]))));
     }
     if (form?.registrationMode == 'full') {
       return Scaffold(
@@ -816,8 +862,10 @@ class _FormPageState extends State<FormPage> {
                                             form!.isWaitlist)
                                           Text(
                                               '${WaitlistStrings.title}. ${WaitlistStrings.explanation}'),
-                                        if (_offerBundle != null)
+                                        if (_offerBundle != null) ...[
+                                          _buildOverview(),
                                           _buildWaitlistPeople(),
+                                        ],
                                         if (_offerBundle == null &&
                                             !form!.isWaitlist &&
                                             form!.capacity?.showRemaining ==
@@ -1048,6 +1096,77 @@ class _FormPageState extends State<FormPage> {
         ticketKey: GlobalKey<FormBuilderState>());
   }
 
+  void _replaceOverviewUrl() {
+    if (!_showOverview || _overviewScope == null) return;
+    final uri = Uri.parse(RouterService.getCurrentBrowserUrl());
+    RouterService.changeUrl(
+        uri.replace(fragment: _overviewScope!.fragment).toString());
+  }
+
+  Future<void> _resolveOverviewAccess() async {
+    final token = _waitlistToken;
+    final offerId = _offerId;
+    final orderId = _waitlistOrderId;
+    bool current() =>
+        mounted &&
+        token == _waitlistToken &&
+        offerId == _offerId &&
+        orderId == _waitlistOrderId;
+    try {
+      final scope = await _waitlist.overviewAccess(
+          token: token, offerId: offerId, orderId: orderId);
+      if (current())
+        setState(() {
+          _overviewScope = scope;
+          _overviewAccessFailed = false;
+        });
+    } catch (_) {
+      if (current()) setState(() => _overviewAccessFailed = true);
+    }
+  }
+
+  Widget _buildOverview() {
+    final scope = _overviewScope;
+    if (scope == null) {
+      if (!_overviewAccessFailed) return const SizedBox.shrink();
+      return Column(children: [
+        Text(OrderOverviewStrings.text('failed')),
+        TextButton(
+            onPressed: _resolveOverviewAccess,
+            child: Text(WaitlistStrings.refresh)),
+      ]);
+    }
+    return CustomerOrderOverviewView(
+      key: ValueKey((scope, _showOverview)),
+      load: () => _waitlist.overview(scope),
+      offerInPage: !_showOverview,
+      onContinue: _offerId == null || !_showOverview
+          ? null
+          : () async {
+              try {
+                final bundle = await _waitlist.read(
+                    token: _waitlistToken, offerId: _offerId);
+                if (bundle['form'] == null ||
+                    (bundle['pendingCount'] as num? ?? 0) == 0) return;
+                if (!mounted ||
+                    _overviewScope?.orderId != scope.orderId ||
+                    _overviewScope?.token != scope.token) return;
+                setState(() => _showOverview = false);
+                // Keep the write capability in memory; reload never recovers it from a view token.
+                _loadedCapabilityFragment = context.routeData.fragment;
+                await _loadOfferContinuation();
+              } catch (_) {
+                /* Keep the overview when the offer is no longer active. */
+              }
+            },
+    );
+  }
+
+  Future<void> _loadOfferContinuation() async {
+    // The loader reads the in-memory offer scope. Avoid re-parsing the view URL.
+    await loadData(continueOffer: true);
+  }
+
   Widget _buildWaitlistPeople({bool manage = false}) {
     final bundle = _offerBundle!;
     final expires = DateTime.tryParse(bundle['expiresAt'] ?? '');
@@ -1138,7 +1257,7 @@ class _FormPageState extends State<FormPage> {
     }
   }
 
-  Future<void> loadData() async {
+  Future<void> loadData({bool continueOffer = false}) async {
     setState(() {
       _isLoading = true;
       _fontLoadFailed = false;
@@ -1160,6 +1279,18 @@ class _FormPageState extends State<FormPage> {
       _offerId ??= widget.offerId;
       _waitlistOrderId ??= widget.waitlistOrderId;
       final fragment = context.routeData.fragment;
+      _loadedCapabilityFragment = fragment;
+      final viewScope = CustomerOrderScope.fromFragment(fragment);
+      if (!continueOffer &&
+          (viewScope != null || (_showOverview && _overviewScope != null))) {
+        _overviewScope = viewScope ?? _overviewScope;
+        if (mounted)
+          setState(() {
+            _showOverview = true;
+            _isLoading = false;
+          });
+        return;
+      }
       if (fragment.startsWith('waitlist?')) {
         final params = Uri.splitQueryString(fragment.substring(9));
         _waitlistToken ??= params['token'];
@@ -1182,6 +1313,7 @@ class _FormPageState extends State<FormPage> {
         }
         form = FormModel.fromJson(
             Map<String, dynamic>.from(_offerBundle!['form']));
+        unawaited(_resolveOverviewAccess());
       } else
         form = await DbForms.getFormFromLink(widget.formLink!);
       if (form == null) {

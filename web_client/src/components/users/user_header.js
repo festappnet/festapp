@@ -18,7 +18,7 @@ export class UserHeader extends HTMLElement {
 
     connectedCallback() {
         // Initial render (empty or skeleton?)
-        this.innerHTML = ''; 
+        if (document.body.dataset.page !== 'organizers') this.innerHTML = '';
         
         // Listen to context changes
         RightsService.addListener(this._handleContextChange);
@@ -112,7 +112,7 @@ export class UserHeader extends HTMLElement {
 
         // SEO: Hidden H1
         const introduction = document.getElementById('site-introduction');
-        const h1 = document.createElement(window.location.pathname === '/' && introduction && !introduction.hidden ? 'span' : 'h1');
+        const h1 = document.createElement(document.body.dataset.page === 'organizers' || (window.location.pathname === '/' && introduction && !introduction.hidden) ? 'span' : 'h1');
         h1.textContent = AppConfig.appName;
         h1.style.position = 'absolute';
         h1.style.width = '1px';

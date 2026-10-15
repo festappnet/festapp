@@ -7,6 +7,22 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { collectPwaShellManifest } from '../lib/pwa_shell_manifest.mjs';
 
+test('all deferred font modules are installed for first use offline', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'festapp-font-modules-'));
+  try {
+    for (const name of ['flutter', 'webclient', 'main.dart.js',
+      'main.dart.js_1.part.js', 'main.dart.js_2.part.js', 'main.dart.js_3.part.js']) {
+      await writeFile(path.join(root, name), name);
+    }
+    const manifest = await collectPwaShellManifest(root);
+    for (const name of ['main.dart.js_1.part.js', 'main.dart.js_2.part.js', 'main.dart.js_3.part.js']) {
+      assert.ok(manifest.coreResources.includes(`/${name}`));
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('worker and budget share normalized resource sets and raw bytes', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-manifest-'));
   try {

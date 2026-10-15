@@ -1,0 +1,1388 @@
+{
+  "isolatedCold": [
+    {
+      "audit": {
+        "phases": [
+          {
+            "phase": "S01",
+            "at": 591
+          },
+          {
+            "phase": "S02",
+            "at": 1232
+          },
+          {
+            "phase": "S03",
+            "at": 1797
+          },
+          {
+            "phase": "S04",
+            "at": 1806
+          },
+          {
+            "phase": "S05",
+            "at": 1807
+          },
+          {
+            "phase": "S06",
+            "at": 2036
+          },
+          {
+            "phase": "S07",
+            "at": 2041
+          },
+          {
+            "phase": "S08",
+            "at": 2042
+          },
+          {
+            "phase": "S09",
+            "at": 2042
+          },
+          {
+            "phase": "S10",
+            "at": 2184
+          },
+          {
+            "phase": "S11",
+            "at": 2184
+          },
+          {
+            "phase": "S12",
+            "at": 2185
+          },
+          {
+            "phase": "S13",
+            "at": 2194
+          }
+        ],
+        "longTasks": [
+          {
+            "start": 1191,
+            "duration": 256
+          }
+        ],
+        "visibility": [
+          {
+            "at": 0,
+            "state": "visible"
+          }
+        ],
+        "ready": 2194
+      },
+      "ready": true,
+      "phase": "S13",
+      "navigation": [
+        {
+          "end": 399.60000002384186
+        }
+      ],
+      "resources": [
+        {
+          "name": "/festapp_flutter_bootstrap_guard.0.20.212-696.js",
+          "start": 400,
+          "duration": 157,
+          "end": 557,
+          "transfer": 1231
+        },
+        {
+          "name": "/festapp_pwa_bridge.0.20.212-696.js",
+          "start": 401,
+          "duration": 154,
+          "end": 554,
+          "transfer": 1057
+        },
+        {
+          "name": "/festapp_update_prompt.0.20.212-696.js",
+          "start": 401,
+          "duration": 122,
+          "end": 523,
+          "transfer": 7655
+        },
+        {
+          "name": "/loading-logo.svg",
+          "start": 407,
+          "duration": 125,
+          "end": 532,
+          "transfer": 1216
+        },
+        {
+          "name": "/site.webmanifest",
+          "start": 413,
+          "duration": 213,
+          "end": 627,
+          "transfer": 613
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.wasm",
+          "start": 591,
+          "duration": 1027,
+          "end": 1619,
+          "transfer": 2014589
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.js",
+          "start": 592,
+          "duration": 172,
+          "end": 764,
+          "transfer": 28527
+        },
+        {
+          "name": "/main.dart.0.20.212-696.js",
+          "start": 592,
+          "duration": 545,
+          "end": 1137,
+          "transfer": 2896509
+        },
+        {
+          "name": "/favicon.ico",
+          "start": 594,
+          "duration": 206,
+          "end": 800,
+          "transfer": 35999
+        },
+        {
+          "name": "/android-chrome-192x192.png",
+          "start": 629,
+          "duration": 173,
+          "end": 802,
+          "transfer": 28954
+        },
+        {
+          "name": "/assets/FontManifest.json",
+          "start": 1446,
+          "duration": 145,
+          "end": 1592,
+          "transfer": 575
+        },
+        {
+          "name": "/assets/fonts/MaterialIcons-Regular.otf",
+          "start": 1594,
+          "duration": 156,
+          "end": 1750,
+          "transfer": 26328
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Medium.ttf",
+          "start": 1594,
+          "duration": 174,
+          "end": 1768,
+          "transfer": 41898
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Book.ttf",
+          "start": 1594,
+          "duration": 185,
+          "end": 1779,
+          "transfer": 40984
+        },
+        {
+          "name": "/assets/fonts/Gill%2520Sans%2520Bold.otf",
+          "start": 1594,
+          "duration": 107,
+          "end": 1702,
+          "transfer": 53648
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/Geist%255Bwght%255D.ttf",
+          "start": 1594,
+          "duration": 149,
+          "end": 1743,
+          "transfer": 86414
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/GeistMono%255Bwght%255D.ttf",
+          "start": 1594,
+          "duration": 152,
+          "end": 1747,
+          "transfer": 89989
+        },
+        {
+          "name": "/assets/packages/lucide_icons_flutter/assets/lucide.ttf",
+          "start": 1595,
+          "duration": 140,
+          "end": 1734,
+          "transfer": 310807
+        },
+        {
+          "name": "/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf",
+          "start": 1595,
+          "duration": 104,
+          "end": 1698,
+          "transfer": 1887
+        },
+        {
+          "name": "/assets/fonts/fallback/Roboto-Regular.ttf",
+          "start": 1595,
+          "duration": 189,
+          "end": 1784,
+          "transfer": 89747
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.js",
+          "start": 1797,
+          "duration": 77,
+          "end": 1874,
+          "transfer": 2093
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.css",
+          "start": 1797,
+          "duration": 103,
+          "end": 1901,
+          "transfer": 963
+        },
+        {
+          "name": "/backend-activation.json",
+          "start": 1947,
+          "duration": 86,
+          "end": 2032,
+          "transfer": 371
+        },
+        {
+          "name": "/version.json",
+          "start": 2043,
+          "duration": 129,
+          "end": 2172,
+          "transfer": 370
+        },
+        {
+          "name": "/sdks/web/v16/OneSignalSDK.page.js",
+          "start": 2184,
+          "duration": 206,
+          "end": 2390,
+          "transfer": 0
+        },
+        {
+          "name": "/assets/assets/translations/cs.json",
+          "start": 2191,
+          "duration": 135,
+          "end": 2326,
+          "transfer": 0
+        },
+        {
+          "name": "/sdks/web/v16/OneSignalSDK.page.es6.js",
+          "start": 2390,
+          "duration": 96,
+          "end": 2486,
+          "transfer": 0
+        },
+        {
+          "name": "/functions/v1/google-auth-start",
+          "start": 2446,
+          "duration": 522,
+          "end": 2968,
+          "transfer": 0
+        },
+        {
+          "name": "/sync/73f77f22-961a-4ded-9647-e33a7ac14f90/web",
+          "start": 2490,
+          "duration": 380,
+          "end": 2870,
+          "transfer": 0
+        },
+        {
+          "name": "/assets/assets/icons/google_g.svg",
+          "start": 2972,
+          "duration": 102,
+          "end": 3074,
+          "transfer": 0
+        },
+        {
+          "name": "/festapp-version.json",
+          "start": 3597,
+          "duration": 153,
+          "end": 3750,
+          "transfer": 0
+        }
+      ]
+    },
+    {
+      "audit": {
+        "phases": [
+          {
+            "phase": "S01",
+            "at": 437
+          },
+          {
+            "phase": "S02",
+            "at": 1281
+          },
+          {
+            "phase": "S03",
+            "at": 1742
+          },
+          {
+            "phase": "S04",
+            "at": 1751
+          },
+          {
+            "phase": "S05",
+            "at": 1752
+          },
+          {
+            "phase": "S06",
+            "at": 1966
+          },
+          {
+            "phase": "S07",
+            "at": 1970
+          },
+          {
+            "phase": "S08",
+            "at": 1971
+          },
+          {
+            "phase": "S09",
+            "at": 1972
+          },
+          {
+            "phase": "S10",
+            "at": 2055
+          },
+          {
+            "phase": "S11",
+            "at": 2055
+          },
+          {
+            "phase": "S12",
+            "at": 2057
+          },
+          {
+            "phase": "S13",
+            "at": 2065
+          }
+        ],
+        "longTasks": [
+          {
+            "start": 1236,
+            "duration": 275
+          }
+        ],
+        "visibility": [
+          {
+            "at": 0,
+            "state": "visible"
+          }
+        ],
+        "ready": 2065
+      },
+      "resources": [
+        {
+          "name": "/festapp_flutter_bootstrap_guard.0.20.212-696.js",
+          "start": 168,
+          "duration": 250,
+          "end": 418,
+          "transfer": 1231
+        },
+        {
+          "name": "/loading-logo.svg",
+          "start": 168,
+          "duration": 76,
+          "end": 244,
+          "transfer": 1216
+        },
+        {
+          "name": "/festapp_pwa_bridge.0.20.212-696.js",
+          "start": 168,
+          "duration": 86,
+          "end": 254,
+          "transfer": 1057
+        },
+        {
+          "name": "/festapp_update_prompt.0.20.212-696.js",
+          "start": 168,
+          "duration": 95,
+          "end": 263,
+          "transfer": 7655
+        },
+        {
+          "name": "/site.webmanifest",
+          "start": 175,
+          "duration": 219,
+          "end": 394,
+          "transfer": 613
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.js",
+          "start": 438,
+          "duration": 112,
+          "end": 551,
+          "transfer": 28527
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.wasm",
+          "start": 438,
+          "duration": 767,
+          "end": 1206,
+          "transfer": 2019127
+        },
+        {
+          "name": "/main.dart.0.20.212-696.js",
+          "start": 439,
+          "duration": 731,
+          "end": 1170,
+          "transfer": 2896606
+        },
+        {
+          "name": "/favicon.ico",
+          "start": 441,
+          "duration": 93,
+          "end": 534,
+          "transfer": 35999
+        },
+        {
+          "name": "/android-chrome-192x192.png",
+          "start": 441,
+          "duration": 78,
+          "end": 519,
+          "transfer": 28954
+        },
+        {
+          "name": "/assets/FontManifest.json",
+          "start": 1510,
+          "duration": 77,
+          "end": 1587,
+          "transfer": 575
+        },
+        {
+          "name": "/assets/fonts/MaterialIcons-Regular.otf",
+          "start": 1589,
+          "duration": 87,
+          "end": 1676,
+          "transfer": 26366
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Book.ttf",
+          "start": 1589,
+          "duration": 97,
+          "end": 1686,
+          "transfer": 40984
+        },
+        {
+          "name": "/assets/fonts/Gill%2520Sans%2520Bold.otf",
+          "start": 1590,
+          "duration": 67,
+          "end": 1657,
+          "transfer": 53492
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Medium.ttf",
+          "start": 1590,
+          "duration": 110,
+          "end": 1699,
+          "transfer": 41699
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/GeistMono%255Bwght%255D.ttf",
+          "start": 1590,
+          "duration": 83,
+          "end": 1673,
+          "transfer": 89989
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/Geist%255Bwght%255D.ttf",
+          "start": 1590,
+          "duration": 132,
+          "end": 1721,
+          "transfer": 86414
+        },
+        {
+          "name": "/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf",
+          "start": 1590,
+          "duration": 115,
+          "end": 1705,
+          "transfer": 1887
+        },
+        {
+          "name": "/assets/packages/lucide_icons_flutter/assets/lucide.ttf",
+          "start": 1590,
+          "duration": 144,
+          "end": 1733,
+          "transfer": 310861
+        },
+        {
+          "name": "/assets/fonts/fallback/Roboto-Regular.ttf",
+          "start": 1590,
+          "duration": 132,
+          "end": 1721,
+          "transfer": 89797
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.js",
+          "start": 1743,
+          "duration": 51,
+          "end": 1794,
+          "transfer": 2093
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.css",
+          "start": 1743,
+          "duration": 80,
+          "end": 1823,
+          "transfer": 963
+        },
+        {
+          "name": "/backend-activation.json",
+          "start": 1898,
+          "duration": 66,
+          "end": 1964,
+          "transfer": 371
+        },
+        {
+          "name": "/version.json",
+          "start": 1972,
+          "duration": 72,
+          "end": 2044,
+          "transfer": 0
+        }
+      ]
+    },
+    {
+      "audit": {
+        "phases": [
+          {
+            "phase": "S01",
+            "at": 397
+          },
+          {
+            "phase": "S02",
+            "at": 987
+          },
+          {
+            "phase": "S03",
+            "at": 1554
+          },
+          {
+            "phase": "S04",
+            "at": 1562
+          },
+          {
+            "phase": "S05",
+            "at": 1563
+          },
+          {
+            "phase": "S06",
+            "at": 1823
+          },
+          {
+            "phase": "S07",
+            "at": 1835
+          },
+          {
+            "phase": "S08",
+            "at": 1836
+          },
+          {
+            "phase": "S09",
+            "at": 1837
+          },
+          {
+            "phase": "S10",
+            "at": 1918
+          },
+          {
+            "phase": "S11",
+            "at": 1918
+          },
+          {
+            "phase": "S12",
+            "at": 1919
+          },
+          {
+            "phase": "S13",
+            "at": 1931
+          }
+        ],
+        "longTasks": [
+          {
+            "start": 945,
+            "duration": 247
+          }
+        ],
+        "visibility": [
+          {
+            "at": 0,
+            "state": "visible"
+          }
+        ],
+        "ready": 1931
+      },
+      "resources": [
+        {
+          "name": "/festapp_update_prompt.0.20.212-696.js",
+          "start": 245,
+          "duration": 91,
+          "end": 336,
+          "transfer": 7655
+        },
+        {
+          "name": "/loading-logo.svg",
+          "start": 245,
+          "duration": 101,
+          "end": 346,
+          "transfer": 1216
+        },
+        {
+          "name": "/festapp_flutter_bootstrap_guard.0.20.212-696.js",
+          "start": 245,
+          "duration": 112,
+          "end": 357,
+          "transfer": 1231
+        },
+        {
+          "name": "/festapp_pwa_bridge.0.20.212-696.js",
+          "start": 245,
+          "duration": 140,
+          "end": 385,
+          "transfer": 1057
+        },
+        {
+          "name": "/site.webmanifest",
+          "start": 259,
+          "duration": 185,
+          "end": 444,
+          "transfer": 613
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.js",
+          "start": 398,
+          "duration": 164,
+          "end": 563,
+          "transfer": 28527
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.wasm",
+          "start": 398,
+          "duration": 700,
+          "end": 1098,
+          "transfer": 2015301
+        },
+        {
+          "name": "/main.dart.0.20.212-696.js",
+          "start": 398,
+          "duration": 494,
+          "end": 893,
+          "transfer": 2896509
+        },
+        {
+          "name": "/favicon.ico",
+          "start": 400,
+          "duration": 110,
+          "end": 510,
+          "transfer": 35999
+        },
+        {
+          "name": "/android-chrome-192x192.png",
+          "start": 445,
+          "duration": 123,
+          "end": 568,
+          "transfer": 28954
+        },
+        {
+          "name": "/assets/FontManifest.json",
+          "start": 1191,
+          "duration": 149,
+          "end": 1341,
+          "transfer": 575
+        },
+        {
+          "name": "/assets/fonts/MaterialIcons-Regular.otf",
+          "start": 1342,
+          "duration": 158,
+          "end": 1500,
+          "transfer": 26328
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Book.ttf",
+          "start": 1342,
+          "duration": 173,
+          "end": 1516,
+          "transfer": 40984
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Medium.ttf",
+          "start": 1342,
+          "duration": 195,
+          "end": 1537,
+          "transfer": 41898
+        },
+        {
+          "name": "/assets/fonts/Gill%2520Sans%2520Bold.otf",
+          "start": 1343,
+          "duration": 91,
+          "end": 1434,
+          "transfer": 53648
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/Geist%255Bwght%255D.ttf",
+          "start": 1343,
+          "duration": 203,
+          "end": 1545,
+          "transfer": 86414
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/GeistMono%255Bwght%255D.ttf",
+          "start": 1343,
+          "duration": 184,
+          "end": 1526,
+          "transfer": 89989
+        },
+        {
+          "name": "/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf",
+          "start": 1343,
+          "duration": 65,
+          "end": 1407,
+          "transfer": 1887
+        },
+        {
+          "name": "/assets/packages/lucide_icons_flutter/assets/lucide.ttf",
+          "start": 1343,
+          "duration": 192,
+          "end": 1535,
+          "transfer": 310807
+        },
+        {
+          "name": "/assets/fonts/fallback/Roboto-Regular.ttf",
+          "start": 1343,
+          "duration": 139,
+          "end": 1482,
+          "transfer": 89747
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.css",
+          "start": 1555,
+          "duration": 90,
+          "end": 1645,
+          "transfer": 963
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.js",
+          "start": 1555,
+          "duration": 93,
+          "end": 1648,
+          "transfer": 2093
+        },
+        {
+          "name": "/backend-activation.json",
+          "start": 1716,
+          "duration": 105,
+          "end": 1821,
+          "transfer": 371
+        },
+        {
+          "name": "/version.json",
+          "start": 1837,
+          "duration": 72,
+          "end": 1909,
+          "transfer": 370
+        }
+      ]
+    }
+  ],
+  "isolatedWarm": {
+    "audit": {
+      "phases": [
+        {
+          "phase": "S01",
+          "at": 39
+        },
+        {
+          "phase": "S02",
+          "at": 133
+        },
+        {
+          "phase": "S03",
+          "at": 257
+        },
+        {
+          "phase": "S04",
+          "at": 260
+        },
+        {
+          "phase": "S05",
+          "at": 261
+        },
+        {
+          "phase": "S06",
+          "at": 297
+        },
+        {
+          "phase": "S07",
+          "at": 297
+        },
+        {
+          "phase": "S08",
+          "at": 297
+        },
+        {
+          "phase": "S09",
+          "at": 297
+        },
+        {
+          "phase": "S10",
+          "at": 388
+        },
+        {
+          "phase": "S11",
+          "at": 389
+        },
+        {
+          "phase": "S12",
+          "at": 389
+        },
+        {
+          "phase": "S13",
+          "at": 408
+        }
+      ],
+      "longTasks": [
+        {
+          "start": 84,
+          "duration": 51
+        }
+      ],
+      "visibility": [
+        {
+          "at": 0,
+          "state": "visible"
+        }
+      ],
+      "ready": 408
+    },
+    "resources": [
+      {
+        "name": "/festapp_flutter_bootstrap_guard.0.20.212-696.js",
+        "start": 28,
+        "duration": 2,
+        "end": 30,
+        "transfer": 0
+      },
+      {
+        "name": "/festapp_pwa_bridge.0.20.212-696.js",
+        "start": 28,
+        "duration": 2,
+        "end": 30,
+        "transfer": 0
+      },
+      {
+        "name": "/festapp_update_prompt.0.20.212-696.js",
+        "start": 28,
+        "duration": 4,
+        "end": 32,
+        "transfer": 0
+      },
+      {
+        "name": "/loading-logo.svg",
+        "start": 28,
+        "duration": 5,
+        "end": 33,
+        "transfer": 0
+      },
+      {
+        "name": "/canvaskit/chromium/canvaskit.js",
+        "start": 39,
+        "duration": 4,
+        "end": 43,
+        "transfer": 0
+      },
+      {
+        "name": "/canvaskit/chromium/canvaskit.wasm",
+        "start": 39,
+        "duration": 128,
+        "end": 167,
+        "transfer": 0
+      },
+      {
+        "name": "/main.dart.0.20.212-696.js",
+        "start": 39,
+        "duration": 16,
+        "end": 56,
+        "transfer": 0
+      },
+      {
+        "name": "/site.webmanifest",
+        "start": 40,
+        "duration": 105,
+        "end": 145,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/FontManifest.json",
+        "start": 135,
+        "duration": 112,
+        "end": 246,
+        "transfer": 0
+      },
+      {
+        "name": "/android-chrome-192x192.png",
+        "start": 146,
+        "duration": 5,
+        "end": 151,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/fonts/MaterialIcons-Regular.otf",
+        "start": 247,
+        "duration": 5,
+        "end": 253,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/fonts/Futura%2520PT%2520Book.ttf",
+        "start": 247,
+        "duration": 4,
+        "end": 251,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/fonts/Futura%2520PT%2520Medium.ttf",
+        "start": 247,
+        "duration": 4,
+        "end": 251,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/fonts/Gill%2520Sans%2520Bold.otf",
+        "start": 248,
+        "duration": 4,
+        "end": 251,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/packages/shadcn_ui/fonts/Geist%255Bwght%255D.ttf",
+        "start": 248,
+        "duration": 4,
+        "end": 252,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/packages/shadcn_ui/fonts/GeistMono%255Bwght%255D.ttf",
+        "start": 248,
+        "duration": 4,
+        "end": 252,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/packages/lucide_icons_flutter/assets/lucide.ttf",
+        "start": 248,
+        "duration": 7,
+        "end": 255,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf",
+        "start": 248,
+        "duration": 5,
+        "end": 253,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/fonts/fallback/Roboto-Regular.ttf",
+        "start": 248,
+        "duration": 6,
+        "end": 253,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/packages/fluttertoast/assets/toastify.css",
+        "start": 258,
+        "duration": 4,
+        "end": 262,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/packages/fluttertoast/assets/toastify.js",
+        "start": 258,
+        "duration": 4,
+        "end": 262,
+        "transfer": 0
+      },
+      {
+        "name": "/version.json",
+        "start": 297,
+        "duration": 86,
+        "end": 383,
+        "transfer": 0
+      },
+      {
+        "name": "/sdks/web/v16/OneSignalSDK.page.js",
+        "start": 389,
+        "duration": 0,
+        "end": 389,
+        "transfer": 0
+      },
+      {
+        "name": "/sdks/web/v16/OneSignalSDK.page.es6.js",
+        "start": 389,
+        "duration": 0,
+        "end": 389,
+        "transfer": 0
+      },
+      {
+        "name": "/assets/assets/translations/cs.json",
+        "start": 407,
+        "duration": 2,
+        "end": 409,
+        "transfer": 0
+      }
+    ]
+  },
+  "authenticatedBackground": {
+    "audit": {
+      "phases": [
+        {
+          "phase": "S01",
+          "at": 120
+        },
+        {
+          "phase": "S02",
+          "at": 792
+        },
+        {
+          "phase": "S03",
+          "at": 1338
+        },
+        {
+          "phase": "S04",
+          "at": 1363
+        },
+        {
+          "phase": "S05",
+          "at": 1364
+        },
+        {
+          "phase": "S06",
+          "at": 1397
+        },
+        {
+          "phase": "S07",
+          "at": 1398
+        },
+        {
+          "phase": "S08",
+          "at": 1399
+        },
+        {
+          "phase": "S09",
+          "at": 1399
+        },
+        {
+          "phase": "S10",
+          "at": 1867
+        },
+        {
+          "phase": "S11",
+          "at": 1877
+        },
+        {
+          "phase": "S12",
+          "at": 1880
+        }
+      ],
+      "longTasks": [],
+      "visibility": [
+        {
+          "at": 0,
+          "state": "hidden"
+        }
+      ],
+      "ready": null
+    },
+    "timing": {
+      "visibility": "hidden",
+      "phase": "S12",
+      "ready": false,
+      "now": 8087,
+      "navigation": [
+        {
+          "responseEnd": 61,
+          "domContentLoaded": 89,
+          "load": 121
+        }
+      ],
+      "resources": [
+        {
+          "name": "/festapp_flutter_bootstrap_guard.0.20.212-696.js",
+          "start": 61,
+          "duration": 5,
+          "end": 67,
+          "transfer": 0,
+          "encoded": 2338,
+          "decoded": 2338,
+          "status": 200
+        },
+        {
+          "name": "/loading-logo.svg",
+          "start": 62,
+          "duration": 5,
+          "end": 67,
+          "transfer": 0,
+          "encoded": 2104,
+          "decoded": 2104,
+          "status": 200
+        },
+        {
+          "name": "/festapp_pwa_bridge.0.20.212-696.js",
+          "start": 62,
+          "duration": 5,
+          "end": 67,
+          "transfer": 0,
+          "encoded": 2052,
+          "decoded": 2052,
+          "status": 200
+        },
+        {
+          "name": "/festapp_update_prompt.0.20.212-696.js",
+          "start": 62,
+          "duration": 25,
+          "end": 86,
+          "transfer": 0,
+          "encoded": 28446,
+          "decoded": 28446,
+          "status": 200
+        },
+        {
+          "name": "/site.webmanifest",
+          "start": 93,
+          "duration": 5,
+          "end": 97,
+          "transfer": 0,
+          "encoded": 632,
+          "decoded": 632,
+          "status": 200
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.wasm",
+          "start": 120,
+          "duration": 18,
+          "end": 139,
+          "transfer": 0,
+          "encoded": 5428806,
+          "decoded": 5428806,
+          "status": 200
+        },
+        {
+          "name": "/canvaskit/chromium/canvaskit.js",
+          "start": 120,
+          "duration": 7,
+          "end": 127,
+          "transfer": 0,
+          "encoded": 86226,
+          "decoded": 86226,
+          "status": 200
+        },
+        {
+          "name": "/main.dart.0.20.212-696.js",
+          "start": 121,
+          "duration": 104,
+          "end": 225,
+          "transfer": 0,
+          "encoded": 10961048,
+          "decoded": 10961048,
+          "status": 200
+        },
+        {
+          "name": "/android-chrome-192x192.png",
+          "start": 130,
+          "duration": 17,
+          "end": 147,
+          "transfer": 0,
+          "encoded": 28654,
+          "decoded": 28654,
+          "status": 200
+        },
+        {
+          "name": "/assets/FontManifest.json",
+          "start": 1304,
+          "duration": 3,
+          "end": 1307,
+          "transfer": 0,
+          "encoded": 816,
+          "decoded": 816,
+          "status": 200
+        },
+        {
+          "name": "/assets/fonts/MaterialIcons-Regular.otf",
+          "start": 1315,
+          "duration": 7,
+          "end": 1322,
+          "transfer": 0,
+          "encoded": 48404,
+          "decoded": 48404,
+          "status": 200
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Book.ttf",
+          "start": 1316,
+          "duration": 13,
+          "end": 1329,
+          "transfer": 0,
+          "encoded": 94816,
+          "decoded": 94816,
+          "status": 200
+        },
+        {
+          "name": "/assets/fonts/Futura%2520PT%2520Medium.ttf",
+          "start": 1316,
+          "duration": 12,
+          "end": 1329,
+          "transfer": 0,
+          "encoded": 98136,
+          "decoded": 98136,
+          "status": 200
+        },
+        {
+          "name": "/assets/fonts/Gill%2520Sans%2520Bold.otf",
+          "start": 1317,
+          "duration": 13,
+          "end": 1329,
+          "transfer": 0,
+          "encoded": 131444,
+          "decoded": 131444,
+          "status": 200
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/Geist%255Bwght%255D.ttf",
+          "start": 1317,
+          "duration": 13,
+          "end": 1330,
+          "transfer": 0,
+          "encoded": 168932,
+          "decoded": 168932,
+          "status": 200
+        },
+        {
+          "name": "/assets/packages/shadcn_ui/fonts/GeistMono%255Bwght%255D.ttf",
+          "start": 1317,
+          "duration": 13,
+          "end": 1330,
+          "transfer": 0,
+          "encoded": 171072,
+          "decoded": 171072,
+          "status": 200
+        },
+        {
+          "name": "/assets/packages/lucide_icons_flutter/assets/lucide.ttf",
+          "start": 1318,
+          "duration": 10,
+          "end": 1328,
+          "transfer": 0,
+          "encoded": 735508,
+          "decoded": 735508,
+          "status": 200
+        },
+        {
+          "name": "/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf",
+          "start": 1318,
+          "duration": 8,
+          "end": 1326,
+          "transfer": 0,
+          "encoded": 2460,
+          "decoded": 2460,
+          "status": 200
+        },
+        {
+          "name": "/assets/fonts/fallback/Roboto-Regular.ttf",
+          "start": 1319,
+          "duration": 8,
+          "end": 1327,
+          "transfer": 0,
+          "encoded": 171676,
+          "decoded": 171676,
+          "status": 200
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.css",
+          "start": 1342,
+          "duration": 3,
+          "end": 1345,
+          "transfer": 0,
+          "encoded": 1337,
+          "decoded": 1337,
+          "status": 200
+        },
+        {
+          "name": "/assets/packages/fluttertoast/assets/toastify.js",
+          "start": 1342,
+          "duration": 3,
+          "end": 1345,
+          "transfer": 0,
+          "encoded": 5285,
+          "decoded": 5285,
+          "status": 200
+        },
+        {
+          "name": "/version.json",
+          "start": 1400,
+          "duration": 3,
+          "end": 1403,
+          "transfer": 0,
+          "encoded": 87,
+          "decoded": 87,
+          "status": 200
+        },
+        {
+          "name": "/auth/v1/token",
+          "start": 1421,
+          "duration": 278,
+          "end": 1699,
+          "transfer": 0,
+          "encoded": 0,
+          "decoded": 0,
+          "status": 200
+        },
+        {
+          "name": "/rest/v1/user_info",
+          "start": 1709,
+          "duration": 95,
+          "end": 1804,
+          "transfer": 0,
+          "encoded": 0,
+          "decoded": 0,
+          "status": 200
+        },
+        {
+          "name": "/festapp-version.json",
+          "start": 4064,
+          "duration": 82,
+          "end": 4146,
+          "transfer": 0,
+          "encoded": 62,
+          "decoded": 62,
+          "status": 200
+        }
+      ]
+    }
+  },
+  "derived": [
+    {
+      "readyMs": 2194,
+      "beforeLoaderMs": 591,
+      "entrypointMs": 641,
+      "engineMs": 565,
+      "afterEngineMs": 397
+    },
+    {
+      "readyMs": 2065,
+      "beforeLoaderMs": 437,
+      "entrypointMs": 844,
+      "engineMs": 461,
+      "afterEngineMs": 323
+    },
+    {
+      "readyMs": 1931,
+      "beforeLoaderMs": 397,
+      "entrypointMs": 590,
+      "engineMs": 567,
+      "afterEngineMs": 377
+    },
+    {
+      "readyMs": 408,
+      "beforeLoaderMs": 39,
+      "entrypointMs": 94,
+      "engineMs": 124,
+      "afterEngineMs": 151
+    }
+  ]
+}

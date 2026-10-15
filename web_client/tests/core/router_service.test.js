@@ -606,3 +606,20 @@ test('same-path personal link changes reload the scoped form while ordinary over
     listeners.hashchange({ oldURL: base, newURL: `${base}#order-preview` });
     assert.strictEqual(reloads, 2);
 });
+
+test('order view overlays retain capability and in-tab offer/view/view changes reload', async () => {
+    const { JSDOM } = await import('jsdom');
+    const { RouterService } = await import('../../src/services/router_service.js');
+    const url = `https://example.test/form/test#order?order_id=1&token=${'a'.repeat(64)}`;
+    const dom = new JSDOM('', { url }); global.window = dom.window;
+    RouterService.pushOverlayState('order-result');
+    assert.strictEqual(window.location.href, url);
+    assert.deepStrictEqual(window.history.state, { overlay: 'order-result' });
+    dom.window.close();
+    const listeners = {}; let reloads = 0;
+    global.window = { addEventListener: (name, cb) => listeners[name] = cb, location: { reload: () => reloads++ } };
+    RouterService.initPopStateListener();
+    listeners.hashchange({ oldURL: url.replace('#order?', '#waitlist?'), newURL: url });
+    listeners.hashchange({ oldURL: url, newURL: url.replace('order_id=1','order_id=2') });
+    assert.strictEqual(reloads, 2);
+});

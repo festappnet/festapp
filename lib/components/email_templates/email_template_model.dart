@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/order_overview_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -203,6 +204,16 @@ class EmailTemplateModel {
   /// Mapping of template codes to their available substitutions.
   static List<EmailTemplateSub> get waitlistSubs => [
         EmailTemplateSub(
+            code: 'order_overview_url',
+            description: OrderOverviewStrings.text('title'),
+            defaultValue:
+                'https://example.invalid/form/example#order?order_id=1&token=preview'),
+        EmailTemplateSub(
+            code: 'order_overview_button',
+            description: OrderOverviewStrings.text('title'),
+            defaultValue:
+                '<a href="https://example.invalid/form/example">Order overview</a>'),
+        EmailTemplateSub(
             code: 'order_symbol',
             description: OrdersStrings.gridOrderSymbol,
             defaultValue: '7G4K9M2R6A'),
@@ -231,6 +242,14 @@ class EmailTemplateModel {
       ];
 
   static final Map<String, List<EmailTemplateSub>> substitutionDefinitions = {
+    'ORDER_OVERVIEW': waitlistSubs
+        .where((sub) => [
+              'order_symbol',
+              'occasion_title',
+              'order_overview_url',
+              'order_overview_button'
+            ].contains(sub.code))
+        .toList(),
     'waitlist_confirmation': waitlistSubs,
     'waitlist_offer': [
       ...waitlistSubs,

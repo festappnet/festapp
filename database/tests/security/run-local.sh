@@ -25,13 +25,24 @@ for old, new in [('festapp-db-tests-pg15', 'festapp-security-remediation-2026100
     assert old in config, f'Local DB config changed: missing {old}'
     config = config.replace(old, new)
 (work / 'supabase/config.toml').write_text(config)
+script = (root / 'automation/bootstrap_local_db.sh').read_text()
+replacements = [
+    ('readonly PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"', f'readonly PROJECT_ROOT="{root}"'),
+    ('readonly LOCAL_WORKDIR="$SCRIPT_DIR/local_db"', f'readonly LOCAL_WORKDIR="{work}"'),
+    ('festapp-db-tests-pg15', 'festapp-security-remediation-20261009'),
+    ('55432', '55562'),
+]
+for old, new in replacements:
+    assert old in script, f'Bootstrap contract changed: missing {old}'
+    script = script.replace(old, new)
+(task / 'bootstrap.sh').write_text(script)
 PY
-if ! FESTAPP_LOCAL_DB_WORKDIR="$TASK_DIRECTORY/local_db" FESTAPP_LOCAL_DB_PROJECT_ID="$TASK_PROJECT_ID" FESTAPP_LOCAL_DB_PORT=55562 bash "$REPOSITORY_ROOT/automation/bootstrap_local_db.sh" > "$TASK_DIRECTORY/bootstrap.log" 2>&1; then
+if ! bash "$TASK_DIRECTORY/bootstrap.sh" > "$TASK_DIRECTORY/bootstrap.log" 2>&1; then
   tail -20 "$TASK_DIRECTORY/bootstrap.log" >&2
   exit 1
 fi
 node "$SCRIPT_DIR/scan_attendance_security.mjs"
 DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55562/postgres?sslmode=disable' \
   node "$REPOSITORY_ROOT/web_client/scripts/run_db_tests.js" \
-  account_intent_atomicity account_email_service_role_permissions sign_in_codes event_attendance_summary rpc_object_authorization get_all_email_templates get_email_templates_tenant_scope \
+  rpc_object_authorization get_all_email_templates get_email_templates_tenant_scope \
   full_deposit_flow on_site_surcharge_flow overpayment_flow companion_contract

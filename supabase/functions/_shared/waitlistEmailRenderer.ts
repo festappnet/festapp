@@ -1,3 +1,4 @@
+import { openOrderOverviewUrl } from "./customerOrderAccess.ts";
 import {
   type DeliverEmailInput,
   type PreparedEmail,
@@ -39,6 +40,7 @@ export type WaitlistRenderContext = {
   timeZone?: string;
   communicationTone?: "formal" | "informal";
   toneSubstitutions?: Record<string, string>;
+  overviewSource?: { sealed: Record<string, string>; contentHash: string; tokenHash: string };
   manageEnvelope?: Record<string, string>;
   manageContentHash?: string;
   manageTokenHash?: string;
@@ -122,7 +124,7 @@ export async function renderWaitlistEmail(
   const offer = row.code === "waitlist_offer";
   if (
     !["waitlist_confirmation", "waitlist_offer"].includes(row.code) ||
-    source.version !== 1 || source.templateCode !== row.code ||
+    ![1, 2].includes(source.version) || source.templateCode !== row.code ||
     row.message_kind !== row.code || source.recipient !== row.recipient ||
     source.organization !== row.organization ||
     source.occasion !== row.occasion ||
@@ -172,7 +174,7 @@ export async function renderWaitlistEmail(
     }
     manageSource = await d.open(context.manageEnvelope);
     if (
-      manageSource.version !== 1 ||
+      ![1, 2].includes(manageSource.version) ||
       manageSource.templateCode !== "waitlist_confirmation" ||
       manageSource.recipient !== row.recipient ||
       manageSource.organization !== row.organization ||
@@ -193,6 +195,10 @@ export async function renderWaitlistEmail(
   const manageUrl = escapeHtml(waitlistCapabilityUrl(context, manageSource));
   const button = (href: string, label: string) =>
     `<a href="${href}" rel="noreferrer noopener" referrerpolicy="no-referrer" style="display:inline-block;padding:12px 20px;background:#1565c0;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a>`;
+  let overviewUrl = "";
+  if (source.version === 2 && context.overviewSource) {
+    overviewUrl = await openOrderOverviewUrl(context, context.overviewSource);
+  }
   // Delivery and editor preview consume the same authoritative form-tone copy.
   const toneKeys = ["waitlist_offer_button_single", "waitlist_offer_button_multiple", "waitlist_manage_button_label", "waitlist_confirmation_heading", "waitlist_confirmation_explanation", "waitlist_offer_heading", "waitlist_offer_instructions", "waitlist_offer_instructions_single"];
   if (toneKeys.some((key) => typeof context.toneSubstitutions?.[key] !== "string")) {
@@ -200,6 +206,8 @@ export async function renderWaitlistEmail(
   }
   const substitutions: Record<string, string | number> = {
     ...Object.fromEntries(toneKeys.map((key) => [key, escapeHtml(context.toneSubstitutions![key])])),
+    order_overview_url: escapeHtml(overviewUrl),
+    order_overview_button: overviewUrl ? button(escapeHtml(overviewUrl), "Přehled objednávky") : "",
     order_symbol: escapeHtml(context.orderSymbol),
     occasion_title: escapeHtml(source.occasionTitle),
     participant_count: offer
@@ -219,8 +227,7 @@ export async function renderWaitlistEmail(
       }
       : {}),
   };
-  return {
-    prepared: await d.render({
+  const prepared = await d.render({
       to: row.recipient,
       templateCode: row.code,
       context: {
@@ -230,7 +237,15 @@ export async function renderWaitlistEmail(
       },
       substitutions,
       replyTo: context.replyTo,
-    }),
+    });
+  // Existing inherited templates need not add the new variable to deliver access.
+  if (overviewUrl && !prepared.html.includes(`href="${escapeHtml(overviewUrl)}"`)) {
+    const link = `<p>${button(escapeHtml(overviewUrl), "Přehled objednávky")}</p>`;
+    prepared.html = /<\/body>/i.test(prepared.html)
+      ? prepared.html.replace(/<\/body>/i, `${link}</body>`) : prepared.html + link;
+  }
+  return {
+    prepared,
     postAction: {
       tracking_policy: "disabled",
       ...(offer ? { waitlist_pending_count: context.offeredCount } : {}),

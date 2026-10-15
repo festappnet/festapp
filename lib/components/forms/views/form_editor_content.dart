@@ -1,7 +1,7 @@
 import '../waitlist_strings.dart';
 import 'form_capacity_settings.dart';
-import 'dart:async';
 import 'package:fstapp/widgets/app_dialog.dart';
+import 'dart:async';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';

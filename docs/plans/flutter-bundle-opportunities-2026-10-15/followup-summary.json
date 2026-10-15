@@ -1,0 +1,209 @@
+{
+  "sourceCommit": "48898861279f82694ce4758406d182ce401a62d2",
+  "toolchain": {
+    "flutter": "3.47.2",
+    "dart": "3.13.2"
+  },
+  "variants": [
+    {
+      "variant": "baseline",
+      "files": [
+        {
+          "name": "main.dart.js",
+          "raw": 10978187,
+          "brotliQ9": 2479487
+        },
+        {
+          "name": "main.dart.js_1.part.js",
+          "raw": 10111256,
+          "brotliQ9": 543840
+        }
+      ],
+      "initialRawSavings": 0,
+      "initialBrotliQ9Savings": 0,
+      "totalRaw": 21089443,
+      "totalBrotliQ9": 3023327
+    },
+    {
+      "variant": "program-volunteers",
+      "files": [
+        {
+          "name": "main.dart.js",
+          "raw": 10812912,
+          "brotliQ9": 2440021
+        },
+        {
+          "name": "main.dart.js_1.part.js",
+          "raw": 10111256,
+          "brotliQ9": 545260
+        },
+        {
+          "name": "main.dart.js_2.part.js",
+          "raw": 38611,
+          "brotliQ9": 12218
+        },
+        {
+          "name": "main.dart.js_4.part.js",
+          "raw": 130959,
+          "brotliQ9": 36997
+        }
+      ],
+      "initialRawSavings": 165275,
+      "initialBrotliQ9Savings": 39466,
+      "totalRaw": 21093738,
+      "totalBrotliQ9": 3034496
+    },
+    {
+      "variant": "html-editor-module",
+      "files": [
+        {
+          "name": "main.dart.js",
+          "raw": 10210993,
+          "brotliQ9": 2302830
+        },
+        {
+          "name": "main.dart.js_1.part.js",
+          "raw": 7564,
+          "brotliQ9": 2674
+        },
+        {
+          "name": "main.dart.js_2.part.js",
+          "raw": 744879,
+          "brotliQ9": 192316
+        },
+        {
+          "name": "main.dart.js_3.part.js",
+          "raw": 5642,
+          "brotliQ9": 2084
+        },
+        {
+          "name": "main.dart.js_5.part.js",
+          "raw": 1553,
+          "brotliQ9": 734
+        },
+        {
+          "name": "main.dart.js_6.part.js",
+          "raw": 10111255,
+          "brotliQ9": 545007
+        },
+        {
+          "name": "main.dart.js_7.part.js",
+          "raw": 14309,
+          "brotliQ9": 4774
+        }
+      ],
+      "initialRawSavings": 767194,
+      "initialBrotliQ9Savings": 176657,
+      "totalRaw": 21096195,
+      "totalBrotliQ9": 3050419
+    },
+    {
+      "variant": "combined-modules",
+      "files": [
+        {
+          "name": "main.dart.js",
+          "raw": 9846501,
+          "brotliQ9": 2216104
+        },
+        {
+          "name": "main.dart.js_1.part.js",
+          "raw": 7566,
+          "brotliQ9": 2681
+        },
+        {
+          "name": "main.dart.js_10.part.js",
+          "raw": 335,
+          "brotliQ9": 221
+        },
+        {
+          "name": "main.dart.js_11.part.js",
+          "raw": 2386,
+          "brotliQ9": 1169
+        },
+        {
+          "name": "main.dart.js_12.part.js",
+          "raw": 1555,
+          "brotliQ9": 741
+        },
+        {
+          "name": "main.dart.js_13.part.js",
+          "raw": 10111254,
+          "brotliQ9": 543429
+        },
+        {
+          "name": "main.dart.js_15.part.js",
+          "raw": 105958,
+          "brotliQ9": 29437
+        },
+        {
+          "name": "main.dart.js_16.part.js",
+          "raw": 348,
+          "brotliQ9": 212
+        },
+        {
+          "name": "main.dart.js_17.part.js",
+          "raw": 14319,
+          "brotliQ9": 4769
+        },
+        {
+          "name": "main.dart.js_18.part.js",
+          "raw": 327,
+          "brotliQ9": 215
+        },
+        {
+          "name": "main.dart.js_19.part.js",
+          "raw": 38610,
+          "brotliQ9": 12212
+        },
+        {
+          "name": "main.dart.js_2.part.js",
+          "raw": 744898,
+          "brotliQ9": 192174
+        },
+        {
+          "name": "main.dart.js_21.part.js",
+          "raw": 130987,
+          "brotliQ9": 36984
+        },
+        {
+          "name": "main.dart.js_3.part.js",
+          "raw": 5644,
+          "brotliQ9": 2087
+        },
+        {
+          "name": "main.dart.js_4.part.js",
+          "raw": 417,
+          "brotliQ9": 229
+        },
+        {
+          "name": "main.dart.js_7.part.js",
+          "raw": 328,
+          "brotliQ9": 217
+        },
+        {
+          "name": "main.dart.js_8.part.js",
+          "raw": 95253,
+          "brotliQ9": 25543
+        }
+      ],
+      "initialRawSavings": 1131686,
+      "initialBrotliQ9Savings": 263383,
+      "totalRaw": 21106686,
+      "totalBrotliQ9": 3068424
+    }
+  ],
+  "combinedScope": [
+    "html_editor",
+    "news_editor",
+    "program_administration",
+    "volunteer_timeline",
+    "ticket_layout_editor",
+    "form_editor"
+  ],
+  "combinedExcludesMapModule": true,
+  "compression": "Brotli quality 9, identical local settings; not CDN encoding",
+  "limitations": [
+    "Build-size experiments only; no startup-time, UI, or PWA acceptance tests.",
+    "Canonical main snapshot; no exact tenant release reproduction."
+  ]
+}

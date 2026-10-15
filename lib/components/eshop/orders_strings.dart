@@ -358,6 +358,7 @@ class OrdersStrings {
   static String get gridAmount => 'OrderGridColumns.amount'.tr(); // "Amount"
   static String get gridReturned =>
       'OrderGridColumns.returned'.tr(); // "Returned"
+  static String get gridReturnedHelp => 'OrderGridColumns.returnedHelp'.tr();
   static String get gridVariableSymbol =>
       'OrderGridColumns.variableSymbol'.tr(); // "Variable symbol"
   static String get gridDeadline =>
