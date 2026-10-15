@@ -1,3 +1,4 @@
+import { authorizeCustomerTicket } from './customerAccess.ts';
 import { prepareTicketRenderer } from '../_shared/ticketGeneration.ts';
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { authorizeRequest, AuthError } from "../_shared/auth.ts";
@@ -6,6 +7,7 @@ import { Buffer } from "node:buffer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
+  "Cache-Control": "no-store",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -17,12 +19,22 @@ Deno.serve(async (req) => {
 
     const reqData = await req.json();
     const { requestSecret, ticketId } = reqData;
+    const customer = Object.hasOwn(reqData, "token") || Object.hasOwn(reqData, "orderId");
 
-    if (typeof ticketId !== "number") {
+    if (!Number.isSafeInteger(ticketId) || ticketId <= 0) {
       return new Response(JSON.stringify({ error: "Invalid input parameters" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
+    }
+
+    if (!customer && !requestSecret && !req.headers.get("Authorization")) {
+      throw new AuthError("Unauthorized", 401);
+    }
+
+    if (customer && !await authorizeCustomerTicket(reqData, async (token, orderId) =>
+      await supabaseAdmin.rpc('get_customer_order_overview', { p_token: token, p_order_id: orderId }))) {
+      throw new AuthError("Ticket is not available", 403);
     }
 
     const { data: result, error: rpcError } = await supabaseAdmin.rpc('get_ticket_details_for_generating', {
@@ -36,7 +48,11 @@ Deno.serve(async (req) => {
     const { ticket, occasion } = result;
 
     const authorizationHeader = req.headers.get("Authorization");
-    await authorizeRequest({ requestSecret, authorizationHeader, occasionId: occasion.id, permission: "readOrder" });
+    if (customer) {
+      if (!['paid', 'sent', 'used'].includes(ticket.state)) throw new AuthError("Ticket is not available", 403);
+    } else {
+      await authorizeRequest({ requestSecret, authorizationHeader, occasionId: occasion.id, permission: "readOrder" });
+    }
 
     const render = await prepareTicketRenderer(occasion, ticket, result.order_data);
     const { bytes: pdfBytes } = await render(ticket);

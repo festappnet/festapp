@@ -128,18 +128,41 @@ BEGIN
  BEGIN PERFORM public.resolve_customer_order_access_v1(offer_token,oid,(w->>'id')::uuid,gen_random_uuid(),delivery); RAISE EXCEPTION 'terminal bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='terminal bootstrap' THEN RAISE; END IF; END;
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'completed manage bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='completed manage bootstrap' THEN RAISE; END IF; END;
  PERFORM assert_eq(public.get_order_email_overview_source_v1(child,'regression@example.invalid',gen_random_uuid())->'source',source->'source','split child email reuses root token');
+ -- Product order follows form fields, regardless of stored JSON array order.
+ DECLARE extra_type bigint; extra_product bigint; stable_items jsonb;
+ BEGIN
+  INSERT INTO eshop.product_types(title,type,occasion) VALUES('Earlier field','product',(x->>'occasion')::bigint) RETURNING id INTO extra_type;
+  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion) VALUES('Earlier option',extra_type,0,'CZK',(x->>'occasion')::bigint) RETURNING id INTO extra_product;
+  INSERT INTO public.form_fields(form,product_type,type,"order") VALUES((x->>'form')::bigint,extra_type,'product_type',-100);
+  INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES(child,ids[2],extra_product);
+  UPDATE eshop.orders SET data=jsonb_set(data,'{tickets,0,products}',(data#>'{tickets,0,products}')||jsonb_build_array(jsonb_build_object('id',extra_product,'title','Earlier option','price',0))) WHERE id=child;
+  r:=public.get_customer_order_overview(view_token,oid);
+  SELECT o->'items' INTO stable_items FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child;
+  PERFORM assert_eq((stable_items#>>'{0,id}')::bigint,extra_product,'form ordering overrides snapshot order');
+  UPDATE eshop.orders SET data=jsonb_set(data,'{tickets,0,products}',(SELECT jsonb_agg(item ORDER BY position DESC) FROM jsonb_array_elements(data#>'{tickets,0,products}') WITH ORDINALITY a(item,position))) WHERE id=child;
+  r:=public.get_customer_order_overview(view_token,oid);
+  PERFORM assert_eq((SELECT o->'items' FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child),stable_items,'shuffling stored products does not reorder the customer list');
+ END;
  SELECT payment_info INTO pid FROM eshop.orders WHERE id=child;
  -- Customer projection exposes only matched movement facts and recorded changes.
- INSERT INTO eshop.transactions(bank_account_id,payment_info,amount,currency,date,transaction_type,counter_account_name,comment)
- VALUES((SELECT bank_account FROM eshop.payment_info WHERE id=pid),pid,250,'CZK','2026-10-14','manual','PRIVATE PAYER','PRIVATE NOTE'),
-       ((SELECT bank_account FROM eshop.payment_info WHERE id=pid),pid,-50,'CZK','2026-10-15','return','PRIVATE PAYER','PRIVATE NOTE'),
-       ((SELECT bank_account FROM eshop.payment_info WHERE id=pid),NULL,999,'CZK','2026-10-15','manual','UNRELATED','UNRELATED');
+ UPDATE eshop.bank_accounts SET account_number='CZ6508000000192000145399',account_number_human_readable='19-2000145399/0800' WHERE id=(SELECT bank_account FROM eshop.payment_info WHERE id=pid);
+ INSERT INTO eshop.transactions(bank_account_id,payment_info,amount,currency,date,transaction_type,counter_account_name,comment,created_at)
+ VALUES((SELECT bank_account FROM eshop.payment_info WHERE id=pid),pid,250,'CZK','2026-10-14','manual','PRIVATE PAYER','PRIVATE NOTE','2026-10-14 19:30:31+00'),
+       ((SELECT bank_account FROM eshop.payment_info WHERE id=pid),pid,-50,'CZK','2026-10-15','return','PRIVATE PAYER','PRIVATE NOTE','2026-10-15 09:15:20+00'),
+       ((SELECT bank_account FROM eshop.payment_info WHERE id=pid),NULL,999,'CZK','2026-10-15','manual','UNRELATED','UNRELATED','2026-10-15 09:16:00+00');
+ WITH cash AS (INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Cash','CASH',ARRAY['CZK']) RETURNING id)
+ INSERT INTO eshop.transactions(bank_account_id,payment_info,amount,currency,date,transaction_type,created_at)
+ SELECT id,pid,25,'CZK','2026-10-15','manual','2026-10-15 10:00:00+00' FROM cash;
  INSERT INTO eshop.orders_history("order",state,price,currency_code,data,created_at)
  VALUES(child,'ordered',100,'CZK','{"tickets":[{"id":1,"products":[{"id":1,"title":"Before","price":100}]}]}',now()+interval '1 second'),
        (child,'ordered',200,'CZK','{"tickets":[{"id":1,"products":[{"id":1,"title":"After","price":200}]}],"note_hidden":"PRIVATE NOTE"}',now()+interval '2 seconds');
  r:=public.get_customer_order_overview(view_token,oid);
- PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'kind'='payment_received' AND e->>'dateOnly'='true'),'timeline includes actual dated payments');
- PERFORM assert_eq((SELECT jsonb_array_length(o#>'{payment,transactions}') FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child),2,'only matched transactions');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'kind'='payment_received' AND (e->>'at')::timestamptz='2026-10-14 19:30:31+00' AND e->>'timeKind'='recorded'),'timeline retains exact recording timestamp');
+ PERFORM assert_eq((SELECT jsonb_array_length(o#>'{payment,transactions}') FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child),3,'only matched transactions');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'orders') o CROSS JOIN LATERAL jsonb_array_elements(o#>'{payment,transactions}') t WHERE (t->>'recordedAt')::timestamptz='2026-10-14 19:30:31+00'),'transaction list retains exact recording timestamp');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'paymentMethod'='bank' AND e->>'recipientAccount'='19-2000145399/0800' AND (e->>'amount')::numeric=250),'actual bank recipient shown');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'paymentMethod'='cash' AND e->>'recipientAccount' IS NULL AND (e->>'amount')::numeric=25),'cash is not attributed to order bank account');
+ PERFORM assert_eq((SELECT count(*) FROM jsonb_array_elements(r->'timeline') e WHERE e->>'kind'='payment_received'),2::bigint,'each incoming movement appears separately');
  PERFORM assert_true(NOT r::text LIKE '%PRIVATE%' AND NOT r::text LIKE '%UNRELATED%','transaction and history private fields excluded');
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'kind'='order_changed' AND (e->>'previousTotal')::numeric=100 AND (e->>'total')::numeric=200 AND e->>'itemsChanged'='true'),'recorded edits retain before and after');
  BEGIN PERFORM public.get_order_overview_admin_context(child); RAISE EXCEPTION 'anonymous admin access';

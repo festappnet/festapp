@@ -14,6 +14,26 @@ export function renderOverviewProducts(host, items, currency, money) {
         node(row, 'strong', money(item.price, item.currency || currency), 'overview-product-price');
     }
 }
+export function renderOverviewCustomer(host, answers = [], key) {
+    const contactTypes = ['name', 'surname', 'email', 'phone'];
+    const contacts = answers.filter(a => contactTypes.includes(a.type) && a.value != null && String(a.value).trim());
+    if (contacts.length) {
+        const list = node(host, 'dl', '', 'overview-customer');
+        const names = contacts.filter(a => ['name', 'surname'].includes(a.type)).sort((a,b) => contactTypes.indexOf(a.type)-contactTypes.indexOf(b.type));
+        const rows = [...(names.length ? [{...names[0], value: names.map(a=>a.value).join(' ')}] : []), ...contacts.filter(a=>!['name','surname'].includes(a.type))];
+        for (const answer of rows) {
+            const row = node(list, 'div', '');
+            node(row, 'dt', `${formFieldTitle(answer)}:`);
+            const value = node(row, 'dd', '');
+            const text = String(answer.value);
+            if (answer.type === 'email' || answer.type === 'phone') {
+                const link = node(value, 'a', text);
+                link.href = answer.type === 'email' ? `mailto:${text}` : `tel:${text.replace(/[^+0-9]/g, '')}`;
+            } else node(value, 'strong', text);
+        }
+    }
+    renderOverviewAnswers(host, answers.filter(a => !contactTypes.includes(a.type)), key);
+}
 export function renderOverviewAnswers(host, answers = [], key) {
     if (!answers.length) return;
     const details = node(host, 'details', '', 'overview-answers');

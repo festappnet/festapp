@@ -37,9 +37,9 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
   'variable_symbol',variable_symbol,'creditor_reference',creditor_reference) END,
  'referenceKind',CASE WHEN currency_code='EUR' THEN 'RF' ELSE 'VS' END,
  'transactions',(SELECT coalesce(jsonb_agg(jsonb_build_object(
-  'date',t.date::date,'amount',t.amount,'currency',trim(t.currency),
+  'date',t.date::date,'recordedAt',t.created_at,'amount',t.amount,'currency',trim(t.currency),
   'kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
-  ORDER BY t.date NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
+  ORDER BY t.created_at NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
  'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
  FROM due;
 $$;
@@ -114,9 +114,11 @@ BEGIN
   FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
   WHERE w.order_id=root.id AND w.form_id=f.id AND s.form_id=f.id AND s.outcome IN ('accepted','declined','cancelled','expired')
   UNION ALL
-  SELECT t.date::date::timestamptz,'4'||t.id::text,jsonb_build_object('kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END,
-   'at',t.date::date,'dateOnly',true,'amount',t.amount,'currency',trim(t.currency),'symbol',o.order_symbol)
-  FROM eshop.orders o JOIN eshop.transactions t ON t.payment_info=o.payment_info WHERE o.id=ANY(ids) AND t.date IS NOT NULL
+  SELECT t.created_at,'4'||t.id::text,jsonb_build_object('kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END,
+   'at',t.created_at,'timeKind','recorded','amount',t.amount,'currency',trim(t.currency),'symbol',o.order_symbol,
+   'paymentMethod',CASE WHEN b.type='CASH' THEN 'cash' WHEN nullif(trim(b.account_number),'') IS NOT NULL THEN 'bank' END,
+   'recipientAccount',CASE WHEN b.type<>'CASH' THEN coalesce(nullif(trim(b.account_number_human_readable),''),nullif(trim(b.account_number),'')) END)
+  FROM eshop.orders o JOIN eshop.transactions t ON t.payment_info=o.payment_info LEFT JOIN eshop.bank_accounts b ON b.id=t.bank_account_id WHERE o.id=ANY(ids) AND t.created_at IS NOT NULL
   UNION ALL
   SELECT h.created_at,'3'||h.id::text,jsonb_build_object(
    'kind',CASE WHEN h.state IS DISTINCT FROM h.previous_state THEN 'order_'||h.state ELSE 'order_changed' END,
@@ -156,8 +158,11 @@ BEGIN
   'answers',public.customer_order_answers_internal(f.id,o.data,false),
   'ticketIds',(SELECT coalesce(jsonb_agg(t.id ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t),
   'items',CASE WHEN o.state='preparing_payment' THEN '[]'::jsonb ELSE (SELECT coalesce(jsonb_agg(jsonb_build_object(
-   'ticketId',t->'id','id',p->'id','title',p->>'title','price',p->'price','currency',p->>'currency_code')),'[]')
+   'ticketId',t->'id','id',p->'id','title',p->>'title','price',p->'price','currency',p->>'currency_code') ORDER BY (t->>'id')::bigint,
+    (SELECT min(coalesce(ff."order",0)) FROM public.form_fields ff WHERE ff.form=f.id AND ff.product_type=product.product_type) NULLS LAST,
+    coalesce(product."order",0),product.id),'[]')
    FROM jsonb_array_elements(coalesce(o.data->'tickets','[]')) t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p
+   JOIN eshop.products product ON product.id=(p->>'id')::bigint
    WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x."order"=o.id AND x.ticket=(t->>'id')::bigint AND x.product=(p->>'id')::bigint)) END,
   'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,f.id),'rawState',t.state,
    'displayStatus',CASE t.state WHEN 'ordered' THEN 'awaiting_payment' WHEN 'paid' THEN 'unused' WHEN 'sent' THEN 'unused' WHEN 'used' THEN 'used' WHEN 'storno' THEN 'cancelled' ELSE 'unknown' END,
