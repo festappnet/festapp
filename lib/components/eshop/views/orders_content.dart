@@ -314,7 +314,6 @@ class _OrdersContentState extends State<OrdersContent> {
         EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE,
       EshopColumns.ORDER_EMAIL_DELIVERY,
       EshopColumns.ORDER_TRANSACTIONS,
-      EshopColumns.ORDER_OVERVIEW,
       EshopColumns.ORDER_HISTORY,
     ];
 

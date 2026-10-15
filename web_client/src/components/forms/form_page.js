@@ -1,4 +1,4 @@
-import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, overviewText } from './order_overview.js';
+import { parseOrderFragment, loadOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
 import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
@@ -129,13 +129,12 @@ export class FormPage extends Component {
 
         try {
             // 3. Fetch Data
-            this.waitlistScope = parseWaitlistFragment(new URLSearchParams(window.location.search).get('waitlist') === '1' ? `#waitlist?${window.location.search.slice(1)}` : window.location.hash);
+            this.waitlistScope = parseWaitlistFragment(window.location.hash);
             this.waitlistCommands ||= new WaitlistCommands();
-            const viewScope = parseOrderLocation(window.location);
+            const viewScope = parseOrderFragment(window.location.hash);
             if (viewScope) {
                 this.setOverviewLayout(true);
                 this.overviewScope = viewScope;
-                if (window.location.hash.startsWith('#order?')) window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
                 this.host.replaceChildren();
                 await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
                     this.continuationScope ? () => this.continueOverviewOffer() : null);
@@ -227,7 +226,7 @@ export class FormPage extends Component {
             section.replaceChildren();
             try {
                 const url = await this.waitlistCommands.overviewAccess(scope);
-                const viewScope = parseOrderLocation(new URL(url));
+                const viewScope = parseOrderFragment(new URL(url).hash);
                 if (!section.isConnected) return;
                 this.overviewScope = viewScope;
                 await loadOrderOverview(section, this.waitlistCommands, viewScope, null, true);
@@ -789,8 +788,8 @@ export class FormPage extends Component {
                      try {
                          const link = this.currentLink;
                          const url = new URL(result.data.orderOverviewUrl);
-                         const viewScope = parseOrderLocation(url);
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
+                         parseOrderFragment(url.hash);
+                         window.history.replaceState({}, '', `${window.location.pathname}${url.hash}`);
                          this.currentLink = null;
                          await this.init(link);
                      } catch {
@@ -804,7 +803,8 @@ export class FormPage extends Component {
                      const link = this.currentLink;
                      if (this.overviewScope) {
                          this.continuationScope = this.waitlistScope;
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(this.overviewScope)}`);
+                         const fragment = `order?${new URLSearchParams({ order_id: String(this.overviewScope.orderId), token: this.overviewScope.token })}`;
+                         window.history.replaceState({}, '', `${window.location.pathname}#${fragment}`);
                      }
                      this.currentLink = null;
                      await this.init(link);
