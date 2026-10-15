@@ -822,6 +822,8 @@
     "back": "Späť k vlastným akciám"
   },
   "OrderOverview": {
+    "unavailableTitle": "Objednávka nie je dostupná",
+    "unavailable": "Objednávka mohla byť vymazaná alebo odkaz už nie je platný. Ak potrebujete pomoc, kontaktujte organizátora podujatia.",
     "title": "Prehľad objednávky",
     "updated": "Aktualizované",
     "downloadTicket": "Stiahnuť PDF",
