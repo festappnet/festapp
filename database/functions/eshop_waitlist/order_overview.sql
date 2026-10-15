@@ -54,6 +54,26 @@ RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensi
 $$;
 REVOKE ALL ON FUNCTION public.customer_ticket_label_internal(bigint,bigint) FROM PUBLIC,anon,authenticated;
 
+-- Customer-visible answers only; field definitions own scope and visibility.
+CREATE OR REPLACE FUNCTION public.customer_order_answers_internal(p_form bigint,p_data jsonb,p_ticket boolean)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT coalesce(jsonb_agg(jsonb_build_object('title',f.title,'type',f.type,'value',answer.value) ORDER BY f."order",f.id),'[]')
+ FROM public.form_fields f CROSS JOIN LATERAL (
+  SELECT coalesce(a->(f.id::text),a->f.type) value
+  FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_data->'fields')='array' THEN p_data->'fields' ELSE '[]' END) a
+  WHERE a ? f.id::text OR (a->>'_subFieldId'=f.id::text AND a ? f.type)
+   OR (NOT a ? '_subFieldId' AND a ? f.type
+    AND NOT EXISTS(SELECT 1 FROM jsonb_object_keys(a) k WHERE k ~ '^[0-9]+$')
+    AND 1=(SELECT count(*) FROM public.form_fields other WHERE other.form=p_form AND other.type=f.type AND other.is_ticket_field=p_ticket AND NOT other.is_hidden))
+  LIMIT 1
+ ) answer
+ WHERE f.form=p_form AND f.is_ticket_field=p_ticket AND NOT f.is_hidden
+ AND f.type IN ('name','surname','email','phone','city','sex','birth_year','birth_date','address','nationality','id_document','text','note','select_one','select_many')
+ AND (jsonb_typeof(answer.value) IN ('string','number','boolean') OR (jsonb_typeof(answer.value)='array'
+  AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(answer.value)='array' THEN answer.value ELSE '[]' END) v WHERE jsonb_typeof(v) NOT IN ('string','number','boolean'))));
+$$;
+REVOKE ALL ON FUNCTION public.customer_order_answers_internal(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_order_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE root eshop.orders; cap eshop.waitlist_capabilities; occ public.occasions; f public.forms;
@@ -84,7 +104,8 @@ BEGIN
  THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
  SELECT jsonb_build_object('code',200,'root',jsonb_build_object('id',root.id,'symbol',root.order_symbol,'createdAt',root.created_at,'state',root.state,'title',occ.title,'formLink',f.link,'hasTickets',EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(occ.features,'[]')) feature WHERE feature->>'code'='ticket' AND feature->>'is_enabled'='true')),
  'timeline',(SELECT coalesce(jsonb_agg(event ORDER BY happened,sort_key),'[]') FROM (
-  SELECT root.created_at happened,'0' sort_key,jsonb_build_object('kind','registration_received','at',root.created_at,'symbol',root.order_symbol) event
+  SELECT root.created_at happened,'0' sort_key,jsonb_build_object('kind',CASE WHEN root.state='waitlisted' THEN 'waitlist_entered' ELSE 'order_ordered' END,'at',root.created_at,'symbol',root.order_symbol) event
+  WHERE root.state='waitlisted' OR NOT EXISTS(SELECT 1 FROM eshop.orders_history WHERE "order"=root.id AND state='ordered')
   UNION ALL
   SELECT w.created_at,'1'||w.id::text,jsonb_build_object('kind','places_offered','at',w.created_at)
   FROM eshop.waitlist_offers w WHERE w.order_id=root.id AND w.form_id=f.id
@@ -92,6 +113,10 @@ BEGIN
   SELECT s.updated_at,'2'||s.id::text,jsonb_build_object('kind','offer_'||s.outcome,'at',s.updated_at)
   FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
   WHERE w.order_id=root.id AND w.form_id=f.id AND s.form_id=f.id AND s.outcome IN ('accepted','declined','cancelled','expired')
+  UNION ALL
+  SELECT t.date::date::timestamptz,'4'||t.id::text,jsonb_build_object('kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END,
+   'at',t.date::date,'dateOnly',true,'amount',t.amount,'currency',trim(t.currency),'symbol',o.order_symbol)
+  FROM eshop.orders o JOIN eshop.transactions t ON t.payment_info=o.payment_info WHERE o.id=ANY(ids) AND t.date IS NOT NULL
   UNION ALL
   SELECT h.created_at,'3'||h.id::text,jsonb_build_object(
    'kind',CASE WHEN h.state IS DISTINCT FROM h.previous_state THEN 'order_'||h.state ELSE 'order_changed' END,
@@ -105,7 +130,7 @@ BEGIN
   FROM (SELECT snapshots.*,lag(state) OVER w previous_state,lag(price) OVER w previous_price,
    lag(items) OVER w previous_items,lag(details) OVER w previous_details FROM (
     SELECT h.id,h.created_at,h."order",h.state,h.price,coalesce(h.currency_code,o.currency_code) currency_code,o.order_symbol,
-     (SELECT coalesce(jsonb_agg(jsonb_build_object('title',p->>'title','price',p->'price') ORDER BY t->>'id',p->>'id'),'[]')
+     (SELECT coalesce(jsonb_agg(jsonb_build_object('id',p->'id','ticketId',t->'id','ticketSymbol',t->>'ticket_symbol','title',p->>'title','price',p->'price') ORDER BY t->>'id',p->>'id'),'[]')
       FROM jsonb_array_elements(coalesce(h.data->'tickets','[]')) t
       CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p) items,
      jsonb_build_object('fields',coalesce(h.data->'fields',h.data#>'{input_data,fields}'),'tickets',
@@ -117,8 +142,8 @@ BEGIN
    OR h.items IS DISTINCT FROM h.previous_items OR h.details IS DISTINCT FROM h.previous_details
  ) events),
  'serverTime',statement_timestamp(),'accessExpiresAt',cap.expires_at,'actions',jsonb_build_array('refresh'),
- 'people',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,f.id),
-  'effectiveLifecycle',CASE WHEN (SELECT state FROM eshop.orders WHERE id=x."order")='preparing_payment' THEN 'preparing' ELSE public.get_effective_waitlist_ticket_lifecycle_internal(t.id) END,'currentOrderId',x."order") ORDER BY t.id),'[]')
+ 'people',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,f.id),'symbol',t.ticket_symbol,
+  'answers',public.customer_order_answers_internal(f.id,t.data,true),'effectiveLifecycle',CASE WHEN (SELECT state FROM eshop.orders WHERE id=x."order")='preparing_payment' THEN 'preparing' ELSE public.get_effective_waitlist_ticket_lifecycle_internal(t.id) END,'currentOrderId',x."order") ORDER BY t.id),'[]')
   FROM (SELECT DISTINCT "order",ticket FROM eshop.order_product_ticket WHERE "order"=ANY(ids)) x JOIN eshop.tickets t ON t.id=x.ticket),
  'offers',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',w.id,'expiresAt',w.expires_at,
   'pendingPlaces',(SELECT count(*) FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='pending' AND w.expires_at>statement_timestamp()),
@@ -128,9 +153,10 @@ BEGIN
   ORDER BY w.created_at,w.id),'[]') FROM eshop.waitlist_offers w WHERE w.order_id=root.id AND w.form_id=f.id),
  'orders',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',o.id,'symbol',o.order_symbol,'state',o.state,'total',o.price,'currency',o.currency_code,
   'payment',public.customer_order_payment_internal(o.id),
+  'answers',public.customer_order_answers_internal(f.id,o.data,false),
   'ticketIds',(SELECT coalesce(jsonb_agg(t.id ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t),
   'items',CASE WHEN o.state='preparing_payment' THEN '[]'::jsonb ELSE (SELECT coalesce(jsonb_agg(jsonb_build_object(
-   'ticketId',t->'id','title',p->>'title','price',p->'price','currency',p->>'currency_code')),'[]')
+   'ticketId',t->'id','id',p->'id','title',p->>'title','price',p->'price','currency',p->>'currency_code')),'[]')
    FROM jsonb_array_elements(coalesce(o.data->'tickets','[]')) t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p
    WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x."order"=o.id AND x.ticket=(t->>'id')::bigint AND x.product=(p->>'id')::bigint)) END,
   'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,f.id),'rawState',t.state,

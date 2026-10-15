@@ -94,7 +94,7 @@ export class FormPage extends Component {
         // Prevent re-init if same link (e.g. hash change/back from preview)
         // Hardened Check: If container has content, we assume it's valid.
         // NOTE: this.host is managed by base Component
-        if (this.currentLink === link && this.host && this.host.innerHTML.trim() !== '') {
+        if (link != null && this.currentLink === link && this.host && this.host.innerHTML.trim() !== '') {
             return;
         }
         // Check for existing instance to prevent duplicates or state leaks
@@ -136,10 +136,11 @@ export class FormPage extends Component {
             this.waitlistScope = parseWaitlistFragment(new URLSearchParams(window.location.search).get('waitlist') === '1' ? `#waitlist?${window.location.search.slice(1)}` : window.location.hash);
             this.waitlistCommands ||= new WaitlistCommands();
             const viewScope = parseOrderLocation(window.location);
+            if (window.location.pathname === '/order' && !viewScope) throw new Error('INVALID_CAPABILITY');
             if (viewScope) {
                 this.setOverviewLayout(true);
                 this.overviewScope = viewScope;
-                if (window.location.hash.startsWith('#order?')) window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
+                if (window.location.hash.startsWith('#order?')) window.history.replaceState({}, '', `/order${orderOverviewSearch(viewScope)}`);
                 this.host.replaceChildren();
                 const overview = await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
                     this.continuationScope ? () => this.continueOverviewOffer() : null);
@@ -801,7 +802,7 @@ export class FormPage extends Component {
                          const link = this.currentLink;
                          const url = new URL(result.data.orderOverviewUrl);
                          const viewScope = parseOrderLocation(url);
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
+                         window.history.replaceState({}, '', `/order${orderOverviewSearch(viewScope)}`);
                          this.currentLink = null;
                          await this.init(link);
                      } catch {
@@ -815,7 +816,7 @@ export class FormPage extends Component {
                      const link = this.currentLink;
                      if (this.overviewScope) {
                          this.continuationScope = this.waitlistScope;
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(this.overviewScope)}`);
+                         window.history.replaceState({}, '', `/order${orderOverviewSearch(this.overviewScope)}`);
                      }
                      this.currentLink = null;
                      await this.init(link);

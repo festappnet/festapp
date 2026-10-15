@@ -456,7 +456,7 @@ function cachedNavigationTarget(pathname) {
   if (pathname === '/' && FORCED_OCCASION_PATH) {
     return FLUTTER_ENTRY;
   }
-  if (pathname === '/' || pathname.startsWith('/form/')) {
+  if (pathname === '/' || pathname === '/order' || pathname.startsWith('/form/')) {
     return WEB_CLIENT_ENTRY;
   }
   return FLUTTER_ENTRY;

@@ -2782,7 +2782,7 @@
     "storno": "Zrušeno",
     "not_required_yet": "Zatím nic neplatíte",
     "free": "Bez platby",
-    "unpaid": "Dosud neuhrazeno",
+    "unpaid": "Čeká na uhrazení",
     "partially_paid": "Částečně uhrazeno",
     "deposit_paid": "Záloha uhrazena",
     "fully_paid": "Plně uhrazeno",
@@ -2835,6 +2835,15 @@
     "tickets": "Vstupenky",
     "ticket": "Vstupenka",
     "registrations": "Přihlášky",
-    "registration": "Přihláška"
+    "registration": "Přihláška",
+    "submittedDetails": "Zadané údaje",
+    "answer": "Odpověď",
+    "added": "Přidáno",
+    "removed": "Odebráno",
+    "changed": "Upraveno",
+    "changedTo": "Nově",
+    "confirmation_sent": "Potvrzení odesláno",
+    "waitlist_entered": "Zařazeno na čekací listinu",
+    "withinDeadline": "V termínu úhrady"
   }
 }

@@ -710,5 +710,38 @@ body.dark-mode .surcharge-info {
     .overview-people > li { flex-wrap: wrap; gap: 4px 16px; }
 }
 
-.overview-ticket-items { margin: 8px 0 0; padding-inline-start: 20px; }
-.overview-ticket-items li { margin-block: 4px; }
+.overview-people > li > div { flex: 1; min-width: 0; }
+.overview-people h3 { margin: 0 0 12px; }
+.overview-products { list-style: none; padding: 0; margin: 8px 0; }
+.overview-products > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 24px; padding-block: 8px; }
+.overview-products > li > span { overflow-wrap: anywhere; }
+.overview-product-price { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.overview-answers, .overview-changes { margin-block: 16px; }
+.overview-answers summary, .overview-changes summary { padding-block: 10px; }
+.overview-answers dl { display: grid; grid-template-columns: minmax(80px, 1fr) minmax(0, 2fr); gap: 8px 24px; }
+.overview-answers dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.overview-answers dt { opacity: .8; }
+.overview-change-group { margin-block: 16px; }
+.overview-change-group h4 { margin: 0 0 8px; }
+.overview-change { border-inline-start: 3px solid var(--border-color, #8888); padding-inline-start: 12px; margin-block: 12px; }
+.overview-change-label { font-weight: 600; }
+.overview-change-removed { border-color: var(--danger-color, #b64d4d); }
+.overview-change-added { border-color: var(--dark-green, #39804b); }
+.overview-change-removed .overview-products { text-decoration: line-through; }
+.overview-change-to { opacity: .8; }
+.overview-timeline .overview-products > li { border: 0; padding: 8px 0; }
+.overview-timeline .overview-products > li::before { content: none; }
+@media (max-width: 420px) {
+    .overview-products > li { gap: 8px; }
+    .overview-answers dl { grid-template-columns: 1fr; gap: 4px; }
+    .overview-answers dd { margin-block-end: 12px; }
+}
+
+.overview-state-row { display: flex; align-items: flex-start; gap: 12px; margin-block: 12px; }
+.overview-state-row > .material-icons { font-size: 28px; line-height: 1.5; flex-shrink: 0; }
+.overview-state-row p { margin: 4px 0; }
+.overview-state-complete > .material-icons { color: var(--dark-green, #2e7d32); }
+.overview-state-overdue > .material-icons, .overview-state-cancelled > .material-icons { color: var(--danger-color, #c04848); }
+.overview-state-pending > .material-icons { color: var(--primary-color, #246ca0); }
+.overview-state-deadline { font-size: .875rem; }
+.overview-state-overdue .overview-state-deadline { font-weight: 600; }

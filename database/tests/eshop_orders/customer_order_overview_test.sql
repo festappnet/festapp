@@ -66,7 +66,7 @@ DO $$
 DECLARE x jsonb:=pg_temp.fixture(2); y jsonb:=pg_temp.fixture(1); r jsonb; oid bigint; regular bigint; other bigint;
  ids bigint[]; w jsonb; child bigint; aborted_child bigint; view_token text:=repeat('a',64); manage text:=repeat('b',64); offer_token text:=repeat('c',64);
  delivery jsonb:=jsonb_build_object('tokenHash',encode(extensions.digest(view_token,'sha256'),'hex'),'sealed',jsonb_build_object('ciphertext','synthetic'),'contentHash',repeat('f',64));
- pid bigint; status text; raw text; source jsonb; replay jsonb; command uuid:=gen_random_uuid();
+ answer_field bigint; pid bigint; status text; raw text; source jsonb; replay jsonb; command uuid:=gen_random_uuid();
 BEGIN
  FOR i IN 1..2 LOOP r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x)); END LOOP;
  oid:=(pg_temp.register(x,2,manage)->>'order')::bigint;
@@ -99,6 +99,13 @@ BEGIN
  PERFORM assert_eq(jsonb_array_length(r->'orders'),1,'partial child included');
  PERFORM assert_eq((r#>>'{orders,0,id}')::bigint,child,'correct child');
  PERFORM assert_eq(jsonb_array_length(r#>'{orders,0,items}'),1,'stored item projection');
+ PERFORM assert_eq((SELECT p->>'symbol' FROM jsonb_array_elements(r->'people') p WHERE p->>'id'=ids[2]::text),(SELECT ticket_symbol FROM eshop.tickets WHERE id=ids[2]),'known symbol belongs to scoped admission');
+ INSERT INTO form_fields(form,type,title,is_ticket_field,is_hidden) VALUES((x->>'form')::bigint,'text','Meal preference',true,false) RETURNING id INTO answer_field;
+ UPDATE eshop.tickets SET data=jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(answer_field::text,'Vegetarian')),'note_hidden','PRIVATE') WHERE id=ids[2];
+ r:=public.get_customer_order_overview(view_token,oid);
+ PERFORM assert_eq((SELECT p#>>'{answers,0,value}' FROM jsonb_array_elements(r->'people') p WHERE p->>'id'=ids[2]::text),'Vegetarian'::text,'overview includes scoped submitted answers');
+ PERFORM assert_true(NOT r::text LIKE '%PRIVATE%','overview never emits raw ticket data');
+
  PERFORM assert_eq(public.get_customer_order_overview(view_token,child)->>'code','403'::text,'child cannot select scope');
  r:=pg_temp.accept(x,w,ARRAY[ids[1]],gen_random_uuid(),offer_token);
  PERFORM assert_eq(r#>>'{data,code}','200'::text,'remaining in-place acceptance');
@@ -131,6 +138,7 @@ BEGIN
  VALUES(child,'ordered',100,'CZK','{"tickets":[{"id":1,"products":[{"id":1,"title":"Before","price":100}]}]}',now()+interval '1 second'),
        (child,'ordered',200,'CZK','{"tickets":[{"id":1,"products":[{"id":1,"title":"After","price":200}]}],"note_hidden":"PRIVATE NOTE"}',now()+interval '2 seconds');
  r:=public.get_customer_order_overview(view_token,oid);
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'kind'='payment_received' AND e->>'dateOnly'='true'),'timeline includes actual dated payments');
  PERFORM assert_eq((SELECT jsonb_array_length(o#>'{payment,transactions}') FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child),2,'only matched transactions');
  PERFORM assert_true(NOT r::text LIKE '%PRIVATE%' AND NOT r::text LIKE '%UNRELATED%','transaction and history private fields excluded');
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'timeline') e WHERE e->>'kind'='order_changed' AND (e->>'previousTotal')::numeric=100 AND (e->>'total')::numeric=200 AND e->>'itemsChanged'='true'),'recorded edits retain before and after');
@@ -228,4 +236,20 @@ BEGIN
  PERFORM assert_true(NOT has_function_privilege('authenticated','public.get_order_email_overview_source_v1(bigint,text,uuid,jsonb)','EXECUTE'),'issuance remains service only');
  RAISE NOTICE 'PASS stable ordinary and waitlist email links; no standalone delivery';
 END $$;
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); y jsonb:=pg_temp.fixture(NULL); visible bigint; hidden bigint; foreign_id bigint; result jsonb;
+BEGIN
+ INSERT INTO form_fields(form,type,title,is_ticket_field,is_hidden) VALUES((x->>'form')::bigint,'text','Meal preference',true,false) RETURNING id INTO visible;
+ INSERT INTO form_fields(form,type,title,is_ticket_field,is_hidden) VALUES((x->>'form')::bigint,'text','Internal',true,true) RETURNING id INTO hidden;
+ INSERT INTO form_fields(form,type,title,is_ticket_field,is_hidden) VALUES((y->>'form')::bigint,'text','Foreign',true,false) RETURNING id INTO foreign_id;
+ result:=public.customer_order_answers_internal((x->>'form')::bigint,jsonb_build_object('note_hidden','PRIVATE', 'fields',jsonb_build_array(
+  jsonb_build_object(visible::text,'Vegetarian'),jsonb_build_object(hidden::text,'PRIVATE'),jsonb_build_object(foreign_id::text,'FOREIGN'))),true);
+ PERFORM assert_eq(jsonb_array_length(result),1,'visible same-form fields only');
+ PERFORM assert_eq(result#>>'{0,value}','Vegetarian'::text,'customer answer projected');
+ PERFORM assert_true(NOT result::text LIKE '%PRIVATE%' AND NOT result::text LIKE '%FOREIGN%','private fields excluded');
+ PERFORM assert_eq(public.customer_order_answers_internal((x->>'form')::bigint,jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(visible::text,'Vegetarian'))),false),'[]'::jsonb,'ticket answer excluded from order scope');
+ PERFORM assert_eq(public.customer_order_answers_internal((x->>'form')::bigint,jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(visible::text,jsonb_build_object('private','secret')))),true),'[]'::jsonb,'object payload excluded');
+ PERFORM assert_true(NOT has_function_privilege('anon','public.customer_order_answers_internal(bigint,jsonb,boolean)','EXECUTE'),'answer helper is private');
+END $$;
+
 ROLLBACK;

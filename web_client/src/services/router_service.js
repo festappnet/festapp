@@ -164,6 +164,12 @@ export class RouterService {
         let path = window.location.pathname;
         const fullUrl = window.location.href;
 
+        if (path === '/order') {
+            const { FormPage } = await import('../components/forms/form_page.js');
+            await new FormPage('form-page-container').init(null, { onBack: RouterService.goBackProgrammatically });
+            return true;
+        }
+
         // 0. Normalize URL
         path = RouterService.normalizeUrl(fullUrl);
 

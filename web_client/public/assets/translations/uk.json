@@ -942,7 +942,7 @@
     "storno": "Скасовано",
     "not_required_yet": "Оплата ще не потрібна",
     "free": "Без оплати",
-    "unpaid": "Не оплачено",
+    "unpaid": "Очікує на оплату",
     "partially_paid": "Частково оплачено",
     "deposit_paid": "Завдаток сплачено",
     "fully_paid": "Повністю оплачено",
@@ -995,6 +995,15 @@
     "tickets": "Квитки",
     "ticket": "Квиток",
     "registrations": "Заявки",
-    "registration": "Заявка"
+    "registration": "Заявка",
+    "submittedDetails": "Введені дані",
+    "answer": "Відповідь",
+    "added": "Додано",
+    "removed": "Видалено",
+    "changed": "Змінено",
+    "changedTo": "Тепер",
+    "confirmation_sent": "Підтвердження надіслано",
+    "waitlist_entered": "Додано до списку очікування",
+    "withinDeadline": "У межах терміну оплати"
   }
 }
