@@ -102,6 +102,7 @@ BEGIN
         OR (v_org IS NOT NULL  AND et.organization = v_org AND et.unit IS NULL AND et.occasion IS NULL)
         OR (et.organization IS NULL AND et.unit IS NULL AND et.occasion IS NULL)
       )
+      AND et.code <> 'ORDER_OVERVIEW'
       -- B. Filter based on App Support (New Logic)
       AND (
         is_app_supported IS TRUE

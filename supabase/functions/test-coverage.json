@@ -185,6 +185,7 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
+        "supabase/functions/_shared/orderEmailOverview_test.ts",
         "supabase/functions/_shared/canonicalEmail_test.ts",
         "supabase/functions/_shared/bankSyncWarningEmail_test.ts"
       ]
@@ -274,7 +275,7 @@
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
         "supabase/functions/_shared/customerOrderAccess_test.ts",
-        "supabase/functions/_shared/orderOverviewEmail_test.ts"
+        "supabase/functions/_shared/orderEmailOverview_test.ts"
       ]
     }
   },

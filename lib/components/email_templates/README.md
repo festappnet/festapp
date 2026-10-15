@@ -54,3 +54,17 @@ after partial acceptance and sends only after re-rendering. Expired or cancelled
 offers fail the canonical intent-validity gate before any provider call.
 An editor preview resolves the same template/wrapper without issuing tokens or
 creating offers. Acceptance uses the ordinary order confirmation/ticket flow.
+
+## Stable order overview link
+
+The first confirmation includes a read-only overview link. All subsequent order
+emails, including payment, update, reminder, cancellation and ticket delivery,
+reuse the root order's encrypted source and token. Split orders share that root
+link. Rendering does not rotate revoked/expired capabilities. Formless orders
+have no public form route and omit the link.
+
+There is no standalone `ORDER_OVERVIEW` email. Its historical rows remain for
+history, but the template catalog excludes the code, its enqueue RPC is retired,
+and the send-time intent gate rejects old queued messages. The access endpoint
+never sends mail or rotates the link. Existing templates can position
+`order_overview_button` themselves; otherwise rendering appends it once.

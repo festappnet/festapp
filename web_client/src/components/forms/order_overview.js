@@ -14,7 +14,7 @@ const line = (parent, tag, text) => {
 const money = (value, currency) => value == null ? overviewText('unknown') : `${value} ${currency || ''}`;
 export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPage = false) {
     host.replaceChildren();
-    host.style.cssText = 'max-width:850px;margin:0 auto;padding:20px;overflow-wrap:anywhere';
+    host.classList.add('order-overview');
     const heading = line(host, 'h1', `${data.root.title || ''} - ${data.root.symbol}`);
     if (!offerInPage) { heading.tabIndex = -1; heading.focus(); }
     line(host, 'p', `${overviewText('updated')}: ${new Date(data.serverTime).toLocaleString()}`);
@@ -28,7 +28,7 @@ export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPa
     if (onContinue) { const button = line(host, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
     else if (!offerInPage && data.offers.some(o => o.pendingPlaces > 0)) line(host, 'p', overviewText('offerEmail'));
     for (const order of data.orders) {
-        const card = line(host, 'section', ''); card.style.cssText = 'padding:16px;margin:16px 0;border:1px solid #aaa;border-radius:8px';
+        const card = line(host, 'section', ''); card.className = 'order-overview-card';
         line(card, 'h2', order.symbol);
         line(card, 'p', `${overviewText('orderState')}: ${overviewText(order.state)}`);
         line(card, 'p', `${overviewText('total')}: ${money(order.total, order.currency)}`);
@@ -53,6 +53,7 @@ export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPa
 
 export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false) {
     const generation = (host._overviewGeneration || 0) + 1; host._overviewGeneration = generation;
+    host.classList.add('order-overview');
     host.replaceChildren(); host.setAttribute('aria-busy', 'true');
     line(host, 'p', overviewText('loading'));
     try {
