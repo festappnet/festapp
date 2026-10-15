@@ -128,6 +128,21 @@ BEGIN
  BEGIN PERFORM public.resolve_customer_order_access_v1(offer_token,oid,(w->>'id')::uuid,gen_random_uuid(),delivery); RAISE EXCEPTION 'terminal bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='terminal bootstrap' THEN RAISE; END IF; END;
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'completed manage bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='completed manage bootstrap' THEN RAISE; END IF; END;
  PERFORM assert_eq(public.get_order_email_overview_source_v1(child,'regression@example.invalid',gen_random_uuid())->'source',source->'source','split child email reuses root token');
+ -- Product order follows form fields, regardless of stored JSON array order.
+ DECLARE extra_type bigint; extra_product bigint; stable_items jsonb;
+ BEGIN
+  INSERT INTO eshop.product_types(title,type,occasion) VALUES('Earlier field','product',(x->>'occasion')::bigint) RETURNING id INTO extra_type;
+  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion) VALUES('Earlier option',extra_type,0,'CZK',(x->>'occasion')::bigint) RETURNING id INTO extra_product;
+  INSERT INTO public.form_fields(form,product_type,type,"order") VALUES((x->>'form')::bigint,extra_type,'product_type',-100);
+  INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES(child,ids[2],extra_product);
+  UPDATE eshop.orders SET data=jsonb_set(data,'{tickets,0,products}',(data#>'{tickets,0,products}')||jsonb_build_array(jsonb_build_object('id',extra_product,'title','Earlier option','price',0))) WHERE id=child;
+  r:=public.get_customer_order_overview(view_token,oid);
+  SELECT o->'items' INTO stable_items FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child;
+  PERFORM assert_eq((stable_items#>>'{0,id}')::bigint,extra_product,'form ordering overrides snapshot order');
+  UPDATE eshop.orders SET data=jsonb_set(data,'{tickets,0,products}',(SELECT jsonb_agg(item ORDER BY position DESC) FROM jsonb_array_elements(data#>'{tickets,0,products}') WITH ORDINALITY a(item,position))) WHERE id=child;
+  r:=public.get_customer_order_overview(view_token,oid);
+  PERFORM assert_eq((SELECT o->'items' FROM jsonb_array_elements(r->'orders') o WHERE (o->>'id')::bigint=child),stable_items,'shuffling stored products does not reorder the customer list');
+ END;
  SELECT payment_info INTO pid FROM eshop.orders WHERE id=child;
  -- Customer projection exposes only matched movement facts and recorded changes.
  INSERT INTO eshop.transactions(bank_account_id,payment_info,amount,currency,date,transaction_type,counter_account_name,comment,created_at)

@@ -2787,7 +2787,7 @@
     "deposit_paid": "Záloha uhrazena",
     "fully_paid": "Objednávka je zaplacená",
     "awaiting_payment": "Čeká na úhradu",
-    "unused": "Nepoužitá",
+    "unused": "Platná",
     "used": "Použitá",
     "ordered": "Objednáno",
     "paid": "Potvrzeno jako zaplacené",
