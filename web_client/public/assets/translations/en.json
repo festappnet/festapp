@@ -2756,7 +2756,7 @@
   },
   "OrderOverview": {
     "title": "Order overview",
-    "updated": "Loaded",
+    "updated": "Updated",
     "refresh": "Refresh",
     "loading": "Loading overview",
     "failed": "Could not update the overview. Please retry.",
@@ -2764,7 +2764,7 @@
     "continue": "Continue the remaining offer",
     "offerEmail": "Use the original offer link in your email to accept or decline.",
     "orderState": "Order state",
-    "total": "Total",
+    "total": "Total price",
     "received": "Recorded payment",
     "totalOutstanding": "Outstanding",
     "returned": "Returned",
