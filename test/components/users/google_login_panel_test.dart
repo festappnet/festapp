@@ -137,9 +137,12 @@ void main() {
             await tester.pumpAndSettle();
             GoogleAuthService.state.value = entry.value;
             await tester.pump();
-            await tester.runAsync(() async {
-              await Future<void>.delayed(const Duration(milliseconds: 50));
-            });
+            if (export) {
+              // Give engine-side image decoding time before reference captures.
+              await tester.runAsync(() async {
+                await Future<void>.delayed(const Duration(milliseconds: 50));
+              });
+            }
             await tester.pump(const Duration(milliseconds: 300));
             expect(tester.takeException(), isNull,
                 reason: '$width $language $dark ${entry.key}');

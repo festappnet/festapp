@@ -55,19 +55,12 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return StandardDialog(
+      title: SelectableText(widget.product.title ?? ''),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 32),
-            SelectableText(
-              widget.product.title ?? '',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
             if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) ...[
               const SizedBox(height: 16),
               TextField(

@@ -1,4 +1,5 @@
 import { FormStrings } from './form_strings.js';
+import { overviewText } from './order_overview.js';
 import { WaitlistStrings } from './waitlist_strings.js';
 import { observeOrderDelivery } from './order_delivery_status.js';
 import { OrdersStrings } from '../eshop/orders_strings.js';
@@ -62,7 +63,7 @@ export class OrderResult {
                 
                 <div class="result-actions">
                     <button class="btn btn-outline-secondary btn-back-to-form">
-                        ${PublicOrderStrings.backToForm}
+                        ${success && resultData?.overviewAvailable ? overviewText('title') : PublicOrderStrings.backToForm}
                     </button>
                 </div>
             </div>

@@ -25,11 +25,11 @@ deno test \
 
 echo "[3/4] Flutter feature, model and login-payload contracts"
 fvm flutter test \
-  test/components/reception/login_qr_payload_test.dart \
+  test/components/reception/login_qr_payload_cases.dart \
   test/components/reception/manual_login_code_field_test.dart \
   test/components/reception/reception_gating_test.dart \
   test/components/users/occasion_user_grid_test.dart \
-  test/components/users/login_feedback_test.dart
+  test/components/users/login_feedback_cases.dart
 
 echo "[4/4] Static contract and secret-absence checks"
 fvm flutter analyze --no-fatal-infos \

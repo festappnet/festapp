@@ -17,7 +17,7 @@ class _PersonalFormPathUrlStrategy extends PathUrlStrategy {
     final path = super.getPath();
     final fragment = _location.hash;
     if (Uri.parse(path).path.startsWith('/form/') &&
-        fragment.startsWith('#waitlist?')) {
+        (fragment.startsWith('#waitlist?') || fragment.startsWith('#order?'))) {
       return '$path$fragment';
     }
     return path;

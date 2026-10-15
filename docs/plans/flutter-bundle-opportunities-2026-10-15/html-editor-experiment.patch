@@ -1,0 +1,2403 @@
+--- a/lib/components/html/rich_html_editor_controller.dart
++++ b/lib/components/html/rich_html_editor_controller.dart
+@@ -6,11 +6,7 @@
+ 
+ import 'package:flutter/material.dart';
+ import 'package:flutter/scheduler.dart';
+-import 'package:super_clipboard/super_clipboard.dart';
+-import 'package:super_editor/super_editor.dart';
+-import 'package:html/parser.dart' as html_parser;
+-
+-import 'html_editor_document.dart';
++
+ import 'html_document_codec.dart';
+ import 'html_strings.dart';
+ import 'package:fstapp/components/_shared/common_strings.dart';
+@@ -18,275 +14,7 @@
+ 
+ export 'html_media_service.dart' show HtmlMediaOwner, HtmlContentProfile;
+ 
+-/// One edit session. Domain callers exchange HTML, never document nodes.
+-class RichHtmlEditorController extends ChangeNotifier {
+-  RichHtmlEditorController(
+-      {String? initialHtml,
+-      required this.owner,
+-      this.profile = HtmlContentProfile.appContent,
+-      HtmlMediaDraft? media})
+-      : originalHtml = initialHtml ?? '',
+-        media = media ?? HtmlMediaDraft(),
+-        _ownsMedia = media == null {
+-    _load(initialHtml);
+-  }
+-  final HtmlMediaOwner owner;
+-  final HtmlContentProfile profile;
+-  String originalHtml;
+-  final HtmlMediaDraft media;
+-  final bool _ownsMedia;
+-  late HtmlEditorDocument _codec;
+-  late String _baselineHtml;
+-  late Editor editor;
+-  final focusNode = FocusNode();
+-  final layoutKey = GlobalKey();
+-  int revision = 0;
+-  int _generation = 0;
+-  bool _disposed = false;
+-  String? _cachedHtml;
+-  late Set<String> _originalImageSources;
+-
+-  bool isOriginalImageSource(String source) =>
+-      _originalImageSources.contains(source);
+-
+-  String get html => _cachedHtml ??= _codec.isUnchanged
+-      ? _codec.encode()
+-      : applyHtmlContentProfile(_codec.encode(), profile);
+-  bool get hasUserChanges => !_codec.isUnchanged;
+-  bool get isDirty => !_codec.isUnchanged || _baselineHtml != originalHtml;
+-  bool get isEmpty => editor.document.every(
+-      (node) => node is TextNode && node.text.toPlainText().trim().isEmpty);
+-  CommonEditorOperations get operations => CommonEditorOperations(
+-      document: editor.document,
+-      editor: editor,
+-      composer: editor.composer,
+-      documentLayoutResolver: () => layoutKey.currentState as DocumentLayout);
+-
+-  void _load(String? value) {
+-    _codec = HtmlEditorDocument(value);
+-    _originalImageSources = HtmlDocumentCodec.decode(value)
+-        .imageSlots
+-        .map((image) => image.source ?? image.attributes['data-src'])
+-        .whereType<String>()
+-        .toSet();
+-    _baselineHtml = _codec.encode();
+-    editor = createDefaultDocumentEditor(
+-        document: _codec.document, isHistoryEnabled: true);
+-    // HTML profiles own link normalization. Markdown prefixes, smart dashes
+-    // and bare image URL reactions must not rewrite songs or email templates.
+-    editor.reactionPipeline.removeWhere(
+-        (reaction) => reaction is! UpdateComposerTextStylesReaction);
+-    editor.document.addListener(_changed);
+-  }
+-
+-  void _changed(DocumentChangeLog _) {
+-    revision++;
+-    _cachedHtml = null;
+-    notifyListeners();
+-  }
+-
+-  void reset(String html) {
+-    _generation++;
+-    originalHtml = html;
+-    editor.document.removeListener(_changed);
+-    editor.dispose();
+-    _cachedHtml = null;
+-    _load(html);
+-    revision++;
+-    notifyListeners();
+-  }
+-
+-  Future<String> prepareForSave({BuildContext? context}) async {
+-    if (context != null &&
+-        !await confirmHtmlUploadRetry(context, media, html: html))
+-      throw StateError('Image retry cancelled');
+-    return media.prepareHtml(html, originalHtml, owner);
+-  }
+-
+-  void toggle(Attribution attribution) =>
+-      operations.toggleAttributionsOnSelection({attribution});
+-  void undo() => editor.undo();
+-  void redo() => editor.redo();
+-
+-  Future<void> insertImage(Uint8List bytes) async {
+-    final selection = editor.composer.selection;
+-    final generation = _generation;
+-    final version = revision;
+-    final source = await media.addBytes(bytes, owner);
+-    _checkPending(generation, version);
+-    _restoreSelection(selection);
+-    _pasteDocument(MutableDocument(
+-        nodes: [ImageNode(id: Editor.createNodeId(), imageUrl: source)]));
+-  }
+-
+-  Future<void> insertImageSource(String url) async {
+-    final selection = editor.composer.selection;
+-    final generation = _generation;
+-    final version = revision;
+-    final source = await media.importSource(url, owner);
+-    _checkPending(generation, version);
+-    _restoreSelection(selection);
+-    _pasteDocument(MutableDocument(
+-        nodes: [ImageNode(id: Editor.createNodeId(), imageUrl: source)]));
+-  }
+-
+-  Future<void> paste() async {
+-    final clipboard = SystemClipboard.instance;
+-    if (clipboard == null)
+-      throw StateError('Clipboard unavailable; choose an image or paste a URL');
+-    final selection = editor.composer.selection;
+-    final generation = _generation;
+-    final version = revision;
+-    final reader = await clipboard.read();
+-    await pasteReader(reader,
+-        selection: selection, generation: generation, version: version);
+-  }
+-
+-  /// The same import boundary for system HTML and other explicit HTML inputs.
+-  Future<void> pasteHtml(String html) async {
+-    final selection = editor.composer.selection;
+-    final generation = _generation;
+-    final version = revision;
+-    final imported = await media.importHtml(html, owner);
+-    _checkPending(generation, version);
+-    _restoreSelection(selection);
+-    _pasteHtml(imported);
+-  }
+-
+-  Future<void> pasteEvent(ClipboardReadEvent event) async {
+-    final selection = editor.composer.selection;
+-    final generation = _generation;
+-    final version = revision;
+-    final reader = await event.getClipboardReader();
+-    await pasteReader(reader,
+-        selection: selection, generation: generation, version: version);
+-  }
+-
+-  Future<bool> pasteReader(ClipboardReader reader,
+-      {DocumentSelection? selection, int? generation, int? version}) async {
+-    selection ??= editor.composer.selection;
+-    generation ??= _generation;
+-    version ??= revision;
+-    final nodes = <DocumentNode>[];
+-    final imageSources = <String>{};
+-    for (final item in reader.items) {
+-      // A rich item can expose both HTML and a bitmap of the same content.
+-      if (item.canProvide(Formats.htmlText)) {
+-        final value = await item.readValue(Formats.htmlText);
+-        if (value != null && value.isNotEmpty) {
+-          final imported = await media.importHtml(value, owner);
+-          imageSources.addAll(HtmlDocumentCodec.decode(imported)
+-              .imageSlots
+-              .map((image) => image.source)
+-              .whereType<String>());
+-          nodes.addAll(_pasteContent(imported));
+-          continue;
+-        }
+-      }
+-      var imageRead = false;
+-      for (final format in [
+-        Formats.png,
+-        Formats.jpeg,
+-        Formats.webp,
+-        Formats.gif,
+-        Formats.heic
+-      ]) {
+-        if (!item.canProvide(format)) continue;
+-        final completion = Completer<Uint8List>();
+-        final progress = item.getFile(format, (file) async {
+-          try {
+-            completion.complete(await file.readAll());
+-          } catch (error, stack) {
+-            completion.completeError(error, stack);
+-          }
+-        }, onError: (error) {
+-          if (!completion.isCompleted) completion.completeError(error);
+-        });
+-        if (progress == null)
+-          throw StateError('Clipboard image is unavailable');
+-        final source = await media.addBytes(await completion.future, owner);
+-        if (imageSources.add(source))
+-          nodes.add(ImageNode(id: Editor.createNodeId(), imageUrl: source));
+-        imageRead = true;
+-        break;
+-      }
+-      if (!imageRead && item.canProvide(Formats.plainText)) {
+-        final text = await item.readValue(Formats.plainText);
+-        if (text != null && text.isNotEmpty)
+-          nodes.addAll(_pasteContent(
+-              '<p>${htmlEscape.convert(text).replaceAll('\n', '<br>')}</p>'));
+-      }
+-    }
+-    if (nodes.isEmpty)
+-      throw StateError('Clipboard contains no supported text or image');
+-    _checkPending(generation, version);
+-    _restoreSelection(selection);
+-    _pasteDocument(MutableDocument(nodes: nodes));
+-    return true;
+-  }
+-
+-  Iterable<DocumentNode> _pasteContent(String html) {
+-    final fragment = html_parser.parseFragment(html);
+-    final complex = fragment.querySelector(
+-            'table,ul,ol,pre,img,hr,blockquote,h1,h2,h3,h4,h5,h6,p[style],p[class],div[style]') !=
+-        null;
+-    if (complex)
+-      return [PreservedHtmlNode(id: Editor.createNodeId(), html: html)];
+-    final incoming = HtmlEditorDocument(html);
+-    _codec.adoptFragment(incoming);
+-    return incoming.document;
+-  }
+-
+-  void _pasteHtml(String html) =>
+-      _pasteDocument(MutableDocument(nodes: _pasteContent(html).toList()));
+-
+-  void _pasteDocument(MutableDocument content) {
+-    final selection = editor.composer.selection;
+-    if (selection == null) return;
+-    final position = selection.isCollapsed
+-        ? selection.extent
+-        : CommonEditorOperations.getDocumentPositionAfterExpandedDeletion(
+-            document: editor.document, selection: selection);
+-    if (position == null) throw StateError('Cannot resolve paste position');
+-    editor.execute([
+-      if (!selection.isCollapsed)
+-        DeleteContentRequest(documentRange: selection),
+-      PasteStructuredContentEditorRequest(
+-          content: content, pastePosition: position),
+-    ]);
+-  }
+-
+-  void _restoreSelection(DocumentSelection? selection) {
+-    final resolved = selection ??
+-        DocumentSelection.collapsed(
+-            position: DocumentPosition(
+-                nodeId: editor.document.last.id,
+-                nodePosition: editor.document.last.endPosition));
+-    editor.execute([
+-      ChangeSelectionRequest(resolved, SelectionChangeType.placeCaret,
+-          SelectionReason.userInteraction)
+-    ]);
+-  }
+-
+-  void _checkPending(int generation, int version) {
+-    if (_disposed || generation != _generation || revision != version) {
+-      throw StateError(
+-          'The document changed during paste; paste again at the desired position');
+-    }
+-  }
+-
+-  @override
+-  void dispose() {
+-    _disposed = true;
+-    _generation++;
+-    editor.document.removeListener(_changed);
+-    editor.dispose();
+-    focusNode.dispose();
+-    if (_ownsMedia) media.dispose();
+-    super.dispose();
+-  }
+-}
+-
++abstract interface class HtmlDraftController {String get html; String get originalHtml; bool get isDirty;}
+ /// Parent-owned media and active-field registry. Field Apply never uploads.
+ class HtmlSaveCoordinator extends ChangeNotifier {
+   HtmlSaveCoordinator({HtmlMediaDraft? media})
+@@ -295,7 +23,7 @@
+   final _active = <Object, void Function()>{};
+   final _dirty = <Object, bool Function()>{};
+   final _accepted = <Object, void Function()>{};
+-  final _applied = <RichHtmlEditorController>{};
++  final _applied = <HtmlDraftController>{};
+   bool _disposed = false;
+   bool get hasActiveDraft => _dirty.values.any((read) => read());
+   bool get hasDraft => _applied.isNotEmpty || hasActiveDraft;
+@@ -316,13 +44,13 @@
+   }
+ 
+   final _originals = <String, String>{};
+-  void recordValue(RichHtmlEditorController controller) {
++  void recordValue(HtmlDraftController controller) {
+     _originals[controller.html] = controller.originalHtml;
+     if (controller.isDirty) _applied.add(controller);
+     draftChanged();
+   }
+ 
+-  void markSaved({RichHtmlEditorController? controller}) {
++  void markSaved({HtmlDraftController? controller}) {
+     if (controller != null) {
+       _applied.remove(controller);
+     } else {
+--- /dev/null
++++ b/lib/components/html/rich_html_editor_controller_runtime.dart
+@@ -0,0 +1,291 @@
++import 'package:fstapp/widgets/app_dialog.dart';
++import 'package:fstapp/components/navigation/retained_draft_guard.dart';
++import 'dart:async';
++import 'dart:convert';
++import 'dart:typed_data';
++
++import 'package:flutter/material.dart';
++import 'package:flutter/scheduler.dart';
++import 'package:super_clipboard/super_clipboard.dart';
++import 'package:super_editor/super_editor.dart';
++import 'package:html/parser.dart' as html_parser;
++
++import 'html_editor_document.dart';
++import 'html_document_codec.dart';
++import 'html_strings.dart';
++import 'package:fstapp/components/_shared/common_strings.dart';
++import 'html_media_service.dart';
++
++export 'html_media_service.dart' show HtmlMediaOwner, HtmlContentProfile;
++
++import 'rich_html_editor_controller.dart';
++export 'rich_html_editor_controller.dart';
++/// One edit session. Domain callers exchange HTML, never document nodes.
++class RichHtmlEditorController extends ChangeNotifier implements HtmlDraftController {
++  RichHtmlEditorController(
++      {String? initialHtml,
++      required this.owner,
++      this.profile = HtmlContentProfile.appContent,
++      HtmlMediaDraft? media})
++      : originalHtml = initialHtml ?? '',
++        media = media ?? HtmlMediaDraft(),
++        _ownsMedia = media == null {
++    _load(initialHtml);
++  }
++  final HtmlMediaOwner owner;
++  final HtmlContentProfile profile;
++  String originalHtml;
++  final HtmlMediaDraft media;
++  final bool _ownsMedia;
++  late HtmlEditorDocument _codec;
++  late String _baselineHtml;
++  late Editor editor;
++  final focusNode = FocusNode();
++  final layoutKey = GlobalKey();
++  int revision = 0;
++  int _generation = 0;
++  bool _disposed = false;
++  String? _cachedHtml;
++  late Set<String> _originalImageSources;
++
++  bool isOriginalImageSource(String source) =>
++      _originalImageSources.contains(source);
++
++  String get html => _cachedHtml ??= _codec.isUnchanged
++      ? _codec.encode()
++      : applyHtmlContentProfile(_codec.encode(), profile);
++  bool get hasUserChanges => !_codec.isUnchanged;
++  bool get isDirty => !_codec.isUnchanged || _baselineHtml != originalHtml;
++  bool get isEmpty => editor.document.every(
++      (node) => node is TextNode && node.text.toPlainText().trim().isEmpty);
++  CommonEditorOperations get operations => CommonEditorOperations(
++      document: editor.document,
++      editor: editor,
++      composer: editor.composer,
++      documentLayoutResolver: () => layoutKey.currentState as DocumentLayout);
++
++  void _load(String? value) {
++    _codec = HtmlEditorDocument(value);
++    _originalImageSources = HtmlDocumentCodec.decode(value)
++        .imageSlots
++        .map((image) => image.source ?? image.attributes['data-src'])
++        .whereType<String>()
++        .toSet();
++    _baselineHtml = _codec.encode();
++    editor = createDefaultDocumentEditor(
++        document: _codec.document, isHistoryEnabled: true);
++    // HTML profiles own link normalization. Markdown prefixes, smart dashes
++    // and bare image URL reactions must not rewrite songs or email templates.
++    editor.reactionPipeline.removeWhere(
++        (reaction) => reaction is! UpdateComposerTextStylesReaction);
++    editor.document.addListener(_changed);
++  }
++
++  void _changed(DocumentChangeLog _) {
++    revision++;
++    _cachedHtml = null;
++    notifyListeners();
++  }
++
++  void reset(String html) {
++    _generation++;
++    originalHtml = html;
++    editor.document.removeListener(_changed);
++    editor.dispose();
++    _cachedHtml = null;
++    _load(html);
++    revision++;
++    notifyListeners();
++  }
++
++  Future<String> prepareForSave({BuildContext? context}) async {
++    if (context != null &&
++        !await confirmHtmlUploadRetry(context, media, html: html))
++      throw StateError('Image retry cancelled');
++    return media.prepareHtml(html, originalHtml, owner);
++  }
++
++  void toggle(Attribution attribution) =>
++      operations.toggleAttributionsOnSelection({attribution});
++  void undo() => editor.undo();
++  void redo() => editor.redo();
++
++  Future<void> insertImage(Uint8List bytes) async {
++    final selection = editor.composer.selection;
++    final generation = _generation;
++    final version = revision;
++    final source = await media.addBytes(bytes, owner);
++    _checkPending(generation, version);
++    _restoreSelection(selection);
++    _pasteDocument(MutableDocument(
++        nodes: [ImageNode(id: Editor.createNodeId(), imageUrl: source)]));
++  }
++
++  Future<void> insertImageSource(String url) async {
++    final selection = editor.composer.selection;
++    final generation = _generation;
++    final version = revision;
++    final source = await media.importSource(url, owner);
++    _checkPending(generation, version);
++    _restoreSelection(selection);
++    _pasteDocument(MutableDocument(
++        nodes: [ImageNode(id: Editor.createNodeId(), imageUrl: source)]));
++  }
++
++  Future<void> paste() async {
++    final clipboard = SystemClipboard.instance;
++    if (clipboard == null)
++      throw StateError('Clipboard unavailable; choose an image or paste a URL');
++    final selection = editor.composer.selection;
++    final generation = _generation;
++    final version = revision;
++    final reader = await clipboard.read();
++    await pasteReader(reader,
++        selection: selection, generation: generation, version: version);
++  }
++
++  /// The same import boundary for system HTML and other explicit HTML inputs.
++  Future<void> pasteHtml(String html) async {
++    final selection = editor.composer.selection;
++    final generation = _generation;
++    final version = revision;
++    final imported = await media.importHtml(html, owner);
++    _checkPending(generation, version);
++    _restoreSelection(selection);
++    _pasteHtml(imported);
++  }
++
++  Future<void> pasteEvent(ClipboardReadEvent event) async {
++    final selection = editor.composer.selection;
++    final generation = _generation;
++    final version = revision;
++    final reader = await event.getClipboardReader();
++    await pasteReader(reader,
++        selection: selection, generation: generation, version: version);
++  }
++
++  Future<bool> pasteReader(ClipboardReader reader,
++      {DocumentSelection? selection, int? generation, int? version}) async {
++    selection ??= editor.composer.selection;
++    generation ??= _generation;
++    version ??= revision;
++    final nodes = <DocumentNode>[];
++    final imageSources = <String>{};
++    for (final item in reader.items) {
++      // A rich item can expose both HTML and a bitmap of the same content.
++      if (item.canProvide(Formats.htmlText)) {
++        final value = await item.readValue(Formats.htmlText);
++        if (value != null && value.isNotEmpty) {
++          final imported = await media.importHtml(value, owner);
++          imageSources.addAll(HtmlDocumentCodec.decode(imported)
++              .imageSlots
++              .map((image) => image.source)
++              .whereType<String>());
++          nodes.addAll(_pasteContent(imported));
++          continue;
++        }
++      }
++      var imageRead = false;
++      for (final format in [
++        Formats.png,
++        Formats.jpeg,
++        Formats.webp,
++        Formats.gif,
++        Formats.heic
++      ]) {
++        if (!item.canProvide(format)) continue;
++        final completion = Completer<Uint8List>();
++        final progress = item.getFile(format, (file) async {
++          try {
++            completion.complete(await file.readAll());
++          } catch (error, stack) {
++            completion.completeError(error, stack);
++          }
++        }, onError: (error) {
++          if (!completion.isCompleted) completion.completeError(error);
++        });
++        if (progress == null)
++          throw StateError('Clipboard image is unavailable');
++        final source = await media.addBytes(await completion.future, owner);
++        if (imageSources.add(source))
++          nodes.add(ImageNode(id: Editor.createNodeId(), imageUrl: source));
++        imageRead = true;
++        break;
++      }
++      if (!imageRead && item.canProvide(Formats.plainText)) {
++        final text = await item.readValue(Formats.plainText);
++        if (text != null && text.isNotEmpty)
++          nodes.addAll(_pasteContent(
++              '<p>${htmlEscape.convert(text).replaceAll('\n', '<br>')}</p>'));
++      }
++    }
++    if (nodes.isEmpty)
++      throw StateError('Clipboard contains no supported text or image');
++    _checkPending(generation, version);
++    _restoreSelection(selection);
++    _pasteDocument(MutableDocument(nodes: nodes));
++    return true;
++  }
++
++  Iterable<DocumentNode> _pasteContent(String html) {
++    final fragment = html_parser.parseFragment(html);
++    final complex = fragment.querySelector(
++            'table,ul,ol,pre,img,hr,blockquote,h1,h2,h3,h4,h5,h6,p[style],p[class],div[style]') !=
++        null;
++    if (complex)
++      return [PreservedHtmlNode(id: Editor.createNodeId(), html: html)];
++    final incoming = HtmlEditorDocument(html);
++    _codec.adoptFragment(incoming);
++    return incoming.document;
++  }
++
++  void _pasteHtml(String html) =>
++      _pasteDocument(MutableDocument(nodes: _pasteContent(html).toList()));
++
++  void _pasteDocument(MutableDocument content) {
++    final selection = editor.composer.selection;
++    if (selection == null) return;
++    final position = selection.isCollapsed
++        ? selection.extent
++        : CommonEditorOperations.getDocumentPositionAfterExpandedDeletion(
++            document: editor.document, selection: selection);
++    if (position == null) throw StateError('Cannot resolve paste position');
++    editor.execute([
++      if (!selection.isCollapsed)
++        DeleteContentRequest(documentRange: selection),
++      PasteStructuredContentEditorRequest(
++          content: content, pastePosition: position),
++    ]);
++  }
++
++  void _restoreSelection(DocumentSelection? selection) {
++    final resolved = selection ??
++        DocumentSelection.collapsed(
++            position: DocumentPosition(
++                nodeId: editor.document.last.id,
++                nodePosition: editor.document.last.endPosition));
++    editor.execute([
++      ChangeSelectionRequest(resolved, SelectionChangeType.placeCaret,
++          SelectionReason.userInteraction)
++    ]);
++  }
++
++  void _checkPending(int generation, int version) {
++    if (_disposed || generation != _generation || revision != version) {
++      throw StateError(
++          'The document changed during paste; paste again at the desired position');
++    }
++  }
++
++  @override
++  void dispose() {
++    _disposed = true;
++    _generation++;
++    editor.document.removeListener(_changed);
++    editor.dispose();
++    focusNode.dispose();
++    if (_ownsMedia) media.dispose();
++    super.dispose();
++  }
++}
++
+--- a/lib/components/html/rich_html_editor.dart
++++ b/lib/components/html/rich_html_editor.dart
+@@ -19,7 +19,7 @@
+ import 'html_strings.dart';
+ import 'html_text_style.dart';
+ import 'html_view.dart';
+-import 'rich_html_editor_controller.dart';
++import 'rich_html_editor_controller_runtime.dart';
+ 
+ class RichHtmlEditor extends StatefulWidget {
+   const RichHtmlEditor(
+--- a/lib/components/html/editable_html_field.dart
++++ b/lib/components/html/editable_html_field.dart
+@@ -1,17 +1,6 @@
+-import 'package:fstapp/widgets/app_dialog.dart';
+ import 'package:flutter/material.dart';
+-import 'package:flutter/services.dart';
+-import 'package:fstapp/components/_shared/common_strings.dart';
+-import 'package:fstapp/services/exception_handler.dart';
+-
+-import 'html_strings.dart';
+-import 'html_text_style.dart';
+-import 'html_view.dart';
+-import 'rich_html_editor.dart';
+ import 'rich_html_editor_controller.dart';
+-import 'rich_html_editor_dialog.dart';
+-
+-/// Inline Apply changes the parent draft. Only onSave or parent save persists.
++import 'editable_html_field_runtime.dart' deferred as runtime;
+ class EditableHtmlField extends StatefulWidget {
+   const EditableHtmlField({
+     required this.html,
+@@ -39,232 +28,15 @@
+   final VoidCallback? twoFingersOn;
+   final VoidCallback? twoFingersOff;
+   @override
+-  State<EditableHtmlField> createState() => _EditableHtmlFieldState();
++  State<EditableHtmlField> createState() => _LazyEditableHtmlState();
+ }
+ 
+-class _EditableHtmlFieldState extends State<EditableHtmlField> {
+-  RichHtmlEditorController? _controller;
+-  HtmlSaveCoordinator? _coordinator;
+-  Future<void> Function(String)? _writer;
+-  String _activationHtml = '';
+-  bool _active = false;
+-  bool _saving = false;
+-  bool _expanded = false;
+-  bool _confirmingCancel = false;
+-  void _begin() {
+-    _coordinator = widget.coordinator ?? HtmlEditingScope.maybeOf(context);
+-    _activationHtml = widget.html ?? '';
+-    _writer =
+-        widget.onSave; // Freeze the entity/version writer for this session.
+-    _controller ??= RichHtmlEditorController(
+-      initialHtml: _activationHtml,
+-      owner: _coordinator == null && _writer == null
+-          ? const HtmlMediaOwner.none()
+-          : widget.owner,
+-      profile: widget.profile,
+-      media: _coordinator?.media,
+-    );
+-    if (_controller!.html != _activationHtml)
+-      _controller!.reset(_activationHtml);
+-    _controller!.removeListener(_draftChanged);
+-    _controller!.addListener(_draftChanged);
+-    _coordinator?.registerActive(
+-      this,
+-      () {
+-        _coordinator?.recordValue(_controller!);
+-        widget.onChanged(_controller!.html);
+-      },
+-      // Sanitizing loaded HTML is not a user edit. Match the field's own
+-      // Save/Cancel controls instead of prompting for merely opening it.
+-      isDirty: () => _active && _controller!.hasUserChanges,
+-      acceptSave: () {
+-        if (mounted) setState(() => _active = false);
+-        _controller!.removeListener(_draftChanged);
+-        _coordinator?.unregisterActive(this);
+-      },
+-    );
+-    setState(() => _active = true);
+-  }
+ 
+-  void _draftChanged() {
+-    _coordinator?.draftChanged();
+-    if (mounted && _active) setState(() {});
+-  }
+-
+-  Future<void> _requestCancel() async {
+-    if (_saving || _confirmingCancel || !_active) return;
+-    _confirmingCancel = true;
+-    final discard = !_controller!.hasUserChanges ||
+-        await showDialog<bool>(
+-              context: context,
+-              builder: (context) => AppAlertDialog(
+-                onClose: () => Navigator.pop(context, false),
+-                title: Text(HtmlStrings.discardDraft),
+-                actions: [
+-                  TextButton(
+-                    onPressed: () => Navigator.pop(context, false),
+-                    child: Text(CommonStrings.storno),
+-                  ),
+-                  TextButton(
+-                    onPressed: () => Navigator.pop(context, true),
+-                    child: Text(CommonStrings.ok),
+-                  ),
+-                ],
+-              ),
+-            ) ==
+-            true;
+-    _confirmingCancel = false;
+-    if (!mounted || !_active) return;
+-    if (discard) {
+-      _cancel();
+-    } else {
+-      _controller!.focusNode.requestFocus();
+-    }
+-  }
+-
+-  void _cancel() {
+-    _controller!.removeListener(_draftChanged);
+-    _coordinator?.unregisterActive(this);
+-    _controller!.reset(_activationHtml);
+-    setState(() => _active = false);
+-  }
+-
+-  Future<void> _apply() async {
+-    if (_saving || !_controller!.hasUserChanges) return;
+-    setState(() => _saving = true);
+-    final success = await ExceptionHandler.guardVoid(
+-      context,
+-      futureFunction: () async {
+-        var html = _controller!.html;
+-        if (_writer != null) {
+-          html = await _controller!.prepareForSave(context: context);
+-          if (!mounted) return;
+-          await _writer!(html);
+-          if (!mounted) return;
+-        }
+-        _coordinator?.recordValue(_controller!);
+-        widget.onChanged(html);
+-      },
+-    );
+-    if (!mounted) return;
+-    setState(() {
+-      _saving = false;
+-      if (success) _active = false;
+-    });
+-    if (success) {
+-      _controller!.removeListener(_draftChanged);
+-      if (_writer != null) _coordinator?.markSaved(controller: _controller);
+-      _coordinator?.unregisterActive(this);
+-      _activationHtml = widget.html ?? _controller!.html;
+-      _controller!.reset(_activationHtml);
+-    }
+-  }
+-
+-  Future<void> _expand() async {
+-    setState(() => _expanded = true);
+-    await WidgetsBinding.instance.endOfFrame;
+-    if (!mounted) return;
+-    final action = await RichHtmlEditorDialog.expand(context, _controller!,
+-        textStyle: htmlTextStyle(context, fontSize: widget.fontSize));
+-    if (!mounted) return;
+-    setState(() => _expanded = false);
+-    if (action == HtmlEditorFullscreenAction.save) {
+-      await _apply();
+-      return;
+-    }
+-    if (action == HtmlEditorFullscreenAction.cancel) {
+-      _cancel();
+-      return;
+-    }
+-    await WidgetsBinding.instance.endOfFrame;
+-    if (mounted) _controller!.focusNode.requestFocus();
+-  }
+-
+-  @override
+-  void dispose() {
+-    _controller?.removeListener(_draftChanged);
+-    _coordinator?.unregisterActive(this);
+-    _controller?.dispose();
+-    super.dispose();
+-  }
+-
+-  Widget _editingActions() => Wrap(
+-        alignment: WrapAlignment.end,
+-        crossAxisAlignment: WrapCrossAlignment.center,
+-        spacing: 12,
+-        children: [
+-          TextButton(
+-            onPressed: _saving ? null : _requestCancel,
+-            child: Text(CommonStrings.storno),
+-          ),
+-          FilledButton(
+-            onPressed: _saving || !_controller!.hasUserChanges ? null : _apply,
+-            child: Text(CommonStrings.save),
+-          ),
+-          IconButton(
+-            tooltip: HtmlStrings.expand,
+-            onPressed: _saving ? null : _expand,
+-            icon: const Icon(Icons.open_in_full),
+-          ),
+-        ],
+-      );
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    if (!_active) {
+-      return Row(
+-        crossAxisAlignment: CrossAxisAlignment.start,
+-        children: [
+-          Expanded(
+-            child: HtmlView(
+-              html: (widget.html?.isNotEmpty ?? false)
+-                  ? widget.html!
+-                  : widget.placeholder ?? '',
+-              fontSize: widget.fontSize,
+-              twoFingersOn: widget.twoFingersOn,
+-              twoFingersOff: widget.twoFingersOff,
+-              imageBytesResolver: (_coordinator ??
+-                      widget.coordinator ??
+-                      HtmlEditingScope.maybeOf(context))
+-                  ?.media
+-                  .previewBytes,
+-            ),
+-          ),
+-          if (widget.enabled)
+-            IconButton(
+-              tooltip: CommonStrings.edit,
+-              icon: const Icon(Icons.edit),
+-              onPressed: _begin,
+-            ),
+-        ],
+-      );
+-    }
+-    return CallbackShortcuts(
+-      bindings: {
+-        const SingleActivator(LogicalKeyboardKey.escape): () {
+-          if (!_expanded && ModalRoute.of(context)?.isCurrent != false) {
+-            _requestCancel();
+-          }
+-        },
+-      },
+-      child: Focus(
+-        autofocus: true,
+-        child: Column(
+-          crossAxisAlignment: CrossAxisAlignment.stretch,
+-          children: [
+-            if (_expanded) _editingActions(),
+-            const SizedBox(height: 8),
+-            if (!_expanded)
+-              RichHtmlEditor(
+-                controller: _controller!,
+-                textStyle: htmlTextStyle(context, fontSize: widget.fontSize),
+-                onCancel: _requestCancel,
+-                toolbarActions: _editingActions(),
+-                enabled: !_saving && widget.enabled,
+-              ),
+-          ],
+-        ),
+-      ),
+-    );
+-  }
++class _LazyEditableHtmlState extends State<EditableHtmlField> {
++ late final Future<void> _loaded=runtime.loadLibrary();
++ @override Widget build(BuildContext context)=>FutureBuilder<void>(future:_loaded,builder:(context,s){
++  if(s.hasError)return const Center(child:Text('Editor failed to load'));
++  if(s.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
++  return runtime.EditableHtmlFieldRuntime(html:widget.html,onChanged:widget.onChanged,owner:widget.owner,profile:widget.profile,enabled:widget.enabled,placeholder:widget.placeholder,fontSize:widget.fontSize,onSave:widget.onSave,coordinator:widget.coordinator,twoFingersOn:widget.twoFingersOn,twoFingersOff:widget.twoFingersOff);
++ });
+ }
+--- /dev/null
++++ b/lib/components/html/editable_html_field_runtime.dart
+@@ -0,0 +1,270 @@
++import 'package:fstapp/widgets/app_dialog.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import 'package:fstapp/components/_shared/common_strings.dart';
++import 'package:fstapp/services/exception_handler.dart';
++
++import 'html_strings.dart';
++import 'html_text_style.dart';
++import 'html_view.dart';
++import 'rich_html_editor.dart';
++import 'rich_html_editor_controller_runtime.dart';
++import 'rich_html_editor_dialog_runtime.dart';
++
++/// Inline Apply changes the parent draft. Only onSave or parent save persists.
++class EditableHtmlFieldRuntime extends StatefulWidget {
++  const EditableHtmlFieldRuntime({
++    required this.html,
++    required this.onChanged,
++    this.owner = const HtmlMediaOwner.none(),
++    this.profile = HtmlContentProfile.appContent,
++    this.enabled = true,
++    this.placeholder,
++    this.fontSize = 18,
++    this.onSave,
++    this.coordinator,
++    this.twoFingersOn,
++    this.twoFingersOff,
++    super.key,
++  });
++  final String? html;
++  final String? placeholder;
++  final ValueChanged<String> onChanged;
++  final Future<void> Function(String)? onSave;
++  final HtmlMediaOwner owner;
++  final HtmlContentProfile profile;
++  final bool enabled;
++  final double fontSize;
++  final HtmlSaveCoordinator? coordinator;
++  final VoidCallback? twoFingersOn;
++  final VoidCallback? twoFingersOff;
++  @override
++  State<EditableHtmlFieldRuntime> createState() => _EditableHtmlFieldRuntimeState();
++}
++
++class _EditableHtmlFieldRuntimeState extends State<EditableHtmlFieldRuntime> {
++  RichHtmlEditorController? _controller;
++  HtmlSaveCoordinator? _coordinator;
++  Future<void> Function(String)? _writer;
++  String _activationHtml = '';
++  bool _active = false;
++  bool _saving = false;
++  bool _expanded = false;
++  bool _confirmingCancel = false;
++  void _begin() {
++    _coordinator = widget.coordinator ?? HtmlEditingScope.maybeOf(context);
++    _activationHtml = widget.html ?? '';
++    _writer =
++        widget.onSave; // Freeze the entity/version writer for this session.
++    _controller ??= RichHtmlEditorController(
++      initialHtml: _activationHtml,
++      owner: _coordinator == null && _writer == null
++          ? const HtmlMediaOwner.none()
++          : widget.owner,
++      profile: widget.profile,
++      media: _coordinator?.media,
++    );
++    if (_controller!.html != _activationHtml)
++      _controller!.reset(_activationHtml);
++    _controller!.removeListener(_draftChanged);
++    _controller!.addListener(_draftChanged);
++    _coordinator?.registerActive(
++      this,
++      () {
++        _coordinator?.recordValue(_controller!);
++        widget.onChanged(_controller!.html);
++      },
++      // Sanitizing loaded HTML is not a user edit. Match the field's own
++      // Save/Cancel controls instead of prompting for merely opening it.
++      isDirty: () => _active && _controller!.hasUserChanges,
++      acceptSave: () {
++        if (mounted) setState(() => _active = false);
++        _controller!.removeListener(_draftChanged);
++        _coordinator?.unregisterActive(this);
++      },
++    );
++    setState(() => _active = true);
++  }
++
++  void _draftChanged() {
++    _coordinator?.draftChanged();
++    if (mounted && _active) setState(() {});
++  }
++
++  Future<void> _requestCancel() async {
++    if (_saving || _confirmingCancel || !_active) return;
++    _confirmingCancel = true;
++    final discard = !_controller!.hasUserChanges ||
++        await showDialog<bool>(
++              context: context,
++              builder: (context) => AppAlertDialog(
++                onClose: () => Navigator.pop(context, false),
++                title: Text(HtmlStrings.discardDraft),
++                actions: [
++                  TextButton(
++                    onPressed: () => Navigator.pop(context, false),
++                    child: Text(CommonStrings.storno),
++                  ),
++                  TextButton(
++                    onPressed: () => Navigator.pop(context, true),
++                    child: Text(CommonStrings.ok),
++                  ),
++                ],
++              ),
++            ) ==
++            true;
++    _confirmingCancel = false;
++    if (!mounted || !_active) return;
++    if (discard) {
++      _cancel();
++    } else {
++      _controller!.focusNode.requestFocus();
++    }
++  }
++
++  void _cancel() {
++    _controller!.removeListener(_draftChanged);
++    _coordinator?.unregisterActive(this);
++    _controller!.reset(_activationHtml);
++    setState(() => _active = false);
++  }
++
++  Future<void> _apply() async {
++    if (_saving || !_controller!.hasUserChanges) return;
++    setState(() => _saving = true);
++    final success = await ExceptionHandler.guardVoid(
++      context,
++      futureFunction: () async {
++        var html = _controller!.html;
++        if (_writer != null) {
++          html = await _controller!.prepareForSave(context: context);
++          if (!mounted) return;
++          await _writer!(html);
++          if (!mounted) return;
++        }
++        _coordinator?.recordValue(_controller!);
++        widget.onChanged(html);
++      },
++    );
++    if (!mounted) return;
++    setState(() {
++      _saving = false;
++      if (success) _active = false;
++    });
++    if (success) {
++      _controller!.removeListener(_draftChanged);
++      if (_writer != null) _coordinator?.markSaved(controller: _controller);
++      _coordinator?.unregisterActive(this);
++      _activationHtml = widget.html ?? _controller!.html;
++      _controller!.reset(_activationHtml);
++    }
++  }
++
++  Future<void> _expand() async {
++    setState(() => _expanded = true);
++    await WidgetsBinding.instance.endOfFrame;
++    if (!mounted) return;
++    final action = await RichHtmlEditorDialog.expand(context, _controller!,
++        textStyle: htmlTextStyle(context, fontSize: widget.fontSize));
++    if (!mounted) return;
++    setState(() => _expanded = false);
++    if (action == HtmlEditorFullscreenAction.save) {
++      await _apply();
++      return;
++    }
++    if (action == HtmlEditorFullscreenAction.cancel) {
++      _cancel();
++      return;
++    }
++    await WidgetsBinding.instance.endOfFrame;
++    if (mounted) _controller!.focusNode.requestFocus();
++  }
++
++  @override
++  void dispose() {
++    _controller?.removeListener(_draftChanged);
++    _coordinator?.unregisterActive(this);
++    _controller?.dispose();
++    super.dispose();
++  }
++
++  Widget _editingActions() => Wrap(
++        alignment: WrapAlignment.end,
++        crossAxisAlignment: WrapCrossAlignment.center,
++        spacing: 12,
++        children: [
++          TextButton(
++            onPressed: _saving ? null : _requestCancel,
++            child: Text(CommonStrings.storno),
++          ),
++          FilledButton(
++            onPressed: _saving || !_controller!.hasUserChanges ? null : _apply,
++            child: Text(CommonStrings.save),
++          ),
++          IconButton(
++            tooltip: HtmlStrings.expand,
++            onPressed: _saving ? null : _expand,
++            icon: const Icon(Icons.open_in_full),
++          ),
++        ],
++      );
++
++  @override
++  Widget build(BuildContext context) {
++    if (!_active) {
++      return Row(
++        crossAxisAlignment: CrossAxisAlignment.start,
++        children: [
++          Expanded(
++            child: HtmlView(
++              html: (widget.html?.isNotEmpty ?? false)
++                  ? widget.html!
++                  : widget.placeholder ?? '',
++              fontSize: widget.fontSize,
++              twoFingersOn: widget.twoFingersOn,
++              twoFingersOff: widget.twoFingersOff,
++              imageBytesResolver: (_coordinator ??
++                      widget.coordinator ??
++                      HtmlEditingScope.maybeOf(context))
++                  ?.media
++                  .previewBytes,
++            ),
++          ),
++          if (widget.enabled)
++            IconButton(
++              tooltip: CommonStrings.edit,
++              icon: const Icon(Icons.edit),
++              onPressed: _begin,
++            ),
++        ],
++      );
++    }
++    return CallbackShortcuts(
++      bindings: {
++        const SingleActivator(LogicalKeyboardKey.escape): () {
++          if (!_expanded && ModalRoute.of(context)?.isCurrent != false) {
++            _requestCancel();
++          }
++        },
++      },
++      child: Focus(
++        autofocus: true,
++        child: Column(
++          crossAxisAlignment: CrossAxisAlignment.stretch,
++          children: [
++            if (_expanded) _editingActions(),
++            const SizedBox(height: 8),
++            if (!_expanded)
++              RichHtmlEditor(
++                controller: _controller!,
++                textStyle: htmlTextStyle(context, fontSize: widget.fontSize),
++                onCancel: _requestCancel,
++                toolbarActions: _editingActions(),
++                enabled: !_saving && widget.enabled,
++              ),
++          ],
++        ),
++      ),
++    );
++  }
++}
+--- a/lib/components/html/rich_html_editor_dialog.dart
++++ b/lib/components/html/rich_html_editor_dialog.dart
+@@ -1,31 +1,8 @@
+-import 'package:fstapp/widgets/app_dialog.dart';
++import 'html_media_service.dart' show HtmlMediaDraft;
+ import 'package:flutter/material.dart';
+-import 'package:fstapp/components/_shared/common_strings.dart';
+-import 'package:fstapp/services/exception_handler.dart';
+-
+-import 'html_media_service.dart';
+-import 'html_strings.dart';
+-import 'rich_html_editor.dart';
+ import 'rich_html_editor_controller.dart';
+-
+-enum HtmlEditorFullscreenAction { save, cancel, collapse }
+-
+-class RichHtmlEditorDialog extends StatefulWidget {
+-  const RichHtmlEditorDialog._({
+-    required this.controller,
+-    this.title,
+-    this.textStyle,
+-    this.ownsController = true,
+-    this.fullPage = false,
+-    this.readOnly = false,
+-  });
+-  final RichHtmlEditorController controller;
+-  final String? title;
+-  final TextStyle? textStyle;
+-  final bool ownsController;
+-  final bool fullPage;
+-  final bool readOnly;
+-
++import 'rich_html_editor_dialog_runtime.dart' deferred as runtime;
++class RichHtmlEditorDialog {
+   static Future<String?> show(
+     BuildContext context, {
+     String? initialHtml,
+@@ -37,249 +14,9 @@
+     HtmlMediaDraft? media,
+     bool readOnly = false,
+   }) async {
+-    String? html = initialHtml;
+-    if (html == null && loadHtml != null) {
+-      var loaded = false;
+-      await ExceptionHandler.guardVoid(
+-        context,
+-        futureFunction: () async {
+-          html = await loadHtml();
+-          loaded = true;
+-        },
+-      );
+-      if (!loaded || !context.mounted) return null;
+-    }
+-    if (!context.mounted) return null;
+-    coordinator ??= HtmlEditingScope.maybeOf(context);
+-    final draftMedia = readOnly ? null : media ?? coordinator?.media;
+-    final controller = RichHtmlEditorController(
+-      initialHtml: html,
+-      owner: draftMedia == null ? const HtmlMediaOwner.none() : owner,
+-      profile: profile,
+-      media: draftMedia,
+-    );
+-    final result = await showDialog<String>(
+-      context: context,
+-      barrierDismissible: false,
+-      builder: (_) => RichHtmlEditorDialog._(
+-          controller: controller, title: title, readOnly: readOnly),
+-    );
+-    if (!readOnly && result != null) coordinator?.recordValue(controller);
+-    return result;
+-  }
+ 
+-  static Future<HtmlEditorFullscreenAction> expand(
+-    BuildContext context,
+-    RichHtmlEditorController controller, {
+-    TextStyle? textStyle,
+-  }) async {
+-    final route = PageRouteBuilder<HtmlEditorFullscreenAction>(
+-      transitionDuration: Duration.zero,
+-      reverseTransitionDuration: Duration.zero,
+-      fullscreenDialog: true,
+-      pageBuilder: (_, __, ___) => RichHtmlEditorDialog._(
+-        controller: controller,
+-        ownsController: false,
+-        fullPage: true,
+-        textStyle: textStyle,
+-      ),
+-    );
+-    final action = await Navigator.of(
+-      context,
+-      rootNavigator: true,
+-    ).push<HtmlEditorFullscreenAction>(route);
+-    // The inline editor must not remount until the page's exit transition
+-    // removes its editor: both share the document layout key and IME client.
+-    await route.completed;
+-    return action ?? HtmlEditorFullscreenAction.collapse;
+-  }
+-
+-  @override
+-  State<RichHtmlEditorDialog> createState() => _RichHtmlEditorDialogState();
++ await runtime.loadLibrary();
++ if(!context.mounted)return null;
++ return runtime.RichHtmlEditorDialog.show(context,initialHtml:initialHtml,loadHtml:loadHtml,title:title,owner:owner,profile:profile,coordinator:coordinator,media:media,readOnly:readOnly);
++ }
+ }
+-
+-class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
+-  bool _expanded = false;
+-  bool _confirmingCancel = false;
+-  bool get _fullPage => widget.fullPage || _expanded;
+-
+-  void _finish(bool save) {
+-    if (widget.ownsController) {
+-      Navigator.pop<String>(
+-          context, save && !widget.readOnly ? widget.controller.html : null);
+-    } else {
+-      Navigator.pop<HtmlEditorFullscreenAction>(
+-        context,
+-        save
+-            ? HtmlEditorFullscreenAction.save
+-            : HtmlEditorFullscreenAction.cancel,
+-      );
+-    }
+-  }
+-
+-  Future<void> _toggleFullscreen() async {
+-    if (widget.fullPage) {
+-      Navigator.pop<HtmlEditorFullscreenAction>(
+-        context,
+-        HtmlEditorFullscreenAction.collapse,
+-      );
+-      return;
+-    }
+-    setState(() => _expanded = !_expanded);
+-    await WidgetsBinding.instance.endOfFrame;
+-    if (mounted && !widget.readOnly) widget.controller.focusNode.requestFocus();
+-  }
+-
+-  Future<bool> _canClose() async {
+-    if (_confirmingCancel) return false;
+-    if (!widget.controller.hasUserChanges) return true;
+-    _confirmingCancel = true;
+-    final discard = await showDialog<bool>(
+-          context: context,
+-          builder: (context) => AppAlertDialog(
+-            onClose: () => Navigator.pop(context, false),
+-            title: Text(HtmlStrings.discardDraft),
+-            actions: [
+-              TextButton(
+-                onPressed: () => Navigator.pop(context, false),
+-                child: Text(CommonStrings.storno),
+-              ),
+-              TextButton(
+-                onPressed: () => Navigator.pop(context, true),
+-                child: Text(CommonStrings.ok),
+-              ),
+-            ],
+-          ),
+-        ) ==
+-        true;
+-    _confirmingCancel = false;
+-    if (mounted && !discard) widget.controller.focusNode.requestFocus();
+-    return discard;
+-  }
+-
+-  Future<void> _requestCancel() async {
+-    if (await _canClose() && mounted) _finish(false);
+-  }
+-
+-  @override
+-  void dispose() {
+-    if (widget.ownsController) widget.controller.dispose();
+-    super.dispose();
+-  }
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return AnimatedBuilder(
+-      animation: widget.controller,
+-      builder: (context, _) {
+-        final small = MediaQuery.sizeOf(context).width < 650;
+-        final content = SafeArea(
+-          child: Scaffold(
+-            appBar: AppDialogAppBar(
+-              onClose: _requestCancel,
+-              title: Text(widget.title ?? CommonStrings.edit),
+-              actions: [
+-                if (_fullPage)
+-                  Builder(
+-                    builder: (context) => TextButton.icon(
+-                      style: TextButton.styleFrom(
+-                        foregroundColor: IconTheme.of(context).color,
+-                      ),
+-                      onPressed: _toggleFullscreen,
+-                      icon: const Icon(Icons.close_fullscreen),
+-                      label: Text(HtmlStrings.collapse),
+-                    ),
+-                  )
+-                else
+-                  IconButton(
+-                    tooltip: HtmlStrings.expand,
+-                    onPressed: _toggleFullscreen,
+-                    icon: const Icon(Icons.open_in_full),
+-                  ),
+-              ],
+-            ),
+-            body: _fullPage
+-                ? Padding(
+-                    padding: const EdgeInsets.all(12),
+-                    child: RichHtmlEditor(
+-                      controller: widget.controller,
+-                      enabled: !widget.readOnly,
+-                      textStyle: widget.textStyle,
+-                      onCancel: _requestCancel,
+-                      fullscreen: true,
+-                    ),
+-                  )
+-                : Align(
+-                    alignment: Alignment.topCenter,
+-                    child: ConstrainedBox(
+-                      constraints: BoxConstraints(
+-                        maxWidth: small ? double.infinity : 1000,
+-                      ),
+-                      child: SingleChildScrollView(
+-                        child: Padding(
+-                          padding: const EdgeInsets.all(12),
+-                          child: RichHtmlEditor(
+-                              controller: widget.controller,
+-                              enabled: !widget.readOnly,
+-                              textStyle: widget.textStyle,
+-                              onCancel: _requestCancel),
+-                        ),
+-                      ),
+-                    ),
+-                  ),
+-            bottomNavigationBar: SafeArea(
+-              child: Padding(
+-                padding: const EdgeInsets.all(12),
+-                child: Row(
+-                  mainAxisAlignment: MainAxisAlignment.end,
+-                  children: [
+-                    TextButton(
+-                      onPressed: () async {
+-                        if (await _canClose() && context.mounted)
+-                          _finish(false);
+-                      },
+-                      child: Text(CommonStrings.storno),
+-                    ),
+-                    const SizedBox(width: 12),
+-                    FilledButton(
+-                      onPressed:
+-                          !widget.readOnly && widget.controller.hasUserChanges
+-                              ? () => _finish(true)
+-                              : null,
+-                      child: Text(CommonStrings.save),
+-                    ),
+-                  ],
+-                ),
+-              ),
+-            ),
+-          ),
+-        );
+-        return AppDialogDismissal(
+-          onClose: _requestCancel,
+-          autofocus: !_fullPage,
+-          child: PopScope(
+-            canPop: !widget.ownsController || !widget.controller.isDirty,
+-            onPopInvokedWithResult: (didPop, _) async {
+-              if (!didPop && await _canClose() && context.mounted)
+-                Navigator.pop(context);
+-            },
+-            child: _fullPage
+-                ? content
+-                : small
+-                    ? AppDialog.fullscreen(
+-                        onClose: _requestCancel, child: content)
+-                    : AppDialog(
+-                        onClose: _requestCancel,
+-                        clipBehavior: Clip.antiAlias,
+-                        child: SizedBox(
+-                          width: 1000,
+-                          height: MediaQuery.sizeOf(context).height * 0.85,
+-                          child: content,
+-                        ),
+-                      ),
+-          ),
+-        );
+-      },
+-    );
+-  }
+-}
+--- /dev/null
++++ b/lib/components/html/rich_html_editor_dialog_runtime.dart
+@@ -0,0 +1,285 @@
++import 'package:fstapp/widgets/app_dialog.dart';
++import 'package:flutter/material.dart';
++import 'package:fstapp/components/_shared/common_strings.dart';
++import 'package:fstapp/services/exception_handler.dart';
++
++import 'html_media_service.dart';
++import 'html_strings.dart';
++import 'rich_html_editor.dart';
++import 'rich_html_editor_controller_runtime.dart';
++
++enum HtmlEditorFullscreenAction { save, cancel, collapse }
++
++class RichHtmlEditorDialog extends StatefulWidget {
++  const RichHtmlEditorDialog._({
++    required this.controller,
++    this.title,
++    this.textStyle,
++    this.ownsController = true,
++    this.fullPage = false,
++    this.readOnly = false,
++  });
++  final RichHtmlEditorController controller;
++  final String? title;
++  final TextStyle? textStyle;
++  final bool ownsController;
++  final bool fullPage;
++  final bool readOnly;
++
++  static Future<String?> show(
++    BuildContext context, {
++    String? initialHtml,
++    Future<String?> Function()? loadHtml,
++    String? title,
++    HtmlMediaOwner owner = const HtmlMediaOwner.none(),
++    HtmlContentProfile profile = HtmlContentProfile.appContent,
++    HtmlSaveCoordinator? coordinator,
++    HtmlMediaDraft? media,
++    bool readOnly = false,
++  }) async {
++    String? html = initialHtml;
++    if (html == null && loadHtml != null) {
++      var loaded = false;
++      await ExceptionHandler.guardVoid(
++        context,
++        futureFunction: () async {
++          html = await loadHtml();
++          loaded = true;
++        },
++      );
++      if (!loaded || !context.mounted) return null;
++    }
++    if (!context.mounted) return null;
++    coordinator ??= HtmlEditingScope.maybeOf(context);
++    final draftMedia = readOnly ? null : media ?? coordinator?.media;
++    final controller = RichHtmlEditorController(
++      initialHtml: html,
++      owner: draftMedia == null ? const HtmlMediaOwner.none() : owner,
++      profile: profile,
++      media: draftMedia,
++    );
++    final result = await showDialog<String>(
++      context: context,
++      barrierDismissible: false,
++      builder: (_) => RichHtmlEditorDialog._(
++          controller: controller, title: title, readOnly: readOnly),
++    );
++    if (!readOnly && result != null) coordinator?.recordValue(controller);
++    return result;
++  }
++
++  static Future<HtmlEditorFullscreenAction> expand(
++    BuildContext context,
++    RichHtmlEditorController controller, {
++    TextStyle? textStyle,
++  }) async {
++    final route = PageRouteBuilder<HtmlEditorFullscreenAction>(
++      transitionDuration: Duration.zero,
++      reverseTransitionDuration: Duration.zero,
++      fullscreenDialog: true,
++      pageBuilder: (_, __, ___) => RichHtmlEditorDialog._(
++        controller: controller,
++        ownsController: false,
++        fullPage: true,
++        textStyle: textStyle,
++      ),
++    );
++    final action = await Navigator.of(
++      context,
++      rootNavigator: true,
++    ).push<HtmlEditorFullscreenAction>(route);
++    // The inline editor must not remount until the page's exit transition
++    // removes its editor: both share the document layout key and IME client.
++    await route.completed;
++    return action ?? HtmlEditorFullscreenAction.collapse;
++  }
++
++  @override
++  State<RichHtmlEditorDialog> createState() => _RichHtmlEditorDialogState();
++}
++
++class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
++  bool _expanded = false;
++  bool _confirmingCancel = false;
++  bool get _fullPage => widget.fullPage || _expanded;
++
++  void _finish(bool save) {
++    if (widget.ownsController) {
++      Navigator.pop<String>(
++          context, save && !widget.readOnly ? widget.controller.html : null);
++    } else {
++      Navigator.pop<HtmlEditorFullscreenAction>(
++        context,
++        save
++            ? HtmlEditorFullscreenAction.save
++            : HtmlEditorFullscreenAction.cancel,
++      );
++    }
++  }
++
++  Future<void> _toggleFullscreen() async {
++    if (widget.fullPage) {
++      Navigator.pop<HtmlEditorFullscreenAction>(
++        context,
++        HtmlEditorFullscreenAction.collapse,
++      );
++      return;
++    }
++    setState(() => _expanded = !_expanded);
++    await WidgetsBinding.instance.endOfFrame;
++    if (mounted && !widget.readOnly) widget.controller.focusNode.requestFocus();
++  }
++
++  Future<bool> _canClose() async {
++    if (_confirmingCancel) return false;
++    if (!widget.controller.hasUserChanges) return true;
++    _confirmingCancel = true;
++    final discard = await showDialog<bool>(
++          context: context,
++          builder: (context) => AppAlertDialog(
++            onClose: () => Navigator.pop(context, false),
++            title: Text(HtmlStrings.discardDraft),
++            actions: [
++              TextButton(
++                onPressed: () => Navigator.pop(context, false),
++                child: Text(CommonStrings.storno),
++              ),
++              TextButton(
++                onPressed: () => Navigator.pop(context, true),
++                child: Text(CommonStrings.ok),
++              ),
++            ],
++          ),
++        ) ==
++        true;
++    _confirmingCancel = false;
++    if (mounted && !discard) widget.controller.focusNode.requestFocus();
++    return discard;
++  }
++
++  Future<void> _requestCancel() async {
++    if (await _canClose() && mounted) _finish(false);
++  }
++
++  @override
++  void dispose() {
++    if (widget.ownsController) widget.controller.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return AnimatedBuilder(
++      animation: widget.controller,
++      builder: (context, _) {
++        final small = MediaQuery.sizeOf(context).width < 650;
++        final content = SafeArea(
++          child: Scaffold(
++            appBar: AppDialogAppBar(
++              onClose: _requestCancel,
++              title: Text(widget.title ?? CommonStrings.edit),
++              actions: [
++                if (_fullPage)
++                  Builder(
++                    builder: (context) => TextButton.icon(
++                      style: TextButton.styleFrom(
++                        foregroundColor: IconTheme.of(context).color,
++                      ),
++                      onPressed: _toggleFullscreen,
++                      icon: const Icon(Icons.close_fullscreen),
++                      label: Text(HtmlStrings.collapse),
++                    ),
++                  )
++                else
++                  IconButton(
++                    tooltip: HtmlStrings.expand,
++                    onPressed: _toggleFullscreen,
++                    icon: const Icon(Icons.open_in_full),
++                  ),
++              ],
++            ),
++            body: _fullPage
++                ? Padding(
++                    padding: const EdgeInsets.all(12),
++                    child: RichHtmlEditor(
++                      controller: widget.controller,
++                      enabled: !widget.readOnly,
++                      textStyle: widget.textStyle,
++                      onCancel: _requestCancel,
++                      fullscreen: true,
++                    ),
++                  )
++                : Align(
++                    alignment: Alignment.topCenter,
++                    child: ConstrainedBox(
++                      constraints: BoxConstraints(
++                        maxWidth: small ? double.infinity : 1000,
++                      ),
++                      child: SingleChildScrollView(
++                        child: Padding(
++                          padding: const EdgeInsets.all(12),
++                          child: RichHtmlEditor(
++                              controller: widget.controller,
++                              enabled: !widget.readOnly,
++                              textStyle: widget.textStyle,
++                              onCancel: _requestCancel),
++                        ),
++                      ),
++                    ),
++                  ),
++            bottomNavigationBar: SafeArea(
++              child: Padding(
++                padding: const EdgeInsets.all(12),
++                child: Row(
++                  mainAxisAlignment: MainAxisAlignment.end,
++                  children: [
++                    TextButton(
++                      onPressed: () async {
++                        if (await _canClose() && context.mounted)
++                          _finish(false);
++                      },
++                      child: Text(CommonStrings.storno),
++                    ),
++                    const SizedBox(width: 12),
++                    FilledButton(
++                      onPressed:
++                          !widget.readOnly && widget.controller.hasUserChanges
++                              ? () => _finish(true)
++                              : null,
++                      child: Text(CommonStrings.save),
++                    ),
++                  ],
++                ),
++              ),
++            ),
++          ),
++        );
++        return AppDialogDismissal(
++          onClose: _requestCancel,
++          autofocus: !_fullPage,
++          child: PopScope(
++            canPop: !widget.ownsController || !widget.controller.isDirty,
++            onPopInvokedWithResult: (didPop, _) async {
++              if (!didPop && await _canClose() && context.mounted)
++                Navigator.pop(context);
++            },
++            child: _fullPage
++                ? content
++                : small
++                    ? AppDialog.fullscreen(
++                        onClose: _requestCancel, child: content)
++                    : AppDialog(
++                        onClose: _requestCancel,
++                        clipBehavior: Clip.antiAlias,
++                        child: SizedBox(
++                          width: 1000,
++                          height: MediaQuery.sizeOf(context).height * 0.85,
++                          child: content,
++                        ),
++                      ),
++          ),
++        );
++      },
++    );
++  }
++}
+--- a/lib/components/news/news_form_page.dart
++++ b/lib/components/news/news_form_page.dart
+@@ -1,28 +1,9 @@
+-import 'package:fstapp/widgets/app_dialog.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter/foundation.dart';
+ import 'package:auto_route/auto_route.dart';
+-import 'package:flutter/foundation.dart';
+-import 'package:fstapp/services/exception_handler.dart';
+-import 'package:http/http.dart' as http;
+-import 'dart:async';
+-import 'package:flutter/material.dart';
+-import 'package:flutter_form_builder/flutter_form_builder.dart';
+-import 'package:fstapp/data_services/rights_service.dart';
+-import 'package:fstapp/components/html/html_strings.dart';
+-import 'package:fstapp/app_config.dart';
+-import 'package:fstapp/components/users/user_info_model.dart';
+-import 'package:fstapp/data_services/auth_service.dart';
+-import 'package:fstapp/components/html/html_helper.dart';
+-import 'package:fstapp/styles/styles_config.dart';
+-import 'package:fstapp/components/html/rich_html_editor.dart';
+-import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+-import 'package:fstapp/components/_shared/common_strings.dart';
+-import 'package:fstapp/components/news/news_strings.dart';
+-import 'db_news.dart';
+ import 'news_submission.dart';
+ export 'news_submission.dart' show NewsSubmission;
+-import 'package:fstapp/components/news/news_send_confirmation_dialog.dart';
+-import 'package:fstapp/components/news/news_notification_audience_selector.dart';
+-
++import 'news_form_runtime.dart' deferred as runtime;
+ @RoutePage()
+ class NewsFormPage extends StatefulWidget {
+   static const ROUTE = "newsForm";
+@@ -38,292 +19,15 @@
+   });
+ 
+   @override
+-  _NewsFormPageState createState() => _NewsFormPageState();
++  State<NewsFormPage> createState() => _LazyNewsFormState();
+ }
+ 
+-class _NewsFormPageState extends State<NewsFormPage> {
+-  final _formKey = GlobalKey<FormBuilderState>();
+-  late RichHtmlEditorController _controller;
+-  bool _saving = false;
+-  bool _confirming = false;
+-  bool _publishOutcomeUnknown = false;
+-  NewsNotificationAudience? _audience;
+-  final FocusNode _toFocusNode = FocusNode();
+-  UserInfoModel? _currentUser;
+ 
+-  @override
+-  void initState() {
+-    super.initState();
+-    _controller = RichHtmlEditorController(
+-        owner: HtmlMediaOwner.occasion(RightsService.currentOccasionId()));
+-  }
+-
+-  @override
+-  void didChangeDependencies() async {
+-    super.didChangeDependencies();
+-    _currentUser = RightsService.currentUser();
+-    setState(() {});
+-  }
+-
+-  @override
+-  void dispose() {
+-    _controller.dispose();
+-    _toFocusNode.dispose();
+-    super.dispose();
+-  }
+-
+-  Future<void> _stornoPressed() async {
+-    if (_saving) return;
+-    if (_controller.isDirty) {
+-      final discard = await showDialog<bool>(
+-          context: context,
+-          builder: (context) => AppAlertDialog(
+-                  onClose: () => Navigator.pop(context, false),
+-                  title: Text(HtmlStrings.discardDraft),
+-                  actions: [
+-                    TextButton(
+-                        onPressed: () => Navigator.pop(context, false),
+-                        child: Text(CommonStrings.storno)),
+-                    TextButton(
+-                        onPressed: () => Navigator.pop(context, true),
+-                        child: Text(CommonStrings.ok)),
+-                  ]));
+-      if (discard != true || !mounted) return;
+-    }
+-    Navigator.pop(context);
+-  }
+-
+-  bool get _hasPublishableContent =>
+-      !_controller.isEmpty &&
+-      (_audience?.sendsNotification != true ||
+-          HtmlHelper.htmlToSnippet(_controller.html).trim().isNotEmpty);
+-
+-  Future<void> _sendPressed() async {
+-    if (_saving || _confirming || _publishOutcomeUnknown || _audience == null)
+-      return;
+-    final htmlContent = _controller.html;
+-    final audience = _audience!;
+-    final plainText = HtmlHelper.htmlToSnippet(htmlContent).trim();
+-    if (_controller.isEmpty ||
+-        (audience.sendsNotification && plainText.isEmpty)) {
+-      ScaffoldMessenger.of(context)
+-          .showSnackBar(SnackBar(content: Text(NewsStrings.contentRequired)));
+-      return;
+-    }
+-    final heading = _formKey.currentState?.fields['heading']?.value as String?;
+-    final headingDefault = _currentUser?.name ?? '';
+-    final sendsToSelf = audience.sendsToSelfOnly ||
+-        (audience.sendsNotification &&
+-            AppConfig.isPublicNotificationSendingDisabled);
+-    if (audience.sendsNotification) {
+-      setState(() => _confirming = true);
+-      final confirmed = await showDialog<bool>(
+-          context: context,
+-          builder: (_) => NewsSendConfirmationDialog(
+-              isSelfOnly: sendsToSelf,
+-              isTest: !audience.publishesNews,
+-              recipientIdentity: _currentUserIdentity,
+-              heading: heading?.trim().isNotEmpty == true
+-                  ? heading!.trim()
+-                  : headingDefault,
+-              htmlContent: htmlContent));
+-      if (!mounted) return;
+-      setState(() => _confirming = false);
+-      if (confirmed != true) return;
+-    }
+-    final delivery = audience.deliveryFields(
+-        currentUserId: sendsToSelf ? AuthService.currentUserId() : '',
+-        forceSelfOnly: AppConfig.isPublicNotificationSendingDisabled);
+-    setState(() => _saving = true);
+-    final success =
+-        await ExceptionHandler.guardVoid(context, futureFunction: () async {
+-      // A notification-only self test has no persistent HTML owner.
+-      final prepared = audience.publishesNews
+-          ? await _controller.prepareForSave(context: context)
+-          : htmlContent;
+-      try {
+-        final submission = NewsSubmission(
+-            content: prepared,
+-            heading: heading,
+-            headingDefault: headingDefault,
+-            addToNews: audience.publishesNews,
+-            withNotification: audience.sendsNotification,
+-            recipients: (delivery['to'] as List?)?.cast<String>());
+-        if (widget.onSubmit != null)
+-          await widget.onSubmit!(submission);
+-        else
+-          await DbNews.publishSubmission(context, submission);
+-      } on TimeoutException {
+-        _publishOutcomeUnknown = true;
+-        rethrow;
+-      } on http.ClientException {
+-        _publishOutcomeUnknown = true;
+-        rethrow;
+-      }
+-    });
+-    if (!mounted) return;
+-    setState(() => _saving = false);
+-    if (success) Navigator.pop(context, true);
+-  }
+-
+-  String get _currentUserIdentity {
+-    final name = _currentUser?.toFullNameString() ?? '';
+-    final email = _currentUser?.email ?? '';
+-    if (name.isNotEmpty && email.isNotEmpty) return '$name · $email';
+-    if (name.isNotEmpty) return name;
+-    return email;
+-  }
+-
+-  String get _publishButtonText => switch (_audience) {
+-        NewsNotificationAudience.none => NewsStrings.publishWithoutNotification,
+-        NewsNotificationAudience.selfTest => NewsStrings.publishAndSendSelf,
+-        NewsNotificationAudience.everyone => NewsStrings.publishAndSendEveryone,
+-        null => NewsStrings.selectRecipients,
+-      };
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return AnimatedBuilder(
+-        animation: _controller,
+-        builder: (context, _) => PopScope(
+-            canPop: !_saving && !_controller.isDirty,
+-            onPopInvokedWithResult: (didPop, _) {
+-              if (!didPop) _stornoPressed();
+-            },
+-            child: SafeArea(
+-              child: Scaffold(
+-                appBar: AppBar(
+-                  centerTitle: true,
+-                  title: Text(NewsStrings.createNews),
+-                  leading: BackButton(
+-                    onPressed: _saving ? null : _stornoPressed,
+-                  ),
+-                ),
+-                body: SingleChildScrollView(
+-                  child: Align(
+-                    alignment: Alignment.topCenter,
+-                    child: ConstrainedBox(
+-                      constraints:
+-                          BoxConstraints(maxWidth: StylesConfig.appMaxWidth),
+-                      child: Column(
+-                        children: [
+-                          Padding(
+-                            padding:
+-                                const EdgeInsets.symmetric(horizontal: 12.0),
+-                            child: FormBuilder(
+-                              key: _formKey,
+-                              child: Column(
+-                                children: [
+-                                  FormBuilderTextField(
+-                                    name: "heading",
+-                                    focusNode: _toFocusNode,
+-                                    decoration: InputDecoration(
+-                                        labelText: NewsStrings.heading,
+-                                        hintText: _currentUser?.name,
+-                                        floatingLabelBehavior:
+-                                            FloatingLabelBehavior.always),
+-                                  ),
+-                                  NewsNotificationAudienceSelector(
+-                                    selected: _audience,
+-                                    currentUserIdentity: _currentUserIdentity,
+-                                    allowEveryone: !AppConfig
+-                                        .isPublicNotificationSendingDisabled,
+-                                    onChanged: (value) =>
+-                                        setState(() => _audience = value),
+-                                  ),
+-                                  const SizedBox(height: 12),
+-                                ],
+-                              ),
+-                            ),
+-                          ),
+-                          widget.editorOverride ??
+-                              RichHtmlEditor(
+-                                  controller: _controller, enabled: !_saving),
+-                          if (_publishOutcomeUnknown)
+-                            Padding(
+-                                padding: const EdgeInsets.all(12),
+-                                child: Text(HtmlStrings.unknownPublish)),
+-                          ListenableBuilder(
+-                            listenable: _controller,
+-                            builder: (context, _) => _NewsFormActions(
+-                              onCancel: _saving ? () {} : _stornoPressed,
+-                              onPublish: _saving ||
+-                                      _confirming ||
+-                                      _publishOutcomeUnknown ||
+-                                      _audience == null ||
+-                                      !_hasPublishableContent
+-                                  ? null
+-                                  : _sendPressed,
+-                              publishLabel: _publishButtonText,
+-                            ),
+-                          ),
+-                        ],
+-                      ),
+-                    ),
+-                  ),
+-                ),
+-              ),
+-            )));
+-  }
++class _LazyNewsFormState extends State<NewsFormPage> {
++ late final Future<void> _loaded=runtime.loadLibrary();
++ @override Widget build(BuildContext context)=>FutureBuilder<void>(future:_loaded,builder:(context,s){
++  if(s.hasError)return const Center(child:Text('Editor failed to load'));
++  if(s.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());
++  return runtime.NewsFormRuntime(editorOverride:widget.editorOverride,occasionLink:widget.occasionLink,onSubmit:widget.onSubmit);
++ });
+ }
+-
+-class _NewsFormActions extends StatelessWidget {
+-  final VoidCallback onCancel;
+-  final VoidCallback? onPublish;
+-  final String publishLabel;
+-
+-  const _NewsFormActions({
+-    required this.onCancel,
+-    required this.onPublish,
+-    required this.publishLabel,
+-  });
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    final colors = Theme.of(context).colorScheme;
+-    return Padding(
+-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+-      child: SizedBox(
+-        width: double.infinity,
+-        child: Wrap(
+-          alignment: WrapAlignment.end,
+-          crossAxisAlignment: WrapCrossAlignment.center,
+-          spacing: 12,
+-          runSpacing: 8,
+-          children: [
+-            TextButton(
+-              onPressed: onCancel,
+-              style: TextButton.styleFrom(
+-                foregroundColor: colors.onSurfaceVariant,
+-                padding: const EdgeInsets.symmetric(
+-                  horizontal: 18,
+-                  vertical: 14,
+-                ),
+-              ),
+-              child: Text(CommonStrings.storno),
+-            ),
+-            ElevatedButton.icon(
+-              onPressed: onPublish,
+-              icon: const Icon(Icons.publish_outlined, size: 20),
+-              label: Text(publishLabel),
+-              style: ElevatedButton.styleFrom(
+-                backgroundColor: colors.primary,
+-                foregroundColor: colors.onPrimary,
+-                disabledBackgroundColor: colors.onSurface.withAlpha(30),
+-                disabledForegroundColor: colors.onSurface.withAlpha(95),
+-                elevation: onPublish == null ? 0 : 2,
+-                padding: const EdgeInsets.symmetric(
+-                  horizontal: 20,
+-                  vertical: 14,
+-                ),
+-                shape: RoundedRectangleBorder(
+-                  borderRadius: BorderRadius.circular(10),
+-                ),
+-              ),
+-            ),
+-          ],
+-        ),
+-      ),
+-    );
+-  }
+-}
+--- /dev/null
++++ b/lib/components/news/news_form_runtime.dart
+@@ -0,0 +1,329 @@
++import 'package:fstapp/widgets/app_dialog.dart';
++import 'package:auto_route/auto_route.dart';
++import 'package:flutter/foundation.dart';
++import 'package:fstapp/services/exception_handler.dart';
++import 'package:http/http.dart' as http;
++import 'dart:async';
++import 'package:flutter/material.dart';
++import 'package:flutter_form_builder/flutter_form_builder.dart';
++import 'package:fstapp/data_services/rights_service.dart';
++import 'package:fstapp/components/html/html_strings.dart';
++import 'package:fstapp/app_config.dart';
++import 'package:fstapp/components/users/user_info_model.dart';
++import 'package:fstapp/data_services/auth_service.dart';
++import 'package:fstapp/components/html/html_helper.dart';
++import 'package:fstapp/styles/styles_config.dart';
++import 'package:fstapp/components/html/rich_html_editor.dart';
++import 'package:fstapp/components/html/rich_html_editor_controller_runtime.dart';
++import 'package:fstapp/components/_shared/common_strings.dart';
++import 'package:fstapp/components/news/news_strings.dart';
++import 'db_news.dart';
++import 'news_submission.dart';
++export 'news_submission.dart' show NewsSubmission;
++import 'package:fstapp/components/news/news_send_confirmation_dialog.dart';
++import 'package:fstapp/components/news/news_notification_audience_selector.dart';
++
++@RoutePage()
++class NewsFormRuntime extends StatefulWidget {
++  static const ROUTE = "newsForm";
++  final Widget? editorOverride;
++  final String occasionLink;
++  final Future<void> Function(NewsSubmission)? onSubmit;
++
++  const NewsFormRuntime({
++    super.key,
++    @PathParam('{occasionLink}') this.occasionLink = '',
++    @visibleForTesting this.editorOverride,
++    this.onSubmit,
++  });
++
++  @override
++  _NewsFormRuntimeState createState() => _NewsFormRuntimeState();
++}
++
++class _NewsFormRuntimeState extends State<NewsFormRuntime> {
++  final _formKey = GlobalKey<FormBuilderState>();
++  late RichHtmlEditorController _controller;
++  bool _saving = false;
++  bool _confirming = false;
++  bool _publishOutcomeUnknown = false;
++  NewsNotificationAudience? _audience;
++  final FocusNode _toFocusNode = FocusNode();
++  UserInfoModel? _currentUser;
++
++  @override
++  void initState() {
++    super.initState();
++    _controller = RichHtmlEditorController(
++        owner: HtmlMediaOwner.occasion(RightsService.currentOccasionId()));
++  }
++
++  @override
++  void didChangeDependencies() async {
++    super.didChangeDependencies();
++    _currentUser = RightsService.currentUser();
++    setState(() {});
++  }
++
++  @override
++  void dispose() {
++    _controller.dispose();
++    _toFocusNode.dispose();
++    super.dispose();
++  }
++
++  Future<void> _stornoPressed() async {
++    if (_saving) return;
++    if (_controller.isDirty) {
++      final discard = await showDialog<bool>(
++          context: context,
++          builder: (context) => AppAlertDialog(
++                  onClose: () => Navigator.pop(context, false),
++                  title: Text(HtmlStrings.discardDraft),
++                  actions: [
++                    TextButton(
++                        onPressed: () => Navigator.pop(context, false),
++                        child: Text(CommonStrings.storno)),
++                    TextButton(
++                        onPressed: () => Navigator.pop(context, true),
++                        child: Text(CommonStrings.ok)),
++                  ]));
++      if (discard != true || !mounted) return;
++    }
++    Navigator.pop(context);
++  }
++
++  bool get _hasPublishableContent =>
++      !_controller.isEmpty &&
++      (_audience?.sendsNotification != true ||
++          HtmlHelper.htmlToSnippet(_controller.html).trim().isNotEmpty);
++
++  Future<void> _sendPressed() async {
++    if (_saving || _confirming || _publishOutcomeUnknown || _audience == null)
++      return;
++    final htmlContent = _controller.html;
++    final audience = _audience!;
++    final plainText = HtmlHelper.htmlToSnippet(htmlContent).trim();
++    if (_controller.isEmpty ||
++        (audience.sendsNotification && plainText.isEmpty)) {
++      ScaffoldMessenger.of(context)
++          .showSnackBar(SnackBar(content: Text(NewsStrings.contentRequired)));
++      return;
++    }
++    final heading = _formKey.currentState?.fields['heading']?.value as String?;
++    final headingDefault = _currentUser?.name ?? '';
++    final sendsToSelf = audience.sendsToSelfOnly ||
++        (audience.sendsNotification &&
++            AppConfig.isPublicNotificationSendingDisabled);
++    if (audience.sendsNotification) {
++      setState(() => _confirming = true);
++      final confirmed = await showDialog<bool>(
++          context: context,
++          builder: (_) => NewsSendConfirmationDialog(
++              isSelfOnly: sendsToSelf,
++              isTest: !audience.publishesNews,
++              recipientIdentity: _currentUserIdentity,
++              heading: heading?.trim().isNotEmpty == true
++                  ? heading!.trim()
++                  : headingDefault,
++              htmlContent: htmlContent));
++      if (!mounted) return;
++      setState(() => _confirming = false);
++      if (confirmed != true) return;
++    }
++    final delivery = audience.deliveryFields(
++        currentUserId: sendsToSelf ? AuthService.currentUserId() : '',
++        forceSelfOnly: AppConfig.isPublicNotificationSendingDisabled);
++    setState(() => _saving = true);
++    final success =
++        await ExceptionHandler.guardVoid(context, futureFunction: () async {
++      // A notification-only self test has no persistent HTML owner.
++      final prepared = audience.publishesNews
++          ? await _controller.prepareForSave(context: context)
++          : htmlContent;
++      try {
++        final submission = NewsSubmission(
++            content: prepared,
++            heading: heading,
++            headingDefault: headingDefault,
++            addToNews: audience.publishesNews,
++            withNotification: audience.sendsNotification,
++            recipients: (delivery['to'] as List?)?.cast<String>());
++        if (widget.onSubmit != null)
++          await widget.onSubmit!(submission);
++        else
++          await DbNews.publishSubmission(context, submission);
++      } on TimeoutException {
++        _publishOutcomeUnknown = true;
++        rethrow;
++      } on http.ClientException {
++        _publishOutcomeUnknown = true;
++        rethrow;
++      }
++    });
++    if (!mounted) return;
++    setState(() => _saving = false);
++    if (success) Navigator.pop(context, true);
++  }
++
++  String get _currentUserIdentity {
++    final name = _currentUser?.toFullNameString() ?? '';
++    final email = _currentUser?.email ?? '';
++    if (name.isNotEmpty && email.isNotEmpty) return '$name · $email';
++    if (name.isNotEmpty) return name;
++    return email;
++  }
++
++  String get _publishButtonText => switch (_audience) {
++        NewsNotificationAudience.none => NewsStrings.publishWithoutNotification,
++        NewsNotificationAudience.selfTest => NewsStrings.publishAndSendSelf,
++        NewsNotificationAudience.everyone => NewsStrings.publishAndSendEveryone,
++        null => NewsStrings.selectRecipients,
++      };
++
++  @override
++  Widget build(BuildContext context) {
++    return AnimatedBuilder(
++        animation: _controller,
++        builder: (context, _) => PopScope(
++            canPop: !_saving && !_controller.isDirty,
++            onPopInvokedWithResult: (didPop, _) {
++              if (!didPop) _stornoPressed();
++            },
++            child: SafeArea(
++              child: Scaffold(
++                appBar: AppBar(
++                  centerTitle: true,
++                  title: Text(NewsStrings.createNews),
++                  leading: BackButton(
++                    onPressed: _saving ? null : _stornoPressed,
++                  ),
++                ),
++                body: SingleChildScrollView(
++                  child: Align(
++                    alignment: Alignment.topCenter,
++                    child: ConstrainedBox(
++                      constraints:
++                          BoxConstraints(maxWidth: StylesConfig.appMaxWidth),
++                      child: Column(
++                        children: [
++                          Padding(
++                            padding:
++                                const EdgeInsets.symmetric(horizontal: 12.0),
++                            child: FormBuilder(
++                              key: _formKey,
++                              child: Column(
++                                children: [
++                                  FormBuilderTextField(
++                                    name: "heading",
++                                    focusNode: _toFocusNode,
++                                    decoration: InputDecoration(
++                                        labelText: NewsStrings.heading,
++                                        hintText: _currentUser?.name,
++                                        floatingLabelBehavior:
++                                            FloatingLabelBehavior.always),
++                                  ),
++                                  NewsNotificationAudienceSelector(
++                                    selected: _audience,
++                                    currentUserIdentity: _currentUserIdentity,
++                                    allowEveryone: !AppConfig
++                                        .isPublicNotificationSendingDisabled,
++                                    onChanged: (value) =>
++                                        setState(() => _audience = value),
++                                  ),
++                                  const SizedBox(height: 12),
++                                ],
++                              ),
++                            ),
++                          ),
++                          widget.editorOverride ??
++                              RichHtmlEditor(
++                                  controller: _controller, enabled: !_saving),
++                          if (_publishOutcomeUnknown)
++                            Padding(
++                                padding: const EdgeInsets.all(12),
++                                child: Text(HtmlStrings.unknownPublish)),
++                          ListenableBuilder(
++                            listenable: _controller,
++                            builder: (context, _) => _NewsFormActions(
++                              onCancel: _saving ? () {} : _stornoPressed,
++                              onPublish: _saving ||
++                                      _confirming ||
++                                      _publishOutcomeUnknown ||
++                                      _audience == null ||
++                                      !_hasPublishableContent
++                                  ? null
++                                  : _sendPressed,
++                              publishLabel: _publishButtonText,
++                            ),
++                          ),
++                        ],
++                      ),
++                    ),
++                  ),
++                ),
++              ),
++            )));
++  }
++}
++
++class _NewsFormActions extends StatelessWidget {
++  final VoidCallback onCancel;
++  final VoidCallback? onPublish;
++  final String publishLabel;
++
++  const _NewsFormActions({
++    required this.onCancel,
++    required this.onPublish,
++    required this.publishLabel,
++  });
++
++  @override
++  Widget build(BuildContext context) {
++    final colors = Theme.of(context).colorScheme;
++    return Padding(
++      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
++      child: SizedBox(
++        width: double.infinity,
++        child: Wrap(
++          alignment: WrapAlignment.end,
++          crossAxisAlignment: WrapCrossAlignment.center,
++          spacing: 12,
++          runSpacing: 8,
++          children: [
++            TextButton(
++              onPressed: onCancel,
++              style: TextButton.styleFrom(
++                foregroundColor: colors.onSurfaceVariant,
++                padding: const EdgeInsets.symmetric(
++                  horizontal: 18,
++                  vertical: 14,
++                ),
++              ),
++              child: Text(CommonStrings.storno),
++            ),
++            ElevatedButton.icon(
++              onPressed: onPublish,
++              icon: const Icon(Icons.publish_outlined, size: 20),
++              label: Text(publishLabel),
++              style: ElevatedButton.styleFrom(
++                backgroundColor: colors.primary,
++                foregroundColor: colors.onPrimary,
++                disabledBackgroundColor: colors.onSurface.withAlpha(30),
++                disabledForegroundColor: colors.onSurface.withAlpha(95),
++                elevation: onPublish == null ? 0 : 2,
++                padding: const EdgeInsets.symmetric(
++                  horizontal: 20,
++                  vertical: 14,
++                ),
++                shape: RoundedRectangleBorder(
++                  borderRadius: BorderRadius.circular(10),
++                ),
++              ),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}

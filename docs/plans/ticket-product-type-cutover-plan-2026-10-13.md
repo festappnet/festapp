@@ -1,7 +1,7 @@
 # Konkrétní product type na vstupence - canonical cutover
 
-Datum: 2026-10-13
-Stav: Plán implementace připraven; produkční formulářové vazby ověřeny, rozsah sdíleného release čeká
+Datum: 2026-10-13  
+Stav: Plán implementace připraven; produkční formulářové vazby ověřeny, rozsah sdíleného release čeká  
 Verification: standard (datová migrace, autorizace, sdílený kontrakt PDF)
 
 ## Výsledek a hranice

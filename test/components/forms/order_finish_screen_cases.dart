@@ -8,6 +8,36 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   testWidgets(
+      'overview close notifies once after route pop so the preview can close',
+      (tester) async {
+    var closed = 0;
+    await tester.pumpWidget(MaterialApp(
+        home: Builder(
+            builder: (context) => TextButton(
+                onPressed: () => showGeneralDialog(
+                    context: context,
+                    pageBuilder: (dialogContext, _, __) => FinishOrderScreen(
+                          overviewAvailable: true,
+                          orderFutureFunction: () async =>
+                              const FunctionResponse(
+                                  status: 200, data: {'code': 200}),
+                          onSuccess: () {
+                            closed++;
+                          },
+                        )),
+                child: const Text('open')))));
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OrderOverview.title'));
+    await tester.pumpAndSettle();
+    expect(closed, 1);
+    expect(find.byType(FinishOrderScreen), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
       'queued confirmation renders before acceptance and status failure never claims sent',
       (tester) async {
     for (final fail in [false, true]) {

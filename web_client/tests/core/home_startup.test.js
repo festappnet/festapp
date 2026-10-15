@@ -1,4 +1,5 @@
-import '../helpers/style_imports.js';
+import { register } from 'node:module';
+register('../css_loader.mjs', import.meta.url);
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -67,5 +68,31 @@ test('actual server catalogue shell reveals links while startup is pending and r
     assert.equal(dom.window.document.querySelector('#web-client-startup').style.position, 'relative');
     assert.equal(dom.window.document.querySelector('#site-introduction').hidden, true);
     assert.ok(dom.window.document.querySelector('a[href="/form/live"]'));
+    dom.window.close();
+});
+
+for (const fails of [false, true]) test(`organizer startup preserves static content, core failure=${fails}`, async () => {
+    const dom = new JSDOM('<body data-page="organizers"><main><h1>Organizers</h1></main></body>');
+    const source = readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8')
+        .replace(/^import .*;\r?\n/gm, '')
+        .replace("document.addEventListener('DOMContentLoaded', Main.init);", 'Main.init();');
+    let initializations = 0;
+    let themes = 0;
+    let ready = 0;
+    dom.window.markFestappAppReady = () => ready++;
+    await runInNewContext(source, {
+        window: dom.window, document: dom.window.document, console: { error() {} },
+        GoogleAuthService: { takeCallback: () => null },
+        initializeCoreServices: async options => { assert.equal(options.isAppSupported, false); initializations++; if (fails) throw Error('offline'); },
+        LocalizationService: {}, SupabaseService: {}, RightsService: {}, AppConfig: { isAppSupported: true },
+        ThemeService: { init() { themes++; } }, ImageLoader: { init() {} },
+        handleOrganizerIntent: () => assert.fail('no creation intent on content page'),
+        RouterService: { handleInitialLoad() { assert.fail('no router fallback'); } },
+        UnitPage: class { constructor() { assert.fail('no catalog'); } },
+    });
+    assert.equal(initializations, 1);
+    assert.equal(themes, 1);
+    assert.equal(ready, fails ? 0 : 1);
+    assert.equal(dom.window.document.querySelector('h1').textContent, 'Organizers');
     dom.window.close();
 });

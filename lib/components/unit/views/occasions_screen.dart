@@ -470,11 +470,6 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
               child: Row(
                 children: [
                   Text('$year', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(width: 12),
-                  Text('${byYear[year]!.length}',
-                      semanticsLabel:
-                          '${CommonStrings.events}: ${byYear[year]!.length}',
-                      style: Theme.of(context).textTheme.bodyMedium),
                   const SizedBox(width: 16),
                   const Expanded(child: Divider()),
                 ],

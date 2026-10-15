@@ -36,6 +36,21 @@ The public private-input interface is `automation/private-inputs.schema.json`.
 It declares names only. Values come from private configuration repository or an approved secret
 manager through an explicit build/deploy handoff and are never committed here.
 
+## Flutter web font loading
+
+`build_web_bundle.sh` runs `optimize_web_fonts.mjs` after Flutter compilation
+and before version stamping and PWA generation. It removes automatic font
+registrations only for known unused dependency families, checking both main
+and every deferred JavaScript file for references. Font files and AssetManifest
+remain intact; the current application typography and regular Lucide icons
+remain registered.
+
+The dynamic Google Fonts registry belongs behind
+`lib/components/fonts/form_font_catalog.dart`. Do not add eager `google_fonts`
+imports to forms or administration code: that restores roughly 10 MB of code
+to the entry bundle. The PWA installer must continue caching every
+`main.dart.js_<n>.part.js` atomically for first use offline.
+
 ## Web deployment
 
 `automation/deploy_direct.sh` is the canonical production web deployment path.

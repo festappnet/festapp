@@ -1,0 +1,146 @@
+{
+  "scope": "vstupenky.online local implementation only",
+  "baseline": "current pre-task dirty working tree, not clean main",
+  "files": [
+    {
+      "path": "automation/cloudflare_build.sh",
+      "beforeSha256": "aabf1c29566f2b1d5167b06858fb2930f8c0d1baffd9465b746bf571c716e96a",
+      "afterSha256": "d09c80828d3fc5ff36bb9e73ecad0de816a14abc7edd77700071d59d5b7fd426"
+    },
+    {
+      "path": "automation/apply_config.sh",
+      "beforeSha256": "bf87f6e6deed38e24ebe932e83f20d4092414a0354966da12b3149f8caa20c09",
+      "afterSha256": "5c9b77034ab3cb88aa64d84d31ac04d71179c2a664f77c3c1c1b755f3fa98741"
+    },
+    {
+      "path": "automation/build_web_bundle.sh",
+      "beforeSha256": "04dc4a2ee08712fffa30d8638073437e28379db182918aa9163d793db1eb9266",
+      "afterSha256": "a57d61c8254ce66bbbe7aaf809f3c3ebd03bdc93484b5c101e3531823927b266"
+    },
+    {
+      "path": "automation/tenant-overlays/generated.paths",
+      "beforeSha256": "cc21cedeb262351ebd8132bf8f080861f8bcdbba791cdf266c07f6f49edd4eb3",
+      "afterSha256": "4c8014fe906583e6f3ae470bb79d4bc4c47b090c3699367b81888f7739e4c788"
+    },
+    {
+      "path": "automation/tests/public_seo.test.mjs",
+      "beforeSha256": "d5c66e21fee9dd27d84ef6e94d465f218e9d297db431bd4b98eabd54a70a5e71",
+      "afterSha256": "63a862dc2254a332c0a5fad4549a984bba8bfde965530abbeda920789e170d55"
+    },
+    {
+      "path": "automation/tests/apply_config.test.sh",
+      "beforeSha256": "ec12bb43e24b11d3d4e7af1c16d0a24a50db1c032e5123fcdbba7f3194b797e3",
+      "afterSha256": "5fd89ab69c14d09644009c7386f88357c6632bb532fb20bfe4d32943f09f4e88"
+    },
+    {
+      "path": "web_client/index.html",
+      "beforeSha256": "0a11e3f0b648ae046e53806969d4dfd173c8b540930aed861365298383c40097",
+      "afterSha256": "07e7e01e314436a84a829074cbc3cbd3644d3102be3938a667eeb9b395428198"
+    },
+    {
+      "path": "web_client/src/main.js",
+      "beforeSha256": "c9c8e854d8e0c1a39650b108456531849e48fe0ef2e450d1c92bb0f798e5874b",
+      "afterSha256": "91033cd6d79ba3424d0bec2c92e9b8633832737a5a48df29774d61fcfa3f671a"
+    },
+    {
+      "path": "web_client/src/services/seo_service.js",
+      "beforeSha256": "4fd72734371fc730a4724b7abbd39e8cc23bccdc353f75ac41b24aca0ef5082a",
+      "afterSha256": "7682b44c472c1c6d56dc33db2a32ed49dcc5e08816d8f924cf836e8d2f2d3e4d"
+    },
+    {
+      "path": "web_client/src/components/unit/unit_page.js",
+      "beforeSha256": "2bf7d9e01b2aea1244aa229226561bb43f805cbbdc770b8c673186a8c04159af",
+      "afterSha256": "3f0106087d4fc4d49ab8547ba5fde82996078466f7bd630ef402b17f35394723"
+    },
+    {
+      "path": "web_client/src/components/unit/unit_strings.js",
+      "beforeSha256": "e53304201b3f45aae9c240ccfc78c26d1881fc5d994825b1a1de1a711889aa0d",
+      "afterSha256": "1f8194472b10d3cb256c10d826c622d87271b6dd254d20a20a5a2bf86469d2dc"
+    },
+    {
+      "path": "web_client/src/components/occasion/db_occasions.js",
+      "beforeSha256": "954b47d59c05cf38cf3ae83de7aa37291708b02249deaf5ef8443884cb802e64",
+      "afterSha256": "d13615c24f5b1d942ceddeb56449f11c9545001301a1aea783325d51e2048195"
+    },
+    {
+      "path": "web_client/src/components/occasion/occasion_card.js",
+      "beforeSha256": "e54f3edfb2ae5098910e3f2a45e0516901546b3f922907231e8559985734b71f",
+      "afterSha256": "bddd831519332adda323d52e78d8e48f9f380adbcaff2fd15c0050f0a28a30cd"
+    },
+    {
+      "path": "web_client/src/components/occasion/occasion_card.css",
+      "beforeSha256": "c6bc8093d3818beac9be4c3864db300bab3b43bb5d55926094cc770a6c4cccec",
+      "afterSha256": "d4e1adfcae2c33cd1dc362e9f2f28aab27511ceb33991f768862a96968705bec"
+    },
+    {
+      "path": "web_client/tests/components/occasion_card_links.test.js",
+      "beforeSha256": "057971514cd91d0960d429c6ae884651bf674d532724aea5840c79cb3a8e7ed8",
+      "afterSha256": "cacbfd266d4302b71d89f9dc155c4ca99fc85e5fc12430dda2448f1e9cdc0031"
+    },
+    {
+      "path": "web_client/tests/core/home_startup.test.js",
+      "beforeSha256": "92509be0c3e026b25477b56878abf96203b91b2d56987c48f0c67147bd0e6a09",
+      "afterSha256": "60bd802214de6f4ad6f162379065af07106531d0d8a908b67710cdaa94686b55"
+    },
+    {
+      "path": "web_client/tests/services/seo_service.test.js",
+      "beforeSha256": "6d28413d7b3533dde6a807971010fb6140ce60672b6746785aee36cbb5c630c4",
+      "afterSha256": "3dcf44421fac1b8dced30aa63e88a8608315c70b72792c0d52ddb34ccff4a983"
+    },
+    {
+      "path": "docs/plans/vstupenky-seo-plan-2026-10-15.md",
+      "beforeSha256": "b91e8f4d1b6b8d0ca15f0322cab92ea58e14125ece6d9ec90fcdb9ed960d9bc9",
+      "afterSha256": "4e37ba81c484e1da54b810fbc597548d939d3528a019d8fac5e31ce43306d90b"
+    },
+    {
+      "path": "automation/release/render_organizer_page.mjs",
+      "beforeSha256": null,
+      "afterSha256": "3d8eb47d327359b6aa40d1e5a3f839305233b38c1d810052732873a122ecf57f"
+    },
+    {
+      "path": "automation/release/organizers/page.html",
+      "beforeSha256": null,
+      "afterSha256": "edd87ef6992d38f4923f5f764efbdec3aad538136f933507a4fab0d878da346a"
+    },
+    {
+      "path": "automation/release/organizers/page.css",
+      "beforeSha256": null,
+      "afterSha256": "e0e6c42f6dec0189d22fc2ffeaf98551987add52bafd925213fb54f3be12b748"
+    },
+    {
+      "path": "automation/tests/organizer_page.test.mjs",
+      "beforeSha256": null,
+      "afterSha256": "8051884da0398e5bba15ea770a97421434de818f446c694636cddedf99886fc8"
+    },
+    {
+      "path": "web_client/src/components/occasion/catalog.js",
+      "beforeSha256": null,
+      "afterSha256": "68272372cd93c229f6ccf60fdf614943065fb0a3d2680235040c57b30d670989"
+    },
+    {
+      "path": "web_client/src/components/unit/unit_page.css",
+      "beforeSha256": null,
+      "afterSha256": "934b809f555237ae35ec39554faaeef9e78d2cca8cf1aaae92c5f817b28843d9"
+    },
+    {
+      "path": "web_client/src/startup/organizer_intent.js",
+      "beforeSha256": null,
+      "afterSha256": "e5bca84b6ae36505039f6ff7e344adebfc10ea0d4834f4840c3fc33a43421ac3"
+    },
+    {
+      "path": "web_client/tests/components/catalog.test.js",
+      "beforeSha256": null,
+      "afterSha256": "0ff73f238c0883836a1a0ca4b6b6c9a27b5a2b375ca67d8cbbb658f1132ee77e"
+    },
+    {
+      "path": "web_client/tests/core/organizer_intent.test.js",
+      "beforeSha256": null,
+      "afterSha256": "13b83e022ee8dd839fa71e7c540718c191d57650efb3722e4d39bc9ee06dfa93"
+    },
+    {
+      "path": "web/organizers-page",
+      "beforeSha256": null,
+      "afterSha256": "1fc532ee6fe187380aae88ce1dd616fdcb3e3cb5b906532528843e6a9768b57f"
+    }
+  ]
+}

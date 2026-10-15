@@ -85,6 +85,13 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 
 - **FVM**: Always prefix flutter/dart commands with `fvm`
 - **Error handling**: Prefer `ExceptionHandler.guard()` over try-catch in UI code
+- **Admin modals**: Use `widgets/app_dialog.dart` (`AppAlertDialog`,
+  `AppSimpleDialog`, or `AppDialog` for custom/fullscreen content), and
+  `AppDialogHeader`/`AppDialogAppBar` for custom headers. The shared shell owns
+  shape, rightmost close button and Escape focus. Pass the same `onClose` as
+  Cancel and set `dismissible: false` while closing is blocked; preserve draft
+  `PopScope` guards. `StandardDialog` is the compact content adapter. Native
+  date/time pickers and public song/game views keep their specialized controls.
 - **Localization**: `*_strings.dart` files with static getters (`CommonStrings.save`) not `"key".tr()`
 - **Routing**: `auto_route`, `app_router.gr.dart` is generated — don't edit
 - **Permissions**: Check `RightsService` before showing admin/editor UI

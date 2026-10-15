@@ -121,3 +121,5 @@ Na výslovnou navazující žádost byl zkontrolován i GitHub security audit: 5
 [Přesná mapa všech 53 upozornění a výsledky](../operations/github-security-alerts-2026-10-09.md) odlišuje opravený PR od dosud otevřených upozornění na main. Secret scanning, push protection a automatické Dependabot security updates jsou na GitHubu vypnuté; code scanning neposkytl analýzu. Nastavení GitHubu nebylo při auditu měněno.
 
 První migrace přenechává BEGIN/COMMIT release wrapperu, aby její změny a zápis do ledgeru byly atomické. Neobsahuje vnitřní COMMIT, který by obalový ledger transakční kontrakt předčasně ukončil.
+
+Publikace: https://github.com/festappnet/festapp/pull/352, head `0becef204366e759e2b13d85c1089610617f20c4`, base `affe4bda1fd54553de6837db13bfe124e1db5335`. Upstream doplnil pouze oddělený host monitoring; bez překryvu s bezpečnostním balíkem. Stav GitHubu `REVIEW_REQUIRED` / `BLOCKED`, povinné jedno review; auto-merge repozitáře je vypnutý. Produkční nasazení neproběhlo. Autoritativní čistý release worktree: `/Users/miakh/source/festapp-security-release-20261009`.

@@ -1,3 +1,4 @@
+import 'bank_account_dialog_scope.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
@@ -55,7 +56,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
   void _showError(String message) {
     if (!mounted) return;
     showDialog(
-      context: context,
+      context: BankAccountDialogScope.contextOf(context),
+      useRootNavigator: false,
       builder: (context) => AppAlertDialog(
         title: const Text('Error'),
         content: SelectableText(message),
@@ -89,7 +91,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
       }
 
       if (!mounted) return;
-      DialogHelper.chooseUser(context, (chosenUser) async {
+      DialogHelper.chooseUser(BankAccountDialogScope.contextOf(context),
+          (chosenUser) async {
         if (chosenUser.id == null || chosenUser.email == null) {
           _showError(BankAccountStrings.errorUpdatingUser);
           return;
@@ -99,7 +102,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
         bool isSupport = false;
 
         await showDialog(
-          context: context,
+          context: BankAccountDialogScope.contextOf(context),
+          useRootNavigator: false,
           builder: (context) => StatefulBuilder(
             builder: (context, setState) => AppAlertDialog(
               title: Text(
@@ -152,7 +156,7 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
             ),
           ),
         );
-      }, availableUsers, BankAccountStrings.add);
+      }, availableUsers, BankAccountStrings.add, useRootNavigator: false);
     } catch (e) {
       if (mounted) setState(() => _isLoadingUsers = false);
       _showError("Error loading users: $e");
@@ -164,7 +168,8 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
     bool isSupport = user.isSupport;
 
     await showDialog(
-      context: context,
+      context: BankAccountDialogScope.contextOf(context),
+      useRootNavigator: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AppAlertDialog(
           title: Text(

@@ -145,12 +145,12 @@ async function handleHome(request, env) {
       }).join("");
       const years = archive ? groupPastOccasionsByYear(list) : [];
       const body = years.length
-        ? years.map(({year, occasions}) => `<h3>${year} (${occasions.length})</h3><ul>${links(occasions)}</ul>`).join("")
+        ? years.map(({year, occasions}) => `<h3>${year}</h3><ul>${links(occasions)}</ul>`).join("")
         : `<ul>${links(list)}</ul>`;
-      return `<section${archive ? ' class="catalog-archive"' : ""}><h2>${title}${archive ? ` (${list.length})` : ""}</h2>${body}</section>`;
+      return `<section${archive ? ' class="catalog-archive"' : ""}><h2>${title}</h2>${body}</section>`;
     };
     const content = section("Právě probíhá", groups.present) + section("Nadcházející akce", groups.upcoming) +
-      section("Další akce", groups.undated) + section("Minulé akce", groups.past, true);
+      section("Další akce", groups.undated) + section("Proběhlé události", groups.past, true);
     html = html.replace('<div id="events-grid"></div>', () => `<div id="events-grid" data-server-catalog="ready">${content || '<p>Zatím zde nejsou žádné akce.</p>'}</div>`);
   } catch (error) {
     console.error("Public catalog HTML unavailable", error.message);

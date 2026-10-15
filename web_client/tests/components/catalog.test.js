@@ -1,4 +1,3 @@
-import '../helpers/style_imports.js';
 import { register } from 'node:module';
 register('../css_loader.mjs', import.meta.url);
 import test, { before } from 'node:test';
@@ -109,6 +108,7 @@ test('large multi-year archive shows year headings and every completed card with
     });
     const page = fixture();
     page.render(pastEvents(9));
+    assert.ok(!document.querySelector('.catalog-archive h2').textContent.includes('('));
     assert.deepEqual([...document.querySelectorAll('.catalog-archive h3')].map(h => h.textContent), ['2024', '2023']);
     assert.equal(document.querySelectorAll('.catalog-archive a').length, 9);
     assert.equal(document.querySelector('details'), null);

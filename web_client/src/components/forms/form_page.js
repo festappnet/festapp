@@ -1,3 +1,4 @@
+import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
 import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
@@ -95,6 +96,7 @@ export class FormPage extends Component {
         // Check for existing instance to prevent duplicates or state leaks
         if (options.onBack) this.onBack = options.onBack;
 
+        this.setOverviewLayout(false);
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
@@ -127,8 +129,19 @@ export class FormPage extends Component {
 
         try {
             // 3. Fetch Data
-            this.waitlistScope = parseWaitlistFragment(window.location.hash);
+            this.waitlistScope = parseWaitlistFragment(new URLSearchParams(window.location.search).get('waitlist') === '1' ? `#waitlist?${window.location.search.slice(1)}` : window.location.hash);
             this.waitlistCommands ||= new WaitlistCommands();
+            const viewScope = parseOrderLocation(window.location);
+            if (viewScope) {
+                this.setOverviewLayout(true);
+                this.overviewScope = viewScope;
+                if (window.location.hash.startsWith('#order?')) window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
+                this.host.replaceChildren();
+                await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
+                    this.continuationScope ? () => this.continueOverviewOffer() : null);
+                return;
+            }
+            this.overviewScope = null;
             let formModel;
             if (this.waitlistScope) {
                 let referrer = document.querySelector('meta[name="referrer"]');
@@ -138,6 +151,7 @@ export class FormPage extends Component {
                 this.waitlistBundle = bundle;
                 if (!this.waitlistScope.offerId || !bundle.pendingCount) {
                     this.renderWaitlistManagement(bundle);
+                    this.attachOverview();
                     return;
                 }
                 formModel = new FormModel(bundle.form);
@@ -186,10 +200,56 @@ export class FormPage extends Component {
             });
 
         } catch (e) {
-            console.error(e);
+            // Capability failures must never log request or transport details.
             this.currentLink = null; // A retry must not hit the same-link guard.
             this.renderError(e.message === 'INVALID_CAPABILITY' ? WaitlistStrings.invalid : FormStrings.loadFailed, () => this.init(link));
         }
+    }
+
+    setOverviewLayout(enabled) {
+        this.host.classList.toggle('order-overview-page', enabled);
+        if (!enabled) this.host.classList.remove('order-overview');
+        const header = document.getElementById('universal-header');
+        const app = document.getElementById('app');
+        if (!header || !app) return;
+        header.classList.remove('header-hidden');
+        if (enabled) this.host.before(header);
+        else app.prepend(header);
+    }
+
+    async attachOverview() {
+        const scope = this.waitlistScope;
+        // Admin offer previews already use the authenticated offer bundle.
+        // They have no customer capability and must not mint one just to render.
+        if (!scope?.token) return;
+        const section = document.createElement('section'); section.className = 'order-overview'; this.host.prepend(section);
+        const load = async () => {
+            section.replaceChildren();
+            try {
+                const url = await this.waitlistCommands.overviewAccess(scope);
+                const viewScope = parseOrderLocation(new URL(url));
+                if (!section.isConnected) return;
+                this.overviewScope = viewScope;
+                await loadOrderOverview(section, this.waitlistCommands, viewScope, null, true);
+            } catch {
+                const error = document.createElement('p'); error.textContent = overviewText('failed'); error.setAttribute('role', 'alert');
+                const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = overviewText('refresh'); retry.onclick = load;
+                section.replaceChildren(error, retry);
+            }
+        };
+        await load();
+    }
+
+    async continueOverviewOffer() {
+        const scope = this.continuationScope;
+        if (!scope) return;
+        try {
+            const bundle = await this.waitlistCommands.read(scope);
+            if (!bundle.form || !bundle.pendingCount) return;
+            this.waitlistScope = scope;
+            const model = new FormModel(bundle.form); model.offerBundle = bundle;
+            this.renderForm(model, false);
+        } catch { /* The overview remains available if the offer ended. */ }
     }
 
     async refreshOffer(model) {
@@ -222,6 +282,7 @@ export class FormPage extends Component {
     }
 
     renderWaitlistOutcome(outcome, bundle) {
+        this.setOverviewLayout(true);
         const model = new FormModel({ ...bundle?.form, data: { ...bundle?.form?.data, communication_tone: bundle?.form?.data?.communication_tone || bundle?.communicationTone } });
         model.registrationMode = 'waitlist';
         model.occasionTitle = bundle?.occasionTitle || model.occasionTitle;
@@ -240,6 +301,7 @@ export class FormPage extends Component {
     }
 
     renderWaitlistManagement(bundle) {
+        this.setOverviewLayout(true);
         this.waitlistBundle = bundle;
         const tone = bundle.form ? new FormModel(bundle.form).communicationTone : null;
         const terminal = ['declined', 'cancelled', 'expired', 'accepted'].includes(bundle.offerStatus) ? bundle.offerStatus
@@ -391,6 +453,7 @@ export class FormPage extends Component {
     }
 
     renderForm(formModel, showPreview) {
+        this.setOverviewLayout(false);
         if (formModel.offerBundle) this.waitlistBundle = formModel.offerBundle;
         this.currentPriceWidget?.destroy();
         this.currentPriceWidget = null;
@@ -424,6 +487,7 @@ export class FormPage extends Component {
         
         if (formModel.registrationMode !== 'waitlist') new CurrencySelectorWidget(session, this.host);
         renderWaitlistControls(this, formModel);
+        if (this.waitlistScope) this.attachOverview();
         
         
 
@@ -721,10 +785,30 @@ export class FormPage extends Component {
              document.body.style.overflow = ''; 
              
              if (result.success) {
+                 if (formModel.registrationMode === 'waitlist' && result.data.orderOverviewUrl) {
+                     try {
+                         const link = this.currentLink;
+                         const url = new URL(result.data.orderOverviewUrl);
+                         const viewScope = parseOrderLocation(url);
+                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
+                         this.currentLink = null;
+                         await this.init(link);
+                     } catch {
+                         // Registration is committed even if the supplementary view cannot open.
+                         this.overviewScope = null;
+                     }
+                     this.showFullScreenResult(true, { ...result.data, overviewAvailable: Boolean(this.overviewScope) }, formModel);
+                     return;
+                 }
                  if (formModel.offerBundle) {
-                     const link = this.currentLink; this.currentLink = null;
+                     const link = this.currentLink;
+                     if (this.overviewScope) {
+                         this.continuationScope = this.waitlistScope;
+                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(this.overviewScope)}`);
+                     }
+                     this.currentLink = null;
                      await this.init(link);
-                     this.showFullScreenResult(true, { ...result.data, ticketOrder: { order: result.data.order } }, formModel);
+                     this.showFullScreenResult(true, { ...result.data, overviewAvailable: Boolean(this.overviewScope), ticketOrder: { order: result.data.order } }, formModel);
                      return;
                  }
                  // Clean up old widgets first
@@ -741,7 +825,7 @@ export class FormPage extends Component {
         }).catch(async e => {
              await previewHistoryClosed;
 
-             console.error("Submit Error:", e);
+             // Preserve the stable error UI without logging capability-bearing transport errors.
              loader.remove();
              document.body.style.overflow = ''; 
              if (formModel.offerBundle) await this.refreshOffer(formModel);

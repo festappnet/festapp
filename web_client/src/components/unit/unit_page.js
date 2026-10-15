@@ -119,7 +119,7 @@ export class UnitPage extends Component {
         section.className = isPast ? 'catalog-archive' : 'catalog-section';
         const titleEl = document.createElement('h2');
         titleEl.className = 'section-title';
-        titleEl.textContent = isPast ? `${title} (${list.length})` : title;
+        titleEl.textContent = title;
         section.appendChild(titleEl);
         const years = isPast ? groupPastOccasionsByYear(list) : [];
         if (years.length) {

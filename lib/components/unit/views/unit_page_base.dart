@@ -116,7 +116,10 @@ abstract class UnitPageBaseState<T extends UnitPageBase> extends State<T> {
   }
 
   Future<void> _handleSignIn() async {
-    if (RightsService.currentUnit()?.id == null) return;
+    if (RightsService.currentUnit()?.id == null) {
+      if (mounted) setState(() {});
+      return;
+    }
     final newUnitId = RightsService.currentUnit()!.id!;
 
     await _loadDataForUnit(newUnitId);

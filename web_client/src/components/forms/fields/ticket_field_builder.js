@@ -492,8 +492,8 @@ export class TicketFieldBuilder {
                     });
                 };
 
-                if (ticketItem.updateFromSession) ticketItem.updateFromSession(index);
                 listContainer.appendChild(ticketItem);
+                if (ticketItem.updateFromSession) ticketItem.updateFromSession(index);
             };
     
             // --- Logic Branch: Blueprint vs Manual ---

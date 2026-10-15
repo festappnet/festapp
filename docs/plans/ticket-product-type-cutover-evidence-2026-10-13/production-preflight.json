@@ -11,29 +11,29 @@
   },
   "source_main_sha": "ed18e864696a0e1db9e41e9d4fa9bc53f4193ca4",
   "production_branch_sha": "c7c725519fb2d172ef297f843fd665efc9ff8005",
-  "configurations": 133,
-  "converted": 133,
-  "unresolved": [],
+  "configurations": 73,
+  "converted": 69,
+  "unresolved": [
+    {
+      "id": 13,
+      "error": "Error: upstream_404"
+    },
+    {
+      "id": 19,
+      "error": "Error: upstream_404"
+    },
+    {
+      "id": 25,
+      "error": "Error: upstream_404"
+    },
+    {
+      "id": 27,
+      "error": "Error: upstream_404"
+    }
+  ],
   "other_organizations": 11,
   "other_legacy_configurations": 60,
-  "scope_approval": "all shared ticket consumers and all completed workspace changes approved in this conversation; client deployment only festapptickets",
-  "production_writes": {
-    "database": false,
-    "public_artwork": "3 originals restored with matching source SHA-256"
-  },
-  "deployment": false,
-  "verification": {
-    "deno": 46,
-    "image_worker_unit": 91,
-    "image_worker_typecheck": "passed",
-    "flutter_full_batch": {
-      "passed": 1233,
-      "failed": 3,
-      "skipped": 1
-    },
-    "flutter_all_failed_tests_fixed": "10 targeted tests passed",
-    "deletion_ui": "4 passed",
-    "sql": "8 release migrations and both cancelled/paid order deletion tests passed against current live schema in disposable local DB"
-  },
-  "migration_sha256": "55e045011a88a4cee75e497c4fd364aa240bf84088ae4fd216bdb37b04c90e9c"
+  "scope_approval": "requested; no answer received",
+  "production_writes": false,
+  "deployment": false
 }

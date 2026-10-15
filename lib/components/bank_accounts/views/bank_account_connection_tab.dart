@@ -1,3 +1,4 @@
+import 'bank_account_dialog_scope.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -486,7 +487,8 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
             ? null
             : () async {
                 final picked = await showDatePicker(
-                  context: context,
+                  context: BankAccountDialogScope.contextOf(context),
+                  useRootNavigator: false,
                   initialDate: widget.expiryDate ?? DateTime.now(),
                   firstDate: DateTime(2000),
                   lastDate: DateTime(2100),

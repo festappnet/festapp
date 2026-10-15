@@ -30,20 +30,12 @@ class _OptionDetailEditorDialogState extends State<OptionDetailEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return StandardDialog(
+      title: Text(CommonStrings.description),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 32),
-            Text(
-              CommonStrings.description,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-            ),
             const SizedBox(height: 8),
             EditableHtmlField(html: _description, coordinator: widget.coordinator,
               owner: HtmlMediaOwner.occasion(widget.occasionId),

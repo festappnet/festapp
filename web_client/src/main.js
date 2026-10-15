@@ -18,14 +18,15 @@ import { initializeCoreServices } from './startup/initialize_core_services.js';
 class Main {
     static async init() {
         try {
+            ThemeService.init();
             // 1. Init Core Services
             await initializeCoreServices({
                 localizationService: LocalizationService,
                 supabaseService: SupabaseService,
                 rightsService: RightsService,
-                isAppSupported: AppConfig.isAppSupported,
+                // Content pages need account context without a later router fetch.
+                isAppSupported: AppConfig.isAppSupported && document.body.dataset.page !== 'organizers',
             });
-            ThemeService.init();
             ImageLoader.init(); // Initialize Image Loader
 
             if (googleCallback) {
@@ -34,6 +35,12 @@ class Main {
                 modal._setView('google_completing');
                 try { modal.showGoogleResult(await GoogleAuthService.complete(googleCallback)); }
                 catch (error) { modal.googleError = error.message; modal._setView('login'); }
+            }
+
+            // Static public content owns this document; only shared account services run.
+            if (document.body.dataset.page === 'organizers') {
+                window.markFestappAppReady?.();
+                return;
             }
 
             const organizerIntent = await handleOrganizerIntent();

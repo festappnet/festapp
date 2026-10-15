@@ -195,8 +195,10 @@ class DialogHelper {
       BuildContext context,
       void Function(UserInfoModel) onPressedAction,
       List<UserInfoModel> allUsers,
-      String setText) async {
+      String setText,
+      {bool useRootNavigator = true}) async {
     showDialog(
+      useRootNavigator: useRootNavigator,
       context: context,
       builder: (context) => ResponsiveSearchDialog<UserInfoModel>(
         items: allUsers,

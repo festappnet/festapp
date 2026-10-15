@@ -66,12 +66,12 @@ jobs:
       - run: >-
           fvm flutter test --no-pub
           test/components/images/image_upload_contract_test.dart
-          test/components/images/image_control_client_test.dart
-          test/components/html/html_media_service_test.dart
+          test/components/images/image_control_client_cases.dart
+          test/components/html/html_media_service_cases.dart
           test/components/ticket_layout/ticket_layout_test.dart
-          test/components/ticket_layout/ticket_layout_saver_test.dart
+          test/components/ticket_layout/ticket_layout_saver_cases.dart
           test/components/ticket_layout/ticket_canvas_selection_test.dart
-          test/widgets/app_text_selection_test.dart
+          test/widgets/app_text_selection_cases.dart
       - run: >-
           fvm flutter test --no-pub --platform chrome
           test/components/html/html_image_preview_test.dart

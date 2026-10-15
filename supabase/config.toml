@@ -322,3 +322,6 @@ verify_jwt = true
 
 [functions.bank-sync-reconcile]
 verify_jwt = false
+
+[functions.customer-order-access]
+verify_jwt = false

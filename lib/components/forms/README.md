@@ -86,6 +86,53 @@ Waitlisted orders collect contact answers and waiting tickets with their own
 answers, without sale products or payments. Waiting tickets are not valid
 admissions and have no ticket symbol. Acceptance reuses their ticket IDs. Editors explicitly confirm offers of a number of places. A personal
 link opens a prefilled form; only its explicit submit accepts selected tickets
-and currently available products. Displayed occupancy counts admissions, active offers and all waiting registrations, and may exceed the configured limit. The minimum editable capacity counts admissions, active offers and server-provided `heldForWaiting` priority reservations. The admin Active filter includes both waiting registrations and current offers, excluding terminal waiting states; offer preparation reads the full loaded order set independently of that filter. Offers hold person capacity only. The same
+and currently available products. Offers hold person capacity only. The same
 per-order person ceiling applies to both modes. See the
 [implementation contract](../../../docs/plans/form-capacity-waitlist-plan-2026-10-13.md).
+
+## Payment and reminder defaults
+
+Each form inherits the occasion's Form feature unless an explicit override is
+stored. `forms.deadline_duration_seconds = NULL` inherits the feature deadline
+(default 7 days); zero is an immediate deadline. This resolves when creating a
+payment or recalculating its deadline, without rewriting existing deadlines on
+settings saves. In `forms.data`, absent/null `is_reminder_enabled` inherits the
+feature (default true), while explicit false/true overrides it. Absent/null
+`reminder_interval_seconds` inherits the feature (default 1 day). Clearing a
+form override restores inheritance, so subsequent occasion changes apply.
+The Form feature itself must remain enabled for reminders to send.
+
+Both reminder queueing and send-time eligibility honor the same enablement
+precedence, including deposit reminders. Queue timing uses persisted per-form
+and per-occasion values; the legacy interval argument on
+`queue_payment_reminders` remains callable but no longer overrides them.
+
+## Customer order overview
+
+Waitlist registrations, offers and resulting orders share one stable customer
+URL: `/form/<link>?order_id=<root>&token=<view>`. Legacy `#order?` links still
+resolve and normalize to this URL. The same root token is reused by every order
+email, including split children. Query capabilities are protected by no-store,
+no-referrer and noindex response headers; never log or persist them in clients.
+
+The page reads `get_customer_order_overview` through POST RPC without offline
+storage. SQL allowlists current payment facts, matched transaction dates/amounts,
+and recorded history transitions and item/price changes. Private transaction
+metadata, admin notes and raw history payloads are never returned. Timeline
+entries are historical observations; the current payment status distinguishes
+paid deposits from fully paid orders.
+
+View access permits reads only. Accept/decline and waiting withdrawal retain
+their existing write capabilities (`?waitlist=1` and legacy `#waitlist?`). The
+orders grid opens the same view URL through authenticated
+`get_order_overview_admin_context`, which checks order-view permission before
+`customer-order-access` opens or initially creates the root's encrypted source.
+It never rotates a token or sends a standalone email. Expired/revoked sources
+are not replaced. `ORDER_OVERVIEW` is retired from the template catalog.
+
+The journey migration is `20261015210000_customer_order_journey.sql`, assembled
+from `order_overview.sql` and `order_overview_admin.sql`.
+
+Use `python3 automation/assemble-order-overview-migration.py --check` for source
+parity; do not regenerate the published capacity migration for this follow-up.
+See [implementation and targeted evidence](../../../docs/plans/order-overview-waitlist-follow-up-implementation-2026-10-15.md).

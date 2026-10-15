@@ -38,6 +38,18 @@ export class WaitlistCommands {
         if (error || data?.code !== 200) throw new Error(data?.errorCode || 'INVALID_CAPABILITY');
         return data;
     }
+    async overview(scope) {
+        const { data, error } = await this.client.rpc('get_customer_order_overview', { p_token: scope.token, p_order_id: scope.orderId });
+        if (error || data?.code !== 200) throw new Error('INVALID_CAPABILITY');
+        return data;
+    }
+    async overviewAccess(scope) {
+        const { data, error } = await this.client.functions.invoke('customer-order-access', {
+            body: { ...scope, commandId: crypto.randomUUID() },
+        });
+        if (error || data?.code !== 200 || typeof data.url !== 'string') throw new Error('INVALID_CAPABILITY');
+        return data.url;
+    }
     async command(operation, payload) {
         return this._invoke('waitlist-commands', { operation, payload });
     }

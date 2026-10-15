@@ -314,6 +314,7 @@ class _OrdersContentState extends State<OrdersContent> {
         EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE,
       EshopColumns.ORDER_EMAIL_DELIVERY,
       EshopColumns.ORDER_TRANSACTIONS,
+      EshopColumns.ORDER_OVERVIEW,
       EshopColumns.ORDER_HISTORY,
     ];
 
@@ -327,6 +328,9 @@ class _OrdersContentState extends State<OrdersContent> {
     List<OrderModel>? firstLoadOrders = bundle.orders;
 
     final newController = SingleDataGridController<OrderModel>(
+      columnHelp: {
+        EshopColumns.PAYMENT_INFO_RETURNED: OrdersStrings.gridReturnedHelp
+      },
       context: context,
       additionalFilterEnabled: true,
       additionalRowPredicate: OrderGridFilters.orderIsActive,

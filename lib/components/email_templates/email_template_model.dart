@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/order_overview_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -201,7 +202,21 @@ class EmailTemplateModel {
   );
 
   /// Mapping of template codes to their available substitutions.
+  static List<EmailTemplateSub> get orderOverviewSubs => [
+        EmailTemplateSub(
+            code: 'order_overview_url',
+            description: OrderOverviewStrings.text('title'),
+            defaultValue:
+                'https://example.invalid/form/example#order?order_id=1&token=preview'),
+        EmailTemplateSub(
+            code: 'order_overview_button',
+            description: OrderOverviewStrings.text('title'),
+            defaultValue:
+                '<a href="https://example.invalid/form/example">Order overview</a>'),
+      ];
+
   static List<EmailTemplateSub> get waitlistSubs => [
+        ...orderOverviewSubs,
         EmailTemplateSub(
             code: 'order_symbol',
             description: OrdersStrings.gridOrderSymbol,
@@ -279,6 +294,7 @@ class EmailTemplateModel {
     ],
     'ACCOUNT_DELETION_COMPLETE': [appNameSub],
     'TICKET_ORDER_CONFIRMATION': [
+      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       amountSub,
@@ -290,6 +306,7 @@ class EmailTemplateModel {
       fullOrderSub,
     ],
     'TICKET_ORDER_UPDATE': [
+      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       fullOrderSub,
@@ -297,6 +314,7 @@ class EmailTemplateModel {
       balanceReasoningSub,
     ],
     'TICKET_ORDER_PAYMENT_DONE': [
+      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       fullOrderSub,
@@ -304,6 +322,7 @@ class EmailTemplateModel {
       amountSub,
     ],
     'TICKET_ORDER_REMINDER': [
+      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       balanceReasoningSub,
@@ -314,6 +333,7 @@ class EmailTemplateModel {
       remainingTimeSub,
     ],
     'TICKET_ORDER_STORNO': [
+      ...orderOverviewSubs,
       orderSymbolSub,
       occasionTitleSub,
       amountSub,

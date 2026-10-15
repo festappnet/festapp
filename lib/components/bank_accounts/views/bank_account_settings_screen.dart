@@ -1,3 +1,4 @@
+import 'bank_account_dialog_scope.dart';
 import 'dart:async';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -460,7 +461,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   void _showError(String message, {String? title}) {
     if (!mounted) return;
     showDialog(
-      context: context,
+      context: BankAccountDialogScope.contextOf(context),
+      useRootNavigator: false,
       builder: (context) => AppAlertDialog(
         constraints: const BoxConstraints(maxWidth: 560),
         scrollable: true,
@@ -534,7 +536,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   Future<void> _regenerateToken({bool silent = false}) async {
     if (!silent) {
       bool? confirm = await showDialog<bool>(
-        context: context,
+        context: BankAccountDialogScope.contextOf(context),
+        useRootNavigator: false,
         builder: (context) => AppAlertDialog(
           title: Text(BankAccountStrings.regenerateToken),
           content: Text(BankAccountStrings.regenerateTokenConfirmation),
@@ -580,7 +583,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   Future<void> _showAddCurrencyDialog() async {
     final controller = TextEditingController();
     await showDialog(
-      context: context,
+      context: BankAccountDialogScope.contextOf(context),
+      useRootNavigator: false,
       builder: (context) => AppAlertDialog(
         title: Text(BankAccountStrings.addCurrency),
         content: Column(
@@ -818,56 +822,69 @@ class _RoutedBankAccountDialogState extends State<RoutedBankAccountDialog> {
       );
   Widget _buildDialog(BuildContext context) => Offstage(
         offstage: !_visible,
-        child: BlockSemantics(
-          child: FocusScope(
-            autofocus: true,
-            canRequestFocus: _visible,
-            child: CallbackShortcuts(
-              bindings: {
-                const SingleActivator(LogicalKeyboardKey.escape):
-                    widget.onClose,
-              },
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ModalBarrier(
-                    color: Colors.black54,
-                    onDismiss: widget.onClose,
-                    semanticsLabel: MaterialLocalizations.of(context)
-                        .modalBarrierDismissLabel,
-                  ),
-                  AppDialog(
-                    onClose: widget.onClose,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: 600,
-                        maxHeight: 800,
-                      ),
-                      child: Column(
-                        children: [
-                          _BankAccountDialogHeader(
-                            title: widget.title,
-                            onClose: widget.onClose,
+        child: Navigator(
+          pages: [
+            MaterialPage<void>(
+              child: Builder(
+                builder: (dialogContext) => BankAccountDialogScope(
+                  dialogContext: dialogContext,
+                  child: _buildDialogShell(dialogContext),
+                ),
+              ),
+            ),
+          ],
+          onDidRemovePage: (_) {},
+        ),
+      );
+
+  Widget _buildDialogShell(BuildContext context) => BlockSemantics(
+        child: FocusScope(
+          autofocus: true,
+          canRequestFocus: _visible,
+          child: CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): widget.onClose,
+            },
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ModalBarrier(
+                  color: Colors.black54,
+                  onDismiss: widget.onClose,
+                  semanticsLabel: MaterialLocalizations.of(context)
+                      .modalBarrierDismissLabel,
+                ),
+                AppDialog(
+                  onClose: widget.onClose,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 600,
+                      maxHeight: 800,
+                    ),
+                    child: Column(
+                      children: [
+                        _BankAccountDialogHeader(
+                          title: widget.title,
+                          onClose: widget.onClose,
+                        ),
+                        Expanded(child: widget.child),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: widget.onClose,
+                                child: Text(BankAccountStrings.cancel),
+                              ),
+                            ],
                           ),
-                          Expanded(child: widget.child),
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton(
-                                  onPressed: widget.onClose,
-                                  child: Text(BankAccountStrings.cancel),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

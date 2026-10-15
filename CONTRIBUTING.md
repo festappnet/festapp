@@ -41,7 +41,33 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
 **Key concept:** Tests run in a transaction and auto-rollback. Any data inserted
 during a test is undone automatically.
 
-### C. Troubleshooting
+### C. Flutter tests
+
+```bash
+fvm flutter test                         # Complete suite
+fvm flutter test test/components/forms   # One feature
+fvm flutter test test/components/forms/default_values_cases.dart # One suite
+```
+
+Small suites in the same feature share a `<feature>_unit_test.dart` or
+`<feature>_widget_test.dart` entrypoint to avoid starting a Flutter engine for
+each file. Their original
+tests live in `*_cases.dart` files, each with its own `main()`, registered under
+a named `group` in the entrypoint. Flutter discovers only the entrypoint during
+a directory run; explicitly naming a cases file still runs that suite directly.
+
+Add new tests as `*_test.dart` by default. Use `*_cases.dart` only when importing
+and registering it in the feature entrypoint. Group related widget suites only
+when their setup and teardown can safely share one engine. Keep tests that
+replace platform singletons, use custom bindings, or leave process state behind
+in separate `*_test.dart` files. Shared suites must use local instances or
+restore any state they change; setup and teardown hooks belong inside their
+named group. Initialization that mutates shared state belongs in scoped hooks,
+not in the suite's `main()`.
+
+Use `--no-pub` for repeated local runs when dependencies are already resolved.
+
+### D. Troubleshooting
 
 If a test fails saying "function does not exist":
 
@@ -49,18 +75,24 @@ If a test fails saying "function does not exist":
 2. Check that every active migration has a unique 14-digit timestamp.
 3. Run schema check tests if available.
 
-### D. Remote database and Edge Function changes
+### E. Remote database and Edge Function changes
 
 Do not use a remote database as a substitute for the isolated test database.
 Version every SQL change in the repository and deploy it through the approved
-release workflow. Production runs on the canonical self-hosted server; former
-cloud sources are frozen retention/reconciliation targets, not migration targets.
+release workflow to the canonical self-hosted backend at `https://api.festapp.net`.
+The production switch completed on 2026-09-10. Former cloud sources are frozen
+retention/reconciliation targets; routine changes must not reopen their writes.
 
-Resolve the live target from canonical backend activation in
-`automation/project.conf` and the live `backend-activation.json`, then verify
-organization, generation and `FORCE_OCCASION_LINK` in that same database as
-required by `docs/architecture/ai_context.md`. Never select a live target from
-compiled `SUPABASE_URL` or the project ref in `.env.local`.
+For a production tenant, require `BACKEND_ACTIVATION_PHASE=canonical` in
+its `automation/project.conf` and verify the published
+`WEB_LINK/backend-activation.json`: tenant ID, canonical generation and endpoint
+must match the selected configuration. Verify
+`BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID` and any `FORCE_OCCASION_LINK`
+in that same canonical database before reading event or user data. Stop on a
+mismatch. `SUPABASE_URL` can be a compiled legacy mobile fallback; neither it
+nor a project ref in `.env.local` selects the live database. The shared main
+configuration is a development template, not evidence of a tenant's activation.
+
 Deploy Deno functions from their checked-in
 `supabase/functions/<name>/` source and follow
 [docs/backend/edge_functions.md](docs/backend/edge_functions.md).

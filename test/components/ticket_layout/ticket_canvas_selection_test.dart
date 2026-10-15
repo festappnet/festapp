@@ -1,6 +1,5 @@
 import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
-import 'package:fstapp/widgets/app_text_selection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_controller.dart';
@@ -37,8 +36,6 @@ void main() {
           addTearDown(transform.dispose);
           addTearDown(resources.dispose);
           await tester.pumpWidget(MaterialApp(
-              builder: (context, child) =>
-                  AppTextSelection(enabled: true, child: child!),
               home: TicketLayoutCanvas(
                   controller: controller,
                   resources: resources,

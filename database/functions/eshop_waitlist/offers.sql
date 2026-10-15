@@ -50,6 +50,9 @@ BEGIN
  SELECT expires_at INTO expiry FROM eshop.waitlist_offers WHERE id=p_offer AND order_id=p_order;
  INSERT INTO eshop.waitlist_capabilities(token_hash,organization_id,form_id,order_id,offer_id,kind,expires_at)
  VALUES(p_delivery->>'tokenHash',occ.organization,o.form,o.id,p_offer,CASE WHEN p_offer IS NULL THEN 'manage' ELSE 'offer' END,expiry);
+ IF p_offer IS NULL AND p_delivery ? 'overview' THEN
+  PERFORM public.issue_order_overview_internal(o.id,p_delivery->'overview',p_command);
+ END IF;
  result:=public.enqueue_email(kind,jsonb_build_object('organization',occ.organization,'occasion',occ.id,'unit',occ.unit),o.data->>'email',
  jsonb_build_object('order_id',o.id,'offer_id',p_offer,'command_id',p_command,'content_hash',p_delivery->>'contentHash','waitlistEnvelope',p_delivery->'sealed'),
  p_command::text||':'||o.id::text,code,now(),expiry,o.id,NULL);

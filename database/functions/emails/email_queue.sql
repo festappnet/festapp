@@ -51,6 +51,8 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_order eshop.orders; v_pi eshop.payment_info; v_occ public.occasions; v_form public.forms; v_feature jsonb; v_deposit jsonb;
 BEGIN
  PERFORM public.require_service_role();
+ -- Retired standalone overview emails must never leave the queue.
+ IF p_message.code='ORDER_OVERVIEW' THEN RETURN false; END IF;
  IF public.is_demo_occasion(p_message.occasion) THEN RETURN false; END IF;
  IF p_message.expires_at<=now() THEN RETURN false; END IF;
  IF p_message.message_kind='custom' AND p_message.code='BANK_SYNC_WARNING' THEN

@@ -31,14 +31,23 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(!html.includes('fonts.googleapis.com'));
   render(); assert.equal(readFileSync(output, 'utf8'), html);
   const builtIndex = join(root, 'web_client/built.html');
-  writeFileSync(builtIndex, '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link rel="stylesheet" href="/web-assets/index-fixture.css">');
+  writeFileSync(builtIndex, '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link rel="stylesheet" href="/web-assets/index-fixture.css"><script type="module" crossorigin src="/web-assets/index-fixture.js"></script><script>function reportFestappClientVersion() {}</script>');
   const bundleOutput = join(root, 'bundle/organizers-page');
   const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
   assert.equal(build.status, 0, build.stderr);
   const bundled = readFileSync(bundleOutput, 'utf8');
   assert.ok(bundled.includes('href="/web-assets/index-fixture.css"'));
-  assert.ok(!bundled.includes('fonts.googleapis.com'));
+  assert.ok(bundled.includes('src="/web-assets/index-fixture.js"'));
+  assert.ok(bundled.includes('function reportFestappClientVersion()'));
+  assert.ok(bundled.includes('data-page="organizers"'));
+  assert.ok(bundled.includes('<user-header>'));
+  assert.ok(!bundled.includes('organizer-header'));
+  assert.ok(!bundled.includes('prefers-color-scheme'));
   assert.equal(readFileSync(output, 'utf8'), html, 'compiled theme must not alter the deterministic source leaf');
+
+  writeFileSync(builtIndex, '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">');
+  const incomplete = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
+  assert.notEqual(incomplete.status, 0, 'font links alone cannot substitute the app stylesheet and entry');
 
   writeFileSync(config, 'DOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
   render(); assert.equal(existsSync(output), false);

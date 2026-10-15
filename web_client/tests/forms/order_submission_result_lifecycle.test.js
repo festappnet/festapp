@@ -105,3 +105,47 @@ test('demo checkout and waitlist use the normal result without sending or storin
     dom.window.close();
   }
 });
+
+for (const viewFails of [false, true]) {
+  test(`waitlist registration opens the shared overview and preserves confirmation on view failure=${viewFails}`, async t => {
+    const dom = new JSDOM('<div id="form-page-container"></div>', {url: 'https://example.test/form/test'});
+    Object.assign(globalThis, {window: dom.window, document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement, CustomEvent: dom.window.CustomEvent});
+    window.scrollTo = () => {};
+    t.after(() => dom.window.close());
+    const [{FormPage}, {RouterService}] = await Promise.all([
+      import('../../src/components/forms/form_page.js'), import('../../src/services/router_service.js'),
+    ]);
+    t.mock.method(RouterService, 'pushOverlayState', () => {});
+    t.mock.method(RouterService, 'goBackProgrammatically', () => window.dispatchEvent(new window.PopStateEvent('popstate')));
+    const page = new FormPage('form-page-container');
+    page.currentLink = 'test';
+    const model = {key: 'test-key', registrationMode: 'waitlist', visibleFields: [], communicationTone: 'formal'};
+    page.currentSession = {formModel: model, payload: {fields: []}, state: {tickets: [{fields: []}]}};
+    let registrations = 0, reads = 0;
+    const token = 'a'.repeat(64);
+    page.waitlistCommands = {
+      command: async () => { registrations++; return {code: 200, order: {id: 12},
+        orderOverviewUrl: `https://example.test/form/test#order?order_id=12&token=${token}`}; },
+      overview: async scope => {
+        reads++;
+        assert.deepEqual(scope, {orderId: 12, token});
+        if (viewFails) throw new Error('offline');
+        return {root: {title: 'Synthetic', symbol: 'REGISTERED'}, people: [], offers: [], orders: [], serverTime: '2026-10-15T12:00:00Z'};
+      },
+    };
+    page.submitOrder(document.createElement('form'), model);
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.equal(registrations, 1);
+    assert.equal(reads, 1);
+    assert.ok(document.querySelector('.fullscreen-result-overlay .success-color'), 'committed registration stays successful');
+    assert.equal(window.location.hash, `#order?order_id=12&token=${token}`);
+    assert.equal(JSON.stringify(window.history.state).includes(token), false);
+    assert.ok(viewFails ? page.host.querySelector('[role=alert]') : page.host.textContent.includes('REGISTERED'));
+    document.querySelector('.btn-back-to-form').click();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(document.querySelector('.fullscreen-result-overlay'), null);
+    assert.equal(registrations, 1, 'return must never repeat registration');
+    page.cleanup();
+  });
+}

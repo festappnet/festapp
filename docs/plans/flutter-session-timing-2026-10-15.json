@@ -1,0 +1,87 @@
+[
+  {
+    "sample": 1,
+    "requests": [
+      {
+        "kind": "refresh_session",
+        "startMs": 615,
+        "durationMs": 286,
+        "status": 200
+      },
+      {
+        "kind": "validate_organization",
+        "startMs": 908,
+        "durationMs": 84,
+        "status": 200
+      }
+    ]
+  },
+  {
+    "sample": 2,
+    "requests": [
+      {
+        "kind": "refresh_session",
+        "startMs": 197,
+        "durationMs": 153,
+        "status": 200
+      },
+      {
+        "kind": "validate_organization",
+        "startMs": 353,
+        "durationMs": 66,
+        "status": 200
+      }
+    ]
+  },
+  {
+    "sample": 3,
+    "requests": [
+      {
+        "kind": "refresh_session",
+        "startMs": 154,
+        "durationMs": 190,
+        "status": 200
+      },
+      {
+        "kind": "validate_organization",
+        "startMs": 348,
+        "durationMs": 93,
+        "status": 200
+      }
+    ]
+  },
+  {
+    "sample": 4,
+    "requests": [
+      {
+        "kind": "refresh_session",
+        "startMs": 161,
+        "durationMs": 182,
+        "status": 200
+      },
+      {
+        "kind": "validate_organization",
+        "startMs": 345,
+        "durationMs": 157,
+        "status": 200
+      }
+    ]
+  },
+  {
+    "sample": 5,
+    "requests": [
+      {
+        "kind": "refresh_session",
+        "startMs": 172,
+        "durationMs": 276,
+        "status": 200
+      },
+      {
+        "kind": "validate_organization",
+        "startMs": 453,
+        "durationMs": 65,
+        "status": 200
+      }
+    ]
+  }
+]

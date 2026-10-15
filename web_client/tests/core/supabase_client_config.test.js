@@ -22,7 +22,7 @@ test('unsupported-app header data loads only after Supabase initialization', asy
     new URL('../../src/startup/initialize_core_services.js', import.meta.url),
     'utf8',
   );
-  assert.match(mainSource, /await initializeCoreServices\(\{[\s\S]*supabaseService: SupabaseService,[\s\S]*rightsService: RightsService,[\s\S]*isAppSupported: AppConfig\.isAppSupported,/,
+  assert.match(mainSource, /await initializeCoreServices\(\{[\s\S]*supabaseService: SupabaseService,[\s\S]*rightsService: RightsService,[\s\S]*isAppSupported: AppConfig\.isAppSupported && document\.body\.dataset\.page !== 'organizers',/,
     'main must provide the configured Supabase and rights services to canonical startup');
   const initializeAt = startupSource.indexOf('await supabaseService.initialize()');
   const rightsAt = startupSource.indexOf(
