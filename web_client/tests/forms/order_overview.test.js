@@ -235,3 +235,20 @@ test('history distinguishes each bank, cash and unknown movement safely', t=>{
  assert.doesNotMatch(entries[2].textContent,/cashPayment|bankPayment/);
  assert.equal(entries.length,4);
 });
+
+test('cancelled paid orders show zero or recorded refunds in both current states', t=>{
+ const host=setup(t),data=fixture(),order=data.orders[0];
+ order.state='storno';order.payment.received=1900;order.payment.returned=null;
+ renderOrderOverview(host,data);
+ assert.equal(host.querySelectorAll('.overview-refunded').length,2);
+ assert.match(host.querySelector('.overview-refunded').textContent,/0,00/);
+ order.payment.returned=500;
+ data.timeline=[{kind:'refund',at:data.serverTime,amount:-500,currency:'CZK'}];
+ renderOrderOverview(host,data);
+ assert.match(host.querySelector('.overview-refunded').textContent,/500,00/);
+ assert.match(host.querySelector('.overview-timeline > li').textContent,/refund.*500,00/);
+ order.state='sent';renderOrderOverview(host,data);
+ assert.match(host.querySelector('.overview-refunded').textContent,/500,00/);
+ order.payment.returned=0;renderOrderOverview(host,data);
+ assert.equal(host.querySelector('.overview-refunded'),null);
+});
