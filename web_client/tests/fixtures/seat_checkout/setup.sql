@@ -13,6 +13,9 @@ BEGIN
  VALUES('Regression seats',org,oc,'[]','{"dimensions":{"width":5,"height":5}}') RETURNING id INTO bp;
  INSERT INTO public.forms(title,occasion,link,is_open,blueprint,bank_account)
  VALUES('Browser seat regression',oc,'seat-checkout-regression',true,bp,bank) RETURNING id INTO fid;
+ -- Direct fixture inserts must participate in the same URL reservation contract.
+ PERFORM public.reserve_public_link_internal('occasion',oc,(SELECT link FROM public.occasions WHERE id=oc),true);
+ PERFORM public.reserve_public_link_internal('form',fid,'seat-checkout-regression',true);
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('Admission','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion,is_hidden)
  VALUES('Admission',pt,150,'CZK',oc,false) RETURNING id INTO prod;
