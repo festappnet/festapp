@@ -253,3 +253,25 @@ test('only recorded positive refunds appear in current states', t=>{
  order.payment.returned=0;renderOrderOverview(host,data);
  assert.equal(host.querySelector('.overview-refunded'),null);
 });
+
+test('individual downloads show progress, recover from errors and exclude unavailable tickets', async t=>{
+ const host=setup(t),data=fixture();let finish;
+ const download=(id,symbol)=>{assert.equal(id,2);assert.equal(symbol,2);return new Promise(resolve=>finish=resolve);};
+ renderOrderOverview(host,data,null,false,download);
+ const button=host.querySelector('.overview-ticket-download');assert.ok(button);
+ const pending=button.onclick();assert.equal(button.disabled,true);assert.match(button.textContent,/downloadingTicket/);
+ finish();await pending;assert.equal(button.disabled,false);
+ renderOrderOverview(host,data,null,false,async()=>{throw new Error('denied');});
+ await host.querySelector('.overview-ticket-download').onclick();
+ assert.ok(host.querySelector('.overview-download-error[role=alert]'));
+ assert.equal(host.querySelector('.overview-ticket-download').disabled,false);
+ for(const state of ['storno','ordered']) {data.orders[0].state=state;renderOrderOverview(host,data,null,false,download);assert.equal(host.querySelector('.overview-ticket-download'),null);}
+ data.orders[0].state='sent';data.root.hasTickets=false;renderOrderOverview(host,data,null,false,download);
+ assert.equal(host.querySelector('.overview-ticket-download'),null);
+});
+test('download transport sends the capability and ticket ID in a POST body',async()=>{
+ let received;
+ const commands=new WaitlistCommands({functions:{invoke:async(name,options)=>{received={name,...options};return {data:{file:'JVBERg=='},error:null};}}});
+ assert.equal(await commands.downloadTicket({token:'secret',orderId:1},7),'JVBERg==');
+ assert.deepEqual(received,{name:'download-ticket',body:{token:'secret',orderId:1,ticketId:7}});
+});

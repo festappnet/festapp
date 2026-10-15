@@ -818,6 +818,9 @@
   "OrderOverview": {
     "title": "Bestellübersicht",
     "updated": "Aktualisiert",
+    "downloadTicket": "PDF herunterladen",
+    "downloadingTicket": "PDF wird vorbereitet…",
+    "downloadFailed": "Das Ticket konnte nicht heruntergeladen werden. Bitte erneut versuchen.",
     "usedTickets": "Verwendete Tickets",
     "cashPayment": "Barzahlung",
     "bankPayment": "Banküberweisung",

@@ -2757,6 +2757,9 @@
   "OrderOverview": {
     "title": "Order overview",
     "updated": "Updated",
+    "downloadTicket": "Download PDF",
+    "downloadingTicket": "Preparing PDF…",
+    "downloadFailed": "Could not download the ticket. Please try again.",
     "usedTickets": "Tickets used",
     "cashPayment": "Cash",
     "bankPayment": "Bank transfer",
