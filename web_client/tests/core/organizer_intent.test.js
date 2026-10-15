@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import '../helpers/style_imports.js';
+import { register } from 'node:module';
 import { JSDOM } from 'jsdom';
+register('../css_loader.mjs', import.meta.url);
 
 test('organizer intent uses current rights, existing registration and signed-in admin, preserving auth fragment', async t => {
     const dom = new JSDOM('<!doctype html><div id="app"><main></main></div>', { url: 'https://vstupenky.online/?create=1&utm_source=organizers#auth-fragment' });

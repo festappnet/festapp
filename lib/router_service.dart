@@ -371,7 +371,9 @@ class RouterService {
   static void pushOverlayState(String overlayTag) {
     if (kIsWeb) {
       final currentUrl = _js.getCurrentUrl();
-      _js.pushState('$currentUrl#$overlayTag');
+      final uri = Uri.parse(currentUrl);
+      final personal = uri.fragment.startsWith('waitlist?') || uri.fragment.startsWith('order?');
+      _js.pushState(personal ? currentUrl : '$currentUrl#$overlayTag');
     }
   }
 

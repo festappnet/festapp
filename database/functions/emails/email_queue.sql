@@ -75,6 +75,13 @@ BEGIN
  END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_message.order_id;
  IF v_order.id IS NULL OR v_order.occasion<>p_message.occasion THEN RETURN false; END IF;
+ IF p_message.message_kind='custom' AND p_message.code='ORDER_OVERVIEW' THEN
+  RETURN v_order.data->>'email'=p_message.recipient AND EXISTS(
+   SELECT 1 FROM eshop.order_overview_sources s JOIN eshop.waitlist_capabilities c USING(token_hash)
+   WHERE s.command_id=(p_message.data->>'order_overview_command')::uuid AND c.kind='order_view'
+   AND c.order_id=v_order.id AND c.form_id=v_order.form AND c.organization_id=p_message.organization
+   AND c.revoked_at IS NULL AND c.expires_at>now() AND s.expires_at=c.expires_at);
+ END IF;
  IF p_message.message_kind='waitlist_confirmation' THEN
   RETURN v_order.state='waitlisted' AND v_order.data->>'email'=p_message.recipient;
  END IF;

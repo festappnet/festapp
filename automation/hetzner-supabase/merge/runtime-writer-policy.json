@@ -261,6 +261,14 @@
         "canonical-email-enqueue"
       ],
       "mutates_authority": true
+    },
+    "customer-order-access": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {

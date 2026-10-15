@@ -52,6 +52,7 @@ RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,
 DECLARE f bigint; affected integer:=0; n integer; occ bigint; impacts jsonb;
 BEGIN
  PERFORM public.require_client_sync_service_role_v1();
+ PERFORM public.cleanup_order_overview_sources_internal(p_batch_size);
  IF p_batch_size NOT BETWEEN 1 AND 500 THEN RAISE EXCEPTION 'Invalid expiry batch'; END IF;
  FOR f IN SELECT DISTINCT form_id FROM eshop.waitlist_offers w WHERE expires_at<=clock_timestamp() AND EXISTS
   (SELECT 1 FROM eshop.waitlist_offer_slots s WHERE s.offer_id=w.id AND outcome='pending') ORDER BY form_id LIMIT p_batch_size LOOP

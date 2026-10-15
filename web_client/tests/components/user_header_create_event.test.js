@@ -24,7 +24,14 @@ test('create-event invitation respects the tenant and explicit registration perm
     const previousLink = AppConfig.webLink;
     const previousContext = RightsService._context;
     t.after(() => { AppConfig.webLink = previousLink; RightsService._context = previousContext; });
+    document.body.dataset.page = 'organizers';
+    const heading = document.createElement('h1');
+    heading.textContent = 'Organizers';
+    document.body.appendChild(heading);
     const header = new UserHeader();
+    header.innerHTML = '<a href="/">Brand</a>';
+    document.body.appendChild(header);
+    assert.ok(header.querySelector('a'), 'fallback remains before rights load');
     for (const [link, organization, visible] of [
         ['https://vstupenky.online', { IS_REGISTRATION_ENABLED: true }, true],
         ['https://vstupenky.online', { IS_REGISTRATION_ENABLED: false }, false],
@@ -36,6 +43,8 @@ test('create-event invitation respects the tenant and explicit registration perm
         AppConfig.webLink = link;
         header.context = RightsService._context = { organization };
         header.render();
+        assert.equal(document.querySelectorAll('h1').length, 1);
+        assert.equal(header.querySelectorAll('.user-header-container').length, 1);
         const button = header.querySelector('.btn-add-event');
         assert.equal(!!button, visible, `${link}, ${JSON.stringify(organization)}`);
         assert.ok(header.querySelector('.btn-sign-in'), 'existing users can still sign in');

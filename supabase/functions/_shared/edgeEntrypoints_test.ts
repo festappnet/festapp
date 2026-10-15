@@ -71,6 +71,7 @@ const optionEntrypoints = [
   "send-sign-in-code",
   "send-ticket-order",
   "waitlist-commands",
+  "customer-order-access",
   "send-tickets",
 ];
 
@@ -347,4 +348,18 @@ Deno.test("first ticket delivery joins the paid intent while explicit resend get
   } finally {
     supabaseAdmin.rpc = originalRpc;
   }
+});
+
+Deno.test("customer-order-access rejects unsafe methods and malformed scope without privileged work", async () => {
+  const handler = await loadHandler("customer-order-access");
+  const get = await handler(new Request("https://edge-test.invalid"));
+  assertEquals(get.status, 405);
+  const invalid = await handler(new Request("https://edge-test.invalid", {method: "POST", body: "{}"}));
+  assertEquals(invalid.status, 403);
+  assertEquals(invalid.headers.get("Cache-Control"), "no-store");
+  assertEquals(invalid.headers.get("Referrer-Policy"), "no-referrer");
+  const reissue = await handler(new Request("https://edge-test.invalid", {method: "POST", body: JSON.stringify({
+    commandId: "cc000000-0000-0000-0000-000000000001", reissue: true,
+  })}));
+  assertEquals(reissue.status, 401);
 });

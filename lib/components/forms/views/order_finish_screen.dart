@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/order_overview_strings.dart';
 import '../waitlist_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
@@ -13,6 +14,7 @@ class FinishOrderScreen extends StatefulWidget {
   final VoidCallback? onOrderConfirmed;
   final String? tone;
   final bool hasTickets;
+  final bool overviewAvailable;
   final String? occasionTitle;
   final Future<String?> Function(String)? deliveryStatusReader;
 
@@ -23,6 +25,7 @@ class FinishOrderScreen extends StatefulWidget {
     this.onOrderConfirmed,
     this.tone,
     this.hasTickets = true,
+    this.overviewAvailable = false,
     this.occasionTitle,
     this.deliveryStatusReader,
   });
@@ -39,6 +42,14 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
   Map<String, dynamic>? _errorProduct;
   Map<String, dynamic>? _orderData;
   String _deliveryState = 'queued';
+  bool _successCloseNotified = false;
+
+  void _notifySuccessAfterClose() {
+    if (!_isSuccess || _successCloseNotified) return;
+    _successCloseNotified = true;
+    final callback = widget.onSuccess;
+    WidgetsBinding.instance.addPostFrameCallback((_) => callback?.call());
+  }
 
   late AnimationController _mainController;
   late AnimationController _loadingController;
@@ -152,9 +163,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
       body: PopScope(
         canPop: true,
         onPopInvoked: (didPop) {
-          if (didPop && _isSuccess) {
-            widget.onSuccess?.call();
-          }
+          if (didPop) _notifySuccessAfterClose();
         },
         child: Center(
           child: AnimatedSwitcher(
@@ -277,6 +286,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
           OutlinedButton(
             onPressed: () {
               Navigator.of(context).pop();
+              _notifySuccessAfterClose();
             },
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 32),
@@ -284,7 +294,9 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
-            child: Text(PublicOrderStrings.backToForm),
+            child: Text(_isSuccess && widget.overviewAvailable
+                ? OrderOverviewStrings.text('title')
+                : PublicOrderStrings.backToForm),
           ),
         ],
       ),

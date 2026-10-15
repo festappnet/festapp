@@ -530,14 +530,11 @@ class FormHelper {
         showDialog(
           context: context,
           builder: (context) => StandardDialog(
+            title: Text(title),
             content: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                  ),
                   const SizedBox(height: 8),
                   HtmlView(
                     html: description,

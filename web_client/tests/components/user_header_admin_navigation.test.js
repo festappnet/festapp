@@ -45,10 +45,17 @@ test('the Admin header button opens the admin route', async () => {
     };
     RouterService.navigateToHandover = () => { handoverNavigations += 1; };
 
+    document.body.dataset.page = 'organizers';
     const header = new UserHeader();
     header.user = { id: 'admin-user' };
     header.context = {};
     header.render();
+    document.body.appendChild(header);
+    header.render();
+    assert.equal(header.querySelector('h1'), null);
+    header.querySelector('.user-info-container').click();
+    assert.equal(header.querySelector('.popover-user-name').textContent, 'Admin');
+    header.querySelector('#user-popover-wrapper').remove();
     header.querySelector('.btn-admin').click();
 
     assert.equal(adminNavigations, 1);

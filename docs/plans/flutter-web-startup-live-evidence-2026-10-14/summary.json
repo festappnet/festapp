@@ -1,0 +1,45 @@
+{
+  "version": "0.20.205+689",
+  "checkedAtUtc": "2026-10-14T20:28:00.986201+00:00",
+  "previousVersion": "0.20.198+682",
+  "main": {
+    "previousRaw": 21079461,
+    "currentRaw": 10945750,
+    "previousBrotliTransfer": 3489796,
+    "currentBrotliTransfer": 2890492,
+    "rawReductionPercent": 48.0738620404,
+    "transferReductionPercent": 17.1730381948
+  },
+  "fonts": {
+    "previousCount": 16,
+    "currentCount": 9,
+    "previousTransfer": 1952271,
+    "currentTransfer": 741489
+  },
+  "currentGuestUnitEntry": {
+    "path": "/unit/1/edit",
+    "result": "redirect to login",
+    "coldReadyMs": [
+      1875.699999988079,
+      2569.300000011921,
+      1611.199999988079
+    ],
+    "coldMedianReadyMs": 1875.699999988079,
+    "warmReadyMs": [
+      314.9000000357628,
+      165.5
+    ],
+    "marker": "festapp-app-ready",
+    "limitation": "Anonymous Flutter startup only, not an authenticated administration readiness metric; no controlled before/after timing attribution"
+  },
+  "pwaCaches": [
+    {
+      "executables": [
+        "/main.dart.js_1.part.js",
+        "/main.dart.0.20.205-689.js"
+      ],
+      "hasDeferredCatalog": true,
+      "name": "festapp-app-shell-0.20.205+689"
+    }
+  ]
+}

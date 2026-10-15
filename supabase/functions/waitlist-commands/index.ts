@@ -1,3 +1,4 @@
+import { openOrderOverviewUrl } from "../_shared/customerOrderAccess.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import {
   prepareWaitlistDelivery,
@@ -103,6 +104,20 @@ Deno.serve(async (request) => {
         }
       } catch { /* Non-domain SQL failures use the stable transport error. */ }
       return respond({ code: 400, error: "waitlist_command_failed" });
+    }
+    if (operation === "register") {
+      const result = data?.data || data;
+      if (result?.code === 200 && result.order?.id) {
+        try {
+          const source = await supabaseAdmin.rpc("get_registered_order_overview_source_v1", {
+            p_order_id: result.order.id, p_command_id: commandId,
+          });
+          if (!source.error) {
+            const url = await openOrderOverviewUrl(source.data, source.data.source);
+            return respond(data?.data ? { ...data, data: { ...result, orderOverviewUrl: url } } : { ...data, orderOverviewUrl: url });
+          }
+        } catch { /* Registration succeeded; the queued email remains the delivery path. */ }
+      }
     }
     return respond(data);
   } catch {

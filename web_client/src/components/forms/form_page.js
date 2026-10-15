@@ -1,3 +1,4 @@
+import { parseOrderFragment, loadOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
 import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
@@ -129,6 +130,15 @@ export class FormPage extends Component {
             // 3. Fetch Data
             this.waitlistScope = parseWaitlistFragment(window.location.hash);
             this.waitlistCommands ||= new WaitlistCommands();
+            const viewScope = parseOrderFragment(window.location.hash);
+            if (viewScope) {
+                this.overviewScope = viewScope;
+                this.host.replaceChildren();
+                await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
+                    this.continuationScope ? () => this.continueOverviewOffer() : null);
+                return;
+            }
+            this.overviewScope = null;
             let formModel;
             if (this.waitlistScope) {
                 let referrer = document.querySelector('meta[name="referrer"]');
@@ -138,6 +148,7 @@ export class FormPage extends Component {
                 this.waitlistBundle = bundle;
                 if (!this.waitlistScope.offerId || !bundle.pendingCount) {
                     this.renderWaitlistManagement(bundle);
+                    this.attachOverview();
                     return;
                 }
                 formModel = new FormModel(bundle.form);
@@ -186,10 +197,42 @@ export class FormPage extends Component {
             });
 
         } catch (e) {
-            console.error(e);
+            // Capability failures must never log request or transport details.
             this.currentLink = null; // A retry must not hit the same-link guard.
             this.renderError(e.message === 'INVALID_CAPABILITY' ? WaitlistStrings.invalid : FormStrings.loadFailed, () => this.init(link));
         }
+    }
+
+    async attachOverview() {
+        const scope = this.waitlistScope;
+        const section = document.createElement('section'); this.host.prepend(section);
+        const load = async () => {
+            section.replaceChildren();
+            try {
+                const url = await this.waitlistCommands.overviewAccess(scope);
+                const viewScope = parseOrderFragment(new URL(url).hash);
+                if (!section.isConnected) return;
+                this.overviewScope = viewScope;
+                await loadOrderOverview(section, this.waitlistCommands, viewScope, null, true);
+            } catch {
+                const error = document.createElement('p'); error.textContent = overviewText('failed'); error.setAttribute('role', 'alert');
+                const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = overviewText('refresh'); retry.onclick = load;
+                section.replaceChildren(error, retry);
+            }
+        };
+        await load();
+    }
+
+    async continueOverviewOffer() {
+        const scope = this.continuationScope;
+        if (!scope) return;
+        try {
+            const bundle = await this.waitlistCommands.read(scope);
+            if (!bundle.form || !bundle.pendingCount) return;
+            this.waitlistScope = scope;
+            const model = new FormModel(bundle.form); model.offerBundle = bundle;
+            this.renderForm(model, false);
+        } catch { /* The overview remains available if the offer ended. */ }
     }
 
     async refreshOffer(model) {
@@ -424,6 +467,7 @@ export class FormPage extends Component {
         
         if (formModel.registrationMode !== 'waitlist') new CurrencySelectorWidget(session, this.host);
         renderWaitlistControls(this, formModel);
+        if (this.waitlistScope) this.attachOverview();
         
         
 
@@ -721,10 +765,31 @@ export class FormPage extends Component {
              document.body.style.overflow = ''; 
              
              if (result.success) {
+                 if (formModel.registrationMode === 'waitlist' && result.data.orderOverviewUrl) {
+                     try {
+                         const link = this.currentLink;
+                         const url = new URL(result.data.orderOverviewUrl);
+                         parseOrderFragment(url.hash);
+                         window.history.replaceState({}, '', `${window.location.pathname}${url.hash}`);
+                         this.currentLink = null;
+                         await this.init(link);
+                     } catch {
+                         // Registration is committed even if the supplementary view cannot open.
+                         this.overviewScope = null;
+                     }
+                     this.showFullScreenResult(true, { ...result.data, overviewAvailable: Boolean(this.overviewScope) }, formModel);
+                     return;
+                 }
                  if (formModel.offerBundle) {
-                     const link = this.currentLink; this.currentLink = null;
+                     const link = this.currentLink;
+                     if (this.overviewScope) {
+                         this.continuationScope = this.waitlistScope;
+                         const fragment = `order?${new URLSearchParams({ order_id: String(this.overviewScope.orderId), token: this.overviewScope.token })}`;
+                         window.history.replaceState({}, '', `${window.location.pathname}#${fragment}`);
+                     }
+                     this.currentLink = null;
                      await this.init(link);
-                     this.showFullScreenResult(true, { ...result.data, ticketOrder: { order: result.data.order } }, formModel);
+                     this.showFullScreenResult(true, { ...result.data, overviewAvailable: Boolean(this.overviewScope), ticketOrder: { order: result.data.order } }, formModel);
                      return;
                  }
                  // Clean up old widgets first
@@ -741,7 +806,7 @@ export class FormPage extends Component {
         }).catch(async e => {
              await previewHistoryClosed;
 
-             console.error("Submit Error:", e);
+             // Preserve the stable error UI without logging capability-bearing transport errors.
              loader.remove();
              document.body.style.overflow = ''; 
              if (formModel.offerBundle) await this.refreshOffer(formModel);

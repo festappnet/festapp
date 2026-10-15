@@ -391,3 +391,22 @@ Deno.test("informal communication setting does not rewrite an authored formal te
   assert.equal(result.prepared.html, authored);
   assert.equal(result.prepared.subject, "Vlastní předmět pořadatele");
 });
+
+Deno.test("new inherited email receives overview link while immutable v1 stays unchanged", async () => {
+  const { prepareOrderOverviewSource } = await import("./waitlistEmail.ts");
+  const previous = Deno.env.get("EMAIL_PAYLOAD_KEY");
+  Deno.env.set("EMAIL_PAYLOAD_KEY", btoa(String.fromCharCode(...new Uint8Array(32).fill(23))));
+  try {
+    const f = await fixture();
+    const legacy = await renderWaitlistEmail(f.row, f.dependencies);
+    assert.equal(legacy.prepared.html.includes("#order?"), false);
+    const selected = { ...source, version: 2 as const };
+    f.row.data.content_hash = await sha256Text(JSON.stringify(selected));
+    f.context.overviewSource = await prepareOrderOverviewSource(source);
+    const rendered = await renderWaitlistEmail(f.row, { ...f.dependencies, open: async () => selected });
+    assert.match(rendered.prepared.html, /#order\?order_id=101&amp;token=[a-f0-9]{64}/);
+    assert.equal(rendered.postAction.tracking_policy, "disabled");
+  } finally {
+    if (previous === undefined) Deno.env.delete("EMAIL_PAYLOAD_KEY"); else Deno.env.set("EMAIL_PAYLOAD_KEY", previous);
+  }
+});

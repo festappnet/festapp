@@ -8,6 +8,11 @@ import 'package:fstapp/main.dart';
 import 'package:fstapp/startup/startup_failure_policy.dart';
 
 void main() {
+  test('order view fragment survives cold startup', () {
+    final uri = Uri.parse(
+        'https://example.invalid/form/example#order?order_id=1&token=synthetic');
+    expect(Uri.parse(initialRouteForUri(uri)).fragment, uri.fragment);
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
   testWidgets('pending database startup becomes actionable without launching the app', (tester) async {
     final pending = Completer<void>();

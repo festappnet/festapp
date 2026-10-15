@@ -1,6 +1,7 @@
 # Osobní přehled objednávky - follow-up kapacity formuláře
 
-Datum: 2026-10-13. Stav: naplánováno, bez implementace a nasazení.
+Datum: 2026-10-13. Stav: lokálně implementováno a cíleně ověřeno 2026-10-15, bez nasazení.
+Aktuální [realizační evidence a úpravy podle ticket kontraktu](order-overview-waitlist-follow-up-implementation-2026-10-15.md).
 Revize po dokončení původní lokální realizace: 2026-10-13.
 Ověřování budoucí implementace: **standard** (osobní odkazy, oprávnění, platební údaje).
 Navazuje na [kapacitu a náhradníky](form-capacity-waitlist-plan-2026-10-13.md)

@@ -152,7 +152,7 @@ test('server catalogue preserves undated records and orders present, upcoming an
   const html = await (await worker.fetch(request('/'), env)).text();
   assert.ok(html.indexOf('Current</a>') < html.indexOf('Next</a>'));
   assert.ok(html.indexOf('Next</a>') < html.indexOf('Archive (Copy)</a>'));
-  assert.match(html, /<section class="catalog-archive"><h2>Minulé akce \(1\)<\/h2>/);
+  assert.match(html, /<section class="catalog-archive"><h2>Proběhlé události<\/h2>/);
   assert.ok(html.includes('No date</a>'));
   assert.ok(html.includes('data-server-catalog="ready"'));
 });
@@ -187,8 +187,8 @@ test('server archive stays visible and groups large multi-year archives', async 
   t.mock.method(globalThis, 'fetch', async () => Response.json({occasions: past}));
   const html = await (await worker.fetch(request('/'), env)).text();
   assert.ok(!html.includes('<details'));
-  assert.ok(html.includes('<h3>2025 (5)</h3>'));
-  assert.ok(html.includes('<h3>2024 (4)</h3>'));
+  assert.ok(html.includes('<h3>2025</h3>'));
+  assert.ok(html.includes('<h3>2024</h3>'));
   assert.ok(html.indexOf('<h3>2025') < html.indexOf('<h3>2024'));
   for (const occasion of past) assert.ok(html.includes(occasion.title));
 });
