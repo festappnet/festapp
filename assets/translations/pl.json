@@ -817,7 +817,7 @@
   },
   "OrderOverview": {
     "title": "Przegląd zamówienia",
-    "updated": "Wczytano",
+    "updated": "Zaktualizowano",
     "refresh": "Odśwież",
     "loading": "Wczytywanie przeglądu",
     "failed": "Nie udało się odświeżyć przeglądu. Spróbuj ponownie.",
@@ -825,7 +825,7 @@
     "continue": "Kontynuuj pozostałą ofertę",
     "offerEmail": "Aby przyjąć lub odrzucić ofertę, użyj pierwotnego linku w wiadomości e-mail.",
     "orderState": "Stan zamówienia",
-    "total": "Cena",
+    "total": "Cena łączna",
     "received": "Zarejestrowana wpłata",
     "totalOutstanding": "Pozostało do zapłaty",
     "returned": "Zwrócono",

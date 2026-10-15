@@ -749,7 +749,7 @@
   },
   "OrderOverview": {
     "title": "Prehľad objednávky",
-    "updated": "Načítané",
+    "updated": "Aktualizované",
     "refresh": "Obnoviť",
     "loading": "Načítavanie prehľadu",
     "failed": "Prehľad sa nepodarilo aktualizovať. Skúste to znova.",
@@ -757,7 +757,7 @@
     "continue": "Pokračovať v zostávajúcej ponuke",
     "offerEmail": "Na prijatie alebo odmietnutie použite pôvodný odkaz ponuky v e-maile.",
     "orderState": "Stav objednávky",
-    "total": "Cena",
+    "total": "Celková cena",
     "received": "Evidovaná úhrada",
     "totalOutstanding": "Zostáva uhradiť",
     "returned": "Vrátené",

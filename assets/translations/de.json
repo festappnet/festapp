@@ -817,7 +817,7 @@
   },
   "OrderOverview": {
     "title": "Bestellübersicht",
-    "updated": "Geladen",
+    "updated": "Aktualisiert",
     "refresh": "Aktualisieren",
     "loading": "Übersicht wird geladen",
     "failed": "Die Übersicht konnte nicht aktualisiert werden. Bitte erneut versuchen.",
