@@ -89,6 +89,7 @@ const HANDOFF_BOOTSTRAP_CACHE_NAMES = new Set([
   'festapp-app-shell-0.20.223+707',
   'festapp-app-shell-0.20.224+708',
   'festapp-app-shell-0.20.225+709',
+  'festapp-app-shell-0.20.226+710',
   'festapp-app-shell-0.20.185+669',
   'festapp-app-shell-0.20.186+670',
   'festapp-app-shell-0.20.187+671',
@@ -125,7 +126,9 @@ async function precacheAtomically() {
   // main.dart.js_<n>.part.js files; omitting an unvisited route can make an
   // installed PWA stall when it is cold-started offline on that URL. Large
   // non-code assets remain lazy so maps/media do not delay activation.
-  await cache.addAll(CORE_URLS);
+  // A cached failed deployment response must not poison every install retry.
+  await cache.addAll(CORE_URLS.map((url) => new Request(
+    new URL(url, self.location.origin), { cache: 'no-store' })));
 }
 
 async function requiresEmergencyCutover() {
@@ -494,11 +497,11 @@ async function recoverCurrentExecutable(request, cache, allowNewerBootstrap) {
       // Dart runtime is executing yet, so let the network's coherent release
       // start and allow its worker to take over. Deferred chunks remain strict.
       if (!allowNewerBootstrap) return Response.error();
-      const latestResponse = await fetch(request);
+      const latestResponse = await fetch(request, { cache: 'no-store' });
       return latestResponse.ok ? latestResponse : Response.error();
     }
 
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: 'no-store' });
     if (!response.ok) return Response.error();
     try {
       await cache.put(request, response.clone());

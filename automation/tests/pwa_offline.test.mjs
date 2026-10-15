@@ -118,6 +118,7 @@ try {
   let activationDocument = '{"schemaVersion":1,"tenantId":"test","generation":1,"backend":"legacy"}\n';
   let serverVersion = '1.2.3+5';
   let cachePutFails = false;
+  let staleHttpExecutable = false;
   const cachedPuts = [];
   const deletedCaches = [];
   const openedCaches = [];
@@ -145,7 +146,13 @@ try {
     }],
   ]);
   const cache = {
-    addAll: async () => {},
+    addAll: async (requests) => {
+      assert.ok(requests.length > 0);
+      for (const request of requests) {
+        assert.equal(request.cache, 'no-store',
+          'installation must bypass cached failed HTTP responses');
+      }
+    },
     put: async (request) => {
       if (cachePutFails) throw new Error('storage quota exceeded');
       cachedPuts.push(String(request.url || request));
@@ -187,7 +194,7 @@ try {
         return true;
       },
     },
-    fetch: async (request) => {
+    fetch: async (request, options) => {
       const url = String(request.url || request);
       if (url.includes('/backend-activation.json')) {
         activationNetworkCalls++;
@@ -204,6 +211,9 @@ try {
         });
       }
       if (url.includes('/main.dart.js')) {
+        if (staleHttpExecutable && options?.cache !== 'no-store') {
+          return new Response('<html>Not found</html>', { status: 404 });
+        }
         return new Response('recovered current executable');
       }
       if (url.includes('/web-assets/index.js')) {
@@ -224,6 +234,7 @@ try {
     },
   };
   vm.runInNewContext(worker, context);
+  await vm.runInNewContext('precacheAtomically()', context);
 
   async function dispatchFetch(request, clientId = '', resultingClientId = '') {
     let responsePromise;
@@ -403,6 +414,7 @@ try {
   // If storage eviction/corruption removed an executable from this worker's
   // own build, recover that exact build from the network instead of leaving
   // every controlled reload permanently stuck on the Flutter loader.
+  staleHttpExecutable = true;
   serverVersion = '1.2.3+4';
   const recoveredMainResponse = await dispatchFetch(
     new Request('https://app.test/main.dart.js'),
