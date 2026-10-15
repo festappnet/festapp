@@ -116,7 +116,9 @@ email, including split children. Query capabilities are protected by no-store,
 no-referrer and noindex response headers; never log or persist them in clients.
 
 The page reads `get_customer_order_overview` through POST RPC without offline
-storage. SQL allowlists current payment facts, matched transaction dates/amounts,
+storage. While visible it refreshes every 30 seconds and immediately after
+returning to the tab; unchanged content keeps its DOM and there is no refresh
+button. Leaving the page cancels polling and ignores pending responses. SQL allowlists current payment facts, matched transaction dates/amounts,
 and recorded history transitions and item/price changes. Private transaction
 metadata, admin notes and raw history payloads are never returned. Timeline
 entries are historical observations; the current payment status distinguishes

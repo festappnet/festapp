@@ -28,14 +28,13 @@ function section(host, title, className = '') {
 function fact(list, label, value) {
     const row = line(list, 'div', ''); line(row, 'dt', label); line(row, 'dd', value);
 }
-export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPage = false) {
+export function renderOrderOverview(host, data, onContinue, offerInPage = false) {
     host.replaceChildren(); host.classList.add('order-overview');
     line(host, 'p', overviewText('title')).className = 'overview-eyebrow';
     line(host, 'h1', data.root.title || overviewText('title'));
     line(host, 'p', `${overviewText('orderReference')}: ${data.root.symbol}`).className = 'overview-reference';
     const toolbar = line(host, 'div', ''); toolbar.className = 'overview-toolbar';
-    line(toolbar, 'span', `${overviewText('updated')}: ${date(data.serverTime)}`);
-    const refresh = line(toolbar, 'button', overviewText('refresh')); refresh.type = 'button'; refresh.onclick = onRefresh;
+    line(toolbar, 'span', `${overviewText('updated')}: ${date(data.serverTime)}`).className = 'overview-updated';
 
     const waiting = data.people.some(p => ['waiting', 'offered', 'offer_expired', 'offer_declined', 'offer_cancelled'].includes(p.effectiveLifecycle));
     const activeOffer = data.offers.some(o => o.pendingPlaces > 0);
@@ -113,22 +112,60 @@ export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPa
     line(current, 'p', overviewText(waiting ? activeOffer ? 'offerReady' : 'waitingExplanation' : 'statusAbove'));
 }
 
-export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false) {
+export function stopOrderOverview(host) {
+    host._overviewRefreshCleanup?.();
+    host._overviewGeneration = (host._overviewGeneration || 0) + 1;
+}
+
+function scheduleOverviewRefresh(host, refresh) {
+    const doc = host.ownerDocument, win = doc.defaultView;
+    if (!win || !host.isConnected || !host.classList.contains('order-overview')) return;
+    let timer;
+    const visible = () => host.isConnected && host.classList.contains('order-overview') && doc.visibilityState === 'visible' && host.getClientRects().length > 0;
+    const run = () => { if (visible()) return refresh(); cleanup(); };
+    const changed = () => { win.clearTimeout(timer); if (visible()) void run(); };
+    const cleanup = () => { win.clearTimeout(timer); doc.removeEventListener('visibilitychange', changed); };
+    host._overviewRefreshCleanup = cleanup;
+    doc.addEventListener('visibilitychange', changed);
+    if (visible()) timer = win.setTimeout(run, 30000);
+}
+
+export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false, background = false) {
+    host._overviewRefreshCleanup?.();
     const generation = (host._overviewGeneration || 0) + 1; host._overviewGeneration = generation;
     host.classList.add('order-overview');
-    host.replaceChildren(); host.setAttribute('aria-busy', 'true');
-    line(host, 'p', overviewText('loading'));
+    if (!background) {
+        host._overviewSnapshot = null;
+        host.replaceChildren(); host.setAttribute('aria-busy', 'true');
+        line(host, 'p', overviewText('loading'));
+    }
     try {
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
         replaceResolvedPublicLink('form', formLinkFromPath(window.location.pathname), data.root?.formLink);
-        renderOrderOverview(host, data, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage),
-            onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage);
+        const snapshot = JSON.stringify({ ...data, serverTime: null });
+        // Keep expanded details and keyboard focus stable when nothing changed.
+        // A focused control may be in use: defer replacing it until the next poll.
+        if (snapshot !== host._overviewSnapshot && (!background || !host.contains(host.ownerDocument.activeElement))) {
+            const opened = [...host.querySelectorAll('details')].map(detail => detail.open);
+            renderOrderOverview(host, data,
+                onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage);
+            [...host.querySelectorAll('details')].forEach((detail, i) => { detail.open = opened[i] || false; });
+            host._overviewSnapshot = snapshot;
+        }
+        const timestamp = host.querySelector('.overview-updated');
+        if (timestamp && snapshot === host._overviewSnapshot) timestamp.textContent = `${overviewText('updated')}: ${date(data.serverTime)}`;
         return data;
     } catch {
         if (host._overviewGeneration !== generation) return;
+        host._overviewSnapshot = null;
         host.replaceChildren(); line(host, 'p', overviewText('failed')).setAttribute('role', 'alert');
-        const retry = line(host, 'button', overviewText('refresh')); retry.type = 'button';
+        const retry = line(host, 'button', LocalizationService.tr('Common.retry')); retry.type = 'button';
         retry.onclick = () => loadOrderOverview(host, commands, scope, onContinue, offerInPage);
-    } finally { if (host._overviewGeneration === generation) host.removeAttribute('aria-busy'); }
+    } finally {
+        if (host._overviewGeneration === generation) {
+            host.removeAttribute('aria-busy');
+            scheduleOverviewRefresh(host, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, true));
+        }
+    }
 }
