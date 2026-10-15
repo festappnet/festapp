@@ -824,6 +824,7 @@
     "usedTickets": "Verwendete Tickets",
     "cashPayment": "Barzahlung",
     "bankPayment": "Banküberweisung",
+    "recipientAccount": "Empfängerkonto",
     "refresh": "Aktualisieren",
     "loading": "Übersicht wird geladen",
     "failed": "Die Übersicht konnte nicht aktualisiert werden. Bitte erneut versuchen.",
