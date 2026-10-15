@@ -665,3 +665,37 @@ body.dark-mode .surcharge-info {
     color: var(--primary-color, #6f42c1); /* Keep price prominent */
 }
 
+
+/* Order summaries share the site header, while editable forms stay focused. */
+#form-page-container.order-overview-page {
+    max-width: 850px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 24px 16px;
+}
+.order-overview {
+    overflow-wrap: anywhere;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color, #aaa);
+    border-radius: 12px;
+    line-height: 1.5;
+}
+.order-overview h1 { font-size: clamp(1.4rem, 4vw, 2rem); margin: 0 0 16px; }
+.order-overview h2 { font-size: 1.25rem; margin: 20px 0 12px; }
+.order-overview button {
+    font: inherit;
+    padding: 10px 18px;
+    min-height: 44px;
+    border: 1px solid currentColor;
+    border-radius: 8px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+}
+.order-overview button:hover { background: var(--hover-color, #8882); }
+.order-overview-card { padding: 16px; margin-top: 20px; border: 1px solid var(--border-color, #aaa); border-radius: 8px; }
+.order-overview-card h2 { margin-top: 0; }
+@media (max-width: 480px) {
+    .order-overview { padding: 16px; }
+}

@@ -75,6 +75,7 @@ BEGIN
  source:=public.resolve_customer_order_access_v1(manage,oid,NULL,command,delivery);
  replay:=public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery);
  PERFORM assert_eq(source->'source',replay->'source','bootstrap converges to existing encrypted source');
+ PERFORM assert_eq(public.get_order_email_overview_source_v1(oid,'regression@example.invalid',gen_random_uuid())->'source',source->'source','ordinary email reuses initial waitlist token');
  PERFORM assert_eq((SELECT count(*) FROM eshop.order_overview_sources s JOIN eshop.waitlist_capabilities c USING(token_hash) WHERE c.order_id=oid),1::bigint,'single generation');
  PERFORM assert_true(NOT source::text LIKE '%'||view_token||'%','resolver SQL contains no raw token');
  r:=public.get_customer_order_overview(view_token,oid);
@@ -117,6 +118,7 @@ BEGIN
  PERFORM assert_true(NOT r::text LIKE '%ticket_symbol%' AND NOT r ? 'data' AND NOT r ? 'allowedActions','allowlist only');
  BEGIN PERFORM public.resolve_customer_order_access_v1(offer_token,oid,(w->>'id')::uuid,gen_random_uuid(),delivery); RAISE EXCEPTION 'terminal bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='terminal bootstrap' THEN RAISE; END IF; END;
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'completed manage bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='completed manage bootstrap' THEN RAISE; END IF; END;
+ PERFORM assert_eq(public.get_order_email_overview_source_v1(child,'regression@example.invalid',gen_random_uuid())->'source',source->'source','split child email reuses root token');
  SELECT payment_info INTO pid FROM eshop.orders WHERE id=child;
  UPDATE eshop.bank_accounts SET account_number='CZ6508000000192000145399' WHERE id=(SELECT bank_account FROM eshop.payment_info WHERE id=pid);
  UPDATE eshop.payment_info SET amount=1000,deposit_amount=300,paid=300,deposit_deadline=now()-interval '1 day',deadline=now()+interval '1 day' WHERE id=pid;
@@ -175,5 +177,29 @@ BEGIN
  PERFORM assert_true(NOT has_table_privilege('anon','eshop.order_overview_sources','SELECT'),'no public source read');
  PERFORM assert_true(NOT has_function_privilege('authenticated','public.resolve_customer_order_access_v1(text,bigint,uuid,uuid,jsonb,uuid,boolean)','EXECUTE'),'no client issuance bypass');
  RAISE NOTICE 'PASS overview scope, partial/full, payment matrix, ticket refresh, expiry and revocation';
+END $$;
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); o eshop.orders; first_source jsonb; replay jsonb; token text:=repeat('e',64);
+ delivery jsonb:=jsonb_build_object('tokenHash',encode(extensions.digest(token,'sha256'),'hex'),'contentHash',repeat('f',64),'sealed',jsonb_build_object('ciphertext','synthetic'));
+BEGIN
+ PERFORM public.create_ticket_order_internal_v1(pg_temp.checkout(x));
+ SELECT * INTO STRICT o FROM eshop.orders WHERE form=(x->>'form')::bigint;
+ first_source:=public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid());
+ PERFORM assert_true(first_source->'source'='null'::jsonb,'first ordinary confirmation needs a source');
+ first_source:=public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid(),delivery);
+ replay:=public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid(),delivery);
+ PERFORM assert_eq(replay->'source',first_source->'source','ordinary email retry preserves exact source');
+ PERFORM assert_eq(public.get_customer_order_overview(token,o.id)->>'code','200'::text,'ordinary order has public overview');
+ PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_all_email_templates(jsonb_build_object('occasion',x->'occasion'))) t WHERE t->>'code'='ORDER_OVERVIEW'),'no standalone template card');
+ PERFORM assert_true(NOT public.email_intent_valid(jsonb_populate_record(NULL::public.email_messages,jsonb_build_object('message_kind','custom','code','ORDER_OVERVIEW','occasion',x->'occasion'))),'retired email rejected even without an order');
+ PERFORM assert_true(to_regprocedure('public.enqueue_order_overview_reissue_v1(bigint,uuid,uuid,jsonb,text)') IS NULL,'standalone email producer removed');
+ BEGIN
+  PERFORM public.get_order_email_overview_source_v1(o.id,'other@example.invalid',gen_random_uuid());
+  RAISE EXCEPTION 'recipient bypass';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM='recipient bypass' THEN RAISE; END IF; END;
+ UPDATE eshop.waitlist_capabilities SET revoked_at=now() WHERE token_hash=delivery->>'tokenHash';
+ PERFORM assert_true(public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid(),delivery) IS NULL,'revoked token never replaced automatically');
+ PERFORM assert_true(NOT has_function_privilege('authenticated','public.get_order_email_overview_source_v1(bigint,text,uuid,jsonb)','EXECUTE'),'issuance remains service only');
+ RAISE NOTICE 'PASS stable ordinary and waitlist email links; no standalone delivery';
 END $$;
 ROLLBACK;

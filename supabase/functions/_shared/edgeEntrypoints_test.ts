@@ -361,5 +361,5 @@ Deno.test("customer-order-access rejects unsafe methods and malformed scope with
   const reissue = await handler(new Request("https://edge-test.invalid", {method: "POST", body: JSON.stringify({
     commandId: "cc000000-0000-0000-0000-000000000001", reissue: true,
   })}));
-  assertEquals(reissue.status, 401);
+  assertEquals(reissue.status, 403);
 });

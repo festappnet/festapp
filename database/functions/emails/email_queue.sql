@@ -51,6 +51,8 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_order eshop.orders; v_pi eshop.payment_info; v_occ public.occasions; v_form public.forms; v_feature jsonb; v_deposit jsonb;
 BEGIN
  PERFORM public.require_service_role();
+ -- Retired standalone overview emails must never leave the queue.
+ IF p_message.code='ORDER_OVERVIEW' THEN RETURN false; END IF;
  IF public.is_demo_occasion(p_message.occasion) THEN RETURN false; END IF;
  IF p_message.expires_at<=now() THEN RETURN false; END IF;
  IF p_message.message_kind='custom' AND p_message.code='BANK_SYNC_WARNING' THEN
@@ -75,13 +77,6 @@ BEGIN
  END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_message.order_id;
  IF v_order.id IS NULL OR v_order.occasion<>p_message.occasion THEN RETURN false; END IF;
- IF p_message.message_kind='custom' AND p_message.code='ORDER_OVERVIEW' THEN
-  RETURN v_order.data->>'email'=p_message.recipient AND EXISTS(
-   SELECT 1 FROM eshop.order_overview_sources s JOIN eshop.waitlist_capabilities c USING(token_hash)
-   WHERE s.command_id=(p_message.data->>'order_overview_command')::uuid AND c.kind='order_view'
-   AND c.order_id=v_order.id AND c.form_id=v_order.form AND c.organization_id=p_message.organization
-   AND c.revoked_at IS NULL AND c.expires_at>now() AND s.expires_at=c.expires_at);
- END IF;
  IF p_message.message_kind='waitlist_confirmation' THEN
   RETURN v_order.state='waitlisted' AND v_order.data->>'email'=p_message.recipient;
  END IF;

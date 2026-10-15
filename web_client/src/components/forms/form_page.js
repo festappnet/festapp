@@ -96,6 +96,7 @@ export class FormPage extends Component {
         // Check for existing instance to prevent duplicates or state leaks
         if (options.onBack) this.onBack = options.onBack;
 
+        this.setOverviewLayout(false);
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
@@ -132,6 +133,7 @@ export class FormPage extends Component {
             this.waitlistCommands ||= new WaitlistCommands();
             const viewScope = parseOrderFragment(window.location.hash);
             if (viewScope) {
+                this.setOverviewLayout(true);
                 this.overviewScope = viewScope;
                 this.host.replaceChildren();
                 await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
@@ -203,9 +205,23 @@ export class FormPage extends Component {
         }
     }
 
+    setOverviewLayout(enabled) {
+        this.host.classList.toggle('order-overview-page', enabled);
+        if (!enabled) this.host.classList.remove('order-overview');
+        const header = document.getElementById('universal-header');
+        const app = document.getElementById('app');
+        if (!header || !app) return;
+        header.classList.remove('header-hidden');
+        if (enabled) this.host.before(header);
+        else app.prepend(header);
+    }
+
     async attachOverview() {
         const scope = this.waitlistScope;
-        const section = document.createElement('section'); this.host.prepend(section);
+        // Admin offer previews already use the authenticated offer bundle.
+        // They have no customer capability and must not mint one just to render.
+        if (!scope?.token) return;
+        const section = document.createElement('section'); section.className = 'order-overview'; this.host.prepend(section);
         const load = async () => {
             section.replaceChildren();
             try {
@@ -265,6 +281,7 @@ export class FormPage extends Component {
     }
 
     renderWaitlistOutcome(outcome, bundle) {
+        this.setOverviewLayout(true);
         const model = new FormModel({ ...bundle?.form, data: { ...bundle?.form?.data, communication_tone: bundle?.form?.data?.communication_tone || bundle?.communicationTone } });
         model.registrationMode = 'waitlist';
         model.occasionTitle = bundle?.occasionTitle || model.occasionTitle;
@@ -283,6 +300,7 @@ export class FormPage extends Component {
     }
 
     renderWaitlistManagement(bundle) {
+        this.setOverviewLayout(true);
         this.waitlistBundle = bundle;
         const tone = bundle.form ? new FormModel(bundle.form).communicationTone : null;
         const terminal = ['declined', 'cancelled', 'expired', 'accepted'].includes(bundle.offerStatus) ? bundle.offerStatus
@@ -434,6 +452,7 @@ export class FormPage extends Component {
     }
 
     renderForm(formModel, showPreview) {
+        this.setOverviewLayout(false);
         if (formModel.offerBundle) this.waitlistBundle = formModel.offerBundle;
         this.currentPriceWidget?.destroy();
         this.currentPriceWidget = null;
