@@ -823,6 +823,10 @@
     "newTotal": "Nová cena",
     "itemsChanged": "Zmena položiek",
     "detailsChanged": "Údaje objednávky boli aktualizované.",
-    "gridOverview": "Prehľad"
+    "gridOverview": "Prehľad",
+    "tickets": "Vstupenky",
+    "ticket": "Vstupenka",
+    "registrations": "Prihlášky",
+    "registration": "Prihláška"
   }
 }

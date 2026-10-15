@@ -9,6 +9,8 @@ BEGIN
  INSERT INTO units(title,organization) VALUES('Waitlist regression',org) RETURNING id INTO un;
  INSERT INTO occasions(title,unit,organization,link,start_time,end_time) VALUES('Waitlist regression',un,org,suffix,now(),now()+interval '1 day') RETURNING id INTO oc;
  INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END) RETURNING id,key INTO f,fk;
+ PERFORM public.reserve_public_link_internal('occasion',oc,suffix,true);
+ PERFORM public.reserve_public_link_internal('form',f,suffix,true);
  INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Regression bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('spot','spot',oc) RETURNING id INTO pt;
@@ -146,11 +148,13 @@ BEGIN
  r:=public.customer_order_payment_internal(child);
  PERFORM assert_eq(r->>'status','deposit_paid'::text,'paid order is only deposit paid');
  PERFORM assert_eq((r->>'dueNow')::numeric,700::numeric,'remaining deposit balance');
+ PERFORM assert_eq((r#>>'{qrPayment,amount}')::numeric,700::numeric,'QR uses remaining amount');
  FOR status IN SELECT unnest(ARRAY['unpaid','partially_paid','deposit_paid','fully_paid','fully_paid']) LOOP
   UPDATE eshop.payment_info SET paid=CASE status WHEN 'unpaid' THEN 0 WHEN 'partially_paid' THEN 100 WHEN 'deposit_paid' THEN 300 ELSE 1000 END WHERE id=pid;
   UPDATE eshop.orders SET state='ordered' WHERE id=child;
   PERFORM assert_eq(public.customer_order_payment_internal(child)->>'status',status,'payment matrix');
  END LOOP;
+ PERFORM assert_true(public.customer_order_payment_internal(child)->'qrPayment'='null'::jsonb,'fully paid has no QR');
  UPDATE eshop.payment_info SET paid=0 WHERE id=pid;
  r:=public.customer_order_payment_internal(child);
  PERFORM assert_eq(r->>'overdue','true'::text,'unpaid deposit overdue');
@@ -160,6 +164,8 @@ BEGIN
  r:=public.customer_order_payment_internal(child);
  PERFORM assert_eq(r->>'referenceKind','RF'::text,'EUR uses RF');
  PERFORM assert_eq(r->>'reference',(SELECT creditor_reference FROM eshop.payment_info WHERE id=pid),'existing reference fact');
+ PERFORM assert_eq(r#>>'{qrPayment,creditor_reference}',r->>'reference','QR uses canonical EUR reference');
+ PERFORM assert_true(length(r#>>'{qrPayment,creditor_name}')>0,'QR has canonical creditor name fallback');
  UPDATE eshop.payment_info SET currency_code='CZK' WHERE id=pid;
  PERFORM assert_eq(public.customer_order_payment_internal(child)->>'status','unknown'::text,'currency mismatch is unknown');
  UPDATE eshop.orders SET currency_code='CZK' WHERE id=child;
