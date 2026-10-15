@@ -88,6 +88,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   // Form fields state
   late String? _title;
   late String? _linkValue;
+  String? _savedLink;
   DateTime? _from;
   DateTime? _to;
   late TextEditingController _linkController;
@@ -157,6 +158,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
     _title = occasion!.title;
     _linkValue = occasion!.link;
+    _savedLink = occasion!.link;
     _linkController.text = _linkValue ?? "";
     _from = occasion!.startTime;
     _to = occasion!.endTime;
@@ -255,6 +257,11 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
           // 5. Persist the changes to the database.
           await DbOccasions.updateOccasion(occasion!);
+          if (mounted) setState(() {
+            _savedLink = occasion!.link;
+            _linkValue = occasion!.link;
+            _linkController.text = occasion!.link ?? "";
+          });
           _htmlSave.markSaved();
           _snapshot.accept(_draft);
 
@@ -277,6 +284,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
         },
       );
     } catch (error) {
+      occasion?.link = _savedLink;
       final tickets = occasion!.features.whereType<TicketFeature>().toList();
       final layoutConflict =
           error.toString().contains('ticket_layout_conflict') ||
@@ -562,6 +570,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                   const SizedBox(height: 16),
                   OccasionAdvancedSettings(
                     linkController: _linkController,
+                    savedLink: _savedLink,
                     replyToEmailController: _replyToEmailController,
                     selectedTimezone: _selectedTimezone,
                     allTimezones: _allTimezones,

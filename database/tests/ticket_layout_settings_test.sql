@@ -46,10 +46,10 @@ BEGIN
   PERFORM public.update_occasion_203(config);
   PERFORM assert_eq((SELECT features#>'{0,layout}' FROM public.occasions WHERE id=v_oc),layout,'legacy save retains layout');
   config:=config||jsonb_build_object('ticket_layout_change',jsonb_build_object('expected',layout,'next',changed));
-  response:=public.save_occasion_client_sync_v1(v_oc,command,0,config);
+  response:=public.save_occasion_client_sync_v1(v_oc,command,1,config);
   PERFORM assert_eq(response->>'status','applied','command save applies explicit change');
   PERFORM assert_eq((SELECT features#>'{0,layout}' FROM public.occasions WHERE id=v_oc),changed,'explicit change persists');
-  saved:=public.save_occasion_client_sync_v1(v_oc,command,0,config);
+  saved:=public.save_occasion_client_sync_v1(v_oc,command,1,config);
   PERFORM assert_eq(saved,response,'same command is replayed');
   BEGIN
     PERFORM public.update_occasion_203(config||'{"title":"Must not persist"}');

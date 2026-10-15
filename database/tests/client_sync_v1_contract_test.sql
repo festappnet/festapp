@@ -398,7 +398,7 @@ BEGIN
       LIKE '%client_sync_v1%false%',
     'ordinary occasion create forces the activation flag false');
   PERFORM assert_true(pg_get_functiondef(
-    'public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint)'::regprocedure)
+    'public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint,text)'::regprocedure)
       LIKE '%client_sync_v1%false%',
     'occasion duplication cannot copy an enabled activation flag');
   PERFORM assert_eq((SELECT count(*) FROM pg_trigger t

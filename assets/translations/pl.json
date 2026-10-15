@@ -155,7 +155,11 @@
     "occasionPaymentDefaultsHelp": "Ustawienia domyślne dla wszystkich formularzy tego wydarzenia. Poszczególne formularze mogą je zastąpić.",
     "formPaymentDefaultsHelp": "Formularz dziedziczy ustawienia płatności i przypomnień z funkcji Formularz tego wydarzenia. Własne wartości dotyczą tylko tego formularza.",
     "labelShowPaymentQr": "Pokaż kod QR płatności po zamówieniu",
-    "helperShowPaymentQr": "Po złożeniu zamówienia pokazuje kod QR płatności i dane bezpośrednio na ekranie potwierdzenia."
+    "helperShowPaymentQr": "Po złożeniu zamówienia pokazuje kod QR płatności i dane bezpośrednio na ekranie potwierdzenia.",
+    "savedPublicLink": "Aktualny zapisany link",
+    "publicLinkPreview": "Podgląd niezapisanego linku",
+    "automaticPublicLink": "Krótki link powstanie po zapisaniu. Możesz wpisać własną nazwę adresu.",
+    "publicLinkHistoryHelp": "Poprzednie adresy będą nadal działać."
   },
   "FeatureTicket": {
     "scanCameraInstruction": "Skieruj kamerę na kod uczestnika, aby zweryfikować wejście.",
@@ -888,5 +892,9 @@
     "itemsChanged": "Zmieniono pozycje",
     "detailsChanged": "Dane zamówienia zostały zaktualizowane.",
     "gridOverview": "Przegląd"
+  },
+  "OccasionSetup": {
+    "createEvent": "Utwórz wydarzenie",
+    "finalizeFailed": "Nie udało się potwierdzić utworzenia. Ponów to samo żądanie."
   }
 }

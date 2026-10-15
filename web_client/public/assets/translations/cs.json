@@ -286,7 +286,7 @@
     "labelFormLink": "Odkaz formuláře",
     "helperFormLink": "Používejte pouze písmena, číslice a pomlčky. Bude součástí URL adresy.",
     "validationLinkRequired": "Odkaz je povinný.",
-    "validationLinkInvalidChars": "Neplatné znaky. Používejte pouze písmena, číslice a pomlčky.",
+    "validationLinkInvalidChars": "Použijte malá písmena a-z, číslice a jednotlivé pomlčky mezi slovy, nejvýše 80 znaků.",
     "validationLinkInUse": "Odkaz se již používá.",
     "labelDeadlineDays": "Splatnost platby (ve dnech)",
     "helperDeadlineDays": "Nastavte, kolik dní má uživatel na zaplacení objednávky. Pro neomezenou dobu ponechte prázdné.",
@@ -385,7 +385,12 @@
     "remindersOff": "Vypnuto",
     "remindersOn": "Zapnuto",
     "occasionPaymentDefaultsHelp": "Výchozí nastavení pro všechny formuláře této události. Jednotlivé formuláře je mohou přepsat.",
-    "formPaymentDefaultsHelp": "Formulář přebírá nastavení platby a připomínek z funkce Formulář na této události. Vlastní hodnoty platí jen pro tento formulář."
+    "formPaymentDefaultsHelp": "Formulář přebírá nastavení platby a připomínek z funkce Formulář na této události. Vlastní hodnoty platí jen pro tento formulář.",
+    "savedPublicLink": "Současný uložený odkaz",
+    "publicLinkPreview": "Náhled neuloženého odkazu",
+    "automaticPublicLink": "Krátký odkaz se vytvoří po uložení. Adresní název můžete zadat ručně.",
+    "publicLinkHistoryHelp": "Původní adresy budou dále fungovat.",
+    "fontLoadFailed": "Písma se nepodařilo načíst. Zkuste to prosím znovu."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -438,7 +443,8 @@
     "paymentReference": "Reference platby",
     "shortTitleHelp": "Název pro tisk na vstupence, například u večeře. Pokud není vyplněný, použije se plný název produktu.",
     "maxHelp": "Maximální počet kusů produktu, které lze objednat. Prázdná hodnota nebo 0 znamená bez omezení.",
-    "validApplications": "Platné přihlášky"
+    "validApplications": "Platné přihlášky",
+    "returnedHelp": "Aby byla platba zaregistrována jako vrácená, odešlete ji zpět se stejným variabilním symbolem jako původní platbu."
   },
   "FormsFeature": {
     "showDepositDescription": "Zobrazit popisek zálohy / doplatku u produktů",
@@ -684,7 +690,22 @@
     "waveEmptyPrice": "Prázdná cena = beze změny",
     "noWaves": "Zatím nejsou žádné cenové vlny.",
     "waveNow": "Aktuálně",
-    "waveHiddenState": "Skryto"
+    "waveHiddenState": "Skryto",
+    "bankSyncWarningContactShort": "Kontaktujte:",
+    "bankSyncPaymentPaused": "Synchronizace bankovního účtu pro tuto platbu je vypnutá.",
+    "bankSyncWarningTitle": "Automatické párování plateb nefunguje",
+    "bankSyncWarningHelp": "Platba již mohla dorazit na účet, ale zatím není přiřazena k objednávce. Před připomenutím platby ověřte výpis z účtu.",
+    "bankSyncWarningContact": "Požádejte správce bankovního účtu o kontrolu synchronizace:",
+    "bankSyncWarningFallback": "Požádejte organizátora, aby kontaktoval správce bankovního účtu.",
+    "bankSyncWarningReasons": {
+      "not_configured": "Automatická synchronizace není nastavena.",
+      "suspended": "Automatická synchronizace je vypnutá.",
+      "bank_error": "Při synchronizaci s bankou došlo k chybě.",
+      "stale": "Bankovní platby nebyly delší dobu aktualizovány.",
+      "token_missing": "Chybí přístupový token k bance.",
+      "email_missing": "Příjem bankovních e-mailů není nastaven."
+    },
+    "noOrders": "Zatím nejsou žádné objednávky."
   },
   "UserColumns": {
     "id": "Id",
@@ -1759,7 +1780,13 @@
     "connect_email": "Připojit bankovní email",
     "missingAccountForCurrencies": "Bankovní účet pro {} není nastaven.",
     "addAccountForPayments": "Pro přijímání plateb přidejte v nastavení organizace účet, který podporuje uvedené měny.",
-    "askManagerForPaymentAccount": "Pro přijímání plateb požádejte správce organizace o přidání účtu pro uvedené měny."
+    "askManagerForPaymentAccount": "Pro přijímání plateb požádejte správce organizace o přidání účtu pro uvedené měny.",
+    "synchronizationPending": "Synchronizace je zapnutá. Načtení čeká na limit banky.",
+    "automaticSynchronization": "Automatická synchronizace",
+    "synchronizationEnabled": "Zapnuto",
+    "synchronizationPaused": "Vypnuto",
+    "synchronizationChanging": "Měním nastavení synchronizace",
+    "emailBankUnsupported": "Propojení bankovních e-mailů je zatím dostupné pouze pro Fio banku a Air Bank. Tento účet můžete používat pro ruční evidenci plateb."
   },
   "FeatureContract": {
     "title": "Smlouva",
@@ -2467,7 +2494,8 @@
     "elementLimit": "Vstupenka může mít nejvýše 32 prvků",
     "draftProducts": "Produktová pole upravíte po vytvoření akce.",
     "replacementProducts": "Použití předlohy nahradí rozložení a odstraní produktová pole: {count}",
-    "productType": "Produktová skupina"
+    "productType": "Produktová skupina",
+    "hiddenProduct": "Skupina již není v nabídce"
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transakce s jinou měnou než objednávka nejsou v grafu zahrnuty",
@@ -2542,7 +2570,9 @@
     "reloadConfirm": "Načíst uloženou verzi? Vaše neuložené změny se zahodí.",
     "leave": "Uložit a vrátit se do seznamu",
     "incomplete": "Koncept zůstává soukromý. Nastavení funkcí, formuláře a plánku přidáme v dalších krocích.",
-    "deleteConfirm": "Opravdu smazat tento rozpracovaný koncept?"
+    "deleteConfirm": "Opravdu smazat tento rozpracovaný koncept?",
+    "createEvent": "Vytvořit událost",
+    "finalizeFailed": "Vytvoření se nepodařilo potvrdit. Zkuste znovu stejný požadavek."
   },
   "Waitlist": {
     "settings": "Kapacita a náhradníci",
@@ -2716,11 +2746,14 @@
     "badge": "Ukázka",
     "view": "Prohlédnout ukázku",
     "readOnly": "Ukázková akce - pouze k prohlížení",
-    "copy": "Vytvořit vlastní kopii",
+    "copy": "Vytvořit kopii této akce",
     "copyHint": "Kopie bude skrytá, bez účastníků a plateb. Před otevřením zkontrolujte termíny, ceny a vlastní účet.",
     "unavailable": "Ukázkové akce se nepodařilo načíst.",
     "noTarget": "Pro kopii potřebujete vlastní organizaci, kterou můžete spravovat.",
-    "back": "Zpět k vlastním akcím"
+    "back": "Zpět k vlastním akcím",
+    "ball": "Ples",
+    "concert": "Koncert",
+    "weekend": "Víkendovka"
   },
   "OrderOverview": {
     "title": "Přehled objednávky",

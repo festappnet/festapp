@@ -160,6 +160,7 @@ BEGIN
     v_report_user := get_user_id('report_integration');
     UPDATE public.user_info SET organization=v_org_id WHERE id=v_report_user;
     INSERT INTO public.occasion_users (occasion,"user",is_editor_order_view) VALUES (v_occasion_id,v_report_user,true);
+  PERFORM pg_temp.adopt_public_link_fixtures();
     PERFORM set_config('request.jwt.claim.sub',v_report_user::text,true);
     PERFORM set_config('test.report_link',(SELECT link FROM public.occasions WHERE id=v_occasion_id),true);
     SET LOCAL ROLE authenticated;

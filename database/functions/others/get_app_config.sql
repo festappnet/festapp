@@ -60,8 +60,11 @@ BEGIN
           INTO occasionId, occasion_link
         FROM public.forms f
         JOIN public.occasions o ON f.occasion = o.id
-        WHERE f.link = form_link
+        WHERE f.id = public.resolve_form_link_internal(form_link)
           AND o.organization = org_id;
+        IF occasionId IS NULL THEN
+            RETURN json_build_object('code',404,'message','Form not found');
+        END IF;
     END IF;
 
     -- 2. If no occasion found yet, try via link_txt
@@ -69,7 +72,7 @@ BEGIN
         SELECT id, link
           INTO occasionId, occasion_link
         FROM occasions
-        WHERE link = link_txt
+        WHERE id = public.resolve_occasion_link_internal(link_txt,org_id)
           AND organization = org_id;
 
         -- If link_txt is provided but *not* found, this is a hard 404.

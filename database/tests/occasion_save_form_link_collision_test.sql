@@ -92,6 +92,8 @@ BEGIN
   INSERT INTO public.forms(title,link,occasion)
   VALUES('Existing form',v_config->>'link',v_other_occasion);
 
+  INSERT INTO public.occasion_link_reservations SELECT link,id FROM public.occasions WHERE id IN(v_occasion,v_other_occasion);
+  INSERT INTO public.form_link_reservations SELECT link,id FROM public.forms WHERE occasion=v_other_occasion;
   PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
   PERFORM set_config('request.jwt.claim.sub', v_unit_editor::text, true);
 
@@ -109,10 +111,8 @@ BEGIN
     'occasion save persists enabled features and deposit configuration'
   );
 
-  PERFORM assert_eq(
-    (SELECT link FROM public.forms WHERE occasion = v_occasion),
-    (v_config->>'link') || '-' || v_occasion::text,
-    'automatic form uses a distinct stable slug');
+  PERFORM assert_true((SELECT link ~ '^[23456789abcdefghjkmnpqrstuvwxyz]{8}$' FROM public.forms WHERE occasion=v_occasion),
+    'automatic form has an independent short random slug');
   PERFORM assert_eq(
     (SELECT link FROM public.forms WHERE occasion = v_other_occasion),
     v_config->>'link',
@@ -128,8 +128,7 @@ BEGIN
     PERFORM public.update_occasion_203(v_config || jsonb_build_object(
       'id', v_explicit_occasion, 'form_link', v_config->>'link'));
     PERFORM assert_fail('explicit conflicting form link must be rejected');
-  EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM NOT LIKE '%Form link is already in use%' THEN RAISE; END IF;
+  EXCEPTION WHEN unique_violation THEN NULL;
   END;
   PERFORM assert_eq((SELECT count(*)::int FROM public.forms WHERE occasion = v_explicit_occasion), 0,
     'explicit collision leaves no partial form');

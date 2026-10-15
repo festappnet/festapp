@@ -1,5 +1,5 @@
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/services/utilities_all.dart';
+import 'package:fstapp/components/forms/views/form_public_link.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -37,7 +37,7 @@ class OccasionSetupDraft {
 
   bool get basicsReady =>
       title.trim().isNotEmpty &&
-      Utilities.isValidUrl(data['link'] as String? ?? '') &&
+      isValidPublicSlug(data['link'] as String? ?? '', allowEmpty: true) &&
       DateTime.tryParse(
               (data['start'] ?? data['start_time']) as String? ?? '') !=
           null &&
@@ -82,6 +82,16 @@ class OccasionSetupDrafts {
         'p_data': data,
         'p_step': step
       })));
+
+  Future<String> finalize(OccasionSetupDraft draft, String commandId) async {
+    final response = Map<String, dynamic>.from(await client.rpc(
+        'finalize_occasion_setup_draft', params: {
+      'p_id': draft.id,
+      'p_expected_revision': draft.revision,
+      'p_command_id': commandId,
+    }));
+    return (response['data'] as Map)['link'] as String;
+  }
 
   Future<void> delete(OccasionSetupDraft draft) async {
     await client.rpc('delete_occasion_setup_draft', params: {

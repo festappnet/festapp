@@ -12,6 +12,7 @@ BEGIN
  INSERT INTO eshop.order_product_ticket("order") VALUES(ord) RETURNING id INTO opt;
  INSERT INTO eshop.spots(occasion,title,order_product_ticket) VALUES(occ,'Seat',opt) RETURNING id INTO spot_id;
  INSERT INTO eshop.blueprints(organization,occasion,title,objects) VALUES(org,occ,'Blueprint',jsonb_build_array(jsonb_build_object('id',spot_id,'type','spot'))) RETURNING id INTO blueprint_id;
+  PERFORM pg_temp.adopt_public_link_fixtures();
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  result:=public.get_blueprint_for_edit(link);
  PERFORM assert_eq((result->>'code')::integer,200,'Blueprint loads');

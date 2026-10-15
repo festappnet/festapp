@@ -16,9 +16,10 @@ import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/services/time_helper.dart';
-import 'package:fstapp/services/utilities_all.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:fstapp/components/forms/views/form_public_link.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/widgets/mouse_detector.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 
@@ -27,6 +28,7 @@ class OccasionCreationHelper {
       BuildContext context, OccasionModel source,
       {int? sourceUnitId,
       List<OccasionModel> existingOccasions = const []}) async {
+    final copyLocale = context.locale.languageCode;
     final destinations = await ExceptionHandler.guard(context,
         futureFunction: () => DbUnits.getOccasionCopyUnits(source.id!));
     if (!context.mounted || destinations == null || destinations.isEmpty)
@@ -36,7 +38,7 @@ class OccasionCreationHelper {
     if (target == null || !context.mounted) return null;
     if (AppConfig.occasionSetupEnabled) {
       await createNewOccasion(context, target, existingOccasions,
-          source: source);
+          source: source, copyLocale: copyLocale);
       return target;
     }
     bool mediaCopied = false;
@@ -46,7 +48,7 @@ class OccasionCreationHelper {
         futures: [
           () async {
             mediaCopied = await DbOccasions.duplicateOccasion(source.id!,
-                targetUnitId: target.id);
+                targetUnitId: target.id, locale: copyLocale);
           }
         ]);
     if (!context.mounted) return null;
@@ -64,7 +66,8 @@ class OccasionCreationHelper {
 
   static Future<OccasionModel?> createNewOccasion(BuildContext context,
       UnitModel unit, List<OccasionModel> existingOccasions,
-      {OccasionModel? source}) async {
+      {OccasionModel? source, String? copyLocale}) async {
+    final intentLocale = copyLocale ?? context.locale.languageCode;
     if (AppConfig.occasionSetupEnabled) {
       final store = OccasionSetupDrafts(Supabase.instance.client);
       final draft =
@@ -79,7 +82,9 @@ class OccasionCreationHelper {
                   ...created.data,
                   'sourceId': source.id,
                   'sourceUnitId': source.unit,
-                  'sourceSelectionPending': true
+                  'sourceSelectionPending': true,
+                  'copy_locale': intentLocale,
+                  'copy_title_edited': false
                 },
                 0);
       });
@@ -90,14 +95,13 @@ class OccasionCreationHelper {
     }
     final formKey = GlobalKey<FormState>();
     String? title = AdministrationStrings.myFestival;
-    String? link = "myfestival${DateTime.now().add(Duration(days: 33)).year}";
+    String? link = '';
     DateTime? startDate = DateTime.now()
         .add(Duration(days: 30))
         .copyWith(minute: 0, second: 0, millisecond: 0, microsecond: 0);
     DateTime? endDate = startDate
         .add(Duration(days: 3))
         .copyWith(minute: 0, second: 0, millisecond: 0, microsecond: 0);
-    bool isLinkManuallyChanged = false;
     String? linkError;
     bool isFormValid = true;
 
@@ -106,11 +110,10 @@ class OccasionCreationHelper {
     final TextEditingController linkController =
         TextEditingController(text: link);
 
-    ValueNotifier<String> htmlNotifier =
-        ValueNotifier<String>(_generateHtml(link));
+    ValueNotifier<String> linkNotifier = ValueNotifier<String>(link);
 
     void validateForm() {
-      linkError = _validateLink(link ?? "", existingOccasions);
+      linkError = _validateLink(link ?? "");
       isFormValid = title != null &&
           title!.trim().isNotEmpty &&
           linkError == null &&
@@ -118,21 +121,6 @@ class OccasionCreationHelper {
           endDate != null &&
           !endDate!.isBefore(startDate!);
     }
-
-    void updateLinkAndHtml() {
-      var processedTitle = Utilities.removeDiacritics(titleController.text);
-      link = "${processedTitle.split(' ').first.toLowerCase()}${endDate!.year}";
-      linkController.text = link!;
-      htmlNotifier.value = _generateHtml(link);
-      validateForm();
-    }
-
-    titleController.addListener(() {
-      if (!isLinkManuallyChanged && titleController.text.isNotEmpty) {
-        title = titleController.text;
-        updateLinkAndHtml();
-      }
-    });
 
     return await showDialog<OccasionModel?>(
       context: context,
@@ -151,9 +139,8 @@ class OccasionCreationHelper {
                 void handleLinkChange(String value) {
                   setState(() {
                     link = value;
-                    isLinkManuallyChanged = true;
                     validateForm();
-                    htmlNotifier.value = _generateHtml(link);
+                    linkNotifier.value = link ?? '';
                   });
                 }
 
@@ -234,13 +221,9 @@ class OccasionCreationHelper {
                         ),
                         const SizedBox(height: 16),
                         ValueListenableBuilder<String>(
-                          valueListenable: htmlNotifier,
-                          builder: (context, htmlContent, child) {
-                            return HtmlView(
-                              isSelectable: true,
-                              fontSize: 12,
-                              html: htmlContent,
-                            );
+                          valueListenable: linkNotifier,
+                          builder: (context, draftLink, child) {
+                            return PublicLink(link: draftLink, isForm: false);
                           },
                         ),
                       ],
@@ -294,27 +277,9 @@ class OccasionCreationHelper {
     );
   }
 
-  static String _generateHtml(String? link) {
-    return '''
-      <p>${AdministrationStrings.eventAvailableAt}<br>
-      <a href="${AppConfig.webLink}/$link">${AppConfig.webLink}/#/$link</a></p>
-    ''';
-  }
-
-  static String? _validateLink(
-      String link, List<OccasionModel> existingOccasions) {
-    if (link.isEmpty) {
-      return AdministrationStrings.linkIsRequiredError;
-    }
-    final isValidFormat = Utilities.isValidUrl(link);
-    if (!isValidFormat) {
-      return AdministrationStrings.invalidCharactersError;
-    }
-    final isUnique =
-        !existingOccasions.any((occasion) => occasion.link == link);
-    if (!isUnique) {
-      return AdministrationStrings.linkInUseError;
-    }
-    return null;
+  static String? _validateLink(String link) {
+    return isValidPublicSlug(link, allowEmpty: true)
+        ? null
+        : FormStrings.validationLinkInvalidChars;
   }
 }

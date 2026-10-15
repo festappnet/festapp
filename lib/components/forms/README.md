@@ -136,3 +136,21 @@ from `order_overview.sql` and `order_overview_admin.sql`.
 Use `python3 automation/assemble-order-overview-migration.py --check` for source
 parity; do not regenerate the published capacity migration for this follow-up.
 See [implementation and targeted evidence](../../../docs/plans/order-overview-waitlist-follow-up-implementation-2026-10-15.md).
+
+## Public URL ownership
+
+SQL `public_links/registry.sql` owns current and historical public slugs. New
+items with a blank slug receive an independent cryptographic 8-character code.
+Explicit changes use lowercase ASCII letters/digits and single hyphens, up to
+80 characters; unchanged legacy links are retained exactly. Domain commands
+reserve URLs atomically with writes and receipts. Reservations survive deletion
+as tombstones. Aliases resolve to stable IDs under the existing permissions.
+
+Settings keep a separate server-confirmed link baseline: Copy uses the saved
+public URL, while an unsaved proposal is plain text. Loaded aliases replace the
+URL without adding history or discarding query/capability fragments. Unknown
+aliases require an online resolve. Occasion copy locale is captured once and
+persisted in the command/draft; SQL alone owns the localized copy title.
+
+Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
+New writes cannot claim those slugs; canonical links and titles are never bulk renamed.

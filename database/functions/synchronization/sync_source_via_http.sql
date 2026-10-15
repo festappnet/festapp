@@ -17,6 +17,8 @@ DECLARE
     v_features JSONB;
     v_local_data JSONB;
     v_remaining_places INTEGER;
+    v_local_id bigint;
+    v_old_org bigint;
     v_count INTEGER := 0;
     v_synced_ids BIGINT[];
 BEGIN
@@ -129,6 +131,10 @@ BEGIN
                     v_local_data := jsonb_set(v_local_data, '{remaining_places}', to_jsonb(v_remaining_places));
                 END IF;
 
+                SELECT id, organization INTO v_local_id,v_old_org FROM public.occasions
+                  WHERE external_source=r_source.source_name AND external_id=r_occ.id FOR UPDATE;
+                IF v_local_id IS NOT NULL AND v_old_org IS DISTINCT FROM r_map.target_org_id THEN
+                  RAISE EXCEPTION 'External occasion tenant cannot change'; END IF;
                 -- OCCASION UPSERT
                 INSERT INTO public.occasions (
                     link, title, description, data, start_time, end_time,
@@ -138,7 +144,7 @@ BEGIN
                     external_source, external_id
                 )
                 VALUES (
-                    r_occ.link, r_occ.title, r_occ.description, v_local_data,
+                    '', r_occ.title, r_occ.description, v_local_data,
                     r_occ.start_time, r_occ.end_time,
                     r_occ.is_open, r_occ.is_hidden, r_occ.is_promoted,
                     r_map.target_org_id, r_map.target_unit_id, v_features,
@@ -146,7 +152,6 @@ BEGIN
                     r_source.source_name, r_occ.id
                 )
                 ON CONFLICT (external_source, external_id) DO UPDATE SET
-                    link = EXCLUDED.link,
                     title = EXCLUDED.title,
                     description = EXCLUDED.description,
                     data = EXCLUDED.data,
@@ -157,7 +162,10 @@ BEGIN
                     features = EXCLUDED.features,
                     organization = EXCLUDED.organization,
                     unit = EXCLUDED.unit,
-                    updated_at = NOW();
+                    updated_at = NOW()
+                RETURNING id INTO v_local_id;
+                UPDATE public.occasions SET link=public.reserve_public_link_internal(
+                  'occasion',v_local_id,r_occ.link,link IS NULL OR link='') WHERE id=v_local_id;
                 v_count := v_count + 1;
             END LOOP;
         END LOOP;

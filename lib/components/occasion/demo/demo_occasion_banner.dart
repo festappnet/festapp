@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/unit/unit_creation_helper.dart';
 import 'package:flutter/material.dart';
@@ -36,17 +37,20 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
   bool _busy = false;
   int? _source;
   String? _command;
+  String? _copyLocale;
   UnitModel? _target;
   Future<void> _copy() async {
     if (_busy) return;
     final source = RightsService.currentOccasionId();
     if (source == null || !RightsService.isDemoReadOnly) return;
+    final intentLocale = context.locale.languageCode;
     setState(() => _busy = true);
     try {
       if (_source != source) {
         _source = source;
         _target = null;
         _command = null;
+        _copyLocale = null;
       }
       if (_target == null) {
         var targets = await DbUnits.getOccasionCopyUnits(source);
@@ -68,9 +72,10 @@ class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
             hint: DemoOccasionStrings.copyHint);
         if (_target == null || !mounted) return;
         _command = const Uuid().v4();
+        _copyLocale = intentLocale;
       }
       final result = await DbOccasions.duplicateDemoOccasion(source,
-          targetUnitId: _target!.id!, commandId: _command!);
+          targetUnitId: _target!.id!, commandId: _command!, locale: _copyLocale!);
       if (!mounted) return;
       if (!result.mediaCopied)
         ToastHelper.Show(context, UnitStrings.createCopyMediaFailed);

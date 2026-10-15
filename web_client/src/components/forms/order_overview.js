@@ -1,3 +1,4 @@
+import { formLinkFromPath, replaceResolvedPublicLink } from '../../services/public_link.js';
 import { LocalizationService } from '../../services/localization_service.js';
 export const overviewText = key => LocalizationService.tr(`OrderOverview.${key}`);
 export function parseOrderFragment(fragment) {
@@ -120,8 +121,10 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
     try {
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
+        replaceResolvedPublicLink('form', formLinkFromPath(window.location.pathname), data.root?.formLink);
         renderOrderOverview(host, data, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage),
             onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage);
+        return data;
     } catch {
         if (host._overviewGeneration !== generation) return;
         host.replaceChildren(); line(host, 'p', overviewText('failed')).setAttribute('role', 'alert');

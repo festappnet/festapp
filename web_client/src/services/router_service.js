@@ -1,3 +1,4 @@
+import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';
 import { AppConfig } from '../app_config.js';
 import { prepareFlutterRuntime } from './flutter_runtime_handoff.js';
 import { unsupportedOccasionAppRedirect } from './public_occasion_routes.js';
@@ -14,11 +15,10 @@ export class RouterService {
              window.location.hash.startsWith('#waitlist?') || window.location.hash.startsWith('#order?'));
     }
 
-    static getFormLink(path) {
-        if (!path.startsWith(RouterService.FORM_PATH_PREFIX)) return null;
-        const segment = path.substring(RouterService.FORM_PATH_PREFIX.length).split('/')[0];
-        try { return segment ? decodeURIComponent(segment) : null; }
-        catch { return null; }
+    static getFormLink(path) { return formLinkFromPath(path); }
+
+    static canonicalizePublicLink(kind, requested, canonical) {
+        replaceResolvedPublicLink(kind, requested, canonical);
     }
 
     static openExternalUrl(url, { inCurrentWindow = false } = {}) {
