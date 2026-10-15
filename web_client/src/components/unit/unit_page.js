@@ -55,6 +55,8 @@ export class UnitPage extends Component {
 
     async loadOccasions(orgId, unitId = null) {
         this.unitId = unitId;
+        const organizerNavigation = document.querySelector('.catalog-navigation');
+        if (organizerNavigation) organizerNavigation.hidden = unitId !== null;
         this.orgId = orgId;
         const requestId = ++this.requestId;
         this.host.querySelector('[data-catalog-status]')?.remove();

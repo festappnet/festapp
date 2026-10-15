@@ -34,6 +34,7 @@ test('server HTML and sitemap agree with native card destinations, escape conten
   const home = await worker.fetch(request('/'), env);
   const html = await home.text();
   assert.equal(home.status, 200);
+  assert.ok(html.includes('href="/pro-poradatele"'), 'main catalogue retains organizer navigation');
   for (const occasion of occasions) {
     const href = getOccasionHref(occasion).replaceAll('&', '&amp;');
     assert.ok(html.includes(`<a href="${href}">`), href);
@@ -239,6 +240,7 @@ test('unit catalogue exposes escaped organizer identity in HTML even without Jav
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.ok(html.includes('<section id="unit-introduction" class="unit-introduction"><h1>Pořadatel &lt;script&gt;bad&lt;/script&gt;</h1>'));
+  assert.ok(!html.includes('href="/pro-poradatele"'), 'individual organizer catalogues omit organizer navigation');
   assert.ok(html.includes('<title>Pořadatel &lt;script&gt;bad&lt;/script&gt; | vstupenky.online</title>'));
   assert.ok(!html.includes('<script>bad</script>'));
 });
