@@ -2758,6 +2758,9 @@
   "OrderOverview": {
     "title": "Přehled objednávky",
     "updated": "Aktualizováno",
+    "downloadTicket": "Stáhnout PDF",
+    "downloadingTicket": "Připravuji PDF…",
+    "downloadFailed": "Vstupenku se nepodařilo stáhnout. Zkuste to znovu.",
     "usedTickets": "Použité vstupenky",
     "cashPayment": "Hotovost",
     "bankPayment": "Bankovní převod",

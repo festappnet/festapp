@@ -368,3 +368,21 @@ Deno.test("customer-order-access rejects unsafe methods and malformed scope with
   })}));
   assertEquals(admin.status, 403);
 });
+
+Deno.test("customer ticket download rejects foreign tickets before details or PDF work", async () => {
+ const handler=await loadHandler("download-ticket");
+ const {supabaseAdmin}=await import('./supabaseUtil.ts');
+ const previousRpc=supabaseAdmin.rpc,reads:string[]=[];
+ try {
+  supabaseAdmin.rpc=((name:string)=>{
+   reads.push(name);
+   if(name!=='get_customer_order_overview')throw new Error('Unexpected privileged read');
+   return Promise.resolve({data:{code:200,root:{hasTickets:true},orders:[{state:'sent',tickets:[{id:8,rawState:'sent'}]}]},error:null});
+  }) as unknown as typeof supabaseAdmin.rpc;
+  const response=await handler(new Request('https://edge-test.invalid',{method:'POST',body:JSON.stringify({ticketId:7,orderId:1,token:'a'.repeat(64)})}));
+  assertEquals(response.status,403);assertEquals(response.headers.get('Cache-Control'),'no-store');
+  assertEquals(reads,['get_customer_order_overview']);
+  const missing=await handler(new Request('https://edge-test.invalid',{method:'POST',body:JSON.stringify({ticketId:7})}));
+  assertEquals(missing.status,401);assertEquals(reads.length,1);
+ } finally {supabaseAdmin.rpc=previousRpc;}
+});

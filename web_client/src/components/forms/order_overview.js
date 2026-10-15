@@ -56,7 +56,7 @@ function renderOrderState(host, order, includeReference = true, hasTickets = fal
         line(text, 'p', `${overviewText(overdue ? 'overdue' : 'withinDeadline')} · ${overviewText('dueAt')}: ${date(payment.dueAt)}`).className = 'overview-state-deadline';
     }
 }
-export function renderOrderOverview(host, data, onContinue, offerInPage = false) {
+export function renderOrderOverview(host, data, onContinue, offerInPage = false, onDownload = null) {
     host.replaceChildren(); host.classList.add('order-overview');
     line(host, 'h1', `${overviewText('title')} ${data.root.symbol}`);
     line(host, 'p', data.root.title || '').className = 'overview-event-title';
@@ -91,6 +91,19 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
             const status = ticket?.displayStatus === 'cancelled' || (data.root.hasTickets && ['used', 'unused'].includes(ticket?.displayStatus)) ? ticket.displayStatus : null;
             if (status) line(header, 'span', overviewText(status)).className = 'overview-admission-status';
             else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(header, 'span', overviewText(person.effectiveLifecycle)).className = 'overview-admission-status';
+            if (onDownload && data.root.hasTickets && ['paid', 'sent', 'used'].includes(order?.state) && ['used', 'unused'].includes(ticket?.displayStatus)) {
+                const download = line(header, 'button', overviewText('downloadTicket'));
+                download.type = 'button'; download.className = 'overview-ticket-download';
+                download.onclick = async () => {
+                    download.disabled = true; download.textContent = overviewText('downloadingTicket');
+                    content.querySelector('.overview-download-error')?.remove();
+                    try { await onDownload(ticket.id, person.symbol || ticket.id); }
+                    catch {
+                        const error = line(content, 'p', overviewText('downloadFailed'));
+                        error.className = 'overview-download-error'; error.setAttribute('role', 'alert');
+                    } finally { download.disabled = false; download.textContent = overviewText('downloadTicket'); }
+                };
+            }
             if (person.label) line(content, 'p', person.label);
             renderOverviewAnswers(content, person.answers, `ticket:${person.id}`);
             const items = (order?.items || []).filter(item => String(item.ticketId) === String(person.id));
@@ -202,7 +215,16 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         if (snapshot !== host._overviewSnapshot && (!background || !host.contains(host.ownerDocument.activeElement))) {
             const opened = new Map([...host.querySelectorAll('details[data-overview-key]')].map(detail => [detail.dataset.overviewKey, detail.open]));
             renderOrderOverview(host, data,
-                onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage);
+                onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage,
+                async (ticketId, symbol) => {
+                    const encoded = await commands.downloadTicket(scope, ticketId);
+                    const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+                    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+                    const link = document.createElement('a'); link.href = url;
+                    link.download = `ticket_${String(symbol).replace(/[^a-zA-Z0-9_-]/g, '')}.pdf`;
+                    document.body.appendChild(link); link.click(); link.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                });
             host.querySelectorAll('details[data-overview-key]').forEach(detail => { if (opened.has(detail.dataset.overviewKey)) detail.open = opened.get(detail.dataset.overviewKey); });
             host._overviewSnapshot = snapshot;
         }
