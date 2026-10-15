@@ -709,6 +709,9 @@ create table if not exists eshop.spots (
   CONSTRAINT spots_resource_slot_fkey FOREIGN KEY (resource_slot) REFERENCES public.resource_slots (id) ON DELETE SET NULL
 ) TABLESPACE pg_default;
 
+CREATE INDEX IF NOT EXISTS spots_order_product_ticket_idx
+  ON eshop.spots (order_product_ticket);
+
 -----------------------------------------------
 -- 9. Public Tables that reference both public and eshop tables
 -----------------------------------------------
