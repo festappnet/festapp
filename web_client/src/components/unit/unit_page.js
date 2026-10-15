@@ -1,7 +1,7 @@
 import { Component } from '../base/component.js';
 import { DbOccasions } from '../occasion/db_occasions.js';
 import { OccasionCard } from '../occasion/occasion_card.js';
-import { classifyOccasions } from '../occasion/catalog.js';
+import { classifyOccasions, groupPastOccasionsByYear } from '../occasion/catalog.js';
 import { UnitStrings } from './unit_strings.js';
 import './unit_page.css';
 
@@ -111,21 +111,35 @@ export class UnitPage extends Component {
         if (present.length) this.renderSection(UnitStrings.happeningNow, present, true);
         if (upcoming.length) this.renderSection(UnitStrings.upcomingEvents, upcoming);
         if (undated.length) this.renderSection(UnitStrings.otherEvents, undated);
-        if (past.length) this.renderSection(UnitStrings.pastEvents, past, false, true, isSearch);
+        if (past.length) this.renderSection(UnitStrings.pastEvents, past, false, true);
     }
 
-    renderSection(title, list, isPresent = false, isPast = false, open = false) {
-        const section = document.createElement(isPast ? 'details' : 'section');
+    renderSection(title, list, isPresent = false, isPast = false) {
+        const section = document.createElement('section');
         section.className = isPast ? 'catalog-archive' : 'catalog-section';
-        const titleEl = document.createElement(isPast ? 'summary' : 'h2');
+        const titleEl = document.createElement('h2');
         titleEl.className = 'section-title';
         titleEl.textContent = isPast ? `${title} (${list.length})` : title;
-        if (isPast) section.open = open;
         section.appendChild(titleEl);
+        const years = isPast ? groupPastOccasionsByYear(list) : [];
+        if (years.length) {
+            years.forEach(({ year, occasions }) => {
+                const heading = document.createElement('h3');
+                heading.className = 'catalog-year-title';
+                heading.textContent = String(year);
+                section.appendChild(heading);
+                section.appendChild(this.createGrid(occasions, isPresent, isPast));
+            });
+        } else {
+            section.appendChild(this.createGrid(list, isPresent, isPast));
+        }
+        this.host.appendChild(section);
+    }
+
+    createGrid(list, isPresent, isPast) {
         const grid = document.createElement('div');
         grid.className = 'catalog-grid';
         list.forEach(oc => grid.appendChild(OccasionCard.create(oc, isPresent, isPast)));
-        section.appendChild(grid);
-        this.host.appendChild(section);
+        return grid;
     }
 }

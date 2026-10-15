@@ -21,3 +21,19 @@ export function extractPublicOccasions(data) {
     if (!Array.isArray(occasions)) throw new Error('Invalid public catalogue response');
     return occasions;
 }
+
+// Keep small archives flat. UTC makes the year identical in browser and edge SSR.
+export function groupPastOccasionsByYear(past) {
+    if (past.length < 9) return [];
+    const byYear = new Map();
+    for (const occasion of past) {
+        const start = occasion.start_time;
+        const year = start == null || start === '' ? NaN : new Date(start).getUTCFullYear();
+        // Unknown years stay visible in the original flat list, never silently omitted.
+        if (!Number.isFinite(year)) return [];
+        if (!byYear.has(year)) byYear.set(year, []);
+        byYear.get(year).push(occasion);
+    }
+    if (byYear.size < 2) return [];
+    return [...byYear].sort(([a], [b]) => b - a).map(([year, occasions]) => ({ year, occasions }));
+}

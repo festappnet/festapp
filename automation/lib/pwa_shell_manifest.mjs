@@ -88,7 +88,7 @@ export async function collectPwaShellManifest(buildDir) {
 
   const knownResources = [...byUrl.keys()];
   const standaloneDocuments = knownResources.filter((url) =>
-    url !== '/' && url.endsWith('/'));
+    url !== '/' && (url.endsWith('/') || url === '/organizers-page'));
   const standaloneDocumentSet = new Set(standaloneDocuments);
   const installCriticalNames = new Set([
     '/flutter.js', '/flutter_bootstrap.js', '/main.dart.js',

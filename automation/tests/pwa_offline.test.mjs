@@ -18,6 +18,7 @@ try {
   await mkdir(path.join(tempRoot, 'privacy'), { recursive: true });
   await writeFile(path.join(tempRoot, 'flutter'), '<html>flutter</html>');
   await writeFile(path.join(tempRoot, 'webclient'), '<html>web</html>');
+  await writeFile(path.join(tempRoot, 'organizers-page'), '<html>organizers</html>');
   await writeFile(path.join(tempRoot, 'main.dart.js'), 'main');
   await writeFile(path.join(tempRoot, 'main.dart.js_7.part.js'), 'deferred');
   await writeFile(path.join(tempRoot, 'main.dart.1.2.3-4.js'), 'duplicate');
@@ -79,6 +80,7 @@ try {
     'client sync runtime config must not be part of the app-shell precache');
   assert.ok(coreUrls.includes('/main.dart.js'));
   assert.ok(coreUrls.includes('/flutter?pwa-cache=1'));
+  assert.ok(coreUrls.includes('/organizers-page'));
   assert.ok(coreUrls.includes('/privacy/'),
     'standalone documents must be available before their first navigation');
   assert.ok(coreUrls.includes('/main.dart.js_7.part.js'),
@@ -153,6 +155,7 @@ try {
       if (url === fontUrl) return cachedFont.clone();
       if (url.includes('/flutter?pwa-cache=1')) return cachedShell.clone();
       if (url.includes('/webclient?pwa-cache=1')) return cachedWebClient.clone();
+      if (url === '/organizers-page') return new Response('<html>organizers</html>');
       if (url === '/privacy/') return cachedPrivacy.clone();
       if (url.includes('/assets/translation.json')) return new Response('{}');
       return undefined;
@@ -273,6 +276,13 @@ try {
     'fresh-tab',
   );
   assert.equal(await freshShellResponse.text(), '<html>offline shell</html>');
+  for (const pathname of ['/pro-poradatele', '/pro-poradatele/']) {
+    const request = new Request('https://app.test' + pathname);
+    Object.defineProperty(request, 'mode', { value: 'navigate' });
+    const response = await dispatchFetch(request, '', 'organizer-tab');
+    assert.equal(await response.text(), '<html>organizers</html>',
+      'organizer navigation must retain its document under an active offline worker');
+  }
   const freshAssetResponse = await dispatchFetch(
     new Request('https://app.test/assets/translation.json'),
     'fresh-tab',

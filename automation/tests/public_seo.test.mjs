@@ -142,7 +142,7 @@ test('organizer route serves its own HTML, uses apex in sitemap and deduplicates
   assert.ok(!xml.includes('preview.pages.dev'));
 });
 
-test('server catalogue preserves undated records and orders present, upcoming and collapsed archive', async t => {
+test('server catalogue preserves undated records and orders present, upcoming and visible archive', async t => {
   t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [
     { title: 'Archive (Copy)', link: 'archive', start_time: '2020-01-01', end_time: '2020-01-02' },
     { title: 'Next', link: 'next', start_time: '2099-01-01', end_time: '2099-01-02' },
@@ -152,7 +152,7 @@ test('server catalogue preserves undated records and orders present, upcoming an
   const html = await (await worker.fetch(request('/'), env)).text();
   assert.ok(html.indexOf('Current</a>') < html.indexOf('Next</a>'));
   assert.ok(html.indexOf('Next</a>') < html.indexOf('Archive (Copy)</a>'));
-  assert.match(html, /<details class="catalog-archive"><summary>Minulé akce \(1\)<\/summary>/);
+  assert.match(html, /<section class="catalog-archive"><h2>Minulé akce \(1\)<\/h2>/);
   assert.ok(html.includes('No date</a>'));
   assert.ok(html.includes('data-server-catalog="ready"'));
 });
@@ -175,4 +175,20 @@ test('organizer route is preserved by the real ticket-only policy', async () => 
   const response = await ticketWorker.fetch(new Request('https://vstupenky.online/pro-poradatele'), pageEnv);
   assert.equal(response.status, 200);
   assert.match(await response.text(), /Prodej vstupenek/);
+});
+
+
+test('server archive stays visible and groups large multi-year archives', async t => {
+  const past = Array.from({length: 9}, (_, i) => ({
+    ...occasions[0], title: `Archive ${i}`, link: `archive-${i}`,
+    start_time: `${i < 5 ? 2025 : 2024}-05-01T00:00:00Z`,
+    end_time: `${i < 5 ? 2025 : 2024}-05-02T00:00:00Z`,
+  }));
+  t.mock.method(globalThis, 'fetch', async () => Response.json({occasions: past}));
+  const html = await (await worker.fetch(request('/'), env)).text();
+  assert.ok(!html.includes('<details'));
+  assert.ok(html.includes('<h3>2025 (5)</h3>'));
+  assert.ok(html.includes('<h3>2024 (4)</h3>'));
+  assert.ok(html.indexOf('<h3>2025') < html.indexOf('<h3>2024'));
+  for (const occasion of past) assert.ok(html.includes(occasion.title));
 });

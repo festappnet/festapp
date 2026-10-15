@@ -445,6 +445,10 @@ self.addEventListener('activate', (event) => {
 });
 
 function cachedNavigationTarget(pathname) {
+  if ((pathname === '/pro-poradatele' || pathname === '/pro-poradatele/') &&
+      STANDALONE_DOCUMENT_PATHS.has('/organizers-page')) {
+    return '/organizers-page';
+  }
   const normalizedPath = pathname.endsWith('/') ? pathname : pathname + '/';
   if (STANDALONE_DOCUMENT_PATHS.has(normalizedPath)) {
     return normalizedPath;

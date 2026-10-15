@@ -139,13 +139,15 @@ async function handleHome(request, env) {
     };
     const section = (title, list, archive = false) => {
       if (!list.length) return "";
-      const links = list.map(occasion => {
+      const links = occasions => occasions.map(occasion => {
         const href = occasionHref(occasion);
         return href ? `<li><a href="${escapeHtml(href)}">${escapeHtml(occasion.title)}</a> ${date(occasion.start_time)}</li>` : "";
       }).join("");
-      return archive
-        ? `<details class="catalog-archive"><summary>${title} (${list.length})</summary><ul>${links}</ul></details>`
-        : `<section><h2>${title}</h2><ul>${links}</ul></section>`;
+      const years = archive ? groupPastOccasionsByYear(list) : [];
+      const body = years.length
+        ? years.map(({year, occasions}) => `<h3>${year} (${occasions.length})</h3><ul>${links(occasions)}</ul>`).join("")
+        : `<ul>${links(list)}</ul>`;
+      return `<section${archive ? ' class="catalog-archive"' : ""}><h2>${title}${archive ? ` (${list.length})` : ""}</h2>${body}</section>`;
     };
     const content = section("Právě probíhá", groups.present) + section("Nadcházející akce", groups.upcoming) +
       section("Další akce", groups.undated) + section("Minulé akce", groups.past, true);
