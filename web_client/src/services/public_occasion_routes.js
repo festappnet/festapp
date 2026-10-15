@@ -10,6 +10,7 @@ export function isPublicOccasionAppPath(pathname) {
         'resetPassword', 'forgotPassword', 'reset-password', 'forgot-password',
         'google-auth', 'app', 'privacy', 'terms', 'support', 'delete-account',
         'flutter', 'webclient', 'auth_bridge', 'assets', 'web-assets', 'canvaskit',
+        'pro-poradatele', 'organizers-page',
     ]);
     if (reservedRoots.has(segments[0]) || segments[0].includes('.')) return false;
     if (segments.length === 1) return true;

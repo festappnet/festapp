@@ -18,7 +18,7 @@ function assertPolicy(response) {
 
 test('generated Pages worker secures HTML and assets while preserving route bodies', async () => {
   for (const [path, body] of [
-    ['/', '/webclient'], ['/form/', '/webclient'], ['/form/example', '/webclient'],
+    ['/', '/webclient'], ['/form/example', '/webclient'],
     ['/login', '/flutter'], ['/auth_bridge', '/auth_bridge'], ['/unknown', '/unknown'],
     ['/web-assets/app.js', '/web-assets/app.js'], ['/main.dart.js', '/main.dart.js'],
   ]) {
@@ -28,6 +28,13 @@ test('generated Pages worker secures HTML and assets while preserving route bodi
     assert.equal(await response.text(), body);
     if (path === '/main.dart.js') assert.equal(response.headers.get('cache-control'), 'no-cache, must-revalidate');
   }
+});
+
+test('empty form slug returns a secured 404 rather than a successful shell', async () => {
+  const response = await worker.fetch(new Request(origin + '/form/'), env);
+  assertPolicy(response);
+  assert.equal(response.status, 404);
+  assert.match(await response.text(), /noindex/);
 });
 
 test('policy wrapping preserves redirect status, activation CORS and OAuth cache controls', async () => {

@@ -65,6 +65,8 @@ cp "$PROJECT_ROOT/automation/lib/backend_activation_manifest.mjs" "$TMP_ROOT/aut
 cp "$PROJECT_ROOT/automation/release/generate_backend_activation_manifest.mjs" "$TMP_ROOT/automation/release/generate_backend_activation_manifest.mjs"
 cp "$PROJECT_ROOT/automation/release/generate_backend_profile_fingerprint.mjs" "$TMP_ROOT/automation/release/generate_backend_profile_fingerprint.mjs"
 cp "$PROJECT_ROOT/automation/release/render_legal_pages.mjs" "$TMP_ROOT/automation/release/render_legal_pages.mjs"
+cp "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" "$TMP_ROOT/automation/release/render_organizer_page.mjs"
+cp -R "$PROJECT_ROOT/automation/release/organizers" "$TMP_ROOT/automation/release/organizers"
 cp "$PROJECT_ROOT"/automation/release/legal/*.md "$TMP_ROOT/automation/release/legal/"
 cp "$PROJECT_ROOT/automation/templates/web/delete-account/index.html" "$TMP_ROOT/automation/templates/web/delete-account/index.html"
 cp "$FIXTURE_CONF" "$TMP_ROOT/automation/project.conf"

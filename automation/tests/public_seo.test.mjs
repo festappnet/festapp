@@ -5,6 +5,7 @@ import { getOccasionHref } from '../../web_client/src/components/occasion/occasi
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const workerSource = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+  .replace('// SHARED_CATALOG_CLASSIFICATION', readFileSync(new URL('../../web_client/src/components/occasion/catalog.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
   .replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = "vstupenky.online";');
 const { default: worker } = await import('data:text/javascript;base64,' + Buffer.from(workerSource).toString('base64'));
 const shell = readFileSync(new URL('../../web_client/index.html', import.meta.url), 'utf8');
@@ -89,4 +90,89 @@ test('backend outages never turn an existing form or app route into a 404', asyn
   for (const path of ['/form/valid-event', '/valid-event/event']) {
     assert.equal((await worker.fetch(request(path), env)).status, 200);
   }
+});
+
+const productionSource = workerSource.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = "https://vstupenky.online";')
+  .replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
+const { default: productionWorker } = await import('data:text/javascript;base64,' + Buffer.from(productionSource).toString('base64'));
+
+test('canonical host/protocol matrix preserves form and OAuth query parameters, previews stay isolated', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ title: 'Public form' }));
+  for (const path of ['/', '/form/live?utm_source=seo-check&code=a%2Bb&state=x%2Fy', '/google-auth?google_code=proof&google_attempt=fixture']) {
+    for (const origin of ['http://vstupenky.online', 'https://www.vstupenky.online', 'http://www.vstupenky.online']) {
+      const response = await productionWorker.fetch(new Request(origin + path), env);
+      assert.equal(response.status, 308);
+      assert.equal(response.headers.get('location'), 'https://vstupenky.online' + path);
+    }
+    assert.equal((await productionWorker.fetch(new Request('https://vstupenky.online' + path), env)).status, 200);
+  }
+  const preview = await productionWorker.fetch(new Request('https://preview.pages.dev/'), env);
+  assert.equal(preview.status, 200);
+  assert.equal(preview.headers.get('location'), null);
+  assert.equal(preview.headers.get('strict-transport-security'), null);
+});
+
+test('HSTS covers HTML, XML, missing assets, redirects and thrown asset failures, including HEAD', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [] }));
+  for (const path of ['/', '/missing.png', '/sitemap.xml', '/webclient']) {
+    for (const method of ['GET', 'HEAD']) {
+      const response = await productionWorker.fetch(new Request('https://vstupenky.online' + path, { method }), env);
+      assert.equal(response.headers.get('strict-transport-security'), 'max-age=300');
+      if (method === 'HEAD') assert.equal(await response.text(), '');
+    }
+  }
+  const response = await productionWorker.fetch(new Request('https://vstupenky.online/'), {
+    ASSETS: { fetch: async () => { throw new Error('asset outage'); } },
+  });
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get('strict-transport-security'), 'max-age=300');
+});
+
+test('organizer route serves its own HTML, uses apex in sitemap and deduplicates internal links', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [...occasions, occasions[0]] }));
+  const pageEnv = { ...env, ASSETS: { fetch: async request => new URL(request.url).pathname === '/organizers-page'
+    ? new Response('<h1>Prodej vstupenek a registrace na akce</h1>') : env.ASSETS.fetch(request) } };
+  const response = await productionWorker.fetch(new Request('https://vstupenky.online/pro-poradatele'), pageEnv);
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /Prodej vstupenek/);
+  assert.equal((await worker.fetch(request('/pro-poradatele'), env)).status, 404);
+  const xml = await (await productionWorker.fetch(new Request('https://preview.pages.dev/sitemap.xml'), pageEnv)).text();
+  assert.ok(xml.includes('https://vstupenky.online/pro-poradatele'));
+  assert.equal((xml.match(/<loc>https:\/\/vstupenky.online\/form\/camp-registration<\/loc>/g) || []).length, 1);
+  assert.ok(!xml.includes('preview.pages.dev'));
+});
+
+test('server catalogue preserves undated records and orders present, upcoming and collapsed archive', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [
+    { title: 'Archive (Copy)', link: 'archive', start_time: '2020-01-01', end_time: '2020-01-02' },
+    { title: 'Next', link: 'next', start_time: '2099-01-01', end_time: '2099-01-02' },
+    { title: 'Current', link: 'current', start_time: '2000-01-01', end_time: '2099-01-02' },
+    { title: 'No date', link: 'undated' },
+  ] }));
+  const html = await (await worker.fetch(request('/'), env)).text();
+  assert.ok(html.indexOf('Current</a>') < html.indexOf('Next</a>'));
+  assert.ok(html.indexOf('Next</a>') < html.indexOf('Archive (Copy)</a>'));
+  assert.match(html, /<details class="catalog-archive"><summary>Minulé akce \(1\)<\/summary>/);
+  assert.ok(html.includes('No date</a>'));
+  assert.ok(html.includes('data-server-catalog="ready"'));
+});
+
+
+test('malformed catalogue payload is unavailable rather than an empty catalogue', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ error: 'unexpected payload' }));
+  const html = await (await worker.fetch(request('/'), env)).text();
+  assert.ok(html.includes('data-server-catalog="unavailable"'));
+  assert.ok(!html.includes('Zatím zde nejsou žádné akce.'));
+});
+
+
+test('organizer route is preserved by the real ticket-only policy', async () => {
+  const source = productionSource.replace('const IS_APP_SUPPORTED = true;', 'const IS_APP_SUPPORTED = false;')
+    .replace('// PUBLIC_OCCASION_ROUTE_POLICY', readFileSync(new URL('../../web_client/src/services/public_occasion_routes.js', import.meta.url), 'utf8').replaceAll('export function ', 'function '));
+  const { default: ticketWorker } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+  const pageEnv = { ...env, ASSETS: { fetch: async request => new URL(request.url).pathname === '/organizers-page'
+    ? new Response('<h1>Prodej vstupenek a registrace na akce</h1>') : env.ASSETS.fetch(request) } };
+  const response = await ticketWorker.fetch(new Request('https://vstupenky.online/pro-poradatele'), pageEnv);
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /Prodej vstupenek/);
 });

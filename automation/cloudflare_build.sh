@@ -48,6 +48,8 @@ const WEB_CLIENT_INDEX = "/webclient";
 const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
+const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
+const ORGANIZERS_ENABLED = false; // stamped from tenant domain
 const SITE_NAME = "Festapp"; // replaced from project.conf after generation
 const IS_APP_SUPPORTED = true; // replaced from project.conf after generation
 // PUBLIC_OCCASION_ROUTE_POLICY
@@ -64,7 +66,7 @@ const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);
 // Internal asset names (extension-less HTML entry points). Cloudflare serves
 // these as application/octet-stream to direct hits, which triggers a browser
 // download. They must never be reachable as a user-facing URL — redirect to /.
-const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient"]);
+const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-page"]);
 
 // Flutter's entry/runtime files use stable, unversioned names that change on
 // every deploy (main.dart.js, its main.dart.js_<n>.part.js deferred chunks,
@@ -110,7 +112,7 @@ function occasionHref(occasion) {
 }
 
 async function publicOccasions(env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return [];
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error("Public catalog is not configured");
   const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_available_occasions`, {
     method: "POST",
     headers: { "content-type": "application/json", apikey: env.SUPABASE_ANON_KEY,
@@ -120,21 +122,37 @@ async function publicOccasions(env) {
   });
   if (!rpc.ok) throw new Error(`Public catalog HTTP ${rpc.status}`);
   const data = await rpc.json();
-  return Array.isArray(data) ? data : data?.occasions || data?.data?.occasions || [];
+  return extractPublicOccasions(data);
 }
+
+// SHARED_CATALOG_CLASSIFICATION
 
 async function handleHome(request, env) {
   const base = await serveAsset(env, request, WEB_CLIENT_INDEX);
   let html = await base.text();
   try {
     const occasions = await publicOccasions(env);
-    const links = occasions.map(occasion => {
-      const href = occasionHref(occasion);
-      return href ? `<li><a href="${escapeHtml(href)}">${escapeHtml(occasion.title)}</a></li>` : "";
-    }).join("");
-    if (links) html = html.replace('<div id="events-grid"></div>', `<div id="events-grid"><ul>${links}</ul></div>`);
+    const groups = classifyOccasions(occasions);
+    const date = value => {
+      if (!value || !Number.isFinite(new Date(value).getTime())) return "";
+      return `<time datetime="${escapeHtml(new Date(value).toISOString())}">${escapeHtml(new Date(value).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" }))}</time>`;
+    };
+    const section = (title, list, archive = false) => {
+      if (!list.length) return "";
+      const links = list.map(occasion => {
+        const href = occasionHref(occasion);
+        return href ? `<li><a href="${escapeHtml(href)}">${escapeHtml(occasion.title)}</a> ${date(occasion.start_time)}</li>` : "";
+      }).join("");
+      return archive
+        ? `<details class="catalog-archive"><summary>${title} (${list.length})</summary><ul>${links}</ul></details>`
+        : `<section><h2>${title}</h2><ul>${links}</ul></section>`;
+    };
+    const content = section("Právě probíhá", groups.present) + section("Nadcházející akce", groups.upcoming) +
+      section("Další akce", groups.undated) + section("Minulé akce", groups.past, true);
+    html = html.replace('<div id="events-grid"></div>', () => `<div id="events-grid" data-server-catalog="ready">${content || '<p>Zatím zde nejsou žádné akce.</p>'}</div>`);
   } catch (error) {
     console.error("Public catalog HTML unavailable", error.message);
+    html = html.replace('<div id="events-grid"></div>', '<div id="events-grid" data-server-catalog="unavailable"><p role="status">Akce se nepodařilo načíst. Zkuste stránku znovu načíst.</p></div>');
   }
   return htmlResponse(html, base.headers);
 }
@@ -168,15 +186,17 @@ async function serveAsset(env, request, path) {
 // ---------------------------------------------------------------------------
 async function handleSitemap(request, env) {
   const url = new URL(request.url);
-  const baseUrl = url.origin;
+  const baseUrl = CANONICAL_ORIGIN || url.origin;
   const xmlHeaders = { "content-type": "application/xml", "cache-control": "public, max-age=0, s-maxage=3600" };
 
+  const organizerEntry = ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/pro-poradatele</loc></url>` : "";
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}/</loc>
     <priority>1.0</priority>
   </url>
+${organizerEntry}
 </urlset>`;
 
   try {
@@ -185,10 +205,17 @@ async function handleSitemap(request, env) {
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     xml += `  <url>\n    <loc>${escapeHtml(baseUrl)}/</loc>\n    <priority>1.0</priority>\n  </url>\n`;
+    xml += organizerEntry;
+    const seen = new Set();
     for (const occ of occasions) {
       const href = occasionHref(occ);
-      if (!href || !href.startsWith("/")) continue;
-      xml += `  <url>\n    <loc>${escapeHtml(baseUrl + href)}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
+      if (!href) continue;
+      const destination = new URL(href, baseUrl);
+      if (destination.origin !== baseUrl) continue;
+      const canonical = baseUrl + destination.pathname;
+      if (seen.has(canonical)) continue;
+      seen.add(canonical);
+      xml += `  <url>\n    <loc>${escapeHtml(canonical)}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
     }
     xml += `</urlset>`;
     return new Response(xml, { headers: xmlHeaders });
@@ -239,9 +266,9 @@ async function handleForm(request, env, path) {
     let imageUrl;
     if (imagePath && /^https?:\/\//i.test(imagePath)) imageUrl = imagePath;
     else if (imagePath) imageUrl = `https://img.festapp.net/${imagePath}`;
-    else imageUrl = `${url.origin}/android-chrome-512x512.png`;
+    else imageUrl = `${CANONICAL_ORIGIN || url.origin}/android-chrome-512x512.png`;
     const fullTitle = `${title} - ${orgTitle}`;
-    const canonicalUrl = new URL(url.pathname, url.origin).href;
+    const canonicalUrl = new URL(url.pathname, CANONICAL_ORIGIN || url.origin).href;
 
     let page = baseHtml;
     page = page.replace(/<title[^>]*>.*?<\/title>/i, () => `<title>${escapeHtml(fullTitle)}</title>`);
@@ -294,6 +321,13 @@ async function routeRequest(request, env) {
         status: 204,
         headers: activationCorsHeaders(),
       });
+    }
+
+    if (path === "/pro-poradatele" || path === "/pro-poradatele/") {
+      if (!ORGANIZERS_ENABLED) return notFound();
+      if (path.endsWith("/")) return Response.redirect(new URL("/pro-poradatele" + url.search, url).href, 308);
+      const res = await serveAsset(env, request, "/organizers-page");
+      return res.ok ? htmlResponse(res.body, res.headers) : notFound();
     }
 
     if (path === "/sitemap.xml") return handleSitemap(request, env);
@@ -394,17 +428,26 @@ async function routeRequest(request, env) {
 
 export default {
   async fetch(request, env) {
-    const response = await routeRequest(request, env);
-    // Advanced-mode Pages routing bypasses _headers. Apply the shared policy
-    // to the final response, retaining route-specific cache and CORS headers.
+    const url = new URL(request.url);
+    const production = CANONICAL_ORIGIN && [new URL(CANONICAL_ORIGIN).hostname, "www." + new URL(CANONICAL_ORIGIN).hostname].includes(url.hostname);
+    let response;
+    if (production && (url.origin !== CANONICAL_ORIGIN)) {
+      const target = new URL(CANONICAL_ORIGIN);
+      target.pathname = url.pathname;
+      target.search = url.search;
+      response = Response.redirect(target.href, 308);
+    } else {
+      try { response = await routeRequest(request, env); }
+      catch (error) {
+        console.error("Public route unavailable", error.message);
+        response = new Response("Service temporarily unavailable", { status: 503 });
+      }
+    }
     const headers = new Headers(response.headers);
     headers.set("content-security-policy", "base-uri 'self'; object-src 'none'");
     headers.set("x-content-type-options", "nosniff");
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
+    if (production && url.protocol === "https:") headers.set("strict-transport-security", "max-age=300");
+    return new Response(request.method === "HEAD" ? null : response.body, { status: response.status, statusText: response.statusText, headers });
   },
 };
 WORKER
@@ -417,6 +460,8 @@ import sys
 
 worker_path, config_path = sys.argv[1:]
 source = pathlib.Path(worker_path).read_text(encoding="utf-8")
+catalog = pathlib.Path("web_client/src/components/occasion/catalog.js").read_text(encoding="utf-8").replace("export function", "function")
+source = source.replace("// SHARED_CATALOG_CLASSIFICATION", catalog)
 config = pathlib.Path(config_path).read_text(encoding="utf-8")
 app_supported = re.search(r'^IS_APP_SUPPORTED=(true|false)\s*$', config, re.MULTILINE)
 if not app_supported:
@@ -428,6 +473,14 @@ match = re.search(r"^FORCE_OCCASION_LINK=(.*)$", config, re.MULTILINE)
 occasion_link = match.group(1).strip().strip('"').strip("'") if match else ""
 occasion_link = occasion_link.strip().strip("/")
 replacement = json.dumps(f"/{occasion_link}/event" if occasion_link and app_supported.group(1) == 'true' else None)
+web_link_match = re.search(r'^WEB_LINK=(.*)$', config, re.MULTILINE)
+web_link = web_link_match.group(1).strip().strip('"').strip("'").rstrip('/') if web_link_match else ''
+from urllib.parse import urlparse
+canonical = urlparse(web_link)
+if canonical.scheme != 'https' or not canonical.hostname or canonical.path or canonical.query or canonical.fragment or canonical.username or canonical.port:
+    raise SystemExit("WEB_LINK must be a bare HTTPS origin for canonical routing")
+source = source.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = ' + json.dumps(web_link) + ';', 1)
+source = source.replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = ' + ('true' if canonical.hostname == 'vstupenky.online' else 'false') + ';', 1)
 name_match = re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
 site_name = name_match.group(1).strip().strip('"').strip("'") if name_match else 'Festapp'
 source = source.replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = ' + json.dumps(site_name, ensure_ascii=False) + ';', 1)

@@ -1,113 +1,130 @@
 import { Component } from '../base/component.js';
 import { DbOccasions } from '../occasion/db_occasions.js';
-import { LocalizationService } from '../../services/localization_service.js';
 import { OccasionCard } from '../occasion/occasion_card.js';
+import { classifyOccasions } from '../occasion/catalog.js';
 import { UnitStrings } from './unit_strings.js';
+import './unit_page.css';
 
 export class UnitPage extends Component {
     constructor(hostId) {
         super(hostId);
         this.allOccasions = [];
         this.searchInput = null;
+        this.hasLoaded = false;
+        this.requestId = 0;
     }
 
     init(searchId) {
         this.searchInput = document.getElementById(searchId);
-
-        if (this.searchInput) {
-            this.searchInput.placeholder = UnitStrings.search + '...';
-            this.searchInput.addEventListener('input', (e) => {
-                this.filter(e.target.value);
-            });
-            const clearBtn = document.getElementById('clear-search');
-            if (clearBtn) {
-                 clearBtn.onclick = () => {
-                     this.searchInput.value = '';
-                     this.filter('');
-                 };
-            }
+        if (!this.searchInput) return;
+        this.searchInput.placeholder = UnitStrings.search + '...';
+        this.searchInput.setAttribute('aria-label', UnitStrings.search);
+        this.onSearch = (e) => this.filter(e.target.value);
+        this.searchInput.addEventListener('input', this.onSearch);
+        const clearBtn = document.getElementById('clear-search');
+        if (clearBtn) {
+            clearBtn.setAttribute('aria-label', UnitStrings.clearSearch);
+            clearBtn.onclick = () => this.clearSearch();
         }
     }
 
+    clearSearch() {
+        if (this.searchInput) this.searchInput.value = '';
+        this.filter('');
+        this.searchInput?.focus();
+    }
+
+    showStatus(message, retry = false) {
+        this.host.querySelector('[data-catalog-status]')?.remove();
+        const status = document.createElement('div');
+        status.dataset.catalogStatus = '';
+        status.className = 'catalog-status';
+        const text = document.createElement('p');
+        text.setAttribute('role', 'status');
+        text.textContent = message;
+        status.appendChild(text);
+        if (retry) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = UnitStrings.retry;
+            button.onclick = () => this.loadOccasions(this.orgId);
+            status.appendChild(button);
+        }
+        this.host.prepend(status);
+    }
+
     async loadOccasions(orgId) {
+        this.orgId = orgId;
+        const requestId = ++this.requestId;
+        this.showStatus(UnitStrings.loading);
         try {
             const occasions = await DbOccasions.getPublicOccasions(orgId);
+            if (requestId !== this.requestId || !this.host.isConnected) return;
             this.allOccasions = occasions || [];
-            this.render(this.allOccasions);
-
-            // Check for search query param (?q=...)
-            const params = new URLSearchParams(window.location.search);
-            const query = params.get('q');
-            if (query && this.searchInput) {
-                this.searchInput.value = query;
-                this.filter(query);
-            }
+            this.hasLoaded = true;
+            const query = new URLSearchParams(window.location.search).get('q');
+            if (query && this.searchInput && !this.searchInput.value) this.searchInput.value = query;
+            this.filter(this.searchInput?.value || '');
         } catch (e) {
-            console.error("UnitPage.loadOccasions failed:", e);
-            if (this.host) {
-                this.host.innerHTML = `<p style="text-align:center; color:red">Failed to load events: ${e.message}</p>`;
-            }
+            if (requestId !== this.requestId || !this.host.isConnected) return;
+            console.error('UnitPage.loadOccasions failed:', e);
+            this.showStatus(this.host.querySelector('a') ? UnitStrings.refreshFailed : UnitStrings.loadFailed, true);
         }
+    }
+
+    // Called when leaving this route, so pending requests cannot overwrite another page.
+    clear() {
+        ++this.requestId;
+        if (this.searchInput && this.onSearch) this.searchInput.removeEventListener('input', this.onSearch);
+        const clearBtn = document.getElementById('clear-search');
+        if (clearBtn) clearBtn.onclick = null;
+        super.clear();
     }
 
     filter(term) {
         const clearBtn = document.getElementById('clear-search');
         if (clearBtn) clearBtn.style.display = term ? 'block' : 'none';
-        
-        if (!term) {
-            this.render(this.allOccasions);
-            return;
-        }
-        
-        const norm = str => str ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
-        const q = norm(term);
-        
-        const filtered = this.allOccasions.filter(o => norm(o.title).includes(q));
-        this.render(filtered, true);
+        // The server-rendered catalogue remains usable until the first successful refresh.
+        if (!this.hasLoaded) return;
+        const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const query = norm(term).trim();
+        const filtered = query ? this.allOccasions.filter(o => norm(o.title).includes(query)) : this.allOccasions;
+        this.render(filtered, Boolean(query));
     }
 
     render(occasions, isSearch = false) {
-        this.clear();
-
-        if (!occasions || occasions.length === 0) {
-            const noEvents = document.createElement('div');
-            noEvents.style.textAlign = 'center';
-            noEvents.style.padding = '20px';
-            noEvents.textContent = UnitStrings.noEventsFound;
-            this.host.appendChild(noEvents);
+        // Rendering is not disposal: keep search handlers and request generation intact.
+        super.clear();
+        if (!occasions?.length) {
+            this.showStatus(isSearch ? UnitStrings.noSearchResults : UnitStrings.emptyCatalogue);
+            if (isSearch) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = UnitStrings.clearSearch;
+                button.onclick = () => this.clearSearch();
+                this.host.querySelector('[data-catalog-status]').appendChild(button);
+            }
             return;
         }
-
-        const now = new Date();
-        const present = occasions.filter(o => new Date(o.start_time) <= now && new Date(o.end_time) >= now);
-        const upcoming = occasions.filter(o => new Date(o.start_time) > now).sort((a,b) => new Date(a.start_time) - new Date(b.start_time));
-        const past = occasions.filter(o => new Date(o.end_time) < now).sort((a,b) => new Date(b.end_time) - new Date(a.end_time));
-
+        const { present, upcoming, past, undated } = classifyOccasions(occasions);
+        if (!present.length && !upcoming.length && !undated.length && !isSearch) this.showStatus(UnitStrings.onlyArchive);
         if (present.length) this.renderSection(UnitStrings.happeningNow, present, true);
         if (upcoming.length) this.renderSection(UnitStrings.upcomingEvents, upcoming);
-        if (past.length) this.renderSection(UnitStrings.pastEvents, past, false, true);
+        if (undated.length) this.renderSection(UnitStrings.otherEvents, undated);
+        if (past.length) this.renderSection(UnitStrings.pastEvents, past, false, true, isSearch);
     }
 
-    renderSection(title, list, isPresent = false, isPast = false) {
-        const section = document.createElement('div');
-        
-        const titleEl = document.createElement('h2');
+    renderSection(title, list, isPresent = false, isPast = false, open = false) {
+        const section = document.createElement(isPast ? 'details' : 'section');
+        section.className = isPast ? 'catalog-archive' : 'catalog-section';
+        const titleEl = document.createElement(isPast ? 'summary' : 'h2');
         titleEl.className = 'section-title';
-        titleEl.style.fontSize = '24px';
-        titleEl.style.fontWeight = 'bold';
-        titleEl.style.margin = '24px 0 16px';
-        titleEl.textContent = title;
+        titleEl.textContent = isPast ? `${title} (${list.length})` : title;
+        if (isPast) section.open = open;
         section.appendChild(titleEl);
-        
         const grid = document.createElement('div');
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
-        grid.style.gap = '16px';
-        
-        list.forEach(oc => {
-            grid.appendChild(OccasionCard.create(oc, isPresent, isPast));
-        });
-        
+        grid.className = 'catalog-grid';
+        list.forEach(oc => grid.appendChild(OccasionCard.create(oc, isPresent, isPast)));
         section.appendChild(grid);
         this.host.appendChild(section);
     }

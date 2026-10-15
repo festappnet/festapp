@@ -45,6 +45,11 @@ export class SeoService {
         
         if (currentUrl) {
             const canonicalUrl = new URL(currentUrl, window.location.origin);
+            const tenant = new URL(AppConfig.webLink);
+            if ([tenant.hostname, 'www.' + tenant.hostname].includes(canonicalUrl.hostname)) {
+                canonicalUrl.protocol = tenant.protocol;
+                canonicalUrl.host = tenant.host;
+            }
             canonicalUrl.search = '';
             canonicalUrl.hash = '';
             let canonical = document.querySelector('link[rel="canonical"]');

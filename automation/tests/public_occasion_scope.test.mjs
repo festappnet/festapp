@@ -15,7 +15,7 @@ const disabled = [
   '/unit-ball/event', '/demo/eventEdit/42', '/demo/reception', '/demo/cleaning/1', '/map-editor',
 ];
 const preserved = [
-  '/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',
+  '/', '/pro-poradatele', '/pro-poradatele/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',
   '/demo/reservations/orders/current',
   '/demo/check/42',
   '/google-auth', '/app/google-auth', '/resetPassword',
@@ -33,7 +33,7 @@ async function workerFor(supported, dir) {
   const file = path.join(dir, 'worker.js');
   const config = path.join(dir, 'project.conf');
   writeFileSync(file, template);
-  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=Fixture\n`);
+  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=Fixture\nWEB_LINK=https://tenant.invalid\n`);
   const stamped = spawnSync('python3', ['-', file, config], {
     input: stamp, encoding: 'utf8', cwd: projectRoot,
   });

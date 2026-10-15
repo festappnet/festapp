@@ -56,3 +56,13 @@ test('invalid external schemes fall back to internal links, and valid external l
     assert.equal(OccasionCard.create({ ...occasion, features: feature('javascript:alert(1)') }).getAttribute('href'), '/form/registration');
     assert.equal(OccasionCard.create({ ...occasion, features: feature('https://organizer.invalid/register') }).href, 'https://organizer.invalid/register');
 });
+
+
+test('public cards with missing or invalid dates remain usable without invented dates', () => {
+    for (const dates of [{}, { start_time: null, end_time: null }, { start_time: 'invalid', end_time: 'invalid' }]) {
+        const card = OccasionCard.create({ ...occasion, start_time: undefined, end_time: undefined, ...dates });
+        assert.equal(card.getAttribute('href'), '/form/registration');
+        assert.equal(card.querySelector('.oc-date'), null);
+        assert.ok(card.textContent.includes(occasion.title));
+    }
+});
