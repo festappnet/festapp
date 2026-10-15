@@ -750,6 +750,7 @@
     "usedTickets": "Wykorzystane bilety",
     "cashPayment": "Gotówka",
     "bankPayment": "Przelew bankowy",
+    "recipientAccount": "Rachunek odbiorcy",
     "refresh": "Odśwież",
     "loading": "Wczytywanie przeglądu",
     "failed": "Nie udało się odświeżyć przeglądu. Spróbuj ponownie.",

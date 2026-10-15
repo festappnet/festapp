@@ -2764,6 +2764,7 @@
     "usedTickets": "Použité vstupenky",
     "cashPayment": "Hotovost",
     "bankPayment": "Bankovní převod",
+    "recipientAccount": "Cílový účet",
     "refresh": "Obnovit",
     "loading": "Načítání přehledu",
     "failed": "Přehled se nepodařilo aktualizovat. Zkuste to znovu.",

@@ -2763,6 +2763,7 @@
     "usedTickets": "Tickets used",
     "cashPayment": "Cash",
     "bankPayment": "Bank transfer",
+    "recipientAccount": "Recipient account",
     "refresh": "Refresh",
     "loading": "Loading overview",
     "failed": "Could not update the overview. Please retry.",
