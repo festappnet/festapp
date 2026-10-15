@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from '../../src/components/forms/waitlist_commands.js';
+import { WaitlistCommands, parseWaitlistLocation, waitlistRegistrationPayload } from '../../src/components/forms/waitlist_commands.js';
 import { FormModel } from '../../src/components/forms/form_models.js';
 import { FormSession } from '../../src/components/forms/form_session.js';
 import { FormAvailabilityService } from '../../src/components/forms/form_availability_service.js';
@@ -49,29 +49,29 @@ test('closed public registration never closes an authorized offer; full has no s
 
 test('personal fragment is scoped and cannot be replaced by an order symbol', () => {
     const token = 'a'.repeat(64);
-    assert.deepEqual(parseWaitlistFragment(`#waitlist?order_id=12&token=${token}`), { token, orderId: 12 });
-    assert.equal(parseWaitlistFragment('#order-preview'), null);
-    assert.throws(() => parseWaitlistFragment('#waitlist?order_id=12&token=short'), /INVALID_CAPABILITY/);
+    assert.deepEqual(parseWaitlistLocation(new URL(`/order?waitlist=1&order_id=12&token=${token}`, "https://tickets.invalid")), { token, orderId: 12 });
+    assert.equal(parseWaitlistLocation(new URL('#order-preview', "https://tickets.invalid")), null);
+    assert.throws(() => parseWaitlistLocation(new URL('/order?waitlist=1&order_id=12&token=short', "https://tickets.invalid")), /INVALID_CAPABILITY/);
 });
 
 test('admin offer fragment requires explicit marker and a single valid offer without a token', () => {
     const offerId = '12345678-1234-1234-abcd-123456789012';
-    assert.deepEqual(parseWaitlistFragment(`#waitlist?offer_id=${offerId}&admin=1`), { token: null, offerId });
+    assert.deepEqual(parseWaitlistLocation(new URL(`/order?waitlist=1&offer_id=${offerId}&admin=1`, "https://tickets.invalid")), { token: null, offerId });
     for (const query of [
         `offer_id=${offerId}`, `offer_id=${offerId}&admin=0`, `offer_id=${offerId}&admin=true`,
         'order_id=12&admin=1', `offer_id=${offerId}&order_id=12&admin=1`,
         'offer_id=------------------------------------&admin=1', 'offer_id=bad&admin=1',
         `offer_id=${offerId}&admin=1&token=`, `offer_id=${offerId}&admin=1&token=bad`,
         `offer_id=${offerId}&offer_id=${offerId}&admin=1`, `offer_id=${offerId}&admin=1&admin=0`,
-    ]) assert.throws(() => parseWaitlistFragment(`#waitlist?${query}`), /INVALID_CAPABILITY/, query);
+    ]) assert.throws(() => parseWaitlistLocation(new URL(`/order?waitlist=1&${query}`, "https://tickets.invalid")), /INVALID_CAPABILITY/, query);
     const token = 'b'.repeat(64);
-    assert.deepEqual(parseWaitlistFragment(`#waitlist?offer_id=${offerId}&token=${token}`), { token, offerId });
-    assert.deepEqual(parseWaitlistFragment(`#waitlist?order_id=12&token=${token}`), { token, orderId: 12 });
+    assert.deepEqual(parseWaitlistLocation(new URL(`/order?waitlist=1&offer_id=${offerId}&token=${token}`, "https://tickets.invalid")), { token, offerId });
+    assert.deepEqual(parseWaitlistLocation(new URL(`/order?waitlist=1&order_id=12&token=${token}`, "https://tickets.invalid")), { token, orderId: 12 });
 });
 
 test('admin offer uses normal read and acceptance transports with real scope and no client privilege flag', async () => {
     const offerId = '12345678-1234-1234-abcd-123456789012';
-    const scope = parseWaitlistFragment(`#waitlist?offer_id=${offerId}&admin=1`);
+    const scope = parseWaitlistLocation(new URL(`/order?waitlist=1&offer_id=${offerId}&admin=1`, "https://tickets.invalid"));
     const calls = [];
     const bundle = { code: 200, pendingCount: 1, tickets: [{ id: 101, lifecycle: 'offered' }] };
     const commands = new WaitlistCommands({
@@ -89,7 +89,7 @@ test('admin offer uses normal read and acceptance transports with real scope and
 });
 
 test('admin marker cannot bypass server authentication or authorization rejection', async () => {
-    const scope = parseWaitlistFragment('#waitlist?offer_id=12345678-1234-1234-abcd-123456789012&admin=1');
+    const scope = parseWaitlistLocation(new URL('/order?waitlist=1&offer_id=12345678-1234-1234-abcd-123456789012&admin=1', "https://tickets.invalid"));
     for (const response of [{ error: new Error('unauthenticated') }, { data: { code: 403, errorCode: 'INVALID_CAPABILITY' } }]) {
         const commands = new WaitlistCommands({ rpc: async () => response, functions: { invoke: async () => response } });
         await assert.rejects(commands.read(scope), /INVALID_CAPABILITY/);

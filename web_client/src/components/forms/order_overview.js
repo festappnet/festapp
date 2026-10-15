@@ -1,14 +1,13 @@
-import { formLinkFromPath, replaceResolvedPublicLink } from '../../services/public_link.js';
+import { renderOverviewProducts, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
+import { renderPaymentDetails } from './payment_details.js';
+import { presentPayment } from '../../../../supabase/functions/_shared/paymentPresentation.ts';
 import { LocalizationService } from '../../services/localization_service.js';
 export const overviewText = key => LocalizationService.tr(`OrderOverview.${key}`);
-export function parseOrderFragment(fragment) {
-    if (!fragment?.startsWith('#order?')) return null;
-    return parseOrderLocation({ search: fragment.slice(6) });
-}
 export function parseOrderLocation(location) {
+    if (location.pathname !== '/order' || location.hash) return null;
     const params = new URLSearchParams(location.search || '');
     if (params.get('waitlist') === '1') return null;
-    if (!params.has('order_id') && !params.has('token')) return parseOrderFragment(location.hash);
+    if (!params.has('order_id') && !params.has('token')) return null;
     const token = params.get('token');
     const id = params.get('order_id');
     if (params.getAll('token').length !== 1 || params.getAll('order_id').length !== 1 ||
@@ -28,14 +27,29 @@ function section(host, title, className = '') {
 function fact(list, label, value) {
     const row = line(list, 'div', ''); line(row, 'dt', label); line(row, 'dd', value);
 }
-export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPage = false) {
+function renderOrderState(host, order, includeReference = true) {
+    const payment = order.payment;
+    const state = order.state === 'storno' ? 'cancelled' : payment?.status || order.state;
+    const complete = ['fully_paid', 'free'].includes(state);
+    const overdue = payment?.instructionsAvailable && payment.overdue && !complete;
+    const cancelled = state === 'cancelled';
+    const row = line(host, 'div', '');
+    row.className = `overview-state-row overview-state-${complete ? 'complete' : cancelled ? 'cancelled' : overdue ? 'overdue' : 'pending'}`;
+    const icon = line(row, 'i', complete ? 'check_circle' : cancelled ? 'cancel' : overdue ? 'warning' : 'schedule');
+    icon.className = 'material-icons'; icon.setAttribute('aria-hidden', 'true');
+    const text = line(row, 'div', '');
+    line(text, 'p', `${includeReference ? `${overviewText('orderReference')} ${order.symbol}: ` : ''}${overviewText(state)}`);
+    if (payment?.instructionsAvailable && payment.dueAt && !complete && !cancelled) {
+        line(text, 'p', `${overviewText(overdue ? 'overdue' : 'withinDeadline')} · ${overviewText('dueAt')}: ${date(payment.dueAt)}`).className = 'overview-state-deadline';
+    }
+}
+export function renderOrderOverview(host, data, onContinue, offerInPage = false) {
     host.replaceChildren(); host.classList.add('order-overview');
     line(host, 'p', overviewText('title')).className = 'overview-eyebrow';
     line(host, 'h1', data.root.title || overviewText('title'));
     line(host, 'p', `${overviewText('orderReference')}: ${data.root.symbol}`).className = 'overview-reference';
     const toolbar = line(host, 'div', ''); toolbar.className = 'overview-toolbar';
-    line(toolbar, 'span', `${overviewText('updated')}: ${date(data.serverTime)}`);
-    const refresh = line(toolbar, 'button', overviewText('refresh')); refresh.type = 'button'; refresh.onclick = onRefresh;
+    line(toolbar, 'span', `${overviewText('updated')}: ${date(data.serverTime)}`).className = 'overview-updated';
 
     const waiting = data.people.some(p => ['waiting', 'offered', 'offer_expired', 'offer_declined', 'offer_cancelled'].includes(p.effectiveLifecycle));
     const activeOffer = data.offers.some(o => o.pendingPlaces > 0);
@@ -44,23 +58,37 @@ export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPa
         line(summary, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
         if (!data.orders.length) line(summary, 'p', overviewText('not_required_yet'));
     }
-    for (const order of data.orders) line(summary, 'p', `${order.symbol}: ${overviewText(order.state === 'storno' ? 'cancelled' : order.payment?.status || order.state)}`);
+    for (const order of data.orders) renderOrderState(summary, order);
     if (!waiting && !data.orders.length) line(summary, 'p', overviewText('withdrawn'));
     for (const offer of data.offers.filter(o => o.pendingPlaces > 0)) line(summary, 'p', `${overviewText('offeredPlaces')}: ${offer.pendingPlaces} · ${overviewText('validUntil')}: ${date(offer.expiresAt)}`);
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
     else if (!offerInPage && activeOffer) line(summary, 'p', overviewText('offerEmail'));
 
-    const people = section(host, overviewText('people'));
+    const itemLabel = overviewText(data.root.hasTickets ? 'ticket' : 'registration');
+    const people = section(host, overviewText(data.people.length === 1 ? (data.root.hasTickets ? 'ticket' : 'registration') : (data.root.hasTickets ? 'tickets' : 'registrations')));
     const participants = line(people, 'ul', ''); participants.className = 'overview-people';
     data.people.forEach((person, i) => {
         const row = line(participants, 'li', '');
-        line(row, 'span', person.label || `${overviewText('participant')} ${i + 1}`);
-        line(row, 'strong', overviewText(person.effectiveLifecycle));
+        const content = line(row, 'div', '');
+        const symbol = data.root.hasTickets && person.symbol;
+        if (data.people.length > 1 || symbol) line(content, 'h3', `${itemLabel} ${symbol || i + 1}`);
+        if (person.label) line(content, 'p', person.label);
+        const order = data.orders.find(order => order.id === person.currentOrderId);
+        const ticket = order?.tickets?.find(ticket => ticket.id === person.id);
+        const items = (order?.items || []).filter(item => String(item.ticketId) === String(person.id));
+        if (items.length) renderOverviewProducts(content, items, order.currency, money);
+        renderOverviewAnswers(content, person.answers, `ticket:${person.id}`);
+        // Payment belongs to the whole order; individual admissions only show
+        // waitlist outcomes or their actual usage/cancellation state.
+        const status = ticket?.displayStatus === 'cancelled' || (data.root.hasTickets && ['used', 'unused'].includes(ticket?.displayStatus)) ? ticket.displayStatus : null;
+        if (status) line(row, 'span', overviewText(status));
+        else if (person.effectiveLifecycle !== 'admitted' && !ticket) line(row, 'span', overviewText(person.effectiveLifecycle));
     });
     for (const order of data.orders) {
         const card = section(host, `${overviewText('orderReference')} ${order.symbol}`, 'order-overview-card');
         const amounts = line(card, 'dl', ''); amounts.className = 'overview-amounts';
         fact(amounts, overviewText('total'), money(order.total, order.currency));
+        renderOverviewAnswers(card, order.answers, `order:${order.id}`);
         const payment = order.payment;
         if (payment) {
             fact(amounts, overviewText('received'), money(payment.received, order.currency));
@@ -68,11 +96,24 @@ export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPa
             for (const key of ['returned', 'overpaid']) if (payment[key] > 0) fact(amounts, overviewText(key), money(payment[key], order.currency));
             if (payment.instructionsAvailable) {
                 const instructions = line(card, 'dl', ''); instructions.className = 'overview-payment-details';
-                fact(instructions, overviewText('dueNow'), money(payment.dueNow, order.currency));
+                if (payment.qrPayment && payment.dueNow > 0) {
+                    const paymentHost = line(card, 'div', '');
+                    let presentation;
+                    try { presentation = presentPayment(payment.qrPayment); } catch { /* Manual bank details remain available if QR data is invalid. */ }
+                    renderPaymentDetails(paymentHost, {
+                        ...payment.qrPayment,
+                        payload: presentation?.qrPayload,
+                        reference_kind: payment.referenceKind,
+                        reference: presentation?.referenceDisplay || payment.reference,
+                    }, { occasionTitle: data.root.title, orderSymbol: order.symbol });
+                    paymentHost.querySelector('details').dataset.overviewKey = `payment:${order.id}`;
+                } else {
+                    fact(instructions, overviewText('dueNow'), money(payment.dueNow, order.currency));
+                    fact(instructions, overviewText('account'), payment.publicAccount);
+                    fact(instructions, payment.referenceKind, payment.reference);
+                }
                 fact(instructions, overviewText('dueAt'), payment.dueAt ? date(payment.dueAt) : overviewText('onSite'));
                 if (payment.overdue) line(card, 'p', overviewText('overdue'));
-                fact(instructions, overviewText('account'), payment.publicAccount);
-                fact(instructions, payment.referenceKind, payment.reference);
             }
             const transactions = payment.transactions || [];
             line(card, 'h3', `${overviewText('transactions')} (${transactions.filter(t => t.kind === 'payment_received').length})`);
@@ -87,48 +128,82 @@ export function renderOrderOverview(host, data, onRefresh, onContinue, offerInPa
                 }
             }
         }
-        if (order.items?.length) {
-            const details = line(card, 'details', ''); line(details, 'summary', overviewText('items'));
-            for (const item of order.items) line(details, 'p', `${item.title || ''}: ${money(item.price, item.currency)}`);
-        }
-        for (const [i, ticket] of (data.root.hasTickets === false ? [] : order.tickets || []).entries()) line(card, 'p', `${ticket.label || `${overviewText('participant')} ${i + 1}`} - ${overviewText(ticket.displayStatus)}`);
+
     }
     const history = section(host, overviewText('history'));
     const timeline = line(history, 'ol', ''); timeline.className = 'overview-timeline';
     for (const event of data.timeline || []) {
+        if (event.kind === 'registration_received') continue;
         const entry = line(timeline, 'li', '');
-        line(entry, 'strong', overviewText(event.kind));
-        const time = line(entry, 'time', date(event.at)); time.dateTime = event.at;
+        line(entry, 'strong', overviewText(event.kind === 'order_sent' && !data.root.hasTickets ? 'confirmation_sent' : event.kind));
+        const time = line(entry, 'time', event.dateOnly ? new Date(`${event.at}T12:00:00`).toLocaleDateString(LocalizationService.currentLocale, { dateStyle: 'medium' }) : date(event.at)); time.dateTime = event.at;
+        if (event.amount != null) line(entry, 'p', money(event.amount, event.currency));
         if (event.previousState && event.previousState !== event.state) line(entry, 'p', `${overviewText(event.previousState)} → ${overviewText(event.state)}`);
         if (event.previousTotal != null) line(entry, 'p', `${overviewText('previousTotal')}: ${money(event.previousTotal, event.currency)} → ${overviewText('newTotal')}: ${money(event.total, event.currency)}`);
-        if (event.itemsChanged) {
-            const changes = line(entry, 'details', ''); line(changes, 'summary', overviewText('itemsChanged'));
-            for (const [key, prefix] of [['itemsBefore', '−'], ['itemsAfter', '+']]) for (const item of event[key] || []) line(changes, 'p', `${prefix} ${item.title || ''}: ${money(item.price, event.currency)}`);
-        }
+        if (event.itemsChanged) renderOverviewChanges(entry, event, itemLabel, data.people, money, data.root.hasTickets);
         if (event.detailsChanged) line(entry, 'p', overviewText('detailsChanged'));
         if (event.symbol && event.symbol !== data.root.symbol) line(entry, 'small', `${overviewText('orderReference')} ${event.symbol}`);
     }
     const current = line(timeline, 'li', ''); current.className = 'overview-timeline-current';
     line(current, 'strong', overviewText('currentStatus'));
-    line(current, 'p', overviewText(waiting ? activeOffer ? 'offerReady' : 'waitingExplanation' : 'statusAbove'));
+    if (waiting) line(current, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
+    for (const order of data.orders) renderOrderState(current, order, data.orders.length > 1);
+    if (!waiting && !data.orders.length) line(current, 'p', overviewText('withdrawn'));
 }
 
-export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false) {
+export function stopOrderOverview(host) {
+    host._overviewRefreshCleanup?.();
+    host._overviewGeneration = (host._overviewGeneration || 0) + 1;
+}
+
+function scheduleOverviewRefresh(host, refresh) {
+    const doc = host.ownerDocument, win = doc.defaultView;
+    if (!win || !host.isConnected || !host.classList.contains('order-overview')) return;
+    let timer;
+    const visible = () => host.isConnected && host.classList.contains('order-overview') && doc.visibilityState === 'visible' && host.getClientRects().length > 0;
+    const run = () => { if (visible()) return refresh(); cleanup(); };
+    const changed = () => { win.clearTimeout(timer); if (visible()) void run(); };
+    const cleanup = () => { win.clearTimeout(timer); doc.removeEventListener('visibilitychange', changed); };
+    host._overviewRefreshCleanup = cleanup;
+    doc.addEventListener('visibilitychange', changed);
+    if (visible()) timer = win.setTimeout(run, 30000);
+}
+
+export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false, background = false) {
+    host._overviewRefreshCleanup?.();
     const generation = (host._overviewGeneration || 0) + 1; host._overviewGeneration = generation;
     host.classList.add('order-overview');
-    host.replaceChildren(); host.setAttribute('aria-busy', 'true');
-    line(host, 'p', overviewText('loading'));
+    if (!background) {
+        host._overviewSnapshot = null;
+        host.replaceChildren(); host.setAttribute('aria-busy', 'true');
+        line(host, 'p', overviewText('loading'));
+    }
     try {
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
-        replaceResolvedPublicLink('form', formLinkFromPath(window.location.pathname), data.root?.formLink);
-        renderOrderOverview(host, data, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage),
-            onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage);
+        const snapshot = JSON.stringify({ ...data, serverTime: null });
+        // Keep expanded details and keyboard focus stable when nothing changed.
+        // A focused control may be in use: defer replacing it until the next poll.
+        if (snapshot !== host._overviewSnapshot && (!background || !host.contains(host.ownerDocument.activeElement))) {
+            const opened = new Map([...host.querySelectorAll('details[data-overview-key]')].map(detail => [detail.dataset.overviewKey, detail.open]));
+            renderOrderOverview(host, data,
+                onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage);
+            host.querySelectorAll('details[data-overview-key]').forEach(detail => { if (opened.has(detail.dataset.overviewKey)) detail.open = opened.get(detail.dataset.overviewKey); });
+            host._overviewSnapshot = snapshot;
+        }
+        const timestamp = host.querySelector('.overview-updated');
+        if (timestamp && snapshot === host._overviewSnapshot) timestamp.textContent = `${overviewText('updated')}: ${date(data.serverTime)}`;
         return data;
     } catch {
         if (host._overviewGeneration !== generation) return;
+        host._overviewSnapshot = null;
         host.replaceChildren(); line(host, 'p', overviewText('failed')).setAttribute('role', 'alert');
-        const retry = line(host, 'button', overviewText('refresh')); retry.type = 'button';
+        const retry = line(host, 'button', LocalizationService.tr('Common.retry')); retry.type = 'button';
         retry.onclick = () => loadOrderOverview(host, commands, scope, onContinue, offerInPage);
-    } finally { if (host._overviewGeneration === generation) host.removeAttribute('aria-busy'); }
+    } finally {
+        if (host._overviewGeneration === generation) {
+            host.removeAttribute('aria-busy');
+            scheduleOverviewRefresh(host, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, true));
+        }
+    }
 }

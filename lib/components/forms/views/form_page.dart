@@ -68,7 +68,6 @@ class _FormPageState extends State<FormPage> {
   CustomerOrderScope? _overviewScope;
   bool _showOverview = false;
   bool _overviewAccessFailed = false;
-  String? _loadedCapabilityFragment;
   String? _offerId;
   int? _waitlistOrderId;
   String? _waitlistToken;
@@ -112,19 +111,6 @@ class _FormPageState extends State<FormPage> {
 
     // This ensures that if the widget rebuilds (e.g., from pop state),
     // we don't re-trigger the data load, but we do re-subscribe the listener.
-    final fragment = context.routeData.fragment;
-    if (_dependenciesInitialized &&
-        fragment != _loadedCapabilityFragment &&
-        (fragment.startsWith('order?') || fragment.startsWith('waitlist?'))) {
-      _offerId = null;
-      _waitlistOrderId = null;
-      _waitlistToken = null;
-      _overviewScope = null;
-      _offerBundle = null;
-      _waitlistMessage = null;
-      _showOverview = false;
-      loadData();
-    }
     if (_dependenciesInitialized) {
       _popStateSubscription?.cancel();
       _popStateSubscription = RouterService.onPopState.listen(_handlePopState);
@@ -1097,9 +1083,7 @@ class _FormPageState extends State<FormPage> {
 
   void _replaceOverviewUrl() {
     if (!_showOverview || _overviewScope == null) return;
-    final uri = Uri.parse(RouterService.getCurrentBrowserUrl());
-    RouterService.changeUrl(
-        uri.replace(fragment: _overviewScope!.fragment).toString());
+    RouterService.changeUrl(_overviewScope!.uri.toString());
   }
 
   Future<void> _resolveOverviewAccess() async {
@@ -1159,7 +1143,6 @@ class _FormPageState extends State<FormPage> {
                     _overviewScope?.token != scope.token) return;
                 setState(() => _showOverview = false);
                 // Keep the write capability in memory; reload never recovers it from a view token.
-                _loadedCapabilityFragment = context.routeData.fragment;
                 await _loadOfferContinuation();
               } catch (_) {
                 /* Keep the overview when the offer is no longer active. */
@@ -1284,24 +1267,9 @@ class _FormPageState extends State<FormPage> {
     try {
       _offerId ??= widget.offerId;
       _waitlistOrderId ??= widget.waitlistOrderId;
-      final fragment = context.routeData.fragment;
-      _loadedCapabilityFragment = fragment;
-      final viewScope = CustomerOrderScope.fromFragment(fragment);
-      if (!continueOffer &&
-          (viewScope != null || (_showOverview && _overviewScope != null))) {
-        _overviewScope = viewScope ?? _overviewScope;
-        if (mounted)
-          setState(() {
-            _showOverview = true;
-            _isLoading = false;
-          });
+      if (!continueOffer && _showOverview && _overviewScope != null) {
+        setState(() { _isLoading = false; });
         return;
-      }
-      if (fragment.startsWith('waitlist?')) {
-        final params = Uri.splitQueryString(fragment.substring(9));
-        _waitlistToken ??= params['token'];
-        _offerId ??= params['offer_id'];
-        _waitlistOrderId ??= int.tryParse(params['order_id'] ?? '');
       }
       if (_offerId != null || _waitlistOrderId != null) {
         _offerBundle = await _waitlist.read(

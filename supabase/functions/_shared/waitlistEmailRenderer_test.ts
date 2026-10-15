@@ -237,7 +237,7 @@ Deno.test("links permit trusted localhost previews and reject credentialed or un
   }, selected);
   const url = new URL(local);
   assert.equal(url.hash, "");
-  assert.equal(url.pathname, "/form/synthetic-form");
+  assert.equal(url.pathname, "/order");
   assert.match(url.search, /^\?order_id=101&token=/);
   for (
     const webLink of [

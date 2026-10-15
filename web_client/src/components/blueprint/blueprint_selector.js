@@ -1,3 +1,4 @@
+import { RouterService } from '../../services/router_service.js';
 
 import { FormStrings } from '../forms/form_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
@@ -65,7 +66,7 @@ export class BlueprintSelector {
         // --- History / Navigation ---
         // Push a new state so the back button closes the modal instead of navigating away
         const stateId = 'seat-selection';
-        window.history.pushState({ overlay: stateId }, '', '#seat-selection');
+        RouterService.pushOverlayState(stateId);
 
         // Global Event Killer removed in favor of CSS handling (touch-action: none on container)
         // and targeted gesture handling in BlueprintRenderer/GestureController

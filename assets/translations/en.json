@@ -2502,7 +2502,7 @@
     "compareCurrencies": "All currencies in CZK",
     "currencyComparisonHelp": "Indicative conversion of all days at the latest available CNB rate, rounded to cents per day and currency. Rate date:",
     "orderTimeline": "Order activity over time",
-    "orderTimelineHelp": "Newly created orders per day, including orders cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
+    "orderTimelineHelp": "Newly created orders per day, including orders cancelled later. This is not a count of unique people.",
     "paymentTimeline": "When payments arrived",
     "paymentTimelineHelp": "Recorded positive transactions by payment date, including partial payments on unpaid orders. Refunds are separate. Older payments without transaction records are absent, so the snapshot total may be higher.",
     "daily": "Daily",
@@ -2550,7 +2550,7 @@
     "product": "Product",
     "count": "Count",
     "applicationTimeline": "Application activity over time",
-    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people. Days use Europe/Prague time.",
+    "applicationTimelineHelp": "Newly created applications per day, including applications cancelled later. This is not a count of unique people.",
     "onlyValid": "Valid only",
     "includingCancelled": "Including cancelled"
   },
@@ -2781,7 +2781,7 @@
     "storno": "Cancelled",
     "not_required_yet": "No payment required yet",
     "free": "No payment required",
-    "unpaid": "Unpaid",
+    "unpaid": "Awaiting payment",
     "partially_paid": "Partially paid",
     "deposit_paid": "Deposit paid",
     "fully_paid": "Fully paid",
@@ -2830,6 +2830,19 @@
     "newTotal": "New total",
     "itemsChanged": "Items changed",
     "detailsChanged": "Order details were updated.",
-    "gridOverview": "Overview"
+    "gridOverview": "Overview",
+    "tickets": "Tickets",
+    "ticket": "Ticket",
+    "registrations": "Registrations",
+    "registration": "Registration",
+    "submittedDetails": "Submitted details",
+    "answer": "Answer",
+    "added": "Added",
+    "removed": "Removed",
+    "changed": "Changed",
+    "changedTo": "Now",
+    "confirmation_sent": "Confirmation sent",
+    "waitlist_entered": "Added to the waiting list",
+    "withinDeadline": "Within the payment deadline"
   }
 }

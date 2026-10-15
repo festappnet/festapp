@@ -2503,7 +2503,7 @@
     "compareCurrencies": "Všechny měny v CZK",
     "currencyComparisonHelp": "Orientační přepočet všech dnů posledním dostupným kurzem ČNB, zaokrouhlený na haléře za den a měnu. Datum kurzu:",
     "orderTimeline": "Jak přibývaly objednávky",
-    "orderTimelineHelp": "Počet nově vytvořených objednávek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague.",
+    "orderTimelineHelp": "Počet nově vytvořených objednávek za den, včetně později stornovaných. Nejde o počet unikátních lidí.",
     "paymentTimeline": "Kdy přicházely platby",
     "paymentTimelineHelp": "Kladné zaevidované transakce podle data platby, včetně částečných úhrad nezaplacených objednávek. Vratky jsou oddělené. Starší platby bez transakčního záznamu v grafu nejsou; souhrn proto může být vyšší.",
     "daily": "Po dnech",
@@ -2551,7 +2551,7 @@
     "product": "Produkt",
     "count": "Počet",
     "applicationTimeline": "Jak přibývaly přihlášky",
-    "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí. Dny podle časového pásma Europe/Prague.",
+    "applicationTimelineHelp": "Počet nově vytvořených přihlášek za den, včetně později stornovaných. Nejde o počet unikátních lidí.",
     "onlyValid": "Pouze platné",
     "includingCancelled": "Včetně stornovaných"
   },
@@ -2782,7 +2782,7 @@
     "storno": "Zrušeno",
     "not_required_yet": "Zatím nic neplatíte",
     "free": "Bez platby",
-    "unpaid": "Dosud neuhrazeno",
+    "unpaid": "Čeká na uhrazení",
     "partially_paid": "Částečně uhrazeno",
     "deposit_paid": "Záloha uhrazena",
     "fully_paid": "Plně uhrazeno",
@@ -2831,6 +2831,19 @@
     "newTotal": "Nová cena",
     "itemsChanged": "Změna položek",
     "detailsChanged": "Údaje objednávky byly aktualizovány.",
-    "gridOverview": "Přehled"
+    "gridOverview": "Přehled",
+    "tickets": "Vstupenky",
+    "ticket": "Vstupenka",
+    "registrations": "Přihlášky",
+    "registration": "Přihláška",
+    "submittedDetails": "Zadané údaje",
+    "answer": "Odpověď",
+    "added": "Přidáno",
+    "removed": "Odebráno",
+    "changed": "Upraveno",
+    "changedTo": "Nově",
+    "confirmation_sent": "Potvrzení odesláno",
+    "waitlist_entered": "Zařazeno na čekací listinu",
+    "withinDeadline": "V termínu úhrady"
   }
 }

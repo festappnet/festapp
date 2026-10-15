@@ -70,12 +70,16 @@ test('precache contains the immutable main selected by the deployed Flutter HTML
     await writeFile(path.join(root, 'webclient'), 'web');
     await writeFile(path.join(root, 'main.dart.js'), 'main');
     await writeFile(path.join(root, 'main.dart.1.0.0-1.js'), 'main');
+    await writeFile(path.join(root, 'main.dart.js_1.part.js'), 'font');
+    await writeFile(path.join(root, 'main.dart.1.0.0-1.js_1.part.js'), 'font');
     await writeFile(path.join(root, 'main.dart.0.9.0-9.js'), 'old');
     await writeFile(path.join(root, 'festapp-version.json'), JSON.stringify({
       version: '1.0.0+1', main: 'main.dart.1.0.0-1.js',
     }));
     await writeFile(path.join(root, 'festapp_flutter_bootstrap_guard.js'), 'guard');
     const manifest = await collectPwaShellManifest(root);
+    assert.ok(manifest.coreResources.includes('/main.dart.1.0.0-1.js_1.part.js'));
+    assert.ok(!manifest.knownResources.includes('/main.dart.js_1.part.js'));
     assert.ok(manifest.coreResources.includes('/main.dart.1.0.0-1.js'),
       'the exact executable requested by Flutter must be installed before handoff');
     assert.ok(!manifest.knownResources.includes('/main.dart.js'),
@@ -164,4 +168,18 @@ test('precache contains the immutable main selected by the deployed Flutter HTML
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('lazy web modules and their styles install with the shell before a deployment can remove them', async () => {
+ const dir=await mkdtemp(path.join(tmpdir(),'festapp-web-modules-'));
+ try {
+  await mkdir(path.join(dir,'web-assets'),{recursive:true});
+  await writeFile(path.join(dir,'web-assets','blueprint-hash1234.js'),'export {};');
+  await writeFile(path.join(dir,'web-assets','blueprint-hash1234.css'),'body {}');
+  await writeFile(path.join(dir,'flutter'),'flutter');
+  await writeFile(path.join(dir,'webclient'),'webclient');
+  const manifest=await collectPwaShellManifest(dir);
+  assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.js'));
+  assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.css'));
+ } finally {await rm(dir,{recursive:true,force:true});}
 });

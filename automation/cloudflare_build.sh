@@ -346,6 +346,22 @@ async function routeRequest(request, env) {
       return Response.redirect(new URL("/", url).toString(), 301);
     }
 
+    if (path === "/order") {
+      const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
+      const response = htmlResponse(res.body, res.headers);
+      response.headers.set("cache-control", "no-store");
+      response.headers.set("referrer-policy", "no-referrer");
+      response.headers.set("x-robots-tag", "noindex, nofollow");
+      return response;
+    }
+
+    if (path.startsWith("/form/") &&
+        ["order_id", "offer_id", "token", "waitlist"].some(key => url.searchParams.has(key))) {
+      return new Response("Tento odkaz již není podporován.", { status: 410, headers: {
+        "content-type": "text/plain; charset=utf-8", "cache-control": "no-store",
+        "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow",
+      }});
+    }
     if (path.startsWith("/form/")) return handleForm(request, env, path);
 
     // OAuth handoffs must reach the correct adapter and never enter HTML caches.

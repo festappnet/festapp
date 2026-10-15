@@ -83,6 +83,12 @@ const FALSE_OFFLINE_RECOVERY_CACHE_NAMES = new Set([
 // Remove this bounded migration list once supported installations are newer
 // than 0.19.93+459.
 const HANDOFF_BOOTSTRAP_CACHE_NAMES = new Set([
+  // These installed routers predate the standalone order route. Claim without
+  // reloading their forms so new navigations reach /order rather than home.
+  'festapp-app-shell-0.20.222+706',
+  'festapp-app-shell-0.20.223+707',
+  'festapp-app-shell-0.20.224+708',
+  'festapp-app-shell-0.20.225+709',
   'festapp-app-shell-0.20.185+669',
   'festapp-app-shell-0.20.186+670',
   'festapp-app-shell-0.20.187+671',
@@ -456,7 +462,7 @@ function cachedNavigationTarget(pathname) {
   if (pathname === '/' && FORCED_OCCASION_PATH) {
     return FLUTTER_ENTRY;
   }
-  if (pathname === '/' || pathname.startsWith('/form/')) {
+  if (pathname === '/' || pathname === '/order' || pathname.startsWith('/form/')) {
     return WEB_CLIENT_ENTRY;
   }
   return FLUTTER_ENTRY;
@@ -464,7 +470,7 @@ function cachedNavigationTarget(pathname) {
 
 function isFlutterExecutable(pathname) {
   return pathname === FLUTTER_MAIN || pathname === '/main.dart.js' ||
-    /^\\/main\\.dart\\.js_\\d+\\.part\\.js$/.test(pathname) ||
+    /^\\/main\\.dart\\.(?:[0-9][0-9A-Za-z.+-]*\\.)?js_\\d+\\.part\\.js$/.test(pathname) ||
     pathname === '/flutter.js' ||
     pathname === '/flutter_bootstrap.js';
 }
@@ -511,6 +517,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  if (url.origin === self.location.origin && request.mode === 'navigate' &&
+      url.pathname.startsWith('/form/') &&
+      ['order_id', 'offer_id', 'token', 'waitlist'].some(key => url.searchParams.has(key))) {
+    event.respondWith(new Response('Tento odkaz již není podporován.', { status: 410,
+      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' } }));
+    return;
+  }
   // Cache only font resources the application actually requests. This covers
   // Google Fonts stylesheets/binaries and Flutter's demand-loaded Noto Color
   // Emoji shards without downloading either provider's unused catalog.

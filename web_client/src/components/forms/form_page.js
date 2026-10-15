@@ -1,5 +1,5 @@
-import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, overviewText } from './order_overview.js';
-import { WaitlistCommands, parseWaitlistFragment, waitlistRegistrationPayload } from './waitlist_commands.js';
+import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, stopOrderOverview, overviewText } from './order_overview.js';
+import { WaitlistCommands, parseWaitlistLocation, waitlistRegistrationPayload } from './waitlist_commands.js';
 import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
 import { WaitlistStrings as WaitlistStrings } from './waitlist_strings.js';
 import { FormModel } from './form_models.js';
@@ -49,6 +49,10 @@ export class FormPage extends Component {
     }
 
     cleanup({ preserveEditButton = false } = {}) {
+        if (this.host) {
+            stopOrderOverview(this.host);
+            this.host.querySelectorAll('.order-overview').forEach(stopOrderOverview);
+        }
         if (this.currentPriceWidget) {
             this.currentPriceWidget.destroy();
             this.currentPriceWidget = null;
@@ -90,7 +94,7 @@ export class FormPage extends Component {
         // Prevent re-init if same link (e.g. hash change/back from preview)
         // Hardened Check: If container has content, we assume it's valid.
         // NOTE: this.host is managed by base Component
-        if (this.currentLink === link && this.host && this.host.innerHTML.trim() !== '') {
+        if (link != null && this.currentLink === link && this.host && this.host.innerHTML.trim() !== '') {
             return;
         }
         // Check for existing instance to prevent duplicates or state leaks
@@ -129,13 +133,17 @@ export class FormPage extends Component {
 
         try {
             // 3. Fetch Data
-            this.waitlistScope = parseWaitlistFragment(new URLSearchParams(window.location.search).get('waitlist') === '1' ? `#waitlist?${window.location.search.slice(1)}` : window.location.hash);
+            const personalParams = new URLSearchParams(window.location.search);
+            if (window.location.pathname !== '/order' &&
+                (['order_id', 'offer_id', 'token', 'waitlist'].some(key => personalParams.has(key)) ||
+                 /^#(?:order|waitlist)\?/.test(window.location.hash))) throw new Error('INVALID_CAPABILITY');
+            this.waitlistScope = parseWaitlistLocation(window.location);
             this.waitlistCommands ||= new WaitlistCommands();
             const viewScope = parseOrderLocation(window.location);
+            if (window.location.pathname === '/order' && !viewScope && !this.waitlistScope) throw new Error('INVALID_CAPABILITY');
             if (viewScope) {
                 this.setOverviewLayout(true);
                 this.overviewScope = viewScope;
-                if (window.location.hash.startsWith('#order?')) window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
                 this.host.replaceChildren();
                 const overview = await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
                     this.continuationScope ? () => this.continueOverviewOffer() : null);
@@ -150,7 +158,6 @@ export class FormPage extends Component {
                 referrer.content = 'no-referrer';
                 const bundle = await this.waitlistCommands.read(this.waitlistScope);
                 this.waitlistBundle = bundle;
-                RouterService.canonicalizePublicLink('form', link, bundle.form?.link || bundle.formLink);
                 link = bundle.form?.link || bundle.formLink || link;
                 this.currentLink = link;
                 if (!this.waitlistScope.offerId || !bundle.pendingCount) {
@@ -300,6 +307,8 @@ export class FormPage extends Component {
         }, model, () => {
             const url = new URL(window.location.href);
             url.hash = '';
+            url.pathname = `/form/${encodeURIComponent(link)}`;
+            for (const key of ['order_id', 'offer_id', 'token', 'waitlist', 'admin']) url.searchParams.delete(key);
             window.history.replaceState(null, '', url.pathname + url.search);
             this.waitlistScope = null; this.waitlistBundle = null;
             this.currentLink = null; this.init(link);
@@ -797,7 +806,7 @@ export class FormPage extends Component {
                          const link = this.currentLink;
                          const url = new URL(result.data.orderOverviewUrl);
                          const viewScope = parseOrderLocation(url);
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(viewScope)}`);
+                         window.history.replaceState({}, '', `/order${orderOverviewSearch(viewScope)}`);
                          this.currentLink = null;
                          await this.init(link);
                      } catch {
@@ -811,7 +820,7 @@ export class FormPage extends Component {
                      const link = this.currentLink;
                      if (this.overviewScope) {
                          this.continuationScope = this.waitlistScope;
-                         window.history.replaceState({}, '', `${window.location.pathname}${orderOverviewSearch(this.overviewScope)}`);
+                         window.history.replaceState({}, '', `/order${orderOverviewSearch(this.overviewScope)}`);
                      }
                      this.currentLink = null;
                      await this.init(link);

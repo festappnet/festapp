@@ -222,10 +222,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       if (widget.openOfferForm != null) {
         await widget.openOfferForm!(offer['id'] as String);
       } else {
-        final link = widget.order.form?.link;
-        if (link == null ||
-            !await AdminOfferFormLink.open(
-              formLink: link,
+        if (!await AdminOfferFormLink.open(
               offerId: offer['id'] as String,
             )) {
           throw StateError('Offer form could not be opened');
