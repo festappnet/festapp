@@ -129,20 +129,20 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false)
                 for (const transaction of transactions) {
                     const row = line(list, 'li', '');
                     const description = line(row, 'span', overviewText(transaction.kind));
-                    line(description, 'small', transaction.recordedAt ? `${overviewText('recordedAt')}: ${date(transaction.recordedAt)}` : overviewText('dateUnknown'));
+                    line(description, 'small', transaction.recordedAt ? date(transaction.recordedAt) : overviewText('dateUnknown'));
                     line(row, 'strong', money(transaction.amount, transaction.currency));
                 }
             }
         }
 
     }
-    const history = section(host, overviewText('history'));
+    const history = section(host, overviewText('history'), 'overview-history-card');
     const timeline = line(history, 'ol', ''); timeline.className = 'overview-timeline';
     for (const event of data.timeline || []) {
         if (event.kind === 'registration_received') continue;
         const entry = line(timeline, 'li', '');
         line(entry, 'strong', overviewText(event.kind === 'order_sent' && !data.root.hasTickets ? 'confirmation_sent' : event.kind));
-        const time = line(entry, 'time', `${event.timeKind === 'recorded' ? `${overviewText('recordedAt')}: ` : ''}${date(event.at)}`); time.dateTime = event.at;
+        const time = line(entry, 'time', date(event.at)); time.dateTime = event.at;
         if (event.amount != null) line(entry, 'p', money(event.amount, event.currency));
         if (event.previousState && event.previousState !== event.state) line(entry, 'p', `${overviewText(event.previousState)} → ${overviewText(event.state)}`);
         if (event.previousTotal != null) line(entry, 'p', `${overviewText('previousTotal')}: ${money(event.previousTotal, event.currency)} → ${overviewText('newTotal')}: ${money(event.total, event.currency)}`);
