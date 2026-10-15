@@ -688,7 +688,7 @@ body.dark-mode .surcharge-info {
 .overview-status { border-inline-start: 4px solid var(--primary-color, #1565c0); background: var(--hover-color, #8882); padding: 20px 24px; border-radius: 0 8px 8px 0; }
 .overview-people, .overview-transactions { list-style: none; padding: 0; margin: 0; }
 .overview-people > li, .overview-transactions li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-block-end: 1px solid var(--border-color, #8885); }
-.overview-people > li:last-child { border-block-end: 0; }
+.overview-people > li:last-child, .overview-transactions > li:last-child { border-block-end: 0; }
 .overview-transactions small { display: block; margin-block-start: 4px; }
 .order-overview-card { padding-block: 24px; border-block: 1px solid var(--border-color, #8885); }
 .overview-amounts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin: 24px 0; }
@@ -738,10 +738,11 @@ body.dark-mode .surcharge-info {
 }
 
 .overview-state-row { display: flex; align-items: flex-start; gap: 12px; margin-block: 12px; }
-.overview-state-row > .material-icons { font-size: 28px; line-height: 1.5; flex-shrink: 0; }
 .overview-state-row p { margin: 4px 0; }
-.overview-state-complete > .material-icons { color: var(--dark-green, #2e7d32); }
-.overview-state-overdue > .material-icons, .overview-state-cancelled > .material-icons { color: var(--danger-color, #c04848); }
-.overview-state-pending > .material-icons { color: var(--primary-color, #246ca0); }
+.overview-state-complete > .overview-state-icon { color: var(--dark-green, #2e7d32); }
+.overview-state-overdue > .overview-state-icon, .overview-state-cancelled > .overview-state-icon { color: var(--danger-color, #c04848); }
+.overview-state-pending > .overview-state-icon { color: var(--primary-color, #246ca0); }
 .overview-state-deadline { font-size: .875rem; }
 .overview-state-overdue .overview-state-deadline { font-weight: 600; }
+
+.overview-state-icon { width: 28px; height: 28px; fill: currentColor; flex-shrink: 0; }

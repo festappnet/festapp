@@ -149,12 +149,24 @@ test('single registration shows one heading, collapsed answers and no ticket wor
     assert.match(host.querySelector('.overview-people h3').textContent,/T123/);
 });
 
-test('payment timeline uses only the recorded calendar date and amount',t=>{
+test('payments show recorded timestamps consistently in the list and history',t=>{
     const host=setup(t),data=fixture();
-    data.timeline=[{kind:'payment_received',at:'2026-10-15',dateOnly:true,amount:300,currency:'CZK'}];
+    data.timeline=[{kind:'payment_received',at:'2026-10-15T19:30:31Z',timeKind:'recorded',amount:300,currency:'CZK'}];
+    data.orders[0].payment.transactions=[{kind:'payment_received',recordedAt:'2026-10-15T19:30:31Z',date:'2026-10-15',amount:300,currency:'CZK'}];
     renderOrderOverview(host,data);
-    assert.doesNotMatch(host.querySelector('.overview-timeline time').textContent,/:/);
-    assert.match(host.querySelector('.overview-timeline').textContent,/300,00/);
+    const timestamp=host.querySelector('.overview-timeline time');
+    assert.equal(timestamp.dateTime,'2026-10-15T19:30:31Z');
+    assert.match(timestamp.textContent,/recordedAt:.*\d{1,2}:\d{2}/);
+    assert.equal(host.querySelector('.overview-transactions small').textContent,timestamp.textContent);
+});
+
+test('one order has its reference in the status heading and a standalone paid status',t=>{
+    const host=setup(t),data=fixture();data.people=[];data.orders[0].payment.status='fully_paid';
+    renderOrderOverview(host,data);
+    assert.equal(host.querySelector('.overview-status h2').textContent,'OrderOverview.currentOrderStatus CHILD');
+    assert.doesNotMatch(host.querySelector('.overview-state-row').textContent,/CHILD|check_circle/);
+    assert.ok(host.querySelector('.overview-state-complete svg'));
+    assert.match(host.querySelector('.order-overview-card h2').textContent,/orderDetails CHILD/);
 });
 
 test('payment status distinguishes awaiting, overdue and completed without an overdue warning for paid orders',t=>{
