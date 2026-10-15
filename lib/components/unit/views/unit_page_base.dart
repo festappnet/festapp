@@ -1,3 +1,4 @@
+import 'package:fstapp/components/occasion/past_occasion_years.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:auto_route/auto_route.dart';
@@ -350,27 +351,8 @@ abstract class UnitPageBaseState<T extends UnitPageBase> extends State<T> {
                 ),
               ),
             ),
-          // Grid of past occasion cards.
           if (pastEvents.isNotEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              sliver: SliverGrid(
-                gridDelegate: gridDelegate,
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final occasion = pastEvents[index];
-                    return RepaintBoundary(
-                      child: OccasionCard(
-                        occasion: occasion,
-                        isPast: true,
-                        isPresent: false,
-                      ),
-                    );
-                  },
-                  childCount: pastEvents.length,
-                ),
-              ),
-            ),
+            ..._buildPastEvents(pastEvents, gridDelegate),
           // Extra space below the last item.
           const SliverToBoxAdapter(
             child: SizedBox(height: 64),
@@ -379,4 +361,47 @@ abstract class UnitPageBaseState<T extends UnitPageBase> extends State<T> {
       ),
     );
   }
+
+  List<Widget> _buildPastEvents(
+      List<OccasionModel> occasions, SliverGridDelegate gridDelegate) {
+    final groups = groupPastOccasionsByYear(occasions);
+    if (groups.isEmpty) return [_pastGrid(occasions, gridDelegate)];
+    return [
+      for (final entry in groups.entries) ...[
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Semantics(
+              header: true,
+              child: Text('${entry.key} (${entry.value.length})',
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+          ),
+        ),
+        _pastGrid(entry.value, gridDelegate),
+      ],
+    ];
+  }
+
+  Widget _pastGrid(
+          List<OccasionModel> occasions, SliverGridDelegate gridDelegate) =>
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        sliver: SliverGrid(
+          gridDelegate: gridDelegate,
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final occasion = occasions[index];
+              return RepaintBoundary(
+                child: OccasionCard(
+                  occasion: occasion,
+                  isPast: true,
+                  isPresent: false,
+                ),
+              );
+            },
+            childCount: occasions.length,
+          ),
+        ),
+      );
 }

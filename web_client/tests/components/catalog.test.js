@@ -4,7 +4,7 @@ register('../css_loader.mjs', import.meta.url);
 import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { classifyOccasions, extractPublicOccasions } from '../../src/components/occasion/catalog.js';
+import { classifyOccasions, extractPublicOccasions, groupPastOccasionsByYear } from '../../src/components/occasion/catalog.js';
 let UnitPage, DbOccasions, OccasionCard, LocalizationService;
 before(async () => {
     const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://vstupenky.online/' });
@@ -47,20 +47,23 @@ test('failed refresh preserves SSR links, safely renders error and retry updates
     assert.equal(document.querySelector('a[href="/form/server"]'), null);
     assert.match(document.querySelector('[role=status]').textContent, /žádné akce/);
 });
-test('archive search expands historical matches and empty search differs from empty catalogue in both locales', async t => {
+test('past events stay visible before and after search, with distinct empty search states in both locales', async t => {
     t.mock.method(OccasionCard, 'create', occasion => { const a = document.createElement('a'); a.href = '/form/' + occasion.link; a.textContent = occasion.title; return a; });
     for (const locale of ['cs', 'en']) {
         LocalizationService.currentLocale = locale;
         const page = fixture();
         t.mock.method(DbOccasions, 'getPublicOccasions', async () => [{ title: 'Historická akce', link: 'past', start_time: '2020-01-01', end_time: '2020-01-02' }]);
         await page.loadOccasions(3);
-        assert.equal(document.querySelector('details').open, false);
+        assert.equal(document.querySelector('details'), null);
+        assert.ok(document.querySelector('section.catalog-archive a[href="/form/past"]'));
         page.filter('historicka');
-        assert.equal(document.querySelector('details').open, true);
+        assert.equal(document.querySelector('details'), null);
+        assert.ok(document.querySelector('section.catalog-archive a[href="/form/past"]'));
         page.filter('missing');
         assert.match(document.querySelector('[role=status]').textContent, locale === 'cs' ? /tento výraz/ : /match your search/);
         document.querySelector('[data-catalog-status] button').click();
-        assert.equal(document.querySelector('details').open, false);
+        assert.equal(document.querySelector('details'), null);
+        assert.ok(document.querySelector('section.catalog-archive a[href="/form/past"]'));
     }
 });
 test('disposed catalogue ignores a late response', async t => {
@@ -74,4 +77,46 @@ test('disposed catalogue ignores a late response', async t => {
 test('public catalogue response contract distinguishes an empty result from invalid payloads', () => {
     for (const valid of [[], { occasions: [] }, { data: { occasions: [] } }]) assert.deepEqual(extractPublicOccasions(valid), []);
     for (const invalid of [null, {}, { occasions: 'bad' }, { error: 'unavailable' }]) assert.throws(() => extractPublicOccasions(invalid));
+});
+
+function pastEvents(count, multiYear = true) {
+    return Array.from({ length: count }, (_, i) => ({
+        title: `Past event ${i}`, link: `past-${i}`,
+        start_time: `${multiYear && i % 2 ? 2023 : 2024}-01-01T12:00:00Z`,
+        end_time: `${multiYear && i % 2 ? 2023 : 2024}-01-02T12:00:00Z`,
+    }));
+}
+
+test('archive years require nine events and multiple known start years, preserving every event', () => {
+    assert.deepEqual(groupPastOccasionsByYear(pastEvents(8)), []);
+    assert.deepEqual(groupPastOccasionsByYear(pastEvents(9, false)), []);
+    const events = pastEvents(9);
+    const groups = groupPastOccasionsByYear(events);
+    assert.deepEqual(groups.map(group => group.year), [2024, 2023]);
+    assert.deepEqual(groups[0].occasions, events.filter((_, i) => i % 2 === 0));
+    assert.equal(groups.flatMap(group => group.occasions).length, 9);
+    for (const invalid of [null, '', 'invalid']) {
+        assert.deepEqual(groupPastOccasionsByYear([...events, { start_time: invalid }]), []);
+    }
+    assert.equal(groupPastOccasionsByYear([...events, { start_time: '2025-01-01T00:30:00+01:00' }])[0].year, 2024);
+});
+
+test('large multi-year archive shows year headings and every completed card without a disclosure', t => {
+    const flags = [];
+    t.mock.method(OccasionCard, 'create', (occasion, present, past) => {
+        flags.push({ present, past });
+        const a = document.createElement('a'); a.href = '/form/' + occasion.link; a.textContent = occasion.title; return a;
+    });
+    const page = fixture();
+    page.render(pastEvents(9));
+    assert.deepEqual([...document.querySelectorAll('.catalog-archive h3')].map(h => h.textContent), ['2024', '2023']);
+    assert.equal(document.querySelectorAll('.catalog-archive a').length, 9);
+    assert.equal(document.querySelector('details'), null);
+    assert.ok(flags.every(flag => flag.past && !flag.present));
+    page.render(pastEvents(8));
+    assert.equal(document.querySelector('.catalog-archive h3'), null);
+    assert.equal(document.querySelectorAll('.catalog-archive a').length, 8);
+    page.render(pastEvents(9, false));
+    assert.equal(document.querySelector('.catalog-archive h3'), null);
+    assert.equal(document.querySelectorAll('.catalog-archive a').length, 9);
 });

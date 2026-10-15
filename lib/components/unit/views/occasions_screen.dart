@@ -1,3 +1,4 @@
+import 'package:fstapp/components/occasion/past_occasion_years.dart';
 import 'package:fstapp/components/unit/app_landing.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -327,7 +328,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                       ],
                       if (pastEvents.isNotEmpty) ...[
                         _buildSectionHeader(context, CommonStrings.pastEvents),
-                        _buildGrid(pastEvents),
+                        ..._buildPastEvents(pastEvents),
                       ],
                     ],
                     const SliverToBoxAdapter(child: SizedBox(height: 64)),
@@ -451,6 +452,39 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         child: Text(title, style: Theme.of(context).textTheme.titleLarge),
       ),
     );
+  }
+
+  List<Widget> _buildPastEvents(List<OccasionModel> occasions) {
+    final byYear = groupPastOccasionsByYear(occasions);
+    if (byYear.isEmpty) return [_buildGrid(occasions)];
+    final years = byYear.keys.toList();
+
+    return [
+      for (final year in years) ...[
+        SliverToBoxAdapter(
+          child: Padding(
+            padding:
+                EdgeInsets.fromLTRB(16, year == years.first ? 0 : 24, 16, 12),
+            child: Semantics(
+              header: true,
+              child: Row(
+                children: [
+                  Text('$year', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(width: 12),
+                  Text('${byYear[year]!.length}',
+                      semanticsLabel:
+                          '${CommonStrings.events}: ${byYear[year]!.length}',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(width: 16),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+            ),
+          ),
+        ),
+        _buildGrid(byYear[year]!),
+      ],
+    ];
   }
 
   Widget _buildGrid(List<OccasionModel> occasions, {bool isPresent = false}) {
