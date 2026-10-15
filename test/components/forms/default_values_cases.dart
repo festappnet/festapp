@@ -1,3 +1,7 @@
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter/material.dart';
+import 'package:fstapp/components/eshop/models/order_model.dart';
+import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/holder_models/field_holder.dart';
@@ -107,6 +111,51 @@ void main() {
       final resolved = CheckboxFieldBuilder.resolveDefaults(
           holderWith(['A', 42, null, 'B']), options);
       expect(resolved.map((o) => o.title).toList()..sort(), ['A', 'B']);
+    });
+  });
+  group('Saved identity document answers', () {
+    setUpAll(() => initializeDateFormatting('cs_CZ'));
+    const document = {
+      'id_document_number': 'AB123456',
+      'id_document_expiry_date': '2031-06-30',
+    };
+    final field = FormFieldDefinition(
+      id: 27,
+      type: FormMetadata.fieldTypeIdDocument,
+      title: 'Passport',
+      data: {'show_expiry_date': true, 'value': document},
+    );
+
+    testWidgets('responses show the document answer without raw map keys',
+        (tester) async {
+      late BuildContext context;
+      await tester.pumpWidget(MaterialApp(home: Builder(builder: (value) {
+        context = value;
+        return const SizedBox();
+      })));
+      final order = OrderModel(
+        id: 1,
+        orderSymbol: '1',
+        state: OrderModel.orderedState,
+        data: {
+          'fields': [
+            {'27': document}
+          ]
+        },
+      );
+      final response = FormResponseModel.fromOrder(order, [field]);
+      final value = response.toTrinaRow(context).cells['27']!.value.toString();
+      expect(value, contains('AB123456'));
+      expect(value, contains('2031'));
+      expect(value, isNot(contains('id_document_number')));
+      expect(value, isNot(contains('id_document_expiry_date')));
+      expect(response.fields!['27'], document);
+      expect(FormResponseModel.fromPlutoJson({'27': value}, [field]).fields,
+          isEmpty);
+      response.fields!['27'] = 'LEGACY123';
+      expect(response.toTrinaRow(context).cells['27']!.value, 'LEGACY123');
+      response.fields!['27'] = null;
+      expect(response.toTrinaRow(context).cells['27']!.value, '');
     });
   });
 }
