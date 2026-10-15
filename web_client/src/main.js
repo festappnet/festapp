@@ -1,3 +1,4 @@
+import { handleOrganizerIntent } from './startup/organizer_intent.js';
 import { GoogleAuthService } from './services/google_auth_service.js';
 import { LoginModal } from './components/users/login_modal.js';
 const googleCallback = GoogleAuthService.takeCallback();
@@ -35,8 +36,14 @@ class Main {
                 catch (error) { modal.googleError = error.message; modal._setView('login'); }
             }
 
+            const organizerIntent = await handleOrganizerIntent();
+            if (organizerIntent === 'navigated') {
+                window.markFestappAppReady?.();
+                return;
+            }
+
             // 2. Check Routing (SPA Support)
-            if (await RouterService.handleInitialLoad()) {
+            if (!organizerIntent && await RouterService.handleInitialLoad()) {
                  RouterService.initPopStateListener();
                  window.markFestappAppReady?.();
                  return; 
@@ -51,7 +58,7 @@ class Main {
             // 4. Initial Fetch
             await unitPage.loadOccasions(AppConfig.organization);
 
-            // Reveal the home only after cards replace the server-rendered SEO list.
+            // Complete startup after the catalogue update settles; SSR stays usable while pending.
             const app = document.getElementById('app');
             if (app) app.style.display = 'flex';
             

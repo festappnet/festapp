@@ -58,3 +58,5 @@ web_client/public/.well-known/assetlinks.json
 web_client/public/.well-known/apple-app-site-association
 web_client/public/apple-app-site-association
 web_client/public/_headers
+
+web/organizers-page

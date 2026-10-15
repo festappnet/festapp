@@ -65,8 +65,11 @@ export class OccasionCard {
         const header = document.createElement('div');
         header.className = 'oc-header';
         
-        // Date String (Simplified for now, assumes TimeHelper exists and works)
-        const dateStr = TimeHelper.getMinimalisticDateRange(new Date(occasion.start_time), new Date(occasion.end_time), LocalizationService.currentLocale);
+        // Missing or invalid dates must not hide an otherwise public event.
+        const start = occasion.start_time ? new Date(occasion.start_time) : null;
+        const end = occasion.end_time ? new Date(occasion.end_time) : null;
+        const dateStr = start && end && Number.isFinite(start.getTime()) && Number.isFinite(end.getTime())
+            ? TimeHelper.getMinimalisticDateRange(start, end, LocalizationService.currentLocale) : '';
         
         const infoRow = document.createElement('div');
         infoRow.className = 'oc-info-row';
@@ -85,7 +88,7 @@ export class OccasionCard {
         titleDiv.className = 'oc-title';
         titleDiv.textContent = occasion.title || '';
 
-        infoDiv.appendChild(dateDiv);
+        if (dateStr) infoDiv.appendChild(dateDiv);
         infoDiv.appendChild(titleDiv);
         infoRow.appendChild(infoDiv);
 

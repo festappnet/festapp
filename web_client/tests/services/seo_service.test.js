@@ -25,3 +25,15 @@ test('SPA form changes update canonical, share URLs and images without retaining
     assert.equal(document.querySelector('meta[property="og:image:width"]'), null);
     assert.equal(document.querySelector('meta[property="og:image:height"]'), null);
 });
+
+
+test('tenant www URL canonicalizes to configured HTTPS apex without tracking or fragment', () => {
+    const dom = new JSDOM('<!doctype html><head></head>', { url: 'https://www.vstupenky.online/' });
+    globalThis.window = dom.window; globalThis.document = dom.window.document; globalThis.DOMParser = dom.window.DOMParser;
+    const previous = AppConfig.webLink; AppConfig.webLink = 'https://vstupenky.online';
+    try {
+        SeoService.updateMetaTags({ title: 'Apex form' }, 'https://www.vstupenky.online/form/live?utm_source=mail#section');
+        assert.equal(document.querySelector('link[rel=canonical]').href, 'https://vstupenky.online/form/live');
+        assert.equal(document.querySelector('meta[property="og:url"]').content, 'https://vstupenky.online/form/live');
+    } finally { AppConfig.webLink = previous; dom.window.close(); }
+});
