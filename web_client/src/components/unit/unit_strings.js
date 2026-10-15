@@ -3,6 +3,7 @@ import { LocalizationService } from '../../services/localization_service.js';
 
 export class UnitStrings {
     static copy(key, cs, en) { return LocalizationService.tr(`Catalogue.${key}`, {}, LocalizationService.currentLocale === 'cs' || LocalizationService.currentLocale === 'sk' ? cs : en); }
+    static get organizerEvents() { return this.copy('organizerEvents', 'Akce a vstupenky tohoto pořadatele', 'Events and tickets from this organizer'); }
     static get clearSearch() { return this.copy('clearSearch', 'Vymazat hledání', 'Clear search'); }
     static get retry() { return this.copy('retry', 'Zkusit znovu', 'Try again'); }
     static get loading() { return this.copy('loading', 'Aktualizujeme seznam akcí…', 'Updating events…'); }
