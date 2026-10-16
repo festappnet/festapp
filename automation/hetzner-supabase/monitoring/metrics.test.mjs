@@ -29,3 +29,11 @@ test('existing agent detects OOM/restarts, stale recovery evidence and long DB t
  assert.equal(runtimeFailure({...good,logUploadAt:now/1000-3*3600},good,now),'log_upload_stale');
  assert.equal(runtimeFailure({...good,longTransactions:1},good,now),'database_long_transaction');
 });
+
+test('existing agent detects PITR archive failure, pending WAL lag and missing base backup', () => {
+ const now=Date.now(); const good={at:now,ok:true,containers:[{name:'db',running:true,oom:false,restarts:0}],backupAt:now/1000,logUploadAt:now/1000,longTransactions:0,pitr:{enabled:true,failed:false,oldestPendingSeconds:0,backupAt:now/1000}};
+ assert.equal(runtimeFailure(good,null,now),null);
+ for (const [change,reason] of [[{enabled:false},'pitr_archiving_disabled'],[{failed:true},'pitr_archive_failed'],[{oldestPendingSeconds:601},'pitr_archive_lag'],[{oldestPendingSeconds:null},'pitr_archive_lag'],[{backupAt:null},'pitr_backup_stale'],[{backupAt:now/1000-27*3600},'pitr_backup_stale']]) {
+  assert.equal(runtimeFailure({...good,pitr:{...good.pitr,...change}},good,now),reason);
+ }
+});

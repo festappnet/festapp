@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily differential and weekly full Festapp pgBackRest backup
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 UTC
+RandomizedDelaySec=5m
+Persistent=true
+Unit=festapp-pgbackrest-backup.service
+
+[Install]
+WantedBy=timers.target

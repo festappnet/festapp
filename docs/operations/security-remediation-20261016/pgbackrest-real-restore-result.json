@@ -1,0 +1,18 @@
+{
+  "status": "pass",
+  "tool": "pgbackrest 2.57.0",
+  "backup_label": "20261016-134619F_20261016-135038D",
+  "target": "2026-10-16T13:50:53.779337+00:00",
+  "paused_at_target": true,
+  "replay_at": "2026-10-16T13:50:53.420853+00:00",
+  "replay_lsn": "5/64000058",
+  "catalog_smoke": true,
+  "network": "none",
+  "ports": false,
+  "host_mounts": false,
+  "application_preloads_disabled": true,
+  "encrypted_key_escrow_used": true,
+  "isolated_restore_seconds": 49.81,
+  "full_service_rto_proven": false,
+  "storage_r2_consistency_proven": false
+}

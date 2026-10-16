@@ -1,0 +1,14 @@
+[Unit]
+Description=Festapp pgBackRest encrypted physical backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/opt/festapp-backup/pgbackrest/run-backup.sh
+TimeoutStartSec=2h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

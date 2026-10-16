@@ -55,3 +55,16 @@ test('runtime logs are encrypted before leaving the host and retained off-host',
   assert.match(upload, /production_cutover_authorized:false/);
   assert.doesNotMatch(upload, /docker compose (?:stop|down|restart|up)/);
 });
+
+test('pgBackRest secret config has the required explicit protected mode', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_pgbackrest_install.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('pgBackRest derivative follows the canonical database image without changing PostgreSQL', () => {
+  const dockerfile = fs.readFileSync(path.join(backup, 'pgbackrest/Dockerfile'), 'utf8');
+  const runtime = fs.readFileSync(path.join(root, 'automation/hetzner-supabase/runtime/docker-compose.festapp.yml'), 'utf8');
+  const base = runtime.match(/^  db:\n    image: (.+)$/m)?.[1];
+  assert.ok(base);
+  assert.equal(dockerfile.match(/^FROM (.+)$/m)?.[1], base, 'Update/rebuild the derivative alongside the canonical database image.');
+});
