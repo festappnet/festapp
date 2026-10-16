@@ -3,6 +3,13 @@
 Datum: 2026-10-16  
 Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, cross-store/RTO důkaz; doručení host alertu, control-plane evidence a servisní restart jsou doložené.
 
+## Čistá provozní předávka
+
+Zálohování i otestovaná obnova jsou funkční: skutečné full/diff PITR, obnovení DB/Auth/REST/Storage, proxy a čtecí Edge funkce prošly v izolaci. Nová úplná šifrovaná sada i samostatný nouzový klíčový ZIP v2 jsou ověřené mimo server v iCloudu. [Závěrečný čtecí live check 17:57 UTC](../operations/security-remediation-20261016/handoff-health-result.json) potvrzuje zdravé API/monitoring, žádné alerty a běžící WAL archivaci: 60 archivovaných úseků, žádná zaznamenaná chyba, poslední archiv starý 188 s. Žádná produkční služba se při této předávce neměnila.
+
+Zbývající body nejsou důvodem znovu instalovat zálohy nebo opakovat úspěšné restore testy. Kritické hard capy čekají na reprezentativní peak a bezpečné kapacitní rozhodnutí; plné RTO včetně provider přepnutí není změřené. Padesát historických neplatných R2 registry referencí je doložená nekonzistence zdrojových dat, nikoli selhání archivace všech 1 074 existujících objektů. Jeden odkaz má kandidáta ve druhém veřejném bucketu, totožnost a dalších 49 zdrojů zatím chybí. Bez těchto podkladů se data nemažou ani nenahrazují. Celý původní plán proto zůstává částečně otevřený, běžný provoz a ověřená obnova tím nejsou označené za nefunkční.
+
+
 ## Upřesnění skutečného použití Realtime a zbývajících bran
 
 [Číselná kontrola rozpočtu 4 GB](../operations/security-remediation-20261016/resource-budget.json) je nyní dopočítaná: fyzická RAM 3,981,275,136 B, vynucené admin stropy 1,207,959,552 B, cílová rezerva OS 536,870,912 B a souběžné logické zálohy 805,306,368 B. Zbývá 1,431,138,304 B pro ostatní kontejnery, zatímco součet jejich jednotlivých naměřených working-set maxim je 1,961,586,688 B. Rozdíl 530,448,384 B je nesoulad s tímto konzervativním návrhovým kritériem ještě před rezervou na špičku, nikoli důkaz skutečného souběžného OOM nebo nutnosti přikoupit RAM. Pozorovaná maxima nejsou doporučené capy. Celý bezpečný budget nelze dokončit pouhým nastavením nízkých limitů; chybí reprezentativní peak a navazující rozhodnutí o kapacitě nebo režimu nepovinných služeb. Žádná taková provozní změna se neprovedla.
