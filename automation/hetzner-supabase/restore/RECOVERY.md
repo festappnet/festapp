@@ -10,8 +10,12 @@ buckets. Neither token can write or delete objects.
 The uploaded ZIP is sensitive because it contains the private age identity.
 Do not publish it, attach it to issues or commit its contents. No public share
 link or iCloud security-setting change was made. The key ZIP upload confirms independent key custody. A separate uploaded
-`Festapp-Backup-20261016T150700Z.zip` contains the complete five-artifact
-encrypted snapshot (1,803,229,836 bytes). Its hashes match the actually restored
+`Festapp-Backup-20261016T150700Z.zip` contains the first complete five-artifact
+encrypted snapshot (1,803,229,836 bytes). A newer uploaded snapshot,
+`Festapp-Backup-20261016T164727Z.zip` (1,803,347,771 bytes), includes the repaired
+runtime configuration archive. Both retain the separate existing key ZIP.
+The newer ZIP passed all artifact hashes and actual offline globals decryption
+using only those two iCloud ZIPs. Its hashes match the actually restored
 set; an offline test decrypted globals using only these two iCloud ZIPs, without
 R2 or the original server. This is one independent data snapshot, not automatic
 iCloud replication of daily/WAL history. It does not prove end-to-end iCloud encryption.
@@ -80,5 +84,23 @@ tunnel credential. Its DB/Storage/image restore proofs remain valid, but that
 runtime archive alone is insufficient for a bare-host restore. The backup now
 includes these canonical dependencies and the protected tunnel credential inside
 the same age-encrypted runtime stream. PGDATA, WAL and pgBackRest spool are never
-copied into runtime; use the separately verified DB/PITR artifacts. This fix needs
-a new actual encrypted runtime receipt before claiming the coverage repaired.
+copied into runtime; use the separately verified DB/PITR artifacts. The new complete set `20261016T164727Z` finished off-host verification at
+17:00:13 UTC. Independent iCloud-kit credentials downloaded all five artifacts
+and checked every size/hash. The downloaded runtime archive covers all 21
+current configuration bind mounts; it contains none of live PGDATA. See
+`runtime-bootstrap-offhost-result.json` for the actual bounded receipt.
+
+On Ubuntu 26.04, `/tmp` may be RAM-backed. Keep multi-gigabyte backup inputs
+and restore working files on a persistent disk, in private mode-0700 folders.
+Set `TMPDIR` explicitly when running the drill, for example:
+
+```sh
+sudo install -d -m 0700 /var/tmp/festapp-recovery-work
+sudo env TMPDIR=/var/tmp/festapp-recovery-work python3 drill-online-backup-local.py \
+  --backup-dir /var/tmp/festapp-recovery-input --identity /protected/age-identity.txt \
+  --evidence /protected/new-restore-result.json --storage-consistency --service-smoke
+```
+
+The fresh-host test correctly refused insufficient free space on RAM-backed
+`/tmp` before decrypting or starting a database. This concern does not apply
+to production backups in `/var/backups`; do not solve it by increasing host RAM.

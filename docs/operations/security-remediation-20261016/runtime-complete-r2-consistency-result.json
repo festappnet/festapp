@@ -1,0 +1,17 @@
+{
+  "objects": 1074,
+  "bytes": 341530791,
+  "content_hashes_verified": true,
+  "database_r2_references_checked": 997,
+  "missing_database_r2_references": 50,
+  "consistent": false,
+  "scope": "Selected online DB snapshot against selected R2 archive; not arbitrary-time R2 version history",
+  "status": "fail",
+  "backup_run_id": "20261016T164727Z",
+  "database_image_records": 1225,
+  "database_reference_source": "pg_restore COPY data from selected dump; no SQL execution",
+  "application_services_started": false,
+  "docker_used": false,
+  "network_used": false,
+  "full_application_restore_proven": false
+}

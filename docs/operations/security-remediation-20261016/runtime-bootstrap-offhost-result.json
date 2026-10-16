@@ -1,0 +1,18 @@
+{
+  "backup_run_id": "20261016T164727Z",
+  "off_host_acquisition": {
+    "run_id": "20261016T164727Z",
+    "source": "independent read-only credential from uploaded iCloud recovery ZIP; direct R2 download",
+    "original_server_used_for_acquisition": false,
+    "original_identity_used_for_acquisition": false,
+    "all_five_artifact_hashes_verified": true,
+    "acquisition_and_completion_wait_seconds": 261.01,
+    "off_host_verified": true
+  },
+  "encrypted_runtime_hash_verified": true,
+  "archive_entries": 216,
+  "all_21_application_runtime_bind_mounts_covered": true,
+  "live_pgdata_copied": false,
+  "runtime_secrets_executed": false,
+  "previous_snapshot_runtime_missing_binds": 17
+}
