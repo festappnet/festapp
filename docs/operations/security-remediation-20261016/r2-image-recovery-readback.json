@@ -59,9 +59,12 @@
     "success": false,
     "access_denied": true
   },
-  "r2_image_backup_activated": false,
-  "pending": "User decision on scoped Object Read only source credential; prepared archive helper is not a live backup receipt",
+  "r2_image_backup_activated": true,
+  "pending": "First live archive and actual content/reference restore still running; do not confuse activation with completed backup",
   "source_urls_changed": false,
   "sources_deleted": false,
-  "note": "No raw customer URLs, object names or credentials in this receipt."
+  "note": "No raw customer URLs, object names or credentials in this receipt.",
+  "source_reader_permissions": "Object Read only, exact four image buckets",
+  "offline_recovery_permissions": "Object Read only, backup bucket only",
+  "user_authorized": true
 }

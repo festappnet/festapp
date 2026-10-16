@@ -1,0 +1,47 @@
+{
+  "status": 200,
+  "success": true,
+  "tokens": [
+    {
+      "name": "festapp-image-backup-read-20261016",
+      "policies": [
+        {
+          "effect": "allow",
+          "id": "f8f5947974d2478c8df3c68bb1a78566",
+          "permission_groups": [
+            {
+              "id": "6a018a9f2fc74eb6b293b0c548f38b39",
+              "name": "Workers R2 Storage Bucket Item Read"
+            }
+          ],
+          "resources": {
+            "com.cloudflare.edge.r2.bucket.84b32318ac235bf6738bdf1c8caa0795_default_festapp-images": "*",
+            "com.cloudflare.edge.r2.bucket.84b32318ac235bf6738bdf1c8caa0795_default_festapp-images-a": "*",
+            "com.cloudflare.edge.r2.bucket.84b32318ac235bf6738bdf1c8caa0795_default_festapp-images-a-private": "*",
+            "com.cloudflare.edge.r2.bucket.84b32318ac235bf6738bdf1c8caa0795_default_festapp-images-private": "*"
+          }
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "name": "festapp-offline-recovery-read-20261016",
+      "policies": [
+        {
+          "effect": "allow",
+          "id": "276c65e0a3424416bcc0f415a117ba57",
+          "permission_groups": [
+            {
+              "id": "6a018a9f2fc74eb6b293b0c548f38b39",
+              "name": "Workers R2 Storage Bucket Item Read"
+            }
+          ],
+          "resources": {
+            "com.cloudflare.edge.r2.bucket.84b32318ac235bf6738bdf1c8caa0795_default_festapp-supabase-backups": "*"
+          }
+        }
+      ],
+      "status": "active"
+    }
+  ]
+}

@@ -36,7 +36,7 @@
     "automation/hetzner-supabase/monitoring/festapp-host-monitor.service": "af61a1bc001d6b345ec0b3049c53e8fcb5c137287ca74dd54c0deefec9f4e358",
     "automation/hetzner-supabase/monitoring/install.sh": "2d418d2e664dfef1e75500257f84a4b93172c5e2848893ede4d76ad7e85a0ce3",
     "automation/hetzner-supabase/restore/drill-online-backup-local.py": "7c12ba59580cbddb99bc555f7943ee203692fd370c60463229ec5f5a06e9861b",
-    "automation/hetzner-supabase/restore/service_smoke.py": "7471e4fd85941c037b05817caea2b33cf28e79e0b8a061f9fb6cb2f58f7d69a0",
+    "automation/hetzner-supabase/restore/service_smoke.py": "d765e0919badf3721f6c834586f510b5d77d40e3c8c39eb532bef22ef47292c0",
     "automation/hetzner-supabase/restore/r2_archive.py": "5f0a48478ebc2a3f3bddff106a4b4bb29e8b58a54931663a9bae6c3dc91c6c7c",
     "automation/hetzner-supabase/runtime/docker-compose.resource-budget.yml": "c7720abcccf9d7294ecbec0722aaa48415dea8c73bfc053d4c19b1af43567165",
     "automation/hetzner-supabase/runtime/apply-admin-resource-budget.py": "d83ac48342be45d367bf0f85ffc15bc6057fc6a6a0733ce2a80dcfece283f04c",

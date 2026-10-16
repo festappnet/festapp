@@ -89,7 +89,7 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
    attributes,rebuilt=storage_metadata(objects,members,rebuild_metadata)
   # BusyBox tar does not restore GNU/PAX xattrs. Use the exact Storage image's
   # existing fs-xattr library; values are data on stdin, never executable code.
-  program="const x=require('fs-xattr'),fs=require('fs'),path=require('path');(async()=>{const records=JSON.parse(fs.readFileSync(0,'utf8'));for(const [name,attrs] of Object.entries(records)){const p=path.resolve('/var/lib/storage',name);if(!p.startsWith('/var/lib/storage/'))throw Error('path');for(const [k,v] of Object.entries(attrs)){if(!['user.supabase.content-type','user.supabase.cache-control','user.supabase.etag'].includes(k))throw Error('attribute');await x.set(p,k,v);}}})().catch(()=>process.exit(1));"
+  program="const x=require('fs-xattr'),fs=require('fs'),path=require('path');(async()=>{const records=JSON.parse(fs.readFileSync(0,'utf8'));for(const [name,attrs] of Object.entries(records)){const p=path.resolve('/var/lib/storage',name);if(!p.startsWith('/var/lib/storage/'))throw Error('path');for(const [k,v] of Object.entries(attrs)){if(!['user.supabase.content-type','user.supabase.cache-control','user.supabase.etag'].includes(k))throw Error('attribute');await x.set(p,k,v);}}})().catch(e=>{console.error(JSON.stringify({operation:'restore-storage-xattr',code:e.code||e.name}));process.exit(1)});"
   run(['docker','exec','-i','-u','root',storage,'node','-e',program],input=json.dumps(attributes).encode())
   wait(9999,'/health');wait(5000,'/status')
   for _ in range(90):
