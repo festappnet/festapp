@@ -2,6 +2,10 @@
 
 Datum: 2026-10-16. Audit běžícího serveru, pouze čtení. Nebyly změněny produkční údaje, oprávnění, konfigurace ani služby. Nebyl proveden zátěžový test, obnova zálohy ani spuštěna nebezpečná zapisovací funkce.
 
+## Následná náprava 2026-10-16
+
+Tento audit zachovává původní nálezy jako historický snapshot. Následně nasazené migrace `20261016170000/171000/172000` odstranily čtyři nebezpečné/nepoužívané funkce, uzavřely interní sync a opravily ACL/search_path. Caddy cap i existující monitor jsou aktualizované a skutečný backup prošel izolovanou obnovou. Aktuální důkazy a dosud otevřené provozní body C vlastní [produkční receipt](security-remediation-20261016/production-result.json) a [aktuální serverový plán](../plans/server-security-remediation-plan-2026-10-16.md). Původní závěr níže nepopisuje výsledný katalog po opravách.
+
 ## Závěr
 
 **Nasazený backend nelze považovat za dostatečně zabezpečený. Nejvyšší prioritu mají veřejně spustitelné privilegované RPC bez autorizace.** Izolace administrace a databáze od veřejných portů funguje při provedených kontrolách, ale neřeší chyby uvnitř veřejného API. Další významná rizika jsou nesprávné synchronizační RLS politiky, rozdíl konfigurace mezi repozitářem a serverem a chybějící limity prostředků kontejnerů.

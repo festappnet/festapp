@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-16",
+  "host_memory_kib": 3888028,
+  "snapshot_used_mib": 2561,
+  "snapshot_available_mib": 1235,
+  "swap_bytes": 0,
+  "container_count": 13,
+  "fresh_backup": {
+    "elapsed_seconds": 77,
+    "cpu_seconds": 28.621904,
+    "cgroup_memory_peak_bytes": 717103104,
+    "memory_includes_reclaimable_cache": true
+  },
+  "updated_existing_host_monitor": {
+    "elapsed_seconds": 2,
+    "cpu_seconds": 1.235737,
+    "memory_peak_bytes": 72974336
+  },
+  "oom_observed": false,
+  "resize_performed": false,
+  "new_container_hard_caps_applied": false,
+  "wal_archive_enabled": false,
+  "canonical_database_bytes": 1190440083,
+  "cluster_database_sum_bytes": 4832707736,
+  "limits": "Bounded production observations, not a representative peak/load test. No claim that 8 GB is required or that 4 GB has guaranteed peak headroom. CPU time is cumulative CPU seconds, not elapsed duration. Isolated restore time excludes download/application startup. PITR sizing remains undecided."
+}

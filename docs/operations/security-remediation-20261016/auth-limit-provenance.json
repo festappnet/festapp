@@ -1,0 +1,62 @@
+{
+  "image": "supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7",
+  "method": "Effective configured values from allowlisted live container environment; absent values derived from exact tagged configuration/limiter source. No Auth configuration or sessions changed.",
+  "explicit_live": {
+    "GOTRUE_RATE_LIMIT_HEADER": "X-Festapp-Client-IP",
+    "GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED": true,
+    "GOTRUE_EXTERNAL_EMAIL_ENABLED": true,
+    "GOTRUE_EXTERNAL_PHONE_ENABLED": false,
+    "GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED": false
+  },
+  "version_default_values": {
+    "password_min_length": {
+      "value": 6,
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/conf/configuration.go#L25"
+    },
+    "native_email_rate": {
+      "events": 30,
+      "period_seconds": 3600,
+      "algorithm": "interval",
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/conf/rate.go"
+    },
+    "native_sms_rate": {
+      "events": 30,
+      "period_seconds": 3600,
+      "algorithm": "interval",
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/conf/configuration.go#L383"
+    },
+    "signup_otp_recovery_resend": {
+      "rate_per_300_seconds": 30,
+      "burst": 30,
+      "key": "trusted client IP",
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/api/apilimiter/apilimiter.go#L232"
+    },
+    "verify": {
+      "rate_per_300_seconds": 30,
+      "burst": 30,
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/api/apilimiter/apilimiter.go#L202"
+    },
+    "refresh": {
+      "rate_per_300_seconds": 150,
+      "burst": 30,
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/api/apilimiter/apilimiter.go#L197"
+    },
+    "refresh_token_rotation": {
+      "enabled": true,
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/conf/configuration.go#L788"
+    },
+    "refresh_token_reuse_interval": {
+      "seconds": 0,
+      "provenance": "Go zero value, no default tag/override in inspected environment",
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/conf/configuration.go#L789"
+    },
+    "captcha_enabled": {
+      "value": false,
+      "source": "https://github.com/supabase/auth/blob/v2.189.0/internal/conf/configuration.go#L712"
+    }
+  },
+  "central_abuse_policy_preserved": true,
+  "password_permanent_reusable_contract_preserved": true,
+  "configuration_source_sha256": "df81c9a655c57773ba57916c0d015a17312f4060f8defaeaba834482a9523363",
+  "limits": "This is version-pinned config evidence, not a new production brute-force test. Existing central password hook, email gate and budgets remain authoritative for application admission."
+}

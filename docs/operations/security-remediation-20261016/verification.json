@@ -40,5 +40,7 @@
     "Real latest-backup restore, key-loss recovery and RPO/RTO not proven by synthetic fixture.",
     "Runtime caps require representative resource samples; none guessed.",
     "Alert delivery/control-plane firewall/MFA/billing and effective Auth defaults remain operational evidence gates."
-  ]
+  ],
+  "evidence_phase": "historical local/pre-deployment snapshot",
+  "superseded_production_status": "production-result.json"
 }

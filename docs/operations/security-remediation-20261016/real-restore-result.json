@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "status": "pass",
+  "backup_run_id": "20261016T123646Z",
+  "backup_manifest_sha256": "6827b865262a7b2b7e174c91c6ca5dcccb2018e02ce8d5cdd2cedf69c99b654f",
+  "source_backup_consistency": "online-operational-backup-not-promotion-rpo0",
+  "isolated": true,
+  "network": "none",
+  "ports": false,
+  "host_mounts": false,
+  "application_services_started": false,
+  "runtime_executed": false,
+  "archive_inventory": {
+    "storage.tar": {
+      "files": 1732,
+      "bytes": 1298699295
+    },
+    "runtime.tar": {
+      "files": 142,
+      "bytes": 1660184
+    }
+  },
+  "database_read_smoke": true,
+  "globals_errors_checked": true,
+  "rpo_seconds": null,
+  "pitr_proven": false,
+  "note": "Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.",
+  "isolated_restore_seconds": 25.56,
+  "full_service_rto_proven": false,
+  "transfer_time_included": false
+}
