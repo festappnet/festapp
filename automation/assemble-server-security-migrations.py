@@ -65,6 +65,7 @@ manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes(
  root/'automation/hetzner-supabase/monitoring/install.sh',
  root/'automation/hetzner-supabase/restore/drill-online-backup-local.py',
  root/'automation/hetzner-supabase/restore/service_smoke.py',
+ root/'automation/hetzner-supabase/restore/gateway_smoke.py',
  root/'automation/hetzner-supabase/restore/r2_archive.py',
  root/'automation/hetzner-supabase/restore/verify-r2-dump-local.py',
  root/'automation/hetzner-supabase/restore/download-offhost-backup.py',

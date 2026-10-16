@@ -28,6 +28,11 @@ test('R2 image backup streams objects and fails on changed bytes or unsafe paths
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('gateway restore accepts only bounded public proxy configuration files', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_gateway_restore.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('runtime recovery archive includes bootstrap dependencies without copying live PGDATA', () => {
   const result = spawnSync('python3', [path.join(root, 'automation/tests/test_runtime_backup_archive.py')], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);

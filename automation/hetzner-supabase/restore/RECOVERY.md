@@ -35,7 +35,9 @@ escrow, and decrypted the escrow. No original workstation key path or server
 access was used. See `icloud-recovery-result.json` for sanitized evidence.
 
 For full recovery, first run the isolated DB/Auth/REST/Storage drill against the
-chosen downloaded set. It never executes the encrypted runtime configuration.
+chosen downloaded set. By default it never executes the encrypted runtime configuration. The optional
+`--gateway-smoke` extension reads only five allowlisted public proxy files; it
+never loads runtime.env or integration credentials.
 Inspect that configuration privately when preparing a replacement host: it
 contains active Compose overrides, integration credentials and local image IDs.
 Rebuild the pinned pgBackRest image and replace the old host-local image ID with
@@ -104,3 +106,15 @@ sudo env TMPDIR=/var/tmp/festapp-recovery-work python3 drill-online-backup-local
 The fresh-host test correctly refused insufficient free space on RAM-backed
 `/tmp` before decrypting or starting a database. This concern does not apply
 to production backups in `/var/backups`; do not solve it by increasing host RAM.
+
+`--service-smoke --gateway-smoke` also starts the pinned Envoy/Caddy images in
+the restored database's network-none loopback namespace, using the actual
+backed-up public proxy files. Only upstream DNS names become 127.0.0.1 and site
+addresses use private HTTP test listeners. Fixture API keys authenticate real
+Auth, REST and Storage reads through both proxies. This does not test provider
+TLS, Cloudflare Access or Edge/realtime/pooler integrations. Caddy alone needs
+its production NET_BIND_SERVICE capability: the pinned binary carries that
+file capability, so Linux refuses exec with EPERM if it is absent from the
+bounding set even for high-port listeners. Every service still drops all other
+capabilities, publishes no port and mounts no host files. The receipt marks
+public proxy configuration execution separately from loading runtime secrets.
