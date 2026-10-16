@@ -9,12 +9,9 @@ buckets. Neither token can write or delete objects.
 
 The uploaded ZIP is sensitive because it contains the private age identity.
 Do not publish it, attach it to issues or commit its contents. No public share
-link or iCloud security-setting change was made. The key ZIP upload confirms independent key custody. A separate uploaded
-`Festapp-Backup-20261016T150700Z.zip` contains the complete five-artifact
-encrypted snapshot (1,803,229,836 bytes). Its hashes match the actually restored
-set; an offline test decrypted globals using only these two iCloud ZIPs, without
-R2 or the original server. This is one independent data snapshot, not automatic
-iCloud replication of daily/WAL history. It does not prove end-to-end iCloud encryption.
+link or iCloud security-setting change was made. iCloud upload confirmation
+proves independent key custody; it does not establish a second full backup of
+all customer data outside Cloudflare or prove end-to-end iCloud encryption.
 
 `download-offhost-backup.py` is copied into the private kit as
 `download-backup.py`, next to `age-identity.txt` and `backup-reader.json.age`.
@@ -40,36 +37,3 @@ references with the selected R2 archive. Keep production email/payment processin
 disabled until the separate cutover decision; never replay historical unknown
 email outcomes automatically. Tested isolated restore time excludes bare-host
 provisioning, image downloads and complete integration cutover.
-
-On a workstation with limited free disk, pass
-`--consume-downloaded-artifacts` to the isolated drill. This explicit option
-removes each local encrypted artifact only after its complete successful age
-decryption; all manifest hashes are checked before any input is removed.
-The manifest/acquisition receipt and off-host copies remain. A failed later
-restore may require downloading the set again. The drill checks free local
-space before decryption, including a Docker reserve, to avoid disk-induced WAL
-fsync failures. This option never deletes from the server or R2.
-
-`verify-r2-dump-local.py` provides a Docker-independent check using standard
-`pg_restore --data-only` to read the chosen dump's image COPY records. It never
-executes SQL or contacts a database. The two encrypted inputs must match their
-selected manifest's hashes. A missing image reference writes a bounded failure
-receipt and exits nonzero; a successful archive checksum alone is insufficient.
-
-The first actual archive contains all 1,074 source objects (341,530,791 bytes),
-with verified content hashes. The chosen DB has 997 R2 registry links, of which
-50 already have no source object: 45 contain a test marker. None of these exact
-URLs appears in the checked occasion/event/information payloads. Public samples
-return 404; legacy private routes require auth. This is not evidence that every
-registry row is dispensable. No rows or links were removed, and the strict
-reference gate remains unsuccessful. The full service drill still runs its
-independent application checks and saves the result before returning a nonzero
-status for R2 gaps; the gaps are never silently accepted as consistency.
-
-The local Storage drill streams the private archive into tar on stdin rather
-than copying a mode-0600 workstation-owned file into a capability-restricted
-container. Extraction uses `mkdir && tar`, so a tar failure cannot be hidden by
-a subsequent cleanup command. `tar -o` sets ownership to the isolated runtime
-user; original archive bytes and HTTP xattrs are preserved. All metadata is
-prepared before the pinned Storage application starts. An isolated test with
-all capabilities dropped restored all 1,732 files/attribute records successfully.
