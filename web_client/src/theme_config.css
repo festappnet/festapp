@@ -21,9 +21,9 @@
 
 :root {
     /* Colors from properties matches Flutter ThemeConfig */
-    --seed-1: #253759;
-    --seed-2: #80BDF2; /* dddPrimary */
-    --seed-3: #4465A6; /* lllPrimary */
+    --seed-1: #2C677B;
+    --seed-2: #E0B73B; /* dddPrimary */
+    --seed-3: #BA5D3F; /* lllPrimary */
     --white: #ffffff;
 
     /* Light Theme (Default) */
