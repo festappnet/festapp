@@ -1,35 +1,17 @@
-# Podmínky používání – Festapp
+# Podmínky používání – Absolventský Velehrad
 
-Účinnost: 9. října 2026. Verze: 1.1.
+Účinnost: 29. srpna 2026. Verze: 1.0.
 
-## Poskytovatel systému
+Aplikace Absolventský Velehrad je poskytována pro Absolventské křesťanské hnutí, z. s., IČO 21202125, Ječná 505/2, 120 00 Praha 2. Pořadatele lze kontaktovat na `info@absolventskyvelehrad.cz` nebo +420 605 871 039. Technickou podporu aplikace zajišťuje její vývojář a vydavatel Michael Bujnovský na `info@festapp.net`.
 
-Poskytovatelem systému Festapp a Vstupenky.online je Michael Bujnovský, IČO 06455361, se sídlem Přívozská 1704/24, Moravská Ostrava, 702 00 Ostrava. Kontakt pro provoz systému a technickou podporu je `info@festapp.net`.
+Pro distribuci na zařízeních Apple se použije standardní licenční smlouva Apple: <https://www.apple.com/legal/internet-services/itunes/dev/stdeula/>. Použití aplikace získané z Google Play podléhá také příslušným podmínkám Google Play.
 
-## K čemu systém slouží
+Aplikace poskytuje program, mapu, zprávy a praktické informace. Podle konkrétního ročníku může umožnit vytvoření účtu, registraci na aktivitu, odeslání formuláře nebo zobrazení osobního programu. Přihlašovací údaje jsou osobní a nesmějí být zpřístupněny neoprávněné osobě.
 
-Vstupenky.online je webový systém pro pořadatele a účastníky akcí. Umožňuje zveřejňovat nabídky, spravovat přihlášky a objednávky, prodávat vstupenky nebo účast na akci a komunikovat s účastníky. Lze jej využít například pro skautské a jiné tábory, kurzy, setkání, kulturní akce nebo další jednorázové i opakované akce. Pořadatelem může být spolek, oddíl, firma i jednotlivý člověk.
+Program, dostupnost, místa na mapě a organizační informace se mohou měnit. Uživatel má dbát aktuálních pokynů pořadatele; data uložená pro offline použití nemusí do dalšího připojení obsahovat poslední změny.
 
-## Systém a pořadatel akce
+Aplikaci není dovoleno používat k narušování provozu, obcházení kapacitních nebo bezpečnostních omezení, neoprávněnému přístupu k cizím účtům, automatizovanému zneužívání služby ani k odesílání protiprávního nebo škodlivého obsahu.
 
-Michael Bujnovský poskytuje technický systém. Konkrétní akci, její obsah, cenu, podmínky účasti, platby, zrušení a vyřízení dotazů či reklamací zajišťuje pořadatel uvedený u nabídky nebo objednávky. Smluvní podmínky konkrétní akce, vstupenky nebo jiné služby určuje její pořadatel. Tyto podmínky používání systému je nenahrazují.
+Pořadatel a technický provozovatel usilují o dostupnost a správnost aplikace, nemohou však zaručit nepřetržitý provoz, dostupnost připojení nebo aktuálnost offline dat. Tím nejsou dotčena práva spotřebitele ani odpovědnost, kterou nelze podle práva vyloučit.
 
-Vytvořením účtu přijímáte tyto podmínky používání systému. Samotná registrace účtu není objednávkou vstupenky ani souhlasem s pravidly konkrétní akce.
-
-## E-maily a komunikace
-
-Systém může zasílat e-maily potřebné k používání účtu a služeb, například potvrzení registrace, přihlášení a obnovu přístupu, potvrzení objednávky a platby, vstupenky, připomenutí nebo informace o změně či zrušení objednávky. Pořadatel může prostřednictvím systému posílat také organizační informace související s konkrétní akcí nebo přihláškou. Za obsah zpráv pořadatele odpovídá pořadatel.
-
-Přijetí těchto podmínek samo o sobě neznamená souhlas s reklamními e-maily nebo newsletterem.
-
-## Pravidla používání
-
-Přihlašovací údaje a vstupenky jsou osobní. Systém není dovoleno používat k narušování provozu, obcházení kapacitních nebo bezpečnostních omezení, neoprávněnému přístupu k cizím účtům či vstupenkám ani k odesílání protiprávního nebo škodlivého obsahu.
-
-## Aktuálnost informací
-
-Informace o akci se mohou měnit. Aktuální podmínky a organizační informace poskytuje pořadatel. Tím nejsou dotčena práva spotřebitele ani odpovědnost, kterou nelze podle práva vyloučit.
-
-## Soukromí a podpora
-
-Zpracování osobních údajů popisuje dokument <https://vstupenky.online/privacy/>. Technickou pomoc najdete na stránce <https://vstupenky.online/support/>.
+Účet lze smazat postupem na <https://app.absolventskyvelehrad.cz/privacy/choices/>. Zpracování osobních údajů popisují zásady na <https://app.absolventskyvelehrad.cz/privacy/>. Technickou pomoc najdete na <https://app.absolventskyvelehrad.cz/support/>.
