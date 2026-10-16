@@ -1,0 +1,25 @@
+{
+  "at": 1792166083.6125178,
+  "status": "pass",
+  "backup_run_id": "20261016T150700Z",
+  "encrypted_artifacts": 5,
+  "archive_bytes": 1803229836,
+  "archive_sha256": "1fe43e1ae8606db02751e60a2dd94837acb7e1c58dcb5472bd9fd35b0bc44acf",
+  "all_contained_artifact_hashes_verified": true,
+  "icloud_sync": {
+    "download_status": "NSURLUbiquitousItemDownloadingStatusCurrent",
+    "ubiquitous": true,
+    "upload_error": false,
+    "uploaded": true,
+    "uploading": false
+  },
+  "full_data_in_icloud": true,
+  "contains_decryption_identity": false,
+  "key_in_separate_uploaded_recovery_zip": true,
+  "automatic_icloud_replication_configured": false,
+  "scope": "One complete independent offline snapshot; regular daily/WAL backups remain in R2",
+  "archive_manifest_matches_actual_application_restore": true,
+  "offline_globals_decryption_with_icloud_key_zip_proven": true,
+  "original_server_used_for_offline_check": false,
+  "r2_or_other_network_used_for_offline_check": false
+}

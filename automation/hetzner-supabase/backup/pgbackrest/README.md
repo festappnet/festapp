@@ -60,6 +60,15 @@ restore to a chosen time and verify before a separately authorized cutover.
 Existing dump/Storage/runtime restore remains available; PITR covers the entire
 PostgreSQL cluster, not Storage or external R2 images at the same timestamp.
 
+`restore/drill-pgbackrest-local.py --rest-smoke` also starts the canonical pinned
+PostgREST image in the restored network-none container's private network
+namespace. PostgreSQL listens only on its isolated loopback. No ports, host
+binds or production JWT/password are supplied; background integrations remain
+disabled and recovery stays paused/read-only. HTTP reads run as service_role
+and check organization/occasion reads. This proves a REST read boundary, not
+anonymous RLS, recovered Auth/Storage or a full-service RTO. The additional
+container is removed with the database on success or failure.
+
 References: https://pgbackrest.org/user-guide.html and
 https://pgbackrest.org/configuration.html (S3-compatible storage, repository
 encryption, full/differential backups, retention and point-in-time recovery).

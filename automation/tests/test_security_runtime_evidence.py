@@ -5,6 +5,28 @@ root=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('runtime_evidence',root/'automation/hetzner-supabase/monitoring/runtime-evidence.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 class RuntimeEvidenceTest(unittest.TestCase):
+ def test_cgroup_working_set_and_cpu_counters_without_secrets(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   folder=Path(tmp);proc=folder/'proc';groups=folder/'cgroups';group=groups/'docker-test'
+   (proc/'123').mkdir(parents=True);group.mkdir(parents=True)
+   (proc/'meminfo').write_text('MemTotal: 4096 kB\nMemAvailable: 1024 kB\nSwapTotal: 0 kB\n')
+   (proc/'123/cgroup').write_text('0::/docker-test\n')
+   for name,value in {'memory.current':'1000','memory.stat':'inactive_file 300\n','cpu.stat':'usage_usec 12345\n','pids.current':'9'}.items():(group/name).write_text(value)
+   sample=m.resource_sample([{'Name':'/db','State':{'Pid':123},'Config':{'Env':['secret']}}],proc,groups)
+   self.assertEqual(sample['host']['MemTotal'],4096*1024)
+   self.assertEqual(sample['containers'],[{'name':'/db','memory_bytes':1000,'working_set_bytes':700,'cpu_usage_usec':12345,'pids':9}])
+   self.assertNotIn('secret',json.dumps(sample))
+ def test_history_retention_and_symlink_rejection(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   folder=Path(tmp);old=folder/'resources-20200101.jsonl';old.write_text('old')
+   m.record_resources({'at':1792159800,'containers':[]},folder)
+   self.assertFalse(old.exists())
+   history=next(folder.glob('resources-*.jsonl'))
+   self.assertEqual(history.stat().st_mode&0o777,0o600)
+   self.assertEqual(len(history.read_text().splitlines()),1)
+   history.unlink();target=folder/'target';target.write_text('unchanged');history.symlink_to(target)
+   with self.assertRaises(OSError):m.record_resources({'at':1792159800},folder)
+   self.assertEqual(target.read_text(),'unchanged')
  def test_sanitized_existing_monitor_observations(self):
   with tempfile.TemporaryDirectory() as tmp:
    folder=Path(tmp);(folder/'.env').write_text('FESTAPP_RUNTIME_DATABASE=festapp_rehearsal_20260909220601\nSECRET=fixture-never-serialize\n')

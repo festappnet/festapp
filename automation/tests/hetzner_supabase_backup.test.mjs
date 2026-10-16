@@ -13,6 +13,21 @@ test('retention preserves daily and weekly recovery points and refuses unsafe se
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('restored Storage references require matching object versions and sizes', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_storage_restore_consistency.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('application restore refuses production names and network or host-mount exposure', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_restore_service_isolation.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('R2 image backup streams objects and fails on changed bytes or unsafe paths', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_r2_image_archive.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('scheduled backup is encrypted, bounded, off-host and never authorizes cutover', () => {
   const create = fs.readFileSync(path.join(backup, 'create-online-encrypted-backup.sh'), 'utf8');
   assert.match(create, /plaintext_artifacts_written:false/);

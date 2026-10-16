@@ -1,0 +1,139 @@
+{
+  "source_commit": "9763e21269e5cd3854fd33e4672e61178506f614",
+  "at": 1792162633.6945407,
+  "override_sha256": "c7720abcccf9d7294ecbec0722aaa48415dea8c73bfc053d4c19b1af43567165",
+  "limits": {
+    "studio": {
+      "mem_limit": 805306368,
+      "cpus": "1.0",
+      "pids_limit": 256
+    },
+    "meta": {
+      "mem_limit": 402653184,
+      "cpus": "0.5",
+      "pids_limit": 128
+    }
+  },
+  "containers": {
+    "/festapp-caddy": {
+      "id": "50d02cd764289083001e00254faac3404bb938e00a8f85465234eec83252db1b",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": null
+    },
+    "/festapp-supabase-admin-tunnel": {
+      "id": "523a8f92837aa15cbb80bc3013bc82d33371fcc00f3be07edb75433dd7831630",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": null
+    },
+    "/realtime-dev.supabase-realtime": {
+      "id": "682134471c41e62fb4b3fd1ed63624ae9b5e16348ba6c8e5f1444b8cb2f038a9",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-auth": {
+      "id": "3583021ed7c68ff00ee97d1af3a617ef0a3c8cd36efea79b528c8d400fc9a0e3",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-db": {
+      "id": "b61a796fc4315e9f98055fa21dc02a5ea9412aa5b9088c0a895dd8584af81bd6",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-edge-functions": {
+      "id": "2821b8efd98a2a44ddd716bf37d9399ff3d3d20d46c5e6809e8fd19decdfface",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-envoy": {
+      "id": "1c28cf8c39b5ffe476781e02a1cdd3a6f7c21bab6bba0e55889d3b274c6203c6",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-imgproxy": {
+      "id": "37e03552706190cff39f7bc4fc6e8db968daadc440df2f569d96bf683283e1d3",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-meta": {
+      "id": "3c93b1a3018c4cbff49bdb883e1ce1f12051b64cbb8a042aa5e61d6960895658",
+      "memory": 402653184,
+      "cpus": 500000000,
+      "pids": 128,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-pooler": {
+      "id": "cf2a74a306e54dc0486da7e2654c17b100f6f0e2a90b268bd70fecfc58ad47fc",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-rest": {
+      "id": "4032efffd5baae2fb239ed74d08d87747d8c8ef7e855a9cae6c25566cf14db6c",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-storage": {
+      "id": "29fbf75cd071414d716779240a38875ccf787902fa999d38fc40a193cb63be2a",
+      "memory": 0,
+      "cpus": 0,
+      "pids": null,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    },
+    "/supabase-studio": {
+      "id": "568a08987e79831efac348dfab74aa45d75b073fbc4f2177d5c7272134d07dda",
+      "memory": 805306368,
+      "cpus": 1000000000,
+      "pids": 256,
+      "running": true,
+      "oom": false,
+      "health": "healthy"
+    }
+  },
+  "only_admin_recreated": true,
+  "host_resized": false,
+  "critical_service_caps_changed": false
+}

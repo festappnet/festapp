@@ -32,10 +32,18 @@
     "automation/hetzner-supabase/runtime/collect-resource-budget.sh": "8485ab057a68c96c4f49ffaeb9e7f1b6b48dc789e6063bfd53a1d7fac05424f3",
     "automation/hetzner-supabase/monitoring/agent.mjs": "f668f803d09507a3c59e9a49fba148815c2602932583f9a52a28c45b38914076",
     "automation/hetzner-supabase/monitoring/metrics.mjs": "272ae171290e40f65e532a57a0d7d7208ece4457c5e6322cebaacd44831982d3",
-    "automation/hetzner-supabase/monitoring/runtime-evidence.py": "9237a22e3f67fa9f1f8d51422f1f6c8086e92f48d2f614a453a09353181e4014",
+    "automation/hetzner-supabase/monitoring/runtime-evidence.py": "053fd2503ffb8e681836754fc777c09793a33a931918fdac0b56e95e6a2f8c9b",
     "automation/hetzner-supabase/monitoring/festapp-host-monitor.service": "af61a1bc001d6b345ec0b3049c53e8fcb5c137287ca74dd54c0deefec9f4e358",
     "automation/hetzner-supabase/monitoring/install.sh": "2d418d2e664dfef1e75500257f84a4b93172c5e2848893ede4d76ad7e85a0ce3",
-    "automation/hetzner-supabase/restore/drill-online-backup-local.py": "18563c7d56861421688a5c30c60ae5715c95d349477b68723b655b11187e7cc7"
+    "automation/hetzner-supabase/restore/drill-online-backup-local.py": "6763ad06a99ec1cafc6d142c0af5a47323be8085dc89965e35d537a853dfa250",
+    "automation/hetzner-supabase/restore/service_smoke.py": "78114890a48c67e01c7506c1f27a37b90436f664dd545803c715e541cc0b8eee",
+    "automation/hetzner-supabase/restore/r2_archive.py": "fc70aa9e9b286a298c4686d05dfed63f9536b6687cce17b730ee8b0d5eac6e86",
+    "automation/hetzner-supabase/restore/verify-r2-dump-local.py": "1ca102ccb35f2a147eb935648d785ba3a122b93ad79304cfb67b32cd378acf9b",
+    "automation/hetzner-supabase/restore/download-offhost-backup.py": "8fb5085b8bf5ad2a00eb5d4524e3e0dc49a38db8aa425920e689e17bdeadb816",
+    "automation/hetzner-supabase/runtime/docker-compose.resource-budget.yml": "c7720abcccf9d7294ecbec0722aaa48415dea8c73bfc053d4c19b1af43567165",
+    "automation/hetzner-supabase/runtime/apply-admin-resource-budget.py": "d83ac48342be45d367bf0f85ffc15bc6057fc6a6a0733ce2a80dcfece283f04c",
+    "automation/hetzner-supabase/backup/create-online-encrypted-backup.sh": "7d710d91b83838885a846eca683f62539e4558546de23a41e9eecdafbef4a662",
+    "automation/hetzner-supabase/backup/create-r2-image-archive.py": "9ed3edc666a371bc7a456312d4bf153774582095c8ac62d85e0a0103649a8ac2"
   },
   "contract_files": {
     "database/functions/security/server_security_acl_manifest.json": "e977bebe9018d7b2d89070e651ce527d685c58fb9c13f48caf0188470878e7eb",

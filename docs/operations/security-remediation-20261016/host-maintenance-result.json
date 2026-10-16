@@ -1,0 +1,62 @@
+{
+  "before": {
+    "at": 1792160007.8993824,
+    "before_boot_id": "ef7de96c-d4cb-4c81-a605-ae60f725258d",
+    "before_kernel": "7.0.0-30-generic",
+    "original_email_paused": false,
+    "unknown_before": 2,
+    "reboot_authorized": true,
+    "new_packages_installed": false,
+    "drained": true,
+    "archive_check": true
+  },
+  "after": {
+    "at": 1792160084.566539,
+    "kernel": "7.0.0-38-generic",
+    "boot_changed": true,
+    "email_paused": false,
+    "unknown_after": 2,
+    "reboot_required": false,
+    "containers": [
+      "supabase-db Up 26 seconds (healthy)",
+      "supabase-edge-functions Up 26 seconds (healthy)",
+      "supabase-auth Up 23 seconds (healthy)",
+      "supabase-studio Up 26 seconds (healthy)",
+      "festapp-caddy Up 26 seconds",
+      "festapp-supabase-admin-tunnel Up 26 seconds",
+      "supabase-envoy Up 26 seconds (healthy)",
+      "supabase-storage Up 26 seconds (healthy)",
+      "supabase-rest Up 26 seconds (healthy)",
+      "realtime-dev.supabase-realtime Up 26 seconds (health: starting)",
+      "supabase-meta Up 26 seconds (healthy)",
+      "supabase-pooler Up 26 seconds (healthy)",
+      "supabase-imgproxy Up 26 seconds (healthy)"
+    ]
+  },
+  "public_canaries": {
+    "/auth/v1/health": 200,
+    "/rest/v1/": 403,
+    "/storage/v1/status": 200,
+    "external_sync_sources": {
+      "status": 401,
+      "denied": true
+    },
+    "external_sync_maps": {
+      "status": 401,
+      "denied": true
+    },
+    "external_occasions_cache": {
+      "status": 401,
+      "denied": true
+    },
+    "websocket": 101,
+    "bounded_operational_health": {
+      "status": 200,
+      "ok": false,
+      "alerts": [
+        "abuse_ordinary_backlog"
+      ]
+    }
+  },
+  "note": "All 13 containers subsequently healthy; docker, SSH socket and existing backup/monitor timers active. No package upgrades, resize or unrelated image updates. SSH first observed returned 22.7 seconds after first bounded post-reboot poll started; this is not measured total outage."
+}
