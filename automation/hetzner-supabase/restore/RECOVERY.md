@@ -73,3 +73,12 @@ a subsequent cleanup command. `tar -o` sets ownership to the isolated runtime
 user; original archive bytes and HTTP xattrs are preserved. All metadata is
 prepared before the pinned Storage application starts. An isolated test with
 all capabilities dropped restored all 1,732 files/attribute records successfully.
+
+The 20261016T150700Z runtime artifact lacks some bind-mounted bootstrap files
+(Envoy, pooler, Studio customization and database init scripts), and the admin
+tunnel credential. Its DB/Storage/image restore proofs remain valid, but that
+runtime archive alone is insufficient for a bare-host restore. The backup now
+includes these canonical dependencies and the protected tunnel credential inside
+the same age-encrypted runtime stream. PGDATA, WAL and pgBackRest spool are never
+copied into runtime; use the separately verified DB/PITR artifacts. This fix needs
+a new actual encrypted runtime receipt before claiming the coverage repaired.

@@ -64,23 +64,7 @@ COPYFILE_DISABLE=1 tar --format=pax --xattrs --xattrs-include='user.supabase.*' 
 if [[ -f /etc/festapp-backup/images.env ]]; then
   python3 "$SCRIPT_DIR/create-r2-image-archive.py" --output "$RUN_DIR/r2-images.tar.age"
 fi
-runtime_paths=(docker/.env docker/docker-compose.yml docker/docker-compose.festapp.yml
-  docker/docker-compose.database-target.yml docker/caddy/Caddyfile docker/volumes/functions
-  docker/volumes/proxy)
-# Include every active override and PITR recovery configuration in the encrypted
-# runtime archive. Existing deployments without pgBackRest keep the old format.
-for override in docker-compose.email.yml docker-compose.pgbackrest.yml docker-compose.resource-budget.yml; do
-  [[ ! -f "$COMPOSE_DIR/$override" ]] || runtime_paths+=("docker/$override")
-done
-extra_paths=()
-if [[ -f /etc/festapp-pgbackrest/enabled ]]; then
-  extra_paths=(-C / etc/festapp-pgbackrest/pgbackrest.conf
-    etc/festapp-pgbackrest/recovery.json.age opt/festapp-backup/pgbackrest/Dockerfile)
-fi
-if [[ -f /etc/festapp-backup/images.env ]]; then
-  extra_paths+=(-C / etc/festapp-backup/images.env)
-fi
-COPYFILE_DISABLE=1 tar -C /opt/festapp-supabase -cf - "${runtime_paths[@]}" "${extra_paths[@]}" |
+bash "$SCRIPT_DIR/archive-runtime.sh" |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/runtime.tar.age"
 
 artifacts='{}'

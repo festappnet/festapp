@@ -41,6 +41,19 @@ BEGIN
  IF p_operation<>'read' AND c.expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'OFFER_EXPIRED'; END IF;
  RETURN o.form;
 END $$;
+-- Action/activity policy is shared by compact ordinary orders and full waitlist summaries.
+CREATE OR REPLACE FUNCTION public.get_order_action_summary_internal(
+ p_state text, p_has_waiting boolean DEFAULT false, p_pending_places bigint DEFAULT 0
+) RETURNS jsonb LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT jsonb_build_object('isActive',CASE WHEN p_state='waitlisted' THEN
+  coalesce(p_has_waiting,false) OR coalesce(p_pending_places,0)>0 ELSE p_state IS DISTINCT FROM 'storno' END,
+ 'allowedActions',CASE WHEN p_state='waitlisted' THEN jsonb_build_array('view','note','offer','withdraw')
+ WHEN p_state IN ('storno','preparing_payment') THEN jsonb_build_array('view')
+ WHEN p_state='ordered' THEN jsonb_build_array('view','note','edit','cancel','paid')
+ ELSE jsonb_build_array('view','note','edit','cancel','send') END);
+$$;
+REVOKE ALL ON FUNCTION public.get_order_action_summary_internal(text,boolean,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.get_waitlist_summary_internal(p_order bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  WITH effective AS (SELECT public.get_effective_waitlist_ticket_lifecycle_internal(person.id) lifecycle
@@ -48,12 +61,8 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  s AS (SELECT count(*) n,min(w.expires_at) expiry FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers w ON w.id=x.offer_id
  JOIN public.get_order_tickets_internal(p_order) person ON person.id=x.ticket_id WHERE true AND x.outcome='pending' AND w.expires_at>clock_timestamp())
  SELECT jsonb_build_object('counts',coalesce((SELECT jsonb_object_agg(lifecycle,n) FROM p),'{}'),
- 'pendingPlaces',s.n,'earliestExpiry',s.expiry,'isActive',CASE WHEN o.state='waitlisted' THEN
-  coalesce((SELECT n>0 FROM p WHERE lifecycle='waiting'),false) OR s.n>0 ELSE o.state IS DISTINCT FROM 'storno' END,
- 'allowedActions',CASE WHEN o.state='waitlisted' THEN jsonb_build_array('view','note','offer','withdraw')
- WHEN o.state IN ('storno','preparing_payment') THEN jsonb_build_array('view')
- WHEN o.state='ordered' THEN jsonb_build_array('view','note','edit','cancel','paid')
- ELSE jsonb_build_array('view','note','edit','cancel','send') END)
+ 'pendingPlaces',s.n,'earliestExpiry',s.expiry) || public.get_order_action_summary_internal(
+ o.state,coalesce((SELECT n>0 FROM p WHERE lifecycle='waiting'),false),s.n)
  FROM eshop.orders o CROSS JOIN s WHERE o.id=p_order;
 $$;
 CREATE OR REPLACE FUNCTION public.get_waitlist_offer_form(p_token text DEFAULT NULL,p_offer_id uuid DEFAULT NULL,p_order_id bigint DEFAULT NULL)

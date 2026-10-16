@@ -1,3 +1,4 @@
+import 'package:fstapp/components/images/recovering_image.dart';
 import 'package:fstapp/components/schedule/event_type_colors.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/components/schedule/event_grid_record.dart';
@@ -689,23 +690,15 @@ class ScheduleContentState extends State<ScheduleContent> {
                                 border: Border.all(color: Colors.grey.shade400),
                                 color: ThemeConfig.whiteColor(context),
                               ),
-                              child: CachedNetworkImage(
-                                  imageUrl: imageUrl,
+                              child: RecoveringImage(
+                                  image: CachedNetworkImageProvider(imageUrl),
                                   width: 120,
                                   fit: BoxFit.contain),
                             ),
                           ),
-                          child: CachedNetworkImage(
-                            imageUrl: imageUrl,
+                          child: RecoveringImage(
+                            image: CachedNetworkImageProvider(imageUrl),
                             fit: BoxFit.fitWidth,
-                            placeholder: (context, url) => SizedBox(
-                                width: 50,
-                                height: 50,
-                                child: Center(
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2.0))),
-                            errorWidget: (context, url, error) =>
-                                Icon(Icons.broken_image, size: 24),
                           ),
                         )
                       : Icon(Icons.image,

@@ -68,5 +68,16 @@
     "off_host_verified": true,
     "result": "r2-production-backup-result.json",
     "note": "Entire logical/Storage/runtime/R2 backup, not just R2 overhead; nice=10, existing timer/daemon only. The earlier anon/current sample is not a maximum."
+  },
+  "capacity_observation_extension": {
+    "source_commit": "afb0a779456158a4529f5ce77c1b01aa6ec50159",
+    "production_receipt": "native-resource-production-result.json",
+    "scheduled_samples": "native-resource-scheduled-observations.json",
+    "db_counts": "Client connections, active, idle-in-transaction, long transactions; max and reserved connections; collector connection excluded",
+    "edge_counts": "Native process-wide live user isolates, including warm workers, plus cumulative received/handled requests",
+    "edge_transport": "Numeric allowlist through existing Docker logs and existing minute collector",
+    "new_public_endpoint": false,
+    "new_daemon": false,
+    "critical_caps_changed": false
   }
 }

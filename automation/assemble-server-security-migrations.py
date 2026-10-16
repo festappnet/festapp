@@ -71,7 +71,9 @@ manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes(
  root/'automation/hetzner-supabase/runtime/docker-compose.resource-budget.yml',
  root/'automation/hetzner-supabase/runtime/apply-admin-resource-budget.py',
  root/'automation/hetzner-supabase/backup/create-online-encrypted-backup.sh',
- root/'automation/hetzner-supabase/backup/create-r2-image-archive.py']}
+ root/'automation/hetzner-supabase/backup/create-r2-image-archive.py',
+ root/'automation/hetzner-supabase/backup/archive-runtime.sh',
+ root/'automation/hetzner-supabase/backup/install-online-backup.sh']}
 manifest['contract_files']={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in [
  'database/functions/security/server_security_acl_manifest.json',
  'database/functions/security/definer_contracts.json']}
