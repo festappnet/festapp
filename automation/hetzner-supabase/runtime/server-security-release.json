@@ -48,8 +48,10 @@
     "automation/hetzner-supabase/restore/download-offhost-backup.py": "8fb5085b8bf5ad2a00eb5d4524e3e0dc49a38db8aa425920e689e17bdeadb816",
     "automation/hetzner-supabase/runtime/docker-compose.resource-budget.yml": "c7720abcccf9d7294ecbec0722aaa48415dea8c73bfc053d4c19b1af43567165",
     "automation/hetzner-supabase/runtime/apply-admin-resource-budget.py": "d83ac48342be45d367bf0f85ffc15bc6057fc6a6a0733ce2a80dcfece283f04c",
-    "automation/hetzner-supabase/backup/create-online-encrypted-backup.sh": "7d710d91b83838885a846eca683f62539e4558546de23a41e9eecdafbef4a662",
-    "automation/hetzner-supabase/backup/create-r2-image-archive.py": "9ed3edc666a371bc7a456312d4bf153774582095c8ac62d85e0a0103649a8ac2"
+    "automation/hetzner-supabase/backup/create-online-encrypted-backup.sh": "bd993839127f76aa86e8c69b71f87ca8b58bfbe8af96326e491f44138e7e1e3d",
+    "automation/hetzner-supabase/backup/create-r2-image-archive.py": "9ed3edc666a371bc7a456312d4bf153774582095c8ac62d85e0a0103649a8ac2",
+    "automation/hetzner-supabase/backup/archive-runtime.sh": "c85e6ec1f91734d0f23d077eb555e1e33f73373c7ba1135d496595566a9d3339",
+    "automation/hetzner-supabase/backup/install-online-backup.sh": "ddceabf59c4694540fe7e2d9e06cdd4ded36cb8710cd07a96a63b853ace3129b"
   },
   "contract_files": {
     "database/functions/security/server_security_acl_manifest.json": "e977bebe9018d7b2d89070e651ce527d685c58fb9c13f48caf0188470878e7eb",
