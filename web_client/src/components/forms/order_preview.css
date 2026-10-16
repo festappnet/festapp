@@ -12,7 +12,7 @@
     z-index: 2000;
     justify-content: center; /* Horizontally centered */
     align-items: flex-end; /* Always at bottom */
-    font-family: var(--font-family-base, sans-serif);
+    font-family: var(--font-family-base, inherit);
 }
 
 .order-preview-overlay.visible {
