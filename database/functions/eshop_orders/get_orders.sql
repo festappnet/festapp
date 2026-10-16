@@ -139,10 +139,14 @@ BEGIN
     FROM public.forms f
     WHERE f.occasion = v_occasion_id;
 
-    -- Materialize once per authorized order: the summary resolves ticket and
-    -- offer lifecycles and is reused by all three response fields.
+    -- Ordinary orders need only activity/actions. Resolve ticket/offer lifecycles
+    -- once only for orders that expose a full waitlist summary.
     WITH selected_orders AS MATERIALIZED (
-        SELECT o.*, public.get_waitlist_summary_internal(o.id) AS waitlist_summary
+        SELECT o.*, CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL
+          OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
+          THEN public.get_waitlist_summary_internal(o.id)
+          ELSE public.get_order_action_summary_internal(o.state)
+        END AS waitlist_summary
         FROM eshop.orders o
         WHERE o.occasion = v_occasion_id
           AND (v_form_id IS NULL OR o.form = v_form_id)
