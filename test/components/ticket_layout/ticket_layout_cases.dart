@@ -2126,6 +2126,60 @@ void main() {
     r.dispose();
   });
   testWidgetsWithEnvironment(() => _environment,
+      'font size slider restores history shortcuts after dialog focus restoration',
+      (tester) async {
+    tester.view.physicalSize = const Size(1800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final dialogFocus = FocusNode();
+    addTearDown(dialogFocus.dispose);
+    await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Focus(
+                focusNode: dialogFocus,
+                child: TicketLayoutEditor(
+                    occasionId: 1,
+                    type: 'named',
+                    resources: resources(),
+                    service: FakeService()))));
+    await tester.pumpAndSettle();
+    final canvas = tester
+        .state<TicketLayoutCanvasState>(find.byType(TicketLayoutCanvas));
+    final c = canvas.widget.controller;
+    final element = c.document.elements
+        .firstWhere((e) => e.binding == 'ticketSymbol');
+    c.select(element.id);
+    await tester.pumpAndSettle();
+    final slider = find.descendant(
+        of: find.byType(TicketLayoutProperties),
+        matching: find.byType(Slider)).first;
+    await tester.ensureVisible(slider);
+    final before = c.selection!.fontSize;
+    // A dismissed template picker restores focus to the surrounding dialog.
+    dialogFocus.requestFocus();
+    await tester.pump();
+    final gesture = await tester.startGesture(tester.getCenter(slider),
+        kind: PointerDeviceKind.mouse);
+    await gesture.moveBy(const Offset(-60, 0));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    final changed = c.selection!.fontSize;
+    expect(changed, isNot(before));
+    expect(c.canUndo, isTrue);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(c.selection!.fontSize, before);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyY);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(c.selection!.fontSize, changed);
+  });
+  testWidgetsWithEnvironment(() => _environment,
       'opening, live drag, resize, zoom and apply make zero PDF calls',
       (tester) async {
     final service = FakeService();
