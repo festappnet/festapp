@@ -13,8 +13,8 @@ BEGIN
     VALUES('Report metrics','report-metrics',now(),now(),org,unit_id) RETURNING id INTO occ;
   INSERT INTO public.occasions(title,link,start_time,end_time,organization,unit)
     VALUES('Other','report-other',now(),now(),org,unit_id) RETURNING id INTO other_occ;
-  INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(occ,u,true);
   PERFORM pg_temp.adopt_public_link_fixtures();
+  INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(occ,u,true);
   PERFORM set_config('request.jwt.claim.sub',u::text,true);
   SET LOCAL ROLE authenticated;
   r:=public.get_report_ws('report-metrics');
@@ -47,8 +47,21 @@ BEGIN
   PERFORM assert_eq((r->'report'->'valid'->'orders'->>'total')::int,5,'valid orders exclude storno, retain unknown/future');
   PERFORM assert_eq((r->'report'->'valid'->'tickets'->>'total')::int,1,'valid ticket deduplicated');
   PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'valid'->'order_days') x),5,'valid history matches count');
+  PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'timeline'->'tickets') x),1,'ticket timeline deduplicates multiple products');
+  PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'valid'->'ticket_days') x),1,'valid ticket history');
+  INSERT INTO eshop.tickets(occasion,state,created_at)
+    SELECT occ,'paid','2026-10-01 22:30:00+00'::timestamptz FROM generate_series(1,8);
+  INSERT INTO eshop.order_product_ticket("order",product,ticket)
+    SELECT o1,product1,id FROM eshop.tickets WHERE occasion=occ AND id<>ticket_id;
+  r:=public.get_report_ws('report-metrics');
+  PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'timeline'->'tickets') x),9,'eight tickets in one order count as eight');
+  PERFORM assert_true(r->'report'->'timeline'->'tickets' @> '[{"day":"2026-10-02","currency":"CZK","count":8}]','ticket creation day uses Prague timezone');
+  DELETE FROM eshop.order_product_ticket WHERE ticket IN (SELECT id FROM eshop.tickets WHERE occasion=occ AND id<>ticket_id);
+  DELETE FROM eshop.tickets WHERE occasion=occ AND id<>ticket_id;
+  r:=public.get_report_ws('report-metrics');
   UPDATE eshop.tickets SET state='storno' WHERE id=ticket_id;
   PERFORM assert_eq((public.get_report_ws('report-metrics')->'report'->'valid'->'tickets'->>'total')::int,0,'partially cancelled ticket excluded');
+  PERFORM assert_eq(public.get_report_ws('report-metrics')->'report'->'valid'->'ticket_days','[]'::jsonb,'cancelled ticket excluded from history');
   UPDATE eshop.tickets SET state='paid' WHERE id=ticket_id;
   UPDATE eshop.orders SET state='storno' WHERE id=o1;
   PERFORM assert_eq((public.get_report_ws('report-metrics')->'report'->'valid'->'tickets'->>'total')::int,0,'ticket under cancelled parent excluded');

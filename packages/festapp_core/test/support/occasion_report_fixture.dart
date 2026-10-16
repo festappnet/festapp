@@ -24,6 +24,11 @@ Map<String, dynamic> reportResponse({String id = '1', bool empty = false}) => {
                 {'state': 'paid', 'count': 2},
               ],
       },
+      'ticket_days': empty
+          ? []
+          : [
+              {'day': '2026-10-01', 'currency': 'CZK', 'count': 2},
+            ],
       'order_days': empty
           ? []
           : [
@@ -39,6 +44,11 @@ Map<String, dynamic> reportResponse({String id = '1', bool empty = false}) => {
     'timeline': {
       'order_timezone': 'Europe/Prague',
       'payment_date_basis': 'transaction_date',
+      'tickets': empty
+          ? []
+          : [
+              {'day': '2026-10-01', 'currency': 'CZK', 'count': 2},
+            ],
       'orders': empty
           ? []
           : [

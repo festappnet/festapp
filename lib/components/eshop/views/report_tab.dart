@@ -248,9 +248,11 @@ class _ReportTabState extends State<ReportTab> {
       );
 
   List<Widget> _timelines(OccasionReport report) {
-    if (!report.hasTimeline) return [Text(ReportStrings.timelineUnavailable)];
+    if (!report.hasTicketTimeline) {
+      return [Text(ReportStrings.timelineUnavailable)];
+    }
     final dates = [
-      ...report.orderDays.where((d) => d.count > 0).map((d) => d.day),
+      ...report.ticketDays.where((d) => d.count > 0).map((d) => d.day),
       ...report.paymentDays
           .where((d) =>
               reportMinorUnits(d.received) > BigInt.zero ||
@@ -278,7 +280,7 @@ class _ReportTabState extends State<ReportTab> {
         : end.subtract(Duration(days: _rangeDays - 1));
     final colors = Theme.of(context).colorScheme;
     final currencies = {
-      ...report.orderDays.map((d) => d.currency),
+      ...report.ticketDays.map((d) => d.currency),
       ...report.money.map((m) => m.currency),
       ...report.paymentDays.map((d) => d.currency),
     }.toList()
@@ -289,11 +291,11 @@ class _ReportTabState extends State<ReportTab> {
             ? '*'
             : currencies.first;
     final visible = selected == '*' ? currencies : [selected];
-    final orders = <DateTime, BigInt>{};
-    for (final d in report.orderDays.where(
+    final tickets = <DateTime, BigInt>{};
+    for (final d in report.ticketDays.where(
       (d) => visible.contains(d.currency),
     )) {
-      orders.update(
+      tickets.update(
         d.day,
         (value) => value + BigInt.from(d.count),
         ifAbsent: () => BigInt.from(d.count),
@@ -370,9 +372,9 @@ class _ReportTabState extends State<ReportTab> {
             cumulative: _cumulative,
             series: [
               ReportTimelineSeries(
-                ReportStrings.orders,
+                ReportStrings.timelineItems,
                 colors.primary,
-                orders,
+                tickets,
               ),
             ],
           ),

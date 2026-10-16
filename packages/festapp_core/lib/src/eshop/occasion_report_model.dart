@@ -103,6 +103,7 @@ class OccasionReport {
           'timeline': Map<String, dynamic>.unmodifiable({
             ...Map<String, dynamic>.from(_source['timeline'] as Map),
             'orders': valid['order_days'],
+            'tickets': valid['ticket_days'],
           }),
       }),
       text,
@@ -117,11 +118,18 @@ class OccasionReport {
   final List<ReportProduct> products;
   final Map<String, int> warnings;
   final List<ReportOrderDay> orderDays;
+  final List<ReportOrderDay> ticketDays;
+  final bool hasTicketTimeline;
   final List<ReportPaymentDay> paymentDays;
   final bool hasTimeline;
 
   OccasionReport._(Map<String, dynamic> r, this.text)
     : _source = r,
+      hasTicketTimeline = r['timeline']?['tickets'] != null,
+      ticketDays = List.unmodifiable([
+        for (final d in r['timeline']?['tickets'] ?? [])
+          ReportOrderDay(Map<String, dynamic>.from(d)),
+      ]),
       hasTimeline = r['timeline'] != null,
       orderDays = List.unmodifiable([
         for (final d in r['timeline']?['orders'] ?? [])

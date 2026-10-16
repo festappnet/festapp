@@ -369,12 +369,15 @@ void main() {
             product: p,
             canEdit: true,
             reload: () async => p,
+            onOpenWaves: () {},
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    expect(find.text(OrdersStrings.priceRefreshAction), findsNothing);
+    expect(find.text(OrdersStrings.priceWaves), findsOneWidget);
     expect(find.text('Přidat další změnu'), findsOneWidget);
     await tester.tap(find.text('Přidat další změnu'));
     await tester.pumpAndSettle();

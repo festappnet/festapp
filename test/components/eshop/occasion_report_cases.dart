@@ -133,6 +133,15 @@ void main() {
       addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
       await tester.pumpWidget(app((_) async => reportFixture()));
       await tester.pumpAndSettle();
+      final chart = tester
+          .widgetList<ReportTimelineChart>(find.byType(ReportTimelineChart))
+          .first;
+      expect(chart.series.single.label,
+          ticketMode ? ReportStrings.tickets : OrdersStrings.applications);
+      expect(
+          chart.series.single.amounts.values
+              .fold<BigInt>(BigInt.zero, (a, b) => a + b),
+          BigInt.from(2));
       expect(find.text(ReportStrings.tickets),
           ticketMode ? findsWidgets : findsNothing);
       expect(
@@ -378,6 +387,8 @@ void main() {
           {'day': '2026-10-04', 'currency': 'CZK', 'count': 2}
         ];
         report['valid']['order_days'] = timeline['orders'];
+        timeline['tickets'] = timeline['orders'];
+        report['valid']['ticket_days'] = timeline['tickets'];
         report['money_by_currency'] = [
           (report['money_by_currency'] as List).first,
         ];
