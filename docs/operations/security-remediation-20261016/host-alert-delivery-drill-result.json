@@ -1,0 +1,71 @@
+{
+  "run_id": "20261016T164631Z",
+  "authorization": "explicit user approval; application must continue running",
+  "started_at": "2026-10-16T16:46:31.684413+00:00",
+  "completed_at": "2026-10-16T16:54:44.455989+00:00",
+  "restored_at": "2026-10-16T16:51:54.990084+00:00",
+  "pause_epoch_ms": 1792169195455,
+  "restored": true,
+  "application_services_stopped": false,
+  "synthetic_observations_sent": false,
+  "alert_delivery_proven": true,
+  "four_checks_healthy": true,
+  "naturally_resolved": true,
+  "all_container_identity_health_preserved": true,
+  "failsafe_cleanup": "unit no longer loaded; host timer active, no residual fail-safe timer",
+  "incidents": [
+    {
+      "service": "festapp-host",
+      "check_id": "cpu",
+      "code": "heartbeat_missing",
+      "severity": "critical",
+      "state": "resolved",
+      "opened_at": 1792169384629,
+      "resolved_at": 1792169514569
+    },
+    {
+      "service": "festapp-host",
+      "check_id": "agent",
+      "code": "heartbeat_missing",
+      "severity": "critical",
+      "state": "resolved",
+      "opened_at": 1792169384629,
+      "resolved_at": 1792169514569
+    },
+    {
+      "service": "festapp-host",
+      "check_id": "disk",
+      "code": "heartbeat_missing",
+      "severity": "critical",
+      "state": "resolved",
+      "opened_at": 1792169384629,
+      "resolved_at": 1792169514569
+    },
+    {
+      "service": "festapp-host",
+      "check_id": "memory",
+      "code": "heartbeat_missing",
+      "severity": "critical",
+      "state": "resolved",
+      "opened_at": 1792169384629,
+      "resolved_at": 1792169514569
+    }
+  ],
+  "deliveries": [
+    {
+      "event_kind": "recovery",
+      "state": "delivered",
+      "created_at": 1792169540888,
+      "updated_at": 1792169600186
+    },
+    {
+      "event_kind": "opened",
+      "state": "delivered",
+      "created_at": 1792169384629,
+      "updated_at": 1792169481466
+    }
+  ],
+  "existing_sender_used": true,
+  "provider_acceptance_alone_counted_as_delivery": false,
+  "configured_recipients_only": true
+}

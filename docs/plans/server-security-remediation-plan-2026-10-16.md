@@ -1,8 +1,12 @@
 # Oprava zabezpečení a provozních limitů serveru Festapp
 
 Datum: 2026-10-16  
-Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, cross-store/RTO důkaz, ověření doručení host alertu; control-plane evidence a servisní restart jsou doložené.
+Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, cross-store/RTO důkaz; doručení host alertu, control-plane evidence a servisní restart jsou doložené.
 Ověření: standard - bezpečnost, autentizace, migrace a sdílený produkční backend
+
+## Skutečné doručení host upozornění a návrat do zdravého stavu
+
+Po výslovném souhlasu uživatele proběhl řízený výpadek pouze původního host monitor timeru, s předem ověřenou nezávislou 12minutovou systemd pojistkou. Aplikace, kontejnery i backup/log timery dál běžely. Existující monitoring vytvořil `heartbeat_missing`; rodičovská vazba zabránila dalším upozorněním podřízených kontrol. Původní sender má skutečný `delivered` receipt jak pro upozornění, tak pro obnovu, nikoli pouze provider `accepted`. Po potvrzení prvního doručení se běžný monitor znovu spustil; všechny čtyři checks jsou zdravé a všechny testové incidenty přirozeně `resolved`. [Skutečný receipt](../operations/security-remediation-20261016/host-alert-delivery-drill-result.json) potvrzuje identitu/stav všech 13 kontejnerů a aktivní původní timery; nezůstala další timer jednotka. Nešlo o syntetické produkční observations, nový check, credential nebo sender. Tím je dřívější konkrétní host delivery gap uzavřený.
 
 ## Doplnění skutečně chybějících startovacích souborů zálohy
 
@@ -58,7 +62,7 @@ Stávající stejný host monitor přijal všechny čtyři heartbeaty a ukazuje 
 
 Autoritativní [produkční receipt](../operations/security-remediation-20261016/pgbackrest-production-result.json), [reálná obnova](../operations/security-remediation-20261016/pgbackrest-real-restore-result.json), [runtime backup důkaz](../operations/security-remediation-20261016/pgbackrest-runtime-backup-verification.json) a [syntetické testy](../operations/security-remediation-20261016/pgbackrest-verification.json) jsou bez tajemství/zákaznického obsahu. Kanonický postup vlastní `automation/hetzner-supabase/backup/pgbackrest/README.md`. CI hlídá, aby derivative sledoval canonical PostgreSQL image. Průběžné pozorování při první záloze ukázalo cca 40 MiB RSS zálohovacích procesů a přes 1 GiB dostupné host RAM; není to záruka maxima nebo sizing běžné špičky.
 
-**Nadále otevřené:** reprezentativní resource budget zbývajících kritických služeb a odůvodněné hard capy, skutečné doručení host alertu, úplné bare-host/integrační RTO a nevyřešených 50 historických R2 registry odkazů bez zdrojového objektu. Jejich nepřítomnost v kontrolovaných payloads není povolení k mazání metadat. Nezávislá úschova klíče, skutečná PITR obnova, kontrola DB/Storage, image-source archivace, firewall/MFA i kernel restart jsou doložené. Historické formulace o neschváleném nebo vypnutém PITR nejsou aktuální stav.
+**Nadále otevřené:** reprezentativní resource budget zbývajících kritických služeb a odůvodněné hard capy, úplné bare-host/integrační RTO a nevyřešených 50 historických R2 registry odkazů bez zdrojového objektu. Jejich nepřítomnost v kontrolovaných payloads není povolení k mazání metadat. Nezávislá úschova klíče, skutečná PITR obnova, kontrola DB/Storage, image-source archivace, firewall/MFA i kernel restart jsou doložené. Historické formulace o neschváleném nebo vypnutém PITR nejsou aktuální stav.
 
 ## Produkční A/B a předchozí stav C - historický snapshot před PITR
 
