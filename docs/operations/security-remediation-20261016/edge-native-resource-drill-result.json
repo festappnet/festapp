@@ -1,0 +1,26 @@
+{
+  "status": "pass",
+  "responses": 16,
+  "samplingElapsedMs": 1.668724999999995,
+  "metrics": {
+    "version": 1,
+    "at": 1792167769699,
+    "activeUserWorkersCount": 2,
+    "retiredUserWorkersCount": 0,
+    "receivedRequestsCount": 16,
+    "handledRequestsCount": 16
+  },
+  "memory_peak_bytes": 52920320,
+  "oom": false,
+  "restarts": 0,
+  "network": "none",
+  "host_binds": false,
+  "host_ports": false,
+  "production_credentials": false,
+  "production_functions": false,
+  "max_parallelism": 1,
+  "max_parallelism_scope": "per service_path, not process-wide",
+  "native_log_parsed_by_production_collector": true,
+  "script_sha256": "1e3a45153aefda11f7f27846e5732f36f4ba3672a1c225e6555dffc55f4cf128",
+  "scope": "Isolated 16-request burst on two fixture services and native log transport; not a production capacity benchmark"
+}
