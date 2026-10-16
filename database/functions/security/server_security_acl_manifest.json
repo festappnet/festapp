@@ -1,0 +1,46 @@
+{
+  "retired_rpc_names": [
+    "migrate_users_to_org",
+    "update_spot",
+    "apply_allocations_claim_only",
+    "send_email_mailersend"
+  ],
+  "sync_tables": [
+    "external_sync_sources",
+    "external_sync_maps",
+    "external_occasions_cache"
+  ],
+  "sync_policy": {
+    "name": "service_only",
+    "roles": [
+      "service_role"
+    ],
+    "command": "ALL",
+    "permissive": "PERMISSIVE",
+    "using": "true",
+    "with_check": "true"
+  },
+  "entrypoints": {
+    "public.update_spot_assignments(jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.add_sync_map(text,bigint,bigint,text,bigint,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    }
+  },
+  "extension_client_execute": {
+    "http": false,
+    "dblink": false
+  },
+  "application_client_truncate": false,
+  "application_definer_search_path_required": true,
+  "reviewed_definer_sources": [
+    "database/functions/inventory/update_spots_assignments.sql"
+  ],
+  "monitor": "public.get_festapp_monitoring_health_v1(text)",
+  "monitor_credential_table": "public.festapp_monitoring_credentials"
+}

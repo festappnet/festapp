@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-16",
+  "status": "A/B deployed and verified; C operational evidence partially complete",
+  "canonical_source_commit": "9b2064fb796f7ec12f8271f80fbc03b9b0306e61",
+  "verified_ci_commit": "89639ea9172cadd2bfb456ab55aae6bc9695249c",
+  "target": {
+    "tenant": "festapp",
+    "organization_id": 1,
+    "canonical_generation": 1,
+    "api": "https://api.festapp.net",
+    "database": "festapp_rehearsal_20260909220601"
+  },
+  "migration_versions": [
+    "20261016170000",
+    "20261016171000",
+    "20261016172000"
+  ],
+  "release_manifest_sha256": "f33e693c92e7d01a6ed9117173806d1d17b352036ed508351a6ca8b368fa27fc",
+  "release_manifest_note": "Immutable prepared artifact retains production_applied=false; this separate receipt records the subsequent application. Applied inputs were sealed from the canonical source commit.",
+  "catalog": {
+    "read_only_failure_gate_passed": true,
+    "retired_rpc_count": 0,
+    "sync_policies": [
+      {
+        "name": "service_only",
+        "roles": [
+          "service_role"
+        ],
+        "table": "external_occasions_cache",
+        "command": "ALL",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "service_only",
+        "roles": [
+          "service_role"
+        ],
+        "table": "external_sync_maps",
+        "command": "ALL",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "service_only",
+        "roles": [
+          "service_role"
+        ],
+        "table": "external_sync_sources",
+        "command": "ALL",
+        "permissive": "PERMISSIVE"
+      }
+    ],
+    "client_sync_http_access_denied": true,
+    "effective_acl_and_search_path_checked": true
+  },
+  "runtime": {
+    "caddy_active_config_sha256": "127d9968e158e55fbcfe08551ec46d9ff18a7b339f3af3f7b3fe4f628f2ad107",
+    "caddy_reloaded_without_stack_restart": true,
+    "storage_body_cap_mib": 52,
+    "host_monitor_same_four_checks_accepted": true,
+    "host_monitor_new_service_or_identity": false
+  },
+  "ci": {
+    "seat_checkout_and_ticket_delivery_run": "https://github.com/festappnet/festapp/actions/runs/38902723087",
+    "seat_checkout": "success",
+    "ticket_preview_and_delivery": "success",
+    "image_service_regressions": "success",
+    "web_startup_regressions": "success",
+    "test_fixture_fix": "Wait for completed select_spot RPC before asserting actual SQL reservation."
+  },
+  "backup": {
+    "run_id": "20261016T123646Z",
+    "off_host_verified": true,
+    "uploaded_at": "2026-10-16T12:38:03Z",
+    "real_isolated_restore": "real-restore-result.json",
+    "retention_changed": false
+  },
+  "live_probes": {
+    "/auth/v1/health": 200,
+    "/rest/v1/": 403,
+    "/storage/v1/status": 200,
+    "external_sync_sources": {
+      "status": 401,
+      "denied": true
+    },
+    "external_sync_maps": {
+      "status": 401,
+      "denied": true
+    },
+    "external_occasions_cache": {
+      "status": 401,
+      "denied": true
+    },
+    "websocket": 101,
+    "bounded_operational_health": {
+      "status": 200,
+      "ok": false,
+      "alerts": [
+        "abuse_ordinary_backlog"
+      ]
+    }
+  },
+  "email": {
+    "paused": false,
+    "historic_unknown_count": 2,
+    "unknown_messages_replayed": false,
+    "health_alert_note": "abuse_ordinary_backlog remains associated with the existing ordinary queue including two historic unknown outcomes; not cleared by replay or queue reset."
+  },
+  "credential_incident": {
+    "scoped_edge_monitoring_write_token_exposed_to_tool_output": true,
+    "old_credential_revoked": true,
+    "replacement_same_scope": true,
+    "root_environment_and_protected_local_references_updated": true,
+    "only_functions_recreated_to_load_replacement": true,
+    "email_gate_restored_to_previous_unpaused_state": true,
+    "host_monitor_token_changed": false,
+    "other_monitoring_projects_changed": false
+  },
+  "protected_evidence": {
+    "host": "/var/lib/festapp-rehearsal-evidence/server-security-20261016",
+    "workstation": "/Users/miakh/.local/share/festapp-server-security-20261016"
+  },
+  "remaining": [
+    "Representative peak resource measurements and justified numerical container budget; no arbitrary hard caps or paid resize applied.",
+    "Account-level provider IPv4/IPv6 firewall and Cloudflare Access MFA/session-policy evidence unavailable; external reachability probes do not prove the complete rules.",
+    "Independent decryption-key custody/key-loss drill unverified; workstation has no configured Time Machine destination.",
+    "Recovery objective not selected; PITR disabled, full service RTO and DB/Storage/R2 consistency not proven by isolated SQL restore.",
+    "Pending kernel/libc maintenance requires an agreed service window and verified out-of-band console before reboot.",
+    "Four host heartbeats accepted; existing same-project delivery receipts verified, but no host-specific alert delivery manufactured or proven."
+  ]
+}

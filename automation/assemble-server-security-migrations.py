@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Deterministic follow-up migrations; never rewrites abuse or baseline."""
+from pathlib import Path
+import argparse, hashlib, json
+root=Path(__file__).resolve().parents[1]
+parser=argparse.ArgumentParser(); parser.add_argument('--check',action='store_true'); args=parser.parse_args()
+bundles={
+ '20261016170000_server_security_containment.sql':['database/functions/security/server_security_containment.sql'],
+ '20261016171000_server_security_authorization.sql':['database/functions/security/server_security_retirement.sql','database/functions/inventory/update_spots_assignments.sql','database/functions/security/external_sync_acl.sql','database/functions/synchronization/add_sync_map.sql'],
+ '20261016172000_server_security_hygiene.sql':['database/functions/security/server_security_search_paths.sql','database/functions/security/server_security_hygiene.sql'],
+}
+for name,sources in bundles.items():
+ content='-- Canonical sources: '+', '.join(sources)+'\n\n'+'\n'.join((root/f).read_text() for f in sources)
+ target=root/'supabase/migrations'/name
+ if args.check:
+  if target.read_text()!=content: raise SystemExit(f'Migration drift: {name}')
+ else: target.write_text(content)
+# Small independently executable transactional phase drivers and a digest manifest.
+manifest={'version':1,'base_main':'cf699e154bfb9d4f0ad5b1991d00e0dd0f055d89','production_applied':False,'phases':[]}
+for name in bundles:
+ version, phase=name.removesuffix('.sql').split('_server_security_')
+ digest=hashlib.sha256((root/'supabase/migrations'/name).read_bytes()).hexdigest()
+ account='supabase_admin' if phase=='hygiene' else 'postgres'
+ driver=f"""\\set ON_ERROR_STOP on
+BEGIN;
+SELECT pg_advisory_xact_lock(hashtextextended('festapp-server-security-remediation',0));
+DO $$$$
+BEGIN
+  IF current_database()<>'festapp_rehearsal_20260909220601' OR
+    NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=1) THEN
+    RAISE EXCEPTION 'Canonical target mismatch';
+  END IF;
+  IF EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='{version}') THEN
+    RAISE EXCEPTION 'Migration already recorded; use readback rather than replay';
+  END IF;
+END $$$$;
+-- Embedded canonical migration {name}
+{(root/'supabase/migrations'/name).read_text()}
+-- End canonical migration
+INSERT INTO supabase_migrations.schema_migrations(version,name,statements)
+VALUES('{version}','server_security_{phase}',ARRAY['-- sha256:{digest}']);
+NOTIFY pgrst,'reload schema';
+COMMIT;
+""".replace('$$$$','$$')
+ target=root/'automation/hetzner-supabase/runtime'/f'apply-server-security-{phase}.sql'
+ if args.check:
+  if target.read_text()!=driver: raise SystemExit(f'Driver drift: {phase}')
+ else: target.write_text(driver)
+ manifest['phases'].append({'version':version,'file':'supabase/migrations/'+name,'sha256':digest,'database_user':account,'driver':str(target.relative_to(root))})
+manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [
+ root/'automation/hetzner-supabase/runtime/Caddyfile',
+ root/'automation/hetzner-supabase/runtime/apply-security-config.sh',
+ root/'automation/hetzner-supabase/runtime/audit-security-state.sql',
+ root/'automation/hetzner-supabase/runtime/collect-resource-budget.sh',
+ root/'automation/hetzner-supabase/monitoring/agent.mjs',
+ root/'automation/hetzner-supabase/monitoring/metrics.mjs',
+ root/'automation/hetzner-supabase/monitoring/runtime-evidence.py',
+ root/'automation/hetzner-supabase/monitoring/festapp-host-monitor.service',
+ root/'automation/hetzner-supabase/monitoring/install.sh',
+ root/'automation/hetzner-supabase/restore/drill-online-backup-local.py']}
+manifest['contract_files']={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in [
+ 'database/functions/security/server_security_acl_manifest.json',
+ 'database/functions/security/definer_contracts.json']}
+manifest_file=root/'automation/hetzner-supabase/runtime/server-security-release.json' 
+content=json.dumps(manifest,indent=2)+'\n'
+if args.check:
+ if manifest_file.read_text()!=content: raise SystemExit('Release manifest drift')
+else: manifest_file.write_text(content)
+print('Server security migrations: canonical')

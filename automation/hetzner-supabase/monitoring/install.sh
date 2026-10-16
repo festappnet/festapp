@@ -10,7 +10,7 @@ sha256sum --check --quiet SHA256SUMS
 id festapp-host-monitor >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin festapp-host-monitor
 install -d -m 0755 /opt/festapp-host-monitor
 install -d -m 0750 -o root -g festapp-host-monitor /etc/festapp-host-monitor
-install -m 0644 agent.mjs metrics.mjs sdk.mjs LICENSE /opt/festapp-host-monitor/
+install -m 0644 agent.mjs metrics.mjs runtime-evidence.py sdk.mjs LICENSE /opt/festapp-host-monitor/
 install -m 0640 -o root -g festapp-host-monitor token /etc/festapp-host-monitor/token
 install -m 0644 festapp-host-monitor.service festapp-host-monitor.timer /etc/systemd/system/
 systemctl daemon-reload

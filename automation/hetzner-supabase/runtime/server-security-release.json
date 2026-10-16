@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "base_main": "cf699e154bfb9d4f0ad5b1991d00e0dd0f055d89",
+  "production_applied": false,
+  "phases": [
+    {
+      "version": "20261016170000",
+      "file": "supabase/migrations/20261016170000_server_security_containment.sql",
+      "sha256": "df60beef0a8dd773e554a3fe9c10f7ccabe7c2dc6883947dcffc871c75882649",
+      "database_user": "postgres",
+      "driver": "automation/hetzner-supabase/runtime/apply-server-security-containment.sql"
+    },
+    {
+      "version": "20261016171000",
+      "file": "supabase/migrations/20261016171000_server_security_authorization.sql",
+      "sha256": "f665d52c6bade3787a63a51034e07d2cc67f004ee6fe1d40605bcee65d4f53c3",
+      "database_user": "postgres",
+      "driver": "automation/hetzner-supabase/runtime/apply-server-security-authorization.sql"
+    },
+    {
+      "version": "20261016172000",
+      "file": "supabase/migrations/20261016172000_server_security_hygiene.sql",
+      "sha256": "dc73dc9a5f938f5732c3285f89086f625a6140a7473c740c297df1898b6fa1a6",
+      "database_user": "supabase_admin",
+      "driver": "automation/hetzner-supabase/runtime/apply-server-security-hygiene.sql"
+    }
+  ],
+  "runtime_files": {
+    "automation/hetzner-supabase/runtime/Caddyfile": "127d9968e158e55fbcfe08551ec46d9ff18a7b339f3af3f7b3fe4f628f2ad107",
+    "automation/hetzner-supabase/runtime/apply-security-config.sh": "99b6f987fce0851497d5485f3db6f4ea35344d104bb300a6ecf6283c7e7226e6",
+    "automation/hetzner-supabase/runtime/audit-security-state.sql": "dcb4c4cd5f67c83437894fd91abb7888c8aa555663a54c0660fb39a35035f2e0",
+    "automation/hetzner-supabase/runtime/collect-resource-budget.sh": "8485ab057a68c96c4f49ffaeb9e7f1b6b48dc789e6063bfd53a1d7fac05424f3",
+    "automation/hetzner-supabase/monitoring/agent.mjs": "f668f803d09507a3c59e9a49fba148815c2602932583f9a52a28c45b38914076",
+    "automation/hetzner-supabase/monitoring/metrics.mjs": "74fa3a3b39737a38e174532c6f79c2d34fbd9f16b698a0a8e9dcd914d4024ff9",
+    "automation/hetzner-supabase/monitoring/runtime-evidence.py": "f7e237eaaf9094256e7c8a1b507601d2aa7c07d22595fea74904bf940427d115",
+    "automation/hetzner-supabase/monitoring/festapp-host-monitor.service": "af61a1bc001d6b345ec0b3049c53e8fcb5c137287ca74dd54c0deefec9f4e358",
+    "automation/hetzner-supabase/monitoring/install.sh": "2d418d2e664dfef1e75500257f84a4b93172c5e2848893ede4d76ad7e85a0ce3",
+    "automation/hetzner-supabase/restore/drill-online-backup-local.py": "18563c7d56861421688a5c30c60ae5715c95d349477b68723b655b11187e7cc7"
+  },
+  "contract_files": {
+    "database/functions/security/server_security_acl_manifest.json": "e977bebe9018d7b2d89070e651ce527d685c58fb9c13f48caf0188470878e7eb",
+    "database/functions/security/definer_contracts.json": "0a5448ecaf1a7deb6a715093df7de8210abe1a76a08eb8fd734bbc3748e6fa35"
+  }
+}

@@ -3,7 +3,7 @@ import pg from '../../../web_client/node_modules/pg/lib/index.js';
 import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import assert from 'node:assert/strict';
-const ports = JSON.parse(execFileSync('docker', ['inspect', '--format', '{{json .NetworkSettings.Ports}}', 'supabase_db_festapp-security-remediation-20261009'], {encoding:'utf8'}));
+const ports = JSON.parse(execFileSync('docker', ['inspect', '--format', '{{json .NetworkSettings.Ports}}', 'supabase_db_festapp-security-remediation-20261016'], {encoding:'utf8'}));
 assert(ports['5432/tcp']?.some(binding => binding.HostPort === '55562'), 'Run only against the task-owned disposable database on port 55562');
 const db=new pg.Client({connectionString:'postgresql://postgres:postgres@127.0.0.1:55562/postgres?sslmode=disable'});
 const results=[];

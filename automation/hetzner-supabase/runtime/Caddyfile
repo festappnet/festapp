@@ -38,6 +38,14 @@
 		}
 		import festapp_supabase_proxy
 	}
+	# 50MiB Storage contract plus multipart overhead; covers resumable/copy paths.
+	@storage path /storage/v1 /storage/v1/*
+	handle @storage {
+		request_body {
+			max_size 52MiB
+		}
+		import festapp_supabase_proxy
+	}
 	@public_api path \
  /.well-known/* \
  /auth/v1 /auth/v1/* \

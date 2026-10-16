@@ -1,5 +1,5 @@
 [Unit]
-Description=Festapp host CPU memory and disk observations
+Description=Festapp host and runtime observations
 After=network-online.target
 Wants=network-online.target
 
@@ -7,6 +7,7 @@ Wants=network-online.target
 Type=oneshot
 User=festapp-host-monitor
 Group=festapp-host-monitor
+ExecStartPre=+/usr/bin/python3 /opt/festapp-host-monitor/runtime-evidence.py
 ExecStart=/usr/bin/node /opt/festapp-host-monitor/agent.mjs
 StateDirectory=festapp-host-monitor
 StateDirectoryMode=0700

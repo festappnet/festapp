@@ -295,6 +295,8 @@ if [ "$RUN_AUTOMATION" = true ]; then
       "$SCRIPT_DIR/tests/hetzner_supabase_infrastructure.test.mjs" \
       "$SCRIPT_DIR/tests/edge_function_test_coverage.test.mjs" \
       "$SCRIPT_DIR/tests/abuse_policy_coverage.test.mjs" \
+      "$SCRIPT_DIR/tests/server_security_migrations.test.mjs" \
+      "$SCRIPT_DIR/hetzner-supabase/monitoring/metrics.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_inventory.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_cutover_mode_gate.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_operational_readiness.test.mjs" \
