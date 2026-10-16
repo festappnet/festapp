@@ -1,10 +1,26 @@
-import importlib.util,json,tarfile,unittest
+import hashlib,importlib.util,json,os,subprocess,sys,tarfile,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('service_smoke',Path(__file__).resolve().parents[1]/'hetzner-supabase/restore/service_smoke.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
 class ServiceIsolationTest(unittest.TestCase):
+ def test_unavailable_docker_does_not_consume_downloaded_inputs(self):
+  with tempfile.TemporaryDirectory() as temp:
+   root=Path(temp);backup=root/'backup';backup.mkdir();tools=root/'bin';tools.mkdir()
+   docker=tools/'docker';docker.write_text('#!/bin/sh\nexit 1\n');docker.chmod(0o700)
+   artifacts={}
+   for name in ['postgres.dump.age','globals.sql.age','storage.tar.age','runtime.tar.age']:
+    data=('fixture-'+name).encode();(backup/name).write_bytes(data)
+    artifacts[name]={'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+   manifest={'version':1,'encrypted':True,'consistency':'online-operational-backup-not-promotion-rpo0','run_id':'20261016T150700Z','source_host':'festapp-supabase-rehearsal-01','source_database':'festapp_rehearsal_20260909220601','artifacts':artifacts}
+   (backup/'manifest.json').write_text(json.dumps(manifest));identity=root/'identity';identity.write_text('fixture')
+   script=Path(__file__).resolve().parents[1]/'hetzner-supabase/restore/drill-online-backup-local.py'
+   env=os.environ.copy();env['PATH']=str(tools)+os.pathsep+env['PATH']
+   result=subprocess.run([sys.executable,str(script),'--backup-dir',str(backup),'--identity',str(identity),'--evidence',str(root/'result.json'),'--consume-downloaded-artifacts'],env=env,capture_output=True)
+   self.assertNotEqual(result.returncode,0)
+   for name,meta in artifacts.items():self.assertEqual(hashlib.sha256((backup/name).read_bytes()).hexdigest(),meta['sha256'])
+
  def test_missing_xattrs_require_explicit_recovery_from_database_metadata(self):
   member=tarfile.TarInfo('stub/stub/photos/pic/v1')
   objects=[{'bucket':'photos','name':'pic','version':'v1','metadata':{'mimetype':'image/jpeg','cacheControl':'max-age=3600'}}]

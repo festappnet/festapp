@@ -55,13 +55,14 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
  service=jwt('service_role');anon=jwt('anon')
  uri='postgresql://supabase_admin@127.0.0.1:5432/isolated_restore?options=-c%20session_preload_libraries%3D%20-c%20local_preload_libraries%3D'
  names=[]
- def start(kind,environment,limits=None):
+ def start(kind,environment,limits=None,prepare=False):
   image=pins['supabase']['images'][kind];assert '@sha256:' in image
   name=database_container+'-'+kind;names.append(name)
   args=['docker','run','-d','--name',name,'--network','container:'+database_container,'--cap-drop=ALL','--security-opt=no-new-privileges']
   if limits:args+=['--memory',str(limits['mem_limit']),'--cpus',limits['cpus'],'--pids-limit',str(limits['pids_limit'])]
   for key,value in environment.items():args+=['-e',key+'='+value]
-  run(args+[image])
+  if prepare:args+=['--entrypoint','sh']
+  run(args+[image]+(['-c','sleep 7200'] if prepare else []))
   info=json.loads(capture(['docker','inspect',name]))[0]
   assert info['HostConfig']['NetworkMode'] in ['container:'+actual['Id'],'container:'+database_container]
   assert not info['HostConfig']['PortBindings'] and not any(m['Type']=='bind' for m in info['Mounts'])
@@ -80,9 +81,11 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
  try:
   start('rest',{'PGRST_DB_URI':uri,'PGRST_DB_ANON_ROLE':'anon','PGRST_DB_SCHEMAS':'public','PGRST_DB_CONFIG':'false','PGRST_JWT_SECRET':secret,'PGRST_SERVER_HOST':'127.0.0.1'})
   start('auth',{'GOTRUE_API_HOST':'127.0.0.1','GOTRUE_API_PORT':'9999','API_EXTERNAL_URL':'http://127.0.0.1:9999','GOTRUE_SITE_URL':'http://127.0.0.1','GOTRUE_DB_DRIVER':'postgres','GOTRUE_DB_DATABASE_URL':uri,'GOTRUE_JWT_SECRET':secret,'GOTRUE_JWT_ADMIN_ROLES':'service_role','GOTRUE_JWT_AUD':'authenticated','GOTRUE_JWT_DEFAULT_GROUP_NAME':'authenticated','GOTRUE_DISABLE_SIGNUP':'true','GOTRUE_EXTERNAL_EMAIL_ENABLED':'true','GOTRUE_MAILER_AUTOCONFIRM':'false'})
-  storage=start('storage',{'DATABASE_URL':uri,'ANON_KEY':anon,'SERVICE_KEY':service,'POSTGREST_URL':'http://127.0.0.1:3000','AUTH_JWT_SECRET':secret,'STORAGE_BACKEND':'file','FILE_STORAGE_BACKEND_PATH':'/var/lib/storage','GLOBAL_S3_BUCKET':'stub','TENANT_ID':'stub','REGION':'stub','ENABLE_IMAGE_TRANSFORMATION':'false','FILE_SIZE_LIMIT':'52428800'})
-  run(['docker','cp',str(storage_archive),storage+':/tmp/restore-storage.tar'])
-  run(['docker','exec','-u','root',storage,'sh','-c','mkdir -p /var/lib/storage; tar -xf /tmp/restore-storage.tar -C /var/lib/storage; rm /tmp/restore-storage.tar'])
+  storage=start('storage',{'DATABASE_URL':uri,'ANON_KEY':anon,'SERVICE_KEY':service,'POSTGREST_URL':'http://127.0.0.1:3000','AUTH_JWT_SECRET':secret,'STORAGE_BACKEND':'file','FILE_STORAGE_BACKEND_PATH':'/var/lib/storage','GLOBAL_S3_BUCKET':'stub','TENANT_ID':'stub','REGION':'stub','ENABLE_IMAGE_TRANSFORMATION':'false','FILE_SIZE_LIMIT':'52428800'},prepare=True)
+  # Stream the private host archive: docker cp can preserve a workstation UID
+  # that a cap-dropped root process cannot read. Never hide tar failure behind rm.
+  with storage_archive.open('rb') as stream:
+   run(['docker','exec','-i','-u','root',storage,'sh','-c','mkdir -p /var/lib/storage && tar -xof - -C /var/lib/storage'],stdin=stream)
   objects=json.loads(sql("SELECT json_agg(json_build_object('bucket',bucket_id,'name',name,'version',version,'metadata',metadata)) FROM storage.objects;"))
   with tarfile.open(storage_archive) as archive:
    members={str(Path(x.name)):x for x in archive.getmembers() if x.isfile()}
@@ -91,6 +94,10 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
   # existing fs-xattr library; values are data on stdin, never executable code.
   program="const x=require('fs-xattr'),fs=require('fs'),path=require('path');(async()=>{const records=JSON.parse(fs.readFileSync(0,'utf8'));for(const [name,attrs] of Object.entries(records)){const p=path.resolve('/var/lib/storage',name);if(!p.startsWith('/var/lib/storage/'))throw Error('path');for(const [k,v] of Object.entries(attrs)){if(!['user.supabase.content-type','user.supabase.cache-control','user.supabase.etag'].includes(k))throw Error('attribute');await x.set(p,k,v);}}})().catch(e=>{console.error(JSON.stringify({operation:'restore-storage-xattr',code:e.code||e.name}));process.exit(1)});"
   run(['docker','exec','-i','-u','root',storage,'node','-e',program],input=json.dumps(attributes).encode())
+  # Restore all files and xattrs before Storage starts background jobs.
+  config=json.loads(capture(['docker','image','inspect',pins['supabase']['images']['storage']]))[0]['Config']
+  assert config['Entrypoint']==['docker-entrypoint.sh'] and config['Cmd']==['node','dist/start/server.js']
+  run(['docker','exec','-d',storage,*config['Entrypoint'],*config['Cmd']])
   wait(9999,'/health');wait(5000,'/status')
   for _ in range(90):
    try:
@@ -123,7 +130,7 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
     info=json.loads(capture(['docker','inspect',container]))[0];assert not info['State']['OOMKilled'] and info['RestartCount']==0
     admin[kind]={'limits':limits[kind],'burst':burst,'oom':False,'restarts':0,'recovered_health':True}
    assert http(8080,'/health') and http(3001,'/api/platform/profile')
-  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_bucket_read':True,'storage_object_bytes_match_archive':True,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'source_images':{key:pins['supabase']['images'][key] for key in ['rest','auth','storage']}}
+  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_bucket_read':True,'storage_object_bytes_match_archive':True,'storage_data_prepared_before_api_start':True,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'source_images':{key:pins['supabase']['images'][key] for key in ['rest','auth','storage']}}
  finally:
   for name in reversed(names):
    subprocess.run(['docker','logs',name],stdout=log,stderr=log)

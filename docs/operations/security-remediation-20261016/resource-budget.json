@@ -49,5 +49,24 @@
   "paid_resize_required_by_current_evidence": false,
   "paid_resize_performed": false,
   "whole_host_hard_cap_budget_complete": false,
-  "note": "Historic host data includes real load/backup windows; new per-container history began after reboot and does not yet cover an equivalent peak. Explicit reserve targets are planning criteria, not enforced reservations."
+  "note": "Historic host data includes real load/backup windows; new per-container history began after reboot and does not yet cover an equivalent peak. Explicit reserve targets are planning criteria, not enforced reservations.",
+  "r2_backup_in_progress_observation": {
+    "at": 1792163744.8887193,
+    "anonymous_memory_bytes": 44752896,
+    "service_memory_current_bytes": 286588928,
+    "service_memory_peak_including_file_cache_bytes": 758284288,
+    "service_cpu_seconds_so_far": 82.18,
+    "host_available_memory_bytes": 1511591936,
+    "complete_run_measurement": false
+  },
+  "admin_limits_production_receipt": "admin-resource-budget-production-result.json",
+  "first_r2_inclusive_backup": {
+    "run_id": "20261016T150700Z",
+    "elapsed_seconds": 958,
+    "cpu_seconds": 170.48,
+    "memory_peak_including_reclaimable_cache_bytes": 758284288,
+    "off_host_verified": true,
+    "result": "r2-production-backup-result.json",
+    "note": "Entire logical/Storage/runtime/R2 backup, not just R2 overhead; nice=10, existing timer/daemon only. The earlier anon/current sample is not a maximum."
+  }
 }

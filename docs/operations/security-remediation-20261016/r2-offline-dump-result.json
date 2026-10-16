@@ -1,0 +1,89 @@
+{
+  "objects": 1074,
+  "bytes": 341530791,
+  "content_hashes_verified": true,
+  "database_r2_references_checked": 997,
+  "missing_database_r2_references": 50,
+  "consistent": false,
+  "scope": "Selected online DB snapshot against selected R2 archive; not arbitrary-time R2 version history",
+  "status": "fail",
+  "backup_run_id": "20261016T150700Z",
+  "database_image_records": 1225,
+  "database_reference_source": "pg_restore COPY data from selected dump; no SQL execution",
+  "application_services_started": false,
+  "docker_used": false,
+  "network_used": false,
+  "full_application_restore_proven": false,
+  "acquisition": {
+    "source": "Direct R2 read using independent recovery kit only; no server relay or original credential",
+    "elapsed_seconds": 148.39,
+    "artifact_hashes_verified": true,
+    "encrypted_bytes": 1803227183
+  },
+  "preexisting_gap_readback": {
+    "missing_references": 50,
+    "structural_counts": {
+      "segments_3": 26,
+      "query_present_False": 50,
+      "prefix_is_images_True": 30,
+      "segments_2": 24,
+      "prefix_is_images_False": 20
+    },
+    "read_samples": [
+      {
+        "host": "img.festapp.net",
+        "result": "404 0",
+        "exit": 0
+      },
+      {
+        "host": "img.festapp.net",
+        "result": "401 0",
+        "exit": 0
+      },
+      {
+        "host": "a.img.festapp.net",
+        "result": "404 0",
+        "exit": 0
+      },
+      {
+        "host": "a.img.festapp.net",
+        "result": "401 0",
+        "exit": 0
+      }
+    ]
+  },
+  "preexisting_gap_usage": {
+    "registry_missing": 50,
+    "distinct_occasion_contexts": 5,
+    "rows_per_occasion_context": [
+      1,
+      1,
+      3,
+      19,
+      26
+    ],
+    "test_marker_registry_rows": 45,
+    "application_reference_scan": {
+      "occasions": {
+        "distinct_missing_urls_referenced": 0,
+        "missing_url_occurrences": 0
+      },
+      "events": {
+        "distinct_missing_urls_referenced": 0,
+        "missing_url_occurrences": 0
+      },
+      "information": {
+        "distinct_missing_urls_referenced": 0,
+        "missing_url_occurrences": 0
+      }
+    },
+    "occasion_context_marker_counts": {
+      "test": 2,
+      "fixture": 0,
+      "audit": 0,
+      "security": 0,
+      "probe": 0,
+      "smoke": 0
+    }
+  }
+}
