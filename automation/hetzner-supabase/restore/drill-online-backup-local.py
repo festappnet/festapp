@@ -16,7 +16,9 @@ def validate_manifest(folder):
  assert re.fullmatch(r'\d{8}T\d{6}Z',m['run_id'])
  assert m['source_host']=='festapp-supabase-rehearsal-01'
  assert m['source_database']=='festapp_rehearsal_20260909220601'
- for name in ('postgres.dump.age','globals.sql.age','storage.tar.age','runtime.tar.age'):
+ required={'postgres.dump.age','globals.sql.age','storage.tar.age','runtime.tar.age'}
+ assert required<=set(m['artifacts'])<=required|{'r2-images.tar.age'}
+ for name in m['artifacts']:
   path=folder/name;a=m['artifacts'][name]
   with path.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
   assert path.stat().st_size==a['bytes'] and digest==a['sha256'],name
@@ -60,7 +62,9 @@ def main():
  # No production secrets/SQL in terminal output. Full logs stay in a protected local tempdir.
  with tempfile.TemporaryDirectory(prefix='festapp-local-restore-') as tmp:
   work=Path(tmp);os.chmod(work,0o700)
-  for filename in ('postgres.dump','globals.sql','storage.tar','runtime.tar'):
+  filenames=['postgres.dump','globals.sql','storage.tar','runtime.tar']
+  if 'r2-images.tar.age' in m['artifacts']:filenames.append('r2-images.tar')
+  for filename in filenames:
    run(['age','-d','-i',str(a.identity),'-o',str(work/filename),str(a.backup_dir/(filename+'.age'))],stdout=subprocess.DEVNULL)
   # Inspect archive members without extracting or executing runtime config.
   counts={};storage_files={}
@@ -122,6 +126,13 @@ def main():
      # Object names remain in memory only, never stdout/evidence/logs.
      rows=subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log)
      consistency=storage_consistency(json.loads(rows),storage_files)
+    r2_consistency=None
+    if 'r2-images.tar.age' in m['artifacts']:
+     from r2_archive import verify_archive
+     query="BEGIN READ ONLY; SELECT coalesce(json_agg(link),'[]'::json) FROM public.images WHERE link LIKE 'https://img.festapp.net/%' OR link LIKE 'https://a.img.festapp.net/%'; COMMIT;"
+     references=json.loads(subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log))
+     r2_consistency=verify_archive(work/'r2-images.tar',references)
+     assert r2_consistency['consistent'],'R2 archive lacks image references from selected DB snapshot'
     application=None
     if a.service_smoke:
      assert consistency['consistent'],'inconsistent Storage prevents application recovery proof'
@@ -129,7 +140,7 @@ def main():
      application=application_reads(name,pins,work/'storage.tar',log,admin_resources=a.admin_resources,rebuild_metadata=a.rebuild_storage_metadata)
     result={'version':1,'status':'pass','backup_run_id':m['run_id'],'backup_manifest_sha256':hashlib.sha256((a.backup_dir/'manifest.json').read_bytes()).hexdigest(),
      'source_backup_consistency':m['consistency'],'isolated':True,'network':'none','ports':False,'host_mounts':False,
-     'application_services_started':bool(application),'application_reads':application,'runtime_executed':False,'archive_inventory':counts,'storage_consistency':consistency,
+     'application_services_started':bool(application),'application_reads':application,'runtime_executed':False,'archive_inventory':counts,'storage_consistency':consistency,'r2_consistency':r2_consistency,
      'database_read_smoke':True,'globals_errors_checked':True,'rto_seconds':round(time.monotonic()-started,2),
      'rpo_seconds':None,'pitr_proven':False,'note':'Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.'}
    except Exception as error:

@@ -59,6 +59,7 @@ manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes(
  root/'automation/hetzner-supabase/monitoring/install.sh',
  root/'automation/hetzner-supabase/restore/drill-online-backup-local.py',
  root/'automation/hetzner-supabase/restore/service_smoke.py',
+ root/'automation/hetzner-supabase/restore/r2_archive.py',
  root/'automation/hetzner-supabase/runtime/docker-compose.resource-budget.yml',
  root/'automation/hetzner-supabase/runtime/apply-admin-resource-budget.py',
  root/'automation/hetzner-supabase/backup/create-online-encrypted-backup.sh',
