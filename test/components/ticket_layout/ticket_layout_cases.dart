@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:math' as math;
@@ -2714,6 +2715,79 @@ void main() {
     c.dispose();
   });
   test(
+      'optional fields add, restore, select and undo without duplicate bindings',
+      () {
+    final base =
+        document().withPaper(true).resizeCanvasArea(const Size(200, 600));
+    final c = TicketLayoutController(base);
+    for (final binding in [
+      'occasionStartTime',
+      'occasionPlace',
+      'note',
+      'price'
+    ]) {
+      final before = c.document;
+      expect(c.addOptionalField(binding), isTrue);
+      final added = c.selection!;
+      expect(added.binding, binding);
+      expect(
+          c.document.elements
+              .where((e) => e.visible && e.id != added.id)
+              .any((e) => e.box.overlaps(added.box)),
+          isFalse);
+      expect(c.document.validate('named'), isEmpty);
+      expect(c.addOptionalField(binding), isTrue);
+      expect(
+          c.document.elements.where((e) => e.binding == binding), hasLength(1));
+      c.undo();
+      expect(c.document, same(before));
+      c.redo();
+      c.select(added.id);
+      final hidden = c.selection!.copyWith(visible: false, color: '123456');
+      c.change(hidden);
+      final hiddenDocument = c.document;
+      expect(c.addOptionalField(binding), isTrue);
+      expect(c.selection!.visible, isTrue);
+      expect(c.selection!.color, '123456');
+      c.undo();
+      expect(c.document, same(hiddenDocument));
+    }
+    expect(c.addOptionalField('qr'), isFalse);
+    expect(c.addOptionalField('unknown'), isFalse);
+    c.dispose();
+  });
+
+  testWidgetsWithEnvironment(() => _environment,
+      'add element offers event fields and inserts directly without PDF requests',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r = resources(
+        template:
+            document().withPaper(true).resizeCanvasArea(const Size(200, 600)));
+    final service = FakeService();
+    await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: TicketLayoutEditor(
+                occasionId: 1, type: 'wide', resources: r, service: service)));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
+    await tester.pumpAndSettle();
+    expect(find.text('TicketLayout.occasionPlace'.tr()), findsOneWidget);
+    await tester.tap(find.text('TicketLayout.occasionStartTime'.tr()));
+    await tester.pumpAndSettle();
+    expect(state.controller.selection.binding, 'occasionStartTime');
+    expect(find.byType(AppAlertDialog), findsNothing);
+    expect(service.pdfCalls, 0);
+    expect(tester.takeException(), isNull);
+    await _environment.pumpWidget(tester, const SizedBox());
+  });
+
+  test(
       'product fields use IDs, safe placement, whole-element undo and custom labels',
       () {
     final original = document()
@@ -2808,8 +2882,13 @@ void main() {
     await tester.pumpAndSettle();
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     final original = state.controller.document;
-    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('TicketLayout.retryCatalog'.tr()), findsNothing);
     await tester.tap(find.text('Odvoz').last);
     await tester.pumpAndSettle();
     expect(state.controller.document, same(original));
@@ -2817,8 +2896,12 @@ void main() {
         .tap(find.widgetWithText(TextButton, 'TicketLayout.cancel'.tr()).last);
     await tester.pumpAndSettle();
     expect(state.controller.document, same(original));
-    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Odvoz').last);
     await tester.pumpAndSettle();
     await tester.tap(
@@ -2881,14 +2964,10 @@ void main() {
             service: service,
             productEditing: false)));
     await tester.pumpAndSettle();
-    expect(
-        tester
-            .widget<ButtonStyleButton>(find.ancestor(
-                of: find.text('TicketLayout.addProduct'.tr()).first,
-                matching:
-                    find.byWidgetPredicate((w) => w is ButtonStyleButton)))
-            .onPressed,
-        isNull);
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
+    await tester.pumpAndSettle();
+    expect(tester.widget<ListTile>(find.widgetWithText(ListTile,
+        'TicketLayout.productGroup'.tr()).last).enabled, isFalse);
     expect(find.text('TicketLayout.draftProducts'.tr()), findsWidgets);
     expect(service.pdfCalls, 0);
     await _environment.pumpWidget(tester, const SizedBox());
@@ -2926,9 +3005,12 @@ void main() {
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     unawaited(state.showMobilePanel(0));
     await tester.pumpAndSettle();
-    final add = find.text('TicketLayout.addProduct'.tr()).first;
+    final add = find.text('TicketLayout.addElement'.tr()).first;
     await tester.ensureVisible(add);
     await tester.tap(add);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
     await tester.pumpAndSettle();
     final filter = find.byWidgetPredicate((w) =>
         w is TextField &&
@@ -2998,8 +3080,12 @@ void main() {
     await tester.pumpAndSettle();
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     final original = state.controller.document;
-    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.pumpAndSettle();
+
     expect(find.text('TicketLayout.catalogError'.tr()), findsOneWidget);
     expect(find.text('TicketLayout.emptyProducts'.tr()), findsNothing);
     await tester.tap(find.text('TicketLayout.retryCatalog'.tr()));

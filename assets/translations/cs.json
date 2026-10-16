@@ -1193,6 +1193,8 @@
     "description": "Funkce umožňuje vytvořit plán sedadel s omezeným počtem míst v rezervačním formuláři. Například můžete navrhnout plán sedadel v autobusu nebo rozvržení sálu s přidělenými místy."
   },
   "OccasionSettings": {
+    "placeName": "Místo konání",
+    "placeNameHelp": "Nepovinné. Název sálu nebo adresa. Na vstupence se zobrazí po přidání do šablony.",
     "title": "Název",
     "titleIsRequired": "Název je povinný",
     "introImage": "Úvodní obrázek",
@@ -2349,6 +2351,9 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "addElement": "Přidat prvek",
+    "occasionStartTime": "Čas začátku události",
+    "occasionPlace": "Místo konání",
     "resetCrop": "Zobrazit celý obrázek",
     "cropImageHint": "Tažením rohů vyberte výřez. Uvnitř jej můžete posunout.",
     "cropImage": "Oříznout obrázek",
@@ -2406,7 +2411,7 @@
     "edit": "Upravit vstupenku",
     "title": "Rozložení vstupenky",
     "apply": "Použít",
-    "cancel": "Zrušit",
+    "cancel": "Storno",
     "undo": "Zpět",
     "redo": "Znovu",
     "select": "Výběr",

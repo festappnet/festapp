@@ -1,4 +1,8 @@
 {
+  "OccasionSettings": {
+    "placeName": "Miesto konania",
+    "placeNameHelp": "Nepovinné. Názov sály alebo adresa. Na vstupenke sa zobrazí po pridaní do šablóny."
+  },
   "BankAccount": {
     "synchronizationPending": "Synchronizácia je zapnutá. Načítanie čaká na limit banky.",
     "automaticSynchronization": "Automatická synchronizácia",
@@ -621,6 +625,9 @@
     "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
   },
   "TicketLayout": {
+    "addElement": "Pridať prvok",
+    "occasionStartTime": "Čas začiatku udalosti",
+    "occasionPlace": "Miesto konania",
     "manageProducts": "Správa formulárov a produktov",
     "layoutLimit": "Rozloženie prekročilo limit 32 KiB. Skráťte popisy alebo odstráňte polia.",
     "addProduct": "Pridať produktové pole",

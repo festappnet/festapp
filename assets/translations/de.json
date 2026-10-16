@@ -1,4 +1,8 @@
 {
+  "OccasionSettings": {
+    "placeName": "Veranstaltungsort",
+    "placeNameHelp": "Optional. Name des Veranstaltungsorts oder Adresse. Wird nach dem Hinzufügen zur Vorlage auf dem Ticket angezeigt."
+  },
   "BankAccount": {
     "synchronizationPending": "Synchronisierung aktiviert. Der nächste Abruf wartet auf die Bankfrist.",
     "automaticSynchronization": "Automatische Synchronisierung",
@@ -622,6 +626,9 @@
     "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
   },
   "TicketLayout": {
+    "addElement": "Element hinzufügen",
+    "occasionStartTime": "Beginn der Veranstaltung",
+    "occasionPlace": "Veranstaltungsort",
     "manageProducts": "Formulare und Produkte verwalten",
     "layoutLimit": "Das Layout überschreitet 32 KiB. Beschriftungen kürzen oder Felder entfernen.",
     "addProduct": "Produktfeld hinzufügen",

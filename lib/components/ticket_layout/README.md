@@ -355,3 +355,21 @@ selection. A multi-selection exposes eight shared resize handles. Resizing scale
 unlocked boxes, their relative positions and text sizes around the opposite
 anchor in one undo step. QR remains square and at least 60 pt; font size and
 canvas bounds constrain the entire group uniformly.
+
+
+## Adding optional elements
+
+“Add element” offers event title, start time, venue, the legacy combined date/place,
+table, order name, note, price, footer and logo (when available). Product groups
+open the searchable catalog picker. Existing visible fields are selected; hidden
+fields are restored with their styling and safe placement. New fields use free
+space without overlapping visible content. Each insertion/restoration is one undo
+step. Source drafts allow ordinary fields while product editing stays unavailable.
+Catalog retry appears only after a catalog load failure. Editor Cancel uses Storno
+in Czech, consistent with the shared dialog wording.
+
+`occasionStartTime` uses the occasion's `data.timezone`, defaulting to
+Europe/Prague, and `occasionPlace` uses `data.place_name`. Both share the preview
+and PDF normalization. Apply `20261016210000_ticket_optional_event_elements.sql`,
+then deploy the shared Edge consumers before publishing the client. This additive
+schema-3 extension does not change existing templates or their combined date/place.

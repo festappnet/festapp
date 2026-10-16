@@ -321,16 +321,28 @@ class TicketLayoutController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool addProductField(int typeId, String title) {
+  bool addProductField(int typeId, String title) =>
+      _addField('productType', typeId: typeId, title: title);
+
+  bool addOptionalField(String binding) {
+    if (!ticketBindings.contains(binding) ||
+        ['qr', 'ticketSymbol', 'productType'].contains(binding)) return false;
+    return _addField(binding);
+  }
+
+  bool _addField(String binding, {int? typeId, String? title}) {
     productAddError = 'space';
     endGesture();
-    final existing =
-        document.elements.where((e) => e.productTypeId == typeId).firstOrNull;
-    if (existing != null) {
+    final existing = document.elements
+        .where((e) => binding == 'productType'
+            ? e.binding == binding && e.productTypeId == typeId
+            : e.binding == binding)
+        .firstOrNull;
+    if (existing != null && (existing.visible || existing.locked)) {
       select(existing.id);
       return true;
     }
-    if (document.elements.length >= 32) {
+    if (existing == null && document.elements.length >= 32) {
       productAddError = 'elements';
       return false;
     }
@@ -338,48 +350,57 @@ class TicketLayoutController extends ChangeNotifier {
     final style = base.elements
         .where((e) => !['qr', 'logo'].contains(e.binding))
         .firstOrNull;
-    final preferredWidth = math.min(180.0, base.area.width - 20);
-    const height = 24.0;
-    // Narrow templates can have useful side space beside their logo or QR.
-    // Prefer the full text box, then try narrower boxes before reporting no room.
-    for (double width = preferredWidth; width >= 60; width -= 30) {
-      for (double y = 10; y + height <= base.area.height; y += 10) {
-        for (double x = 10; x + width <= base.area.width; x += 10) {
-          final box = Rect.fromLTWH(x, y, width, height);
-          if (base.elements.any((e) => e.visible && e.box.overlaps(box)))
-            continue;
-          var id = 'product-$typeId';
-          var suffix = 1;
-          while (base.elements.any((e) => e.id == id)) {
-            id = 'product-$typeId-${suffix++}';
-          }
-          final e = TicketElement(
+    final preferredWidth =
+        binding == 'logo' ? 40.0 : math.min(180.0, base.area.width - 20);
+    final height = existing?.box.height ?? (binding == 'logo' ? 40.0 : 24.0);
+    final candidates = <Rect>[
+      if (existing != null) existing.box,
+      for (double width = preferredWidth;
+          width >= (binding == 'logo' ? 40 : 60);
+          width -= 30)
+        for (double y = 10; y + height <= base.area.height; y += 10)
+          for (double x = 10; x + width <= base.area.width; x += 10)
+            Rect.fromLTWH(x, y, width, height),
+    ];
+    for (final box in candidates) {
+      if (box.left < 0 ||
+          box.top < 0 ||
+          box.right > base.area.width ||
+          box.bottom > base.area.height ||
+          base.elements.any(
+              (e) => e.id != existing?.id && e.visible && e.box.overlaps(box)))
+        continue;
+      var id = existing?.id ?? (typeId == null ? binding : 'product-$typeId');
+      var suffix = 1;
+      while (existing == null && base.elements.any((e) => e.id == id)) {
+        id = '${typeId == null ? binding : 'product-$typeId'}-${suffix++}';
+      }
+      final e = existing?.copyWith(visible: true, box: box) ??
+          TicketElement(
               id: id,
-              binding: 'productType',
+              binding: binding,
               productTypeId: typeId,
-              label: automaticProductLabel(title),
+              label: title == null ? null : automaticProductLabel(title),
               box: box,
               fontSize: style?.fontSize.clamp(6, 18) ?? 12,
-              fontId: style?.fontId,
+              fontId: binding == 'logo' ? null : style?.fontId,
               color: style?.color ?? '2A2A2A');
-          final next = base.withElements([...base.elements, e]);
-          if (ticketLayoutByteSize({
+      final next = base.withElements([
+        ...base.elements.map((other) => other.id == existing?.id ? e : other),
+        if (existing == null) e,
+      ]);
+      if (ticketLayoutByteSize({
                 'schemaVersion': 3,
                 'templates': {'wide': next.toJson()}
               }) >
-              32768) {
-            productAddError = 'size';
-            return false;
-          }
-          if (canStoreDocument?.call(next) == false) {
-            productAddError = 'size';
-            return false;
-          }
-          replace(next);
-          select(id);
-          return true;
-        }
+              32768 ||
+          canStoreDocument?.call(next) == false) {
+        productAddError = 'size';
+        return false;
       }
+      replace(next);
+      select(id);
+      return true;
     }
     return false;
   }

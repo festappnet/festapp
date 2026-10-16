@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 class TicketLayoutStrings {
   static String get manageProducts => 'TicketLayout.manageProducts'.tr();
   static String get layoutLimit => 'TicketLayout.layoutLimit'.tr();
+  static String get addElement => 'TicketLayout.addElement'.tr();
   static String get addProduct => 'TicketLayout.addProduct'.tr();
   static String get productGroup => 'TicketLayout.productGroup'.tr();
   static String get productLabel => 'TicketLayout.productLabel'.tr();

@@ -51,7 +51,13 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog
     const start=new Date(occasion.start_time),end=new Date(occasion.end_time||occasion.start_time);
     if(Number.isFinite(start.getTime())&&Number.isFinite(end.getTime()))date=getMinimalisticDateRange(start,end);
   }
-  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:spot?`Stůl: ${text(spot.spot_group_title)}`:null,note:text(ticket.note)?`Poznámka: ${text(ticket.note)}`:null,price:ticket.price!=null?`Cena: ${formatCurrency(ticket.price,ticket.currency_code||'CZK')}`:null,occasionTitle:text(occasion.title),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?'UKÁZKA - NEPLATÍ PRO VSTUP • ':''}Vstupenka je nepřenosná${occasion.data?.link?' • '+occasion.data.link:''}`};
+  let startTime:string|null=null;
+  if(occasion.start_time && Number.isFinite(new Date(occasion.start_time).getTime())) {
+    const options:Intl.DateTimeFormatOptions={hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:occasion.data?.timezone||'Europe/Prague'};
+    try {startTime=new Intl.DateTimeFormat('cs-CZ',options).format(new Date(occasion.start_time));}
+    catch {startTime=new Intl.DateTimeFormat('cs-CZ',{...options,timeZone:'Europe/Prague'}).format(new Date(occasion.start_time));}
+  }
+  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:spot?`Stůl: ${text(spot.spot_group_title)}`:null,note:text(ticket.note)?`Poznámka: ${text(ticket.note)}`:null,price:ticket.price!=null?`Cena: ${formatCurrency(ticket.price,ticket.currency_code||'CZK')}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?'UKÁZKA - NEPLATÍ PRO VSTUP • ':''}Vstupenka je nepřenosná${occasion.data?.link?' • '+occasion.data.link:''}`};
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
   return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='productType'?formatProduct(e.label!,matches.get(e.productTypeId!)??null):d[e.binding]]));

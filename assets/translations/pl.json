@@ -1,4 +1,8 @@
 {
+  "OccasionSettings": {
+    "placeName": "Miejsce wydarzenia",
+    "placeNameHelp": "Opcjonalne. Nazwa obiektu lub adres. Pojawi się na bilecie po dodaniu do szablonu."
+  },
   "BankAccount": {
     "synchronizationPending": "Synchronizacja jest włączona. Pobieranie czeka na limit banku.",
     "automaticSynchronization": "Automatyczna synchronizacja",
@@ -622,6 +626,9 @@
     "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
   },
   "TicketLayout": {
+    "addElement": "Dodaj element",
+    "occasionStartTime": "Godzina rozpoczęcia wydarzenia",
+    "occasionPlace": "Miejsce wydarzenia",
     "manageProducts": "Zarządzaj formularzami i produktami",
     "layoutLimit": "Układ przekracza 32 KiB. Skróć opisy lub usuń pola.",
     "addProduct": "Dodaj pole produktu",

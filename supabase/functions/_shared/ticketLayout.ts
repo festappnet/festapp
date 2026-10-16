@@ -8,7 +8,7 @@ export function qrColorReadable(color:string,background='FFFFFF'):boolean {
   const back=bg[0]*.2126+bg[1]*.7152+bg[2]*.0722;
   return (Math.max(foreground,back)+.05)/(Math.min(foreground,back)+.05)>=4.5;
 }
-export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'productType', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'orderName', 'logo', 'footer'] as const;
+export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'productType', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'occasionStartTime', 'occasionPlace', 'orderName', 'logo', 'footer'] as const;
 export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }

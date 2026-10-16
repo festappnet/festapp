@@ -42,6 +42,8 @@ const ticketBindings = [
   'price',
   'occasionTitle',
   'occasionDatePlace',
+  'occasionStartTime',
+  'occasionPlace',
   'orderName',
   'logo',
   'footer'

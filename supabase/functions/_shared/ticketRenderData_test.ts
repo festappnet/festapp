@@ -90,3 +90,21 @@ Deno.test('catalog examples prefer visible positive prices with stable order and
   assertEquals(catalog.types.get(3)?.example?.price,null);
  }
 });
+
+Deno.test('optional event fields use event timezone in preview and PDF data',()=>{
+ const occasion={id:7,title:'Koncert',start_time:'2026-10-16T18:30:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}};
+ const t=preset('named');
+ for(const binding of ['occasionStartTime','occasionPlace'] as const)t.elements.push({...structuredClone(t.elements.find(e=>e.binding==='occasionDatePlace')!),id:binding,binding});
+ validateLayout({schemaVersion:3,templates:{named:t}});
+ const actual=normalizeTicketData({ticket_symbol:'test'},occasion,{},undefined,t);
+ const preview=sampleData('normal',occasion,undefined,t);
+ assertEquals(actual.occasionStartTime,'20:30');
+ assertEquals(actual.occasionPlace,'Kulturní dům');
+ assertEquals(preview.occasionStartTime,actual.occasionStartTime);
+ assertEquals(preview.occasionPlace,actual.occasionPlace);
+ assertEquals(normalizeTicketData({},{}).occasionStartTime,null);
+ assertEquals(normalizeTicketData({},{start_time:'invalid'}).occasionStartTime,null);
+ assertEquals(normalizeTicketData({},{}).occasionPlace,null);
+ assertEquals(normalizeTicketData({},{...occasion,data:{timezone:'America/New_York'}}).occasionStartTime,'14:30');
+ assertEquals(normalizeTicketData({},{...occasion,data:{timezone:'invalid'}}).occasionStartTime,'20:30');
+});

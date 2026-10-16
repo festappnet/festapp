@@ -2,6 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class OccasionSettingsStrings {
+  static String get placeName => 'OccasionSettings.placeName'.tr();
+  static String get placeNameHelp => 'OccasionSettings.placeNameHelp'.tr();
+
   // Form Fields
   static String get title => 'OccasionSettings.title'.tr(); // "Title"
   static String get titleIsRequired =>

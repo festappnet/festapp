@@ -527,11 +527,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       minimumSize: const Size(0, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
-                    onPressed: widget.productEditing
-                        ? () => pickProduct(onSelected: onSelected)
-                        : null,
+                    onPressed: () => pickElement(onSelected: onSelected),
                     icon: const Icon(Icons.add),
-                    label: Text(TicketLayoutStrings.addProduct),
+                    label: Text(TicketLayoutStrings.addElement),
                   ),
                 )),
             if (!widget.productEditing)
@@ -581,6 +579,76 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     }))
                 .toList()
           ]));
+  Future<void> pickElement({VoidCallback? onSelected}) async {
+    controller.endGesture();
+    final binding = await showDialog<String>(
+        context: editorContext,
+        builder: (context) => AppAlertDialog(
+                title: Text(TicketLayoutStrings.addElement),
+                content: SizedBox(
+                    width: 420,
+                    child: SingleChildScrollView(
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                      for (final binding in [
+                        'occasionTitle',
+                        'occasionStartTime',
+                        'occasionPlace',
+                        'occasionDatePlace',
+                        'spotGroup',
+                        'orderName',
+                        'note',
+                        'price',
+                        if (resources.logo != null) 'logo',
+                        'footer',
+                      ])
+                        ListTile(
+                            title: Text(TicketLayoutStrings.binding(binding)),
+                            subtitle: controller.document.elements.any(
+                                    (e) => e.binding == binding && e.visible)
+                                ? Text(TicketLayoutStrings.alreadyAdded)
+                                : null,
+                            onTap: () => Navigator.pop(context, binding)),
+                      const Divider(),
+                      ListTile(
+                          title: Text(TicketLayoutStrings.productGroup),
+                          subtitle: widget.productEditing
+                              ? null
+                              : Text(TicketLayoutStrings.draftProducts),
+                          trailing: const Icon(Icons.chevron_right),
+                          enabled: widget.productEditing,
+                          onTap: () => Navigator.pop(context, 'productType')),
+                    ]))),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(TicketLayoutStrings.cancel))
+                ]));
+    if (!mounted || binding == null) return;
+    if (binding == 'productType') {
+      await pickProduct(onSelected: onSelected);
+      return;
+    }
+    if (!controller.addOptionalField(binding)) {
+      ScaffoldMessenger.of(editorContext).showSnackBar(SnackBar(
+          content: Text(controller.productAddError == 'elements'
+              ? TicketLayoutStrings.elementLimit
+              : controller.productAddError == 'size'
+                  ? TicketLayoutStrings.layoutLimit
+                  : TicketLayoutStrings.noSpace)));
+      return;
+    }
+    setState(() {
+      editCanvas = false;
+      editBackground = false;
+    });
+    if (onSelected != null) {
+      onSelected();
+    } else if (MediaQuery.sizeOf(context).width < 900) {
+      showMobilePanel(1);
+    }
+  }
+
   String elementName(TicketElement e) => e.binding == 'productType'
       ? resources.catalog
               .where((t) => t.id == e.productTypeId)
@@ -720,7 +788,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                             }
                           : null),
                 if (catalogLoading) const LinearProgressIndicator(),
-                TextButton(
+                if (resources.catalogError) TextButton(
                     onPressed: catalogLoading
                         ? null
                         : () async {
@@ -736,8 +804,10 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                 });
                             } catch (_) {
                               if (mounted && context.mounted)
-                                update(() =>
-                                    error = TicketLayoutStrings.catalogError);
+                                update(() {
+                                  resources.catalogError = true;
+                                  error = TicketLayoutStrings.catalogError;
+                                });
                             } finally {
                               if (context.mounted)
                                 update(() => catalogLoading = false);
@@ -775,12 +845,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                     e.productTypeId == t.id &&
                                     e.id != element?.id)
                                 .firstOrNull;
-                            if (existing != null) {
-                              controller.select(existing.id);
-                              Navigator.pop(dialogContext, t);
-                              return;
-                            }
-                            if (element == null) {
+                            if (existing != null || element == null) {
                               if (!controller.addProductField(t.id, t.title)) {
                                 update(() => error =
                                     controller.productAddError == 'elements'

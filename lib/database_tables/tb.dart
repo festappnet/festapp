@@ -88,6 +88,7 @@ class OccasionsTb {
   String get data_features_code => "code";
   String get data_features_is_enabled => "is_enabled";
 
+  String get data_place_name => "place_name";
   String get data_timezone => "timezone";
   String get data_reply_to => "reply_to";
   // Legacy - deadline config now stored in deposit feature (features JSONB)

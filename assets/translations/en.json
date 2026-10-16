@@ -1193,6 +1193,8 @@
     "description": "This feature lets you create a seating blueprint with a limited number of seats for the reservation form. For example, you can design a seating chart for a bus or a layout of a hall with assigned seats."
   },
   "OccasionSettings": {
+    "placeName": "Event venue",
+    "placeNameHelp": "Optional. Venue name or address. Appears on tickets when added to the template.",
     "title": "Title",
     "titleIsRequired": "Title is required",
     "introImage": "Intro Image",
@@ -2348,6 +2350,9 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "addElement": "Add element",
+    "occasionStartTime": "Event start time",
+    "occasionPlace": "Event venue",
     "resetCrop": "Show entire image",
     "cropImageHint": "Drag the corners to crop. Drag inside to move the crop.",
     "cropImage": "Crop image",
