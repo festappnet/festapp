@@ -1,0 +1,14 @@
+{
+  "backup_run": "20261016T135453Z",
+  "ciphertext_sha256_verified": true,
+  "age_decryption_verified": true,
+  "pitr_configuration_and_all_overrides_present": true,
+  "required_paths": [
+    "docker/docker-compose.email.yml",
+    "docker/docker-compose.pgbackrest.yml",
+    "etc/festapp-pgbackrest/pgbackrest.conf",
+    "etc/festapp-pgbackrest/recovery.json.age",
+    "opt/festapp-backup/pgbackrest/Dockerfile"
+  ],
+  "plaintext_extracted": false
+}

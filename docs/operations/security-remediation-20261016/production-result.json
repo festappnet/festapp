@@ -16,7 +16,7 @@
     "20261016172000"
   ],
   "release_manifest_sha256": "f33e693c92e7d01a6ed9117173806d1d17b352036ed508351a6ca8b368fa27fc",
-  "release_manifest_note": "Immutable prepared artifact retains production_applied=false; this separate receipt records the subsequent application. Applied inputs were sealed from the canonical source commit.",
+  "release_manifest_note": "The manifest SHA refers to the immutable prepared artifact at canonical_source_commit. Later monitoring changes regenerate the current-tree manifest without changing applied SQL; this receipt records the original application.",
   "catalog": {
     "read_only_failure_gate_passed": true,
     "retired_rpc_count": 0,
@@ -126,5 +126,7 @@
     "Recovery objective not selected; PITR disabled, full service RTO and DB/Storage/R2 consistency not proven by isolated SQL restore.",
     "Pending kernel/libc maintenance requires an agreed service window and verified out-of-band console before reboot.",
     "Four host heartbeats accepted; existing same-project delivery receipts verified, but no host-specific alert delivery manufactured or proven."
-  ]
+  ],
+  "evidence_phase": "A/B deployment before subsequent authorized PITR",
+  "superseded_recovery_status": "pgbackrest-production-result.json"
 }

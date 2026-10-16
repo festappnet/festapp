@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-16",
+  "status": "deployed and verified with real differential PITR",
+  "authorization": "User explicitly approved installation and use of a standard full/differential/PITR backup tool.",
+  "tool": {
+    "name": "pgBackRest",
+    "version": "2.57.0",
+    "package": "Alpine pgbackrest=2.57.0-r0",
+    "base_image": "supabase/postgres:17.6.1.136@sha256:a9946f08d31e8eb1149229c94e5c26603a9233116807cbbd93d75179cbac516a",
+    "deployed_image_id": "sha256:58ab4c77b25c7dc79582c23ed872619ee2494ad7dc12cd3af4c6e6b053571bd0",
+    "postgres_version_unchanged": true
+  },
+  "canonical_runtime_source": "60b7b6645215d9e0ebb6ebbdc6b38607ac09248a",
+  "installed_source_hashes": {
+    "/opt/festapp-backup/pgbackrest/run-backup.sh": "1417606b5136a2a1c4b3f292878e92a6096280e400beb250c4fcea441d1238ed",
+    "/opt/festapp-backup/create-online-encrypted-backup.sh": "e06bfd089427e520f4a8b3a5689a1512f146f52ade06734fc6d82f038b86f41c",
+    "/opt/festapp-host-monitor/metrics.mjs": "272ae171290e40f65e532a57a0d7d7208ece4457c5e6322cebaacd44831982d3",
+    "/opt/festapp-host-monitor/runtime-evidence.py": "9237a22e3f67fa9f1f8d51422f1f6c8086e92f48d2f614a453a09353181e4014"
+  },
+  "restore_tool_sha256": "5d8c8d3f8ee23eb0daedf27e5883c0b9f4c28cffe59a5b3a6e18fcb728b39577",
+  "target": {
+    "tenant": "festapp",
+    "organization_id": 1,
+    "canonical_generation": 1,
+    "database": "festapp_rehearsal_20260909220601"
+  },
+  "policy": {
+    "repo": "existing R2 bucket festapp-supabase-backups, separate /pgbackrest/festapp-production prefix",
+    "encryption": "pgBackRest AES-256-CBC, TLS to R2",
+    "cipher_key_escrow": "age encrypted to the existing recovery public key; actual escrow decryption used during restore",
+    "archive_timeout_seconds": 300,
+    "archive_lag_alert_seconds": 600,
+    "rpo_objective_seconds": 900,
+    "rpo_condition": "Healthy continuous archiving; outages/backlog must be acted on. Not a zero-loss guarantee.",
+    "full": "Sunday",
+    "differential": "daily otherwise at 03:15 UTC plus up to 5 minutes random delay",
+    "full_retention_count": 4,
+    "wal_retention": "continuous from oldest retained full, no shortened archive retention or queue discard",
+    "process_max": 1,
+    "buffer_size": "1MiB",
+    "compression": "zstd level 1",
+    "small_file_bundling": true,
+    "bundle_default_target_bytes": 20971520,
+    "logs": "host logrotate daily/maxsize20M/14 rotations",
+    "existing_logical_storage_runtime_backups_retained": true
+  },
+  "first_full": {
+    "at": 1792158610.9695535,
+    "backup_stop": 1792158600,
+    "label": "20261016-134619F",
+    "type": "full",
+    "archive_check_passed": true,
+    "bundled": true,
+    "elapsed_seconds": 231.52
+  },
+  "first_differential": {
+    "at": 1792158653.7147264,
+    "backup_stop": 1792158644,
+    "label": "20261016-134619F_20261016-135038D",
+    "type": "diff",
+    "archive_check_passed": true,
+    "bundled": true,
+    "elapsed_seconds": 15.5
+  },
+  "backup_sizes": [
+    {
+      "label": "20261016-134619F",
+      "type": "full",
+      "timestamp": {
+        "start": 1792158379,
+        "stop": 1792158600
+      },
+      "info": {
+        "delta": 4842860256,
+        "repository": {
+          "delta": 1392477984,
+          "size": 1392477984
+        },
+        "size": 4842860256
+      }
+    },
+    {
+      "label": "20261016-134619F_20261016-135038D",
+      "type": "diff",
+      "timestamp": {
+        "start": 1792158638,
+        "stop": 1792158644
+      },
+      "info": {
+        "delta": 36323587,
+        "repository": {
+          "delta": 4274624,
+          "size": 1392481680
+        },
+        "size": 4842860255
+      }
+    }
+  ],
+  "exported_encrypted_snapshot": {
+    "files": 196,
+    "bytes": 1408437600,
+    "downloaded_from_r2": true,
+    "protected_local_copy": true,
+    "temporary_server_export_removed": true
+  },
+  "real_restore": "pgbackrest-real-restore-result.json",
+  "synthetic_test": "pgbackrest-verification.json",
+  "post_target_natural_commit": {
+    "natural_cron_end_epoch": 1792158660.251303,
+    "target_epoch": 1792158653.779337,
+    "post_target_archive_check_passed": true
+  },
+  "runtime_backup": {
+    "run_id": "20261016T135453Z",
+    "uploaded_at": "2026-10-16T13:56:13Z",
+    "off_host_verified": true
+  },
+  "runtime_archive_contents_verified": "pgbackrest-runtime-backup-verification.json",
+  "readback": {
+    "database": {
+      "database": "festapp_rehearsal_20260909220601",
+      "archive_mode": "on",
+      "archive_timeout": "5min",
+      "retired_rpc_count": 0,
+      "unknown_emails": 2,
+      "email_paused": false
+    },
+    "pitr": {
+      "enabled": true,
+      "failed": false,
+      "oldestPendingSeconds": 0,
+      "backupAt": 1792158644
+    },
+    "timers": "Id=festapp-pgbackrest-backup.timer\nActiveState=active\nUnitFileState=enabled\n\nId=festapp-host-monitor.timer\nActiveState=active\nUnitFileState=enabled\n\nId=festapp-supabase-backup.timer\nActiveState=active\nUnitFileState=enabled\n\nId=logrotate.timer\nActiveState=active\nUnitFileState=enabled\n",
+    "host_monitor_ok": true,
+    "all_four_existing_heartbeats_accepted": true,
+    "installed_sources_match": true
+  },
+  "resources": {
+    "server_ram_resized": false,
+    "new_cloud_service_or_billing_plan": false,
+    "r2_storage_bytes_increase": true,
+    "bounded_backup_observations": "During initial full scan pgBackRest master+worker RSS about 40 MiB, observed DB container about 247-323 MiB and host available memory above 1 GiB. These are bounded observations, not guaranteed maxima or representative peak capacity.",
+    "historical_resource_samples": "protected host evidence/resource-samples.jsonl"
+  },
+  "operational_corrections": {
+    "initial_config_group_read_fixed": true,
+    "root_umask_regression_test_added": true,
+    "initial_incomplete_unbundled_seed_removed_only_after_asserting_no_completed_pgbackrest_backups": true,
+    "database_restart_only_no_host_reboot": true,
+    "existing_email_pause_restored_and_two_unknown_outcomes_preserved": true,
+    "first_completed_full_uses_bundling_from_start": true
+  },
+  "limits": [
+    "Independent custody of the age private key/key-loss recovery is not proven.",
+    "49.81 seconds is the isolated local recovery operation, excluding repository download, full application startup/cutover and full service RTO.",
+    "PITR covers the whole PostgreSQL cluster. Storage/runtime retain separate daily backup; cross-store point-in-time consistency is not proven.",
+    "Representative numerical container budget, provider firewall/Access policy evidence and pending kernel/libc maintenance with verified out-of-band access remain open in the original server plan.",
+    "Existing application abuse_ordinary_backlog alert from historic unknown email outcomes remains; no queue replay/reset."
+  ],
+  "protected_evidence": {
+    "host": "/var/lib/festapp-rehearsal-evidence/pgbackrest-20261016",
+    "workstation": "/Users/miakh/.local/share/festapp-server-security-20261016/pgbackrest"
+  }
+}

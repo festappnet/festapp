@@ -46,14 +46,17 @@ def main():
     server+=''.join(k+'='+str(v)+'\n' for k,v in settings.items())
     ex('sh','-c','cat > /tmp/safe-postgresql.conf',input=server.encode())
     ex('sh','-c',"printf 'local all all trust\\n' > /tmp/safe_hba.conf; touch /tmp/safe_ident.conf")
-    ex('pg_ctl','-D','/tmp/restore-data','-l','/tmp/server.log','-o','-c config_file=/tmp/safe-postgresql.conf','-w','start')
-    def sql(q):return ex('psql','-X','-h','/tmp','-U','supabase_admin','-d','festapp_rehearsal_20260909220601','-Atqv','ON_ERROR_STOP=1','-c',q,capture=True)
+    # Command-line settings override restored postgresql.auto.conf as well.
+    options='-c config_file=/tmp/safe-postgresql.conf -c data_directory=/tmp/restore-data -c hba_file=/tmp/safe_hba.conf -c ident_file=/tmp/safe_ident.conf -c unix_socket_directories=/tmp -c port=5432 -c shared_preload_libraries= -c session_preload_libraries= -c local_preload_libraries= -c archive_mode=off -c listen_addresses= -c primary_conninfo= -c max_logical_replication_workers=0 -c autovacuum=off -c ssl=off'
+    ex('pg_ctl','-D','/tmp/restore-data','-l','/tmp/server.log','-o',options,'-w','start')
+    def sql(q):return ex('env','PGOPTIONS=-c session_preload_libraries= -c local_preload_libraries=','psql','-X','-h','/tmp','-U','supabase_admin','-d','festapp_rehearsal_20260909220601','-Atqv','ON_ERROR_STOP=1','-c',q,capture=True)
     for _ in range(120):
      if sql('BEGIN READ ONLY; SELECT pg_is_in_recovery() AND pg_is_wal_replay_paused(); COMMIT;')=='t':break
      time.sleep(.5)
     else:raise RuntimeError('requested time target was not reached and paused')
-    state=json.loads(sql("BEGIN READ ONLY; SELECT json_build_object('replay_at',pg_last_xact_replay_timestamp(),'replay_lsn',pg_last_wal_replay_lsn(),'organization_exists',EXISTS(SELECT 1 FROM public.organizations WHERE id=1),'security_versions',(SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version IN ('20261016170000','20261016171000','20261016172000'))); COMMIT;"))
+    state=json.loads(sql("BEGIN READ ONLY; SELECT json_build_object('preloads_disabled',current_setting('shared_preload_libraries')='' AND current_setting('session_preload_libraries')='' AND current_setting('local_preload_libraries')='','network_disabled',current_setting('listen_addresses')='' AND current_setting('primary_conninfo')='' AND current_setting('max_logical_replication_workers')='0','archiving_disabled',current_setting('archive_mode')='off','replay_at',pg_last_xact_replay_timestamp(),'replay_lsn',pg_last_wal_replay_lsn(),'organization_exists',EXISTS(SELECT 1 FROM public.organizations WHERE id=1),'security_versions',(SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version IN ('20261016170000','20261016171000','20261016172000'))); COMMIT;"))
     assert state['organization_exists'] and state['security_versions']==3
+    assert state['preloads_disabled'] and state['network_disabled'] and state['archiving_disabled']
     assert state['replay_at'] and datetime.datetime.fromisoformat(state['replay_at'])<=target
     # Assert isolation from Docker's actual config, not just requested flags.
     actual=json.loads(run('docker','inspect',name,capture=True))[0]
