@@ -28,6 +28,11 @@ test('R2 image backup streams objects and fails on changed bytes or unsafe paths
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('runtime recovery archive includes bootstrap dependencies without copying live PGDATA', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_runtime_backup_archive.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('scheduled backup is encrypted, bounded, off-host and never authorizes cutover', () => {
   const create = fs.readFileSync(path.join(backup, 'create-online-encrypted-backup.sh'), 'utf8');
   assert.match(create, /plaintext_artifacts_written:false/);
@@ -45,7 +50,7 @@ test('scheduled backup is encrypted, bounded, off-host and never authorizes cuto
 
 test('backup shell and systemd contracts are syntactically valid', () => {
   for (const name of [
-    'create-online-encrypted-backup.sh', 'upload-encrypted-runtime-logs.sh',
+    'create-online-encrypted-backup.sh', 'archive-runtime.sh', 'upload-encrypted-runtime-logs.sh',
     'install-online-backup.sh',
   ]) {
     const result = spawnSync('bash', ['-n', path.join(backup, name)], { encoding: 'utf8' });
