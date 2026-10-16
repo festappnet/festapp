@@ -33,6 +33,13 @@ def main():
   result['longTransactions']=int(next(x for x in value if x.isdigit()))
   result['backupAt']=latest('scheduled-backup-*/result.json')
   result['logUploadAt']=latest('runtime-log-upload-*/result.json')
+  if Path('/etc/festapp-pgbackrest/enabled').exists():
+   # Fixed metadata only. Never query repository credentials or customer rows.
+   pitr_sql="BEGIN READ ONLY; SELECT json_build_object('enabled',current_setting('archive_mode')='on','failed',coalesce(last_failed_time>coalesce(last_archived_time,'epoch'::timestamptz),false),'oldestPendingSeconds',(SELECT coalesce(extract(epoch FROM now()-min(modification)),0) FROM pg_ls_archive_statusdir() WHERE name LIKE '%.ready')) FROM pg_stat_archiver; COMMIT;"
+   observation=command(['docker','exec','supabase-db','psql','-X','-U','supabase_admin','-d','postgres','-Atqc',pitr_sql]).splitlines()
+   result['pitr']=json.loads(next(x for x in observation if x.startswith('{')))
+   try:result['pitr']['backupAt']=json.loads(Path('/var/lib/festapp-pgbackrest/last-backup.json').read_text())['backup_stop']
+   except (OSError,ValueError,KeyError):result['pitr']['backupAt']=None
   result['ok']=True
  except Exception:result['reason']='runtime_collection_unavailable'
  # Atomic write never follows a user-controlled destination symlink.

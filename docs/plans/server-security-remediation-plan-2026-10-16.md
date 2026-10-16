@@ -4,6 +4,10 @@ Datum: 2026-10-16
 Stav: Balíky A/B publikované, nasazené a ověřené v produkci. C: monitoring a skutečná izolovaná obnova hotové; zbývá kapacitní budget, key-loss/recovery cíl, control-plane evidence a servisní restart.
 Ověření: standard - bezpečnost, autentizace, migrace a sdílený produkční backend
 
+## Navazující PITR - schválené 2026-10-16
+
+Uživatel výslovně schválil instalaci a použití standardního zálohovacího nástroje („můžeme nainstalovat ... let's do this“). Navazující implementace používá pgBackRest 2.57.0 z Alpine balíčku 2.57.0-r0 v odvozeném image se stejným PostgreSQL/extensions základem, týdenní full + denní differential a průběžnou šifrovanou WAL archivaci do existujícího R2. Bez navýšení RAM/plánu; skutečné R2 bytes se zvýší. Archivace nejpozději po 300 s a existing-agent alert při selhání/lagu nad 600 s podporují cíl RPO <=15 minut při zdravém archivu. Root-only konfigurace, age key escrow, zachování dosavadních denních záloh a krátký řízený restart pouze DB jsou součástí schváleného nasazení. Izolovaný test už prokázal full/diff restore, time target před pozdějším commitem a uchování WAL při selhání archivu. Produkční aplikace a reálný PITR drill budou doložené samostatným receiptem. Následující starší formulace „PITR neschválené“ zachycují stav před tímto pokynem.
+
 ## Produkční výsledek 2026-10-16 - aktuální stav
 
 Tato sekce a [produkční receipt](../operations/security-remediation-20261016/production-result.json) nahrazují níže zachované přednasazovací formulace. Uživatel navazujícím pokynem autorizoval pokračování v publikaci a nasazení. Opravný commit `9b2064fb796f7ec12f8271f80fbc03b9b0306e61` a test-only oprava čekání na dokončení rezervace `89639ea9172cadd2bfb456ab55aae6bc9695249c` jsou na main. Povinné CI pro seat checkout, ticket delivery, image service a web startup prošlo na druhém SHA. Původní dirty checkout nebyl měněn.

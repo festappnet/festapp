@@ -39,6 +39,12 @@ export function runtimeFailure(current, previous, now = Date.now()) {
   }
   if (!Number.isFinite(current.backupAt) || now / 1000 - current.backupAt > 26 * 3600) return 'backup_stale';
   if (!Number.isFinite(current.logUploadAt) || now / 1000 - current.logUploadAt > 2 * 3600) return 'log_upload_stale';
+  if (current.pitr) {
+    if (current.pitr.enabled !== true) return 'pitr_archiving_disabled';
+    if (current.pitr.failed === true) return 'pitr_archive_failed';
+    if (!Number.isFinite(current.pitr.oldestPendingSeconds) || current.pitr.oldestPendingSeconds > 600) return 'pitr_archive_lag';
+    if (!Number.isFinite(current.pitr.backupAt) || now / 1000 - current.pitr.backupAt > 26 * 3600) return 'pitr_backup_stale';
+  }
   if (!Number.isInteger(current.longTransactions)) return 'runtime_collection_unavailable';
   if (current.longTransactions > 0) return 'database_long_transaction';
   return null;
