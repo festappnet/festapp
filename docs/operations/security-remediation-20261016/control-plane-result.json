@@ -1,0 +1,95 @@
+{
+  "observed_at": "2026-10-16T14:16:33.895126+00:00",
+  "method": "Authenticated user-authorized Chrome; read-only provider views and same-origin Cloudflare API GETs. No token created, no rules changed.",
+  "hetzner": {
+    "server_id": 163798435,
+    "server_name": "festapp-supabase-rehearsal-01",
+    "ipv4": "46.224.187.4",
+    "ipv6": "2a01:4f8:1c18:3c4f::/64",
+    "firewall": "festapp-supabase-rehearsal-01-firewall",
+    "status": "Applied",
+    "inbound": [
+      {
+        "protocol": "icmp",
+        "sources": [
+          "0.0.0.0/0",
+          "::/0"
+        ]
+      },
+      {
+        "protocol": "tcp",
+        "port": 80,
+        "sources": "15 Cloudflare IPv4 and 7 IPv6 ranges shown by provider"
+      },
+      {
+        "protocol": "tcp",
+        "port": 443,
+        "sources": "15 Cloudflare IPv4 and 7 IPv6 ranges shown by provider"
+      }
+    ],
+    "public_ssh_rule": false,
+    "public_database_rule": false,
+    "outbound": "allow; no outbound rules",
+    "console": "Connected VNC shows Ubuntu 26.04.1 LTS, matching hostname and login prompt. Console login itself was not attempted.",
+    "cloudflare_ranges": [
+      "103.21.244.0/22",
+      "103.22.200.0/22",
+      "103.31.4.0/22",
+      "104.16.0.0/13",
+      "104.24.0.0/14",
+      "108.162.192.0/18",
+      "131.0.72.0/22",
+      "141.101.64.0/18",
+      "162.158.0.0/15",
+      "172.64.0.0/13",
+      "173.245.48.0/20",
+      "188.114.96.0/20",
+      "190.93.240.0/20",
+      "197.234.240.0/22",
+      "198.41.128.0/17",
+      "2400:cb00::/32",
+      "2405:8100::/32",
+      "2405:b500::/32",
+      "2606:4700::/32",
+      "2803:f800::/32",
+      "2a06:98c0::/29",
+      "2c0f:f248::/32"
+    ],
+    "ranges_match_official_live": true,
+    "source_url": "https://console.hetzner.com/projects/14099861/servers/163798435/firewalls"
+  },
+  "cloudflare": {
+    "studio_domain": "supabase.festapp.net",
+    "application_session_duration": "1h",
+    "policy_session_duration": "1h",
+    "identity_provider": "Google only",
+    "allowed_emails": [
+      "bujnmi@gmail.com",
+      "vichapavel@gmail.com"
+    ],
+    "studio_policy_decisions": [
+      "allow"
+    ],
+    "studio_bypass_or_service_auth": false,
+    "independent_mfa": {
+      "organization_required_for_all_apps": true,
+      "application_mfa_disabled": false,
+      "allowed_authenticators": [
+        "totp",
+        "biometrics",
+        "security_key"
+      ],
+      "session_duration": "1h"
+    },
+    "ssh": "Separate non_identity policy restricted to dedicated workstation service token; browser/admin policies not widened",
+    "dashboard_note": "Current dashboard page incorrectly showed account-plan setup; authenticated read-only API returned existing settings successfully."
+  },
+  "key_custody": {
+    "local_identity_exists": true,
+    "independent_copy_proven": false,
+    "checked": "Known exact Keychain service names, hcloud config/environment, bounded filename-only inventory in Documents/iCloud Drive/CloudStorage, Time Machine destinations, mounted Recovery volume metadata. No private key contents exposed.",
+    "time_machine_destination": false,
+    "recovery_volume_independent": false,
+    "note": "Recovery is internal APFS. Absence from scoped locations does not prove no other copy exists. Do not claim key-loss recovery complete."
+  }
+}

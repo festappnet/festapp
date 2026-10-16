@@ -32,7 +32,7 @@
     "automation/hetzner-supabase/runtime/collect-resource-budget.sh": "8485ab057a68c96c4f49ffaeb9e7f1b6b48dc789e6063bfd53a1d7fac05424f3",
     "automation/hetzner-supabase/monitoring/agent.mjs": "f668f803d09507a3c59e9a49fba148815c2602932583f9a52a28c45b38914076",
     "automation/hetzner-supabase/monitoring/metrics.mjs": "272ae171290e40f65e532a57a0d7d7208ece4457c5e6322cebaacd44831982d3",
-    "automation/hetzner-supabase/monitoring/runtime-evidence.py": "9237a22e3f67fa9f1f8d51422f1f6c8086e92f48d2f614a453a09353181e4014",
+    "automation/hetzner-supabase/monitoring/runtime-evidence.py": "053fd2503ffb8e681836754fc777c09793a33a931918fdac0b56e95e6a2f8c9b",
     "automation/hetzner-supabase/monitoring/festapp-host-monitor.service": "af61a1bc001d6b345ec0b3049c53e8fcb5c137287ca74dd54c0deefec9f4e358",
     "automation/hetzner-supabase/monitoring/install.sh": "2d418d2e664dfef1e75500257f84a4b93172c5e2848893ede4d76ad7e85a0ce3",
     "automation/hetzner-supabase/restore/drill-online-backup-local.py": "18563c7d56861421688a5c30c60ae5715c95d349477b68723b655b11187e7cc7"

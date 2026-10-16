@@ -1,8 +1,18 @@
 # Oprava zabezpečení a provozních limitů serveru Festapp
 
 Datum: 2026-10-16  
-Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, nezávislá úschova klíče, cross-store/RTO důkaz, control-plane evidence a servisní restart.
+Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, nezávislá úschova klíče, cross-store/RTO důkaz, ověření doručení host alertu; control-plane evidence a servisní restart jsou doložené.
 Ověření: standard - bezpečnost, autentizace, migrace a sdílený produkční backend
+
+## Navazující provozní ověření a servisní restart
+
+Uživatel schválil čtecí administraci Hetzner/Cloudflare a výslovně „Restartovat teď“. Server se přepnul z kernelu 7.0.0-30 na již nainstalovaný 7.0.0-38; boot ID se změnilo a reboot-required zmizel. Nebyly instalované další balíky, upgradované image ani navýšená kapacita. Před restartem prošel pgBackRest archive check a email gate byla pozastavená do nulového počtu sending/preparing. Po startu byla obnovená původní gate=false, oba unknown zůstaly 2. Všech 13 kontejnerů následně zdravých; docker, SSH socket a původní monitoring/backup timery aktivní. Veřejné Auth/Storage/Websocket i odmítnutí sync přístupu prošly. [Servisní receipt](../operations/security-remediation-20261016/host-maintenance-result.json).
+
+Skutečný provider firewall je Applied právě k serveru 163798435: pouze ICMP a TCP 80/443 z Cloudflare IPv4/IPv6; žádné veřejné SSH ani DB. Hetzner VNC zobrazuje správný hostname a login prompt (přihlášení samotné netestováno). Skutečný Cloudflare readback potvrzuje Studio pouze pro dvě určené adresy přes Google, bez bypass/service-auth, 1h aplikaci/policy i nezávislé MFA (TOTP/biometrie/security key); SSH zůstává samostatná service-token aplikace. Provedené pouze GET, žádné přegenerování tokenu ani změna pravidel. [Control-plane receipt](../operations/security-remediation-20261016/control-plane-result.json).
+
+Nezávislá kopie age identity není prokázaná: kontrola konkrétních Keychain názvů, Time Machine a omezený filename-only průchod cloudových/Documents umístění ji nenašly. Volume Recovery je interní APFS. Tím není prokázaná neexistence jiné kopie; key-loss drill zůstává otevřený a klíč nebyl automaticky přenesen do dalšího cloudu.
+
+Stávající minutový host collector nyní umí ukládat soukromou omezenou historii host RAM a cgroup v2 working-set/cache, kumulativního CPU a PID. Bez dalšího démona nebo docker-stats procesu; nejvýše 8 MiB za den a sedm denních souborů. Historie nemá env, zákaznické údaje ani příkazové řádky. Číselné limity stále vyžadují skutečnou provozní špičku; reboot/startup a jeden backup ji nenahrazují. Není důvod tvrdit, že je nezbytných 8 GB, nebo zavést neověřené nízké capy. Full-service RTO, DB/Storage/R2 konzistence a nezávislá dostupnost klíče zůstávají samostatné nedokončené důkazy.
 
 ## Standardní PITR nasazené a skutečně ověřené - nejnovější stav
 
