@@ -6,12 +6,15 @@ import '../../../src/theme_config.css';
 
 // Only transport and unrelated administrator discovery are test adapters.
 // Form rendering, seat gestures, state, payload, preview and result are real.
+window.__seatCheckoutRpcResults = new Map();
 async function request(name, args) {
     const response = await fetch('/__seat_checkout_rpc', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, args }),
     });
-    return response.json();
+    const result = await response.json();
+    window.__seatCheckoutRpcResults.set(name, result);
+    return result;
 }
 SupabaseService.getClient = () => ({
     rpc(name, args) {

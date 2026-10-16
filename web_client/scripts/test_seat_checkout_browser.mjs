@@ -91,6 +91,9 @@ try {
     await browser('snapshot', '-i');
     await browser('click', `.blueprint-seat-container[data-seat-id="${fixture.seat}"]`);
     await browser('wait', '--fn', `document.querySelector('.ticket-item[data-seat-id="${fixture.seat}"]') !== null`);
+    // The seat appears optimistically. Wait for the real reservation response
+    // before inspecting SQL on the fixture connection used by the RPC adapter.
+    await browser('wait', '--fn', "window.__seatCheckoutRpcResults?.has('select_spot') === true");
     assert.equal((await db.query('SELECT secret IS NOT NULL AS reserved FROM eshop.spots WHERE id=$1', [fixture.seat])).rows[0].reserved,
         true, 'The map click must reserve the actual SQL seat');
     await browser('click', '.blueprint-btn-confirm');
