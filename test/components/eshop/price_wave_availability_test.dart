@@ -146,7 +146,13 @@ void main() {
               ));
           await tester.tap(find.text('Open'));
           await tester.pumpAndSettle();
-          expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+          expect(find.byType(DropdownButtonFormField<int>), findsOneWidget);
+          expect(
+              tester
+                  .widget<DropdownButtonFormField<int>>(
+                      find.byType(DropdownButtonFormField<int>))
+                  .onChanged,
+              isNull);
           expect(
               find.text(usage == true
                   ? OrdersStrings.waveSeatProductHint
@@ -154,8 +160,6 @@ void main() {
               findsOneWidget);
           await tester.enterText(find.byType(TextField), '550');
           if (originalHidden != null) {
-            expect(find.text(OrdersStrings.waveExistingAvailabilityHint),
-                findsOneWidget);
             expect(
                 find.text(originalHidden
                     ? OrdersStrings.waveHidden

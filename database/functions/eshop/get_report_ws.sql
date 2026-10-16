@@ -60,6 +60,24 @@ BEGIN
   ), valid_order_days AS (
     SELECT (created_at AT TIME ZONE 'Europe/Prague')::date AS day,currency_code::text AS currency,count(*) AS count
     FROM valid_orders GROUP BY 1,2
+  ), ticket_order_dates AS (
+    SELECT DISTINCT ON (t.id) t.id,t.created_at,o.currency_code
+    FROM ticket_scope t JOIN eshop.order_product_ticket i ON i.ticket=t.id
+    JOIN orders_scope o ON o.id=i."order"
+    ORDER BY t.id,o.created_at,o.id
+  ), valid_ticket_order_dates AS (
+    SELECT DISTINCT ON (t.id) t.id,t.created_at,o.currency_code
+    FROM valid_tickets t JOIN eshop.order_product_ticket i ON i.ticket=t.id
+    JOIN valid_orders o ON o.id=i."order"
+    ORDER BY t.id,o.created_at,o.id
+  ), ticket_days AS (
+    SELECT (created_at AT TIME ZONE 'Europe/Prague')::date AS day,
+      currency_code::text AS currency,count(*) AS count
+    FROM ticket_order_dates GROUP BY 1,2
+  ), valid_ticket_days AS (
+    SELECT (created_at AT TIME ZONE 'Europe/Prague')::date AS day,
+      currency_code::text AS currency,count(*) AS count
+    FROM valid_ticket_order_dates GROUP BY 1,2
   ), order_states AS (
     SELECT coalesce(state,'unknown') AS state,count(*) AS count FROM orders_scope GROUP BY 1
   ), ticket_states AS (
@@ -88,6 +106,7 @@ BEGIN
     'valid',jsonb_build_object(
       'orders',jsonb_build_object('total',(SELECT count(*) FROM valid_orders),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM (SELECT coalesce(state,'unknown') AS state,count(*) AS count FROM valid_orders GROUP BY 1) x),'[]'::jsonb)),
       'tickets',jsonb_build_object('total',(SELECT count(*) FROM valid_tickets),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM (SELECT coalesce(state,'unknown') AS state,count(*) AS count FROM valid_tickets GROUP BY 1) x),'[]'::jsonb)),
+      'ticket_days',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM valid_ticket_days d),'[]'::jsonb),
       'order_days',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM valid_order_days d),'[]'::jsonb)
     ),
     'money_by_currency',coalesce((SELECT jsonb_agg(jsonb_build_object(
@@ -97,6 +116,7 @@ BEGIN
     ) ORDER BY currency) FROM money),'[]'::jsonb),
     'timeline',jsonb_build_object(
       'order_timezone','Europe/Prague','payment_date_basis','transaction_date',
+      'tickets',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM ticket_days d),'[]'::jsonb),
       'orders',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day) FROM order_days d),'[]'::jsonb),
       'payments',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM payment_days d),'[]'::jsonb)
     ),

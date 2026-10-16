@@ -439,10 +439,6 @@ class _ProductPriceChangesDialogState extends State<ProductPriceChangesDialog> {
       ]);
     }
     final actions = [
-      TextButton(
-        onPressed: busy ? null : reload,
-        child: Text(OrdersStrings.priceRefreshAction),
-      ),
       if (widget.onOpenWaves != null)
         OutlinedButton(
           onPressed: busy ? null : () => close(openWaves: true),

@@ -141,13 +141,6 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
           title: Text(OrdersStrings.priceWaves),
           onClose: () => Navigator.pop(context),
           closeEnabled: !busy,
-          actions: [
-            IconButton(
-              tooltip: OrdersStrings.priceRefreshAction,
-              onPressed: busy ? null : reload,
-              icon: const Icon(Icons.refresh),
-            ),
-          ],
         ),
         body: SafeArea(
           child: Column(
@@ -537,61 +530,6 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
     if (success) Navigator.pop(context, true);
   }
 
-  Widget availabilityNotice(BuildContext context) {
-    final knownSeatProduct = widget.product.isUsedInBlueprint == true;
-    final colors = Theme.of(context).colorScheme;
-    return Material(
-      color: colors.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: colors.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              knownSeatProduct
-                  ? OrdersStrings.waveSeatProductTitle
-                  : OrdersStrings.waveAvailabilityUnknownTitle,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(knownSeatProduct
-                ? OrdersStrings.waveSeatProductHint
-                : OrdersStrings.waveAvailabilityUnknownHint),
-            if (originalHidden != null) ...[
-              const Divider(height: 24),
-              Text(OrdersStrings.waveExistingAvailability,
-                  style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 4),
-              Text(originalHidden!
-                  ? OrdersStrings.waveHidden
-                  : OrdersStrings.waveShown),
-              const SizedBox(height: 8),
-              Text(OrdersStrings.waveExistingAvailabilityHint),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: hidden == null,
-                title: Text(OrdersStrings.waveCancelAvailability),
-                subtitle: Text(OrdersStrings.waveCancelAvailabilityHint),
-                onChanged: busy
-                    ? null
-                    : (cancel) => setState(() {
-                          hidden = cancel == true ? null : originalHidden;
-                          dirty = true;
-                        }),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: allowClose,
@@ -622,66 +560,86 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
                             suffixText: widget.product.currencyCode),
                         onChanged: (_) => setState(() => dirty = true)),
                     const SizedBox(height: 16),
-                    if (widget.product.isUsedInBlueprint != false)
-                      availabilityNotice(context)
-                    else
-                      DropdownButtonFormField<int>(
-                          isExpanded: true,
-                          itemHeight: null,
-                          initialValue: hidden == null
-                              ? 0
-                              : hidden!
-                                  ? 2
-                                  : 1,
-                          decoration: InputDecoration(
-                              labelText: OrdersStrings.waveAvailability,
-                              helper: Semantics(
-                                liveRegion: true,
-                                child: Text(hidden == null
-                                    ? OrdersStrings.waveAvailabilityKeepHint
-                                    : hidden!
-                                        ? OrdersStrings.waveAvailabilityHideHint
-                                        : OrdersStrings
-                                            .waveAvailabilityShowHint),
-                              ),
-                              suffixIcon: IconButton(
-                                tooltip:
-                                    OrdersStrings.waveAvailabilityHelpTitle,
-                                constraints: const BoxConstraints(
-                                    minWidth: 48, minHeight: 48),
-                                icon: const Icon(Icons.info_outline),
-                                onPressed: busy
-                                    ? null
-                                    : () => showDialog<void>(
-                                          context: context,
-                                          builder: (dialogContext) =>
-                                              AppAlertDialog(
-                                            onClose: () =>
-                                                Navigator.pop(dialogContext),
-                                            scrollable: true,
-                                            title: Text(OrdersStrings
-                                                .waveAvailabilityHelpTitle),
-                                            content: Text(OrdersStrings
-                                                .waveAvailabilityHelp),
-                                          ),
+                    DropdownButtonFormField<int>(
+                        isExpanded: true,
+                        itemHeight: null,
+                        initialValue: hidden == null
+                            ? 0
+                            : hidden!
+                                ? 2
+                                : 1,
+                        decoration: InputDecoration(
+                            labelText: OrdersStrings.waveAvailability,
+                            helper: Semantics(
+                              liveRegion: true,
+                              child: Text(widget.product.isUsedInBlueprint !=
+                                      false
+                                  ? (widget.product.isUsedInBlueprint == true
+                                      ? OrdersStrings.waveSeatProductHint
+                                      : OrdersStrings
+                                          .waveAvailabilityUnknownHint)
+                                  : hidden == null
+                                      ? OrdersStrings.waveAvailabilityKeepHint
+                                      : hidden!
+                                          ? OrdersStrings
+                                              .waveAvailabilityHideHint
+                                          : OrdersStrings
+                                              .waveAvailabilityShowHint),
+                            ),
+                            suffixIcon: IconButton(
+                              tooltip: OrdersStrings.waveAvailabilityHelpTitle,
+                              constraints: const BoxConstraints(
+                                  minWidth: 48, minHeight: 48),
+                              icon: const Icon(Icons.info_outline),
+                              onPressed: busy ||
+                                      widget.product.isUsedInBlueprint != false
+                                  ? null
+                                  : () => showDialog<void>(
+                                        context: context,
+                                        builder: (dialogContext) =>
+                                            AppAlertDialog(
+                                          onClose: () =>
+                                              Navigator.pop(dialogContext),
+                                          scrollable: true,
+                                          title: Text(OrdersStrings
+                                              .waveAvailabilityHelpTitle),
+                                          content: Text(OrdersStrings
+                                              .waveAvailabilityHelp),
                                         ),
-                              )),
-                          items: [
-                            DropdownMenuItem(
-                                value: 0,
-                                child: Text(
-                                    OrdersStrings.waveAvailabilityNoChange)),
-                            DropdownMenuItem(
-                                value: 1, child: Text(OrdersStrings.waveShown)),
-                            DropdownMenuItem(
-                                value: 2, child: Text(OrdersStrings.waveHidden))
-                          ],
-                          onChanged: busy
-                              ? null
-                              : (value) => setState(() {
-                                    hidden = value == 0 ? null : value == 2;
-                                    dirty = true;
-                                  })),
+                                      ),
+                            )),
+                        items: [
+                          DropdownMenuItem(
+                              value: 0,
+                              child:
+                                  Text(OrdersStrings.waveAvailabilityNoChange)),
+                          DropdownMenuItem(
+                              value: 1, child: Text(OrdersStrings.waveShown)),
+                          DropdownMenuItem(
+                              value: 2, child: Text(OrdersStrings.waveHidden))
+                        ],
+                        onChanged:
+                            busy || widget.product.isUsedInBlueprint != false
+                                ? null
+                                : (value) => setState(() {
+                                      hidden = value == 0 ? null : value == 2;
+                                      dirty = true;
+                                    })),
+                    if (widget.product.isUsedInBlueprint != false &&
+                        originalHidden != null)
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        value: hidden == null,
+                        title: Text(OrdersStrings.waveCancelAvailability),
+                        onChanged: busy
+                            ? null
+                            : (cancel) => setState(() {
+                                  hidden =
+                                      cancel == true ? null : originalHidden;
+                                  dirty = true;
+                                }),
+                      ),
                     if (error != null)
                       Text(error!,
                           style: TextStyle(

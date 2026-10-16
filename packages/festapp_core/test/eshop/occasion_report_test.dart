@@ -5,6 +5,27 @@ import '../support/occasion_report_fixture.dart';
 
 void main() {
   setUpAll(tzdata.initializeTimeZones);
+  test(
+    'ticket history counts people independently of orders and follows validity',
+    () {
+      final response = reportResponse();
+      response['report']['timeline']['tickets'] = [
+        {'day': '2026-10-01', 'currency': 'CZK', 'count': 24},
+      ];
+      response['report']['valid']['ticket_days'] = [
+        {'day': '2026-10-01', 'currency': 'CZK', 'count': 23},
+      ];
+      final report = OccasionReport.fromResponse(response);
+      expect(report.ticketDays.single.count, 24);
+      expect(report.onlyValid().ticketDays.single.count, 23);
+      expect(report.orderDays.first.count, 2);
+      response['report']['timeline'].remove('tickets');
+      response['report']['valid'].remove('ticket_days');
+      final legacy = OccasionReport.fromResponse(response);
+      expect(legacy.hasTicketTimeline, isFalse);
+      expect(legacy.onlyValid().hasTicketTimeline, isFalse);
+    },
+  );
   test('report snapshots own response collections across filtered views', () {
     final response = reportResponse();
     final report = OccasionReport.fromResponse(response);

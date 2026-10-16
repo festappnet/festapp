@@ -32,12 +32,12 @@ String formatReportText(OccasionReport report) {
       }
     }
   }
-  if (report.hasTimeline) {
+  if (report.hasTicketTimeline) {
     text
       ..writeln()
       ..writeln(ReportStrings.orderTimeline)
       ..writeln(ReportStrings.orderTimelineHelp);
-    for (final day in report.orderDays) {
+    for (final day in report.ticketDays) {
       text.writeln(
           '${DateFormat('d. M. yyyy').format(day.day)} ${day.currency}: ${day.count}');
     }

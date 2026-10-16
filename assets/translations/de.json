@@ -408,9 +408,9 @@
   },
   "FeatureOrders": {
     "waveSeatProductTitle": "Product assigned to blueprint seats",
-    "waveSeatProductHint": "You can change the price in this wave. Availability cannot be changed because this product is assigned to blueprint seats. Hiding it could prevent customers from completing an order for a selected seat.",
+    "waveSeatProductHint": "Product availability cannot be changed because it is assigned to blueprint seats.",
     "waveAvailabilityUnknownTitle": "Availability changes are unavailable",
-    "waveAvailabilityUnknownHint": "We cannot verify whether this product is assigned to blueprint seats. You can change the price. To change availability, first close this dialog and refresh the plans.",
+    "waveAvailabilityUnknownHint": "Product availability cannot be changed until its blueprint seat assignment is verified.",
     "waveExistingAvailability": "Previously scheduled availability change",
     "waveExistingAvailabilityHint": "Saving the price will not cancel this change. Cancel it below if you do not want it to take effect.",
     "waveCancelAvailability": "Cancel the scheduled availability change",
