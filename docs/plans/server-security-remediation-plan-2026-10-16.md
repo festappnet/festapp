@@ -4,6 +4,12 @@ Datum: 2026-10-16
 Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, cross-store/RTO důkaz, ověření doručení host alertu; control-plane evidence a servisní restart jsou doložené.
 Ověření: standard - bezpečnost, autentizace, migrace a sdílený produkční backend
 
+## Doplněná kapacitní evidence před kritickými limity
+
+Měření nyní doplňuje aggregate DB connections/active/idle/long transactions a nativní procesové čítače Edge Runtime. Používá stejný host timer a existující Docker logy; bez veřejného endpointu, tokenu nebo démona. Do evidence jde pouze šest čísel, ne heap detaily, requesty nebo env. [Kontrakt a postup](../../automation/hetzner-supabase/monitoring/RESOURCE-EVIDENCE.md). Aktuální read-only DB snapshot měl 18 klientských spojení, max 100, rezervu 3 a nulové active/idle-in-transaction/long transakce; nejde o reprezentativní peak.
+
+Izolovaný skutečný pinned Edge 1.74.0 obsloužil 16 požadavků přes dvě fixture funkce bez OOM/restartu, native received/handled=16/16, cgroup peak cca 51 MiB. `--max-parallelism=1` vytvořil dva live workery, protože limit platí na service_path; nesmí se zaměnit za globální kontejnerový strop. [Skutečný native/burst výsledek](../operations/security-remediation-20261016/edge-native-resource-drill-result.json). Cílené ověření: osm Python testů, jeden Deno test a 22 Node testů. Aktivace se doloží samostatným produkčním receiptem; měření samo nezavírá požadavek reprezentativního budgetu a kritických capů.
+
 ## Navazující skutečná aplikační obnova a připravený provozní balík
 
 Nejnovější skutečná sada `20261016T150700Z` má pět šifrovaných artefaktů včetně všech 1 074 R2 objektů. Samostatný offline read-only credential stáhl přímo z R2 celou sadu za 148.39 s a ověřil hash/velikost všech souborů. Nejnovější izolovaná obnova DB/globals/Storage/R2 a připnutých Auth/REST/Storage služeb má úspěšné aplikační čtení i skutečný Storage download se správnými bajty. Metadata nového PAX archivu se neregenerovala z DB. Strict R2 gate přesto správně zůstává `inconsistent-r2-references`: 50 z 997 registry URL nemá objekt už ve zdroji. [Nejnovější aplikační receipt](../operations/security-remediation-20261016/r2-application-recovery-result.json). Tento stav není přepsaný na úplnou cross-store konzistenci.

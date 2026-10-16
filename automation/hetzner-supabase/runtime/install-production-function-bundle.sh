@@ -47,6 +47,8 @@ python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-proof-routes.py" "$STAGE/
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-static-assets.py" "$STAGE/main/index.ts"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-email-cpu-budget.py" "$STAGE/main/index.ts"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-monitoring.py" "$STAGE/main/index.ts"
+[[ -f "$STAGE/_shared/runtime_resource_metrics.ts" ]] || fail "Function bundle lacks native resource instrumentation"
+python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-resource-metrics.py" "$STAGE/main/index.ts"
 if grep -Eq '^[[:space:]]*const memoryLimitMb = 150;?$' "$STAGE/main/index.ts"; then
   sed -Ei 's/(const memoryLimitMb = )150;?$/\1512/' "$STAGE/main/index.ts"
 elif ! grep -Eq '^[[:space:]]*const memoryLimitMb = 512;?$' "$STAGE/main/index.ts"; then
