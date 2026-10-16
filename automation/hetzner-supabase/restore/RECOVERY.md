@@ -9,9 +9,12 @@ buckets. Neither token can write or delete objects.
 
 The uploaded ZIP is sensitive because it contains the private age identity.
 Do not publish it, attach it to issues or commit its contents. No public share
-link or iCloud security-setting change was made. iCloud upload confirmation
-proves independent key custody; it does not establish a second full backup of
-all customer data outside Cloudflare or prove end-to-end iCloud encryption.
+link or iCloud security-setting change was made. The key ZIP upload confirms independent key custody. A separate uploaded
+`Festapp-Backup-20261016T150700Z.zip` contains the complete five-artifact
+encrypted snapshot (1,803,229,836 bytes). Its hashes match the actually restored
+set; an offline test decrypted globals using only these two iCloud ZIPs, without
+R2 or the original server. This is one independent data snapshot, not automatic
+iCloud replication of daily/WAL history. It does not prove end-to-end iCloud encryption.
 
 `download-offhost-backup.py` is copied into the private kit as
 `download-backup.py`, next to `age-identity.txt` and `backup-reader.json.age`.

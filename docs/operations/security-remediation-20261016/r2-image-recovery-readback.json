@@ -60,11 +60,18 @@
     "access_denied": true
   },
   "r2_image_backup_activated": true,
-  "pending": "First live archive and actual content/reference restore still running; do not confuse activation with completed backup",
+  "pending": "50 pre-existing R2 registry references have no source object; no rows or URLs changed",
   "source_urls_changed": false,
   "sources_deleted": false,
   "note": "No raw customer URLs, object names or credentials in this receipt.",
   "source_reader_permissions": "Object Read only, exact four image buckets",
   "offline_recovery_permissions": "Object Read only, backup bucket only",
-  "user_authorized": true
+  "user_authorized": true,
+  "r2_archive_completed": true,
+  "source_objects_archived": 1074,
+  "source_object_bytes": 341530791,
+  "source_content_hashes_verified": true,
+  "strict_database_reference_consistency": false,
+  "missing_registry_references": 50,
+  "actual_recovery_receipt": "r2-application-recovery-result.json"
 }
