@@ -1,0 +1,43 @@
+{
+  "verified_at": "2026-10-16",
+  "scope": "Festapp live host and its 13 containers. Other servers only provider-list inventory, no SSH or modifications.",
+  "host": {
+    "name": "festapp-supabase-rehearsal-01",
+    "actual_role": "canonical production shared Supabase backend",
+    "historical_name": true
+  },
+  "database": {
+    "name": "festapp_rehearsal_20260909220601",
+    "actual_role": "canonical production application database",
+    "historical_name": true
+  },
+  "realtime": {
+    "container": "realtime-dev.supabase-realtime",
+    "tenant_slug": "realtime-dev",
+    "actual_role": "live Realtime service",
+    "historical_name": true,
+    "dependency": "Pinned upstream Compose container name and tenant healthcheck"
+  },
+  "other_containers": [
+    "supabase-db",
+    "supabase-edge-functions",
+    "supabase-auth",
+    "supabase-studio",
+    "festapp-caddy",
+    "festapp-supabase-admin-tunnel",
+    "supabase-envoy",
+    "supabase-storage",
+    "supabase-rest",
+    "supabase-meta",
+    "supabase-pooler",
+    "supabase-imgproxy"
+  ],
+  "other_provider_names_seen": [
+    "napojse-prod-01",
+    "voice-orchestrator-prod",
+    "supabase-dev"
+  ],
+  "other_server_roles_verified": false,
+  "rename_performed": false,
+  "rename_dependencies": "Host name is referenced in 52 automation/skill files, plus protected target assertions/SSH provisioning and evidence. Database guards, backups, scheduler, restored cluster and Realtime tenant routing require coordinated cutover. Provider label alone must not be confused with an OS hostname/database rename."
+}

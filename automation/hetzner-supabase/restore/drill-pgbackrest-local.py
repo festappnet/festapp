@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Restore an encrypted repository COPY to a new network-none local container.
-No production target, bind mount, application process or cutover accepted.
+No production target, bind mount or cutover accepted. Optional REST read smoke
+shares only the network-none container's private loopback, with fixture auth.
 """
 import argparse,datetime,json,os,re,subprocess,tempfile,time,uuid
 from pathlib import Path
 IMAGE='festapp-postgres-pgbackrest:17.6-2.57.0-r0'
 def main():
- p=argparse.ArgumentParser();p.add_argument('--repo-dir',type=Path,required=True);p.add_argument('--recovery',type=Path,required=True);p.add_argument('--identity',type=Path,required=True);p.add_argument('--target',required=True);p.add_argument('--backup-label',required=True);p.add_argument('--evidence',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--repo-dir',type=Path,required=True);p.add_argument('--recovery',type=Path,required=True);p.add_argument('--identity',type=Path,required=True);p.add_argument('--target',required=True);p.add_argument('--backup-label',required=True);p.add_argument('--evidence',type=Path,required=True);p.add_argument('--rest-smoke',action='store_true');a=p.parse_args()
  target=datetime.datetime.fromisoformat(a.target.replace('Z','+00:00'));assert target.tzinfo
  assert re.fullmatch(r'\d{8}-\d{6}F(?:_\d{8}-\d{6}D)?',a.backup_label), 'restore from an explicit full/differential backup'
  assert a.repo_dir.is_dir() and (a.repo_dir/'backup/festapp/backup.info').is_file()
@@ -17,7 +18,7 @@ def main():
  recovery=json.loads(subprocess.check_output(['age','-d','-i',str(a.identity),str(a.recovery)],stderr=subprocess.DEVNULL))
  assert recovery['tool']=='pgbackrest' and recovery['stanza']=='festapp' and recovery['repo_path']=='/pgbackrest/festapp-production' and recovery['cipher_type']=='aes-256-cbc'
  assert re.fullmatch('[a-f0-9]{64}',recovery['cipher_pass'])
- name='festapp-pitr-restore-'+uuid.uuid4().hex[:12];started=time.monotonic()
+ name='festapp-pitr-restore-'+uuid.uuid4().hex[:12];rest_name=name+'-rest';started=time.monotonic()
  with tempfile.TemporaryDirectory(prefix='festapp-pitr-') as temp:
   logfile=Path(temp)/'restore.log'
   with logfile.open('wb') as log:
@@ -44,10 +45,13 @@ def main():
       settings[{'max_prepared_xacts':'max_prepared_transactions','max_locks_per_xact':'max_locks_per_transaction'}.get(key,key)]=int(value.strip())
     server="data_directory='/tmp/restore-data'\nhba_file='/tmp/safe_hba.conf'\nident_file='/tmp/safe_ident.conf'\nunix_socket_directories='/tmp'\nlisten_addresses=''\nshared_preload_libraries=''\nsession_preload_libraries=''\nlocal_preload_libraries=''\narchive_mode=off\nhot_standby=on\nprimary_conninfo=''\nmax_logical_replication_workers=0\nautovacuum=off\n"
     server+=''.join(k+'='+str(v)+'\n' for k,v in settings.items())
+    if a.rest_smoke:server=server.replace("listen_addresses=''","listen_addresses='127.0.0.1'")
     ex('sh','-c','cat > /tmp/safe-postgresql.conf',input=server.encode())
     ex('sh','-c',"printf 'local all all trust\\n' > /tmp/safe_hba.conf; touch /tmp/safe_ident.conf")
+    if a.rest_smoke:ex('sh','-c',"printf 'host all supabase_admin 127.0.0.1/32 trust\\n' >> /tmp/safe_hba.conf")
     # Command-line settings override restored postgresql.auto.conf as well.
     options='-c config_file=/tmp/safe-postgresql.conf -c data_directory=/tmp/restore-data -c hba_file=/tmp/safe_hba.conf -c ident_file=/tmp/safe_ident.conf -c unix_socket_directories=/tmp -c port=5432 -c shared_preload_libraries= -c session_preload_libraries= -c local_preload_libraries= -c archive_mode=off -c listen_addresses= -c primary_conninfo= -c max_logical_replication_workers=0 -c autovacuum=off -c ssl=off'
+    if a.rest_smoke:options=options.replace('-c listen_addresses= ', '-c listen_addresses=127.0.0.1 ')
     ex('pg_ctl','-D','/tmp/restore-data','-l','/tmp/server.log','-o',options,'-w','start')
     def sql(q):return ex('env','PGOPTIONS=-c session_preload_libraries= -c local_preload_libraries=','psql','-X','-h','/tmp','-U','supabase_admin','-d','festapp_rehearsal_20260909220601','-Atqv','ON_ERROR_STOP=1','-c',q,capture=True)
     for _ in range(120):
@@ -56,14 +60,39 @@ def main():
     else:raise RuntimeError('requested time target was not reached and paused')
     state=json.loads(sql("BEGIN READ ONLY; SELECT json_build_object('preloads_disabled',current_setting('shared_preload_libraries')='' AND current_setting('session_preload_libraries')='' AND current_setting('local_preload_libraries')='','network_disabled',current_setting('listen_addresses')='' AND current_setting('primary_conninfo')='' AND current_setting('max_logical_replication_workers')='0','archiving_disabled',current_setting('archive_mode')='off','replay_at',pg_last_xact_replay_timestamp(),'replay_lsn',pg_last_wal_replay_lsn(),'organization_exists',EXISTS(SELECT 1 FROM public.organizations WHERE id=1),'security_versions',(SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version IN ('20261016170000','20261016171000','20261016172000'))); COMMIT;"))
     assert state['organization_exists'] and state['security_versions']==3
+    if a.rest_smoke:
+     state['network_disabled']=sql("BEGIN READ ONLY; SELECT current_setting('listen_addresses')='127.0.0.1' AND current_setting('primary_conninfo')='' AND current_setting('max_logical_replication_workers')='0'; COMMIT;")=='t'
     assert state['preloads_disabled'] and state['network_disabled'] and state['archiving_disabled']
     assert state['replay_at'] and datetime.datetime.fromisoformat(state['replay_at'])<=target
     # Assert isolation from Docker's actual config, not just requested flags.
     actual=json.loads(run('docker','inspect',name,capture=True))[0]
     assert actual['HostConfig']['NetworkMode']=='none' and not actual['HostConfig']['PortBindings']
     assert not any(m['Type']=='bind' for m in actual['Mounts'])
-    result={'status':'pass','tool':'pgbackrest 2.57.0','backup_label':a.backup_label,'target':a.target,'paused_at_target':True,'replay_at':state['replay_at'],'replay_lsn':state['replay_lsn'],'catalog_smoke':True,'network':'none','ports':False,'host_mounts':False,'application_preloads_disabled':True,'encrypted_key_escrow_used':True,'isolated_restore_seconds':round(time.monotonic()-started,2),'full_service_rto_proven':False,'storage_r2_consistency_proven':False}
+    rest_smoke=False
+    if a.rest_smoke:
+     pins=json.loads((Path(__file__).resolve().parents[1]/'runtime/pins.json').read_text())
+     image=pins['supabase']['images']['rest'];assert image.startswith('postgrest/postgrest:') and '@sha256:' in image
+     # Paused read-only clone: admin connection can clear preload GUCs; HTTP
+     # requests run as service_role. No production JWT/password or DB config.
+     uri='postgresql://supabase_admin@127.0.0.1:5432/festapp_rehearsal_20260909220601?options=-c%20session_preload_libraries%3D%20-c%20local_preload_libraries%3D'
+     run('docker','run','-d','--name',rest_name,'--network','container:'+name,'--read-only','--cap-drop=ALL','--security-opt=no-new-privileges',
+      '-e','PGRST_DB_URI='+uri,'-e','PGRST_DB_ANON_ROLE=service_role','-e','PGRST_DB_SCHEMAS=public','-e','PGRST_DB_CONFIG=false',
+      '-e','PGRST_JWT_SECRET=isolated-restore-fixture-only-secret-000000000000','-e','PGRST_SERVER_HOST=127.0.0.1',image)
+     for _ in range(60):
+      try:
+       response=ex('curl','--fail','--silent','--max-time','2','http://127.0.0.1:3000/organizations?select=id&id=eq.1',capture=True)
+       assert json.loads(response)==[{'id':1}];break
+      except (subprocess.CalledProcessError,ValueError,AssertionError):time.sleep(.5)
+     else:raise RuntimeError('isolated REST organization read failed')
+     # Exercise a real application read with an empty projection, retaining no payload.
+     assert isinstance(json.loads(ex('curl','--fail','--silent','--max-time','5','http://127.0.0.1:3000/occasions?select=id&limit=1',capture=True)),list)
+     rest_actual=json.loads(run('docker','inspect',rest_name,capture=True))[0]
+     assert rest_actual['HostConfig']['NetworkMode']=='container:'+actual['Id'] or rest_actual['HostConfig']['NetworkMode']=='container:'+name
+     assert not rest_actual['HostConfig']['PortBindings'] and not any(m['Type']=='bind' for m in rest_actual['Mounts'])
+     rest_smoke=True
+    result={'status':'pass','tool':'pgbackrest 2.57.0','backup_label':a.backup_label,'target':a.target,'paused_at_target':True,'replay_at':state['replay_at'],'replay_lsn':state['replay_lsn'],'catalog_smoke':True,'application_rest_read_smoke':rest_smoke,'production_integrations_started':False,'network':'none','ports':False,'host_mounts':False,'application_preloads_disabled':True,'encrypted_key_escrow_used':True,'isolated_restore_seconds':round(time.monotonic()-started,2),'full_service_rto_proven':False,'storage_r2_consistency_proven':False}
    except Exception:
+    subprocess.run(['docker','logs',rest_name],stdout=log,stderr=log)
     subprocess.run(['docker','cp',name+':/tmp/server.log',str(Path(temp)/'server.log')],stdout=log,stderr=log)
     log.flush()
     failure=a.evidence.with_suffix('.failure.log')
@@ -71,7 +100,9 @@ def main():
      out.write(logfile.read_bytes())
      if (Path(temp)/'server.log').exists():out.write((Path(temp)/'server.log').read_bytes())
     raise RuntimeError('Isolated PITR failed; protected diagnostics saved beside evidence') from None
-   finally:subprocess.run(['docker','rm','-f','-v',name],stdout=log,stderr=log)
+   finally:
+    subprocess.run(['docker','rm','-f','-v',rest_name],stdout=log,stderr=log)
+    subprocess.run(['docker','rm','-f','-v',name],stdout=log,stderr=log)
  with a.evidence.open('x') as stream:json.dump(result,stream,indent=2);stream.write('\n')
  print('Isolated real-backup PITR reached requested time and catalog smoke passed')
 if __name__=='__main__':main()

@@ -1,0 +1,29 @@
+{
+  "source": "Read-only existing monitoring /v1/incidents and /v1/deliveries",
+  "host_checks": [
+    {
+      "id": "agent",
+      "status": "ok",
+      "last_receive": 1792160452913
+    },
+    {
+      "id": "cpu",
+      "status": "ok",
+      "last_receive": 1792160452913
+    },
+    {
+      "id": "disk",
+      "status": "ok",
+      "last_receive": 1792160452913
+    },
+    {
+      "id": "memory",
+      "status": "ok",
+      "last_receive": 1792160452913
+    }
+  ],
+  "host_deliveries": [],
+  "existing_host_alert_delivery_proven": false,
+  "synthetic_outage_or_email_generated": false,
+  "note": "Observed real existing host incidents and delivery receipts, including maintenance. Delivered is the monitoring pipeline receipt, not proof a human read the email."
+}
