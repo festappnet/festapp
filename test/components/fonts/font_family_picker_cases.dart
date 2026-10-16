@@ -11,6 +11,40 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('menu and search preview actual fonts without changing the selection', (tester) async {
+    final calls = <String>[];
+    final pending = Completer<TextStyle>();
+    var changes = 0;
+    await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(), home: Scaffold(
+      body: FontFamilyPicker(value: 'Roboto', families: const ['Roboto', 'Inter', 'Custom Font'],
+        previewStyle: (family) {
+          calls.add(family);
+          return family == 'Inter' ? pending.future :
+              Future.value(TextStyle(fontFamily: 'Loaded_$family'));
+        }, onSelected: (_) async { changes++; }))));
+    await tester.pumpAndSettle();
+    expect(calls, isEmpty, reason: 'Closed picker must not load unselected fonts');
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(calls.toSet(), {'Roboto', 'Inter'});
+    pending.complete(const TextStyle(fontFamily: 'Loaded_Inter', color: Colors.black));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.text('Inter').last).style!.fontFamily, 'Loaded_Inter');
+    expect(tester.widget<Text>(find.text('Inter').last).style!.color, ThemeData.dark().colorScheme.onSurface);
+    expect(changes, 0);
+    await tester.tapAt(const Offset(5, 590));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(FormStrings.moreFonts));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Custom');
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.text('Custom Font')).style!.fontFamily, 'Loaded_Custom Font');
+    expect(changes, 0);
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('font previews keep dark theme text readable in the menu',
       (tester) async {
     final theme = ThemeData.dark();

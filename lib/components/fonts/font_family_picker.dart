@@ -19,12 +19,13 @@ const popularFontFamilies = [
   'Playfair Display',
 ];
 
-/// Options are metadata only. The adapter owns loading and committing a font.
+/// Adapters load preview fonts without committing a selection.
 class FontFamilyPicker extends StatefulWidget {
   final String? value, label;
   final List<String> families, extraFamilies;
   final Future<void> Function(String?) onSelected;
   final TextStyle? selectedStyle;
+  final Future<TextStyle> Function(String)? previewStyle;
   final bool enabled, canReset;
   const FontFamilyPicker({
     super.key,
@@ -33,6 +34,7 @@ class FontFamilyPicker extends StatefulWidget {
     required this.onSelected,
     this.extraFamilies = const [],
     this.selectedStyle,
+    this.previewStyle,
     this.label,
     this.enabled = true,
     this.canReset = true,
@@ -46,6 +48,7 @@ class FontFamilyPicker extends StatefulWidget {
     String? value,
     String? title,
     List<String> extraFamilies = const [],
+    Future<TextStyle> Function(String)? previewStyle,
   }) =>
       showModalBottomSheet<void>(
         context: context,
@@ -61,6 +64,7 @@ class FontFamilyPicker extends StatefulWidget {
           value: value,
           title: title,
           onSelected: onSelected,
+          previewStyle: previewStyle,
         ),
       );
 
@@ -141,6 +145,11 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
                     vertical: 14,
                   ),
                 ),
+                selectedItemBuilder: (context) => [
+                  Text(FormStrings.defaultFont, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  for (final family in choices)
+                    Text(_displayFont(family), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
                 items: [
                   DropdownMenuItem<String>(
                     value: null,
@@ -149,11 +158,7 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
                   ...choices.map(
                     (f) => DropdownMenuItem(
                       value: f,
-                      child: Text(
-                        _displayFont(f),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: _FontPreview(key: ValueKey(f), family: f, load: widget.previewStyle),
                     ),
                   ),
                 ],
@@ -199,6 +204,7 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
                     extraFamilies: widget.extraFamilies,
                     value: widget.value,
                     onSelected: choose,
+                    previewStyle: widget.previewStyle,
                   )
               : null,
         ),
@@ -210,12 +216,14 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
 class _FontChoices extends StatefulWidget {
   final List<String> families, extraFamilies;
   final String? value, title;
+  final Future<TextStyle> Function(String)? previewStyle;
   final Future<void> Function(String?) onSelected;
   const _FontChoices({
     required this.families,
     required this.extraFamilies,
     required this.value,
     required this.title,
+    this.previewStyle,
     required this.onSelected,
   });
   @override
@@ -331,7 +339,7 @@ class _FontChoicesState extends State<_FontChoices> {
                             itemBuilder: (context, index) {
                               final family = options[index];
                               return ListTile(
-                                  title: Text(_displayFont(family)),
+                                  title: _FontPreview(key: ValueKey(family), family: family, load: widget.previewStyle),
                                   selected: widget.value == family,
                                   trailing: busy && loading == family
                                       ? const SizedBox(
@@ -347,4 +355,33 @@ class _FontChoicesState extends State<_FontChoices> {
                       ])),
                     ])))));
   }
+}
+
+/// Only menu rows are mounted here; the closed dropdown never downloads fonts.
+class _FontPreview extends StatefulWidget {
+  final String family;
+  final Future<TextStyle> Function(String)? load;
+  const _FontPreview({super.key, required this.family, this.load});
+  @override
+  State<_FontPreview> createState() => _FontPreviewState();
+}
+
+class _FontPreviewState extends State<_FontPreview> {
+  late final Future<TextStyle>? style = widget.load == null ? null :
+      Future<TextStyle>.sync(() => widget.load!(widget.family));
+  @override
+  Widget build(BuildContext context) => FutureBuilder<TextStyle>(
+      future: style,
+      builder: (context, snapshot) => Row(children: [
+        Expanded(child: Text(_displayFont(widget.family), maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: (snapshot.data ?? const TextStyle()).copyWith(
+                color: Theme.of(context).colorScheme.onSurface))),
+        if (style != null && snapshot.connectionState != ConnectionState.done)
+          const SizedBox(width: 12, height: 12,
+              child: CircularProgressIndicator(strokeWidth: 1.5)),
+        if (snapshot.hasError)
+          Tooltip(message: FormStrings.fontLoadFailed,
+              child: const Icon(Icons.error_outline, size: 16)),
+      ]));
 }

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:math' as math;
@@ -63,7 +64,7 @@ TicketLayoutResources resources(
         presets: (fixture['presets'] as Map).map((key, value) =>
             MapEntry(key as String, TicketTemplate.fromJson(value))),
         scenarios: (fixture['scenarios'] as Map).map((k, v) =>
-            MapEntry(k as String, (v as Map).cast<String, String?>())),
+            MapEntry(k as String, Map<String, String?>.from(v as Map))),
         metrics: TicketFontMetrics.fromJson(fixture['metrics']),
         qrSize: fixture['qrMatrix']['size'],
         qrModules: (fixture['qrMatrix']['data'] as List).cast<int>());
@@ -2126,6 +2127,35 @@ void main() {
     r.dispose();
   });
   testWidgetsWithEnvironment(() => _environment,
+      'global history removes an added field after dialog focus restoration', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final outerFocus = FocusNode();
+    addTearDown(outerFocus.dispose);
+    final r = resources(template: document().withPaper(true).resizeCanvasArea(const Size(200, 600)));
+    r.scenarios['normal']!['occasionStartTime'] = '19:00';
+    await _environment.pumpWidget(tester, MaterialApp(home: Focus(focusNode: outerFocus,
+        child: TicketLayoutEditor(occasionId: 1, type: 'named', resources: r, service: FakeService()))));
+    await tester.pumpAndSettle();
+    final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TicketLayout.occasionStartTime'.tr()));
+    await tester.pumpAndSettle();
+    expect(c.document.elements.any((e) => e.binding == 'occasionStartTime'), isTrue);
+    outerFocus.requestFocus();
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(c.document.elements.any((e) => e.binding == 'occasionStartTime'), isFalse);
+    await _environment.pumpWidget(tester, const SizedBox());
+  });
+
+  testWidgetsWithEnvironment(() => _environment,
       'font size slider restores history shortcuts after dialog focus restoration',
       (tester) async {
     tester.view.physicalSize = const Size(1800, 1200);
@@ -2714,6 +2744,210 @@ void main() {
     c.dispose();
   });
   test(
+      'optional fields add, restore, select and undo without duplicate bindings',
+      () {
+    final base =
+        document().withPaper(true).resizeCanvasArea(const Size(200, 600));
+    final c = TicketLayoutController(base);
+    for (final binding in [
+      'occasionStartTime',
+      'occasionPlace',
+      'note',
+      'price'
+    ]) {
+      final before = c.document;
+      expect(c.addOptionalField(binding), isTrue);
+      final added = c.selection!;
+      expect(added.binding, binding);
+      expect(
+          c.document.elements
+              .where((e) => e.visible && e.id != added.id)
+              .any((e) => e.box.overlaps(added.box)),
+          isFalse);
+      expect(c.document.validate('named'), isEmpty);
+      expect(c.addOptionalField(binding), isTrue);
+      expect(
+          c.document.elements.where((e) => e.binding == binding), hasLength(1));
+      c.undo();
+      expect(c.document, same(before));
+      c.redo();
+      c.select(added.id);
+      final hidden = c.selection!.copyWith(visible: false, color: '123456');
+      c.change(hidden);
+      final hiddenDocument = c.document;
+      expect(c.addOptionalField(binding), isTrue);
+      expect(c.selection!.visible, isTrue);
+      expect(c.selection!.color, '123456');
+      c.undo();
+      expect(c.document, same(hiddenDocument));
+    }
+    expect(c.addOptionalField('qr'), isFalse);
+    expect(c.addOptionalField('unknown'), isFalse);
+    c.dispose();
+  });
+
+  testWidgetsWithEnvironment(() => _environment,
+      'add element offers event fields and inserts directly without PDF requests',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r = resources(
+        template:
+            document().withPaper(true).resizeCanvasArea(const Size(200, 600)));
+    r.scenarios['normal']!['occasionStartTime'] = '19:00';
+    r.scenarios['normal']!['occasionPlace'] = 'Kulturní dům';
+    final service = FakeService();
+    await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: TicketLayoutEditor(
+                occasionId: 1, type: 'wide', resources: r, service: service)));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
+    await tester.pumpAndSettle();
+    expect(find.text('TicketLayout.occasionPlace'.tr()), findsOneWidget);
+    await tester.tap(find.text('TicketLayout.occasionStartTime'.tr()));
+    await tester.pumpAndSettle();
+    expect(state.controller.selection.binding, 'occasionStartTime');
+    expect(find.byType(AppAlertDialog), findsNothing);
+    expect(service.pdfCalls, 0);
+    expect(tester.takeException(), isNull);
+    await _environment.pumpWidget(tester, const SizedBox());
+  });
+
+  testWidgetsWithEnvironment(() => _environment,
+      'inline text and properties stay synchronized and optional deletion is undoable', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r = resources(template: document().withPaper(true).resizeCanvasArea(const Size(200, 600)));
+    await _environment.pumpWidget(tester, MaterialApp(home: TicketLayoutEditor(
+        occasionId: 1, type: 'wide', resources: r, service: FakeService())));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    final TicketLayoutController c = state.controller;
+    c.addTextField('Váš text');
+    await tester.pumpAndSettle();
+    final id = c.selected!;
+    final side = find.byKey(const ValueKey('ticket-free-text'));
+    await tester.ensureVisible(side);
+    await tester.enterText(side, 'Text z panelu');
+    await tester.pumpAndSettle();
+    TicketLayoutCanvas view() => tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
+    expect(view().data[id], 'Text z panelu');
+    Offset screen(Offset point) => tester.getTopLeft(find.byType(InteractiveViewer)) +
+        MatrixUtils.transformPoint(view().transform.value, c.document.area.topLeft + point);
+    final point = screen(c.selection!.box.center);
+    final firstTap = await tester.startGesture(point);
+    await firstTap.up(timeStamp: const Duration(milliseconds: 120));
+    await tester.pump(const Duration(milliseconds: 80));
+    final secondTap = await tester.startGesture(point);
+    await secondTap.up(timeStamp: const Duration(milliseconds: 220));
+    await tester.pumpAndSettle();
+    final inline = find.byKey(const ValueKey('ticket-inline-text'));
+    expect(inline, findsOneWidget);
+    await tester.enterText(inline, 'Text přímo na vstupence');
+    await tester.pumpAndSettle();
+    expect(view().data[id], 'Text přímo na vstupence');
+    expect(tester.widget<TextField>(side).controller!.text, 'Text přímo na vstupence');
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pump();
+    expect(c.document.elements.any((e) => e.id == id), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(inline, findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pumpAndSettle();
+    expect(c.document.elements.any((e) => e.id == id), isFalse);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(c.document.elements.any((e) => e.id == id), isTrue);
+    c.select('qr');
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    expect(c.document.elements.any((e) => e.binding == 'qr'), isTrue);
+    expect(tester.takeException(), isNull);
+    await _environment.pumpWidget(tester, const SizedBox());
+  });
+
+  test('free text repeats, inherits body style and survives roundtrip and undo', () {
+    final base = document().withPaper(true).resizeCanvasArea(const Size(200, 600));
+    final styled = base.withElements(base.elements.map((e) =>
+      ['qr', 'logo', 'ticketSymbol', 'occasionTitle', 'footer'].contains(e.binding)
+        ? e : e.copyWith(fontSize: 15, color: '123456',
+            bold: true, italic: true, underline: true, align: 'right')).toList());
+    final c = TicketLayoutController(styled);
+    expect(c.addTextField('První text'), isTrue);
+    final first = c.selection!;
+    expect([first.fontSize, first.color, first.bold,
+      first.italic, first.underline, first.align],
+      [15, '123456', true, true, true, 'right']);
+    expect(c.addTextField('Druhý text'), isTrue);
+    expect(c.selection!.id, isNot(first.id));
+    final restored = TicketTemplate.fromJson(c.document.toJson());
+    expect(restored.validate('wide'), isEmpty);
+    final r = resources();
+    expect(r.previewData(restored, 'normal')[first.id], 'První text');
+    c.undo();
+    expect(c.document.elements.where((e) => e.binding == 'text').length, 1);
+    c.undo();
+    expect(c.document, same(styled));
+    c.dispose();
+    r.dispose();
+  });
+
+  for (final width in [1400.0, 600.0])
+  testWidgetsWithEnvironment(() => _environment,
+      'free text typing and insertion share global undo while focused at $width', (tester) async {
+    tester.view.physicalSize = Size(width, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r = resources(template: document().withPaper(true)
+        .resizeCanvasArea(const Size(200, 600)));
+    await _environment.pumpWidget(tester, MaterialApp(home: TicketLayoutEditor(
+        occasionId: 1, type: 'wide', resources: r, service: FakeService())));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    if (width < 900) {
+      unawaited(state.showMobilePanel(0));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: find.byType(AppAlertDialog), matching: find.text('TicketLayout.occasionTitle'.tr())), findsNothing);
+    expect(find.widgetWithText(ListTile, 'TicketLayout.occasionPlace'.tr()), findsNothing);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.text'.tr()).last);
+    await tester.pumpAndSettle();
+    final input = find.byKey(const ValueKey('ticket-free-text'));
+    await tester.ensureVisible(input);
+    await tester.enterText(input, 'Vlastní poznámka');
+    await tester.pumpAndSettle();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(state.controller.selection.text, 'TicketLayout.textDefault'.tr());
+    expect(tester.widget<TextField>(input).controller!.text, 'TicketLayout.textDefault'.tr());
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(state.controller.document.elements.any((e) => e.binding == 'text'), isFalse);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyY);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(state.controller.document.elements.any((e) => e.binding == 'text'), isTrue);
+    await _environment.pumpWidget(tester, const SizedBox());
+  });
+
+  test(
       'product fields use IDs, safe placement, whole-element undo and custom labels',
       () {
     final original = document()
@@ -2808,8 +3042,13 @@ void main() {
     await tester.pumpAndSettle();
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     final original = state.controller.document;
-    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('TicketLayout.retryCatalog'.tr()), findsNothing);
     await tester.tap(find.text('Odvoz').last);
     await tester.pumpAndSettle();
     expect(state.controller.document, same(original));
@@ -2817,8 +3056,12 @@ void main() {
         .tap(find.widgetWithText(TextButton, 'TicketLayout.cancel'.tr()).last);
     await tester.pumpAndSettle();
     expect(state.controller.document, same(original));
-    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Odvoz').last);
     await tester.pumpAndSettle();
     await tester.tap(
@@ -2881,15 +3124,10 @@ void main() {
             service: service,
             productEditing: false)));
     await tester.pumpAndSettle();
-    expect(
-        tester
-            .widget<ButtonStyleButton>(find.ancestor(
-                of: find.text('TicketLayout.addProduct'.tr()).first,
-                matching:
-                    find.byWidgetPredicate((w) => w is ButtonStyleButton)))
-            .onPressed,
-        isNull);
-    expect(find.text('TicketLayout.draftProducts'.tr()), findsWidgets);
+    await tester.tap(find.text('TicketLayout.addElement'.tr()).first);
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()), findsNothing);
+    expect(find.descendant(of: find.byType(AppAlertDialog), matching: find.text('TicketLayout.text'.tr())), findsOneWidget);
     expect(service.pdfCalls, 0);
     await _environment.pumpWidget(tester, const SizedBox());
     c.dispose();
@@ -2926,9 +3164,12 @@ void main() {
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     unawaited(state.showMobilePanel(0));
     await tester.pumpAndSettle();
-    final add = find.text('TicketLayout.addProduct'.tr()).first;
+    final add = find.text('TicketLayout.addElement'.tr()).first;
     await tester.ensureVisible(add);
     await tester.tap(add);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
+    await tester.tap(find.widgetWithText(ListTile, 'TicketLayout.productGroup'.tr()).last);
     await tester.pumpAndSettle();
     final filter = find.byWidgetPredicate((w) =>
         w is TextField &&
@@ -2998,8 +3239,9 @@ void main() {
     await tester.pumpAndSettle();
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
     final original = state.controller.document;
-    await tester.tap(find.text('TicketLayout.addProduct'.tr()).first);
+    unawaited(state.pickProduct());
     await tester.pumpAndSettle();
+
     expect(find.text('TicketLayout.catalogError'.tr()), findsOneWidget);
     expect(find.text('TicketLayout.emptyProducts'.tr()), findsNothing);
     await tester.tap(find.text('TicketLayout.retryCatalog'.tr()));

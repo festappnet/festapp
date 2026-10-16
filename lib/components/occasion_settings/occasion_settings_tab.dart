@@ -54,6 +54,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   final _draftRevision = ValueNotifier<int>(0);
   Object get _draft => [
         _title,
+        _placeName,
         _linkController.text,
         _replyToEmailController.text,
         _from?.toIso8601String(),
@@ -87,6 +88,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
   // Form fields state
   late String? _title;
+  String? _placeName;
   late String? _linkValue;
   String? _savedLink;
   DateTime? _from;
@@ -157,6 +159,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
     if (occasion == null) return;
 
     _title = occasion!.title;
+    _placeName = occasion!.data?[Tb.occasions.data_place_name] as String?;
     _linkValue = occasion!.link;
     _savedLink = occasion!.link;
     _linkController.text = _linkValue ?? "";
@@ -243,6 +246,13 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
           }
 
           occasion!.data ??= {};
+
+          final placeName = _placeName?.trim() ?? '';
+          if (placeName.isEmpty) {
+            occasion!.data!.remove(Tb.occasions.data_place_name);
+          } else {
+            occasion!.data![Tb.occasions.data_place_name] = placeName;
+          }
 
           // Save Reply-To Email
           final trimmedEmail = _replyToEmailController.text.trim();
@@ -461,6 +471,17 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                         _to = dateTime;
                       });
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    initialValue: _placeName,
+                    enabled: isEditingEnabled,
+                    decoration: InputDecoration(
+                      labelText: OccasionSettingsStrings.placeName,
+                      helperText: OccasionSettingsStrings.placeNameHelp,
+                      helperMaxLines: 3,
+                    ),
+                    onSaved: (value) => _placeName = value,
                   ),
                   const SizedBox(height: 16),
                   Text(OccasionSettingsStrings.introImage),

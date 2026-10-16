@@ -90,3 +90,39 @@ Deno.test('catalog examples prefer visible positive prices with stable order and
   assertEquals(catalog.types.get(3)?.example?.price,null);
  }
 });
+
+Deno.test('optional event fields use event timezone in preview and PDF data',()=>{
+ const occasion={id:7,title:'Koncert',start_time:'2026-10-16T18:30:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}};
+ const t=preset('named');
+ for(const binding of ['occasionStartTime','occasionPlace'] as const)t.elements.push({...structuredClone(t.elements.find(e=>e.binding==='occasionDatePlace')!),id:binding,binding});
+ validateLayout({schemaVersion:3,templates:{named:t}});
+ const actual=normalizeTicketData({ticket_symbol:'test'},occasion,{},undefined,t);
+ const preview=sampleData('normal',occasion,undefined,t);
+ assertEquals(actual.occasionStartTime,'20:30');
+ assertEquals(actual.occasionPlace,'Kulturní dům');
+ assertEquals(preview.occasionStartTime,actual.occasionStartTime);
+ assertEquals(preview.occasionPlace,actual.occasionPlace);
+ assertEquals(normalizeTicketData({},{}).occasionStartTime,null);
+ assertEquals(normalizeTicketData({},{start_time:'invalid'}).occasionStartTime,null);
+ assertEquals(normalizeTicketData({},{}).occasionPlace,null);
+ assertEquals(normalizeTicketData({},{...occasion,data:{timezone:'America/New_York'}}).occasionStartTime,'14:30');
+ assertEquals(normalizeTicketData({},{...occasion,data:{timezone:'invalid'}}).occasionStartTime,'20:30');
+});
+Deno.test('repeatable free text validates and projects unchanged into preview and real tickets',()=>{
+ const t=preset('wide');
+ const body=t.elements.find(e=>e.binding==='note')!;
+ t.elements.push({...body,id:'custom-a',binding:'text',text:'Vlastní text 🎟️'},
+   {...body,id:'custom-b',binding:'text',text:'Další řádek\nText'});
+ const layout={schemaVersion:3,templates:{wide:t}};
+ validateLayout(layout);
+ for(const data of [sampleData('normal',{id:7},undefined,t),normalizeTicketData({ticket_symbol:'X',order_product_ticket:[]},{id:7},{},undefined,t)]) {
+  assertEquals(data['custom-a'],'Vlastní text 🎟️');
+  assertEquals(data['custom-b'],'Další řádek\nText');
+ }
+ for(const mutate of [(v:any)=>delete v.templates.wide.elements.at(-1).text,
+   (v:any)=>v.templates.wide.elements.at(-1).text=123,
+   (v:any)=>v.templates.wide.elements.at(-1).text='a'.repeat(2001),
+   (v:any)=>v.templates.wide.elements[0].text='unexpected']) {
+  const invalid=structuredClone(layout);mutate(invalid);assertThrows(()=>validateLayout(invalid));
+ }
+});

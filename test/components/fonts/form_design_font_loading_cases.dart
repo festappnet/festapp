@@ -18,6 +18,8 @@ class _Fonts implements FormFontCatalog {
   @override
   List<String> get families => ['Inter', 'Roboto'];
   @override
+  Future<TextStyle> previewStyle(String family) async => getFont(family);
+  @override
   TextStyle getFont(String family) => TextStyle(fontFamily: family);
   @override
   TextTheme getTextTheme(String family, TextTheme base) =>

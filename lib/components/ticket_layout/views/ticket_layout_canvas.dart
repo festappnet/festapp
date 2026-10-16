@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import '../ticket_layout_controller.dart';
+import '../models/ticket_layout.dart';
 import '../ticket_layout_service.dart';
 import '../ticket_text.dart';
 import '../ticket_layout_strings.dart';
@@ -47,6 +48,76 @@ class TicketLayoutCanvas extends StatefulWidget {
 class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   final _viewport = GlobalKey();
   final _focus = FocusNode();
+  final _inlineFocus = FocusNode();
+  final _inlineText = TextEditingController();
+  String? _inlineId;
+  Offset? _doubleTapPosition;
+  Duration? _lastTextTapTime;
+  String? _lastTextTapId;
+
+  void _syncInline() {
+    if (_inlineId == null) return;
+    final e = widget.controller.selection;
+    if (e == null || e.id != _inlineId || e.locked || !e.visible) {
+      _finishInline();
+      return;
+    }
+    final value = e.text ?? widget.data[e.id] ?? '';
+    if (_inlineText.text != value) {
+      _inlineText.value = TextEditingValue(text: value,
+          selection: TextSelection.collapsed(offset: value.length));
+    }
+    setState(() {});
+  }
+
+  void _finishInline() {
+    if (_inlineId == null) return;
+    _inlineId = null;
+    widget.controller.endGesture();
+    _inlineFocus.unfocus();
+    if (mounted) setState(() {});
+  }
+
+  void _inlineFocusChanged() {
+    if (!_inlineFocus.hasFocus) _finishInline();
+  }
+
+  void _startInline() {
+    if (_doubleTapPosition == null || panning || widget.editCanvas || widget.editBackground) return;
+    final point = widget.transform.toScene(_doubleTapPosition!) - widget.controller.document.area.topLeft;
+    final e = widget.controller.document.positionedElements(widget.data).reversed
+        .where((e) => e.visible && e.box.contains(point)).firstOrNull;
+    if (e == null || e.locked || !['text', 'footer'].contains(e.binding)) return;
+    widget.controller.endGesture();
+    widget.controller.select(e.id);
+    _inlineText.text = e.text ?? widget.data[e.id] ?? '';
+    _inlineText.selection = TextSelection(baseOffset: 0, extentOffset: _inlineText.text.length);
+    setState(() { _inlineId = e.id; _editing = null; });
+    _inlineFocus.requestFocus();
+  }
+
+  Widget _inlineEditor(TicketElement e) => Positioned.fromRect(
+      rect: e.box.shift(widget.controller.document.area.topLeft),
+      child: TextField(
+        key: const ValueKey('ticket-inline-text'),
+        controller: _inlineText, focusNode: _inlineFocus,
+        maxLines: null, expands: true, maxLength: 2000,
+        textAlignVertical: TextAlignVertical.top,
+        textAlign: e.align == 'center' ? TextAlign.center : e.align == 'right' ? TextAlign.right : TextAlign.left,
+        style: TextStyle(fontFamily: widget.resources.fontFor(widget.controller.document, e).loaderName,
+            fontSize: e.fontSize, height: 1.2,
+            color: Color(int.parse('ff${e.color}', radix: 16)),
+            fontWeight: e.bold ? FontWeight.bold : FontWeight.normal,
+            fontStyle: e.italic ? FontStyle.italic : FontStyle.normal,
+            decoration: e.underline ? TextDecoration.underline : TextDecoration.none),
+        decoration: const InputDecoration(isCollapsed: true, contentPadding: EdgeInsets.zero,
+            border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+            filled: false, counterText: ''),
+        onTapOutside: (_) => _finishInline(),
+        onChanged: (value) {
+          widget.controller.beginGesture();
+          widget.controller.change(e.copyWith(binding: 'text', text: value));
+        }));
   final Set<int> _pointers = {};
   int? _editing, _imageCorner, _canvasHandle;
   int? _middlePan;
@@ -89,6 +160,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   void initState() {
     super.initState();
     widget.transform.addListener(constrainView);
+    widget.controller.addListener(_syncInline);
+    _inlineFocus.addListener(_inlineFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => fit());
   }
 
@@ -106,6 +179,10 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   @override
   void dispose() {
     widget.transform.removeListener(constrainView);
+    widget.controller.removeListener(_syncInline);
+    _inlineFocus.removeListener(_inlineFocusChanged);
+    _inlineFocus.dispose();
+    _inlineText.dispose();
     _focus.dispose();
     super.dispose();
   }
@@ -218,6 +295,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   }
 
   void _down(PointerDownEvent event) {
+    if (_inlineId != null) return;
     _pendingToggle = null;
     _focus.requestFocus();
     _pointers.add(event.pointer);
@@ -419,9 +497,39 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       widget.controller.endGesture();
       setState(() => _editing = null);
     }
+    if (e is PointerUpEvent && !_dragStarted && _inlineId == null &&
+        !panning && !widget.editBackground && !widget.editCanvas) {
+      final point = widget.transform.toScene(e.localPosition) - widget.controller.document.area.topLeft;
+      final hit = widget.controller.document.positionedElements(widget.data).reversed
+          .where((element) => element.visible && element.box.contains(point)).firstOrNull;
+      if (hit != null && !hit.locked && ['text', 'footer'].contains(hit.binding)) {
+        final elapsed = _lastTextTapTime == null ? null : e.timeStamp - _lastTextTapTime!;
+        if (_lastTextTapId == hit.id && elapsed != null &&
+            elapsed >= kDoubleTapMinTime && elapsed <= kDoubleTapTimeout &&
+            (e.localPosition - _doubleTapPosition!).distance <= kDoubleTapSlop) {
+          _doubleTapPosition = e.localPosition;
+          _lastTextTapTime = null;
+          _startInline();
+        } else {
+          _lastTextTapId = hit.id;
+          _lastTextTapTime = e.timeStamp;
+          _doubleTapPosition = e.localPosition;
+        }
+      } else {
+        _lastTextTapTime = null;
+      }
+    }
   }
 
   KeyEventResult _key(FocusNode node, KeyEvent e) {
+    if (_inlineId != null) {
+      if (e is KeyDownEvent && e.logicalKey == LogicalKeyboardKey.escape) {
+        _finishInline();
+        _focus.requestFocus();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
     if (e.logicalKey == LogicalKeyboardKey.space) {
       setState(() => _space = e is! KeyUpEvent);
       return KeyEventResult.handled;
@@ -446,11 +554,9 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       widget.onDismiss?.call();
       return KeyEventResult.handled;
     }
-    if (!widget.editBackground && e.logicalKey == LogicalKeyboardKey.delete) {
-      final s = widget.controller.selection;
-      if (s != null && !['qr', 'ticketSymbol'].contains(s.binding)) {
-        widget.controller.change(s.copyWith(visible: false));
-      }
+    if (!widget.editBackground && !widget.editCanvas &&
+        [LogicalKeyboardKey.delete, LogicalKeyboardKey.backspace].contains(e.logicalKey)) {
+      widget.controller.removeSelectedOptionalFields();
       return KeyEventResult.handled;
     }
     final step = HardwareKeyboard.instance.isShiftPressed ? 10.0 : 1.0;
@@ -505,35 +611,42 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
                           boundaryMargin: const EdgeInsets.all(double.infinity),
                           minScale: widget.editBackground ? .02 : .2,
                           maxScale: 6,
-                          panEnabled: panning || _editing == null,
+                          panEnabled: _inlineId == null && (panning || _editing == null),
                           scaleEnabled: true,
                           child: ListenableBuilder(
                               listenable: widget.transform,
                               builder: (context, _) => RepaintBoundary(
-                                  child: CustomPaint(
+                                  child: Stack(children: [CustomPaint(
                                       size: widget.controller.document.page,
                                       painter: TicketLayoutPainter(
                                           widget.controller,
                                           widget.resources,
                                           widget.data,
+                                          editingTextId: _inlineId,
                                           zoom: zoom,
                                           editBackground: widget.editBackground,
                                           editCanvas: widget.editCanvas,
                                           cropBackground: widget.cropBackground,
                                           gridStep: widget.grid
                                               ? widget.gridStep
-                                              : null))))))))));
+                                              : null)),
+                                    if (_inlineId != null && widget.controller.selection != null)
+                                      _inlineEditor(widget.controller.document.positionedElements(widget.data)
+                                          .firstWhere((e) => e.id == _inlineId)),
+                                  ])))))))));
 }
 
 class TicketLayoutPainter extends CustomPainter {
   final TicketLayoutController controller;
   final TicketLayoutResources resources;
   final Map<String, String?> data;
+  final String? editingTextId;
   final double zoom;
   final double? gridStep;
   final bool cropToTicket, editBackground, cropBackground, editCanvas;
   TicketLayoutPainter(this.controller, this.resources, this.data,
-      {this.zoom = 1,
+      {this.editingTextId,
+      this.zoom = 1,
       this.gridStep,
       this.cropToTicket = false,
       this.editBackground = false,
@@ -648,7 +761,8 @@ class TicketLayoutPainter extends CustomPainter {
         if (resources.logo != null) _image(canvas, resources.logo!, e.box);
         continue;
       }
-      final text = data[e.id];
+      if (e.id == editingTextId) continue;
+      final text = e.binding == 'text' ? e.text : data[e.id];
       if (text == null) continue;
       TicketTextFit fit;
       try {
@@ -910,6 +1024,7 @@ class TicketLayoutPainter extends CustomPainter {
       old.editBackground != editBackground ||
       old.cropBackground != cropBackground ||
       old.data != data ||
+      old.editingTextId != editingTextId ||
       old.resources != resources ||
       old.zoom != zoom ||
       old.gridStep != gridStep ||

@@ -107,10 +107,7 @@ class TicketLayoutResources {
       : fonts = Map.of(fonts) {
     this.catalog = catalog;
   }
-  Map<String, String?> previewData(TicketTemplate template, String scenario) {
-    final cache = _previewCache[template] ??= {};
-    final cached = cache[scenario];
-    if (cached?.revision == _catalogRevision) return cached!.data;
+  Map<String, String?> previewBindings(TicketTemplate template, String scenario) {
     final base = Map<String, String?>.of(scenarios[scenario]!);
     final selected = <int, Map<String, dynamic>>{};
     final admissions = catalog
@@ -148,9 +145,17 @@ class TicketLayoutResources {
                   decimalDigits: 0)
               .format(total);
     }
+    return base;
+  }
+
+  Map<String, String?> previewData(TicketTemplate template, String scenario) {
+    final cache = _previewCache[template] ??= {};
+    final cached = cache[scenario];
+    if (cached?.revision == _catalogRevision) return cached!.data;
+    final base = previewBindings(template, scenario);
     final data = {
       for (final e in template.elements)
-        e.id: e.binding == 'productType'
+        e.id: e.binding == 'text' ? e.text : e.binding == 'productType'
             ? scenario == 'missing'
                 ? null
                 : _productText(
