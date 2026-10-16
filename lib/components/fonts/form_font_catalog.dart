@@ -29,6 +29,12 @@ class FormFontCatalog {
 
   TextStyle getFont(String family) => font_runtime.GoogleFonts.getFont(family);
 
+  Future<TextStyle> previewStyle(String family) async {
+    final style = getFont(family);
+    await font_runtime.GoogleFonts.pendingFonts([style]);
+    return style;
+  }
+
   TextTheme getTextTheme(String family, TextTheme base) =>
       font_runtime.GoogleFonts.getTextTheme(family, base);
 }

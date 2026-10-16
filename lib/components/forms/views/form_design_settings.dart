@@ -383,6 +383,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
               return FontFamilyPicker(
                 value: widget.form.definition.fontFamily,
                 families: fonts.families,
+                previewStyle: fonts.previewStyle,
                 selectedStyle:
                     _getSafeFont(fonts, widget.form.definition.fontFamily),
                 onSelected: (value) async {
