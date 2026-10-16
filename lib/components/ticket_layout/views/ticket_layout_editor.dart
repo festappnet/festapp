@@ -119,7 +119,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   @override
   void initState() {
     super.initState();
-    FocusManager.instance.addEarlyKeyEventHandler(_globalHistoryKey);
     controller.document = controller.prepareDocument!(controller.document);
     _lastArtworkKey = controller.artworkKey;
     controller.addListener(_refreshArtwork);
@@ -137,7 +136,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   @override
   void dispose() {
-    FocusManager.instance.removeEarlyKeyEventHandler(_globalHistoryKey);
     fontGeneration++;
     controller.dispose();
     transform.dispose();
@@ -145,39 +143,34 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     super.dispose();
   }
 
-  ModalRoute<dynamic>? _historyPanelRoute;
-
-  KeyEventResult _globalHistoryKey(KeyEvent event) {
-    if (!mounted || !(ModalRoute.of(context)?.isCurrent == true ||
-        _historyPanelRoute?.isCurrent == true)) return KeyEventResult.ignored;
-    final focusContext = FocusManager.instance.primaryFocus?.context;
-    final typing = focusContext?.findAncestorStateOfType<EditableTextState>() != null;
-    if (!typing && !editBackground && !editCanvas &&
-        [LogicalKeyboardKey.delete, LogicalKeyboardKey.backspace].contains(event.logicalKey)) {
-      if (!saving && !imageBusy && event is KeyDownEvent) controller.removeSelectedOptionalFields();
-      return event is KeyUpEvent ? KeyEventResult.ignored : KeyEventResult.handled;
-    }
-    final keyboard = HardwareKeyboard.instance;
-    if (event is KeyUpEvent || keyboard.isAltPressed ||
-        !(keyboard.isControlPressed || keyboard.isMetaPressed) ||
-        ![LogicalKeyboardKey.keyZ, LogicalKeyboardKey.keyY].contains(event.logicalKey)) {
-      return KeyEventResult.ignored;
-    }
-    if (!saving && !imageBusy && event is KeyDownEvent) {
-      controller.endGesture();
-      event.logicalKey == LogicalKeyboardKey.keyY || keyboard.isShiftPressed
-          ? controller.redo() : controller.undo();
-    }
-    return KeyEventResult.handled;
-  }
-
   KeyEventResult _historyKey(FocusNode node, KeyEvent event) {
     if (saving) return KeyEventResult.handled;
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
       cancel();
       return KeyEventResult.handled;
     }
-    return KeyEventResult.ignored;
+    final keyboard = HardwareKeyboard.instance;
+    if (event is KeyUpEvent ||
+        keyboard.isAltPressed ||
+        !(keyboard.isControlPressed || keyboard.isMetaPressed)) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.keyZ && key != LogicalKeyboardKey.keyY) {
+      return KeyEventResult.ignored;
+    }
+    // Let text fields keep their own editing history, including when empty.
+    final focusContext = FocusManager.instance.primaryFocus?.context;
+    if (focusContext?.findAncestorWidgetOfExactType<EditableText>() != null) {
+      return KeyEventResult.ignored;
+    }
+    if (!imageBusy && event is KeyDownEvent) {
+      key == LogicalKeyboardKey.keyY || keyboard.isShiftPressed
+          ? controller.redo()
+          : controller.undo();
+    }
+    return KeyEventResult.handled;
   }
 
   Map<String, dynamic> get draftLayout => ticketLayoutDocument({
@@ -586,53 +579,74 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     }))
                 .toList()
           ]));
-  bool _canAddProduct(TicketProductType type) => type.eligible &&
-      type.example != null && !controller.document.elements.any((e) => e.productTypeId == type.id);
-
   Future<void> pickElement({VoidCallback? onSelected}) async {
     controller.endGesture();
-    final available = resources.previewBindings(controller.document, 'normal');
     final binding = await showDialog<String>(
         context: editorContext,
         builder: (context) => AppAlertDialog(
-            title: Text(TicketLayoutStrings.addElement),
-            content: SizedBox(width: 420, child: SingleChildScrollView(child:
-                Column(mainAxisSize: MainAxisSize.min, children: [
-                  ListTile(title: Text(TicketLayoutStrings.binding('text')),
-                      onTap: () => Navigator.pop(context, 'text')),
-                  for (final binding in [
-                    'occasionTitle', 'occasionStartTime', 'occasionPlace',
-                    'spotGroup', 'orderName', 'note', 'price', 'logo',
-                  ])
-                    if (!controller.document.elements.any((e) => e.binding == binding) &&
-                        (binding == 'logo' ? resources.logo != null :
-                          (available[binding]?.trim().isNotEmpty ?? false)))
-                      ListTile(title: Text(TicketLayoutStrings.binding(binding)),
-                          onTap: () => Navigator.pop(context, binding)),
-                  if (widget.productEditing && resources.catalog.any(_canAddProduct)) ...[
-                    const Divider(),
-                    ListTile(title: Text(TicketLayoutStrings.productGroup),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.pop(context, 'productType')),
-                  ],
-                ])))));
+                title: Text(TicketLayoutStrings.addElement),
+                content: SizedBox(
+                    width: 420,
+                    child: SingleChildScrollView(
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                      for (final binding in [
+                        'occasionTitle',
+                        'occasionStartTime',
+                        'occasionPlace',
+                        'occasionDatePlace',
+                        'spotGroup',
+                        'orderName',
+                        'note',
+                        'price',
+                        if (resources.logo != null) 'logo',
+                        'footer',
+                      ])
+                        ListTile(
+                            title: Text(TicketLayoutStrings.binding(binding)),
+                            subtitle: controller.document.elements.any(
+                                    (e) => e.binding == binding && e.visible)
+                                ? Text(TicketLayoutStrings.alreadyAdded)
+                                : null,
+                            onTap: () => Navigator.pop(context, binding)),
+                      const Divider(),
+                      ListTile(
+                          title: Text(TicketLayoutStrings.productGroup),
+                          subtitle: widget.productEditing
+                              ? null
+                              : Text(TicketLayoutStrings.draftProducts),
+                          trailing: const Icon(Icons.chevron_right),
+                          enabled: widget.productEditing,
+                          onTap: () => Navigator.pop(context, 'productType')),
+                    ]))),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(TicketLayoutStrings.cancel))
+                ]));
     if (!mounted || binding == null) return;
     if (binding == 'productType') {
       await pickProduct(onSelected: onSelected);
       return;
     }
-    final added = binding == 'text'
-        ? controller.addTextField(TicketLayoutStrings.textDefault)
-        : controller.addOptionalField(binding);
-    if (!added) {
-      ScaffoldMessenger.of(editorContext).showSnackBar(SnackBar(content: Text(
-          controller.productAddError == 'elements' ? TicketLayoutStrings.elementLimit :
-          controller.productAddError == 'size' ? TicketLayoutStrings.layoutLimit : TicketLayoutStrings.noSpace)));
+    if (!controller.addOptionalField(binding)) {
+      ScaffoldMessenger.of(editorContext).showSnackBar(SnackBar(
+          content: Text(controller.productAddError == 'elements'
+              ? TicketLayoutStrings.elementLimit
+              : controller.productAddError == 'size'
+                  ? TicketLayoutStrings.layoutLimit
+                  : TicketLayoutStrings.noSpace)));
       return;
     }
-    setState(() { editCanvas = false; editBackground = false; });
-    if (onSelected != null) onSelected();
-    else if (MediaQuery.sizeOf(context).width < 900) showMobilePanel(1);
+    setState(() {
+      editCanvas = false;
+      editBackground = false;
+    });
+    if (onSelected != null) {
+      onSelected();
+    } else if (MediaQuery.sizeOf(context).width < 900) {
+      showMobilePanel(1);
+    }
   }
 
   String elementName(TicketElement e) => e.binding == 'productType'
@@ -735,9 +749,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         builder: (dialogContext) => StatefulBuilder(builder: (context, update) {
               final types = resources.catalog
                   .where((t) =>
-                      (element == null ? _canAddProduct(t) :
-                          t.eligible && !controller.document.elements.any((e) =>
-                              e.id != element.id && e.productTypeId == t.id)) &&
+                      t.eligible &&
                       t.title.toLowerCase().contains(filter.toLowerCase()))
                   .toList();
               Widget dismissible(Widget child) => Focus(
@@ -910,14 +922,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     }
   }
 
-  Future<TextStyle> fontPreviewStyle(String family) async {
-    final entries = await fontCatalog;
-    final asset = entries.firstWhere((e) => e['family'] == family);
-    final id = asset['id'] as String;
-    final font = resources.fonts[id] ?? await widget.service.font(widget.occasionId, id);
-    return TextStyle(fontFamily: font.loaderName, fontWeight: FontWeight.w400);
-  }
-
   Widget fontPicker() => FutureBuilder<List<Map<String, dynamic>>>(
         future: fontCatalog,
         builder: (context, snapshot) {
@@ -928,8 +932,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: FontFamilyPicker(
               label: TicketLayoutStrings.templateFont,
-              previewStyle: fontPreviewStyle,
-              selectedStyle: TextStyle(fontFamily: font.loaderName),
               value: font.family,
               families: entries.map((f) => f['family'] as String).toList(),
               extraFamilies: entries
@@ -979,7 +981,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     await FontFamilyPicker.showChoices(
                       context,
                       title: TicketLayoutStrings.fontForText,
-                      previewStyle: fontPreviewStyle,
                       value: element.fontId == null
                           ? null
                           : resources
@@ -1361,9 +1362,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         useSafeArea: true,
         showDragHandle: true,
         shape: appDialogShape,
-        builder: (context) {
-          _historyPanelRoute = ModalRoute.of(context);
-          return Focus(
+        builder: (context) => Focus(
             autofocus: true,
             onKeyEvent: _historyKey,
             child: AppDialogDismissal(
@@ -1404,8 +1403,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                         }))),
                                 panel(includeElements: false),
                               ])),
-                        ]))))); });
-    _historyPanelRoute = null;
+                        ]))))));
     _panelOpen = false;
     if (root != null && mounted)
       await DayRouteSelection.write(root, 'panel', null, replace: true);
@@ -1886,9 +1884,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   if (editBackground) backgroundTools(),
                   Expanded(child: LayoutBuilder(builder: (c, constraints) {
                     final narrow = constraints.maxWidth < 900;
-                    final view = ListenableBuilder(
-                        listenable: controller,
-                        builder: (context, _) => TicketLayoutCanvas(
+                    final view = TicketLayoutCanvas(
                         key: canvas,
                         onDismiss: cancel,
                         onCanvasElementAttempt: () =>
@@ -1905,7 +1901,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         additiveSelection: additiveSelection,
                         wholePage: wholePage,
                         snap: snap,
-                        grid: grid));
+                        grid: grid);
                     return narrow
                         ? Column(children: [
                             Expanded(child: view),

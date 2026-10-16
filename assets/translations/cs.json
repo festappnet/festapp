@@ -2351,13 +2351,9 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
-    "text": "Volný text",
-    "textDefault": "Váš text",
-    "textContent": "Text na vstupence",
-    "removeText": "Odstranit text",
     "addElement": "Přidat prvek",
-    "occasionStartTime": "Čas",
-    "occasionPlace": "Místo",
+    "occasionStartTime": "Čas začátku události",
+    "occasionPlace": "Místo konání",
     "resetCrop": "Zobrazit celý obrázek",
     "cropImageHint": "Tažením rohů vyberte výřez. Uvnitř jej můžete posunout.",
     "cropImage": "Oříznout obrázek",

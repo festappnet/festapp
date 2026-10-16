@@ -34,7 +34,6 @@ class TicketLayoutController extends ChangeNotifier {
   final TicketTemplate Function(TicketTemplate)? prepareDocument;
   final bool Function(TicketTemplate)? canStoreDocument;
   String? productAddError;
-  int historyRevision = 0;
   final Map<String, String?> Function()? geometryData;
   TicketTemplate positionedDocument(TicketTemplate value) =>
       geometryData == null ? value : value.fixedPositions(geometryData!());
@@ -325,18 +324,16 @@ class TicketLayoutController extends ChangeNotifier {
   bool addProductField(int typeId, String title) =>
       _addField('productType', typeId: typeId, title: title);
 
-  bool addTextField(String text) => _addField('text', text: text);
-
   bool addOptionalField(String binding) {
     if (!ticketBindings.contains(binding) ||
-        ['qr', 'ticketSymbol', 'productType', 'text'].contains(binding)) return false;
+        ['qr', 'ticketSymbol', 'productType'].contains(binding)) return false;
     return _addField(binding);
   }
 
-  bool _addField(String binding, {int? typeId, String? title, String? text}) {
+  bool _addField(String binding, {int? typeId, String? title}) {
     productAddError = 'space';
     endGesture();
-    final existing = binding == 'text' ? null : document.elements
+    final existing = document.elements
         .where((e) => binding == 'productType'
             ? e.binding == binding && e.productTypeId == typeId
             : e.binding == binding)
@@ -350,16 +347,16 @@ class TicketLayoutController extends ChangeNotifier {
       return false;
     }
     final base = positionedDocument(document);
-    final style = _insertionStyle(base);
-    final preferredWidth = math.min(
-        binding == 'logo' ? 40.0 : style?.box.width ?? 180.0,
-        base.area.width - 20);
-    final height = existing?.box.height ?? (binding == 'logo' ? 40.0 :
-        math.max(style?.box.height ?? 24.0, (style?.fontSize ?? 12) * 1.3));
+    final style = base.elements
+        .where((e) => !['qr', 'logo'].contains(e.binding))
+        .firstOrNull;
+    final preferredWidth =
+        binding == 'logo' ? 40.0 : math.min(180.0, base.area.width - 20);
+    final height = existing?.box.height ?? (binding == 'logo' ? 40.0 : 24.0);
     final candidates = <Rect>[
       if (existing != null) existing.box,
       for (double width = preferredWidth;
-          width >= math.min(preferredWidth, binding == 'logo' ? 40 : 60);
+          width >= (binding == 'logo' ? 40 : 60);
           width -= 30)
         for (double y = 10; y + height <= base.area.height; y += 10)
           for (double x = 10; x + width <= base.area.width; x += 10)
@@ -382,17 +379,10 @@ class TicketLayoutController extends ChangeNotifier {
           TicketElement(
               id: id,
               binding: binding,
-              text: text,
               productTypeId: typeId,
               label: title == null ? null : automaticProductLabel(title),
               box: box,
-              fontSize: style?.fontSize ?? 12,
-              minFontSize: style?.minFontSize ?? 6,
-              maxLines: style?.maxLines ?? 3,
-              align: style?.align ?? 'left',
-              bold: style?.bold ?? false,
-              italic: style?.italic ?? false,
-              underline: style?.underline ?? false,
+              fontSize: style?.fontSize.clamp(6, 18) ?? 12,
               fontId: binding == 'logo' ? null : style?.fontId,
               color: style?.color ?? '2A2A2A');
       final next = base.withElements([
@@ -413,47 +403,6 @@ class TicketLayoutController extends ChangeNotifier {
       return true;
     }
     return false;
-  }
-
-  TicketElement? _insertionStyle(TicketTemplate template) {
-    final visible = template.elements.where((e) => e.visible &&
-        !['qr', 'logo', 'ticketSymbol'].contains(e.binding)).toList();
-    final body = visible.where((e) =>
-        !['occasionTitle', 'footer'].contains(e.binding)).toList();
-    final candidates = body.isNotEmpty ? body : visible;
-    if (candidates.isEmpty) return null;
-    String signature(TicketElement e) => jsonEncode([
-      e.fontId ?? template.fontId ?? template.font, e.fontSize, e.minFontSize,
-      e.color, e.bold, e.italic, e.underline, e.align, e.maxLines,
-    ]);
-    final counts = <String, int>{};
-    for (final e in candidates) {
-      final key = signature(e);
-      counts[key] = (counts[key] ?? 0) + 1;
-    }
-    final sizes = candidates.map((e) => e.fontSize).toList()..sort();
-    final median = sizes[sizes.length ~/ 2];
-    final sorted = [...candidates]..sort((a, b) {
-      final frequency = counts[signature(b)]!.compareTo(counts[signature(a)]!);
-      if (frequency != 0) return frequency;
-      return (a.fontSize - median).abs().compareTo((b.fontSize - median).abs());
-    });
-    return sorted.first;
-  }
-
-  void removeSelectedOptionalFields() {
-    final removable = selections.where((e) => !e.locked &&
-        !['qr', 'ticketSymbol'].contains(e.binding)).map((e) => e.id).toSet();
-    if (removable.isEmpty) return;
-    endGesture();
-    replace(document.withElements(document.elements
-        .where((e) => !removable.contains(e.id)).toList()));
-  }
-
-  void removeTextField(TicketElement e) {
-    if (e.locked || !['text', 'footer'].contains(e.binding)) return;
-    endGesture();
-    replace(document.withElements(document.elements.where((v) => v.id != e.id).toList()));
   }
 
   void changeProductType(
@@ -845,7 +794,6 @@ class TicketLayoutController extends ChangeNotifier {
     canvasBlockers.clear();
     canvasHidden.clear();
     if (!canUndo) return;
-    historyRevision++;
     _redo.add(_snapshot);
     final previous = _undo.removeLast();
     document = previous.document;
@@ -858,7 +806,6 @@ class TicketLayoutController extends ChangeNotifier {
     canvasBlockers.clear();
     canvasHidden.clear();
     if (!canRedo) return;
-    historyRevision++;
     _undo.add(_snapshot);
     final next = _redo.removeLast();
     document = next.document;
