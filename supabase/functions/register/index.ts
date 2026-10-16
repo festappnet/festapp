@@ -99,9 +99,7 @@ Deno.serve(async (req) => {
     const queued = await emailRpc("enqueue_account_email", {
       p_operation: "register",
       p_domain: {
-        ...(reqData.signInCodeVersion === 2
-          ? { invitation_code: code }
-          : { password: code }),
+        password: code,
         data: reqData,
         unit_title: unitTitle,
       },

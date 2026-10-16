@@ -1,5 +1,6 @@
 export interface Env {
   PUBLIC_SYNC: R2Bucket;
+  SYNC_MISS_BUDGET: { limit(input: { key: string }): Promise<{ success: boolean }> };
 }
 
 export interface ResponseCache {
@@ -67,11 +68,19 @@ export async function handleRequest(
 
   const url = new URL(request.url);
   const match = PATH.exec(url.pathname);
-  if (!match) return new Response('Not found', { status: 404 });
+  if (!match || !Number.isSafeInteger(Number(match[1])) || !Number.isSafeInteger(Number(match[2])) || Number(match[1]) <= 0 || Number(match[2]) <= 0) return new Response('Not found', { status: 404 });
 
   const cacheKey = canonicalCacheKey(request);
   const cached = await cache.match(cacheKey);
   if (cached) return forCaller(request, cached);
+
+  // Native per-location protection bounds random cache misses without SQL or a
+  // user-controlled key. It is best effort, not a globally exact billing cap.
+  try {
+    if (!(await env.SYNC_MISS_BUDGET.limit({ key: 'public-head-miss' })).success) {
+      return new Response('Try again later', { status: 429, headers: { 'Retry-After': '60', 'Cache-Control': 'no-store' } });
+    }
+  } catch { return new Response('Temporarily unavailable', { status: 503 }); }
 
   const [, organizationId, occasionId] = match;
   const object = await env.PUBLIC_SYNC.get(

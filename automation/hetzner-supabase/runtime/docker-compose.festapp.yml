@@ -76,6 +76,10 @@ services:
       - "127.0.0.1:8443:8443"
     logging: *logging
   auth:
+    environment:
+      GOTRUE_RATE_LIMIT_HEADER: X-Festapp-Client-IP
+      GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED: "true"
+      GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_URI: pg-functions://postgres/public/password_verification_attempt_v1
     image: supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7
     logging: *logging
   rest:
@@ -96,6 +100,8 @@ services:
   functions:
     image: supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7
     environment:
+      FESTAPP_TRUSTED_IP_HEADER: X-Festapp-Client-IP
+      GOOGLE_AUTH_TRUSTED_IP_HEADER: X-Festapp-Client-IP
       FESTAPP_ALLOWED_WEB_ORIGINS: ${FESTAPP_ALLOWED_WEB_ORIGINS:-https://festapp-rehearsal.invalid}
       GOOGLE_OIDC_CLIENT_ID: ${GOOGLE_OIDC_CLIENT_ID:-}
       GOOGLE_OIDC_CLIENT_SECRET: ${GOOGLE_OIDC_CLIENT_SECRET:-}

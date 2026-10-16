@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/news/news_model.dart';
 import 'package:fstapp/components/news/news_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -98,12 +97,11 @@ class DbNews {
       );
       return;
     }
-    await _supabase.from(Tb.log_notifications.table).insert({
-      Tb.log_notifications.occasion: RightsService.currentOccasionId()!,
-      Tb.log_notifications.to: to,
-      Tb.log_notifications.content: message,
-      Tb.log_notifications.heading: title,
-      Tb.log_notifications.organization: AppConfig.organization,
+    await _supabase.rpc('enqueue_notification_v1', params: {
+      'p_occasion': RightsService.currentOccasionId()!,
+      'p_to': to,
+      'p_content': message,
+      'p_heading': title,
     });
   }
 
@@ -170,12 +168,11 @@ class DbNews {
     }
 
     if (withNotification) {
-      await _supabase.from(Tb.log_notifications.table).insert({
-        Tb.log_notifications.occasion: RightsService.currentOccasionId()!,
-        Tb.log_notifications.to: to,
-        Tb.log_notifications.content: basicMessage,
-        Tb.log_notifications.heading: heading ?? headingDefault,
-        Tb.log_notifications.organization: AppConfig.organization,
+      await _supabase.rpc('enqueue_notification_v1', params: {
+        'p_occasion': RightsService.currentOccasionId()!,
+        'p_to': to,
+        'p_content': basicMessage,
+        'p_heading': heading ?? headingDefault,
       });
 
       if (!context.mounted) return;

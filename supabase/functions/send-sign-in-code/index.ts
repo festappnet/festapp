@@ -165,9 +165,7 @@ Deno.serve(async (req) => {
 
       const snapshot = await prepareAccountEmail(emailInput);
       const { data: queued, error: queueError } = await supabaseUser.rpc(
-        reqData.signInCodeVersion === 2
-          ? "enqueue_sign_in_code_v1"
-          : "reset_password_and_enqueue_email",
+        "reset_password_and_enqueue_email",
         {
           p_user: userId,
           p_password: code,

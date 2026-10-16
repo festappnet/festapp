@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
         );
       }
       ticketOrderResponse = error
-        ? { code: 500, message: error.message }
+        ? { code: error.code === "PT429" ? 429 : 500, errorCode: error.code === "PT429" ? "ABUSE_LIMIT_EXCEEDED" : undefined, message: error.message }
         : data?.data ?? data;
     }
 

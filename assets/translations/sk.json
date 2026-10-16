@@ -308,7 +308,8 @@
     "update": "Aktualizovať",
     "updateAppPrompt": "Aktualizujte aplikáciu na najnovšiu verziu pre prístup ku všetkým funkciám.",
     "updatedItem": "Aktualizované: {item}.",
-    "users": "Užívatelia"
+    "users": "Užívatelia",
+    "resourceLimited": "Dočasne bol dosiahnutý limit využitia. Skúste to neskôr. Pre zvýšenie kapacity kontaktujte podporu."
   },
   "Unit": {
     "copyTargetUnit": "Do organizácie",

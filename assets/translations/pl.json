@@ -308,7 +308,8 @@
     "update": "Aktualizuj",
     "updateAppPrompt": "Zaktualizuj aplikację do najnowszej wersji, aby uzyskać dostęp do wszystkich funkcji.",
     "updatedItem": "Zaktualizowano: {item}.",
-    "users": "Użytkownicy"
+    "users": "Użytkownicy",
+    "resourceLimited": "Osiągnięto limit wykorzystania. Spróbuj ponownie później. Aby zwiększyć limit, skontaktuj się z pomocą techniczną."
   },
   "Unit": {
     "copyTargetUnit": "Organizacja docelowa",

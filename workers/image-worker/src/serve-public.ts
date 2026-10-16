@@ -1,5 +1,101 @@
 import type { Env } from './types';
 import { resolveProjectByHostname } from './project-registry';
+import { IMAGE_TRANSFORM_CONTRACT } from './transform-contract';
+
+/** Public cache hits are independent of SQL and of the miss limiter. */
+export async function handlePublicServe(
+  request: Request,
+  env: Env,
+  ctx?: ExecutionContext,
+  cache: Pick<Cache, "match" | "put"> | undefined =
+    typeof caches === "undefined" ? undefined : caches.default,
+): Promise<Response> {
+  if (!["GET", "HEAD"].includes(request.method)) {
+    return new Response("Method not allowed", { status: 405 });
+  }
+  const project = resolveProjectByHostname(env, new URL(request.url).hostname);
+  if (project.authContract !== "festapp") {
+    return servePublicObject(request, env);
+  }
+  const url = new URL(request.url);
+  const transform = ["w", "f", "q"].some((k) => url.searchParams.has(k));
+  const widthText = url.searchParams.get("w");
+  const width = widthText === null
+    ? Math.max(...IMAGE_TRANSFORM_CONTRACT.widths)
+    : Number(widthText);
+  const format = url.searchParams.get("f") ?? "auto";
+  if (
+    transform &&
+    (!Number.isSafeInteger(width) || width <= 0 ||
+      !["auto", "png", "webp", "jpeg", "jpg"].includes(format))
+  ) {
+    return new Response("Invalid image variant", { status: 400 });
+  }
+  url.search = "";
+  url.hash = "";
+  if (transform) {
+    const preset = IMAGE_TRANSFORM_CONTRACT.widths.find((w) => w >= width) ??
+      Math.max(...IMAGE_TRANSFORM_CONTRACT.widths);
+    const quality = new URLSearchParams(
+      IMAGE_TRANSFORM_CONTRACT.options[0].replaceAll(",", "&"),
+    ).get("quality")!;
+    url.searchParams.set("w", String(preset));
+    url.searchParams.set("f", format === "jpg" ? "jpeg" : format);
+    url.searchParams.set("q", quality);
+  }
+  const cacheUrl = new URL(url);
+  if (transform && format === "auto") {
+    const accept = request.headers.get("Accept") ?? "";
+    cacheUrl.searchParams.set(
+      "_format",
+      accept.includes("image/avif")
+        ? "avif"
+        : accept.includes("image/webp")
+        ? "webp"
+        : "original",
+    );
+  }
+  const key = new Request(cacheUrl, { method: "GET" });
+  const cached = await cache?.match(key);
+  if (cached) {
+    if (
+      cached.headers.has("etag") &&
+      request.headers.get("If-None-Match") === cached.headers.get("etag")
+    ) return new Response(null, { status: 304, headers: cached.headers });
+    return new Response(request.method === "HEAD" ? null : cached.body, {
+      status: cached.status,
+      headers: cached.headers,
+    });
+  }
+  try {
+    if (
+      !(await env.IMAGE_READ_MISS_BUDGET!.limit({ key: "festapp-public-read" }))
+        .success
+    ) {
+      return new Response("Try again later", {
+        status: 429,
+        headers: { "Retry-After": "60", "Cache-Control": "no-store" },
+      });
+    }
+  } catch {
+    return new Response("Temporarily unavailable", {
+      status: 503,
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
+  const headers = new Headers(request.headers);
+  if (transform) headers.delete("If-None-Match");
+  const result = await servePublicObject(
+    new Request(url, { method: request.method, headers }),
+    env,
+  );
+  if (result.status === 200 && request.method === "GET" && cache) {
+    const write = cache.put(key, result.clone()).catch(() => {});
+    if (ctx) ctx.waitUntil(write);
+    else await write;
+  }
+  return result;
+}
 
 /**
  * Serve public files from R2 with cache headers, conditional requests,
@@ -15,7 +111,7 @@ import { resolveProjectByHostname } from './project-registry';
  * gets its own cache key (params are part of the URL).
  */
 
-export async function handlePublicServe(
+async function servePublicObject(
   request: Request,
   env: Env
 ): Promise<Response> {
@@ -115,7 +211,7 @@ export async function handlePublicServe(
       return new Response(resp.body, { headers });
     } catch (err) {
       // Transform failed — re-fetch original from R2 (stream was consumed)
-      console.error('On-the-fly transform failed, serving original:', err);
+      console.error('image_transform_failed');
       const fallback = await bucket.get(key);
       if (fallback) {
         const headers = new Headers();

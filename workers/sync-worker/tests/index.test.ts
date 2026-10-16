@@ -5,6 +5,7 @@ const body = JSON.stringify({ protocol: 1, serverTime: '2026-08-02T12:00:00Z' })
 
 function environment(found = true): Env {
   return {
+    SYNC_MISS_BUDGET: { limit: vi.fn(async () => ({ success: true })) },
     PUBLIC_SYNC: {
       get: vi.fn(async () =>
         found
@@ -132,4 +133,14 @@ describe('public sync head', () => {
     expect(cache.put).not.toHaveBeenCalled();
     expect(env.PUBLIC_SYNC.get).not.toHaveBeenCalled();
   });
+});
+
+it('blocks random misses before R2 while serving an existing cache hit', async () => {
+  const env = environment(); const cache = memoryCache();
+  const known = new Request('https://sync.festapp.net/v1/public-sync/7/42/head');
+  await handleRequest(known, env, undefined, cache);
+  vi.mocked(env.SYNC_MISS_BUDGET.limit).mockResolvedValue({ success: false });
+  expect((await handleRequest(new Request('https://sync.festapp.net/v1/public-sync/7/43/head'), env, undefined, cache)).status).toBe(429);
+  expect((await handleRequest(known, env, undefined, cache)).status).toBe(200);
+  expect(env.PUBLIC_SYNC.get).toHaveBeenCalledTimes(1);
 });

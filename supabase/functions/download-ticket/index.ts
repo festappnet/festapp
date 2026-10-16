@@ -1,6 +1,7 @@
+import { documentLimits, boundDocumentInput, boundDocumentOutput } from '../_shared/documentLimits.ts';
 import { authorizeCustomerTicket } from './customerAccess.ts';
 import { prepareTicketRenderer } from '../_shared/ticketGeneration.ts';
-import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
+import { supabaseAdmin, createUserClient } from "../_shared/supabaseUtil.ts";
 import { authorizeRequest, AuthError } from "../_shared/auth.ts";
 // Import Buffer for easy Base64 encoding (Supabase Deno supports Node polyfills)
 import { Buffer } from "node:buffer";
@@ -37,27 +38,23 @@ Deno.serve(async (req) => {
       throw new AuthError("Ticket is not available", 403);
     }
 
-    const { data: result, error: rpcError } = await supabaseAdmin.rpc('get_ticket_details_for_generating', {
-      ticket_id_input: ticketId
-    });
-
-    if (rpcError || !result) {
-      throw new Error("Failed to fetch ticket details.");
-    }
-
-    const { ticket, occasion } = result;
-
-    const authorizationHeader = req.headers.get("Authorization");
-    if (customer) {
-      if (!['paid', 'sent', 'used'].includes(ticket.state)) throw new AuthError("Ticket is not available", 403);
-    } else {
-      await authorizeRequest({ requestSecret, authorizationHeader, occasionId: occasion.id, permission: "readOrder" });
-    }
+    const authorizationHeader=req.headers.get('Authorization');
+    let client;
+    if(customer)client=supabaseAdmin; // Capability was checked before any ticket read above.
+    else if(requestSecret){await authorizeRequest({requestSecret});client=supabaseAdmin;}
+    else client=createUserClient(authorizationHeader!);
+    const {data:result,error:rpcError}=await client.rpc('get_ticket_document_data_v1',{p_ticket:ticketId});
+    if(rpcError)throw new AuthError('Ticket document temporarily unavailable',rpcError.code==='PT429'?429:403);
+    if(!result)throw new AuthError('Ticket is not available',403);
+    const limits=documentLimits(result);boundDocumentInput(result,limits.inputBytes);
+    const {ticket,occasion}=result;
+    if(customer&&!['paid','sent','used'].includes(ticket.state))throw new AuthError('Ticket is not available',403);
 
     const render = await prepareTicketRenderer(occasion, ticket, result.order_data);
     const { bytes: pdfBytes } = await render(ticket);
 
-    // --- CHANGED HERE: Encode to Base64 ---
+    boundDocumentOutput(pdfBytes,1,limits);
+    // Encode only the bounded output.
     const base64Pdf = Buffer.from(pdfBytes).toString('base64');
 
     // Return JSON with the Base64 string

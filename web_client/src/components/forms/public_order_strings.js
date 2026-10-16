@@ -56,6 +56,7 @@ export class PublicOrderStrings {
     }
 
     static orderError(code) {
+        if (Number(code) === 429) return LocalizationService.tr('Common.resourceLimited');
         return LocalizationService.tr(`${PublicOrderStrings._prefix}.orderError`, { code: code });
     }
 

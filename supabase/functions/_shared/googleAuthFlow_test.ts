@@ -26,7 +26,7 @@ Deno.test("broker bootstraps a host-only cookie, validates signed OIDC and excha
       return json(attempt);
     }
     const body=JSON.parse(String(init?.body??'{}'));
-    if(url.pathname.endsWith('/google_auth_rate_limit_v1'))return json(true);
+    if(url.pathname.endsWith('/consume_auth_abuse_v1'))return json(true);
     if(url.pathname.endsWith('/google_auth_transition_v1')){
       const p=body.p_payload;
       switch(body.p_operation){

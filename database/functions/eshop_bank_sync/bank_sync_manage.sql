@@ -17,11 +17,16 @@ GRANT EXECUTE ON FUNCTION public.get_bank_sync_connection(bigint) TO authenticat
 
 CREATE OR REPLACE FUNCTION public.begin_bank_sync_operation(p_id uuid,p_account_id bigint,p_operation text,p_hash text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_operation eshop.bank_sync_operations%ROWTYPE;
+DECLARE v_operation eshop.bank_sync_operations%ROWTYPE; v_inserted integer;
 BEGIN
   PERFORM public.check_is_admin_for_bank_account(p_account_id);
   INSERT INTO eshop.bank_sync_operations(id,bank_account_id,actor,operation,payload_sha256,state)
     VALUES(p_id,p_account_id,auth.uid(),p_operation,p_hash,'pending') ON CONFLICT DO NOTHING;
+  GET DIAGNOSTICS v_inserted=ROW_COUNT;
+  IF v_inserted>0 THEN
+    PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('bank.operation',NULL,NULL),
+      jsonb_build_object('actor',auth.uid(),'recipient','bank:'||p_account_id,'global','all'));
+  END IF;
   SELECT * INTO STRICT v_operation FROM eshop.bank_sync_operations WHERE id=p_id OR (bank_account_id=p_account_id AND actor=auth.uid() AND operation=p_operation
       AND payload_sha256=p_hash AND state IN ('pending','running','uncertain')) ORDER BY (id=p_id) DESC LIMIT 1 FOR UPDATE;
   IF v_operation.actor IS DISTINCT FROM auth.uid() OR v_operation.bank_account_id<>p_account_id
