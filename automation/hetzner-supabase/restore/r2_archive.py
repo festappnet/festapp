@@ -3,7 +3,7 @@ Reads local data only; never writes or contacts an object store.
 """
 import hashlib,json,tarfile
 from pathlib import Path
-from urllib.parse import unquote,urlparse
+from urllib.parse import urlparse
 BUCKETS={'festapp-images','festapp-images-a','festapp-images-private','festapp-images-a-private'}
 HOSTS={'img.festapp.net':'festapp-images','a.img.festapp.net':'festapp-images-a'}
 
@@ -28,5 +28,8 @@ def verify_archive(path,references):
    uri=urlparse(value)
    if uri.hostname not in HOSTS:continue
    checked+=1
-   if HOSTS[uri.hostname]+'/'+unquote(uri.path.lstrip('/')) not in keys:missing+=1
+   bucket=HOSTS[uri.hostname]
+   if uri.path.startswith('/private/'):bucket+='-private'
+   # Worker passes URL.pathname directly to R2; percent escapes stay literal.
+   if bucket+'/'+uri.path.lstrip('/') not in keys:missing+=1
  return {'objects':len(keys),'bytes':total,'content_hashes_verified':True,'database_r2_references_checked':checked,'missing_database_r2_references':missing,'consistent':checked>0 and missing==0,'scope':'Selected online DB snapshot against selected R2 archive; not arbitrary-time R2 version history'}

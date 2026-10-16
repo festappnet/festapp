@@ -25,5 +25,10 @@
   "host_deliveries": [],
   "existing_host_alert_delivery_proven": false,
   "synthetic_outage_or_email_generated": false,
-  "note": "Observed real existing host incidents and delivery receipts, including maintenance. Delivered is the monitoring pipeline receipt, not proof a human read the email."
+  "note": "Observed real existing host incidents and delivery receipts, including maintenance. Delivered is the monitoring pipeline receipt, not proof a human read the email.",
+  "additional_readback": {
+    "source": "Read-only D1 aggregate joining deliveries to host incidents directly and through summary_members",
+    "host_deliveries_including_summaries": 0,
+    "rows_written": 0
+  }
 }

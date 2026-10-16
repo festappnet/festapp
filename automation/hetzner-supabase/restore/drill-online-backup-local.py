@@ -3,7 +3,7 @@
 No SSH, DB URL, host data mount, integration service or production target accepted.
 Actual production backup acquisition/key recovery remains an operational gate.
 """
-import argparse,datetime,hashlib,json,os,re,subprocess,tempfile,time,tarfile,traceback
+import argparse,datetime,hashlib,json,os,re,shutil,subprocess,tempfile,time,tarfile,traceback
 from pathlib import Path
 
 def run(args,**kw):
@@ -50,6 +50,7 @@ def main():
  p.add_argument('--service-smoke',action='store_true')
  p.add_argument('--admin-resources',action='store_true')
  p.add_argument('--rebuild-storage-metadata',action='store_true')
+ p.add_argument('--consume-downloaded-artifacts',action='store_true',help='Delete each local encrypted input only after successful decryption; retain manifest and off-host backups')
  a=p.parse_args();m=validate_manifest(a.backup_dir)
  assert not a.admin_resources or a.service_smoke,'admin resource drill requires service smoke'
  assert not a.rebuild_storage_metadata or a.service_smoke,'metadata recovery requires service smoke'
@@ -58,14 +59,23 @@ def main():
  pins=json.loads((Path(__file__).resolve().parents[1]/'runtime/pins.json').read_text())
  image=pins['supabase']['images']['postgres']
  assert image.startswith('supabase/postgres:17.') and '@sha256:' in image
+ # Check Docker before decrypting or consuming any downloaded input.
+ image_info=json.loads(subprocess.check_output(['docker','image','inspect',image],stderr=subprocess.DEVNULL))[0]
  started=time.monotonic(); name='festapp-local-restore-'+os.urandom(8).hex()
  # No production secrets/SQL in terminal output. Full logs stay in a protected local tempdir.
  with tempfile.TemporaryDirectory(prefix='festapp-local-restore-') as tmp:
   work=Path(tmp);os.chmod(work,0o700)
   filenames=['postgres.dump','globals.sql','storage.tar','runtime.tar']
   if 'r2-images.tar.age' in m['artifacts']:filenames.append('r2-images.tar')
+  # Avoid exhausting the workstation disk and causing Docker WAL fsync failures.
+  # Consumption is opt-in and only happens after the complete set passed hashes.
+  sizes=[m['artifacts'][filename+'.age']['bytes'] for filename in filenames]
+  required_free=(max(sizes) if a.consume_downloaded_artifacts else sum(sizes))+512*1024*1024
+  assert shutil.disk_usage(work).free>required_free,'Insufficient local disk space: free disk space or use --consume-downloaded-artifacts for this downloaded copy'
   for filename in filenames:
-   run(['age','-d','-i',str(a.identity),'-o',str(work/filename),str(a.backup_dir/(filename+'.age'))],stdout=subprocess.DEVNULL)
+   source=a.backup_dir/(filename+'.age')
+   run(['age','-d','-i',str(a.identity),'-o',str(work/filename),str(source)],stdout=subprocess.DEVNULL)
+   if a.consume_downloaded_artifacts:source.unlink()
   # Inspect archive members without extracting or executing runtime config.
   counts={};storage_files={}
   for filename in ('storage.tar','runtime.tar'):
@@ -79,7 +89,7 @@ def main():
   with (work/'restore.log').open('wb') as log:
    try:
     if a.service_smoke:
-     command=json.loads(subprocess.check_output(['docker','image','inspect',image]))[0]['Config']['Cmd']
+     command=image_info['Config']['Cmd']
      assert command==['postgres','-D','/etc/postgresql']
      # Keep PID 1 alive across the post-restore PostgreSQL restart. pg_net
      # requires its normal preload for CREATE EXTENSION during pg_restore;
@@ -132,15 +142,14 @@ def main():
      query="BEGIN READ ONLY; SELECT coalesce(json_agg(link),'[]'::json) FROM public.images WHERE link LIKE 'https://img.festapp.net/%' OR link LIKE 'https://a.img.festapp.net/%'; COMMIT;"
      references=json.loads(subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log))
      r2_consistency=verify_archive(work/'r2-images.tar',references)
-     assert r2_consistency['consistent'],'R2 archive lacks image references from selected DB snapshot'
     application=None
     if a.service_smoke:
      assert consistency['consistent'],'inconsistent Storage prevents application recovery proof'
      from service_smoke import application_reads
      application=application_reads(name,pins,work/'storage.tar',log,admin_resources=a.admin_resources,rebuild_metadata=a.rebuild_storage_metadata)
-    result={'version':1,'status':'pass','backup_run_id':m['run_id'],'backup_manifest_sha256':hashlib.sha256((a.backup_dir/'manifest.json').read_bytes()).hexdigest(),
+    result={'version':1,'status':'pass' if r2_consistency is None or r2_consistency['consistent'] else 'inconsistent-r2-references','backup_run_id':m['run_id'],'backup_manifest_sha256':hashlib.sha256((a.backup_dir/'manifest.json').read_bytes()).hexdigest(),
      'source_backup_consistency':m['consistency'],'isolated':True,'network':'none','ports':False,'host_mounts':False,
-     'application_services_started':bool(application),'application_reads':application,'runtime_executed':False,'archive_inventory':counts,'storage_consistency':consistency,'r2_consistency':r2_consistency,
+     'application_services_started':bool(application),'application_reads':application,'runtime_executed':False,'local_encrypted_downloads_consumed':a.consume_downloaded_artifacts,'archive_inventory':counts,'storage_consistency':consistency,'r2_consistency':r2_consistency,
      'database_read_smoke':True,'globals_errors_checked':True,'rto_seconds':round(time.monotonic()-started,2),
      'rpo_seconds':None,'pitr_proven':False,'note':'Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.'}
    except Exception as error:
@@ -161,5 +170,6 @@ def main():
   a.evidence.parent.mkdir(parents=True,exist_ok=True)
   fd=os.open(a.evidence,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
   with os.fdopen(fd,'w') as out:json.dump(result,out,indent=2)
+ assert result['status']=='pass','R2 references are inconsistent; application recovery and bounded gap evidence saved'
  print('Isolated online-backup restore: pass')
 if __name__=='__main__':main()
