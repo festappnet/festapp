@@ -27,6 +27,7 @@ def main():
  assert envpath.stat().st_mode&0o777==0o600
  assert not SECRET.exists(), 'pgBackRest already provisioned; never overwrite encryption keys'
  lock=(COMPOSE/'.festapp-runtime-upgrade.lock').open('w');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+ backup_lock=Path('/var/backups/festapp-supabase/.lock').open('w');fcntl.flock(backup_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
  stamp=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
  evidence=Path('/var/lib/festapp-rehearsal-evidence')/('pgbackrest-install-'+stamp);evidence.mkdir(mode=0o700)
  log=(evidence/'install.log').open('wb')
@@ -122,6 +123,7 @@ def main():
  shutil.copyfile(HERE/'run-backup.sh',dest/'run-backup.sh');os.chmod(dest/'run-backup.sh',0o700)
  shutil.copyfile(HERE/'Dockerfile',dest/'Dockerfile')
  atomic(SECRET/'enabled','enabled\n')
+ backup_lock.close()
  run([str(dest/'run-backup.sh'),'full'])
  for unit in ['festapp-pgbackrest-backup.service','festapp-pgbackrest-backup.timer']:
   shutil.copyfile(HERE/unit,Path('/etc/systemd/system')/unit);os.chmod(Path('/etc/systemd/system')/unit,0o644)
