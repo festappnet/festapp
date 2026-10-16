@@ -21,8 +21,29 @@ def validate_manifest(folder):
   assert len(data)==a['bytes'] and hashlib.sha256(data).hexdigest()==a['sha256'],name
  return m
 
+def storage_consistency(objects, files):
+ # Canonical file backend: GLOBAL_S3_BUCKET=stub, TENANT_ID=stub.
+ # Supabase storage v1.60.4 TenantLocation + withOptionalVersion;
+ # support the two upstream version separators, never an arbitrary suffix.
+ matched=set();missing=0;size_mismatch=0
+ for obj in objects:
+  key='stub/stub/'+obj['bucket']+'/'+obj['name']
+  version=obj.get('version')
+  candidates=[key+'/'+version,key+'-$v-'+version] if version else [key]
+  found=next((name for name in candidates if name in files),None)
+  if found is None:missing+=1;continue
+  matched.add(found)
+  size=obj.get('size')
+  if size is not None and int(size)!=files[found]:size_mismatch+=1
+ return {'referenced_objects':len(objects),'matched_objects':len(objects)-missing,
+  'missing_objects':missing,'size_mismatches':size_mismatch,
+  'unreferenced_archive_files':len(set(files)-matched),
+  'consistent':bool(objects) and missing==0 and size_mismatch==0,
+  'scope':'Same online logical backup DB versus Storage archive, not coordinated PITR or external R2 image consistency'}
+
 def main():
  p=argparse.ArgumentParser();p.add_argument('--backup-dir',type=Path,required=True);p.add_argument('--identity',type=Path,required=True);p.add_argument('--evidence',type=Path,required=True)
+ p.add_argument('--storage-consistency',action='store_true')
  a=p.parse_args();m=validate_manifest(a.backup_dir)
  assert a.identity.is_file() and not a.evidence.exists()
  # Pin the same supported production major; no untrusted CLI image argument.
@@ -36,12 +57,15 @@ def main():
   for filename in ('postgres.dump','globals.sql','storage.tar','runtime.tar'):
    run(['age','-d','-i',str(a.identity),'-o',str(work/filename),str(a.backup_dir/(filename+'.age'))],stdout=subprocess.DEVNULL)
   # Inspect archive members without extracting or executing runtime config.
-  counts={}
+  counts={};storage_files={}
   for filename in ('storage.tar','runtime.tar'):
    with tarfile.open(work/filename) as archive:
     members=archive.getmembers()
     assert all(not Path(x.name).is_absolute() and '..' not in Path(x.name).parts and not x.issym() and not x.islnk() and (x.isfile() or x.isdir()) for x in members),'unsafe archive member'
     counts[filename]={'files':sum(x.isfile() for x in members),'bytes':sum(x.size for x in members if x.isfile())}
+    if filename=='storage.tar' and a.storage_consistency:
+     storage_files={str(Path(x.name)):x.size for x in members if x.isfile()}
+     assert len(storage_files)==counts[filename]['files'],'duplicate Storage archive paths'
   with (work/'restore.log').open('wb') as log:
    try:
     run(['docker','run','-d','--name',name,'--network','none','--label','festapp.isolated-restore=true',
@@ -76,9 +100,15 @@ def main():
      run(['docker','exec','-i',name,'pg_restore','-U','supabase_admin','-d','isolated_restore','--exit-on-error','-L','/tmp/restore.list'],stdin=stream,stdout=log,stderr=log)
     smoke="BEGIN READ ONLY; SELECT count(*) FROM public.organizations; SELECT count(*) FROM auth.users; SELECT count(*) FROM storage.objects; COMMIT;"
     run(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atqc',smoke],stdout=log,stderr=log)
+    consistency=None
+    if a.storage_consistency:
+     query="BEGIN READ ONLY; SELECT coalesce(json_agg(json_build_object('bucket',bucket_id,'name',name,'version',version,'size',metadata->>'size')),'[]'::json) FROM storage.objects; COMMIT;"
+     # Object names remain in memory only, never stdout/evidence/logs.
+     rows=subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log)
+     consistency=storage_consistency(json.loads(rows),storage_files)
     result={'version':1,'status':'pass','backup_run_id':m['run_id'],'backup_manifest_sha256':hashlib.sha256((a.backup_dir/'manifest.json').read_bytes()).hexdigest(),
      'source_backup_consistency':m['consistency'],'isolated':True,'network':'none','ports':False,'host_mounts':False,
-     'application_services_started':False,'runtime_executed':False,'archive_inventory':counts,
+     'application_services_started':False,'runtime_executed':False,'archive_inventory':counts,'storage_consistency':consistency,
      'database_read_smoke':True,'globals_errors_checked':True,'rto_seconds':round(time.monotonic()-started,2),
      'rpo_seconds':None,'pitr_proven':False,'note':'Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.'}
    except Exception as error:

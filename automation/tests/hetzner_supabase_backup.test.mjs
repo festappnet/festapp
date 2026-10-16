@@ -13,6 +13,11 @@ test('retention preserves daily and weekly recovery points and refuses unsafe se
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('restored Storage references require matching object versions and sizes', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_storage_restore_consistency.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('scheduled backup is encrypted, bounded, off-host and never authorizes cutover', () => {
   const create = fs.readFileSync(path.join(backup, 'create-online-encrypted-backup.sh'), 'utf8');
   assert.match(create, /plaintext_artifacts_written:false/);

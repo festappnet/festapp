@@ -35,7 +35,7 @@
     "automation/hetzner-supabase/monitoring/runtime-evidence.py": "053fd2503ffb8e681836754fc777c09793a33a931918fdac0b56e95e6a2f8c9b",
     "automation/hetzner-supabase/monitoring/festapp-host-monitor.service": "af61a1bc001d6b345ec0b3049c53e8fcb5c137287ca74dd54c0deefec9f4e358",
     "automation/hetzner-supabase/monitoring/install.sh": "2d418d2e664dfef1e75500257f84a4b93172c5e2848893ede4d76ad7e85a0ce3",
-    "automation/hetzner-supabase/restore/drill-online-backup-local.py": "18563c7d56861421688a5c30c60ae5715c95d349477b68723b655b11187e7cc7"
+    "automation/hetzner-supabase/restore/drill-online-backup-local.py": "ce450a321e1bb310f0fbfb8a1457956d68550d2ee87569b3b1d96222411aa81d"
   },
   "contract_files": {
     "database/functions/security/server_security_acl_manifest.json": "e977bebe9018d7b2d89070e651ce527d685c58fb9c13f48caf0188470878e7eb",
