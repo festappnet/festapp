@@ -96,6 +96,13 @@ class TicketLayoutProperties extends StatelessWidget {
                     Text(TicketLayoutStrings.binding(e.binding),
                         style: Theme.of(context).textTheme.titleMedium),
                   if (productControl != null) productControl!,
+                  if (['text', 'footer'].contains(e.binding)) ...[
+                    TicketFreeTextInput(key: ValueKey('text-${e.id}'), controller: controller,
+                        element: e, value: e.text ?? data?[e.id] ?? ''),
+                    Align(alignment: Alignment.centerRight, child: TextButton.icon(
+                        onPressed: e.locked ? null : () => controller.removeTextField(e),
+                        icon: const Icon(Icons.delete_outline), label: Text(TicketLayoutStrings.removeText))),
+                  ],
                   if (text) ...[
                     if (fontControl != null) fontControl!,
                     const SizedBox(height: 12),
@@ -449,6 +456,7 @@ class TicketProductLabelInput extends StatefulWidget {
 }
 
 class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
+  late int historyRevision = widget.controller.historyRevision;
   late final text = TextEditingController(text: widget.element.label);
   late final focus = FocusNode()..addListener(_focusChanged);
   void _focusChanged() {
@@ -461,8 +469,10 @@ class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
   @override
   void didUpdateWidget(covariant TicketProductLabelInput old) {
     super.didUpdateWidget(old);
-    if (!focus.hasFocus && text.text != widget.element.label)
+    if ((!focus.hasFocus || historyRevision != widget.controller.historyRevision) && text.text != widget.element.label) {
       text.text = widget.element.label ?? '';
+    }
+    historyRevision = widget.controller.historyRevision;
   }
 
   @override
@@ -507,4 +517,44 @@ class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
               style: Theme.of(context).textTheme.bodySmall),
         ],
       );
+}
+
+
+class TicketFreeTextInput extends StatefulWidget {
+  final TicketLayoutController controller;
+  final TicketElement element;
+  final String value;
+  const TicketFreeTextInput({super.key, required this.controller, required this.element, required this.value});
+  @override
+  State<TicketFreeTextInput> createState() => _TicketFreeTextInputState();
+}
+
+class _TicketFreeTextInputState extends State<TicketFreeTextInput> {
+  late final text = TextEditingController(text: widget.value);
+  late final focus = FocusNode()..addListener(_focusChanged);
+  void _focusChanged() {
+    if (!focus.hasFocus) widget.controller.endGesture();
+  }
+  @override
+  void didUpdateWidget(covariant TicketFreeTextInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (text.text != widget.value) {
+      text.value = TextEditingValue(text: widget.value,
+          selection: TextSelection.collapsed(offset: widget.value.length));
+    }
+  }
+  @override
+  void dispose() {
+    focus.removeListener(_focusChanged);
+    focus.dispose(); text.dispose(); super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) => TextField(
+      key: const ValueKey('ticket-free-text'), controller: text, focusNode: focus,
+      enabled: !widget.element.locked, minLines: 2, maxLines: 5, maxLength: 2000,
+      decoration: InputDecoration(labelText: TicketLayoutStrings.textContent),
+      onChanged: (value) {
+        widget.controller.beginGesture();
+        widget.controller.change(widget.element.copyWith(binding: 'text', text: value));
+      }, onTapOutside: (_) => focus.unfocus());
 }

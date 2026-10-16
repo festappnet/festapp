@@ -2350,6 +2350,10 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "text": "Free text",
+    "textDefault": "Your text",
+    "textContent": "Ticket text",
+    "removeText": "Remove text",
     "addElement": "Add element",
     "occasionStartTime": "Event start time",
     "occasionPlace": "Event venue",

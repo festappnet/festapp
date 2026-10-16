@@ -3,6 +3,9 @@ import 'package:easy_localization/easy_localization.dart';
 class TicketLayoutStrings {
   static String get manageProducts => 'TicketLayout.manageProducts'.tr();
   static String get layoutLimit => 'TicketLayout.layoutLimit'.tr();
+  static String get textDefault => 'TicketLayout.textDefault'.tr();
+  static String get textContent => 'TicketLayout.textContent'.tr();
+  static String get removeText => 'TicketLayout.removeText'.tr();
   static String get addElement => 'TicketLayout.addElement'.tr();
   static String get addProduct => 'TicketLayout.addProduct'.tr();
   static String get productGroup => 'TicketLayout.productGroup'.tr();
@@ -169,5 +172,5 @@ class TicketLayoutStrings {
   static String get orderName => 'TicketLayout.orderName'.tr();
   static String get logo => 'TicketLayout.logo'.tr();
   static String get footer => 'TicketLayout.footer'.tr();
-  static String binding(String value) => 'TicketLayout.$value'.tr();
+  static String binding(String value) => 'TicketLayout.${value == 'footer' ? 'text' : value}'.tr();
 }

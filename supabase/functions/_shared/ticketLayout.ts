@@ -8,11 +8,11 @@ export function qrColorReadable(color:string,background='FFFFFF'):boolean {
   const back=bg[0]*.2126+bg[1]*.7152+bg[2]*.0722;
   return (Math.max(foreground,back)+.05)/(Math.min(foreground,back)+.05)>=4.5;
 }
-export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'productType', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'occasionStartTime', 'occasionPlace', 'orderName', 'logo', 'footer'] as const;
+export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'productType', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'occasionStartTime', 'occasionPlace', 'orderName', 'logo', 'footer', 'text'] as const;
 export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
-export interface Element { id: string; binding: Binding; productTypeId?:number; label?:string; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
+export interface Element { id: string; binding: Binding; productTypeId?:number; label?:string; text?:string; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
 export interface Template { canvasColor?:string; canvasOpacity?:number; backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:string[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 3; templates: { wide?: Template; named?: Template } }
 export function ticketLayoutByteSize(value:unknown):number {
@@ -58,12 +58,13 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
     if (!Array.isArray(t.elements) || t.elements.length < 2 || t.elements.length > 32) fail();
     const ids = new Set(), seen = new Set(), products=new Set();
     for (const e of t.elements) {
-      if (!e || typeof e.id !== 'string' || !/^[a-zA-Z0-9_-]{1,40}$/.test(e.id) || ids.has(e.id) || (e.binding!=='productType'&&seen.has(e.binding)) || !bindings.includes(e.binding) || typeof e.visible !== 'boolean' || typeof e.locked !== 'boolean') fail();
-      if(Object.keys(e).some(k=>!['id','binding','box','visible','locked','style','productTypeId','label'].includes(k)))fail();
+      if (!e || typeof e.id !== 'string' || !/^[a-zA-Z0-9_-]{1,40}$/.test(e.id) || ids.has(e.id) || (!['productType','text'].includes(e.binding)&&seen.has(e.binding)) || !bindings.includes(e.binding) || typeof e.visible !== 'boolean' || typeof e.locked !== 'boolean') fail();
+      if(Object.keys(e).some(k=>!['id','binding','box','visible','locked','style','productTypeId','label','text'].includes(k)))fail();
       if(e.binding==='productType') {
         if(!Number.isSafeInteger(e.productTypeId)||e.productTypeId!<=0||products.has(e.productTypeId)||typeof e.label!=='string'||e.label!==e.label.trim()||Array.from(e.label).length>120)fail();
         products.add(e.productTypeId);
       } else if(e.productTypeId!==undefined||e.label!==undefined)fail();
+      if(e.binding==='text' ? typeof e.text!=='string'||Array.from(e.text).length>2000 : e.text!==undefined)fail();
       ids.add(e.id); seen.add(e.binding);
       checkBox(e.box,t.ticketArea.width,t.ticketArea.height);
       const s=e.style;checkFont(s?.fontId);if(s?.fontId!==undefined&&['qr','logo'].includes(e.binding))fail();

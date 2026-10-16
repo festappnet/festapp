@@ -2351,6 +2351,10 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "text": "Volný text",
+    "textDefault": "Váš text",
+    "textContent": "Text na vstupence",
+    "removeText": "Odstranit text",
     "addElement": "Přidat prvek",
     "occasionStartTime": "Čas začátku události",
     "occasionPlace": "Místo konání",

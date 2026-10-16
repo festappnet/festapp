@@ -626,6 +626,10 @@
     "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
   },
   "TicketLayout": {
+    "text": "Własny tekst",
+    "textDefault": "Twój tekst",
+    "textContent": "Tekst na bilecie",
+    "removeText": "Usuń tekst",
     "addElement": "Dodaj element",
     "occasionStartTime": "Godzina rozpoczęcia wydarzenia",
     "occasionPlace": "Miejsce wydarzenia",

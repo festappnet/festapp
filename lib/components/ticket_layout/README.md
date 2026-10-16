@@ -360,11 +360,14 @@ canvas bounds constrain the entire group uniformly.
 ## Adding optional elements
 
 “Add element” offers event title, start time, venue, the legacy combined date/place,
-table, order name, note, price, footer and logo (when available). Product groups
-open the searchable catalog picker. Existing visible fields are selected; hidden
-fields are restored with their styling and safe placement. New fields use free
-space without overlapping visible content. Each insertion/restoration is one undo
-step. Source drafts allow ordinary fields while product editing stays unavailable.
+table, order name, note, price and logo only when data exists and the field is
+absent (including hidden fields). Product groups exclude already used groups and
+groups without a sample. Repeatable free text replaces the footer choice; existing
+footers remain editable as free text. New text inherits the most common body text
+style, using the median font size to break ties, and uses unoccupied space.
+Each insertion is one undo step. Ctrl/Cmd-Z and redo share document history across
+the canvas and property inputs, including mobile panels. Nested dialogs retain
+their own history until their change is accepted. Source drafts allow ordinary fields while product editing stays unavailable.
 Catalog retry appears only after a catalog load failure. Editor Cancel uses Storno
 in Czech, consistent with the shared dialog wording.
 
@@ -373,3 +376,6 @@ Europe/Prague, and `occasionPlace` uses `data.place_name`. Both share the previe
 and PDF normalization. Apply `20261016210000_ticket_optional_event_elements.sql`,
 then deploy the shared Edge consumers before publishing the client. This additive
 schema-3 extension does not change existing templates or their combined date/place.
+Free text additionally requires `20261016220000_ticket_free_text.sql` and the
+shared Edge renderer before client deployment. Its `text` binding carries at most
+2000 Unicode characters; legacy footer bindings continue to render unchanged.

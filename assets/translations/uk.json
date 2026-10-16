@@ -822,6 +822,10 @@
     "askManagerForPaymentAccount": "Щоб приймати платежі, попросіть адміністратора організації додати рахунок для зазначених валют."
   },
   "TicketLayout": {
+    "text": "Довільний текст",
+    "textDefault": "Ваш текст",
+    "textContent": "Текст на квитку",
+    "removeText": "Видалити текст",
     "addElement": "Додати елемент",
     "occasionStartTime": "Час початку події",
     "occasionPlace": "Місце проведення",

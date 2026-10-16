@@ -108,3 +108,21 @@ Deno.test('optional event fields use event timezone in preview and PDF data',()=
  assertEquals(normalizeTicketData({},{...occasion,data:{timezone:'America/New_York'}}).occasionStartTime,'14:30');
  assertEquals(normalizeTicketData({},{...occasion,data:{timezone:'invalid'}}).occasionStartTime,'20:30');
 });
+Deno.test('repeatable free text validates and projects unchanged into preview and real tickets',()=>{
+ const t=preset('wide');
+ const body=t.elements.find(e=>e.binding==='note')!;
+ t.elements.push({...body,id:'custom-a',binding:'text',text:'Vlastní text 🎟️'},
+   {...body,id:'custom-b',binding:'text',text:'Další řádek\nText'});
+ const layout={schemaVersion:3,templates:{wide:t}};
+ validateLayout(layout);
+ for(const data of [sampleData('normal',{id:7},undefined,t),normalizeTicketData({ticket_symbol:'X',order_product_ticket:[]},{id:7},{},undefined,t)]) {
+  assertEquals(data['custom-a'],'Vlastní text 🎟️');
+  assertEquals(data['custom-b'],'Další řádek\nText');
+ }
+ for(const mutate of [(v:any)=>delete v.templates.wide.elements.at(-1).text,
+   (v:any)=>v.templates.wide.elements.at(-1).text=123,
+   (v:any)=>v.templates.wide.elements.at(-1).text='a'.repeat(2001),
+   (v:any)=>v.templates.wide.elements[0].text='unexpected']) {
+  const invalid=structuredClone(layout);mutate(invalid);assertThrows(()=>validateLayout(invalid));
+ }
+});

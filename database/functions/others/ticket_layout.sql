@@ -117,13 +117,13 @@ BEGIN
           OR NOT EXISTS(SELECT 1 FROM public.ticket_font_assets WHERE id=s->>'fontId')
         THEN RAISE EXCEPTION 'Invalid ticket font'; END IF;
       END IF;
-      IF e->>'binding' IS NULL OR e->>'binding' NOT IN ('qr','ticketSymbol','spotGroup','productType','note','price','occasionTitle','occasionDatePlace','occasionStartTime','occasionPlace','orderName','logo','footer')
-        OR (e->>'binding'<>'productType' AND e->>'binding'=ANY(bindings)) OR e->>'id'=ANY(ids) OR COALESCE(e->>'id','') !~ '^[a-zA-Z0-9_-]{1,40}$'
+      IF e->>'binding' IS NULL OR e->>'binding' NOT IN ('qr','ticketSymbol','spotGroup','productType','note','price','occasionTitle','occasionDatePlace','occasionStartTime','occasionPlace','orderName','logo','footer','text')
+        OR (e->>'binding' NOT IN ('productType','text') AND e->>'binding'=ANY(bindings)) OR e->>'id'=ANY(ids) OR COALESCE(e->>'id','') !~ '^[a-zA-Z0-9_-]{1,40}$'
         OR jsonb_typeof(e->'visible') IS DISTINCT FROM 'boolean' OR jsonb_typeof(e->'locked') IS DISTINCT FROM 'boolean'
         OR (b->>'x')::numeric+(b->>'width')::numeric>(a->>'width')::numeric+.001
         OR (b->>'y')::numeric+(b->>'height')::numeric>(a->>'height')::numeric+.001
       THEN RAISE EXCEPTION 'Invalid layout element'; END IF;
-      IF EXISTS(SELECT 1 FROM jsonb_object_keys(e) AS keys(key) WHERE keys.key NOT IN ('id','binding','productTypeId','label','box','visible','locked','style')) THEN RAISE EXCEPTION 'Invalid element metadata'; END IF;
+      IF EXISTS(SELECT 1 FROM jsonb_object_keys(e) AS keys(key) WHERE keys.key NOT IN ('id','binding','productTypeId','label','text','box','visible','locked','style')) THEN RAISE EXCEPTION 'Invalid element metadata'; END IF;
       IF e->>'binding'='productType' THEN
         IF jsonb_typeof(e->'productTypeId') IS DISTINCT FROM 'number' OR jsonb_typeof(e->'label') IS DISTINCT FROM 'string' THEN RAISE EXCEPTION 'Invalid product field'; END IF;
         IF (e->>'productTypeId')::numeric NOT BETWEEN 1 AND 9007199254740991 OR trunc((e->>'productTypeId')::numeric)<>(e->>'productTypeId')::numeric
@@ -131,6 +131,9 @@ BEGIN
           OR (SELECT count(*) FROM jsonb_array_elements(t->'elements') x WHERE x->'productTypeId'=e->'productTypeId')<>1
         THEN RAISE EXCEPTION 'Invalid product field'; END IF;
       ELSIF e ? 'productTypeId' OR e ? 'label' THEN RAISE EXCEPTION 'Invalid product metadata'; END IF;
+      IF e->>'binding'='text' THEN
+        IF jsonb_typeof(e->'text') IS DISTINCT FROM 'string' OR length(e->>'text')>2000 THEN RAISE EXCEPTION 'Invalid free text'; END IF;
+      ELSIF e ? 'text' THEN RAISE EXCEPTION 'Unexpected free text'; END IF;
       ids:=array_append(ids,e->>'id'); bindings:=array_append(bindings,e->>'binding');
       IF jsonb_typeof(s->'fontSize') IS DISTINCT FROM 'number' OR jsonb_typeof(s->'minFontSize') IS DISTINCT FROM 'number'
         OR jsonb_typeof(s->'maxLines') IS DISTINCT FROM 'number' OR COALESCE(s->>'color','') !~ '^[a-fA-F0-9]{6}$'

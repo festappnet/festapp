@@ -626,6 +626,10 @@
     "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
   },
   "TicketLayout": {
+    "text": "Freier Text",
+    "textDefault": "Ihr Text",
+    "textContent": "Text auf dem Ticket",
+    "removeText": "Text entfernen",
     "addElement": "Element hinzufügen",
     "occasionStartTime": "Beginn der Veranstaltung",
     "occasionPlace": "Veranstaltungsort",

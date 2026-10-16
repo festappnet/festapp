@@ -46,7 +46,8 @@ const ticketBindings = [
   'occasionPlace',
   'orderName',
   'logo',
-  'footer'
+  'footer',
+  'text'
 ];
 Map<String, dynamic> copyTicketJson(Map value) =>
     (jsonDecode(jsonEncode(value)) as Map).cast<String, dynamic>();
@@ -55,7 +56,7 @@ class TicketElement {
   final String id, binding, color, align;
   final String? fontId;
   final int? productTypeId;
-  final String? label;
+  final String? label, text;
   final Rect box;
   final bool visible, locked, bold, italic, underline;
   final double fontSize, minFontSize;
@@ -64,6 +65,7 @@ class TicketElement {
       {this.fontId,
       this.productTypeId,
       this.label,
+      this.text,
       required this.id,
       required this.binding,
       required this.box,
@@ -83,6 +85,7 @@ class TicketElement {
         fontId: s['fontId'],
         productTypeId: j['productTypeId'],
         label: j['label'],
+        text: j['text'],
         id: j['id'],
         binding: j['binding'],
         box: Rect.fromLTWH(
@@ -106,6 +109,7 @@ class TicketElement {
         'binding': binding,
         if (productTypeId != null) 'productTypeId': productTypeId,
         if (label != null) 'label': label,
+        if (text != null) 'text': text,
         'box': boxJson(box),
         'visible': visible,
         'locked': locked,
@@ -122,7 +126,9 @@ class TicketElement {
         }
       };
   TicketElement copyWith(
-          {int? productTypeId,
+          {String? binding,
+          String? text,
+          int? productTypeId,
           String? label,
           String? fontId,
           bool resetFont = false,
@@ -141,7 +147,8 @@ class TicketElement {
           label: label ?? this.label,
           fontId: resetFont ? null : fontId ?? this.fontId,
           id: id,
-          binding: binding,
+          binding: binding ?? this.binding,
+          text: text ?? this.text,
           box: box ?? this.box,
           visible: visible ?? this.visible,
           locked: locked ?? this.locked,
@@ -581,11 +588,14 @@ class TicketTemplate {
             e.label != e.label!.trim() ||
             e.label!.runes.length > 120) errors.add(e.id);
       } else if (e.productTypeId != null || e.label != null) errors.add(e.id);
+      if (e.binding == 'text'
+          ? e.text == null || e.text!.runes.length > 2000
+          : e.text != null) errors.add(e.id);
       if (!validFont(e.fontId) ||
           (e.fontId != null && ['qr', 'logo'].contains(e.binding)) ||
           !ids.add(e.id) ||
           !RegExp(r'^[a-zA-Z0-9_-]{1,40}$').hasMatch(e.id) ||
-          (e.binding != 'productType' && !bindings.add(e.binding)) ||
+          (!['productType', 'text'].contains(e.binding) && !bindings.add(e.binding)) ||
           !ticketBindings.contains(e.binding) ||
           !inside(e.box, area.size) ||
           !e.fontSize.isFinite ||
@@ -696,6 +706,7 @@ void validateTicketLayout(Map<String, dynamic> layout,
             'binding',
             'productTypeId',
             'label',
+            'text',
             'box',
             'visible',
             'locked',

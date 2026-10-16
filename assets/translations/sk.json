@@ -625,6 +625,10 @@
     "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
   },
   "TicketLayout": {
+    "text": "Voľný text",
+    "textDefault": "Váš text",
+    "textContent": "Text na vstupenke",
+    "removeText": "Odstrániť text",
     "addElement": "Pridať prvok",
     "occasionStartTime": "Čas začiatku udalosti",
     "occasionPlace": "Miesto konania",
