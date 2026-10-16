@@ -6,18 +6,8 @@ import {
   supabaseAdmin,
 } from "./supabaseUtil.ts";
 
-/**
- * Custom error class for authorization failures.
- * Includes an HTTP status code.
- */
-export class AuthError extends Error {
-  status: number;
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "AuthError";
-    this.status = status;
-  }
-}
+import { AuthError } from './authError.ts';
+export { AuthError } from './authError.ts';
 
 interface AuthParams {
   requestSecret?: string;
@@ -69,11 +59,13 @@ export async function authorizeRequest({
 
     const userId = userResponse.user.id;
     // Note: Passing BigInt(occasionId) assuming occasionId comes in as number but DB expects BigInt context
-    const userIsEditor = permission === "readOrder"
-      ? await createUserClient(authorizationHeader).rpc(
-        "get_is_editor_order_view_on_occasion", { oc: occasionId },
-      ).then(({ data, error }) => !error && data === true)
-      : permission === "manageUsers"
+    if (permission === "readOrder") {
+      const {data: readable,error} = await createUserClient(authorizationHeader)
+        .rpc("get_is_editor_order_view_on_occasion", {oc: occasionId.toString()});
+      if (error || readable !== true) throw new AuthError("Forbidden",403);
+      return {user: userResponse.user};
+    }
+    const userIsEditor = permission === "manageUsers"
       ? await canManageOccasionUsers(authorizationHeader, BigInt(occasionId))
       : await isUserEditorOrder(userId, BigInt(occasionId));
 

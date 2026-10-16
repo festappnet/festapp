@@ -1,6 +1,6 @@
 # Private file security contract
 
-The registry's project is the existing sharing boundary. Festapp editors on any
+The registry's project is the existing sharing boundary. Read, sign, delete and scoped upload use the single `get_image_project_access_v1` SQL RPC. Imported Organization provenance preserves the original project after backend consolidation; an editor from another project is denied. Festapp editors on any
 occasion in that project can read, presign and delete its private exports. The
 current contract is documented in `docs/backend/image_worker.md`; a key such as
 `private/236/export.pdf` is not authoritative evidence of occasion ownership.

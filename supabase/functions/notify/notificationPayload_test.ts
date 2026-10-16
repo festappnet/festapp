@@ -57,7 +57,7 @@ Deno.test("direct recipient delivery uses only external_id", () => {
     throw new Error("Direct payload must use an external ID alias");
   }
 
-  assertEquals(payload.include_aliases, { external_id: "user-uuid" });
+  assertEquals(payload.include_aliases, { external_id: ["user-uuid"] });
   assertEquals("filters" in payload, false);
   assertEquals("included_segments" in payload, false);
 });

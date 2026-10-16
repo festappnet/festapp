@@ -10,7 +10,9 @@ BEGIN
   result:=public.finalize_ticket_order_internal_v1(target,input_data,false);
   IF coalesce((result->>'code')::integer,500)<>200 THEN RAISE EXCEPTION '%',result::text; END IF;
   RETURN result;
- EXCEPTION WHEN OTHERS THEN
+ EXCEPTION WHEN SQLSTATE 'PT429' THEN
+  RETURN jsonb_build_object('code',429,'errorCode','ABUSE_LIMIT_EXCEEDED','message','Capacity is temporarily limited. Try again later.');
+ WHEN OTHERS THEN
   RETURN CASE WHEN left(SQLERRM,1)='{' THEN SQLERRM::jsonb ELSE jsonb_build_object('code',1013,'message',SQLERRM) END;
  END;
 END $$;

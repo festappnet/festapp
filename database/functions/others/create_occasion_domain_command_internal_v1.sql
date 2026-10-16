@@ -29,6 +29,7 @@ BEGIN
   v_begin:=public.begin_unit_client_mutation_v1(p_command_id,
     'occasion.create',v_unit,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+  PERFORM public.admit_occasion_creation_v1(v_actor,v_unit,v_organization);
   PERFORM public.update_occasion_internal_v1(p_config);
   SELECT o.id,to_jsonb(o)||jsonb_build_object('aggregate_version',1)
     INTO v_occasion,v_entity FROM public.occasions o

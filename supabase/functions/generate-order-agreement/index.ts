@@ -1,6 +1,8 @@
+import { documentLimits, boundDocumentInput, boundDocumentOutput } from '../_shared/documentLimits.ts';
+import { fetchPublicBinary, fetchPublicImage } from '../fetch-http-data/safeFetch.ts';
 import { PDFDocument, rgb, PageSizes, PDFFont } from "npm:pdf-lib";
 import * as fontkit from "npm:fontkit";
-import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
+import { supabaseAdmin, createUserClient } from "../_shared/supabaseUtil.ts";
 import { authorizeRequest, AuthError } from "../_shared/auth.ts";
 import {
   aggregateMetaSurchargeSums,
@@ -42,7 +44,7 @@ function formatDate(isoString: string | null): string {
 }
 
 // --- PDF GENERATION LOGIC ---
-async function generateAgreement(data: any, config: AgreementConfig): Promise<Uint8Array> {
+async function generateAgreement(data: any, config: AgreementConfig, limits: ReturnType<typeof documentLimits>): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
 
@@ -51,9 +53,8 @@ async function generateAgreement(data: any, config: AgreementConfig): Promise<Ui
 
   let font: PDFFont, boldFont: PDFFont;
   try {
-    const fontResponse = await fetch(config.fontUrl);
-    if (!fontResponse.ok) throw new Error(`Font fetch failed: ${fontResponse.statusText}`);
-    const fontData = await fontResponse.arrayBuffer();
+    const {bytes:fontData} = await fetchPublicBinary(config.fontUrl,undefined,limits.assetBytes,
+      ['font/ttf','font/otf','application/x-font-ttf','application/font-sfnt','application/octet-stream']);
     
     font = await pdfDoc.embedFont(new Uint8Array(fontData));
     boldFont = font; // Reusing regular font as bold as requested
@@ -63,9 +64,7 @@ async function generateAgreement(data: any, config: AgreementConfig): Promise<Ui
     throw new Error("Custom font loading failed. Cannot generate PDF.");
   }
 
-  const logoResponse = await fetch(config.logoUrl);
-  if (!logoResponse.ok) throw new Error(`Logo fetch failed: ${logoResponse.status}`);
-  const logoImageBytes = await logoResponse.arrayBuffer();
+  const {bytes:logoImageBytes} = await fetchPublicImage(config.logoUrl,undefined,limits.assetBytes);
   const logoImage = await pdfDoc.embedPng(logoImageBytes);
 
 
@@ -424,7 +423,9 @@ async function generateAgreement(data: any, config: AgreementConfig): Promise<Ui
   });
   drawLabel(dateLabelText, dateFieldX + (signatureLineWidth - font.widthOfTextAtSize(dateLabelText,smallFontSize))/2, signatureLabelBaselineY, font, smallFontSize, colorBlack);
 
-  return pdfDoc.save();
+  const bytes=await pdfDoc.save();
+  boundDocumentOutput(bytes,pdfDoc.getPageCount(),limits);
+  return bytes;
 }
 
 function wrapText(text: string, currentFont: PDFFont, fontSize: number, maxWidth: number): string[] {
@@ -473,29 +474,28 @@ Deno.serve(async (req: Request) => {
         throw new Error("Order ID is missing from the request");
     }
 
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('get_order_details', {
-        orderid: orderId
-    });
+    const authorizationHeader = req.headers.get("Authorization");
+    let client;
+    if (requestSecret) { await authorizeRequest({ requestSecret }); client = supabaseAdmin; }
+    else if (authorizationHeader) client = createUserClient(authorizationHeader);
+    else throw new AuthError("Unauthorized",401);
+    const { data: rpcData, error: rpcError } = await client.rpc('get_order_agreement_data_v1', { p_order: orderId });
 
     if (rpcError) {
-      console.error("Error fetching order details:", rpcError);
-      throw new Error(`Supabase RPC Error: ${rpcError.message}`);
+      throw new AuthError("Order document temporarily unavailable",rpcError.code === "PT429" ? 429 : 403);
     }
     if (!rpcData || !rpcData.data) {
         throw new Error(`No data returned from RPC for orderId: ${orderId}`);
     }
 
+    const limits=documentLimits(rpcData);
+    boundDocumentInput(rpcData,limits.inputBytes);
     const { order: rpcOrder, occasion, form_fields, payment_info } = rpcData.data;
-
-    // --- AUTHORIZATION ---
-    // Authorize using the shared helper. Supports secret (backend) or user token (frontend).
-    const authorizationHeader = req.headers.get("Authorization");
-    await authorizeRequest({ requestSecret, authorizationHeader, occasionId: occasion.id });
-    // ---------------------
 
     const { data: externalServices, error: externalServicesError } =
       await supabaseAdmin.rpc("get_external_services", { p_order_id: orderId });
     if (externalServicesError) throw new Error("Agreement configuration unavailable");
+    boundDocumentInput(externalServices,limits.inputBytes);
     const agreementConfig = parseAgreementConfig(externalServices);
 
     const orderFields = rpcOrder?.data?.fields;
@@ -683,7 +683,7 @@ Deno.serve(async (req: Request) => {
         signatureDate: '',
     };
 
-    const pdfBytes = await generateAgreement(dataForPdf, agreementConfig);
+    const pdfBytes = await generateAgreement(dataForPdf, agreementConfig, limits);
     const base64Pdf = Buffer.from(pdfBytes).toString('base64');
     
     if (!rpcOrder?.order_symbol) throw new Error('Order symbol unavailable');

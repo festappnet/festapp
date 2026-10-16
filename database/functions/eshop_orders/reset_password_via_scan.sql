@@ -15,6 +15,9 @@ DECLARE
     v_target_email text;
     v_encrypted_pw text;
 BEGIN
+    IF NOT public.check_scan_attempt_budget_v1((SELECT occasion FROM eshop.tickets WHERE id=ticket_id)) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
     -- =================================================================
     -- 1. INPUT VALIDATION
     -- =================================================================
@@ -36,6 +39,7 @@ BEGIN
     WHERE id = ticket_id;
 
     IF v_occasion_id IS NULL THEN
+        PERFORM public.admit_scan_access_v1(NULL,false);
         RETURN jsonb_build_object('code', 404, 'message', 'Ticket not found or no occasion assigned.');
     END IF;
 
@@ -47,11 +51,13 @@ BEGIN
     LIMIT 1;
 
     IF v_expected_scan_code IS NULL THEN
+        PERFORM public.admit_scan_access_v1(v_occasion_id,false);
         RETURN jsonb_build_object('code', 400, 'message', 'Scan code not defined for this occasion.');
     END IF;
 
     -- Verify Code Matches
     IF scan_code IS DISTINCT FROM v_expected_scan_code THEN
+        PERFORM public.admit_scan_access_v1(v_occasion_id,false);
         RETURN jsonb_build_object('code', 401, 'message', 'Invalid scan code.');
     END IF;
 
@@ -86,6 +92,10 @@ BEGIN
     -- =================================================================
     -- 5. PERFORM PASSWORD RESET
     -- =================================================================
+
+    IF NOT public.admit_scan_password_reset_v1(v_occasion_id,v_target_user_id) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
 
     -- Generate encrypted password
     v_encrypted_pw := crypt(password, gen_salt('bf'));

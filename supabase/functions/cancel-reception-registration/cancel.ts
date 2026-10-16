@@ -22,6 +22,7 @@ export async function cancelRegistration(
       body: { error: "registration_unavailable" },
     };
   }
+  if (domain.status === "cancelled") return { status: 200, body: { status: "cancelled" } };
   try {
     const { data: target, error: targetError } = await admin.rpc("resolve_existing_user_session_v1", { p_user: user });
     if (targetError || !target?.authEmail) throw new Error("target unavailable");

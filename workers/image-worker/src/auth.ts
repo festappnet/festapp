@@ -69,27 +69,13 @@ export async function checkUnitEditorPermission(
   return (await response.json()) === true;
 }
 
-/**
- * Check if a user is an editor on any occasion.
- */
-export async function checkIsEditorOnAnyOccasion(
-  userJwt: string,
-  auth: SupabaseAuth
-): Promise<boolean> {
-  const response = await fetch(
-    `${auth.supabaseUrl}/rest/v1/rpc/get_is_editor_on_any_occasion`,
-    {
-      method: 'POST',
-      headers: {
-        'apikey': auth.anonKey,
-        'Authorization': `Bearer ${userJwt}`,
-        'Content-Type': 'application/json',
-      },
-      body: '{}',
-    }
-  );
-  if (!response.ok) return false;
-  return (await response.json()) === true;
+/** One canonical project boundary for private read/sign/delete and scoped uploads. */
+export async function checkImageProjectAccess(userJwt:string,auth:SupabaseAuth,project:string,occasion:number|null=null,unit:number|null=null):Promise<boolean> {
+  const response=await fetch(`${auth.supabaseUrl}/rest/v1/rpc/get_image_project_access_v1`, {
+    method:'POST',headers:{apikey:auth.anonKey,Authorization:`Bearer ${userJwt}`,'Content-Type':'application/json'},
+    body:JSON.stringify({p_project:project,p_occasion:occasion,p_unit:unit}),signal:AbortSignal.timeout(8000),
+  });
+  return response.ok && await response.json()===true;
 }
 
 /** Check the independent AKH role model through its authenticated-only RPC. */

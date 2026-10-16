@@ -2,7 +2,7 @@ import type { Env } from './types';
 import {
   authorizeImageDeletion,
   checkAkhEventManagerPermission,
-  checkIsEditorOnAnyOccasion,
+  checkImageProjectAccess,
   extractBearerToken,
   removeImageRecords,
   type SupabaseAuth,
@@ -58,7 +58,7 @@ export async function handleDelete(request: Request, env: Env): Promise<Response
     if (!isPrivateKey(body.key)) {
       return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Only canonical private keys may be deleted by key');
     }
-    if (!await checkIsEditorOnAnyOccasion(jwt, auth)) return errorResponse(403, 'FORBIDDEN', 'Forbidden');
+    if (!await checkImageProjectAccess(jwt, auth, project.id)) return errorResponse(403, 'FORBIDDEN', 'Forbidden');
     await project.privateBucket.delete(body.key);
     return jsonResponse({ deleted: true, key: body.key, projectId: project.id });
   }

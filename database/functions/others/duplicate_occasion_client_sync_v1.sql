@@ -14,6 +14,7 @@ DECLARE
   v_new bigint;
   v_begin jsonb;
   v_hash text;
+  v_policies jsonb;
   v_commit public.client_commits%ROWTYPE;
 BEGIN
   SELECT o.unit, o.title, o.organization INTO v_source_unit, v_title, v_org
@@ -33,7 +34,11 @@ BEGIN
     p_command_id, 'occasion.duplicate', v_unit, v_actor, v_hash);
   IF v_begin->>'disposition' = 'replay' THEN RETURN v_begin->'response'; END IF;
 
+  v_policies:=public.abuse_policy_bundle_v1(ARRAY['occasion.creation','occasion.copy'],v_unit,v_org);
+  PERFORM public.admit_occasion_copy_v1(p_occasion,v_unit,v_org,v_policies->'occasion.copy');
+  PERFORM public.admit_occasion_creation_v1(v_actor,v_unit,v_org,NULL,v_policies->'occasion.creation');
   v_new := public.duplicate_occasion_internal_v1(p_occasion, v_unit,coalesce(p_locale,'en'));
+  PERFORM public.admit_occasion_copy_v1(v_new,v_unit,v_org,v_policies->'occasion.copy');
   INSERT INTO public.occasion_users
     (occasion, "user", is_manager, is_editor, is_editor_view, is_editor_order, is_editor_order_view)
   VALUES (v_new, v_actor, true, true, true, true, true);

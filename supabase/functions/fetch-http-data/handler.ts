@@ -1,5 +1,6 @@
 import { encode as base64Encode } from "https://deno.land/std@0.170.0/encoding/base64.ts";
 import { fetchPublicImage, UnsafeTargetError } from "./safeFetch.ts";
+import { fetchPinnedHttps } from "./pinnedHttps.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -66,7 +67,7 @@ export async function handleFetchHttpData(
       throw new Error("Missing backend configuration");
     }
     const permission = await send(
-      `${dependencies.supabaseUrl}/rest/v1/rpc/check_upload_permission`,
+      `${dependencies.supabaseUrl}/rest/v1/rpc/admit_external_image_fetch_v1`,
       {
         method: "POST",
         headers: {
@@ -82,14 +83,17 @@ export async function handleFetchHttpData(
     );
     if (permission.status === 401) return reply(401, { error: "Unauthorized" });
     if (permission.status === 403) return reply(403, { error: "Forbidden" });
+    if (permission.status === 429) return reply(429, { error: "temporarily_limited" });
     if (!permission.ok) throw new Error("Permission check failed");
-    if (await permission.json() !== true) return reply(403, { error: "Forbidden" });
+    const limits = await permission.json();
+    if (limits?.allowed !== true) return reply(403, { error: "Forbidden" });
+    if (!Number.isSafeInteger(limits.maxBytes) || limits.maxBytes <= 0) throw new Error("Missing fetch policy");
 
     // Only safeFetch talks to the external host; it never receives user headers.
     const image = await fetchPublicImage(targetUrl, {
-      fetch: (url, init) => send(url, init),
+      fetch: dependencies.fetch ? (url, init) => send(url, init) : fetchPinnedHttps,
       resolveDns: dependencies.resolveDns ?? Deno.resolveDns,
-    });
+    }, limits.maxBytes);
     return reply(200, {
       data: base64Encode(Uint8Array.from(image.bytes).buffer),
       contentType: image.contentType,

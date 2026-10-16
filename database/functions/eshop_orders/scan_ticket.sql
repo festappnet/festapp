@@ -27,6 +27,9 @@ DECLARE
     v_deposit_feature JSONB;
     v_deposit_info JSONB;
 BEGIN
+    IF NOT public.check_scan_attempt_budget_v1((SELECT occasion FROM eshop.tickets WHERE ticket_symbol=scanned_id LIMIT 1)) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
     -----------------------------------------------------
     -- 1. Attempt to find ticket by Ticket Symbol
     -----------------------------------------------------
@@ -63,6 +66,7 @@ BEGIN
     -- 1.b. Final Check if Ticket is still missing
     -----------------------------------------------------
     IF ticket_row IS NULL OR ticket_row.state='waitlisted' OR ticket_row.ticket_symbol IS NULL THEN
+        PERFORM public.admit_scan_access_v1(NULL,false);
         RETURN jsonb_build_object('code', 404, 'message', 'Ticket or User with valid ticket not found');
     END IF;
 
@@ -75,6 +79,7 @@ BEGIN
     LIMIT 1;
 
     IF order_id IS NULL THEN
+        PERFORM public.admit_scan_access_v1(NULL,false);
         RETURN jsonb_build_object('code', 404, 'message', 'Order for ticket not found');
     END IF;
 
@@ -116,6 +121,7 @@ BEGIN
     LIMIT 1;
 
     IF expected_scan_code IS NULL THEN
+        PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object('code', 400, 'message', 'Scan code not defined for this occasion');
     END IF;
 
@@ -123,12 +129,17 @@ BEGIN
     -- 5. Validate the scanned_code
     -----------------------------------------------------
     IF scanned_code IS DISTINCT FROM expected_scan_code THEN
+        PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object('code', 401, 'message', 'Scan code is not correct');
     END IF;
 
     -----------------------------------------------------
     -- 6. Fetch order, products, spot, AND GROUPS
     -----------------------------------------------------
+
+    IF NOT public.admit_scan_access_v1(occasion_id,true) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
 
     -- A. Fetch Order
     SELECT CASE

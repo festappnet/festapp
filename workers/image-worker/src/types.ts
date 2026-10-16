@@ -1,6 +1,7 @@
 export type ProjectId = 'default' | 'a' | 'akhweb' | 'slunovrat';
 
 export interface Env {
+  IMAGE_READ_MISS_BUDGET?: { limit(input: { key: string }): Promise<{ success: boolean }> };
   IMAGES_BUCKET: R2Bucket;
   IMAGES_BUCKET_A: R2Bucket;
   IMAGES_BUCKET_AKHWEB: R2Bucket;
@@ -21,5 +22,4 @@ export interface Env {
   CF_ZONE_ID: string;
   CF_CACHE_PURGE_TOKEN: string;
   CONTROL_ALLOWED_ORIGINS: string;
-  PRIVATE_MIGRATION_FALLBACK?: string;
 }

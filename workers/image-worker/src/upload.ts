@@ -2,8 +2,7 @@ import { MAX_IMAGE_INPUT_BYTES, readUploadForm, resolveUploadPolicy, processUplo
 import type { Env } from './types';
 import {
   checkAkhEventManagerPermission,
-  checkEditorPermission,
-  checkUnitEditorPermission,
+  checkImageProjectAccess,
   extractBearerToken,
   type SupabaseAuth,
 } from './auth';
@@ -70,14 +69,14 @@ export async function handleUpload(
     return errorResponse(400, 'MISSING_FILE', 'Missing file field');
   }
 
-  const occasionId = occasionIdRaw ? parseInt(String(occasionIdRaw), 10) : null;
-  const unitId = unitIdRaw ? parseInt(String(unitIdRaw), 10) : null;
+  const occasionId = occasionIdRaw ? Number(occasionIdRaw) : null;
+  const unitId = unitIdRaw ? Number(unitIdRaw) : null;
 
-  if (occasionIdRaw && (occasionId === null || isNaN(occasionId))) {
+  if (occasionIdRaw && (occasionId === null || !Number.isSafeInteger(occasionId) || occasionId <= 0)) {
     return errorResponse(400, 'INVALID_OCCASION', 'Invalid occasionId');
   }
 
-  if (unitIdRaw && (unitId === null || isNaN(unitId))) {
+  if (unitIdRaw && (unitId === null || !Number.isSafeInteger(unitId) || unitId <= 0)) {
     return errorResponse(400, 'INVALID_UNIT', 'Invalid unitId');
   }
 
@@ -108,10 +107,8 @@ export async function handleUpload(
   let isEditor = false;
   if (project.authContract === 'akhweb') {
     isEditor = await checkAkhEventManagerPermission(userJwt, auth);
-  } else if (occasionId !== null) {
-    isEditor = await checkEditorPermission(userJwt, occasionId, auth);
-  } else if (unitId !== null) {
-    isEditor = await checkUnitEditorPermission(userJwt, unitId, auth);
+  } else {
+    isEditor = await checkImageProjectAccess(userJwt, auth, project.id, occasionId, unitId);
   }
   if (!isEditor) {
     return errorResponse(403, 'FORBIDDEN', 'Forbidden');
@@ -160,6 +157,22 @@ export async function handleUpload(
     key = `${prefix}/${uid}-${safeName}`;
   }
 
+  if (project.authContract === 'festapp') {
+    try {
+      const admission = await fetch(`${auth.supabaseUrl}/rest/v1/rpc/admit_image_upload_v1`, {
+        method: 'POST',
+        headers: { apikey: auth.anonKey, Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_bytes: file.size, p_occasion_id: occasionId, p_unit_id: unitId }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!admission.ok) {
+        const error = await admission.json() as { code?: string };
+        return errorResponse(error.code === 'PT429' ? 429 : 503, 'UPLOAD_ADMISSION', 'Upload temporarily limited', true);
+      }
+      if (await admission.json() !== true) return errorResponse(503, 'UPLOAD_ADMISSION', 'Upload temporarily limited', true);
+    } catch { return errorResponse(503, 'UPLOAD_ADMISSION', 'Upload temporarily unavailable', true); }
+  }
+
   let processed;
   try {
     processed = key.startsWith('private/')
@@ -170,6 +183,23 @@ export async function handleUpload(
     throw error;
   }
   if (processed.extension) key = key.replace(/\.[^./]+$/, `.${processed.extension}`);
+
+  // Charge actual transformed bytes before the R2 write. Streaming original
+  // bodies have the measured File size; processed raster bodies are ArrayBuffers.
+  if (project.authContract === 'festapp') {
+    const storedBytes=processed.body instanceof ArrayBuffer ? processed.body.byteLength : file.size;
+    try {
+      const admission=await fetch(`${auth.supabaseUrl}/rest/v1/rpc/admit_image_storage_v1`, {
+        method:'POST', headers:{apikey:auth.anonKey,Authorization:`Bearer ${userJwt}`,'Content-Type':'application/json'},
+        body:JSON.stringify({p_bytes:storedBytes,p_occasion_id:occasionId,p_unit_id:unitId}), signal:AbortSignal.timeout(8000),
+      });
+      if(!admission.ok) {
+        const error=await admission.json() as {code?:string};
+        return errorResponse(error.code==='PT429'?429:503,'STORAGE_ADMISSION','Storage allocation limited',true);
+      }
+      if(await admission.json()!==true)return errorResponse(503,'STORAGE_ADMISSION','Storage allocation unavailable',true);
+    } catch {return errorResponse(503,'STORAGE_ADMISSION','Storage allocation unavailable',true);}
+  }
 
   const isPrivate = key.startsWith('private/');
   const bucket = isPrivate ? project.privateBucket : project.publicBucket;
@@ -190,6 +220,7 @@ export async function handleUpload(
     } catch (error) {
       await bucket.delete(key);
       console.error('image_upload_failed', { operation: 'upload', status: 'db_failed_compensated' });
+      if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
       return errorResponse(502, 'IMAGE_RECORD_FAILED', 'Image record could not be persisted', true);
     }
   }
@@ -236,8 +267,8 @@ async function addImageRecord(
     }
   );
   if (!response.ok) {
-    const text = await response.text();
-    console.warn('add_image_record failed:', response.status, text);
+    if (response.status === 429) throw new ImageProcessingError(429, 'IMAGE_RECORD_LIMIT', 'Image metadata capacity is limited');
+    console.warn('add_image_record failed:', response.status);
     throw new Error('add_image_record failed');
   }
 }

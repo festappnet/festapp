@@ -41,6 +41,7 @@ export async function enqueueAndAwaitEmail(
   },
 ): Promise<EmailDeliveryResult> {
   const kind = input.kind ?? kindForTemplate(input.templateCode ?? "");
+  await admitEmailPreparation(input);
   const prepared = await renderEmail(input);
   // Stable content digest for older clients without a request ID. Identical request retries join the same intent.
   const hash = await crypto.subtle.digest(
@@ -75,6 +76,7 @@ export async function enqueueAndAwaitEmail(
   return { templateId: input.template?.id ?? null, logged: true };
 }
 export async function prepareAccountEmail(input: DeliverEmailInput) {
+  await admitEmailPreparation(input);
   const prepared = await renderEmail(input);
   const digest = Array.from(
     new Uint8Array(
@@ -86,4 +88,14 @@ export async function prepareAccountEmail(input: DeliverEmailInput) {
     (b) => b.toString(16).padStart(2, "0"),
   ).join("");
   return { p_sealed: await sealEmail(prepared), p_content_hash: digest };
+}
+
+async function admitEmailPreparation(input: DeliverEmailInput): Promise<void> {
+  const allowed = await emailRpc("admit_email_preparation_v1", {
+    p_organization: input.context.organization,
+    p_occasion: input.context.occasion ?? null,
+    p_unit: input.context.unit ?? null,
+    p_recipient: input.to,
+  });
+  if (allowed !== true) throw new Error("email_preparation_deferred");
 }

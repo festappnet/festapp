@@ -17,6 +17,9 @@ BEGIN
 
     PERFORM public.check_is_editor_order_on_occasion(occasion_id);
 
+    IF NOT public.admit_scan_access_v1(occasion_id,true) THEN
+        RAISE SQLSTATE 'PT429' USING MESSAGE='abuse_limit_exceeded';
+    END IF;
     PERFORM public.check_ticket_is_mutable(ticket_id);
 
     UPDATE eshop.tickets

@@ -89,10 +89,27 @@ class ImageControlClient {
   }
 
   Future<Uint8List> download(String url) async {
-    final response = await httpClient.get(Uri.parse(url));
-    if (response.statusCode != 200)
+    final uri = Uri.parse(url);
+    if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+      throw const FormatException('Invalid image URL');
+    }
+    // Client memory bound matches the upload protocol's 20 MB input envelope.
+    // The Worker independently enforces actual bytes and central SQL budgets.
+    const maxInputBytes = ImageUploadLimits.maxInputBytes;
+    final response = await httpClient
+        .send(http.Request('GET', uri))
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) {
       throw Exception('Image download failed: ${response.statusCode}');
-    return response.bodyBytes;
+    }
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk in response.stream.timeout(const Duration(seconds: 30))) {
+      if (bytes.length + chunk.length > maxInputBytes) {
+        throw const FormatException('Image exceeds the upload input limit');
+      }
+      bytes.add(chunk);
+    }
+    return bytes.takeBytes();
   }
 }
 

@@ -70,14 +70,14 @@ describe('one server-owned image upload policy', () => {
     const f = fixture(); f.output.mockRejectedValue(new Error('transform failed'));
     const bucket = { put: vi.fn(), delete: vi.fn() };
     const env = { ...f.env, SUPABASE_URL: 'https://api.festapp.net', SUPABASE_ANON_KEY: 'fixture', IMAGES_BUCKET: bucket, IMAGES_PRIVATE_BUCKET: bucket } as unknown as Env;
-    const fetchMock = vi.fn().mockResolvedValue(new Response('true'));
+    const fetchMock = vi.fn().mockImplementation(async () => new Response('true'));
     vi.stubGlobal('fetch', fetchMock);
     try {
       const form = new FormData(); form.set('file', file); form.set('projectId', 'default'); form.set('occasionId', '12'); form.set('profile', 'standard');
       const response = await handleUpload(new Request('https://image-api.festapp.net/upload', { method: 'POST', headers: { Authorization: 'Bearer fixture' }, body: form }), env);
       expect(response.status).toBe(502);
       expect(bucket.put).not.toHaveBeenCalled();
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     } finally { vi.unstubAllGlobals(); }
   });
 });

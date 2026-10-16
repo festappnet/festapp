@@ -12,14 +12,15 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
   }
-  const { record } = await req.json();
-  if (!record || typeof record !== "object" || !Number.isSafeInteger(record.organization) ||
-      !Number.isSafeInteger(record.occasion)) {
-    return new Response(JSON.stringify({ error: "invalid_payload" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+  let notificationId: unknown;
+  try { notificationId = (await req.json())?.record?.id; }
+  catch { return Response.json({ error: "invalid_payload" }, {status:400}); }
+  if (typeof notificationId !== "string" || !/^[0-9a-f-]{36}$/i.test(notificationId)) {
+    return Response.json({error:"invalid_payload"},{status:400});
   }
+  const {data:record,error:admissionError}=await supabaseAdmin.rpc("admit_notification_delivery_v1",{p_notification:notificationId});
+  if(admissionError || !record) return Response.json({error:"notification_unavailable"},{status:admissionError?.code==="PT429"?429:503});
+  if (record.allowed !== true) return Response.json({error:"temporarily_limited"},{status:429});
   const organizationId = record.organization; // assuming `organization` is passed in `record`
   const url = "https://onesignal.com/api/v1/notifications";
 
@@ -49,32 +50,17 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Fetch the link for the current occasion
-  const currentLink = await supabaseAdmin
-    .from("occasions")
-    .select("link")
-    .eq("id", record.occasion)
-    .single();
-
-  if (currentLink.error || !currentLink.data) {
-    console.error("Occasion link not found.");
-    return new Response(JSON.stringify({ error: "Occasion link not found" }), {
-      headers: { "Content-Type": "application/json" },
-      status: 404,
-    });
-  }
-
   // Optional deep-link target path within the occasion (e.g. "cleaning").
   // Falls back to "news" so existing notifications are unaffected.
   const targetPath =
-    (record.data && typeof record.data.path === "string" && record.data.path)
+    (record.data && ["news", "cleaning"].includes(record.data.path))
       ? record.data.path
       : "news";
 
   const payload = buildNotificationPayload({
     appId: onesignalAppId,
     defaultUrl,
-    occasionLink: currentLink.data.link,
+    occasionLink: record.occasion_link,
     targetPath,
     recipient: record.to,
     heading: record.heading,
@@ -82,14 +68,16 @@ Deno.serve(async (req) => {
   });
 
   // Send notification to OneSignal
-  const response = await fetch(url, {
+  let response: Response;
+  try { response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Basic ${onesignalRestApiKey}`,
     },
-    body: JSON.stringify(payload),
-  });
+    body: JSON.stringify({ ...payload, idempotency_key: record.id }),
+    signal: AbortSignal.timeout(10000),
+  }); } catch { return Response.json({error:"notification_delivery_unavailable"},{status:503}); }
 
   if (!response.ok) {
     console.error("Notification delivery failed with status:", response.status);

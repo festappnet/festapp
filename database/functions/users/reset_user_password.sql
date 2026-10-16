@@ -40,13 +40,18 @@ BEGIN
     -- =================================================================
     -- The function checks for permissions in a specific, prioritized order.
 
-    IF NOT public.get_can_reset_user_password(p_user_id) THEN
+    IF auth.uid() IS NULL OR public.get_can_reset_user_password(p_user_id) IS NOT TRUE THEN
         RAISE EXCEPTION '%',jsonb_build_object('code',4030,'message','Permission denied. You do not have the required privileges to reset this user''s password.')::text;
     END IF;
 
     -- =================================================================
     -- 4. PASSWORD UPDATE
     -- =================================================================
+    -- All manual and emailed password changes share admission before bcrypt.
+    -- Verification counters use the account UUID and are never reset here.
+    PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('auth.password.change',NULL,NULL),
+      jsonb_build_object('actor',auth.uid(),'recipient',p_user_id::text),
+      jsonb_build_object('password.change.payload.bytes',octet_length(p_password)));
     v_encrypted_pw := crypt(p_password, gen_salt('bf'));
 
     UPDATE auth.users

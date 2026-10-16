@@ -44,11 +44,10 @@ DECLARE x jsonb := current_setting('test.attendance_summary')::jsonb; s record;
 BEGIN
   SELECT * INTO s FROM public.get_event_attendance_summary(ARRAY[(x->>'event')::bigint]);
   IF s.participant_count <> 2 OR s.is_signed_in IS DISTINCT FROM true THEN RAISE EXCEPTION 'Owner state incorrect'; END IF;
+  IF (SELECT count(*) FROM public.event_users WHERE event=(x->>'event')::bigint)<>1 THEN RAISE EXCEPTION 'Ordinary participant can read other identities'; END IF;
 END $$;
 RESET ROLE;
--- Exercise the eventual privacy cutover in rollback only. Aggregate counts
--- must stay correct after table rows are limited to the authenticated owner.
-DROP POLICY IF EXISTS "Enable read for all" ON public.event_users;
+-- The applied privacy policy must hide identities while keeping aggregate counts.
 SET LOCAL ROLE anon;
 SELECT set_config('request.jwt.claim.sub','',true),set_config('request.jwt.claim.role','anon',true);
 DO $$
@@ -57,6 +56,14 @@ BEGIN
   IF EXISTS(SELECT 1 FROM public.event_users WHERE event=(x->>'event')::bigint) THEN RAISE EXCEPTION 'Public UUID rows still visible'; END IF;
   SELECT participant_count INTO n FROM public.get_event_attendance_summary(ARRAY[(x->>'event')::bigint]);
   IF n IS DISTINCT FROM 2::bigint THEN RAISE EXCEPTION 'Aggregate broke after cutover'; END IF;
+END $$;
+RESET ROLE;
+INSERT INTO public.occasion_users(occasion,"user",is_editor_view)
+SELECT occasion,(current_setting('test.attendance_summary')::jsonb->>'owner')::uuid,true FROM public.events WHERE id=(current_setting('test.attendance_summary')::jsonb->>'event')::bigint;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub',current_setting('test.attendance_summary')::jsonb->>'owner',true),set_config('request.jwt.claim.role','authenticated',true);
+DO $$ BEGIN
+ IF (SELECT count(*) FROM public.event_users WHERE event=(current_setting('test.attendance_summary')::jsonb->>'event')::bigint)<>2 THEN RAISE EXCEPTION 'Authorized participant editor lost access'; END IF;
 END $$;
 RESET ROLE;
 ROLLBACK;

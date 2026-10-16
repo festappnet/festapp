@@ -215,7 +215,7 @@ if [ "$RUN_DB" = true ] || [ "$RUN_INTEGRATION" = true ]; then
              # Run without --allow-all to be safe.
              # test_parser_comprehensive only needs logic, but imports might trigger env read.
              set +e
-             deno test --allow-env --allow-net --allow-read $DENO_TEST_FILES
+             deno test --frozen --lock="$PROJECT_ROOT/supabase/functions/deno.lock" --allow-env --allow-net --allow-read $DENO_TEST_FILES
              res=$?
              set -e
 
@@ -294,6 +294,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
       "$SCRIPT_DIR/tests/cloudflare_pages_project.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_infrastructure.test.mjs" \
       "$SCRIPT_DIR/tests/edge_function_test_coverage.test.mjs" \
+      "$SCRIPT_DIR/tests/abuse_policy_coverage.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_inventory.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_cutover_mode_gate.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_operational_readiness.test.mjs" \

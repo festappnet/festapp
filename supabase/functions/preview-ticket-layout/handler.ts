@@ -1,3 +1,5 @@
+import { documentLimits, boundDocumentOutput } from '../_shared/documentLimits.ts';
+import { AuthError } from '../_shared/authError.ts';
 import QRCode from 'npm:qrcode';
 import { Buffer } from 'node:buffer';
 import { PDFDocument } from 'npm:pdf-lib';
@@ -8,7 +10,7 @@ import {TicketFontError,type TicketFont} from '../_shared/ticketFonts.ts';
 const fontReply=(f:TicketFont)=>({id:f.id,family:f.family,weight:f.weight,font:Buffer.from(f.bytes).toString('base64'),metrics:f.metrics});
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Cache-Control':'no-store'};
 export interface PreviewDependencies {
-  authorize(header:string,occasionId:number,readOnly?:boolean):Promise<boolean>;
+  authorize(header:string,occasionId:number,bytes:number,readOnly?:boolean):Promise<false|{abuseLimits:Record<string,number>}>;
   occasion(id:number):Promise<any>;
   products(id:number):Promise<ProductCatalog>;
   font?:(id:string)=>Promise<TicketFont>;
@@ -30,13 +32,19 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     if(!Number.isSafeInteger(occasionId)||occasionId<1||!['resolve','pdf','font','catalog'].includes(mode)||(!['font','catalog'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
     const readOnly=body.readOnly===true;
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
-    if(!await deps.authorize(auth,occasionId,readOnly))return reply(403,{error:'Forbidden'});
-    if(mode==='font'){if(body.fontProtocol!==2||typeof body.fontId!=='string'||!deps.font)return reply(400,{error:'Invalid font request'});return reply(200,fontReply(await deps.font(body.fontId)));}
+    const admission=await deps.authorize(auth,occasionId,count,readOnly);
+    if(!admission)return reply(403,{error:'Forbidden'});
+    const limits=documentLimits(admission);
+    const boundedReply=(status:number,body:unknown)=>{
+      if(new TextEncoder().encode(JSON.stringify(body)).byteLength>limits.outputBytes)throw new AuthError('Preview output too large',429);
+      return reply(status,body);
+    };
+    if(mode==='font'){if(body.fontProtocol!==2||typeof body.fontId!=='string'||!deps.font)return reply(400,{error:'Invalid font request'});return boundedReply(200,fontReply(await deps.font(body.fontId)));}
     const occasion=await deps.occasion(occasionId);
     if(readOnly&&type!==(occasion.features?.find((f:any)=>f.code==='ticket')?.ticket_type==='named'?'named':'wide'))return reply(400,{error:'Saved ticket type mismatch'});
     let products:ProductCatalog;let catalogError=false;
     try {products=await deps.products(occasionId);} catch(error){if(mode!=='resolve'||readOnly)throw error;catalogError=true;products={types:new Map(),products:new Map()};}
-    if(mode==='catalog')return reply(200,{catalog:[...products.types.values()]});
+    if(mode==='catalog')return boundedReply(200,{catalog:[...products.types.values()]});
     const feature={...(occasion.features?.find((f:any)=>f.code==='ticket')??{}),ticket_type:type};
     if(body.borrowResourcesOnly===true&&mode==='resolve'){delete feature.layout;feature.background=null;products={types:new Map(),products:new Map()};}
     // Keep an unchanged persisted source; new client-supplied sources must be
@@ -67,8 +75,9 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     template??=initial;
     const data=sampleData(scenario,occasion,catalogError?undefined:products,template);
     const qr=QRCode.create(data[template.elements.find(e=>e.binding==='qr')!.id]!,{errorCorrectionLevel:'M'}).modules;
-    if(mode==='resolve') return reply(200,{catalogError,catalog:[...products.types.values()],missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([id,f])=>[id,fontReply(f)])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion,products)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
+    if(mode==='resolve') return boundedReply(200,{catalogError,catalog:[...products.types.values()],missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([id,f])=>[id,fontReply(f)])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion,products)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
     const result=await generateTicketPdf(data,resources,template,type,true);
-    return reply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});
-  }catch(error) {if(error instanceof TicketFontError)return reply(400,{error:error.code});return reply(400,{error:'Ticket preview rejected. Check layout and image resources.'});}
+    boundDocumentOutput(result.bytes,1,limits);
+    return boundedReply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});
+  }catch(error) {if(error && typeof error==='object' && 'status' in error && error.status===429)return reply(429,{error:'temporarily_limited'});if(error instanceof TicketFontError)return reply(400,{error:error.code});return reply(400,{error:'Ticket preview rejected. Check layout and image resources.'});}
 }

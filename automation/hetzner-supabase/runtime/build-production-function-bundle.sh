@@ -39,6 +39,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
   tar --no-xattrs -C "$STAGE" -xf -
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle must not contain symlinks"
 readonly TICKET_FONT_ASSET_PROOF="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/ticket-font-asset-proof.py" "$STAGE/_shared/ticket-assets")"
+install -m 0600 "$SOURCE_ROOT/deno.lock" "$STAGE/deno.lock"
 readonly ARCHIVE="$RUN_DIR/functions.tar.gz"
 COPYFILE_DISABLE=1 tar --no-xattrs -C "$STAGE" -czf "$ARCHIVE" .
 chmod 0600 "$ARCHIVE"

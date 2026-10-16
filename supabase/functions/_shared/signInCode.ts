@@ -1,4 +1,4 @@
-/** Unbiased cryptographic six-digit code; database enforces expiry and attempts. */
+/** Unbiased cryptographic six-digit password. Delivery deadlines do not expire it. */
 export function generateSignInCode(): string {
   const sample = new Uint32Array(1);
   do {

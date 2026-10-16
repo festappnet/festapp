@@ -37,13 +37,12 @@ async function sha256(value: string): Promise<string> {
   ).join("");
 }
 
-async function consumeLimit(key: string, limit: number): Promise<boolean> {
+async function consumeLimit(key: string, family: "reset.source" | "reset.account"): Promise<boolean> {
   const { data, error } = await supabaseAdmin.rpc(
-    "consume_password_reset_rate_limit_v1",
+    "consume_auth_abuse_v1",
     {
       p_key_hash: await sha256(key),
-      p_limit: limit,
-      p_window_seconds: 900,
+      p_family: family,
     },
   );
   if (error || typeof data !== "boolean") {
@@ -75,15 +74,16 @@ Deno.serve(async (req) => {
     !Number.isSafeInteger(organizationId) || organizationId <= 0
   ) return json(origin);
 
-  const sourceAddress = req.headers.get("cf-connecting-ip") ??
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ?? "unknown";
+  // Only opt into an ingress-owned, stripped header after runtime verification.
+  // Without it the shared source bucket fails closed instead of trusting XFF.
+  const trustedHeader = Deno.env.get("FESTAPP_TRUSTED_IP_HEADER");
+  const sourceAddress = trustedHeader ? req.headers.get(trustedHeader) ?? "unknown" : "unknown";
   try {
-    const sourceAllowed = await consumeLimit(`source:${sourceAddress}`, 20);
+    const sourceAllowed = await consumeLimit(`source:${sourceAddress}`, "reset.source");
     if (!sourceAllowed) return json(origin);
     const accountAllowed = await consumeLimit(
       `account:${organizationId}:${userEmail}`,
-      3,
+      "reset.account",
     );
     if (!accountAllowed) return json(origin);
   } catch (error) {

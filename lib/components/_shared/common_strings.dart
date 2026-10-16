@@ -180,4 +180,5 @@ class CommonStrings {
       'Common.dropFileHere'.tr(); // "Drop file here"
   static String get dropFileHereOrClick =>
       'Common.dropFileHereOrClick'.tr(); // "Drop file here or click to upload"
+  static String get resourceLimited => 'Common.resourceLimited'.tr();
 }

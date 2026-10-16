@@ -3,6 +3,7 @@ RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public
 DECLARE o bigint; occ bigint; seq bigint; attempt integer;
 BEGIN
  SELECT occasion INTO STRICT occ FROM public.forms WHERE id=p_form FOR UPDATE;
+ PERFORM public.admit_order_creation_v1(occ);
  seq:=public.next_order_sequence(occ);
  FOR attempt IN 1..10 LOOP
   INSERT INTO eshop.orders(form,occasion,order_symbol,order_sequence,state)

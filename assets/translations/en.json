@@ -1648,7 +1648,8 @@
     "discardChangesConfirmation": "Discard unsaved changes?",
     "keepEditing": "Keep editing",
     "copy": "Copy",
-    "copied": "Copied"
+    "copied": "Copied",
+    "resourceLimited": "The usage limit has been reached. Try again later. Contact support to request more capacity."
   },
   "BankAccount": {
     "synchronizationPending": "Synchronization is enabled. The next bank fetch is waiting for the bank cooldown.",

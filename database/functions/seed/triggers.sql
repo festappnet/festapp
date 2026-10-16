@@ -6,7 +6,7 @@ AS $function$
 DECLARE
   relation_name text;
 BEGIN
-  IF auth.role() <> 'service_role' AND session_user <> 'postgres' THEN
+  IF auth.role() IS DISTINCT FROM 'service_role' AND session_user <> 'postgres' THEN
     RAISE EXCEPTION 'Access Denied: Service role required.';
   END IF;
   IF p_project_url !~ '^https://[^/]+$' THEN
@@ -25,11 +25,10 @@ BEGIN
     );
   END LOOP;
 
-  DROP TRIGGER IF EXISTS push_log_notifications ON public.log_notifications;
-  EXECUTE format(
-    'CREATE TRIGGER push_log_notifications AFTER INSERT ON public.log_notifications '
-    'FOR EACH ROW EXECUTE FUNCTION public.deliver_log_notification_v1(%L)',
-    p_project_url || '/functions/v1/notify'
-  );
+  -- Notification delivery is an explicit domain-command operation.
+  UPDATE public.notification_runtime SET endpoint=p_project_url||'/functions/v1/notify' WHERE singleton;
 END
 $function$;
+
+REVOKE ALL ON FUNCTION public.setup_triggers(text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.setup_triggers(text) TO service_role;

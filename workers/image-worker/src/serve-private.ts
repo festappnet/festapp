@@ -1,5 +1,5 @@
 import type { Env } from './types';
-import { extractBearerToken, checkIsEditorOnAnyOccasion } from './auth';
+import { extractBearerToken, checkImageProjectAccess } from './auth';
 import {
   assertControlHost,
   resolveControlProject,
@@ -12,8 +12,8 @@ import { isPrivateKey } from './private-key';
 /**
  * Serve private files from R2 with JWT authentication and editor permission check.
  *
- * Replicates the `get_is_editor_on_any_occasion()` RLS policy (Pitfall 7):
- * editor on ANY occasion can access private files.
+ * Preserves editor sharing inside the original project through the canonical
+ * SQL project boundary; sharing must not expand after backend consolidation.
  *
  * Private files are served with no-cache headers to prevent CDN caching.
  */
@@ -52,7 +52,7 @@ export async function handlePrivate(
     throw error;
   }
   const auth = { supabaseUrl: project.supabaseUrl, anonKey: project.anonKey };
-  const isEditor = await checkIsEditorOnAnyOccasion(userJwt, auth);
+  const isEditor = await checkImageProjectAccess(userJwt, auth, project.id);
   if (!isEditor) {
     return errorResponse(403, 'FORBIDDEN', 'Forbidden');
   }
@@ -65,13 +65,7 @@ export async function handlePrivate(
   }
 
   if (!isPrivateKey(key)) return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Invalid private key');
-  let object = await project.privateBucket.get(key);
-  if (!object && env.PRIVATE_MIGRATION_FALLBACK === 'enabled') {
-    object = await project.publicBucket.get(key);
-    if (object) console.log('image_operation', {
-      operation: 'private_migration_fallback', status: 'hit', projectId: project.id,
-    });
-  }
+  const object = await project.privateBucket.get(key);
   if (!object) {
     return new Response('Not found', { status: 404 });
   }

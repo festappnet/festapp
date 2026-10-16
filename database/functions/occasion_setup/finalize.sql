@@ -2,7 +2,7 @@
 -- source product IDs are never accepted as IDs in the new aggregate.
 CREATE OR REPLACE FUNCTION public.finalize_occasion_setup_draft(p_id uuid,p_expected_revision bigint,p_command_id uuid)
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts; payload jsonb; config jsonb; features jsonb := '[]';
+DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config jsonb; features jsonb := '[]';
  started jsonb; receipt jsonb; new_id bigint; form_id bigint; form_data jsonb; fields jsonb := '[]';
  field jsonb; pt jsonb; products jsonb; product jsonb; result jsonb; source_id bigint;
  old_products jsonb := '[]'; old_types jsonb := '[]'; type_map jsonb := '{}'; final_features jsonb; new_products jsonb; product_map jsonb := '{}'; idx integer; j integer;
@@ -33,6 +33,10 @@ BEGIN
   'title',payload->>'title','link',payload->>'link','description',coalesce(payload->>'description',''),
   'start_time',payload->>'start','end_time',payload->>'end','is_hidden',true,'is_open',false,
   'features',features,'data',jsonb_build_object('client_sync_v1',false));
+ policies:=public.abuse_policy_bundle_v1(ARRAY['occasion.creation','occasion.copy'],d.unit,d.organization);
+ IF source_id IS NOT NULL AND (coalesce((payload->>'copyProgram')::boolean,false) OR coalesce((payload->>'copyInformation')::boolean,false) OR coalesce((payload->>'copyEmails')::boolean,false)) THEN
+  PERFORM public.admit_occasion_copy_v1(source_id,d.unit,d.organization,policies->'occasion.copy'); END IF;
+ PERFORM public.admit_occasion_creation_v1(auth.uid(),d.unit,d.organization,NULL,policies->'occasion.creation');
  PERFORM public.update_occasion_internal_v1(config);
  new_id := currval(pg_get_serial_sequence('public.occasions','id'));
  SELECT o.features INTO features FROM public.occasions o WHERE o.id=new_id;
@@ -125,6 +129,7 @@ BEGIN
   INSERT INTO public.email_templates(occasion,unit,organization,code,title,subject,html)
   SELECT new_id,d.unit,d.organization,code,title,subject,html FROM public.email_templates WHERE occasion=source_id;
  END IF;
+ PERFORM public.admit_occasion_copy_v1(new_id,d.unit,d.organization,policies->'occasion.copy');
  INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
  VALUES('occasion','occasion',new_id,new_id::text,1);
  INSERT INTO public.client_commits(unit,actor_id,actor_kind,source,change_class)

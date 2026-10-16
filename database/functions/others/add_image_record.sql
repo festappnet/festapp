@@ -23,6 +23,7 @@ BEGIN
     END IF;
 
     -- Insert Record
+    PERFORM public.admit_image_record_v1(p_link,p_occasion_id,p_unit_id);
     INSERT INTO public.images (link, occasion, unit)
     VALUES (p_link, p_occasion_id, p_unit_id)
     RETURNING id INTO v_image_id;

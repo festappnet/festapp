@@ -286,7 +286,8 @@
     "update": "Aktualisieren",
     "updateAppPrompt": "Aktualisieren Sie die App auf die neueste Version, um auf alle Funktionen zuzugreifen.",
     "updatedItem": "Aktualisiert: {item}.",
-    "users": "Benutzer"
+    "users": "Benutzer",
+    "resourceLimited": "Das Nutzungslimit wurde erreicht. Versuchen Sie es später erneut. Kontaktieren Sie den Support für mehr Kapazität."
   },
   "Unit": {
     "addNewEvent": "Neue Veranstaltung hinzufügen"

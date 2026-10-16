@@ -82,38 +82,13 @@ class DbImages {
 
   static Future<String> createCopyOfImage(
       String imageUrl, int? occasion, int? unit) async {
-    if (_isR2Url(imageUrl)) {
-      // R2: download the image bytes and re-upload via Worker
-      final bytes = await ImageControlClient(
-              endpoint: AppConfig.imageApiUrl,
-              projectId: AppConfig.imageProjectId,
-              httpClient: _httpClient)
-          .download(imageUrl);
-      return uploadImage(bytes, occasion, unit);
-    }
-
-    // Supabase Storage: existing copy logic
-    final uri = Uri.parse(imageUrl);
-    final segments = uri.pathSegments;
-    final bucketIndex = segments.indexOf(_bucketName);
-    if (bucketIndex == -1 || bucketIndex + 1 >= segments.length) {
-      throw Exception('Invalid image URL');
-    }
-    final filePath = segments.sublist(bucketIndex + 1).join('/');
-
-    final newPath = 'images/${DateTime.now().millisecondsSinceEpoch}.jpg';
-    await _supabase.storage.from(_bucketName).copy(filePath, newPath);
-
-    final newPublicUrl =
-        _supabase.storage.from(_bucketName).getPublicUrl(newPath);
-
-    await _supabase.rpc('add_image_record', params: {
-      'p_link': newPublicUrl,
-      'p_occasion_id': occasion,
-      'p_unit_id': unit,
-    });
-
-    return newPublicUrl;
+    // Historical public URLs remain readable; all new objects have one writer.
+    final bytes = await ImageControlClient(
+            endpoint: AppConfig.imageApiUrl,
+            projectId: AppConfig.imageProjectId,
+            httpClient: _httpClient)
+        .download(imageUrl);
+    return uploadImage(bytes, occasion, unit);
   }
 
   static Future<bool> isImageOwned(String imageUrl, {int? occasion, int? unit}) async {

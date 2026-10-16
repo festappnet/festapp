@@ -5,7 +5,7 @@ export interface NotificationPayloadInput {
   defaultUrl: string;
   occasionLink: string;
   targetPath: string;
-  recipient?: string | null;
+  recipient?: string | string[] | null;
   heading: string;
   content: string;
 }
@@ -25,7 +25,7 @@ export function buildNotificationPayload(input: NotificationPayloadInput) {
       app_id: input.appId,
       web_url:
         `${input.defaultUrl}/#/${input.occasionLink}/${input.targetPath}`,
-      include_aliases: { external_id: input.recipient },
+      include_aliases: { external_id: Array.isArray(input.recipient) ? input.recipient : [input.recipient] },
       target_channel: "push",
       headings: { en: input.heading },
       contents: { en: input.content },

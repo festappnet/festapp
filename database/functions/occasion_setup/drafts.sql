@@ -63,31 +63,44 @@ REVOKE ALL ON FUNCTION public.build_occasion_setup_configuration(bigint,uuid) FR
 -- Client-generated UUID makes canonical draft initialization safe to retry.
 CREATE OR REPLACE FUNCTION public.create_occasion_setup_draft(p_id uuid, p_unit bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts; configuration jsonb;
+DECLARE d public.occasion_setup_drafts; configuration jsonb; is_new boolean; policy jsonb;
 BEGIN
   IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
+  -- Serialize identical UUIDs before inspecting existence, without charging retries.
+  PERFORM pg_advisory_xact_lock(hashtextextended('draft:'||p_id::text,0));
+  is_new:=NOT EXISTS(SELECT 1 FROM public.occasion_setup_drafts WHERE id=p_id);
+  IF is_new THEN
+    policy:=public.abuse_effective_rules_v1('occasion.draft',p_unit,(SELECT organization FROM public.units WHERE id=p_unit));
+    PERFORM public.admit_occasion_draft_v1(auth.uid(),p_unit,
+      (SELECT organization FROM public.units WHERE id=p_unit),0,true,true,policy);
+  END IF;
   INSERT INTO public.occasion_setup_drafts(id,unit,organization,author)
     SELECT p_id,id,organization,auth.uid() FROM public.units WHERE id = p_unit
     ON CONFLICT (id) DO NOTHING;
-  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id;
+  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
   IF d.unit IS DISTINCT FROM p_unit OR d.author IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   IF NOT (d.data ? 'defaultConfiguration') THEN
+    IF NOT is_new THEN
+      policy:=public.abuse_effective_rules_v1('occasion.draft',p_unit,d.organization);
+      PERFORM public.admit_occasion_draft_v1(auth.uid(),p_unit,d.organization,0,false,true,policy);
+    END IF;
     configuration := public.build_occasion_setup_configuration(p_unit,p_id);
     UPDATE public.occasion_setup_drafts SET data =
       jsonb_build_object('defaultConfiguration',configuration,
         'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
       || d.data WHERE id = p_id RETURNING * INTO d;
+    PERFORM public.admit_occasion_draft_v1(auth.uid(),p_unit,d.organization,octet_length(d.data::text),false,false,policy);
   END IF;
   RETURN to_jsonb(d);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.initialize_occasion_setup_draft_defaults(p_id uuid, p_expected_revision bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts; configuration jsonb;
+DECLARE d public.occasion_setup_drafts; configuration jsonb; policy jsonb;
 BEGIN
   SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
   IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
@@ -97,12 +110,15 @@ BEGIN
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
     RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
   END IF;
+  policy:=public.abuse_effective_rules_v1('occasion.draft',d.unit,d.organization);
+  PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,0,false,true,policy);
   configuration := public.build_occasion_setup_configuration(d.unit,p_id);
   UPDATE public.occasion_setup_drafts SET data =
     jsonb_build_object('defaultConfiguration',configuration,
       'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
     || d.data, revision = revision+1, updated_at=now()
     WHERE id=p_id RETURNING * INTO d;
+  PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(d.data::text),false,false,policy);
   RETURN to_jsonb(d);
 END $$;
 REVOKE ALL ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) FROM PUBLIC,anon;
@@ -135,6 +151,7 @@ BEGIN
   IF d.revision = p_expected_revision + 1 AND d.data = p_data AND d.current_step = p_step THEN RETURN to_jsonb(d); END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
     RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001'; END IF;
+  PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(p_data::text),false,false);
   UPDATE public.occasion_setup_drafts SET data = p_data, current_step = p_step,
     revision = revision + 1, updated_at = now() WHERE id = p_id RETURNING * INTO d;
   RETURN to_jsonb(d);

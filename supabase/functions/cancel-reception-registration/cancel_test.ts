@@ -29,3 +29,10 @@ Deno.test("failed auth revocation keeps domain blocked and receipt pending",asyn
   assertEquals(calls.includes("mark_reception_auth_revoked_v1"),false);
   assertEquals(result,{status:202,body:{status:"domain_blocked_auth_revocation_pending"}});
 });
+Deno.test("completed cancellation replay never mints or revokes another session",async()=>{
+  const {calls,admin,anon}=fixture();
+  const userClient={rpc(){calls.push("domainCancel");return Promise.resolve({data:{code:200,status:"cancelled"},error:null});}} as unknown as SupabaseClient;
+  const result=await cancelRegistration(42,user,userClient,admin,anon,async()=>{throw new Error("must not revoke again");});
+  assertEquals(result,{status:200,body:{status:"cancelled"}});
+  assertEquals(calls,["domainCancel"]);
+});

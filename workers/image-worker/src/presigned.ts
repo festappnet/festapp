@@ -1,6 +1,6 @@
 import { AwsClient } from 'aws4fetch';
 import type { Env } from './types';
-import { extractBearerToken, checkIsEditorOnAnyOccasion } from './auth';
+import { extractBearerToken, checkImageProjectAccess } from './auth';
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
 import { isPrivateKey } from './private-key';
@@ -51,7 +51,7 @@ export async function handlePresign(
   const auth = { supabaseUrl: project.supabaseUrl, anonKey: project.anonKey };
 
   // Check editor-on-any-occasion permission via RPC
-  const isEditor = await checkIsEditorOnAnyOccasion(userJwt, auth);
+  const isEditor = await checkImageProjectAccess(userJwt, auth, project.id);
   if (!isEditor) {
     return errorResponse(403, 'FORBIDDEN', 'Forbidden');
   }

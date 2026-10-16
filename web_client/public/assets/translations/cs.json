@@ -1644,7 +1644,8 @@
     "discardChangesConfirmation": "Opravdu chcete zahodit neuložené změny?",
     "keepEditing": "Pokračovat v úpravách",
     "copy": "Kopírovat",
-    "copied": "Zkopírováno"
+    "copied": "Zkopírováno",
+    "resourceLimited": "Dočasně byl dosažen limit využití. Zkuste to později. Pro navýšení kapacity kontaktujte podporu."
   },
   "BankAccount": {
     "organizationSettings": "nastavení organizace",

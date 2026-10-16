@@ -15,3 +15,13 @@ for (const [locale, expected] of [['cs', '+ Akce'], ['en', '+ Event'], ['uk', '+
         assert.equal(CommonStrings.addEventShort, expected, 'test the real web catalog, not mocked translations or an English fallback');
     });
 }
+
+
+test('abuse errors have the same localized message in every published locale',async()=>{
+ for(const language of ['cs','de','en','pl','sk','uk']) {
+  const canonical=JSON.parse(await readFile(new URL(`../../../assets/translations/${language}.json`,import.meta.url),'utf8'));
+  const published=JSON.parse(await readFile(new URL(`../../public/assets/translations/${language}.json`,import.meta.url),'utf8'));
+  assert.ok(canonical.Common.resourceLimited);
+  assert.equal(published.Common.resourceLimited,canonical.Common.resourceLimited);
+ }
+});

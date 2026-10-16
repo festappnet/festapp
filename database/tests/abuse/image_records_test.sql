@@ -1,0 +1,31 @@
+DO $$
+DECLARE actor uuid; org bigint; un bigint; foreign_org bigint; foreign_unit bigint; before_count bigint;
+BEGIN
+ PERFORM create_user_for_test('image-record-abuse','image-record-abuse@example.invalid');actor:=get_user_id('image-record-abuse');
+ INSERT INTO public.organizations(title) VALUES('Image record fixture') RETURNING id INTO org;
+ INSERT INTO public.units(title,organization) VALUES('Image record Unit',org) RETURNING id INTO un;
+ INSERT INTO public.unit_users(unit,"user",is_editor) VALUES(un,actor,true);
+ INSERT INTO public.organizations(title) VALUES('Foreign image fixture') RETURNING id INTO foreign_org;
+ INSERT INTO public.units(title,organization) VALUES('Foreign image Unit',foreign_org) RETURNING id INTO foreign_unit;
+ UPDATE public.abuse_policy_rules SET base_limit=1 WHERE rule_key='image.records.actor.burst';
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ PERFORM public.add_image_record('https://img.festapp.net/images/fixture/a.png',NULL,un);
+ BEGIN PERFORM public.add_image_record('https://img.festapp.net/images/fixture/b.png',NULL,un);
+  RAISE EXCEPTION 'image record burst bypassed'; EXCEPTION WHEN SQLSTATE 'PT429' THEN NULL; END;
+ BEGIN INSERT INTO public.images(link,unit) VALUES('https://img.festapp.net/images/fixture/direct.png',un);
+  RAISE EXCEPTION 'direct image metadata insert bypassed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ EXECUTE 'RESET ROLE';
+ PERFORM assert_eq((SELECT count(*) FROM public.images WHERE unit=un),1::bigint,'denied metadata write is atomic');
+ DELETE FROM public.images WHERE unit=un;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ BEGIN PERFORM public.add_image_record('https://img.festapp.net/images/fixture/after-delete.png',NULL,un);
+  RAISE EXCEPTION 'deletion reset metadata budget'; EXCEPTION WHEN SQLSTATE 'PT429' THEN NULL; END;
+ EXECUTE 'RESET ROLE';
+ UPDATE public.abuse_policy_rules SET base_limit=60 WHERE rule_key='image.records.actor.burst';
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ BEGIN PERFORM public.add_image_record('https://img.festapp.net/images/fixture/two-owners.png',1,un);
+  RAISE EXCEPTION 'mixed image owner accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ EXECUTE 'RESET ROLE';
+ PERFORM assert_false(has_table_privilege('authenticated','public.images','INSERT'),'REST cannot add image metadata');
+END $$;

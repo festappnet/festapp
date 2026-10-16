@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
       templateCode: template.code,
       context: {
         organization: occasion.organization,
+        actor_id: userId,
         unit: occasion.unit,
         occasion: template.occasion,
       },

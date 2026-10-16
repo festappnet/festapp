@@ -1,4 +1,6 @@
 BEGIN;
+-- This suite creates several links; quota behavior has dedicated abuse scenarios.
+UPDATE public.abuse_policy_rules SET base_limit=hard_cap WHERE budget_key IN ('occasion.creation','occasion.draft');
 DO $$
 DECLARE actor uuid; org bigint; unit_id bigint; a bigint; b bigint; f bigint; first_link text;
  foreign_org bigint; old_revision bigint;

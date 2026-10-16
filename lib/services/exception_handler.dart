@@ -134,6 +134,13 @@ class ExceptionHandler {
   // Helper methods _parsePostgrestException and _showErrorDialog remain the same...
   static AppError? _parsePostgrestException(Object exception) {
     if (exception is! PostgrestException) return null;
+    if (exception.code == 'PT429') {
+      return AppError(
+        code: 429,
+        message: CommonStrings.resourceLimited,
+        rawJson: jsonEncode({'code': 429, 'reason': exception.message}),
+      );
+    }
     final jsonRegex = RegExp(r'\{.*\}');
     final match = jsonRegex.firstMatch(exception.message);
     if (match == null) return null;
