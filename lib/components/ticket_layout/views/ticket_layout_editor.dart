@@ -615,7 +615,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.pop(context, 'productType')),
                   ],
-                ])))));
+                ]))),
+            actions: [TextButton(onPressed: () => Navigator.pop(context),
+                child: Text(TicketLayoutStrings.cancel))]));
     if (!mounted || binding == null) return;
     if (binding == 'productType') {
       await pickProduct(onSelected: onSelected);
@@ -910,14 +912,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     }
   }
 
-  Future<TextStyle> fontPreviewStyle(String family) async {
-    final entries = await fontCatalog;
-    final asset = entries.firstWhere((e) => e['family'] == family);
-    final id = asset['id'] as String;
-    final font = resources.fonts[id] ?? await widget.service.font(widget.occasionId, id);
-    return TextStyle(fontFamily: font.loaderName, fontWeight: FontWeight.w400);
-  }
-
   Widget fontPicker() => FutureBuilder<List<Map<String, dynamic>>>(
         future: fontCatalog,
         builder: (context, snapshot) {
@@ -928,8 +922,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: FontFamilyPicker(
               label: TicketLayoutStrings.templateFont,
-              previewStyle: fontPreviewStyle,
-              selectedStyle: TextStyle(fontFamily: font.loaderName),
               value: font.family,
               families: entries.map((f) => f['family'] as String).toList(),
               extraFamilies: entries
@@ -979,7 +971,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     await FontFamilyPicker.showChoices(
                       context,
                       title: TicketLayoutStrings.fontForText,
-                      previewStyle: fontPreviewStyle,
                       value: element.fontId == null
                           ? null
                           : resources
