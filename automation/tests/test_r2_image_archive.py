@@ -1,11 +1,31 @@
-import importlib.util,io,json,subprocess,tarfile,tempfile,unittest
+import importlib.util,io,json,subprocess,sys,tarfile,tempfile,unittest
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('r2_archive',Path(__file__).resolve().parents[1]/'hetzner-supabase/backup/create-r2-image-archive.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 spec2=importlib.util.spec_from_file_location('r2_verify',Path(__file__).resolve().parents[1]/'hetzner-supabase/restore/r2_archive.py')
 v=importlib.util.module_from_spec(spec2);spec2.loader.exec_module(v)
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'hetzner-supabase/restore'))
+spec3=importlib.util.spec_from_file_location('r2_dump_verify',Path(__file__).resolve().parents[1]/'hetzner-supabase/restore/verify-r2-dump-local.py')
+d=importlib.util.module_from_spec(spec3);spec3.loader.exec_module(d)
 
 class R2ArchiveTest(unittest.TestCase):
+ def test_worker_path_contract_preserves_percent_escapes_and_private_bucket(self):
+  inventories={bucket:[] for bucket in m.BUCKETS}
+  inventories['festapp-images']=[{'Path':'images/space%20file.jpg','Size':3}]
+  inventories['festapp-images-private']=[{'Path':'private/fixture','Size':3}]
+  def fetch(bucket,key):return subprocess.Popen(['python3','-c',"import sys;sys.stdout.buffer.write(b'abc')"],stdout=subprocess.PIPE)
+  stream=io.BytesIO();m.write_archive(inventories,fetch,stream)
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'fixture.tar';path.write_bytes(stream.getvalue())
+   result=v.verify_archive(path,['https://img.festapp.net/images/space%20file.jpg','https://img.festapp.net/private/fixture'])
+   self.assertTrue(result['consistent']);self.assertEqual(result['database_r2_references_checked'],2)
+
+ def test_dump_reference_extraction_does_not_execute_sql_and_rejects_ambiguous_input(self):
+  sql='COPY public.images (id, link, name) FROM stdin;\n1\thttps://img.festapp.net/images/x\tname\n2\t\\N\tname\n\\.\nSELECT dangerous();'
+  self.assertEqual(d.image_references(sql),(2,['https://img.festapp.net/images/x']))
+  for value in ['SELECT 1;',sql.replace('images/x','images/\\x')]:
+   with self.assertRaises(AssertionError):d.image_references(value)
+
  def test_streamed_archive_preserves_contents_and_metadata_with_content_hash(self):
   inventories={bucket:[] for bucket in m.BUCKETS}
   inventories[m.BUCKETS[0]]=[{'Path':'images/example.jpg','Size':3,'MimeType':'image/jpeg','Metadata':{'cache-control':'public,max-age=3600'}}]

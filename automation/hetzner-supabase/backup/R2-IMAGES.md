@@ -33,8 +33,16 @@ The file is included only in the age-encrypted runtime backup, never source
 control. The helper must be installed next to the existing backup script.
 Without that file, existing DB/Storage/runtime backups continue unchanged;
 their manifests must not be treated as R2 image backups. Implementation and
-synthetic archive tests do not prove live R2 backup/restore. Activation and a
-real archive integrity/reference drill remain required.
+synthetic archive tests do not prove live R2 backup/restore. The user authorized activation on 2026-10-16. The first daily run
+`20261016T150700Z` uploaded all five encrypted artifacts and verified the
+off-host copy. Its R2 archive contains all 1,074 source objects, 341,530,791
+plaintext bytes, with verified SHA-256. The independent recovery reader
+downloaded the complete set directly from R2 in 148.39 seconds. A strict
+comparison found 50 pre-existing missing registry references among 997 R2
+links; 45 carry test markers and none of the 50 exact URLs appears in checked
+occasion/event/information payloads. These rows were not deleted, and the
+strict consistency check remains unsuccessful. See the actual receipts and
+`../restore/RECOVERY.md`; activation is not a claim of perfect source data.
 
 The archive is an online snapshot. Concurrent deletion/overwrite can abort
 object reads, and it is not an atomic snapshot with PostgreSQL. Daily image

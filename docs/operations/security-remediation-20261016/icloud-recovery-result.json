@@ -1,15 +1,15 @@
 {
-  "at": 1792163418.44499,
+  "at": 1792163729.790654,
   "status": "pass",
   "icloud_sync": {
-    "download_status": "NSURLUbiquitousItemDownloadingStatusNotDownloaded",
+    "download_status": "NSURLUbiquitousItemDownloadingStatusCurrent",
     "ubiquitous": true,
     "upload_error": false,
     "uploaded": true,
     "uploading": false
   },
-  "archive_sha256": "f10f6953a650f43140027bf15d0f5dff84a831aaa7cbefbeb57e7c0830e8d361",
-  "archive_bytes": 235997,
+  "archive_sha256": "94e8add940b9d33a057bae8ee250ed32d821e8b0f51d58daeea0a3ddd06c53ec",
+  "archive_bytes": 223787,
   "archive_contains_private_identity": true,
   "key_from_icloud_zip_used": true,
   "original_workstation_identity_used": false,
