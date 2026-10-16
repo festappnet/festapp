@@ -1,10 +1,11 @@
+import 'report_number_format.dart';
 import 'package:intl/intl.dart';
 
 import 'package:festapp_core/eshop.dart';
 import '../report_strings.dart';
 
 /// Localized display and export of the same report snapshot, without a new RPC.
-String formatReportText(OccasionReport report) {
+String formatReportText(OccasionReport report, {String? locale}) {
   final text = StringBuffer()
     ..writeln(report.title)
     ..writeln(report.generatedAt.toUtc().toIso8601String());
@@ -28,7 +29,7 @@ String formatReportText(OccasionReport report) {
     for (final amount in money.amounts.entries) {
       if (money.hasDeposits || !amount.key.contains('deposit')) {
         text.writeln(
-            '${ReportStrings.metric(amount.key)}: ${amount.value} ${money.currency}');
+            '${ReportStrings.metric(amount.key)}: ${formatReportNumber(amount.value, locale: locale)} ${money.currency}');
       }
     }
   }
@@ -47,7 +48,7 @@ String formatReportText(OccasionReport report) {
       ..writeln(ReportStrings.paymentTimelineHelp);
     for (final day in report.paymentDays) {
       text.writeln(
-          '${DateFormat('d. M. yyyy').format(day.day)} ${day.currency}: ${ReportStrings.received} ${day.received}, ${ReportStrings.returned} ${day.returned}');
+          '${DateFormat('d. M. yyyy').format(day.day)} ${day.currency}: ${ReportStrings.received} ${formatReportNumber(day.received, locale: locale)}, ${ReportStrings.returned} ${formatReportNumber(day.returned, locale: locale)}');
     }
   }
   text

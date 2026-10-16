@@ -236,7 +236,7 @@ class DbEshop {
     final poolsMap = {for (var p in pools) p.id: p};
     final contextsMap = {for (var c in contexts) c.id: c};
     final formsMap = {
-      for (var form in forms) form.definition.id: form.toString()
+      for (var form in forms) form.definition.id: form.definition.toString()
     };
 
     // Join inventory pools to inventory contexts

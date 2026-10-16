@@ -381,7 +381,8 @@ class OrderModel extends ITrinaRowModel {
       EshopColumnIds.ORDER_OVERVIEW: TrinaCell(value: ""),
       EshopColumnIds.ORDER_HISTORY: TrinaCell(value: ""),
       EshopColumnIds.ORDER_TRANSACTIONS: TrinaCell(value: ""),
-      EshopColumnIds.ORDER_FORM: TrinaCell(value: form?.toString() ?? ""),
+      EshopColumnIds.ORDER_FORM:
+          TrinaCell(value: form?.definition.toString() ?? ""),
       EshopColumnIds.PAYMENT_INFO_REMINDER_SENT:
           TrinaCell(value: paymentInfoModel?.isReminderSent.toString() ?? ''),
       EshopColumnIds.ORDER_CONTRACT_DOWNLOAD: TrinaCell(value: ""),

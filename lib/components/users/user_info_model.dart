@@ -214,7 +214,7 @@ class UserInfoModel extends IHasId {
     }
 
     // 3. Add Form Title
-    final formTitle = ticket?.relatedOrder?.form?.toString();
+    final formTitle = ticket?.relatedOrder?.form?.definition.toString();
     if (formTitle != null && formTitle.isNotEmpty) {
       infoParts.add(formTitle);
     }

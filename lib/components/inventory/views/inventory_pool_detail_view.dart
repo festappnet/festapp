@@ -1,3 +1,6 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/_shared/breadcrumb_row.dart';
+import 'package:fstapp/styles/styles_config.dart';
 import '../models/inventory_pools_list_bundle.dart';
 import '../models/inventory_pool_model.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
@@ -10,6 +13,7 @@ import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/inventory/views/spot_management_view.dart';
 import 'inventory_pool_settings_view.dart';
+import 'inventory_pool_creation_helper.dart';
 import 'inventory_strings.dart';
 import 'resource_editor_view.dart';
 import '../db_inventory_pools.dart';
@@ -30,6 +34,7 @@ class _InventoryPoolDetailPageState extends State<InventoryPoolDetailPage> {
   bool _failed = false;
   int _generation = 0;
   String? _link;
+  int? _occasionId;
   List<InventoryPoolModel> _pools = [];
   final _occupancyKey = GlobalKey<SpotManagementViewState>();
   @override
@@ -66,6 +71,7 @@ class _InventoryPoolDetailPageState extends State<InventoryPoolDetailPage> {
       if (!mounted || generation != _generation) return;
       setState(() {
         _pools = objects.pools;
+        _occasionId = objects.occasion.id;
         _ready = RightsService.currentLink == link &&
             objects.pools.any((p) => p.id == int.tryParse(widget.poolId));
         _failed = !_ready;
@@ -81,8 +87,14 @@ class _InventoryPoolDetailPageState extends State<InventoryPoolDetailPage> {
   }
 
   void _back() {
-    RetainedDraftGuard.instance.leaveOwner(context,
-        () => context.router.replaceAll([const InventoryPoolsListRoute()]));
+    RetainedDraftGuard.instance.leaveOwner(
+        context,
+        () => context.router.replaceAll([
+              PageRouteInfo(InventoryPoolsListRoute.name, rawQueryParams: {
+                ...context.router.root.urlState.uri.queryParametersAll,
+                'list': 'true',
+              })
+            ]));
   }
 
   @override
@@ -103,34 +115,117 @@ class _InventoryPoolDetailPageState extends State<InventoryPoolDetailPage> {
         child: Scaffold(
             appBar: AppBar(
                 automaticallyImplyLeading: false,
-                leading: IconButton(
-                    icon: const Icon(Icons.arrow_back), onPressed: _back),
-                title: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(children: [
-                      TextButton(
-                          onPressed: _back,
-                          child: Text(InventoryStrings.tabTitle)),
-                      const Icon(Icons.chevron_right),
-                      PopupMenuButton<InventoryPoolModel>(
-                          onSelected: (pool) {
-                            if (pool.id.toString() != widget.poolId)
-                              RetainedDraftGuard.instance.leaveOwner(
+                centerTitle: false,
+                elevation: 0,
+                toolbarHeight: 44,
+                title: _buildBreadcrumbs(),
+                actions: [
+                  if (!RightsService.isDemoReadOnly && _occasionId != null)
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 6, horizontal: 4),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(MediaQuery.sizeOf(context).width < 900
+                              ? CommonStrings.create
+                              : InventoryStrings.tabCreateNewGroup),
+                          onPressed: () => RetainedDraftGuard.instance
+                              .leaveOwner(
                                   context,
-                                  () => context.router.navigate(
-                                      InventoryPoolDetailRoute(
-                                          poolId: pool.id.toString())));
-                          },
-                          itemBuilder: (_) => _pools
-                              .map((pool) => PopupMenuItem(
-                                  value: pool, child: Text(pool.toString())))
-                              .toList(),
-                          child: Text(_pools
-                              .firstWhere(
-                                  (pool) => pool.id.toString() == widget.poolId)
-                              .toString()))
-                    ]))),
+                                  () => InventoryPoolCreationHelper
+                                      .showCreatePoolDialog(
+                                          context: context,
+                                          occasionId: _occasionId!,
+                                          onPoolCreated: _back)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      StylesConfig.commonRoundness))),
+                        )),
+                  const SizedBox(width: 8),
+                ]),
             body: AutoRouter(key: ValueKey(widget.poolId))));
+  }
+
+  Widget _buildBreadcrumbs() {
+    final color = Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
+    final selected =
+        _pools.firstWhere((pool) => pool.id.toString() == widget.poolId);
+    final title = Text(selected.title ?? '',
+        style: TextStyle(
+            fontSize: 16,
+            color: color,
+            fontWeight:
+                _pools.length <= 1 ? FontWeight.bold : FontWeight.normal));
+    void resetTabs() =>
+        resetNestedTabs(context.router, InventoryPoolDetailRoute.name);
+    return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: BreadcrumbRow(children: [
+          InkWell(
+              onTap: _back,
+              borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                IgnoreBaseline(
+                    child:
+                        Icon(Icons.grid_view_outlined, size: 20, color: color)),
+                const SizedBox(width: 6),
+                Text(InventoryStrings.tabTitle,
+                    style: TextStyle(fontSize: 16, color: color)),
+              ])),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text('/',
+                  style: TextStyle(
+                      fontSize: 14, color: color.withValues(alpha: .4)))),
+          if (_pools.length <= 1)
+            InkWell(onTap: resetTabs, child: title)
+          else
+            PopupMenuButton<InventoryPoolModel>(
+                elevation: 0,
+                onSelected: (pool) {
+                  if (pool.id == selected.id) {
+                    resetTabs();
+                  } else {
+                    RetainedDraftGuard.instance.leaveOwner(
+                        context,
+                        () => context.router.navigate(InventoryPoolDetailRoute(
+                                poolId: pool.id.toString(),
+                                children: const [
+                                  InventoryPoolTabsRoute(
+                                      children: [InventoryPoolOccupancyRoute()])
+                                ])));
+                  }
+                },
+                itemBuilder: (_) => _pools
+                    .map((pool) => PopupMenuItem(
+                        value: pool,
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(pool.title ?? ''),
+                              if (pool.id == selected.id)
+                                Icon(Icons.check,
+                                    color:
+                                        Theme.of(context).colorScheme.primary)
+                            ])))
+                    .toList(),
+                child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      title,
+                      const SizedBox(width: 8),
+                      Transform.scale(
+                          scaleY: .8,
+                          child: Icon(Icons.unfold_more_rounded,
+                              size: 20, color: color.withValues(alpha: .7))),
+                    ]))),
+        ]));
   }
 }
 

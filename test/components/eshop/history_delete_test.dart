@@ -1,4 +1,5 @@
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -33,7 +34,8 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final order = OrderModel(id: 1, state: 'storno', orderSymbol: 'HISTORY1');
+    final order = OrderModel(id: 1, state: 'storno', orderSymbol: 'HISTORY1')
+      ..form = FormEditorDraft(id: 1, title: 'Přihláška').toBundle();
     final records = [
       OrderHistoryModel(id: 10, state: 'ordered', orderModel: order),
       OrderHistoryModel(id: 11, state: 'storno', orderModel: order),
@@ -45,6 +47,15 @@ void main() {
       path: 'unused',
       assetLoader: _Translations(),
       child: MaterialApp(home: Builder(builder: (context) {
+        expect(
+            order.toTrinaRow(context).cells[EshopColumnIds.ORDER_FORM]!.value,
+            'Přihláška');
+        expect(
+            records.first
+                .toTrinaRow(context)
+                .cells[EshopColumnIds.ORDER_FORM]!
+                .value,
+            'Přihláška');
         grid = SingleDataGridController<OrderHistoryModel>(
           context: context,
           loadData: () async => records,
