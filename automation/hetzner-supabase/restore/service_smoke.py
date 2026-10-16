@@ -29,7 +29,7 @@ def storage_metadata(objects, members, rebuild=False):
    attrs[attr]=value;rebuilt+=1
  return records,rebuilt
 
-def application_reads(database_container, pins, storage_archive, log, admin_resources=False, rebuild_metadata=False, gateway_archive=None):
+def application_reads(database_container, pins, storage_archive, log, admin_resources=False, rebuild_metadata=False, gateway_archive=None, edge_cache_volume=None):
  assert re.fullmatch(r'festapp-local-restore-[a-f0-9]{16}',database_container)
  def run(args,**kwargs):return subprocess.run(args,check=True,stdout=log,stderr=log,**kwargs)
  def capture(args):return subprocess.check_output(args,stderr=log)
@@ -55,12 +55,15 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
  service=jwt('service_role');anon=jwt('anon')
  uri='postgresql://supabase_admin@127.0.0.1:5432/isolated_restore?options=-c%20session_preload_libraries%3D%20-c%20local_preload_libraries%3D'
  names=[]
- def start(kind,environment,limits=None,prepare=False):
+ def start(kind,environment,limits=None,prepare=False,cache_volume=None):
   image=pins['supabase']['images'][kind];assert '@sha256:' in image
   name=database_container+'-'+kind;names.append(name)
   args=['docker','run','-d','--name',name,'--network','container:'+database_container,'--cap-drop=ALL','--security-opt=no-new-privileges']
   # The pinned Caddy binary has a file capability; exec fails EPERM if its
   # bounding set omits NET_BIND_SERVICE, even with a high-port test listener.
+  if cache_volume is not None:
+   assert kind=='edgeRuntime' and re.fullmatch(r'festapp-recovery-edge-cache-[a-f0-9]{12}',cache_volume)
+   args+=['--mount','type=volume,src='+cache_volume+',dst=/root/.cache/deno']
   if kind=='caddy':args+=['--cap-add=NET_BIND_SERVICE']
   if limits:args+=['--memory',str(limits['mem_limit']),'--cpus',limits['cpus'],'--pids-limit',str(limits['pids_limit'])]
   for key,value in environment.items():args+=['-e',key+'='+value]
@@ -138,7 +141,11 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
   if gateway_archive is not None:
    from gateway_smoke import gateway_reads
    gateway=gateway_reads(database_container,gateway_archive,start,run,capture,http,wait,service,anon)
-  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_bucket_read':True,'storage_object_bytes_match_archive':True,'storage_data_prepared_before_api_start':True,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'gateway_reads':gateway,'source_images':{key:pins['supabase']['images'][key] for key in ['rest','auth','storage']}}
+  edge=None
+  if edge_cache_volume is not None:
+   from edge_smoke import edge_reads
+   edge=edge_reads(database_container,gateway_archive,edge_cache_volume,start,run,capture,service,anon,secret)
+  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_bucket_read':True,'storage_object_bytes_match_archive':True,'storage_data_prepared_before_api_start':True,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'gateway_reads':gateway,'edge_reads':edge,'source_images':{key:pins['supabase']['images'][key] for key in ['rest','auth','storage']}}
  finally:
   for name in reversed(names):
    subprocess.run(['docker','logs',name],stdout=log,stderr=log)

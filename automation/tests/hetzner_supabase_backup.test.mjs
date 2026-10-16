@@ -28,6 +28,11 @@ test('R2 image backup streams objects and fails on changed bytes or unsafe paths
   assert.equal(result.status, 0, result.stderr);
 });
 
+test('Edge recovery exports only public sources and refuses wrong hosts or caches', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_edge_restore.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('gateway restore accepts only bounded public proxy configuration files', () => {
   const result = spawnSync('python3', [path.join(root, 'automation/tests/test_gateway_restore.py')], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);

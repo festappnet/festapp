@@ -118,3 +118,40 @@ file capability, so Linux refuses exec with EPERM if it is absent from the
 bounding set even for high-port listeners. Every service still drops all other
 capabilities, publishes no port and mounts no host files. The receipt marks
 public proxy configuration execution separately from loading runtime secrets.
+
+For `--edge-cache-volume`, first prepare native dependencies on the dedicated
+local Lima recovery VM, before transferring any recovery key or database data.
+Start with a manifest-verified runtime artifact and decrypt it only in a private
+workstation folder. Export its public function sources:
+
+```sh
+python3 export-public-edge-sources.py --runtime-archive /protected/runtime.tar \
+  --output /protected/public-edge-sources.tar
+```
+
+Transfer only that public tar, recovery Python sources and pinned-image manifest
+to the empty recovery VM. Its hostname must match
+`lima-festapp-security-recovery-YYYYMMDD`; the downloader refuses production and
+workstation hosts before Docker operations. With ordinary registry access, run:
+
+```sh
+sudo python3 edge_smoke.py --public-source-tar /protected/public-edge-sources.tar \
+  --evidence /protected/new-native-cache-result.json
+```
+
+This runs the pinned native `edge-runtime bundle` for every backed-up index,
+with a 1 GiB/1 CPU/128 PID ceiling and no host mounts or published ports. Then
+it starts only the read-only confirmation-status worker using fixture values
+and an unreachable loopback backend, to cache runtime-only npm type metadata.
+A successful eszip compilation alone missed `@types/node` in the actual offline
+test. No email/payment handler is invoked. The source-hashed cache volume is
+kept; the temporary public-only container is removed.
+
+Block and verify guest IPv4/IPv6 OUTPUT and FORWARD before transferring keys/data,
+allowing only loopback and established SSH replies. In the isolated restore add
+`--service-smoke --gateway-smoke --edge-cache-volume <cache_volume_from_receipt>`.
+The actual backed-up router must reject a correctly shaped JWT with a wrong
+fixture signature; the actual confirmation-status worker must read the restored
+DB and return unavailable for a nonexistent capability. No provider or original
+integration credentials are loaded. This proves the selected worker/router and
+DB path, not every business handler or external integration.

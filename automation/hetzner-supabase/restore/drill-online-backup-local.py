@@ -50,9 +50,11 @@ def main():
  p.add_argument('--service-smoke',action='store_true')
  p.add_argument('--admin-resources',action='store_true')
  p.add_argument('--gateway-smoke',action='store_true')
+ p.add_argument('--edge-cache-volume')
  p.add_argument('--rebuild-storage-metadata',action='store_true')
  p.add_argument('--consume-downloaded-artifacts',action='store_true',help='Delete each local encrypted input only after successful decryption; retain manifest and off-host backups')
  a=p.parse_args();m=validate_manifest(a.backup_dir)
+ assert not a.edge_cache_volume or a.gateway_smoke,'edge recovery requires gateway smoke'
  assert not a.gateway_smoke or a.service_smoke,'gateway drill requires service smoke'
  assert not a.admin_resources or a.service_smoke,'admin resource drill requires service smoke'
  assert not a.rebuild_storage_metadata or a.service_smoke,'metadata recovery requires service smoke'
@@ -148,10 +150,10 @@ def main():
     if a.service_smoke:
      assert consistency['consistent'],'inconsistent Storage prevents application recovery proof'
      from service_smoke import application_reads
-     application=application_reads(name,pins,work/'storage.tar',log,admin_resources=a.admin_resources,rebuild_metadata=a.rebuild_storage_metadata,gateway_archive=work/'runtime.tar' if a.gateway_smoke else None)
+     application=application_reads(name,pins,work/'storage.tar',log,admin_resources=a.admin_resources,rebuild_metadata=a.rebuild_storage_metadata,gateway_archive=work/'runtime.tar' if a.gateway_smoke else None,edge_cache_volume=a.edge_cache_volume)
     result={'version':1,'status':'pass' if r2_consistency is None or r2_consistency['consistent'] else 'inconsistent-r2-references','backup_run_id':m['run_id'],'backup_manifest_sha256':hashlib.sha256((a.backup_dir/'manifest.json').read_bytes()).hexdigest(),
      'source_backup_consistency':m['consistency'],'isolated':True,'network':'none','ports':False,'host_mounts':False,
-     'application_services_started':bool(application),'application_reads':application,'runtime_executed':bool(a.gateway_smoke),'runtime_execution_scope':'public proxy entrypoint/config only' if a.gateway_smoke else 'none','runtime_env_or_integration_credentials_loaded':False,'local_encrypted_downloads_consumed':a.consume_downloaded_artifacts,'archive_inventory':counts,'storage_consistency':consistency,'r2_consistency':r2_consistency,
+     'application_services_started':bool(application),'application_reads':application,'runtime_executed':bool(a.gateway_smoke),'runtime_execution_scope':'public proxy configuration and backed-up Edge sources' if a.edge_cache_volume else ('public proxy entrypoint/config only' if a.gateway_smoke else 'none'),'runtime_env_or_integration_credentials_loaded':False,'local_encrypted_downloads_consumed':a.consume_downloaded_artifacts,'archive_inventory':counts,'storage_consistency':consistency,'r2_consistency':r2_consistency,
      'database_read_smoke':True,'globals_errors_checked':True,'rto_seconds':round(time.monotonic()-started,2),
      'rpo_seconds':None,'pitr_proven':False,'note':'Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.'}
    except Exception as error:
