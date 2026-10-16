@@ -10,8 +10,15 @@ buckets. Neither token can write or delete objects.
 The uploaded ZIP is sensitive because it contains the private age identity.
 Do not publish it, attach it to issues or commit its contents. No public share
 link or iCloud security-setting change was made. The key ZIP upload confirms independent key custody. A separate uploaded
-`Festapp-Backup-20261016T150700Z.zip` contains the complete five-artifact
-encrypted snapshot (1,803,229,836 bytes). Its hashes match the actually restored
+`Festapp-Backup-20261016T150700Z.zip` contains the first complete five-artifact
+encrypted snapshot (1,803,229,836 bytes). A newer uploaded snapshot,
+`Festapp-Backup-20261016T164727Z.zip` (1,803,347,771 bytes), includes the repaired
+runtime configuration archive. Both retain the separate existing key ZIP. The refreshed
+`Festapp-Recovery-2026-10-16-v2.zip` preserves the same identity/reader and
+adds the tested gateway/Edge recovery helpers and the public Edge source export.
+Its source commit is recorded in `SOURCE.json`; the original ZIP is preserved.
+The newer ZIP passed all artifact hashes and actual offline globals decryption
+using only those two iCloud ZIPs. Its hashes match the actually restored
 set; an offline test decrypted globals using only these two iCloud ZIPs, without
 R2 or the original server. This is one independent data snapshot, not automatic
 iCloud replication of daily/WAL history. It does not prove end-to-end iCloud encryption.
@@ -31,7 +38,9 @@ escrow, and decrypted the escrow. No original workstation key path or server
 access was used. See `icloud-recovery-result.json` for sanitized evidence.
 
 For full recovery, first run the isolated DB/Auth/REST/Storage drill against the
-chosen downloaded set. It never executes the encrypted runtime configuration.
+chosen downloaded set. By default it never executes the encrypted runtime configuration. The optional
+`--gateway-smoke` extension reads only five allowlisted public proxy files; it
+never loads runtime.env or integration credentials.
 Inspect that configuration privately when preparing a replacement host: it
 contains active Compose overrides, integration credentials and local image IDs.
 Rebuild the pinned pgBackRest image and replace the old host-local image ID with
@@ -80,5 +89,87 @@ tunnel credential. Its DB/Storage/image restore proofs remain valid, but that
 runtime archive alone is insufficient for a bare-host restore. The backup now
 includes these canonical dependencies and the protected tunnel credential inside
 the same age-encrypted runtime stream. PGDATA, WAL and pgBackRest spool are never
-copied into runtime; use the separately verified DB/PITR artifacts. This fix needs
-a new actual encrypted runtime receipt before claiming the coverage repaired.
+copied into runtime; use the separately verified DB/PITR artifacts. The new complete set `20261016T164727Z` finished off-host verification at
+17:00:13 UTC. Independent iCloud-kit credentials downloaded all five artifacts
+and checked every size/hash. The downloaded runtime archive covers all 21
+current configuration bind mounts; it contains none of live PGDATA. See
+`runtime-bootstrap-offhost-result.json` for the actual bounded receipt.
+
+On Ubuntu 26.04, `/tmp` may be RAM-backed. Keep multi-gigabyte backup inputs
+and restore working files on a persistent disk, in private mode-0700 folders.
+Set `TMPDIR` explicitly when running the drill, for example:
+
+```sh
+sudo install -d -m 0700 /var/tmp/festapp-recovery-work
+sudo env TMPDIR=/var/tmp/festapp-recovery-work python3 drill-online-backup-local.py \
+  --backup-dir /var/tmp/festapp-recovery-input --identity /protected/age-identity.txt \
+  --evidence /protected/new-restore-result.json --storage-consistency --service-smoke
+```
+
+The fresh-host test correctly refused insufficient free space on RAM-backed
+`/tmp` before decrypting or starting a database. This concern does not apply
+to production backups in `/var/backups`; do not solve it by increasing host RAM.
+
+`--service-smoke --gateway-smoke` also starts the pinned Envoy/Caddy images in
+the restored database's network-none loopback namespace, using the actual
+backed-up public proxy files. Only upstream DNS names become 127.0.0.1 and site
+addresses use private HTTP test listeners. Fixture API keys authenticate real
+Auth, REST and Storage reads through both proxies. This does not test provider
+TLS, Cloudflare Access or Edge/realtime/pooler integrations. Caddy alone needs
+its production NET_BIND_SERVICE capability: the pinned binary carries that
+file capability, so Linux refuses exec with EPERM if it is absent from the
+bounding set even for high-port listeners. Every service still drops all other
+capabilities, publishes no port and mounts no host files. The receipt marks
+public proxy configuration execution separately from loading runtime secrets.
+
+For `--edge-cache-volume`, first prepare native dependencies on the dedicated
+local Lima recovery VM, before transferring any recovery key or database data.
+Start with a manifest-verified runtime artifact and decrypt it only in a private
+workstation folder. Export its public function sources:
+
+```sh
+python3 export-public-edge-sources.py --runtime-archive /protected/runtime.tar \
+  --output /protected/public-edge-sources.tar
+```
+
+Transfer only that public tar, recovery Python sources and pinned-image manifest
+to the empty recovery VM. Its hostname must match
+`lima-festapp-security-recovery-YYYYMMDD`; the downloader refuses production and
+workstation hosts before Docker operations. With ordinary registry access, run:
+
+```sh
+sudo python3 edge_smoke.py --public-source-tar /protected/public-edge-sources.tar \
+  --evidence /protected/new-native-cache-result.json
+```
+
+This runs the pinned native `edge-runtime bundle` for every backed-up index,
+with a 1 GiB/1 CPU/128 PID ceiling and no host mounts or published ports. Then
+it starts only the read-only confirmation-status worker using fixture values
+and an unreachable loopback backend, to cache runtime-only npm type metadata.
+A successful eszip compilation alone missed `@types/node` in the actual offline
+test. No email/payment handler is invoked. The source-hashed cache volume is
+kept; the temporary public-only container is removed.
+
+Block and verify guest IPv4/IPv6 OUTPUT and FORWARD before transferring keys/data,
+allowing only loopback and established SSH replies. In the isolated restore add
+`--service-smoke --gateway-smoke --edge-cache-volume <cache_volume_from_receipt>`.
+The actual backed-up router must reject a correctly shaped JWT with a wrong
+fixture signature; the actual confirmation-status worker must read the restored
+DB and return unavailable for a nonexistent capability. No provider or original
+integration credentials are loaded. This proves the selected worker/router and
+DB path, not every business handler or external integration.
+
+The refreshed kit keeps `OBNOVA.txt` as the Czech entrypoint and includes this
+procedure in its source archive. Its separate `public-edge-sources.tar` matches
+the 20261016T164727Z snapshot and can be transferred to the empty recovery VM
+without decrypting runtime configuration there. Use the export command above
+for a different backup: the cache digest must match the selected snapshot.
+This public tar is source code, not a portable prebuilt dependency cache.
+The VM preparation still requires registry access before keys/data arrive.
+
+The current Flutter/web/core sources contain no Supabase Realtime subscription
+API calls; offline sync uses explicit HTTP/RPC reads. A live websocket canary
+is a compatibility check, not evidence of application use. No production
+Realtime service has been stopped. Recovery of unused default components is
+not a substitute for functional application evidence; external consumers and
+provider cutover remain separate, unproven boundaries.

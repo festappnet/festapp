@@ -1,0 +1,11 @@
+{
+  "initial_public_source_sha256": "ffcdaa57d0992fb788bf09cfc02af179cafb33f05854dbc028314f040cabd2a9",
+  "initial_native_bundle_entrypoints": 33,
+  "initial_bundle_only_seconds": 47.33,
+  "offline_worker_boot_proven": false,
+  "observed_gap": "Runtime resolver requested uncached @types/node registry metadata although native bundle succeeded",
+  "registry_host": "registry.npmjs.org",
+  "production_changes": false,
+  "original_credentials_or_provider_calls_used": false,
+  "correction_under_test": "Warm runtime-only metadata by invoking only read-only confirmation-status worker with an unreachable fixture backend before offline clone recovery"
+}

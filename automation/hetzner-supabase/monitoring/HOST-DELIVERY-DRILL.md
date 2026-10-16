@@ -1,6 +1,9 @@
 # Controlled host alert delivery drill
 
-Prepared on 2026-10-16. Not executed or approved by this document.
+Executed once on 2026-10-16 after explicit user approval. Both alert and
+recovery were delivered; all application containers were preserved.
+[Actual sanitized receipt](../../../docs/operations/security-remediation-20261016/host-alert-delivery-drill-result.json).
+This procedure does not authorize another notification test.
 
 The remaining proof requires a real notification to the configured recipients.
 Use the existing host agent, checks, credentials and sender. Do not inject

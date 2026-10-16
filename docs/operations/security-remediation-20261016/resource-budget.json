@@ -79,5 +79,35 @@
     "new_public_endpoint": false,
     "new_daemon": false,
     "critical_caps_changed": false
+  },
+  "four_gb_feasibility_screen": {
+    "observation_receipt": "native-resource-final-observations.json",
+    "sample_count": 77,
+    "host_memory_bytes": 3981275136,
+    "enforced_admin_hard_cap_sum_bytes": 1207959552,
+    "os_reserve_target_bytes": 536870912,
+    "concurrent_logical_backup_reserve_target_bytes": 805306368,
+    "remaining_for_other_containers_bytes": 1431138304,
+    "observed_working_set_maxima_by_other_container_bytes": {
+      "/festapp-caddy": 34189312,
+      "/festapp-supabase-admin-tunnel": 37101568,
+      "/realtime-dev.supabase-realtime": 195883008,
+      "/supabase-auth": 13135872,
+      "/supabase-db": 472313856,
+      "/supabase-edge-functions": 656044032,
+      "/supabase-envoy": 40214528,
+      "/supabase-imgproxy": 42631168,
+      "/supabase-pooler": 187707392,
+      "/supabase-rest": 90644480,
+      "/supabase-storage": 191721472
+    },
+    "sum_of_nonsimultaneous_other_container_maxima_bytes": 1961586688,
+    "screening_shortfall_before_peak_safety_margin_bytes": 530448384,
+    "fits_stated_conservative_budget_criteria": false,
+    "simultaneous_peak_or_oom_proven": false,
+    "representative_peak_proven": false,
+    "physical_backup_rss_added_twice": false,
+    "new_caps_or_paid_capacity_applied": false,
+    "interpretation": "Screen only: maxima are not simultaneous and are not safe cap recommendations. Under the stated admin ceilings plus OS/backup reserve targets, the remaining allocation is smaller than the sum of already observed working sets. This does not prove production needs a RAM upgrade. A safe enforced all-service budget needs representative peak measurements and an approved capacity or service-lifecycle decision; arbitrary critical caps would not resolve that gap."
   }
 }

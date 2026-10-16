@@ -1,5 +1,10 @@
 # Sjednocení bezpečnostních prací Festapp - 2026-10-16
 
+## Aktuální doplnění po ověřené obnově
+
+Nezávislá úschova klíče, úplný iCloud snapshot, skutečná izolovaná DB/Auth/REST/Storage/proxy/čtecí Edge obnova, host alert delivery, control-plane evidence i schválený restart jsou nyní doložené v aktuálním [serverovém plánu](server-security-remediation-plan-2026-10-16.md). Následující starší snapshoty nejsou seznamem současných blockerů. Otevřený je kritický kapacitní budget bez reprezentativního peaku, úplné servisní RTO/cutover a 50 původních R2 registry referencí bez zdrojových objektů. Realtime subscriptions v aplikačních klientech nebyly nalezené; běžící výchozí kontejner se nezastavoval.
+
+
 ## PITR follow-up dokončený - nejnovější stav
 
 Po výslovném pokynu uživatele je nasazený standardní pgBackRest 2.57.0: weekly full, daily differential, komprimované/šifrované balíky a průběžné WAL do existujícího R2. První full i diff a skutečná izolovaná obnova differential do času prošly; hlídá je existující stejný host monitor. RAM/plán se nenavyšovaly, PostgreSQL verze se nezměnila. Konkrétní velikosti, source hashes, skutečný target a zachované hranice vlastní [produkční PITR receipt](../operations/security-remediation-20261016/pgbackrest-production-result.json) a nejnovější sekce [serverového plánu](server-security-remediation-plan-2026-10-16.md). Recovery cíl RPO <=15 minut platí při zdravém archivu; úplné servisní RTO, cross-store konzistence a nezávislá úschova klíče zůstávají otevřené. Následující snapshot před PITR je historický.

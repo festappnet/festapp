@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "status": "inconsistent-r2-references",
+  "backup_run_id": "20261016T164727Z",
+  "backup_manifest_sha256": "eb0f3e5a711824aca18d2bd23dd0df9a0fab9d01e228c98854b68017559ee8ef",
+  "source_backup_consistency": "online-operational-backup-not-promotion-rpo0",
+  "isolated": true,
+  "network": "none",
+  "ports": false,
+  "host_mounts": false,
+  "application_services_started": true,
+  "application_reads": {
+    "auth_health": true,
+    "auth_restored_user_read": true,
+    "rest_organization_read": true,
+    "storage_bucket_read": true,
+    "storage_object_bytes_match_archive": true,
+    "storage_data_prepared_before_api_start": true,
+    "storage_metadata_files": 1732,
+    "storage_metadata_attributes_rebuilt_from_db": 0,
+    "network": "private loopback of network-none clone",
+    "production_credentials_loaded": false,
+    "background_preloads_disabled": true,
+    "production_integrations_started": false,
+    "admin_resource_burst": null,
+    "gateway_reads": {
+      "backed_up_configuration_used": true,
+      "public_configuration_files": 5,
+      "runtime_env_or_credentials_loaded": false,
+      "only_upstream_dns_replaced_with_private_loopback": true,
+      "envoy_auth_storage_and_rest_reads": true,
+      "unauthenticated_auth_request_denied": true,
+      "caddy_to_envoy_to_restored_database_read": true,
+      "caddy_auth_and_storage_reads": true,
+      "provider_tls_or_external_access_tested": false,
+      "caddy_only_additional_capability": "NET_BIND_SERVICE",
+      "services": {
+        "envoy": {
+          "running": true,
+          "oom": false,
+          "restarts": 0
+        },
+        "caddy": {
+          "running": true,
+          "oom": false,
+          "restarts": 0
+        }
+      }
+    },
+    "source_images": {
+      "rest": "postgrest/postgrest:v14.12@sha256:844785450d6b046ee97f1c67ea37e3ff6b4ed7ee3570b1b91c03f66f032c4805",
+      "auth": "supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7",
+      "storage": "supabase/storage-api:v1.60.4@sha256:9326eb9c6b74c0a5ba393ab46a08a51d16bc5ea5f2978fc5b0f17fc67c64a4de"
+    }
+  },
+  "runtime_executed": true,
+  "runtime_execution_scope": "public proxy entrypoint/config only",
+  "runtime_env_or_integration_credentials_loaded": false,
+  "local_encrypted_downloads_consumed": true,
+  "archive_inventory": {
+    "storage.tar": {
+      "files": 1732,
+      "bytes": 1298699295
+    },
+    "runtime.tar": {
+      "files": 170,
+      "bytes": 1756387
+    }
+  },
+  "storage_consistency": {
+    "referenced_objects": 1468,
+    "matched_objects": 1468,
+    "missing_objects": 0,
+    "size_mismatches": 0,
+    "unreferenced_archive_files": 264,
+    "consistent": true,
+    "scope": "Same online logical backup DB versus Storage archive, not coordinated PITR or external R2 image consistency"
+  },
+  "r2_consistency": {
+    "objects": 1074,
+    "bytes": 341530791,
+    "content_hashes_verified": true,
+    "database_r2_references_checked": 997,
+    "missing_database_r2_references": 50,
+    "consistent": false,
+    "scope": "Selected online DB snapshot against selected R2 archive; not arbitrary-time R2 version history"
+  },
+  "database_read_smoke": true,
+  "globals_errors_checked": true,
+  "rto_seconds": 63.45,
+  "rpo_seconds": null,
+  "pitr_proven": false,
+  "note": "Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.",
+  "source_files_sha256": {
+    "automation/hetzner-supabase/restore/download-offhost-backup.py": "8fb5085b8bf5ad2a00eb5d4524e3e0dc49a38db8aa425920e689e17bdeadb816",
+    "automation/hetzner-supabase/restore/verify-r2-dump-local.py": "1ca102ccb35f2a147eb935648d785ba3a122b93ad79304cfb67b32cd378acf9b",
+    "automation/hetzner-supabase/restore/drill-pgbackrest-local.py": "64238a7d4658ef1e705512f8ac40f72c086c328fe1c241b1b3d8503840256e85",
+    "automation/hetzner-supabase/restore/service_smoke.py": "a10d59d5be675b5adb9e3c79f19393f0c985df0d63717109b4e4ac7869954cec",
+    "automation/hetzner-supabase/restore/gateway_smoke.py": "a8a9645e0d187a0661e6dc8f148df55f62cded5f3d5991de31700764d2716ce6",
+    "automation/hetzner-supabase/restore/drill-online-backup-local.py": "e75eb3df7180741c2413aee52492de512b7e22732ec6609b71fb305923ca2537",
+    "automation/hetzner-supabase/restore/r2_archive.py": "fc70aa9e9b286a298c4686d05dfed63f9536b6687cce17b730ee8b0d5eac6e86",
+    "automation/hetzner-supabase/runtime/pins.json": "dbf91ca40dab8e367b62408d0c517e7648fa762dafb174206c70c1e1ab432238"
+  },
+  "total_drill_seconds_including_transfer": 89.42,
+  "guest_ipv4_ipv6_egress_blocked_before_key_transfer": true,
+  "recovery_identity_cleanup_verified": true,
+  "clone_containers_removed": true,
+  "test_vm_stopped": true
+}
