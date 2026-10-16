@@ -11,7 +11,7 @@ flock -w 1800 8
 kind=diff
 [[ $(date -u +%u) != 7 ]] || kind=full
 [[ ${1:-} != full ]] || kind=full
-docker exec --user postgres supabase-db pgbackrest --stanza=festapp --type="$kind" backup
+docker exec --user postgres supabase-db pgbackrest --stanza=festapp --repo1-bundle=y --type="$kind" backup
 docker exec --user postgres supabase-db pgbackrest --stanza=festapp check
 umask 077
 receipt=$(mktemp /var/lib/festapp-pgbackrest/.backup-XXXXXX)

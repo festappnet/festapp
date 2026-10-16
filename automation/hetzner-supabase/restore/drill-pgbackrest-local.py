@@ -8,7 +8,7 @@ IMAGE='festapp-postgres-pgbackrest:17.6-2.57.0-r0'
 def main():
  p=argparse.ArgumentParser();p.add_argument('--repo-dir',type=Path,required=True);p.add_argument('--recovery',type=Path,required=True);p.add_argument('--identity',type=Path,required=True);p.add_argument('--target',required=True);p.add_argument('--backup-label',required=True);p.add_argument('--evidence',type=Path,required=True);a=p.parse_args()
  target=datetime.datetime.fromisoformat(a.target.replace('Z','+00:00'));assert target.tzinfo
- assert re.fullmatch(r'\d{8}-\d{6}F',a.backup_label), 'restore from an explicit full backup'
+ assert re.fullmatch(r'\d{8}-\d{6}F(?:_\d{8}-\d{6}D)?',a.backup_label), 'restore from an explicit full/differential backup'
  assert a.repo_dir.is_dir() and (a.repo_dir/'backup/festapp/backup.info').is_file()
  assert not any(x.is_symlink() for x in a.repo_dir.rglob('*'))
  assert a.identity.is_file() and a.identity.stat().st_mode&0o077==0
@@ -59,7 +59,7 @@ def main():
     actual=json.loads(run('docker','inspect',name,capture=True))[0]
     assert actual['HostConfig']['NetworkMode']=='none' and not actual['HostConfig']['PortBindings']
     assert not any(m['Type']=='bind' for m in actual['Mounts'])
-    result={'status':'pass','tool':'pgbackrest 2.57.0','full_backup_label':a.backup_label,'target':a.target,'paused_at_target':True,'replay_at':state['replay_at'],'replay_lsn':state['replay_lsn'],'catalog_smoke':True,'network':'none','ports':False,'host_mounts':False,'application_preloads_disabled':True,'encrypted_key_escrow_used':True,'isolated_restore_seconds':round(time.monotonic()-started,2),'full_service_rto_proven':False,'storage_r2_consistency_proven':False}
+    result={'status':'pass','tool':'pgbackrest 2.57.0','backup_label':a.backup_label,'target':a.target,'paused_at_target':True,'replay_at':state['replay_at'],'replay_lsn':state['replay_lsn'],'catalog_smoke':True,'network':'none','ports':False,'host_mounts':False,'application_preloads_disabled':True,'encrypted_key_escrow_used':True,'isolated_restore_seconds':round(time.monotonic()-started,2),'full_service_rto_proven':False,'storage_r2_consistency_proven':False}
    except Exception:
     subprocess.run(['docker','cp',name+':/tmp/server.log',str(Path(temp)/'server.log')],stdout=log,stderr=log)
     log.flush()

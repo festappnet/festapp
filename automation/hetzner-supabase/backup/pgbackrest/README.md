@@ -12,6 +12,7 @@ Existing R2 usage increases by encrypted physical backups and archived WAL.
 ## Operation
 
 - One backup worker, zstd level 1, 1 MiB buffers; synchronous archive-push.
+  Scheduled backups bundle small files to reduce S3 request overhead.
   Host logrotate bounds diagnostic file logs (daily/20M, 14 rotations).
 - Full on Sundays, differential daily otherwise; first activation forces full.
 - Four weekly full backups retained, with dependent differentials and continuous
