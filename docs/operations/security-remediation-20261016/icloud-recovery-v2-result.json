@@ -1,0 +1,29 @@
+{
+  "at": 1792173006.578871,
+  "status": "pass",
+  "archive_name": "Festapp-Recovery-2026-10-16-v2.zip",
+  "archive_bytes": 725611,
+  "archive_sha256": "cfc2a2dd2ecfec930dd47a47c8f8f05acf4d37c82e8707df05e2447bb5e49401",
+  "source_commit": "ee0d21fccb3123c62c8566c9137f37cfc6e93d24",
+  "source_archive_sha256": "61b63d51f134430b9aeedd242fb2bd4d3e025fe3c91cb60c662b2171bf89280c",
+  "public_edge_sources_backup_run_id": "20261016T164727Z",
+  "public_edge_sources_sha256": "ffcdaa57d0992fb788bf09cfc02af179cafb33f05854dbc028314f040cabd2a9",
+  "private_identity_rotated": false,
+  "version": 2,
+  "packed_sources_help_checks": 3,
+  "canonical_downloader_bytes_match": true,
+  "packed_read_only_reader_actual_r2_list": true,
+  "packed_identity_decrypts_pitr_escrow": true,
+  "packed_identity_decrypts_offline_icloud_globals": true,
+  "original_server_or_original_identity_path_used": false,
+  "old_archive_preserved": true,
+  "production_runtime_changed": false,
+  "source_archive_includes_gateway_and_edge_tools": true,
+  "icloud_sync": {
+    "download_status": "NSURLUbiquitousItemDownloadingStatusCurrent",
+    "ubiquitous": true,
+    "upload_error": false,
+    "uploaded": true,
+    "uploading": false
+  }
+}

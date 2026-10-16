@@ -9,7 +9,7 @@ Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a s
 
 [Novější čtecí měření](../operations/security-remediation-20261016/native-resource-final-observations.json) obsahuje 77 platných DB/Edge minutových vzorků, nejméně 1 266 249 728 B available RAM, nejvýše 46 DB connections a čtyři Edge workery. Není to doložená provozní špička. Kritické hard capy nelze bezpečně odvodit ani z toho, že host momentálně má volnou paměť; placené navýšení ani náhodné nízké limity neproběhly.
 
-Nezávisle dokončitelný recovery balík se aktualizuje v iCloudu na v2 se stejným klíčem a samostatným read-only přístupem. Zbývají měřený kritický budget, neprokázané plné servisní RTO/cutover a striktní R2 reference gate s 50 původními mezerami. Chybějící obrazové bajty nelze vyrobit testem obnovy; mazání registry řádků není oprava zálohy.
+[Nouzový ZIP v2](../operations/security-remediation-20261016/icloud-recovery-v2-result.json) je vytvořený a iCloud potvrzuje dokončený upload (725 611 B). Obsahuje zdroje `ee0d21fccb3123c62c8566c9137f37cfc6e93d24`, gateway/Edge nástroje, veřejný source export a původní klíč/read-only reader. Ověřeny byly přímo zabalené zdroje, skutečné R2 list přes zabalený reader a offline dešifrování globals z datového iCloud ZIPu pouze zabaleným klíčem. Starší ZIP zůstává zachovaný. Zbývají měřený kritický budget, neprokázané plné servisní RTO/cutover a striktní R2 reference gate s 50 původními mezerami. Chybějící obrazové bajty nelze vyrobit testem obnovy; mazání registry řádků není oprava zálohy.
 
 Ověření: standard - bezpečnost, autentizace, migrace a sdílený produkční backend
 
