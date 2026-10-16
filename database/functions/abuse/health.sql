@@ -16,7 +16,11 @@ BEGIN
     ) q)),
    'countCappedAt',5000,
    'oldestCreatedAt',(SELECT created_at FROM public.email_messages WHERE admission_class=class
-     AND workflow_state IN ('pending','blocked','preparing','sending','retry_wait','unknown') ORDER BY created_at LIMIT 1)
+     AND workflow_state IN ('pending','blocked','preparing','sending','retry_wait','unknown') ORDER BY created_at LIMIT 1),
+   -- Historical uncertain sends and future schedules remain visible in counts,
+   -- but only runnable work can age into a stalled-delivery alert.
+   'oldestDueAt',(SELECT min(greatest(created_at,target_time)) FROM public.email_messages WHERE admission_class=class
+     AND workflow_state IN ('pending','preparing','sending','retry_wait') AND target_time<=statement_timestamp())
   ) stats FROM unnest(ARRAY['ordinary','auth','commitment']) class
  ) q;
  SELECT expires_at INTO expired_at FROM public.abuse_budget_usage WHERE expires_at<statement_timestamp() ORDER BY expires_at LIMIT 1;

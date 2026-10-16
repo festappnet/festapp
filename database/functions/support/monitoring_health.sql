@@ -30,7 +30,7 @@ BEGIN
    FROM jsonb_array_elements(public.abuse_effective_rules_v1('monitor.thresholds',NULL,NULL)->'rules') r;
   IF thresholds IS NULL THEN RAISE configuration_limit_exceeded USING MESSAGE='abuse_policy_missing'; END IF;
   FOREACH cls IN ARRAY ARRAY['auth','commitment','ordinary'] LOOP
-   age_seconds:=extract(epoch FROM statement_timestamp()-(abuse#>>ARRAY['queue',cls,'oldestCreatedAt'])::timestamptz);
+   age_seconds:=extract(epoch FROM statement_timestamp()-(abuse#>>ARRAY['queue',cls,'oldestDueAt'])::timestamptz);
    max_seconds:=(thresholds->>('monitor.'||cls||'.age.seconds'))::bigint;
    IF max_seconds IS NULL THEN RAISE configuration_limit_exceeded USING MESSAGE='abuse_policy_missing'; END IF;
    IF age_seconds>max_seconds THEN v_alerts:=array_append(v_alerts,'abuse_'||cls||'_backlog'); END IF;
