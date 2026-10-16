@@ -359,7 +359,7 @@ canvas bounds constrain the entire group uniformly.
 
 ## Adding optional elements
 
-“Add element” offers event title, start time, venue, the legacy combined date/place,
+“Add element” offers event title, start time and venue separately,
 table, order name, note, price and logo only when data exists and the field is
 absent (including hidden fields). Product groups exclude already used groups and
 groups without a sample. Repeatable free text replaces the footer choice; existing
@@ -367,7 +367,11 @@ footers remain editable as free text. New text inherits the most common body tex
 style, using the median font size to break ties, and uses unoccupied space.
 Each insertion is one undo step. Ctrl/Cmd-Z and redo share document history across
 the canvas and property inputs, including mobile panels. Nested dialogs retain
-their own history until their change is accepted. Source drafts allow ordinary fields while product editing stays unavailable.
+their own history until their change is accepted. Double-clicking an unlocked free
+text (or legacy footer) edits it directly on the canvas, synchronized with the
+properties panel. Escape finishes inline editing. Delete/Backspace outside text
+inputs removes selected unlocked optional elements as one undoable change; QR
+and ticket code remain protected. Source drafts allow ordinary fields while product editing stays unavailable.
 Catalog retry appears only after a catalog load failure. Editor Cancel uses Storno
 in Czech, consistent with the shared dialog wording.
 

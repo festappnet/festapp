@@ -2818,6 +2818,63 @@ void main() {
     await _environment.pumpWidget(tester, const SizedBox());
   });
 
+  testWidgetsWithEnvironment(() => _environment,
+      'inline text and properties stay synchronized and optional deletion is undoable', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final r = resources(template: document().withPaper(true).resizeCanvasArea(const Size(200, 600)));
+    await _environment.pumpWidget(tester, MaterialApp(home: TicketLayoutEditor(
+        occasionId: 1, type: 'wide', resources: r, service: FakeService())));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+    final TicketLayoutController c = state.controller;
+    c.addTextField('Váš text');
+    await tester.pumpAndSettle();
+    final id = c.selected!;
+    final side = find.byKey(const ValueKey('ticket-free-text'));
+    await tester.ensureVisible(side);
+    await tester.enterText(side, 'Text z panelu');
+    await tester.pumpAndSettle();
+    TicketLayoutCanvas view() => tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas));
+    expect(view().data[id], 'Text z panelu');
+    Offset screen(Offset point) => tester.getTopLeft(find.byType(InteractiveViewer)) +
+        MatrixUtils.transformPoint(view().transform.value, c.document.area.topLeft + point);
+    final point = screen(c.selection!.box.center);
+    final firstTap = await tester.startGesture(point);
+    await firstTap.up(timeStamp: const Duration(milliseconds: 120));
+    await tester.pump(const Duration(milliseconds: 80));
+    final secondTap = await tester.startGesture(point);
+    await secondTap.up(timeStamp: const Duration(milliseconds: 220));
+    await tester.pumpAndSettle();
+    final inline = find.byKey(const ValueKey('ticket-inline-text'));
+    expect(inline, findsOneWidget);
+    await tester.enterText(inline, 'Text přímo na vstupence');
+    await tester.pumpAndSettle();
+    expect(view().data[id], 'Text přímo na vstupence');
+    expect(tester.widget<TextField>(side).controller!.text, 'Text přímo na vstupence');
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pump();
+    expect(c.document.elements.any((e) => e.id == id), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(inline, findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pumpAndSettle();
+    expect(c.document.elements.any((e) => e.id == id), isFalse);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(c.document.elements.any((e) => e.id == id), isTrue);
+    c.select('qr');
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    expect(c.document.elements.any((e) => e.binding == 'qr'), isTrue);
+    expect(tester.takeException(), isNull);
+    await _environment.pumpWidget(tester, const SizedBox());
+  });
+
   test('free text repeats, inherits body style and survives roundtrip and undo', () {
     final base = document().withPaper(true).resizeCanvasArea(const Size(200, 600));
     final styled = base.withElements(base.elements.map((e) =>

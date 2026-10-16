@@ -441,6 +441,15 @@ class TicketLayoutController extends ChangeNotifier {
     return sorted.first;
   }
 
+  void removeSelectedOptionalFields() {
+    final removable = selections.where((e) => !e.locked &&
+        !['qr', 'ticketSymbol'].contains(e.binding)).map((e) => e.id).toSet();
+    if (removable.isEmpty) return;
+    endGesture();
+    replace(document.withElements(document.elements
+        .where((e) => !removable.contains(e.id)).toList()));
+  }
+
   void removeTextField(TicketElement e) {
     if (e.locked || !['text', 'footer'].contains(e.binding)) return;
     endGesture();
