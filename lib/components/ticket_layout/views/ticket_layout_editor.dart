@@ -615,9 +615,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.pop(context, 'productType')),
                   ],
-                ]))),
-            actions: [TextButton(onPressed: () => Navigator.pop(context),
-                child: Text(TicketLayoutStrings.cancel))]));
+                ])))));
     if (!mounted || binding == null) return;
     if (binding == 'productType') {
       await pickProduct(onSelected: onSelected);
