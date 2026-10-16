@@ -68,10 +68,18 @@ class TicketLayoutProperties extends StatelessWidget {
                     fontSize: 12,
                     maxLines: 3)
                 : null);
+        void finishSliderGesture() {
+          controller.endGesture();
+          // A dismissed dialog can leave focus outside the editor. Sliders do
+          // not claim keyboard focus on pointer input, so restore history keys.
+          Focus.maybeOf(context)?.requestFocus();
+        }
+
         void resetFont() {
           if (!e.locked && original != null) {
             controller.change(e.copyWith(
                 fontSize: original.fontSize.clamp(e.minFontSize, 72)));
+            finishSliderGesture();
           }
         }
 
@@ -220,7 +228,7 @@ class TicketLayoutProperties extends StatelessWidget {
                                 min: e.minFontSize,
                                 max: 72,
                                 onChangeStart: (_) => controller.beginGesture(),
-                                onChangeEnd: (_) => controller.endGesture(),
+                                onChangeEnd: (_) => finishSliderGesture(),
                                 onChanged: e.locked
                                     ? null
                                     : (v) => controller
@@ -232,15 +240,18 @@ class TicketLayoutProperties extends StatelessWidget {
                         child: GestureDetector(
                             onDoubleTap: e.locked || original == null
                                 ? null
-                                : () => controller.change(
-                                    e.copyWith(maxLines: original.maxLines)),
+                                : () {
+                                    controller.change(
+                                        e.copyWith(maxLines: original.maxLines));
+                                    finishSliderGesture();
+                                  },
                             child: Slider(
                                 value: e.maxLines.toDouble(),
                                 min: 1,
                                 max: 12,
                                 divisions: 11,
                                 onChangeStart: (_) => controller.beginGesture(),
-                                onChangeEnd: (_) => controller.endGesture(),
+                                onChangeEnd: (_) => finishSliderGesture(),
                                 onChanged: e.locked
                                     ? null
                                     : (v) => controller.change(
