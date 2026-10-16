@@ -19,8 +19,7 @@ export class FormAvailabilityService {
      */
     static getStatus(formModel) {
         if (formModel.registrationMode === 'offer') return { status: this.Status.OPEN };
-        if (formModel.registrationMode === 'full') return { status: 'FULL' };
-        if (formModel.registrationMode === 'closed') return { status: this.Status.CLOSED };
+        if (formModel.isOpen === false) return { status: this.Status.CLOSED };
         const now = new Date();
 
         if (formModel.startTime && now < formModel.startTime) {
@@ -30,13 +29,13 @@ export class FormAvailabilityService {
             };
         }
 
+        if (formModel.registrationMode === 'full') return { status: 'FULL' };
+        if (formModel.registrationMode === 'closed') return { status: this.Status.CLOSED };
+
         if (formModel.endTime && now > formModel.endTime) {
             return { status: FormAvailabilityService.Status.CLOSED };
         }
 
-        if (formModel.isOpen === false) {
-             return { status: FormAvailabilityService.Status.CLOSED };
-        }
 
         return { status: FormAvailabilityService.Status.OPEN };
     }

@@ -17,6 +17,9 @@ class ProductModel {
   final DateTime? updatedAt;
   final String? title;
   final bool? isHidden;
+
+  /// Read-only editor metadata. Null means the server did not report usage.
+  final bool? isUsedInBlueprint;
   final String? description;
   final double? price;
   final Map<String, dynamic>? data;
@@ -185,6 +188,7 @@ class ProductModel {
     this.updatedAt,
     this.title,
     this.isHidden,
+    this.isUsedInBlueprint,
     this.description,
     this.price,
     Map<String, dynamic>? data,
@@ -231,6 +235,7 @@ class ProductModel {
           : null,
       title: json['title'],
       isHidden: json['is_hidden'],
+      isUsedInBlueprint: json['is_used_in_blueprint'] as bool?,
       description: json['description'],
       price: json['price'] != null
           ? double.tryParse(json['price'].toString())
@@ -277,6 +282,7 @@ class ProductModel {
     Object? updatedAt = _unchanged,
     Object? title = _unchanged,
     Object? isHidden = _unchanged,
+    Object? isUsedInBlueprint = _unchanged,
     Object? description = _unchanged,
     Object? price = _unchanged,
     Object? data = _unchanged,
@@ -324,6 +330,9 @@ class ProductModel {
     isHidden: identical(isHidden, _unchanged)
         ? this.isHidden
         : isHidden as bool?,
+    isUsedInBlueprint: identical(isUsedInBlueprint, _unchanged)
+        ? this.isUsedInBlueprint
+        : isUsedInBlueprint as bool?,
     description: identical(description, _unchanged)
         ? this.description
         : description as String?,

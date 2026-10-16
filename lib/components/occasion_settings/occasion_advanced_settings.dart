@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -48,40 +49,45 @@ class OccasionAdvancedSettings extends StatelessWidget {
       onExpansionChanged: onExpansionChanged,
       children: <Widget>[
         Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                  controller: linkController,
-                  enabled: isEditingEnabled,
-                  decoration: InputDecoration(
-                    labelText: OccasionSettingsStrings.link,
-                    helperText: FormStrings.publicLinkHistoryHelp,
-                    helperMaxLines: 3,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return OccasionSettingsStrings.linkIsRequired;
-                    if (value != savedLink && !isValidPublicSlug(value)) return FormStrings.validationLinkInvalidChars;
-                    return null;
-                  },
-                  onChanged: onLinkChanged,
-                  onSaved: onLinkSaved),
-              const SizedBox(height: 12),
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: linkController,
-                builder: (_, value, __) => PublicLink(
-                  link: value.text, savedLink: savedLink, isForm: false)),
-              const SizedBox(height: 24),
+              if (AppConfig.isAppSupported) ...[
+                TextFormField(
+                    controller: linkController,
+                    enabled: isEditingEnabled,
+                    decoration: InputDecoration(
+                      labelText: OccasionSettingsStrings.link,
+                      helperText: FormStrings.publicLinkHistoryHelp,
+                      helperMaxLines: 3,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return OccasionSettingsStrings.linkIsRequired;
+                      }
+                      if (value != savedLink && !isValidPublicSlug(value)) {
+                        return FormStrings.validationLinkInvalidChars;
+                      }
+                      return null;
+                    },
+                    onChanged: onLinkChanged,
+                    onSaved: onLinkSaved),
+                const SizedBox(height: 12),
+                ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: linkController,
+                    builder: (_, value, __) => PublicLink(
+                        link: value.text, savedLink: savedLink, isForm: false)),
+                const SizedBox(height: 24),
+              ],
               TextFormField(
                 controller: replyToEmailController,
                 enabled: isEditingEnabled,
                 decoration: InputDecoration(
                   labelText: OccasionSettingsStrings.labelReplyToEmail,
                   floatingLabelBehavior: FloatingLabelBehavior.always,
-                  hintText: (RightsService.currentUnit()?.data?[Tb
-                                  .units.data_reply_to] as String?)
+                  hintText: (RightsService.currentUnit()
+                                  ?.data?[Tb.units.data_reply_to] as String?)
                               ?.isNotEmpty ==
                           true
                       ? "${OccasionSettingsStrings.defaultValue}: ${RightsService.currentUnit()?.data?[Tb.units.data_reply_to]}"
@@ -94,8 +100,8 @@ class OccasionAdvancedSettings extends StatelessWidget {
                 validator: (val) {
                   if (val == null || val.isEmpty) return null;
                   return FormBuilderValidators.email(
-                      errorText: OccasionSettingsStrings
-                          .validationEmailInvalid)(val);
+                      errorText:
+                          OccasionSettingsStrings.validationEmailInvalid)(val);
                 },
               ),
               const SizedBox(height: 16),
@@ -136,10 +142,10 @@ class _TimezoneAutocomplete extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Autocomplete<String>(
-      initialValue: selectedTimezone != null &&
-              allTimezones.contains(selectedTimezone)
-          ? TextEditingValue(text: selectedTimezone!)
-          : null,
+      initialValue:
+          selectedTimezone != null && allTimezones.contains(selectedTimezone)
+              ? TextEditingValue(text: selectedTimezone!)
+              : null,
       optionsBuilder: (TextEditingValue textEditingValue) {
         if (!isEditingEnabled) {
           return const Iterable<String>.empty();
@@ -191,8 +197,7 @@ class _TimezoneAutocomplete extends StatelessWidget {
         );
       },
       optionsViewBuilder: (BuildContext context,
-          AutocompleteOnSelected<String> onSelected,
-          Iterable<String> options) {
+          AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
@@ -200,10 +205,9 @@ class _TimezoneAutocomplete extends StatelessWidget {
             child: ConstrainedBox(
               constraints: BoxConstraints(
                   maxHeight: 300,
-                  maxWidth:
-                      MediaQuery.of(context).size.width - 40 > 0
-                          ? MediaQuery.of(context).size.width - 40
-                          : 300),
+                  maxWidth: MediaQuery.of(context).size.width - 40 > 0
+                      ? MediaQuery.of(context).size.width - 40
+                      : 300),
               child: ListView.builder(
                 padding: EdgeInsets.zero,
                 itemCount: options.length,

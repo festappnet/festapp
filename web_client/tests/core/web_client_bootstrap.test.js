@@ -137,3 +137,17 @@ test('startup has an accessible spinner without visible loading text', t => {
     assert.equal(fallback.querySelector('p').hidden, true);
     assert.ok(fallback.querySelector('.startup-spinner'));
 });
+
+test('Flutter startup browser chrome matches the visible loading background', async (t) => {
+    const flutterHtml = await readFile(new URL('../../../web/index.html', import.meta.url), 'utf8');
+    const dom = new JSDOM(flutterHtml);
+    t.after(() => dom.window.close());
+    const { document } = dom.window;
+    const loaderBackground = dom.window.getComputedStyle(document.getElementById('loader-content')).backgroundColor;
+    const themeProbe = document.createElement('div');
+    themeProbe.style.backgroundColor = document.querySelector('meta[name="theme-color"]').content;
+    document.body.appendChild(themeProbe);
+    assert.equal(dom.window.getComputedStyle(themeProbe).backgroundColor, loaderBackground);
+    assert.equal(dom.window.getComputedStyle(document.body).backgroundColor, loaderBackground);
+    assert.equal(document.querySelector('meta[name="color-scheme"]').content, 'dark');
+});

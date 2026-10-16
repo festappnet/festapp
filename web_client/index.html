@@ -221,14 +221,7 @@
              <div class="sp-loader"></div>
         </div>
     </div>
-    <script>
-        if (location.pathname === '/' && document.querySelector('#events-grid[data-server-catalog]')) {
-            document.getElementById('app').style.display = 'flex';
-            const startup = document.getElementById('web-client-startup');
-            startup.style.cssText = 'position:relative;padding:12px;text-align:center;font:inherit';
-            document.querySelector('#app main').prepend(startup);
-        }
-    </script>
+    <!-- Reveal the catalogue only after styled cards are ready. -->
     <noscript><style>#web-client-startup{display:none!important}#app{display:flex!important}</style></noscript>
 
     <div id="form-page-container" style="display: none;"></div>

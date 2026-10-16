@@ -644,6 +644,20 @@
       "sources": [
         "test/components/bank_accounts/order_bank_sync_warning_test.dart"
       ]
+    },
+    "test/components/eshop/price_wave_availability_test.dart": {
+      "kind": "widget",
+      "reason": "Localized Flutter dialog interaction, narrow layouts, and visibility save callbacks.",
+      "sources": [
+        "test/components/eshop/price_wave_availability_test.dart"
+      ]
+    },
+    "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+      "kind": "widget",
+      "reason": "Localized Flutter form visibility and validation under generated tenant app support.",
+      "sources": [
+        "test/components/occasion_settings/advanced_link_visibility_test.dart"
+      ]
     }
   }
 }

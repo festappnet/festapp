@@ -6,8 +6,8 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { JSDOM } from 'jsdom';
 
-test('server catalogue remains visible while cards load, then startup completes', async t => {
-    const dom = new JSDOM('<div id="web-client-startup"></div><div id="app" style="display:flex"><div id="events-grid"><ul><li>SEO event</li></ul></div></div>', { url: 'https://tickets.invalid/' });
+test('catalogue stays hidden while cards load, then startup reveals cards', async t => {
+    const dom = new JSDOM('<div id="web-client-startup"></div><div id="app" style="display:none"><div id="events-grid"><ul><li>SEO event</li></ul></div></div>', { url: 'https://tickets.invalid/' });
     for (const key of ['window', 'document', 'HTMLElement', 'customElements', 'Event', 'CustomEvent', 'DOMParser']) {
         globalThis[key] = key === 'window' ? dom.window : dom.window[key];
     }
@@ -47,8 +47,8 @@ test('server catalogue remains visible while cards load, then startup completes'
     });
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(ready, false, 'loading cards does not prematurely mark application ready');
-    assert.ok(document.querySelector('#events-grid ul'), 'server links remain usable while loading');
-    assert.equal(document.getElementById('app').style.display, 'flex');
+    assert.ok(document.querySelector('#events-grid ul'), 'server links remain in the DOM while loading');
+    assert.equal(document.getElementById('app').style.display, 'none');
     deliver({ occasions: [{ title: 'Card event', start_time: '2099-01-01', end_time: '2099-01-02' }] });
     await startup;
     assert.equal(ready, true);
@@ -58,17 +58,17 @@ test('server catalogue remains visible while cards load, then startup completes'
 });
 
 
-test('actual server catalogue shell reveals links while startup is pending and retains failure recovery', () => {
+test('server catalogue stays behind startup and retains failure recovery', t => {
     const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
         .replace('<div id="events-grid"></div>', '<div id="events-grid" data-server-catalog="ready"><a href="/form/live">Public event</a></div>');
-    const dom = new JSDOM(html, { url: 'https://vstupenky.online/', runScripts: 'outside-only' });
-    const reveal = [...dom.window.document.scripts].find(script => script.textContent.includes("document.querySelector('#events-grid[data-server-catalog]')"));
-    dom.window.eval(reveal.textContent);
-    assert.equal(dom.window.document.querySelector('#app').style.display, 'flex');
-    assert.equal(dom.window.document.querySelector('#web-client-startup').style.position, 'relative');
-    assert.equal(dom.window.document.querySelector('#site-introduction').hidden, true);
-    assert.ok(dom.window.document.querySelector('a[href="/form/live"]'));
-    dom.window.close();
+    const dom = new JSDOM(html, { url: 'https://vstupenky.online/', runScripts: 'dangerously' });
+    t.after(() => dom.window.close());
+    assert.equal(dom.window.document.querySelector('#app').style.display, 'none');
+    assert.equal(dom.window.document.querySelector('#web-client-startup').style.position, 'fixed');
+    assert.ok(dom.window.document.querySelector('#events-grid a'));
+    dom.window.failFestappWebClientStartup('web-module-error');
+    assert.equal(dom.window.document.querySelector('#app').style.display, 'none');
+    assert.equal(dom.window.document.querySelector('#web-client-startup button').hidden, false);
 });
 
 for (const fails of [false, true]) test(`organizer startup preserves static content, core failure=${fails}`, async () => {
