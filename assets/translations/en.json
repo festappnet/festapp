@@ -2521,7 +2521,7 @@
     "compareCurrencies": "All currencies in CZK",
     "currencyComparisonHelp": "Indicative conversion of all days at the latest available CNB rate, rounded to cents per day and currency. Rate date:",
     "orderTimeline": "Tickets over time",
-    "orderTimelineHelp": "Individual tickets by creation day, rather than orders. Each ticket counts once even when it includes multiple products. The filter controls whether cancelled tickets are included. Time zone: Europe/Prague.",
+    "orderTimelineHelp": "Number of new tickets each day.",
     "paymentTimeline": "When payments arrived",
     "paymentTimelineHelp": "Recorded positive transactions by payment date, including partial payments on unpaid orders. Refunds are separate. Older payments without transaction records are absent, so the snapshot total may be higher.",
     "daily": "Daily",
@@ -2569,7 +2569,7 @@
     "product": "Product",
     "count": "Count",
     "applicationTimeline": "Registrations over time",
-    "applicationTimelineHelp": "Individual registrations by creation day, rather than group orders. Each registration counts once. The filter controls whether cancelled registrations are included. Time zone: Europe/Prague.",
+    "applicationTimelineHelp": "Number of new registrations each day.",
     "onlyValid": "Valid only",
     "includingCancelled": "Including cancelled"
   },

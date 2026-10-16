@@ -2522,7 +2522,7 @@
     "compareCurrencies": "Všechny měny v CZK",
     "currencyComparisonHelp": "Orientační přepočet všech dnů posledním dostupným kurzem ČNB, zaokrouhlený na haléře za den a měnu. Datum kurzu:",
     "orderTimeline": "Jak přibývaly vstupenky",
-    "orderTimelineHelp": "Počet jednotlivých vstupenek podle dne vytvoření, nikoli počet objednávek. Každá vstupenka se počítá jednou, i když obsahuje více produktů. Filtr určuje zahrnutí stornovaných. Časové pásmo: Evropa/Praha.",
+    "orderTimelineHelp": "Počet nových vstupenek v jednotlivých dnech.",
     "paymentTimeline": "Kdy přicházely platby",
     "paymentTimelineHelp": "Kladné zaevidované transakce podle data platby, včetně částečných úhrad nezaplacených objednávek. Vratky jsou oddělené. Starší platby bez transakčního záznamu v grafu nejsou; souhrn proto může být vyšší.",
     "daily": "Po dnech",
@@ -2570,7 +2570,7 @@
     "product": "Produkt",
     "count": "Počet",
     "applicationTimeline": "Jak přibývaly přihlášky",
-    "applicationTimelineHelp": "Počet jednotlivých přihlášek podle dne vytvoření, nikoli počet společných objednávek. Každá přihláška se počítá jednou. Filtr určuje zahrnutí stornovaných. Časové pásmo: Evropa/Praha.",
+    "applicationTimelineHelp": "Počet nových přihlášek v jednotlivých dnech.",
     "onlyValid": "Pouze platné",
     "includingCancelled": "Včetně stornovaných"
   },

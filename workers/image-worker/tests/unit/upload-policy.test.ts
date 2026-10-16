@@ -15,7 +15,7 @@ const file = new File([new Uint8Array([255, 216, 255])], 'source.jpg', { type: '
 
 describe('one server-owned image upload policy', () => {
   it.each([
-    ['standard', 1600, 85], ['ticket-background', 1600, 90],
+    ['standard', 1600, 85], ['ticket-background', 1080, 85],
     ['blueprint-background', 3000, 90], ['portrait', 400, 85],
     ['thumbnail', 200, 85], ['banner', 900, 85],
   ])('processes %s using server bounds even for a small encoded file', async (profile, edge, quality) => {
@@ -31,8 +31,8 @@ describe('one server-owned image upload policy', () => {
     const result = await processUploadImage(file, policy('ticket-background'), f.env);
     expect(f.output).toHaveBeenCalledTimes(2);
     expect(f.output).toHaveBeenCalledWith({ format: 'image/png', anim: false });
-    expect(f.transform.mock.calls[1][0].width).toBeLessThan(1600);
-    expect((result.body as ArrayBuffer).byteLength).toBeLessThanOrEqual(2 * 1024 * 1024);
+    expect(f.transform.mock.calls[1][0].width).toBeLessThan(1080);
+    expect((result.body as ArrayBuffer).byteLength).toBeLessThanOrEqual(800 * 1024);
   });
   it.each(['image/gif', 'image/webp'])('keeps %s animation in general images and resolves still print artwork on the server', async (format) => {
     const f = fixture(format);
