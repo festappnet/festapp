@@ -59,14 +59,17 @@ docker compose exec -T db pg_dump -U postgres -d "$DATABASE" -Fc |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/postgres.dump.age"
 docker compose exec -T db pg_dumpall -U postgres --globals-only |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/globals.sql.age"
-COPYFILE_DISABLE=1 tar -C volumes/storage -cf - . |
+COPYFILE_DISABLE=1 tar --format=pax --xattrs --xattrs-include='user.supabase.*' -C volumes/storage -cf - . |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/storage.tar.age"
+if [[ -f /etc/festapp-backup/images.env ]]; then
+  python3 "$SCRIPT_DIR/create-r2-image-archive.py" --output "$RUN_DIR/r2-images.tar.age"
+fi
 runtime_paths=(docker/.env docker/docker-compose.yml docker/docker-compose.festapp.yml
   docker/docker-compose.database-target.yml docker/caddy/Caddyfile docker/volumes/functions
   docker/volumes/proxy)
 # Include every active override and PITR recovery configuration in the encrypted
 # runtime archive. Existing deployments without pgBackRest keep the old format.
-for override in docker-compose.email.yml docker-compose.pgbackrest.yml; do
+for override in docker-compose.email.yml docker-compose.pgbackrest.yml docker-compose.resource-budget.yml; do
   [[ ! -f "$COMPOSE_DIR/$override" ]] || runtime_paths+=("docker/$override")
 done
 extra_paths=()
@@ -74,11 +77,16 @@ if [[ -f /etc/festapp-pgbackrest/enabled ]]; then
   extra_paths=(-C / etc/festapp-pgbackrest/pgbackrest.conf
     etc/festapp-pgbackrest/recovery.json.age opt/festapp-backup/pgbackrest/Dockerfile)
 fi
+if [[ -f /etc/festapp-backup/images.env ]]; then
+  extra_paths+=(-C / etc/festapp-backup/images.env)
+fi
 COPYFILE_DISABLE=1 tar -C /opt/festapp-supabase -cf - "${runtime_paths[@]}" "${extra_paths[@]}" |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/runtime.tar.age"
 
 artifacts='{}'
-for file in postgres.dump.age globals.sql.age storage.tar.age runtime.tar.age; do
+artifact_files=(postgres.dump.age globals.sql.age storage.tar.age runtime.tar.age)
+[[ ! -f "$RUN_DIR/r2-images.tar.age" ]] || artifact_files+=(r2-images.tar.age)
+for file in "${artifact_files[@]}"; do
   [[ -s "$RUN_DIR/$file" ]] || fail "empty encrypted artifact: $file"
   artifacts="$(jq -c --arg name "$file" --arg sha "$(sha256sum "$RUN_DIR/$file" | awk '{print $1}')" \
     --argjson bytes "$(stat -c %s "$RUN_DIR/$file")" '. + {($name):{sha256:$sha,bytes:$bytes}}' <<<"$artifacts")"
@@ -89,7 +97,7 @@ jq -n --arg run_id "$RUN_ID" --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --argjson retention_days "$RETENTION_DAYS" --argjson artifacts "$artifacts" \
   --argjson weekly_copies "$WEEKLY_COPIES" \
   '{version:1,run_id:$run_id,created_at:$created_at,source_host:$source_host,
-    source_database:$source_database,encrypted:true,plaintext_artifacts_written:false,
+    source_database:$source_database,encrypted:true,plaintext_artifacts_written:false,storage_extended_attributes:true,
     consistency:"online-operational-backup-not-promotion-rpo0",destination:{provider:"cloudflare-r2",
     bucket:$bucket,prefix:$prefix,independent_failure_domain:true},retention_days:$retention_days,
     weekly_copies:$weekly_copies,artifacts:$artifacts}' >"$RUN_DIR/manifest.json"

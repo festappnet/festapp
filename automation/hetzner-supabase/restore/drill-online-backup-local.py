@@ -3,7 +3,7 @@
 No SSH, DB URL, host data mount, integration service or production target accepted.
 Actual production backup acquisition/key recovery remains an operational gate.
 """
-import argparse,datetime,hashlib,json,os,re,subprocess,tempfile,time,tarfile
+import argparse,datetime,hashlib,json,os,re,subprocess,tempfile,time,tarfile,traceback
 from pathlib import Path
 
 def run(args,**kw):
@@ -17,8 +17,9 @@ def validate_manifest(folder):
  assert m['source_host']=='festapp-supabase-rehearsal-01'
  assert m['source_database']=='festapp_rehearsal_20260909220601'
  for name in ('postgres.dump.age','globals.sql.age','storage.tar.age','runtime.tar.age'):
-  data=(folder/name).read_bytes(); a=m['artifacts'][name]
-  assert len(data)==a['bytes'] and hashlib.sha256(data).hexdigest()==a['sha256'],name
+  path=folder/name;a=m['artifacts'][name]
+  with path.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
+  assert path.stat().st_size==a['bytes'] and digest==a['sha256'],name
  return m
 
 def storage_consistency(objects, files):
@@ -44,7 +45,12 @@ def storage_consistency(objects, files):
 def main():
  p=argparse.ArgumentParser();p.add_argument('--backup-dir',type=Path,required=True);p.add_argument('--identity',type=Path,required=True);p.add_argument('--evidence',type=Path,required=True)
  p.add_argument('--storage-consistency',action='store_true')
+ p.add_argument('--service-smoke',action='store_true')
+ p.add_argument('--admin-resources',action='store_true')
+ p.add_argument('--rebuild-storage-metadata',action='store_true')
  a=p.parse_args();m=validate_manifest(a.backup_dir)
+ assert not a.admin_resources or a.service_smoke,'admin resource drill requires service smoke'
+ assert not a.rebuild_storage_metadata or a.service_smoke,'metadata recovery requires service smoke'
  assert a.identity.is_file() and not a.evidence.exists()
  # Pin the same supported production major; no untrusted CLI image argument.
  pins=json.loads((Path(__file__).resolve().parents[1]/'runtime/pins.json').read_text())
@@ -63,16 +69,26 @@ def main():
     members=archive.getmembers()
     assert all(not Path(x.name).is_absolute() and '..' not in Path(x.name).parts and not x.issym() and not x.islnk() and (x.isfile() or x.isdir()) for x in members),'unsafe archive member'
     counts[filename]={'files':sum(x.isfile() for x in members),'bytes':sum(x.size for x in members if x.isfile())}
-    if filename=='storage.tar' and a.storage_consistency:
+    if filename=='storage.tar' and (a.storage_consistency or a.service_smoke):
      storage_files={str(Path(x.name)):x.size for x in members if x.isfile()}
      assert len(storage_files)==counts[filename]['files'],'duplicate Storage archive paths'
   with (work/'restore.log').open('wb') as log:
    try:
-    run(['docker','run','-d','--name',name,'--network','none','--label','festapp.isolated-restore=true',
-      '-e','POSTGRES_PASSWORD=isolated-fixture-only',image],stdout=log,stderr=log)
+    if a.service_smoke:
+     command=json.loads(subprocess.check_output(['docker','image','inspect',image]))[0]['Config']['Cmd']
+     assert command==['postgres','-D','/etc/postgresql']
+     # Keep PID 1 alive across the post-restore PostgreSQL restart. pg_net
+     # requires its normal preload for CREATE EXTENSION during pg_restore;
+     # all workers are disabled before any application services start.
+     run(['docker','run','-d','--name',name,'--network','none','--label','festapp.isolated-restore=true',
+       '-e','POSTGRES_PASSWORD=isolated-fixture-only','--entrypoint','sh',image,'-c','sleep 7200'],stdout=log,stderr=log)
+     run(['docker','exec','-d',name,'sh','-c','docker-entrypoint.sh postgres -D /etc/postgresql > /tmp/restore-init.log 2>&1'],stdout=log,stderr=log)
+    else:
+     run(['docker','run','-d','--name',name,'--network','none','--label','festapp.isolated-restore=true',
+       '-e','POSTGRES_PASSWORD=isolated-fixture-only',image],stdout=log,stderr=log)
     for _ in range(90):
      ready=subprocess.run(['docker','exec',name,'psql','-X','-U','supabase_admin','-d','postgres','-Atqc','SELECT 1'],capture_output=True)
-     observed=subprocess.run(['docker','logs',name],capture_output=True)
+     observed=subprocess.run(['docker','exec',name,'cat','/tmp/restore-init.log'] if a.service_smoke else ['docker','logs',name],capture_output=True)
      logs=observed.stdout+observed.stderr
      if ready.returncode==0 and b'PostgreSQL init process complete' in logs:break
      time.sleep(1)
@@ -101,14 +117,19 @@ def main():
     smoke="BEGIN READ ONLY; SELECT count(*) FROM public.organizations; SELECT count(*) FROM auth.users; SELECT count(*) FROM storage.objects; COMMIT;"
     run(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atqc',smoke],stdout=log,stderr=log)
     consistency=None
-    if a.storage_consistency:
+    if a.storage_consistency or a.service_smoke:
      query="BEGIN READ ONLY; SELECT coalesce(json_agg(json_build_object('bucket',bucket_id,'name',name,'version',version,'size',metadata->>'size')),'[]'::json) FROM storage.objects; COMMIT;"
      # Object names remain in memory only, never stdout/evidence/logs.
      rows=subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log)
      consistency=storage_consistency(json.loads(rows),storage_files)
+    application=None
+    if a.service_smoke:
+     assert consistency['consistent'],'inconsistent Storage prevents application recovery proof'
+     from service_smoke import application_reads
+     application=application_reads(name,pins,work/'storage.tar',log,admin_resources=a.admin_resources,rebuild_metadata=a.rebuild_storage_metadata)
     result={'version':1,'status':'pass','backup_run_id':m['run_id'],'backup_manifest_sha256':hashlib.sha256((a.backup_dir/'manifest.json').read_bytes()).hexdigest(),
      'source_backup_consistency':m['consistency'],'isolated':True,'network':'none','ports':False,'host_mounts':False,
-     'application_services_started':False,'runtime_executed':False,'archive_inventory':counts,'storage_consistency':consistency,
+     'application_services_started':bool(application),'application_reads':application,'runtime_executed':False,'archive_inventory':counts,'storage_consistency':consistency,
      'database_read_smoke':True,'globals_errors_checked':True,'rto_seconds':round(time.monotonic()-started,2),
      'rpo_seconds':None,'pitr_proven':False,'note':'Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.'}
    except Exception as error:
@@ -120,6 +141,7 @@ def main():
     fd=os.open(failure,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
     with os.fdopen(fd,'wb') as out:
      out.write(type(error).__name__.encode()+b'\n')
+     out.write(traceback.format_exc().encode())
      out.write((work/'restore.log').read_bytes())
     raise RuntimeError('Local restore failed; protected diagnostics saved beside requested evidence; no production action performed') from None
    finally:

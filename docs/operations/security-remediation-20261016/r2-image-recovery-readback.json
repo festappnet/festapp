@@ -1,0 +1,67 @@
+{
+  "at": "2026-10-16T14:55:32.362271+00:00",
+  "canonical_organization_1": {
+    "R2_image_records": 24,
+    "Storage_image_records": 0
+  },
+  "slunovrat_organization_19": {
+    "R2_image_records": 6,
+    "Storage_image_records": 224,
+    "records_with_storage_links": {
+      "events": 202,
+      "information": 3,
+      "occasions": 6
+    },
+    "public_samples_from_event_references": {
+      "count": 3,
+      "statuses": [
+        206,
+        206,
+        206
+      ],
+      "redirects": [
+        0,
+        0,
+        0
+      ],
+      "final_host": "api.festapp.net"
+    }
+  },
+  "other_organization_3": {
+    "Storage_image_records": 4
+  },
+  "bucket_inventory": {
+    "festapp-images": {
+      "objects": 410,
+      "bytes": 154439314
+    },
+    "festapp-images-a": {
+      "objects": 664,
+      "bytes": 187091477
+    },
+    "festapp-images-private": {
+      "objects": 0,
+      "bytes": 0
+    },
+    "festapp-images-a-private": {
+      "objects": 0,
+      "bytes": 0
+    }
+  },
+  "backup_bucket_top_prefixes": [
+    "backups/",
+    "logs/",
+    "monitoring/",
+    "pgbackrest-key-escrow/",
+    "pgbackrest/"
+  ],
+  "source_read_with_existing_backup_credential": {
+    "success": false,
+    "access_denied": true
+  },
+  "r2_image_backup_activated": false,
+  "pending": "User decision on scoped Object Read only source credential; prepared archive helper is not a live backup receipt",
+  "source_urls_changed": false,
+  "sources_deleted": false,
+  "note": "No raw customer URLs, object names or credentials in this receipt."
+}

@@ -1,0 +1,14 @@
+{
+  "services": {
+    "studio": {
+      "mem_limit": 805306368,
+      "cpus": "1.0",
+      "pids_limit": 256
+    },
+    "meta": {
+      "mem_limit": 402653184,
+      "cpus": "0.5",
+      "pids_limit": 128
+    }
+  }
+}

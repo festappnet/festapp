@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-16",
+  "verification": "standard",
+  "host_memory_bytes": 3981275136,
+  "seven_day_host_observations": {
+    "source": "Read-only Monitoring D1 observations joined to festapp/production/festapp-host incident_groups; 0 rows written",
+    "samples_per_check": 9913,
+    "first_at": 1791556481455,
+    "last_at": 1792161244029,
+    "memory_percent": {
+      "min": 48.8,
+      "average": 74.97,
+      "max": 83.4
+    },
+    "cpu_percent": {
+      "min": 11.9,
+      "average": 13.45,
+      "max": 77.6
+    },
+    "disk_percent": {
+      "min": 60.5,
+      "average": 75.44,
+      "max": 90.9
+    }
+  },
+  "admin_limits": {
+    "studio": {
+      "mem_limit": 805306368,
+      "cpus": "1.0",
+      "pids_limit": 256
+    },
+    "meta": {
+      "mem_limit": 402653184,
+      "cpus": "0.5",
+      "pids_limit": 128
+    }
+  },
+  "admin_memory_cap_sum_bytes": 1207959552,
+  "isolated_burst_result": "application-recovery-result.json",
+  "reserve_policy": {
+    "os_headroom_target_bytes": 536870912,
+    "logical_backup_transient_target_bytes": 805306368,
+    "logical_backup_observed_cgroup_peak_bytes": 717103104,
+    "backup_memory_includes_reclaimable_cache": true,
+    "physical_backup_workers": 1,
+    "physical_backup_observed_process_rss_approximately_bytes": 41943040
+  },
+  "critical_containers": "Remain uncapped until per-container representative peak and concurrency/recovery checks; admin cap sum plus reserve is not a complete worst-case host allocation. Do not treat per-worker Edge memory as a container cap.",
+  "paid_resize_required_by_current_evidence": false,
+  "paid_resize_performed": false,
+  "whole_host_hard_cap_budget_complete": false,
+  "note": "Historic host data includes real load/backup windows; new per-container history began after reboot and does not yet cover an equivalent peak. Explicit reserve targets are planning criteria, not enforced reservations."
+}
