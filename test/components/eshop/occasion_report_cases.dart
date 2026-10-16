@@ -69,6 +69,18 @@ Widget app(
     );
 
 void main() {
+  testWidgets('large report amounts use localized thousands grouping',
+      (tester) async {
+    final response = reportResponse();
+    response['report']['money_by_currency'][0]['net_received'] = '1046778.22';
+    final report = OccasionReport.fromResponse(response);
+    await tester.pumpWidget(app((_) async => report));
+    await tester.pumpAndSettle();
+    expect(find.text('1\u00a0046\u00a0778,22'), findsOneWidget);
+    expect(formatReportText(report, locale: 'cs'),
+        contains('1\u00a0046\u00a0778,22'));
+  });
+
   testWidgets('valid report is the default and toggles without reloading',
       (tester) async {
     final response = reportResponse();
@@ -295,7 +307,7 @@ void main() {
         tester.widget<SelectableText>(find.byType(SelectableText)).data!;
     expect(displayed, contains('${OrderModel.stateToLocale('paid')}: 2'));
     expect(displayed, isNot(contains('  paid:')));
-    expect(displayed, formatReportText(reportFixture()));
+    expect(displayed, formatReportText(reportFixture(), locale: 'cs'));
     await tester.tap(find.byType(PopupMenuButton<String>));
     await tester.pumpAndSettle();
     await tester.tap(find.text(ReportStrings.export));

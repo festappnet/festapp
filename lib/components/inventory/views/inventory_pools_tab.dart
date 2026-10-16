@@ -14,7 +14,8 @@ import 'inventory_strings.dart';
 
 @RoutePage(name: 'InventoryPoolsListRoute')
 class InventoryPoolsTab extends StatefulWidget {
-  const InventoryPoolsTab({super.key});
+  const InventoryPoolsTab({super.key, this.loadPools});
+  final Future<InventoryPoolsListBundle> Function(String)? loadPools;
 
   @override
   _InventoryPoolsTabState createState() => _InventoryPoolsTabState();
@@ -45,8 +46,8 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
     setState(() => _isLoading = true);
 
     try {
-      final newBundle =
-          await DbInventoryPools.getInventoryPoolsByOccasionLink(occasionLink);
+      final newBundle = await (widget.loadPools ??
+          DbInventoryPools.getInventoryPoolsByOccasionLink)(occasionLink);
       if (!mounted || _previousOccasionLink != occasionLink) return;
       _bundle = newBundle;
 
@@ -60,6 +61,19 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
           spot.inventoryContext = _bundle!.inventoryContexts.firstWhereOrNull(
               (context) => context.id == spot.inventoryContextId);
         }
+      }
+      if (newBundle.pools.length == 1 &&
+          newBundle.pools.single.id != null &&
+          context.routeData.queryParams.get('list')?.toString().toLowerCase() !=
+              'true') {
+        context.router.markUrlStateForReplace();
+        await context.router.replaceAll([
+          InventoryPoolDetailRoute(poolId: newBundle.pools.single.id.toString())
+              .copyWith(
+                  queryParams:
+                      context.router.root.urlState.uri.queryParametersAll)
+        ]);
+        return;
       }
     } catch (e) {
       // Error fetching capacity groups bundle

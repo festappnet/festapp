@@ -23,6 +23,8 @@ import 'package:fstapp/data_services/rights_service.dart';
 
 class ObjectFixture extends RootStackRouter {
   bool realBankGeneral = false;
+  Widget Function()? poolListBuilder;
+  Widget Function()? poolSettingsBuilder;
   WidgetBuilder? bankListBuilder;
   final unitVisible = ValueNotifier(true);
   Future<List<FormBundle>> Function(String) forms = (_) async => [
@@ -87,7 +89,11 @@ class ObjectFixture extends RootStackRouter {
               page(InventoryPoolsNavigationRoute.name, 'inventory-pools',
                   (_) => const AutoRouter(),
                   children: [
-                    text(InventoryPoolsListRoute.name, '', 'POOL LIST'),
+                    page(
+                        InventoryPoolsListRoute.name,
+                        '',
+                        (_) =>
+                            poolListBuilder?.call() ?? const Text('POOL LIST')),
                     page(
                         InventoryPoolDetailRoute.name,
                         ':poolId',
@@ -102,8 +108,12 @@ class ObjectFixture extends RootStackRouter {
                                     'occupancy', 'POOL OCCUPANCY'),
                                 text(InventoryPoolRoomsRoute.name, 'rooms',
                                     'POOL ROOMS'),
-                                text(InventoryPoolSettingsRoute.name,
-                                    'settings', 'POOL SETTINGS')
+                                page(
+                                    InventoryPoolSettingsRoute.name,
+                                    'settings',
+                                    (_) =>
+                                        poolSettingsBuilder?.call() ??
+                                        const Text('POOL SETTINGS'))
                               ])
                         ])
                   ]),
@@ -308,9 +318,14 @@ void main() {
     await mount(
         tester, router, '/occasion-a/reservations/inventory-pools/42/settings');
     expect(find.text('POOL SETTINGS'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back));
+    expect(find.text('Room pool'), findsOneWidget);
+    final header = tester.widget<AppBar>(find.byType(AppBar).last);
+    expect(header.toolbarHeight, 44);
+    expect(header.leading, isNull);
+    await tester.tap(find.byIcon(Icons.grid_view_outlined));
     await tester.pumpAndSettle();
-    expect(router.currentUrl, '/occasion-a/reservations/inventory-pools');
+    expect(router.currentUrl,
+        '/occasion-a/reservations/inventory-pools?list=true');
     expect(find.text('POOL LIST'), findsOneWidget);
   });
   for (final id in ['999', 'invalid']) {

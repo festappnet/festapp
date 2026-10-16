@@ -1,3 +1,4 @@
+import { FormStrings } from '../form_strings.js';
 import { LocalizationService } from '../../../services/localization_service.js';
 import { formatPrice } from '../../../utils/formatters.js';
 import { FeatureService, DEFAULT_META_SURCHARGE_CURRENCY } from '../../features/feature_service.js';
@@ -158,11 +159,39 @@ class IdDocumentPreviewStrategy extends BasePreviewStrategy {
     }
 }
 
+class SexPreviewStrategy extends BasePreviewStrategy {
+    format(value, fieldDef, context) {
+        const label = value === 'male' ? FormStrings.maleLabel
+            : value === 'female' ? FormStrings.femaleLabel
+            : value === '' ? FormStrings.notSpecifiedLabel : null;
+        return label == null ? super.format(value, fieldDef, context) : { value: label, price: null };
+    }
+}
+
+class BirthDatePreviewStrategy extends BasePreviewStrategy {
+    format(value, fieldDef, context) {
+        // A birth date is a calendar date, independent of the viewer's timezone.
+        const match = typeof value === 'string' && /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(value);
+        if (!match) return super.format(value, fieldDef, context);
+        const [, year, month, day] = match;
+        const date = new Date(`${year}-${month}-${day}T12:00:00Z`);
+        if (!Number.isFinite(date.getTime()) || date.getUTCFullYear() !== Number(year) ||
+            date.getUTCMonth() + 1 !== Number(month) || date.getUTCDate() !== Number(day)) {
+            return super.format(value, fieldDef, context);
+        }
+        return { value: new Intl.DateTimeFormat(LocalizationService.currentLocale, {
+            year: 'numeric', month: 'numeric', day: 'numeric', timeZone: 'UTC'
+        }).format(date), price: null };
+    }
+}
+
 export class FieldPreviewFactory {
     static _strategies = {
         'default': new BasePreviewStrategy(),
         'product_type': new ProductTypePreviewStrategy(),
-        'id_document': new IdDocumentPreviewStrategy()
+        'id_document': new IdDocumentPreviewStrategy(),
+        'sex': new SexPreviewStrategy(),
+        'birth_date': new BirthDatePreviewStrategy()
     };
 
     static getStrategy(fieldDef) {

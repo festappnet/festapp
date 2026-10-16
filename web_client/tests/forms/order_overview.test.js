@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import { LocalizationService } from '../../src/services/localization_service.js';
 import { loadOrderOverview, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
 import { WaitlistCommands } from '../../src/components/forms/waitlist_commands.js';
 const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT', hasTickets: true }, serverTime: '2026-10-15T12:00:00Z',
@@ -318,4 +319,15 @@ test('overview displays identity document number and formatted expiry', t => {
  const answer=host.querySelector('.overview-answers dd').textContent;
  assert.match(answer,/AB123456/); assert.match(answer,/2031/);
  assert.doesNotMatch(answer,/\[object Object\]|id_document_/);
+});
+
+test('submitted answers localize gender and calendar dates without exposing storage values', t => {
+ const host=setup(t),data=fixture();
+ const previous=LocalizationService.translations;
+ LocalizationService.translations={PersonFields:{female:'Žena',male:'Muž'}};
+ t.after(()=>{LocalizationService.translations=previous;});
+ data.orders[0].answers=[{type:'sex',title:'Jsem',value:'female'},{type:'birth_date',title:'Datum narození',value:'1990-01-24T00:00:00.000'}];
+ renderOrderOverview(host,data);
+ const values=[...host.querySelectorAll('.overview-answers dd')].map(x=>x.textContent);
+ assert.deepEqual(values,['Žena','24. 1. 1990']);
 });

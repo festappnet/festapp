@@ -654,7 +654,7 @@ class OrderHistoryModel extends ITrinaRowModel {
         EshopColumnIds.HISTORY_CHANGES_SUMMARY:
             TrinaCell(value: _generateChangesSummaryString(context)),
         EshopColumnIds.ORDER_FORM:
-            TrinaCell(value: orderModel?.form?.toString() ?? ""),
+            TrinaCell(value: orderModel?.form?.definition.toString() ?? ""),
         EshopColumnIds.HISTORY_MODEL_REFERENCE: TrinaCell(value: this),
       },
     );

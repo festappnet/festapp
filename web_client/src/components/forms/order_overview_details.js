@@ -43,7 +43,7 @@ export function renderOverviewAnswers(host, answers = [], key) {
     const values = node(details, 'dl', '');
     for (const answer of answers) {
         node(values, 'dt', formFieldTitle(answer) || tr('answer'));
-        const value = answer.type === 'id_document'
+        const value = ['id_document', 'birth_date', 'sex'].includes(answer.type)
             ? FieldPreviewFactory.format(answer, answer.value, {}).value
             : Array.isArray(answer.value) ? answer.value.join(', ') : String(answer.value ?? '');
         node(values, 'dd', value);

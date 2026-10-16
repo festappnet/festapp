@@ -265,7 +265,7 @@ class OccasionUserModel extends ITrinaRowModel {
           TrinaCell(value: data?[Tb.occasion_users.data_text2] ?? ""),
       UserColumns.TEXT3:
           TrinaCell(value: data?[Tb.occasion_users.data_text3] ?? ""),
-      UserColumns.FORM: TrinaCell(value: form?.toString() ?? ""),
+      UserColumns.FORM: TrinaCell(value: form?.definition.toString() ?? ""),
       UserColumns.ORDERED_AT: TrinaCell(value: orderCreatedAt),
       UserColumns.CREATED_AT: TrinaCell(value: createdAt),
       UserColumns.LAST_SIGN_IN_AT: TrinaCell(value: lastSignInAt),

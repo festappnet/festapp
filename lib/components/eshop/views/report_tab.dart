@@ -1,3 +1,4 @@
+import 'report_number_format.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'report_text.dart';
 import 'package:festapp_core/eshop.dart';
@@ -167,7 +168,8 @@ class _ReportTabState extends State<ReportTab> {
         await FileSaver.instance.saveFile(
           name:
               'report_${title.isEmpty ? report.occasionId : title.substring(0, title.length.clamp(0, 80))}',
-          bytes: Uint8List.fromList(utf8.encode(formatReportText(report))),
+          bytes: Uint8List.fromList(utf8.encode(formatReportText(report,
+              locale: Localizations.localeOf(context).toString()))),
           fileExtension: 'txt',
           mimeType: MimeType.text,
         );
@@ -537,7 +539,7 @@ class _ReportTabState extends State<ReportTab> {
           for (final amount in money.amounts.entries)
             if (money.hasDeposits || !amount.key.contains('deposit'))
               _value(ReportStrings.metric(amount.key),
-                  '${amount.value} ${money.currency}'),
+                  '${formatReportNumber(amount.value, locale: Localizations.localeOf(context).toString())} ${money.currency}'),
         ],
         details: ReportStrings.moneyDetails,
       );
@@ -761,7 +763,9 @@ class _ReportTabState extends State<ReportTab> {
                   const SizedBox(height: 24),
                   if (_loading) const LinearProgressIndicator(),
                   if (_error) Text(ReportStrings.error),
-                  if (r != null && _text) SelectableText(formatReportText(r)),
+                  if (r != null && _text)
+                    SelectableText(formatReportText(r,
+                        locale: Localizations.localeOf(context).toString())),
                   if (r != null && !_text) ...[
                     LayoutBuilder(
                       builder: (context, constraints) {
@@ -807,7 +811,9 @@ class _ReportTabState extends State<ReportTab> {
                             for (final m in r.money)
                               _summary(
                                 '${ReportStrings.metric('net_received')} (${m.currency})',
-                                m.amounts['net_received']!,
+                                formatReportNumber(m.amounts['net_received']!,
+                                    locale: Localizations.localeOf(context)
+                                        .toString()),
                                 width,
                               ),
                           ],

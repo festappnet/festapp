@@ -139,15 +139,21 @@ BEGIN
     FROM public.forms f
     WHERE f.occasion = v_occasion_id;
 
-    -- Fetch orders, conditionally filtering by form link
-    IF v_form_id IS NOT NULL THEN
+    -- Materialize once per authorized order: the summary resolves ticket and
+    -- offer lifecycles and is reused by all three response fields.
+    WITH selected_orders AS MATERIALIZED (
+        SELECT o.*, public.get_waitlist_summary_internal(o.id) AS waitlist_summary
+        FROM eshop.orders o
+        WHERE o.occasion = v_occasion_id
+          AND (v_form_id IS NULL OR o.form = v_form_id)
+    )
         SELECT jsonb_agg(jsonb_build_object(
             'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
             'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL
               OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
-              THEN public.get_waitlist_summary_internal(o.id) END,
-            'isActive',(public.get_waitlist_summary_internal(o.id)->>'isActive')::boolean,
-            'allowedActions',public.get_waitlist_summary_internal(o.id)->'allowedActions',
+              THEN o.waitlist_summary END,
+            'isActive',(o.waitlist_summary->>'isActive')::boolean,
+            'allowedActions',o.waitlist_summary->'allowedActions',
             'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
@@ -158,29 +164,7 @@ BEGIN
             'payment_info', o.payment_info, 'note_hidden', o.note_hidden
         ))
         INTO ordersData
-        FROM eshop.orders o
-        WHERE o.occasion = v_occasion_id AND o.form = v_form_id;
-    ELSE
-        SELECT jsonb_agg(jsonb_build_object(
-            'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
-            'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL
-              OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
-              THEN public.get_waitlist_summary_internal(o.id) END,
-            'isActive',(public.get_waitlist_summary_internal(o.id)->>'isActive')::boolean,
-            'allowedActions',public.get_waitlist_summary_internal(o.id)->'allowedActions',
-            'source_waitlist_order_id',o.source_waitlist_order_id,
-            'form_id', o.form,
-            'form', jsonb_build_object('id', o.form),
-            'data', CASE
-                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data
-                ELSE jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email')
-            END,
-            'payment_info', o.payment_info, 'note_hidden', o.note_hidden
-        ))
-        INTO ordersData
-        FROM eshop.orders o
-        WHERE o.occasion = v_occasion_id;
-    END IF;
+        FROM selected_orders o;
 
     -- Extract order IDs from the (potentially filtered) ordersData JSONB
     WITH order_ids AS (
