@@ -16,6 +16,7 @@ def env_read(path):
  return d
 def atomic(path,data,mode=0o600):
  temp=path.with_name('.'+path.name+'.new');fd=os.open(temp,os.O_WRONLY|os.O_CREAT|os.O_EXCL,mode)
+ os.fchmod(fd,mode)
  with os.fdopen(fd,'w') as f:f.write(data)
  os.replace(temp,path)
 def main():
