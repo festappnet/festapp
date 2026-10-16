@@ -1,0 +1,44 @@
+{
+  "base_main": "a95067e26d7b1d17009fa6100145708750833133",
+  "worktree": "/private/tmp/festapp-server-security-20261016",
+  "committed": false,
+  "production_changed": false,
+  "database": "isolated Supabase PostgreSQL 17.6",
+  "checks": {
+    "server_rpc_security_node_tests": 10,
+    "inventory_two_connection_test": 1,
+    "transactional_deployment_driver_test": 1,
+    "sql_regression_suites": 6,
+    "scan_attendance_assertions": 28,
+    "pinned_caddy_storage_chunked_ip_websocket_test": 1,
+    "existing_host_monitor_metrics_tests": 4,
+    "existing_infrastructure_and_backup_tests": 10,
+    "security_package_policy_tests": 6,
+    "existing_abuse_policy_tests": 5,
+    "synthetic_encrypted_restore": true,
+    "canonical_abuse_migration_unchanged": true,
+    "migration_layout": true,
+    "final_clean_pg17_batch": true,
+    "final_batch_log": "/tmp/festapp-security-final-batch.log",
+    "new_canonical_definer_gate": true
+  },
+  "production_readback": {
+    "target": "festapp / organization 1 / canonical generation 1",
+    "main_at_fetch": "a95067e26d7b1d17009fa6100145708750833133",
+    "legacy_rpc_execute_anon_authenticated": true,
+    "sync_policies": "PUBLIC ALL",
+    "stored_function_callers": 0,
+    "pg_depend_callers": 0,
+    "control_plane_cron_callers": 0,
+    "aggregate_access_log_evidence": "not collected; no claim about historic mobile-client usage",
+    "active_password_hook": true,
+    "rate_limit_header": "X-Festapp-Client-IP",
+    "other_effective_auth_defaults": "not inferred from absence in environment"
+  },
+  "limits": [
+    "No production application/deploy/restart/SQL writes performed.",
+    "Real latest-backup restore, key-loss recovery and RPO/RTO not proven by synthetic fixture.",
+    "Runtime caps require representative resource samples; none guessed.",
+    "Alert delivery/control-plane firewall/MFA/billing and effective Auth defaults remain operational evidence gates."
+  ]
+}

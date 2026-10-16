@@ -8,6 +8,9 @@ readonly LOCAL_PROJECT_ID="${FESTAPP_LOCAL_DB_PROJECT_ID:-festapp-db-tests-pg15}
 readonly LOCAL_DB_PORT="${FESTAPP_LOCAL_DB_PORT:-55432}"
 [[ "$LOCAL_DB_PORT" =~ ^[0-9]+$ ]] || { echo "Invalid local DB port" >&2; exit 1; }
 readonly DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:$LOCAL_DB_PORT/postgres?sslmode=disable"
+# Local extension functions are owned by supabase_admin. The baseline still
+# restores as postgres; forward migrations use the local extension-owning admin.
+readonly MIGRATION_DATABASE_URL="postgresql://supabase_admin:postgres@127.0.0.1:$LOCAL_DB_PORT/postgres?sslmode=disable"
 readonly BASELINE_VERSION="20260805230000"
 readonly BASELINE_FILE="$PROJECT_ROOT/supabase/baseline/${BASELINE_VERSION}_production_schema.sql"
 readonly MIGRATIONS_DIR="$PROJECT_ROOT/supabase/migrations"
@@ -88,7 +91,7 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
 
 # The baseline owns every version through BASELINE_VERSION. Only genuinely new,
 # forward migrations are executed here.
-supabase migration up --db-url "$DATABASE_URL" --include-all >/dev/null
+supabase migration up --db-url "$MIGRATION_DATABASE_URL" --include-all >/dev/null
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_ROOT/supabase/seed.sql" >/dev/null
 # Demo contract tests use the same versioned synthetic fixtures as the application.
 # This bootstrap is pinned to the disposable localhost database above.

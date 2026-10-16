@@ -1,7 +1,7 @@
 import { readFile, writeFile, rename, statfs, stat } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { createMonitoring } from './sdk.mjs';
-import { cpuCounters, cpuPercent, memoryPercent, diskMetrics, diskFailure } from './metrics.mjs';
+import { cpuCounters, cpuPercent, memoryPercent, diskMetrics, diskFailure, runtimeFailure } from './metrics.mjs';
 
 const statePath = '/var/lib/festapp-host-monitor/cpu.json';
 const paths = ['/', '/opt/festapp-supabase', '/var/lib/docker', '/var/backups'];
@@ -43,7 +43,16 @@ async function run() {
     return { percent: Math.max(...values.map(v => v.percent)), reason: values.map(diskFailure).find(Boolean) };
   }, 90);
   for (const result of results) monitor.heartbeat(result.id, { status: result.status, code: `host_${result.id}`, context: { count: result.percent ?? 0, reason: result.reason } });
-  monitor.heartbeat('agent', { status: results.some(r => r.reason === 'measurement_unavailable') ? 'failed' : 'ok', code: 'host_collection', context: { count: results.length } });
+  let runtimeReason = 'runtime_collection_unavailable';
+  try {
+    const current = JSON.parse(await readFile('/var/lib/festapp-host-monitor/runtime.json', 'utf8'));
+    let previous;
+    try { previous = JSON.parse(await readFile('/var/lib/festapp-host-monitor/runtime-previous.json', 'utf8')); } catch {}
+    runtimeReason = runtimeFailure(current, previous);
+    await writeFile('/var/lib/festapp-host-monitor/runtime-previous.json', JSON.stringify(current), { mode: 0o600 });
+  } catch {}
+  const collectionFailure = results.some(r => r.reason === 'measurement_unavailable');
+  monitor.heartbeat('agent', { status: collectionFailure || runtimeReason ? 'failed' : 'ok', code: 'host_collection', context: { count: results.length, reason: runtimeReason || (collectionFailure ? 'measurement_unavailable' : 'ok') } });
   const receipt = await monitor.close({ timeoutMs: 10000 });
   if (receipt.status !== 'flushed' || receipt.receipts.length !== 4 || receipt.dropped) throw Error('collection_failed');
   console.log(JSON.stringify({ event: 'host_monitor_received', results, receipts: receipt.receipts.length }));

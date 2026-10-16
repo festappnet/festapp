@@ -26,3 +26,20 @@ export function diskFailure(value) {
   if (value.inodePercent >= 90) return 'disk_inodes';
   return null;
 }
+
+// Existing agent component reports these observations; no new monitor identity.
+export function runtimeFailure(current, previous, now = Date.now()) {
+  if (!current?.ok || !Number.isFinite(current.at) || now - current.at > 180000 || current.at > now + 10000) return 'runtime_collection_unavailable';
+  if (!Array.isArray(current.containers) || !current.containers.length) return 'runtime_collection_unavailable';
+  for (const c of current.containers) {
+    if (c.oom) return 'container_oom';
+    if (!c.running) return 'container_stopped';
+    const old = previous?.containers?.find(p => p.name === c.name);
+    if (old && c.restarts > old.restarts) return 'container_restarted';
+  }
+  if (!Number.isFinite(current.backupAt) || now / 1000 - current.backupAt > 26 * 3600) return 'backup_stale';
+  if (!Number.isFinite(current.logUploadAt) || now / 1000 - current.logUploadAt > 2 * 3600) return 'log_upload_stale';
+  if (!Number.isInteger(current.longTransactions)) return 'runtime_collection_unavailable';
+  if (current.longTransactions > 0) return 'database_long_transaction';
+  return null;
+}

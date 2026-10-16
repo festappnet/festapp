@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly SSH_TARGET="${FESTAPP_REHEARSAL_SSH_TARGET:-root@46.224.187.4}"
+readonly SSH_TARGET="${FESTAPP_REHEARSAL_SSH_TARGET:-festapp-backend-agent}"
 readonly EXPECTED_HOSTNAME="festapp-supabase-rehearsal-01"
 readonly COMPOSE_DIR="/opt/festapp-supabase/docker"
 readonly RESTORE_STARTED_EPOCH="$(date +%s)"
