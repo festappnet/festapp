@@ -150,13 +150,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   KeyEventResult _globalHistoryKey(KeyEvent event) {
     if (!mounted || !(ModalRoute.of(context)?.isCurrent == true ||
         _historyPanelRoute?.isCurrent == true)) return KeyEventResult.ignored;
-    final focusContext = FocusManager.instance.primaryFocus?.context;
-    final typing = focusContext?.findAncestorStateOfType<EditableTextState>() != null;
-    if (!typing && !editBackground && !editCanvas &&
-        [LogicalKeyboardKey.delete, LogicalKeyboardKey.backspace].contains(event.logicalKey)) {
-      if (!saving && !imageBusy && event is KeyDownEvent) controller.removeSelectedOptionalFields();
-      return event is KeyUpEvent ? KeyEventResult.ignored : KeyEventResult.handled;
-    }
     final keyboard = HardwareKeyboard.instance;
     if (event is KeyUpEvent || keyboard.isAltPressed ||
         !(keyboard.isControlPressed || keyboard.isMetaPressed) ||
@@ -602,7 +595,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       onTap: () => Navigator.pop(context, 'text')),
                   for (final binding in [
                     'occasionTitle', 'occasionStartTime', 'occasionPlace',
-                    'spotGroup', 'orderName', 'note', 'price', 'logo',
+                    'occasionDatePlace', 'spotGroup', 'orderName', 'note', 'price', 'logo',
                   ])
                     if (!controller.document.elements.any((e) => e.binding == binding) &&
                         (binding == 'logo' ? resources.logo != null :
@@ -615,7 +608,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.pop(context, 'productType')),
                   ],
-                ])))));
+                ]))),
+            actions: [TextButton(onPressed: () => Navigator.pop(context),
+                child: Text(TicketLayoutStrings.cancel))]));
     if (!mounted || binding == null) return;
     if (binding == 'productType') {
       await pickProduct(onSelected: onSelected);
@@ -910,14 +905,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     }
   }
 
-  Future<TextStyle> fontPreviewStyle(String family) async {
-    final entries = await fontCatalog;
-    final asset = entries.firstWhere((e) => e['family'] == family);
-    final id = asset['id'] as String;
-    final font = resources.fonts[id] ?? await widget.service.font(widget.occasionId, id);
-    return TextStyle(fontFamily: font.loaderName, fontWeight: FontWeight.w400);
-  }
-
   Widget fontPicker() => FutureBuilder<List<Map<String, dynamic>>>(
         future: fontCatalog,
         builder: (context, snapshot) {
@@ -928,8 +915,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: FontFamilyPicker(
               label: TicketLayoutStrings.templateFont,
-              previewStyle: fontPreviewStyle,
-              selectedStyle: TextStyle(fontFamily: font.loaderName),
               value: font.family,
               families: entries.map((f) => f['family'] as String).toList(),
               extraFamilies: entries
@@ -979,7 +964,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                     await FontFamilyPicker.showChoices(
                       context,
                       title: TicketLayoutStrings.fontForText,
-                      previewStyle: fontPreviewStyle,
                       value: element.fontId == null
                           ? null
                           : resources
@@ -1886,9 +1870,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   if (editBackground) backgroundTools(),
                   Expanded(child: LayoutBuilder(builder: (c, constraints) {
                     final narrow = constraints.maxWidth < 900;
-                    final view = ListenableBuilder(
-                        listenable: controller,
-                        builder: (context, _) => TicketLayoutCanvas(
+                    final view = TicketLayoutCanvas(
                         key: canvas,
                         onDismiss: cancel,
                         onCanvasElementAttempt: () =>
@@ -1905,7 +1887,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                         additiveSelection: additiveSelection,
                         wholePage: wholePage,
                         snap: snap,
-                        grid: grid));
+                        grid: grid);
                     return narrow
                         ? Column(children: [
                             Expanded(child: view),
