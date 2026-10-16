@@ -1,5 +1,5 @@
 {
-  "at": 1792163729.790654,
+  "at": 1792166303.082228,
   "status": "pass",
   "icloud_sync": {
     "download_status": "NSURLUbiquitousItemDownloadingStatusCurrent",
@@ -8,8 +8,8 @@
     "uploaded": true,
     "uploading": false
   },
-  "archive_sha256": "94e8add940b9d33a057bae8ee250ed32d821e8b0f51d58daeea0a3ddd06c53ec",
-  "archive_bytes": 223787,
+  "archive_sha256": "d5bf5b2de6a6738ee209e7446bd556c61431f933c5d529668819fad649062866",
+  "archive_bytes": 227488,
   "archive_contains_private_identity": true,
   "key_from_icloud_zip_used": true,
   "original_workstation_identity_used": false,
@@ -20,7 +20,9 @@
   "backup_reader_read_only": true,
   "actual_r2_manifest_get": true,
   "actual_r2_pitr_escrow_get_and_decrypt": true,
-  "checked_backup_run_id": "20261016T145824Z",
-  "all_backup_data_copied_to_icloud": false,
-  "scope": "Independent recovery key and read-only R2 bootstrap in uploaded iCloud ZIP; encrypted data remains in R2, not a second full provider backup"
+  "checked_backup_run_id": "20261016T150700Z",
+  "complete_selected_backup_set_in_icloud": true,
+  "all_backup_history_in_icloud": false,
+  "full_snapshot_receipt": "icloud-full-snapshot-result.json",
+  "scope": "Uploaded independent recovery-key ZIP; separate complete offline snapshot also uploaded, regular daily/WAL history remains in R2"
 }
