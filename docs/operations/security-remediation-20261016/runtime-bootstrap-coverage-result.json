@@ -1,0 +1,49 @@
+{
+  "source_sha": "9679526fb1434bc4dd05b9e3bb5918ed29d6e61e",
+  "previous_snapshot_runtime": {
+    "runtime_bind_mounts_covered": 4,
+    "missing_runtime_mounts": [
+      "docker/studio-customization/install-logout.mjs",
+      "docker/studio-customization/logout.js",
+      "docker/volumes/snippets",
+      "docker/studio-customization/entrypoint.sh",
+      "docker/volumes/db/roles.sql",
+      "docker/volumes/db/_supabase.sql",
+      "docker/volumes/db/logs.sql",
+      "docker/volumes/db/pooler.sql",
+      "docker/volumes/db/webhooks.sql",
+      "docker/volumes/db/realtime.sql",
+      "docker/volumes/db/jwt.sql",
+      "etc/festapp-cloudflared/admin-tunnel.token",
+      "docker/volumes/api/envoy/lds.template.yaml",
+      "docker/volumes/api/envoy/docker-entrypoint.sh",
+      "docker/volumes/api/envoy/cds.yaml",
+      "docker/volumes/api/envoy/envoy.yaml",
+      "docker/volumes/pooler/pooler.exs"
+    ],
+    "data_mounts_covered_by_separate_artifacts_or_regenerated": 4,
+    "archive_entries": 190,
+    "unsafe_paths": false,
+    "config_executed": false
+  },
+  "fixed_runtime": {
+    "runtime_bind_mounts_covered": 21,
+    "missing_runtime_mounts": [],
+    "data_mounts_covered_by_separate_artifacts_or_regenerated": 4,
+    "archive_entries": 216,
+    "unsafe_paths": false,
+    "config_executed": false
+  },
+  "all_application_runtime_binds_covered": true,
+  "full_bare_host_restore_proven": false,
+  "activation": {
+    "application_containers_recreated": false,
+    "backup_service_run_id": "20261016T164727Z",
+    "off_host_new_full_set_verified": false,
+    "target": "canonical host and database verified",
+    "source_ci": [
+      "Web startup regressions: success",
+      "Image service regressions: success"
+    ]
+  }
+}

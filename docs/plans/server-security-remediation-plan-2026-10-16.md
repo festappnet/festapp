@@ -4,6 +4,10 @@ Datum: 2026-10-16
 Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, cross-store/RTO důkaz, ověření doručení host alertu; control-plane evidence a servisní restart jsou doložené.
 Ověření: standard - bezpečnost, autentizace, migrace a sdílený produkční backend
 
+## Doplnění skutečně chybějících startovacích souborů zálohy
+
+Kontrola skutečných bind mountů odhalila ve starém runtime archivu chybějící Envoy/pooler konfiguraci, Studio customization, SQL inicializaci a chráněný admin tunnel credential. Oprava z main `9679526fb1434bc4dd05b9e3bb5918ed29d6e61e` je instalovaná bez obnovy kontejnerů. Nový skutečně vytvořený age archiv byl stažený, hash ověřený a dešifrovaný pouze v paměti: všech 21 aktuálních konfiguračních bind mountů je pokrytých, dříve chybělo 17. Čtyři datové mounty náleží samostatným DB/Storage artefaktům nebo regenerovanému pgBackRest spoolu; živý PGDATA se do runtime nekopíruje. [Skutečný výsledek](../operations/security-remediation-20261016/runtime-bootstrap-coverage-result.json). Deset cílených backup testů prošlo, včetně tří případů skutečného tar výstupu a odmítnutí chybějících vstupů. Nová celá pětiartefaktová záloha `20261016T164727Z` běží přes stávající službu; off-host dokončení ještě není doložené. Samotné pokrytí souborů není úplný bare-host RTO test.
+
 ## Doplněná kapacitní evidence před kritickými limity
 
 Měření nyní doplňuje aggregate DB connections/active/idle/long transactions a nativní procesové čítače Edge Runtime. Používá stejný host timer a existující Docker logy; bez veřejného endpointu, tokenu nebo démona. Do evidence jde pouze šest čísel, ne heap detaily, requesty nebo env. [Kontrakt a postup](../../automation/hetzner-supabase/monitoring/RESOURCE-EVIDENCE.md). Aktuální read-only DB snapshot měl 18 klientských spojení, max 100, rezervu 3 a nulové active/idle-in-transaction/long transakce; nejde o reprezentativní peak.
