@@ -55,3 +55,8 @@ test('runtime logs are encrypted before leaving the host and retained off-host',
   assert.match(upload, /production_cutover_authorized:false/);
   assert.doesNotMatch(upload, /docker compose (?:stop|down|restart|up)/);
 });
+
+test('pgBackRest secret config has the required explicit protected mode', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_pgbackrest_install.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});

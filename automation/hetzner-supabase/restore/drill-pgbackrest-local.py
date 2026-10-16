@@ -42,7 +42,7 @@ def main():
      key,value=line.split(':',1);key=key.strip().lower().removesuffix(' setting')
      if key in ['max_connections','max_worker_processes','max_wal_senders','max_prepared_xacts','max_locks_per_xact']:
       settings[{'max_prepared_xacts':'max_prepared_transactions','max_locks_per_xact':'max_locks_per_transaction'}.get(key,key)]=int(value.strip())
-    server="data_directory='/tmp/restore-data'\nhba_file='/tmp/safe_hba.conf'\nident_file='/tmp/safe_ident.conf'\nunix_socket_directories='/tmp'\nlisten_addresses=''\nshared_preload_libraries=''\nsession_preload_libraries=''\nlocal_preload_libraries=''\narchive_mode=off\nhot_standby=on\nprimary_conninfo=''\n"
+    server="data_directory='/tmp/restore-data'\nhba_file='/tmp/safe_hba.conf'\nident_file='/tmp/safe_ident.conf'\nunix_socket_directories='/tmp'\nlisten_addresses=''\nshared_preload_libraries=''\nsession_preload_libraries=''\nlocal_preload_libraries=''\narchive_mode=off\nhot_standby=on\nprimary_conninfo=''\nmax_logical_replication_workers=0\nautovacuum=off\n"
     server+=''.join(k+'='+str(v)+'\n' for k,v in settings.items())
     ex('sh','-c','cat > /tmp/safe-postgresql.conf',input=server.encode())
     ex('sh','-c',"printf 'local all all trust\\n' > /tmp/safe_hba.conf; touch /tmp/safe_ident.conf")
