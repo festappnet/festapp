@@ -66,7 +66,7 @@ class Main {
             const unitMatch = window.location.pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
             await unitPage.loadOccasions(AppConfig.organization, unitMatch ? Number(unitMatch[1]) : null);
 
-            // Complete startup after the catalogue update settles; SSR stays usable while pending.
+            // Reveal the catalogue after the styled cards or retry state are ready.
             const app = document.getElementById('app');
             if (app) app.style.display = 'flex';
 

@@ -56,6 +56,7 @@ BEGIN
                FROM eshop.planned_changes pc WHERE pc.subject_id=p.id AND pc.change_type='products.is_hidden' AND NOT pc.applied),
              'currency_code', p.currency_code,
              'is_hidden', p.is_hidden,
+             'is_used_in_blueprint', EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product=p.id AND s.occasion=occ_id),
              'order', p."order",
              'maximum', p.maximum,
              'form_ids', (

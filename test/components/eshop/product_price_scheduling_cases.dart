@@ -1,4 +1,5 @@
 import 'package:fstapp/components/eshop/views/product_price_waves_dialog.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
@@ -55,6 +56,7 @@ ProductPriceChange change(
 ProductModel product(List<ProductPriceChange> changes) => ProductModel(
       id: 1,
       title: 'Vstupenka',
+      isUsedInBlueprint: false,
       price: 450,
       currencyCode: 'CZK',
       priceChanges: changes,
@@ -285,9 +287,9 @@ void main() {
           return pending.future;
         })));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Beze změny').last);
+    await tester.tap(find.text(OrdersStrings.waveAvailabilityNoChange).last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Skrýt').last);
+    await tester.tap(find.text(OrdersStrings.waveHidden).last);
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Uložit'));
     await tester.pump();
@@ -299,7 +301,7 @@ void main() {
         isNull);
     pending.completeError(Exception('simulated failure'));
     await tester.pumpAndSettle();
-    expect(find.text('Skrýt'), findsOneWidget);
+    expect(find.text(OrdersStrings.waveHidden), findsOneWidget);
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
         isEmpty);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -342,7 +344,7 @@ void main() {
             .widgetList<Scrollable>(find.byType(Scrollable))
             .every((s) => s.axisDirection == AxisDirection.down),
         isTrue);
-    expect(find.text('Skrýt'), findsOneWidget);
+    expect(find.text(OrdersStrings.waveHidden), findsOneWidget);
     expect(find.textContaining('550'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());

@@ -84,6 +84,13 @@ BEGIN
   IF v_price.revision IS DISTINCT FROM p_expected_price_revision OR
     v_visibility.revision IS DISTINCT FROM p_expected_visibility_revision THEN
     RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
+  -- Seat products must not become unorderable while seats remain selectable.
+  -- Keep an existing target on a price-only save; NULL explicitly cancels it.
+  IF p_is_hidden IS NOT NULL AND EXISTS (
+    SELECT 1 FROM eshop.spots s WHERE s.product=p_product_id AND s.occasion=v_wave.occasion
+  ) AND (v_visibility.id IS NULL OR v_visibility.new_value IS DISTINCT FROM p_is_hidden::text) THEN
+    RAISE invalid_parameter_value USING MESSAGE='BLUEPRINT_PRODUCT_VISIBILITY_NOT_SUPPORTED';
+  END IF;
   IF EXISTS(SELECT 1 FROM eshop.planned_changes WHERE subject_id=p_product_id
     AND change_time=v_wave.change_time AND NOT applied AND wave_id IS DISTINCT FROM p_wave_id
     AND ((change_type='products.price' AND p_price IS NOT NULL) OR

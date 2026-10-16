@@ -1,6 +1,34 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class OrdersStrings {
+  static String get waveSeatProductTitle =>
+      'FeatureOrders.waveSeatProductTitle'.tr();
+  static String get waveSeatProductHint =>
+      'FeatureOrders.waveSeatProductHint'.tr();
+  static String get waveAvailabilityUnknownTitle =>
+      'FeatureOrders.waveAvailabilityUnknownTitle'.tr();
+  static String get waveAvailabilityUnknownHint =>
+      'FeatureOrders.waveAvailabilityUnknownHint'.tr();
+  static String get waveExistingAvailability =>
+      'FeatureOrders.waveExistingAvailability'.tr();
+  static String get waveExistingAvailabilityHint =>
+      'FeatureOrders.waveExistingAvailabilityHint'.tr();
+  static String get waveCancelAvailability =>
+      'FeatureOrders.waveCancelAvailability'.tr();
+  static String get waveCancelAvailabilityHint =>
+      'FeatureOrders.waveCancelAvailabilityHint'.tr();
+  static String get waveAvailabilityHelpTitle =>
+      'FeatureOrders.waveAvailabilityHelpTitle'.tr();
+  static String get waveAvailabilityKeepHint =>
+      'FeatureOrders.waveAvailabilityKeepHint'.tr();
+  static String get waveAvailabilityHideHint =>
+      'FeatureOrders.waveAvailabilityHideHint'.tr();
+  static String get waveAvailabilityShowHint =>
+      'FeatureOrders.waveAvailabilityShowHint'.tr();
+  static String get waveAvailabilityHelp =>
+      'FeatureOrders.waveAvailabilityHelp'.tr();
+  static String get waveAvailabilityNoChange =>
+      'FeatureOrders.waveAvailabilityNoChange'.tr();
   static String get bankSyncWarningEnable =>
       'FeatureOrders.bankSyncWarningEnable'.tr();
   static String get bankSyncWarningManage =>

@@ -4,6 +4,28 @@ import 'package:test/test.dart';
 
 void main() {
   test(
+    'editor blueprint usage survives product joins and remains read-only',
+    () {
+      final product = ProductModel.fromJson({
+        'id': 7,
+        'is_used_in_blueprint': true,
+      });
+      expect(product.isUsedInBlueprint, isTrue);
+      expect(
+        product.copyWith(formTitles: 'Form', price: 450).isUsedInBlueprint,
+        isTrue,
+      );
+      expect(
+        ProductModel.fromJson({
+          'is_used_in_blueprint': false,
+        }).isUsedInBlueprint,
+        isFalse,
+      );
+      expect(ProductModel.fromJson({}).isUsedInBlueprint, isNull);
+      expect(product.toJson().containsKey('is_used_in_blueprint'), isFalse);
+    },
+  );
+  test(
     'product codec preserves the existing nullable wire contract and unknown metadata',
     () {
       final wire = <String, dynamic>{

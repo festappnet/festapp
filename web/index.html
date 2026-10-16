@@ -92,7 +92,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-title" content="vstupenky.online">
   <link rel="manifest" href="site.webmanifest" />
-  <meta name="theme-color" content="#e3e2d3">
+  <!-- Match browser chrome to the loading surface before Flutter starts. -->
+  <meta name="theme-color" content="#242424">
+  <meta name="color-scheme" content="dark">
+  <style>html, body { background-color: #242424; }</style>
 
   <title>vstupenky.online</title>
   <script>
@@ -483,7 +486,6 @@
 
 <style>
     body {
-      background-color: white;
       height: 100vh;
       width: 100vw;
       margin: 0px;
