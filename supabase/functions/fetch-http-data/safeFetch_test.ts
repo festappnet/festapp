@@ -8,6 +8,9 @@ Deno.test("target policy rejects local, private, credentialed and non-HTTPS URLs
     "https://127.0.0.1/a.png",
     "https://10.0.0.1/a.png",
     "https://[::1]/a.png",
+    "https://[::ffff:127.0.0.1]/a.png",
+    "https://[64:ff9b::7f00:1]/a.png",
+    "https://100.64.0.1/a.png",
     "https://user:pass@example.com/a.png",
     "https://image-api.festapp.net/private/image",
     "https://IMAGE-API.festapp.net./private/image",
@@ -19,6 +22,20 @@ Deno.test("target policy rejects local, private, credentialed and non-HTTPS URLs
       assertEquals(error instanceof UnsafeTargetError, true);
     }
   }
+});
+
+Deno.test('a redirect whose next DNS answer is private is rejected before fetching', async () => {
+  let lookup = 0;
+  let calls = 0;
+  await assertRejects(() => fetchPublicImage('https://images.example/start', {
+    resolveDns: (_host, type) => Promise.resolve(type === 'AAAA' ? [] : [++lookup === 1 ? '203.0.113.1' : '127.0.0.1']),
+    fetch: (_url, _init, address) => {
+      calls += 1;
+      assertEquals(address, '203.0.113.1');
+      return Promise.resolve(new Response(null, { status: 302, headers: { location: '/next' } }));
+    },
+  }), UnsafeTargetError);
+  assertEquals(calls, 1);
 });
 
 Deno.test("redirect limit is three and every external request has a timeout signal", async () => {

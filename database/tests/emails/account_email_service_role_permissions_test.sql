@@ -64,9 +64,9 @@ BEGIN
     v_context, 'secure-registration@example.invalid', '{"sealed":"fixture"}', repeat('d', 64),
     'account-role-register-v2', 'SIGN_IN_CODE', now() + interval '10 minutes'
   );
-  IF v_result#>>'{domain,code}' <> '200' OR NOT EXISTS (
+  IF v_result#>>'{domain,code}' <> '200' OR EXISTS (
     SELECT 1 FROM public.sign_in_codes WHERE user_id=(v_result#>>'{domain,id}')::uuid
-  ) THEN RAISE EXCEPTION 'V2 registration must store separate proof'; END IF;
+  ) THEN RAISE EXCEPTION 'Compatibility registration must use the same permanent password'; END IF;
   PERFORM set_config('festapp.v2_registered_user',v_result#>>'{domain,id}',true);
 
   FOREACH v_kind IN ARRAY ARRAY[
@@ -74,11 +74,11 @@ BEGIN
     'deletion_complete', 'google_mailbox', 'gotrue', 'custom'
   ] LOOP
     v_result := public.enqueue_prepared_email(
-      v_kind, v_context, 'prepared@example.invalid', '{"sealed":"fixture"}',
+      v_kind, v_context, v_kind||'-prepared@example.invalid', '{"sealed":"fixture"}',
       'prepared-role-' || v_kind, repeat('c', 64), '', now() + interval '1 hour'
     );
     v_replay := public.enqueue_prepared_email(
-      v_kind, v_context, 'prepared@example.invalid', '{"sealed":"fixture"}',
+      v_kind, v_context, v_kind||'-prepared@example.invalid', '{"sealed":"fixture"}',
       'prepared-role-' || v_kind, repeat('c', 64), '', now() + interval '1 hour'
     );
     IF v_result->>'message_id' IS NULL OR v_result->>'message_id' <> v_replay->>'message_id' THEN
@@ -93,9 +93,7 @@ DO $$
 DECLARE u uuid := current_setting('festapp.v2_registered_user')::uuid; pw text;
 BEGIN
  SELECT encrypted_password INTO pw FROM auth.users WHERE id=u;
- IF extensions.crypt('012345',pw)=pw THEN RAISE EXCEPTION 'One-time code became permanent password'; END IF;
- IF public.consume_sign_in_code_v1('secure-registration@example.invalid',
-     (current_setting('festapp.account_fixture')::jsonb->>'organization')::bigint,'012345')->>'userId'
-     IS DISTINCT FROM u::text THEN RAISE EXCEPTION 'V2 registration proof exchange failed'; END IF;
+ IF extensions.crypt('012345',pw) IS DISTINCT FROM pw THEN RAISE EXCEPTION 'Permanent reusable password was not stored'; END IF;
+ IF EXISTS(SELECT 1 FROM public.sign_in_codes WHERE user_id=u) THEN RAISE EXCEPTION 'Registration created an expiring one-time password'; END IF;
 END $$;
 ROLLBACK;

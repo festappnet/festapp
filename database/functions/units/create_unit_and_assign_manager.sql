@@ -38,6 +38,8 @@ BEGIN
       END IF;
   END;
 
+  PERFORM public.admit_unit_creation_v1(v_user_id,v_org_id);
+
   INSERT INTO public.units (title, organization, data)
   VALUES (
     title, 
@@ -58,7 +60,11 @@ BEGIN
     'data', jsonb_build_object('id', v_new_unit_id)
   );
 
-EXCEPTION WHEN OTHERS THEN
+EXCEPTION WHEN SQLSTATE 'PT429' THEN
+  RETURN jsonb_build_object('code',429,'message','Capacity is temporarily limited. Try again later.');
+WHEN OTHERS THEN
   RETURN jsonb_build_object('code', 500, 'message', SQLERRM);
 END;
 $$ LANGUAGE plpgsql;
+REVOKE ALL ON FUNCTION public.create_unit_and_assign_manager(text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.create_unit_and_assign_manager(text) TO authenticated;

@@ -15,6 +15,7 @@ Deno.test("a custom request ID cannot replay different rendered content", async 
   let inserts = 0;
   globalThis.fetch = async (url, options) => {
     const path = new URL(String(url)).pathname;
+    if (path.endsWith("/admit_email_preparation_v1")) return Response.json(true);
     if (path.endsWith("/get_email_template_and_wrapper")) {
       return Response.json({});
     }

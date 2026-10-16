@@ -205,3 +205,6 @@ workers/*/node_modules/
 
 # Local operational evidence and backups
 .codex-artifacts/
+
+# Reviewed dependency graph for production Edge Functions.
+!/supabase/functions/deno.lock

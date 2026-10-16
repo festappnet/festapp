@@ -12,10 +12,14 @@ DECLARE
     current_state text;
     expected_scan_code text;
 BEGIN
+    IF NOT public.check_scan_attempt_budget_v1((SELECT occasion FROM eshop.tickets WHERE id=ticket_id)) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
     -- 1. Validate Ticket Existence
     IF NOT EXISTS (
         SELECT 1 FROM eshop.tickets WHERE id = ticket_id
     ) THEN
+        PERFORM public.admit_scan_access_v1(NULL,false);
         RETURN jsonb_build_object(
             'code', 404,
             'message', 'Ticket not found.'
@@ -26,26 +30,13 @@ BEGIN
     SELECT occasion, state
     INTO occasion_id, current_state
     FROM eshop.tickets
-    WHERE id = ticket_id;
+    WHERE id = ticket_id FOR UPDATE;
 
     -- Check if occasion_id is present (Integrity check)
     IF occasion_id IS NULL THEN
         RETURN jsonb_build_object(
             'code', 404,
             'message', 'Occasion associated with ticket not found.'
-        );
-    END IF;
-
-    -- 2a. Validate Ticket State (New Check)
-    IF current_state = 'used' THEN
-        RETURN jsonb_build_object(
-            'code', 409,
-            'message', 'Ticket has already been used.'
-        );
-    ELSIF current_state = 'storno' THEN
-        RETURN jsonb_build_object(
-            'code', 409,
-            'message', 'Ticket is cancelled (storno).'
         );
     END IF;
 
@@ -59,6 +50,7 @@ BEGIN
 
     -- Check if scan_code is defined
     IF expected_scan_code IS NULL THEN
+        PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object(
             'code', 400,
             'message', 'Scan code not defined for occasion.'
@@ -67,9 +59,27 @@ BEGIN
 
     -- 4. Validate Provided Scan Code
     IF scan_code IS DISTINCT FROM expected_scan_code THEN
+        PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object(
             'code', 401,
             'message', 'Scan code is not correct.'
+        );
+    END IF;
+
+    IF NOT public.admit_scan_access_v1(occasion_id,true) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
+
+    -- 2a. Validate Ticket State (New Check)
+    IF current_state = 'used' THEN
+        RETURN jsonb_build_object(
+            'code', 409,
+            'message', 'Ticket has already been used.'
+        );
+    ELSIF current_state = 'storno' THEN
+        RETURN jsonb_build_object(
+            'code', 409,
+            'message', 'Ticket is cancelled (storno).'
         );
     END IF;
 

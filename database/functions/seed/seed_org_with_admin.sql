@@ -8,13 +8,13 @@ RETURNS TABLE (
     admin_uid uuid
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 BEGIN
     -- Security Check
-    IF auth.role() <> 'service_role' AND session_user <> 'postgres' THEN
-        RAISE EXCEPTION 'Access Denied: Service role required.';
-    END IF;
+    PERFORM public.require_service_role();
+    PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('organization.creation',NULL,NULL),jsonb_build_object('global','all'));
 
     ----------------------------------------------------------------
     -- 1. Create Organization with registration enabled
@@ -50,6 +50,7 @@ BEGIN
     ----------------------------------------------------------------
     -- 4. Grant Admin Rights on Organization and Unit levels
     ----------------------------------------------------------------
+    PERFORM public.admit_unit_creation_v1(admin_uid,org_id);
     INSERT INTO public.organization_users ("user", organization, is_admin)
     VALUES (admin_uid, org_id, true);
 
@@ -59,3 +60,6 @@ BEGIN
     RETURN;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.seed_org_with_admin(text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.seed_org_with_admin(text,text) TO service_role;

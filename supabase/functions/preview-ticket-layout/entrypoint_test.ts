@@ -16,6 +16,7 @@ Deno.test('saved ticket preview works when the demo registry rejects direct serv
       if(url.pathname==='/rest/v1/occasions')return json({id:7,organization:1,title:'Koncert',features:[{code:'ticket',ticket_type:'wide',layout}],data:{place_name:'Klub'}});
       if(url.pathname==='/rest/v1/demo_occasions')return json({message:'permission denied for table demo_occasions',code:'42501'},403);
       if(url.pathname==='/rest/v1/rpc/is_demo_occasion')return json(true);
+      if(url.pathname==='/rest/v1/rpc/admit_ticket_preview_limits_v1'){const args=JSON.parse(String(init?.body));assertEquals(args.p_read_only,true);return json({abuseLimits:{'document.input.bytes':1048576,'document.asset.bytes':5242880,'document.output.bytes':16777216,'document.output.pages':20}});}
       if(url.pathname==='/rest/v1/rpc/get_products_and_types')return json({product_types:[{id:1,occasion:7,title:'Vstupné',admission:true,offered:true,referenced:true}],products:[{id:1,product_type:1,title:'Základní vstupné',price:590,currency_code:'CZK'}]});
       if(url.pathname.startsWith('/rest/v1/rpc/get_is_'))return json(url.pathname.endsWith('get_is_editor_view_on_occasion'));
       throw new Error('Unexpected request: '+url.pathname);

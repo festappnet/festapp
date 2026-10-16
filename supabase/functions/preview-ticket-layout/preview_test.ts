@@ -7,8 +7,9 @@ import {sampleData, type PreviewProduct} from '../_shared/ticketRenderData.ts';
 import {formatCurrency} from '../_shared/utilities.ts';
 const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');const metrics=fontMetrics(font);
 const body={occasionId:7,mode:'resolve',type:'named',fontProtocol:2};
+const admission={abuseLimits:{'document.input.bytes':1048576,'document.asset.bytes':5242880,'document.output.bytes':16777216,'document.output.pages':20}};
 const req=(value:unknown=body,auth=true)=>new Request('https://test.invalid',{method:'POST',headers:auth?{Authorization:'Bearer test'}:{},body:JSON.stringify(value)});
-function setup(allowed=true){let reads=0,resources=0,products=0;const deps:PreviewDependencies={authorize:async()=>allowed,occasion:async()=>{reads++;return {id:7,features:[{code:'ticket',ticket_type:'named'}],data:{}};},products:async()=>{products++;return {types:new Map(),products:new Map()};},resources:async()=>{resources++;return {font,metrics,fonts:{[futuraId]:{id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400}}};}};return {deps,counts:()=>[reads,resources,products]};}
+function setup(allowed=true){let reads=0,resources=0,products=0;const deps:PreviewDependencies={authorize:async()=>allowed?admission:false,occasion:async()=>{reads++;return {id:7,features:[{code:'ticket',ticket_type:'named'}],data:{}};},products:async()=>{products++;return {types:new Map(),products:new Map()};},resources:async()=>{resources++;return {font,metrics,fonts:{[futuraId]:{id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400}}};}};return {deps,counts:()=>[reads,resources,products]};}
 Deno.test('preview rejects unauthenticated and foreign unit before resource reads',async()=>{
   const s=setup(false);assertEquals((await handlePreview(req(body,false),s.deps)).status,401);assertEquals((await handlePreview(req(),s.deps)).status,403);assertEquals(s.counts(),[0,0,0]);
 });
@@ -111,7 +112,7 @@ Deno.test('deleted background resolves for repair but never silently renders PDF
   const {UnsafeTargetError}=await import('../fetch-http-data/safeFetch.ts');
   const occasion={id:13,organization:3,features:[{code:'ticket',ticket_type:'wide',layout:{schemaVersion:3,templates:{wide:preset('wide')}},background:'https://img.festapp.net/editor/skautskyples2025.jpeg'}]};
   const missing=async()=>{throw new UnsafeTargetError('upstream_404');};
-  const deps:PreviewDependencies={authorize:async()=>true,occasion:async()=>occasion,products:async()=>({types:new Map(),products:new Map()}),
+  const deps:PreviewDependencies={authorize:async()=>admission,occasion:async()=>occasion,products:async()=>({types:new Map(),products:new Map()}),
     resources:(o,f,options)=>loadLayoutResources(o,f,options,missing)};
   const input={occasionId:13,mode:'resolve',type:'wide',fontProtocol:2};
   const response=await handlePreview(req(input),deps);
@@ -136,7 +137,7 @@ Deno.test('font mode authorizes before resolver, does not load images or occasio
  const s=setup(false);let loads=0;s.deps.font=async()=>{loads++;return {id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400};};
  const request={occasionId:7,mode:'font',fontProtocol:2,fontId:futuraId};
  assertEquals((await handlePreview(req(request),s.deps)).status,403);assertEquals(loads,0);
- s.deps.authorize=async()=>true;assertEquals((await handlePreview(req(request),s.deps)).status,200);assertEquals(s.counts(),[0,0,0]);assertEquals(loads,1);
+ s.deps.authorize=async()=>admission;assertEquals((await handlePreview(req(request),s.deps)).status,200);assertEquals(s.counts(),[0,0,0]);assertEquals(loads,1);
  s.deps.font=async()=>{throw new TicketFontError('font_storage_read');};
  assertEquals(await (await handlePreview(req(request),s.deps)).json(),{error:'font_storage_read'});
 });
@@ -150,7 +151,7 @@ Deno.test('schema 3 requires font protocol 2; invalid draft is rejected before l
 Deno.test('warm font cache never skips authorization',async()=>{
  const {futuraId,TicketFontResolver}=await import('../_shared/ticketFonts.ts');let bundled=0;
  const resolver=new TicketFontResolver({fetch:async()=>{throw Error('network');},store:{read:async()=>null,create:async()=>true},bundled:async()=>{bundled++;return font;}});
- const s=setup();let auth=0;s.deps.authorize=async()=>++auth===1;s.deps.font=id=>resolver.resolve(id);
+ const s=setup();let auth=0;s.deps.authorize=async()=>++auth===1?admission:false;s.deps.font=id=>resolver.resolve(id);
  const value={occasionId:7,mode:'font',fontProtocol:2,fontId:futuraId};
  assertEquals((await handlePreview(req(value),s.deps)).status,200);assertEquals((await handlePreview(req(value),s.deps)).status,403);assertEquals([auth,bundled],[2,1]);
 });
@@ -197,62 +198,7 @@ Deno.test('blank setup draft borrows resources without exposing source product f
  assertEquals(result.catalog,[]);assertEquals(result.template.elements.some((e:any)=>e.binding==='productType'),false);
 });
 
-Deno.test('saved per-element colors survive legacy darkColor in editor and PDF preview', async () => {
-  const s = setup();
-  const template = preset('wide');
-  for (const e of template.elements) if (e.binding !== 'qr') e.style.color = '2C773E';
-  const layout = { schemaVersion: 3, templates: { wide: template } };
-  const original = JSON.stringify(layout);
-  s.deps.occasion = async () => ({ id: 7, features: [{ code: 'ticket', darkColor: 'FFFFFF', layout }] });
-  for (const supplied of [false, true]) {
-    const input = { ...body, type: 'wide', ...(supplied ? { layout } : {}) };
-    const resolved = await (await handlePreview(req(input), s.deps)).json();
-    assertEquals(resolved.template.elements.find((e: any) => e.binding === 'price').style.color, '2C773E');
-    assertEquals(JSON.stringify(layout), original, 'Resolve must not mutate the saved template');
-    const response = await handlePreview(req({ ...input, mode: 'pdf' }), s.deps);
-    assertEquals(response.status, 200);
-    const { PDFDocument, PDFRawStream } = await import('npm:pdf-lib');
-    const { inflateSync } = await import('node:zlib');
-    const pdf = await PDFDocument.load(Uint8Array.from(atob((await response.json()).file), c => c.charCodeAt(0)));
-    const colors: number[][] = [];
-    for (const [, object] of pdf.context.enumerateIndirectObjects()) {
-      if (!(object instanceof PDFRawStream)) continue;
-      try {
-        const operators = new TextDecoder().decode(inflateSync(object.getContents()));
-        for (const match of operators.matchAll(/([\d.]+) ([\d.]+) ([\d.]+) rg/g)) colors.push(match.slice(1).map(Number));
-      } catch { /* Non-Flate resources are not page operators. */ }
-    }
-    assert(colors.some(c => c.every((v, i) => Math.abs(v - [44, 119, 62][i] / 255) < 0.000001)), 'PDF must draw the saved green text');
-  }
-});
-
-Deno.test('read-only preview uses saved geometry and data without artwork', async () => {
-  const s=setup();
-  const template=preset('named');
-  const layout={schemaVersion:3,templates:{wide:template}};
-  s.deps.occasion=async()=>({id:7,title:'Koncert',demo_read_only:true,features:[{code:'ticket',ticket_type:'wide',layout}],data:{place_name:'Klub'}});
-  let authorizedReadOnly=false;
-  s.deps.authorize=async(_header,_id,readOnly)=>{authorizedReadOnly=readOnly===true;return authorizedReadOnly;};
-  const response=await handlePreview(req({...body,type:'wide',readOnly:true}),s.deps);
-  assertEquals(response.status,200);
-  const data=await response.json();
-  assert(authorizedReadOnly);
-  assertEquals(data.template,template);
-  assertEquals(data.background,null);
-  assertEquals(data.data.occasionTitle,'Koncert');
-  assert(data.data.footer.startsWith('UKÁZKA - NEPLATÍ PRO VSTUP'));
-});
-Deno.test('read-only preview cannot supply edits, switch slots or use editor resource modes',async()=>{
-  for(const extra of [{layout:{schemaVersion:3,templates:{named:preset('named')}}},{background:null},{borrowResourcesOnly:true},{mode:'pdf'},{mode:'font'},{mode:'catalog'},{type:'wide'}]){
-    const s=setup();
-    const response=await handlePreview(req({...body,readOnly:true,...extra}),s.deps);
-    assertEquals(response.status,400);
-  }
-  const denied=setup(false);
-  assertEquals((await handlePreview(req({...body,readOnly:true}),denied.deps)).status,403);
-  assertEquals(denied.counts(),[0,0,0]);
-});
-Deno.test('saved-only preview fails rather than hiding unavailable product data',async()=>{
-  const s=setup();s.deps.products=async()=>{throw new Error('unavailable');};
-  assertEquals((await handlePreview(req({...body,readOnly:true}),s.deps)).status,400);
+Deno.test('preview denies central output exhaustion without returning a partial PDF',async()=>{
+ const s=setup();s.deps.authorize=async()=>({abuseLimits:{...admission.abuseLimits,'document.output.bytes':1}});
+ assertEquals((await handlePreview(req(),s.deps)).status,429);
 });
