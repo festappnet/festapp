@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-16T17:48:51.617851+00:00",
+  "source_commit": "4c522062a9b6546258e001c63c71163f59a8ae50",
+  "roots": [
+    "lib",
+    "web_client/src",
+    "packages/festapp_core/lib"
+  ],
+  "source_files_checked": 899,
+  "subscription_matches": [],
+  "patterns": "\\.channel\\s*\\(|onPostgresChanges|onBroadcast|postgres_changes|RealtimeChannel|realtime\\.connect|\\.stream\\s*\\(",
+  "explicit_rpc_sync_path": "lib/data_services/client_sync/supabase_private_sync_remote.dart:get_private_client_sync_v1",
+  "scope": "Tracked application source usage, excluding generated Dart. Not a production connection census or proof about external consumers.",
+  "realtime_service_disabled": false,
+  "production_runtime_changed": false
+}

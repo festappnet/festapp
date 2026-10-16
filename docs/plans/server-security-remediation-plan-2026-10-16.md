@@ -2,6 +2,15 @@
 
 Datum: 2026-10-16  
 Stav: A/B nasazené a ověřené. C: monitoring, standardní pgBackRest PITR a skutečná obnova hotové; otevřené zůstávají reprezentativní kapacitní budget, cross-store/RTO důkaz; doručení host alertu, control-plane evidence a servisní restart jsou doložené.
+
+## Upřesnění skutečného použití Realtime a zbývajících bran
+
+[Kontrola klientského kódu](../operations/security-remediation-20261016/realtime-application-usage-result.json) neobsahuje žádné Realtime subscription volání ve Flutteru, JS klientu ani sdíleném festapp_core. Synchronizace používá HTTP/RPC. Realtime zůstává běžící výchozí komponentou; websocket smoke ověřoval kompatibilitu proxy, nikoli používání aplikací. Jeho vypnutí ani odstranění nebylo provedeno. Samostatná obnova Realtime proto není nová dodatečná brána funkční obnovy současné aplikace; původní požadavek změřit RTO, konzistenci a bezpečný cutover tím není označený za splněný.
+
+[Novější čtecí měření](../operations/security-remediation-20261016/native-resource-final-observations.json) obsahuje 77 platných DB/Edge minutových vzorků, nejméně 1 266 249 728 B available RAM, nejvýše 46 DB connections a čtyři Edge workery. Není to doložená provozní špička. Kritické hard capy nelze bezpečně odvodit ani z toho, že host momentálně má volnou paměť; placené navýšení ani náhodné nízké limity neproběhly.
+
+Nezávisle dokončitelný recovery balík se aktualizuje v iCloudu na v2 se stejným klíčem a samostatným read-only přístupem. Zbývají měřený kritický budget, neprokázané plné servisní RTO/cutover a striktní R2 reference gate s 50 původními mezerami. Chybějící obrazové bajty nelze vyrobit testem obnovy; mazání registry řádků není oprava zálohy.
+
 Ověření: standard - bezpečnost, autentizace, migrace a sdílený produkční backend
 
 ## Skutečná offline obnova původního Edge routeru a workeru

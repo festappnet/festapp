@@ -13,7 +13,10 @@ link or iCloud security-setting change was made. The key ZIP upload confirms ind
 `Festapp-Backup-20261016T150700Z.zip` contains the first complete five-artifact
 encrypted snapshot (1,803,229,836 bytes). A newer uploaded snapshot,
 `Festapp-Backup-20261016T164727Z.zip` (1,803,347,771 bytes), includes the repaired
-runtime configuration archive. Both retain the separate existing key ZIP.
+runtime configuration archive. Both retain the separate existing key ZIP. The refreshed
+`Festapp-Recovery-2026-10-16-v2.zip` preserves the same identity/reader and
+adds the tested gateway/Edge recovery helpers and the public Edge source export.
+Its source commit is recorded in `SOURCE.json`; the original ZIP is preserved.
 The newer ZIP passed all artifact hashes and actual offline globals decryption
 using only those two iCloud ZIPs. Its hashes match the actually restored
 set; an offline test decrypted globals using only these two iCloud ZIPs, without
@@ -155,3 +158,18 @@ fixture signature; the actual confirmation-status worker must read the restored
 DB and return unavailable for a nonexistent capability. No provider or original
 integration credentials are loaded. This proves the selected worker/router and
 DB path, not every business handler or external integration.
+
+The refreshed kit keeps `OBNOVA.txt` as the Czech entrypoint and includes this
+procedure in its source archive. Its separate `public-edge-sources.tar` matches
+the 20261016T164727Z snapshot and can be transferred to the empty recovery VM
+without decrypting runtime configuration there. Use the export command above
+for a different backup: the cache digest must match the selected snapshot.
+This public tar is source code, not a portable prebuilt dependency cache.
+The VM preparation still requires registry access before keys/data arrive.
+
+The current Flutter/web/core sources contain no Supabase Realtime subscription
+API calls; offline sync uses explicit HTTP/RPC reads. A live websocket canary
+is a compatibility check, not evidence of application use. No production
+Realtime service has been stopped. Recovery of unused default components is
+not a substitute for functional application evidence; external consumers and
+provider cutover remain separate, unproven boundaries.
