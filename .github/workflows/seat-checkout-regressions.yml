@@ -67,7 +67,7 @@ jobs:
         with:
           deno-version: '2.9.0'
       - name: Ticket preview colors and first-delivery intent
-        run: deno test --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts
+        run: deno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts
       - id: sdk
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
