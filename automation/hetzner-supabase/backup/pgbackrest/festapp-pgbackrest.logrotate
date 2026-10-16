@@ -1,0 +1,11 @@
+/var/lib/festapp-pgbackrest/log/*.log {
+    daily
+    maxsize 20M
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su root root
+}

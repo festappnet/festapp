@@ -128,6 +128,7 @@ def main():
  run([str(dest/'run-backup.sh'),'full'])
  for unit in ['festapp-pgbackrest-backup.service','festapp-pgbackrest-backup.timer']:
   shutil.copyfile(HERE/unit,Path('/etc/systemd/system')/unit);os.chmod(Path('/etc/systemd/system')/unit,0o644)
+ shutil.copyfile(HERE/'festapp-pgbackrest.logrotate','/etc/logrotate.d/festapp-pgbackrest');os.chmod('/etc/logrotate.d/festapp-pgbackrest',0o644)
  run(['systemctl','daemon-reload']);run(['systemctl','enable','--now','festapp-pgbackrest-backup.timer'])
  atomic(evidence/'result.json',json.dumps({'source_commit':args.source_commit,'image':image,'pg_version_unchanged':True,'pgbackrest':'2.57.0','archive_mode':'on','archive_timeout_seconds':300,'repo_encrypted':True,'initial_full_and_check_passed':True,'original_email_pause_restored':True,'existing_logical_backups_retained':True,'backup_timer_enabled':True},indent=2)+'\n')
  print(json.dumps({'status':'pass','evidence':str(evidence),'db_image':image}))

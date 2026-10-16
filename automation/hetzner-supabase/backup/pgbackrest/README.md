@@ -12,6 +12,7 @@ Existing R2 usage increases by encrypted physical backups and archived WAL.
 ## Operation
 
 - One backup worker, zstd level 1, 1 MiB buffers; synchronous archive-push.
+  Host logrotate bounds diagnostic file logs (daily/20M, 14 rotations).
 - Full on Sundays, differential daily otherwise; first activation forces full.
 - Four weekly full backups retained, with dependent differentials and continuous
   WAL. No shortened archive retention or queue-discard limit is configured.
@@ -49,7 +50,8 @@ key or guessing a partial-install recovery.
 
 The derivative is sealed by its local Docker image ID in .env. Recovery on a
 replacement host must rebuild/import that image from this Dockerfile before
-Compose starts; the base image and package version are pinned. The encrypted
+Compose starts; the base image and package version are pinned. A CI compatibility gate requires
+updating this derivative whenever the canonical PostgreSQL image changes. The encrypted
 runtime archive includes all active overrides, pgBackRest config and Dockerfile.
 Never copy a physical restore over the live PGDATA. Use a new isolated cluster,
 disable application preload/background workers, outbound network and integrations,
