@@ -162,3 +162,14 @@ checks. Clients replace only resolved slugs and copy only saved public URLs.
 
 Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
 New writes cannot claim those slugs; canonical links and titles are never bulk renamed.
+
+## Payment-reference ownership
+
+Festapp owns VS allocation and reservation under `database/functions/eshop_payment_references/`.
+Activated organizations reserve against a canonical receiving-account namespace in
+same-transaction checkout SQL; BankSync is not a reservation or invoice dependency.
+The registry retains committed symbols after cancellation/deletion, with form
+watermarks and private exact/sequence/random allocation. Unactivated organizations
+retain the guarded legacy allocator until separately authorized activation. The
+preexisting BankSync issuance API is retired in source; its historical registry
+is retained for audit/backup. See [local cutover and operational gates](../operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).

@@ -60,3 +60,11 @@ Account admins can pause/resume automatic synchronization without replacing the
 token. The connection status, order payment warnings and form/unit bank cards
 share safe operational details. See
 [health and incident notifications](../../../docs/operations/banksync/HEALTH-ALERTS.md).
+
+## Local payment-reference reservations
+
+Festapp owns reference issuance independently of BankSync ingestion. Activated
+scopes use the private SQL registry in `eshop_payment_references/` in the existing
+order transaction. Account aliases share canonical receiving identity; committed
+symbols and form watermarks survive order deletion. Enrollment freezes receiving
+identity and starts locked. See the [scope/import/activation runbook](../../../docs/operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).

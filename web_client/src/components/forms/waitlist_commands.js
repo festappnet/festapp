@@ -1,3 +1,4 @@
+import {canonicalCommandPayload,terminalOrderResponse} from '../eshop/ticket_order_identity.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 
@@ -69,7 +70,7 @@ export class WaitlistCommands {
         });
     }
     async _invoke(endpoint, body) {
-        const key = JSON.stringify([endpoint, body]);
+        const key = JSON.stringify(canonicalCommandPayload([endpoint, body]));
         const commandId = this.pending.get(key) || crypto.randomUUID();
         this.pending.set(key, commandId);
         const { data, error } = await this.client.functions.invoke(endpoint, {
@@ -77,7 +78,7 @@ export class WaitlistCommands {
         });
         if (error) throw new Error('WAITLIST_COMMAND_FAILED');
         const result = data?.data || data;
-        this.pending.delete(key);
+        if (terminalOrderResponse(result)) this.pending.delete(key);
         if (result?.code !== 200) throw Object.assign(new Error(result?.errorCode || 'WAITLIST_COMMAND_FAILED'), { data: result });
         return result;
     }

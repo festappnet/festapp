@@ -14,7 +14,9 @@ test('ticket order sends stable command identity and clears it after success', a
 
     const bodies = [];
     let shouldFail = true;
+    SupabaseService._backend = { supabaseUrl: "https://fixture.example" };
     SupabaseService._client = {
+        auth: { getSession: async () => ({ data: { session: null }, error: null }) },
         functions: {
             invoke: async (_name, options) => {
                 bodies.push(options.body);
@@ -57,6 +59,7 @@ test('blocked persistent storage preserves order identity across in-page retries
     });
     const bodies = [];
     t.mock.method(SupabaseService, 'getClient', () => ({
+        auth: { getSession: async () => ({ data: { session: null }, error: null }) },
         functions: { invoke: async (_, { body }) => {
             bodies.push(body);
             return bodies.length === 1

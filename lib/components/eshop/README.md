@@ -107,3 +107,11 @@ pending. Complete and abort use that journal; a failed prepare restores only
 that attempt, including still-valid offer slots, without overwriting the rest
 of a group. Actual user cancellation never returns an valid ticket to the
 waitlist. Waitlisted tickets are excluded from admissions/revenues.
+
+## Local payment-reference reservations
+
+Festapp owns reference issuance independently of BankSync ingestion. Activated
+scopes use the private SQL registry in `eshop_payment_references/` in the existing
+order transaction. Account aliases share canonical receiving identity; committed
+symbols and form watermarks survive order deletion. Enrollment freezes receiving
+identity and starts locked. See the [scope/import/activation runbook](../../../docs/operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).

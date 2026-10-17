@@ -32,7 +32,7 @@ BEGIN
         v_result := jsonb_set(v_result, '{data,order,order_symbol}', to_jsonb(v_symbol));
       END IF;
     END IF;
-    RETURN v_result;
+    RETURN public.project_local_payment_reference_order_internal(v_result);
   END IF;
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
     FROM public.occasion_users ou WHERE ou.occasion=v_occasion;

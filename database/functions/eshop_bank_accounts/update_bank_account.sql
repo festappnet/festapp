@@ -78,6 +78,9 @@ BEGIN
             AND (account_number IS DISTINCT FROM v_account_number OR type IS DISTINCT FROM p_type)) THEN
           RAISE EXCEPTION 'BANK_SYNC_ACCOUNT_IDENTITY_IMMUTABLE';
         END IF;
+        IF EXISTS(SELECT 1 FROM eshop.payment_reference_accounts a JOIN eshop.payment_reference_namespaces n ON n.id=a.namespace_id
+          WHERE a.bank_account_id=p_id AND (n.canonical_account IS DISTINCT FROM public.canonical_payment_reference_account_internal(v_account_number)
+           OR p_type='CASH')) THEN RAISE EXCEPTION 'PAYMENT_REFERENCE_ACCOUNT_IDENTITY_IMMUTABLE'; END IF;
         UPDATE eshop.bank_accounts
         SET
             account_number = v_account_number,
