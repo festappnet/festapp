@@ -15,14 +15,6 @@ class DbEventFeedback {
       SupabaseEventFeedbackCommands(_supabase);
   static Future<String> _clientId() => ClientCommandIdentity.clientId();
 
-  static Future<bool> isEnabledOnOccasion(int occasionId) async {
-    final res = await _supabase.rpc(
-      'get_is_event_feedback_enabled_on_occasion',
-      params: {'p_occasion': occasionId},
-    );
-    return res == true;
-  }
-
   /// Current viewer's feedback for [eventId], or null.
   static Future<EventFeedbackModel?> getMyFeedback(int eventId) async {
     if (ClientSyncRuntime.isV1Selected && AuthService.isLoggedIn()) {

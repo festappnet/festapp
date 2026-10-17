@@ -110,10 +110,6 @@ export class RightsService {
         return !!this.occasionUser?.is_manager;
     }
 
-    static isUnitManager() {
-        return !!this._context?.unit_user?.is_manager;
-    }
-
 
     static canSeeAdmin() {
         const admin = this.isAdmin();

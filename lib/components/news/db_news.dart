@@ -83,28 +83,6 @@ class DbNews {
       ..aggregateVersion = result.version;
   }
 
-  static Future<void> sendGroupNotification(
-      List<String> to, String message, String title) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.publish(
-        occasionId: RightsService.currentOccasionId()!,
-        addToNews: false,
-        newsMessage: null,
-        sendNotification: true,
-        notificationHeading: title,
-        notificationContent: message,
-        recipients: to,
-      );
-      return;
-    }
-    await _supabase.rpc('enqueue_notification_v1', params: {
-      'p_occasion': RightsService.currentOccasionId()!,
-      'p_to': to,
-      'p_content': message,
-      'p_heading': title,
-    });
-  }
-
   static Future<void> publishSubmission(BuildContext context, NewsSubmission submission) =>
     insertNewsMessage(context, submission.heading, submission.headingDefault,
       submission.content, submission.addToNews, submission.withNotification, submission.recipients);

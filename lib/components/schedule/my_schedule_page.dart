@@ -31,7 +31,6 @@ import 'package:fstapp/components/schedule/program_notification_settings.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/users/companion/companion_dialog.dart';
 import 'package:fstapp/components/users/companion/db_companions.dart';
-import 'package:fstapp/components/users/companion/companion_model.dart';
 
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
@@ -256,31 +255,22 @@ class _MySchedulePageState extends State<MySchedulePage> {
 
   Future<void> _handleCompanionButtonPressed(
       BuildContext context, TimeBlockItem timeBlockItem) async {
-    List<CompanionModel> companions = await DbCompanions.getAllCompanions();
+    final companions = await DbCompanions.getAllCompanions();
+    if (!mounted || !context.mounted) return;
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(builder: (bCtx, setDialogState) {
-          return CompanionAttendanceDialog(
-            eventId: timeBlockItem.id,
-            companions: companions,
-            refreshData: () async {
-              await loadData();
-              var refreshedCompanions = await DbCompanions.getAllCompanions();
-              if (mounted) {
-                setDialogState(() {
-                  companions = refreshedCompanions;
-                });
-              }
-            },
-            canSignIn: () {
-              final currentItem = _dots?.firstWhereOrNull(
-                  (element) => element.id == timeBlockItem.id);
-              return currentItem?.canSignIn() ?? false;
-            },
-          );
-        });
-      },
+      builder: (dialogContext) => CompanionAttendanceDialog(
+        eventId: timeBlockItem.id,
+        companions: companions,
+        refreshData: () async {
+          await loadData();
+        },
+        canSignIn: () {
+          final currentItem = _dots?.firstWhereOrNull(
+              (element) => element.id == timeBlockItem.id);
+          return currentItem?.canSignIn() ?? false;
+        },
+      ),
     );
   }
 

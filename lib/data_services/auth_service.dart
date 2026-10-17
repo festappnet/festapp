@@ -338,12 +338,6 @@ class AuthService {
     }
   }
 
-  static Future<void> changeMyPassword(String pw) async {
-    await _supabase.auth.updateUser(UserAttributes(
-      password: pw,
-    ));
-  }
-
   static Future<dynamic> changePassword(String token, String pw) async {
     return await _supabase.rpc("set_user_password_token", params: {
       "token": token,

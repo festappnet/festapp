@@ -195,12 +195,6 @@ class FeatureService {
       isFeatureEnabled(FeatureConstants.services) &&
       (getServicesFeature()?.allowsFood ?? true);
 
-  /// True when the services feature is enabled AND generic capacity groups are
-  /// permitted (capacity-groups mode).
-  static bool isServiceCapacityGroupsEnabled() =>
-      isFeatureEnabled(FeatureConstants.services) &&
-      (getServicesFeature()?.allowsCapacityGroups ?? true);
-
   /// Returns the [CounselingFeature] config, or null when the feature is absent
   /// or stored as a plain feature.
   static CounselingFeature? getCounselingFeature({List<Feature>? features}) {
