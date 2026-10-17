@@ -111,11 +111,12 @@ export class BlueprintRenderer {
         
         const { svg: processedSvg, isSvg } = SvgUtils.prepareBackgroundSvg(bgSource);
 
+        if (!processedSvg) return;
         if (isSvg) {
              bgContainer.innerHTML = processedSvg;
-        } else if (bgSource.startsWith('http')) {
+        } else {
             const img = document.createElement('img');
-            img.src = bgSource;
+            img.src = processedSvg;
             img.alt = 'Blueprint Background';
             img.className = 'blueprint-bg-img';
             bgContainer.appendChild(img);

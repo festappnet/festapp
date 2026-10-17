@@ -104,6 +104,8 @@ APP_SUPPORTED="$(sed -n 's/^IS_APP_SUPPORTED=//p' automation/project.conf | tr -
 node automation/generate_pwa_service_worker.mjs build/web "$VERSION" "$FORCED_OCCASION" "$APP_SUPPORTED"
 node automation/check_pwa_shell_budget.mjs build/web automation/project.conf
 
+node automation/generate_csp_policy.mjs build/web "$TARGET"
+
 # Cloudflare adds its edge router before running the same verifier. Static
 # hosts have no generated edge worker, so their completed bundle is verified here.
 if [ "$TARGET" = static ]; then

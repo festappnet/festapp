@@ -222,6 +222,21 @@ fi
 printf '<title>Delete | %s</title>%s<h1>Smazání účtu</h1><a href="/privacy/choices/">Choices</a><script>const endpoint="%s/functions/v1/confirm-account-deletion"; const anonKey="%s";</script>\n' \
   "$CONFIG_APP_NAME" "$LEGAL_NAV" "$DELETE_ACCOUNT_ORIGIN" "$DELETE_ACCOUNT_KEY" \
   > "$BUILD_DIR/delete-account/index.html"
+# The fixture follows the production order: final HTML, CSP manifest, Worker stamp.
+printf '<!doctype html><title>Organizer fixture</title>\n' > "$BUILD_DIR/organizers-page"
+refresh_csp_fixture() {
+  node "$PROJECT_ROOT/automation/generate_csp_policy.mjs" "$BUILD_DIR" cloudflare
+  node --input-type=module - "$BUILD_DIR" <<'CSP'
+import {readFileSync, writeFileSync} from 'node:fs';
+import path from 'node:path';
+const dir = process.argv[2];
+const file = path.join(dir, '_worker.js');
+const source = readFileSync(file, 'utf8').replace(/^const CSP_MANIFEST = .*;\n/gm, '');
+const manifest = JSON.parse(readFileSync(path.join(dir, 'csp-manifest.json'), 'utf8'));
+writeFileSync(file, source + 'const CSP_MANIFEST = ' + JSON.stringify(manifest) + ';\n');
+CSP
+}
+refresh_csp_fixture
 if node "$PROJECT_ROOT/automation/verify_web_build.mjs" "$BUILD_DIR" "1.2.3+456" > /dev/null; then
     echo "  ok: coherent web release passes the build gate"
 else
@@ -270,6 +285,7 @@ sed -i.bak \
   's/^  static const int backendActivationCanonicalOrganizationId = .*/  static const int backendActivationCanonicalOrganizationId = 12;/' \
   "$ACTIVATION_ROOT/lib/app_config.dart"
 rm -f "$ACTIVATION_ROOT/lib/app_config.dart.bak"
+refresh_csp_fixture
 if node "$PROJECT_ROOT/automation/verify_web_build.mjs" "$BUILD_DIR" "1.2.3+456" \
     "$ACTIVATION_ROOT/automation/project.conf" cloudflare > /dev/null; then
     echo "  ok: transition bundle binds its complete canonical profile"
