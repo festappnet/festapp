@@ -1,11 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fstapp/components/map/offline_map_file_downloader.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:vector_tile_renderer/vector_tile_renderer.dart';
 
 class OfflineMapHelper {
   /// Universal method: Checks if a file exists locally.
@@ -78,55 +76,6 @@ class OfflineMapHelper {
     return filePath;
   }
 
-  /// Computes the local file path for the sprite JSON.
-  static Future<String> getOfflineSpriteJsonPath(String spriteJsonUrl) async {
-    final directory = await getApplicationDocumentsDirectory();
-    String fileName = Uri.parse(spriteJsonUrl).pathSegments.last;
-    String filePath = "${directory.path}/$fileName";
-    final dirList = directory.listSync();
-    for (var entity in dirList) {
-      if (entity is File &&
-          entity.path.endsWith(".json") &&
-          entity.path != filePath) {
-        await entity.delete();
-      }
-    }
-    return filePath;
-  }
-
-  /// Computes the local file path for the sprite image.
-  static Future<String> getOfflineSpriteImagePath(String spriteImageUrl) async {
-    final directory = await getApplicationDocumentsDirectory();
-    String fileName = Uri.parse(spriteImageUrl).pathSegments.last;
-    String filePath = "${directory.path}/$fileName";
-    final dirList = directory.listSync();
-    for (var entity in dirList) {
-      if (entity is File &&
-          (entity.path.endsWith(".png") || entity.path.endsWith(".jpg")) &&
-          entity.path != filePath) {
-        await entity.delete();
-      }
-    }
-    return filePath;
-  }
-
-  /// Loads the offline map style.
-  /// Attempts to retrieve a cached style JSON (and associated sprites) via [getOrDownloadFile].
-  /// Returns the parsed theme or null if unavailable.
-  static Future<dynamic> loadOfflineMapStyle(String styleURL) async {
-    final filePath = await getOfflineStyleFilePath(styleURL);
-    final file = await getOrDownloadFile(styleURL, filePath, (progress) {});
-    if (file == null) return null;
-    try {
-      final fileContent = await file.readAsString();
-      var vectorTileTheme = jsonDecode(fileContent) as Map<String, dynamic>;
-      return ThemeReader().read(vectorTileTheme);
-    } catch (e) {
-      AppLogger.error("Error loading offline map style: $e");
-      return null;
-    }
-  }
-
   /// Retrieves (or downloads if available) the offline MBTiles package.
   static Future<File?> getOfflineMapPackage(
       String offlineMapPackageURL, String filePath, Function(double) onProgress,
@@ -140,23 +89,4 @@ class OfflineMapHelper {
     );
   }
 
-  /// Retrieves (or downloads if available) the sprite JSON file.
-  static Future<File?> getSpriteJson(String spriteJsonUrl, String filePath,
-      Function(double) onProgress) async {
-    return await getOrDownloadFile(spriteJsonUrl, filePath, onProgress);
-  }
-
-  /// Retrieves (or downloads if available) the sprite image file.
-  static Future<File?> getSpriteImage(String spriteImageUrl, String filePath,
-      Function(double) onProgress) async {
-    return await getOrDownloadFile(spriteImageUrl, filePath, onProgress);
-  }
-
-  /// Removes the offline MBTiles package at [filePath] if it exists.
-  static Future<void> removeOfflinePackage(String filePath) async {
-    final file = File(filePath);
-    if (await file.exists()) {
-      await file.delete();
-    }
-  }
 }

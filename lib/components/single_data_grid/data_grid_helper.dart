@@ -1,7 +1,6 @@
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/map/icon_model.dart';
-import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -205,14 +204,6 @@ class DataGridHelper {
     return result;
   }
 
-  static String returnQuestionMarkOnInvalid(
-      dynamic value, List<String> allValues) {
-    if (!allValues.contains(value)) {
-      return "???";
-    }
-    return UserInfoModel.sexToLocale(value);
-  }
-
   static int? getIdFromFormatted(String value) {
     final startIndex = value.indexOf(":");
     if (startIndex == -1) {
@@ -262,15 +253,6 @@ class DataGridHelper {
     );
   }
 
-  static Widget backgroundFromText(
-      rendererContext, Color Function(String) getBackground,
-      [Function(String)? processText]) {
-    String value = rendererContext.cell.value;
-    String textValue = processText?.call(value);
-    return Container(
-        color: getBackground(value), child: Center(child: Text(textValue)));
-  }
-
   static Widget orderState(
       BuildContext context,
       TrinaColumnRendererContext rendererContext,
@@ -309,59 +291,6 @@ class DataGridHelper {
         ),
       ),
     );
-  }
-
-  static Widget orderStateRenderer(
-      BuildContext context,
-      TrinaColumnRendererContext rendererContext,
-      Color Function(String) getBackground) {
-    String value = rendererContext.cell.value;
-
-    // A helper to create a single colored state tag
-    Widget buildStateTag(String formattedState) {
-      final key = formattedState.split(";").first;
-      final text = formattedState.split(";").last;
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: getBackground(key),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          OrderModel.statesDataGridToUpper(text),
-        ),
-      );
-    }
-
-    // Check if this is a state transition
-    if (value.contains("→")) {
-      final parts = value.split("→");
-      final fromState = parts[0].trim();
-      final toState = parts[1].trim();
-      return Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            buildStateTag(fromState),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Icon(Icons.arrow_forward, size: 18),
-            ),
-            buildStateTag(toState),
-          ],
-        ),
-      );
-    }
-    // Otherwise, render a single state
-    else {
-      return Container(
-        color: getBackground(value.split(";").first),
-        child: Center(
-            child:
-                Text(OrderModel.statesDataGridToUpper(value.split(";").last))),
-      );
-    }
   }
 
   static Widget mapIconRenderer(

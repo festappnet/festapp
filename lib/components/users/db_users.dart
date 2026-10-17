@@ -351,21 +351,6 @@ class DbUsers {
     return [];
   }
 
-  static Future<void> updateUserInfo(OccasionUserModel oum) async {
-    final response = await _supabase.rpc("update_user", params: {
-      "input_data": {
-        "occasion": oum.occasion!,
-        "user": oum.user,
-        "data": oum.data
-      }
-    });
-
-    var code = response['code'];
-    if (code != 200 && code != 201) {
-      throw Exception(response['message']);
-    }
-  }
-
   static Future<UnitModel?> getCurrentUnit(int unit) async {
     var result =
         await _supabase.rpc("get_unit_for_edit", params: {"unit_id": unit});
@@ -501,21 +486,6 @@ class DbUsers {
         result.status == ProfileCommandStatus.rejected) {
       throw StateError('Profile delete rejected or conflicted');
     }
-  }
-
-  static Future<String?> getUserByEmail(String email) async {
-    var data = await _supabase.rpc("get_user_id_by_email",
-        params: {"email": email.toLowerCase()}).maybeSingle();
-    if (data == null) {
-      return null;
-    }
-    return data["id"];
-  }
-
-  static Future<String?> getLastTimeSignIn(String id) async {
-    var data =
-        await _supabase.rpc("get_last_sign_in_at", params: {"user_id": id});
-    return data;
   }
 
   static Future<OccasionUserModel> getOccasionUser(String id) async {

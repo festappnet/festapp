@@ -1,5 +1,5 @@
 import { SupabaseService } from '../../services/supabase_service.js';
-import { FormModel, FormFieldModel } from './form_models.js';
+import { FormModel } from './form_models.js';
 
 export class DbForms {
     
@@ -44,21 +44,6 @@ export class DbForms {
         return null;
     }
 
-    static async getAllFormFields(formLink) {
-        const client = SupabaseService.getClient();
-        const { data, error } = await client.rpc('get_all_form_fields', { form_link: formLink });
-
-        if (error) {
-            console.error("Error fetching form fields:", error);
-            return [];
-        }
-
-        if (Array.isArray(data)) {
-            return data.map(f => new FormFieldModel(f));
-        }
-        
-        return [];
-    }
     static async getBlueprint(secret, formKey, blueprintId) {
         const client = SupabaseService.getClient();
         if (!client) throw new Error("Supabase client not initialized");

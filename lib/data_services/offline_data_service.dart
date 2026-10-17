@@ -141,17 +141,6 @@ class OfflineDataService {
     );
   }
 
-  static Future<void> addAllToMySchedule(List<int> ids) async {
-    var offlineData = await _getConfirmedMyScheduleData();
-    for (var id in ids) {
-      if (!offlineData.contains(id)) {
-        // Avoid duplicates
-        offlineData.add(id);
-      }
-    }
-    await saveMyScheduleData(offlineData);
-  }
-
   static Future<void> removeFromMySchedule(
     int id, {
     bool Function()? isCurrent,
@@ -260,9 +249,6 @@ class OfflineDataService {
 
   static Future<String?> getSelectedPlaceType() =>
       StorageHelper.get(selectedPlaceTypeOffline);
-
-  static Future<void> saveInfoDescription(InformationModel toSave) =>
-      saveOffline(toSave.id!.toString(), toSave, informationOfflineStorage);
 
   static Future<InformationModel?> getInfoDescription(String id) =>
       getOffline(id, InformationModel.fromJson, informationOfflineStorage);
@@ -392,10 +378,6 @@ class OfflineDataService {
           ? ClientSyncProjection.userInventory()
           : getOffline(
               userInventoryBundleOffline, UserInventoryBundle.fromJson);
-
-  /// **Deletes the `UserInventoryBundle` from offline storage.**
-  static Future<void> deleteUserInventoryBundle() =>
-      deleteOffline(userInventoryBundleOffline);
 
   /// **Clears all user-specific data from offline storage.**
   static Future<void> clearUserData() async {

@@ -106,22 +106,6 @@ class ButtonsHelper {
     );
   }
 
-  static Widget bottomBarButton(
-      {required String text, required VoidCallback? onPressed}) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: MaterialButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        color: Colors.black87,
-        onPressed: onPressed,
-        child: Text(
-          text,
-          style: TextStyle(color: Colors.grey.shade200),
-        ),
-      ),
-    );
-  }
-
   static Widget buildReferenceButton({
     required BuildContext context,
     required VoidCallback onPressed,

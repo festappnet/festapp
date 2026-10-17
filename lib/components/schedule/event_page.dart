@@ -1585,24 +1585,15 @@ class _EventPageState extends State<EventPage> {
     if (!mounted) return;
     await showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return CompanionAttendanceDialog(
-              eventId: _event!.id!,
-              canSignIn: () => _event!.canSignIn(),
-              companions: _companions,
-              refreshData: () async {
-                await loadData(widget.id!);
-                _companions = await DbCompanions.getAllCompanions();
-                if (mounted) {
-                  setState(() {});
-                }
-              },
-            );
-          },
-        );
-      },
+      builder: (context) => CompanionAttendanceDialog(
+        eventId: _event!.id!,
+        canSignIn: () => _event!.canSignIn(),
+        companions: _companions,
+        refreshData: () async {
+          await loadData(widget.id!);
+        },
+        reloadCompanions: () async => _companions,
+      ),
     );
   }
 

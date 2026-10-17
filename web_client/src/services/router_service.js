@@ -46,11 +46,6 @@ export class RouterService {
         return /^\/[^/]+\/event(?:\/.*)?$/.test(path);
     }
 
-    static navigateToOccasion(link) {
-        // For backwards compatibility or default behavior
-        return RouterService.navigateToForm(link);
-    }
-
     static async navigateToForm(link) {
         const cleanLink = link.split('?')[0];
         const path = `${RouterService.FORM_PATH_PREFIX}${cleanLink}`;
@@ -78,11 +73,6 @@ export class RouterService {
             return `/unit/${normalizedUnitId}/edit`;
         }
         return '/login';
-    }
-
-    static async navigateToLogin() {
-        const url = RouterService.getLoginUrl();
-        await RouterService.navigateToFlutterRoute(url);
     }
 
     static async navigateToAdmin(unitId = null) {

@@ -79,9 +79,6 @@ export class ToastHelper {
         return new Toast(message, 'error', duration).show();
     }
     
-    static showInfo(message, duration = 3000) {
-        return new Toast(message, 'info', duration).show();
-    }
     
     static show(message, severity = 'info', duration = 3000) {
         return new Toast(message, severity, duration).show();

@@ -99,33 +99,6 @@ class DbEvents {
     return toReturn;
   }
 
-  static Future<HashSet<EventModel>> loadAllMyScheduleOffline() async {
-    var events = await OfflineDataService.getMyScheduleData();
-    var localData = await _supabase
-        .from(Tb.events.table)
-        .select("${Tb.events.id},"
-            "${Tb.events.title},"
-            "${Tb.events.start_time},"
-            "${Tb.events.end_time},"
-            "${Tb.places.table}(${Tb.places.id}, ${Tb.places.title}),"
-            "${Tb.events.type},"
-            "${Tb.events.max_participants},"
-            "${Tb.events.is_group_event}")
-        .inFilter(Tb.events.id, events)
-        .eq(Tb.events.is_hidden, false)
-        .eq(Tb.events.occasion, RightsService.currentOccasionId()!)
-        .order(Tb.events.start_time, ascending: true)
-        .order(Tb.events.max_participants, ascending: false);
-    var localEvents = List<EventModel>.from(localData
-        .map((x) => EventModel.fromJson(x, timeContext: TimeHelper.eventTime)));
-    localEvents = localEvents
-        .map((element) => element.copyWith(isInMySchedule: true))
-        .toList();
-    var toReturn = EventModel.CreateEventModelSet();
-    toReturn.addAll(localEvents);
-    return toReturn;
-  }
-
   static Future<List<EventModel>> getAllEventsForDatagrid() async {
     final occasionId = RightsService.currentOccasionId();
     if (occasionId == null) {
@@ -778,12 +751,6 @@ class DbEvents {
         }
         return;
     }
-  }
-
-  static Future<bool> hasEventAllowedRole(int eventId) async {
-    var data =
-        await _supabase.rpc("get_is_event_allowed", params: {"ev": eventId});
-    return data;
   }
 
   static Future<List<EventModel>> getAllEvents(
