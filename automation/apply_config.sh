@@ -956,3 +956,6 @@ if [ -f "$VERSION_SCRIPT" ] && [ -n "$VERSION" ]; then
 else
     echo "Skipping Version Configuration (Script missing or VERSION not set)"
 fi
+
+# Security headers are generated from the main-owned policy, never tenant copies.
+node "$PROJECT_ROOT/automation/lib/csp_policy.mjs" --sync-headers

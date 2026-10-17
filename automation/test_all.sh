@@ -288,6 +288,8 @@ if [ "$RUN_AUTOMATION" = true ]; then
       "$SCRIPT_DIR/tests/test_all_status.test.mjs" \
       "$SCRIPT_DIR/tests/image_service_preflight.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_manifest.test.mjs" \
+      "$SCRIPT_DIR/tests/csp_policy.test.mjs" \
+      "$SCRIPT_DIR/tests/csp_hosting.test.mjs" \
       "$SCRIPT_DIR/tests/optimize_web_fonts.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_reconcile.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_storage_bridge.test.mjs" \

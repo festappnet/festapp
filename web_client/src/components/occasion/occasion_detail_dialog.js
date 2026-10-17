@@ -5,7 +5,7 @@ import { TimeHelper } from '../../services/time_helper.js';
 import { FeatureService } from '../features/feature_service.js';
 import { FeatureConstants } from '../features/feature_constants.js';
 import { CommonStrings } from '../shared/common_strings.js';
-import { FormPage } from '../forms/form_page.js';
+import { html, sanitizeHtml } from '../../utils/html.js';
 import { getOccasionHref } from './occasion_link.js';
 
 export class OccasionDetailDialog {
@@ -41,15 +41,7 @@ export class OccasionDetailDialog {
             reserveTitle = formFeature.reserveButtonTitle;
         }
 
-        let btnStyle = 'width: 100%; padding: 12px;';
-        if (formFeature && formFeature.primaryColor) {
-             let bgColor = formFeature.primaryColor.trim();
-             if (!bgColor.startsWith('#')) bgColor = '#' + bgColor;
-             const textColor = ThemeService.getBestTextColor(bgColor);
-             btnStyle += ` background-color: ${bgColor} !important; color: ${textColor} !important; border: none;`;
-        }
-
-        overlay.innerHTML = `
+        overlay.innerHTML = html`
             <div class="overlay-content dialog-content" style="
                 max-width: 600px;
                 width: 90%;
@@ -112,19 +104,25 @@ export class OccasionDetailDialog {
                         line-height: 1.6;
                         color: var(--text-color, inherit);
                     ">
-                        ${description}
+                        ${sanitizeHtml(description)}
                     </div>
                     
-                    <button class="btn btn-primary btn-reserve" style="${btnStyle}">${reserveTitle}</button>
+                    <button class="btn btn-primary btn-reserve" style="width: 100%; padding: 12px;">${reserveTitle}</button>
                 </div>
             </div>
-        `;
+        `.toString();
 
         document.body.appendChild(overlay);
 
         // Bind Events
         const closeBtn = overlay.querySelector('.close-btn');
         const reserveBtn = overlay.querySelector('.btn-reserve');
+        const color = String(formFeature?.primaryColor || '').trim().replace(/^#/, '');
+        if (/^(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(color)) {
+            reserveBtn.style.setProperty('background-color', '#' + color, 'important');
+            reserveBtn.style.setProperty('color', ThemeService.getBestTextColor('#' + color), 'important');
+            reserveBtn.style.border = 'none';
+        }
 
         const onKeyDown = (e) => {
             if (e.key === 'Escape') close();
