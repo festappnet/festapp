@@ -273,9 +273,13 @@ class OfflineDataService {
   static Future<void> deleteUserInfo() =>
       deleteOffline(UserInfoModel.userInfoOffline);
 
-  static Future<UserInfoModel?> getUserInfo() => ClientSyncRuntime.isV1Selected
-      ? ClientSyncProjection.userInfo()
-      : getOffline(UserInfoModel.userInfoOffline, UserInfoModel.fromJson);
+  static Future<UserInfoModel?> getUserInfo() async {
+    // Retire cached full peer profiles without touching catalogs or receipts.
+    await deleteOffline('user_info');
+    return ClientSyncRuntime.isV1Selected
+        ? ClientSyncProjection.userInfo()
+        : getOffline(UserInfoModel.userInfoOffline, UserInfoModel.fromJson);
+  }
 
   static Future<void> saveGlobalSettings(OccasionSettingsModel toSave) =>
       saveOffline(OccasionSettingsModel.globalSettingsOffline, toSave);
@@ -395,6 +399,7 @@ class OfflineDataService {
 
   /// **Clears all user-specific data from offline storage.**
   static Future<void> clearUserData() async {
+    await deleteOffline('user_info');
     await deleteOffline(UserInfoModel.userInfoOffline);
     await clearMyScheduleData();
     await deleteOffline(activitiesOfflineStorage);

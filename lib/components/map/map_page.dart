@@ -1817,10 +1817,29 @@ class _MapPageState extends State<MapPage>
       _placeTypesResolved = true;
     }
 
+    final privateProfileOccasionId = RightsService.currentOccasionId();
+    final privateProfile = await OfflineDataService.getUserInfo();
+    List<PlaceModel> visiblePlaces(Iterable<PlaceModel> catalog) =>
+        MapPageHelper.visiblePlacesForContext(
+          catalog,
+          ownGroupPlaces: [
+            if (privateProfile?.eventUserGroup?.place
+                case final PlaceModel place)
+              place,
+            for (final group
+                in privateProfile?.userGroups?.toList() ?? const [])
+              if (group.place case final PlaceModel place) place,
+          ],
+          profileUserId: privateProfile?.id,
+          currentUserId: RightsService.currentUser()?.id,
+          profileOccasionId: ClientSyncRuntime.isV1Selected
+              ? privateProfileOccasionId
+              : privateProfile?.occasionUser?.occasion,
+          currentOccasionId: RightsService.currentOccasionId(),
+        );
     offlinePlaces.sortPlaces(false);
-    var offlineList = loadOtherGroups
-        ? offlinePlaces
-        : offlinePlaces.where((e) => !(e.isHidden)).toList();
+    var offlineList =
+        loadOtherGroups ? offlinePlaces : visiblePlaces(offlinePlaces);
     await addOfflineEventsToPlace(offlineList);
     // Cache-first paint of the toilet colors, so they show without network;
     // the online pass below overwrites them with the live statuses.
@@ -1899,7 +1918,7 @@ class _MapPageState extends State<MapPage>
             return e.place!.copyWith(title: e.title);
           }).toList();
         } else {
-          onlineList = placesFromDb.where((p) => !(p.isHidden)).toList();
+          onlineList = visiblePlaces(placesFromDb);
         }
         onlineList.sortPlaces(false);
 

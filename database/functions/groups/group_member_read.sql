@@ -43,7 +43,7 @@ BEGIN
                 SELECT COALESCE(jsonb_agg(
                     jsonb_build_object(
                         'is_admin', ug.is_admin,
-                        'user_info', row_to_json(p_ui)::jsonb
+                        'user_info', jsonb_build_object('id',p_ui.id,'name',p_ui.name,'surname',p_ui.surname)
                     )
                 ), '[]'::jsonb)
                 FROM public.user_groups ug
