@@ -52,17 +52,17 @@
   ],
   "contracts": {
     "database/functions/security/data_security_contracts.json": "7031ca9bbd0c7a38cd2649f494719dc87337cb872ad0a92e86b73d3c39be20de",
-    "database/functions/security/server_security_acl_manifest.json": "dfbc58b2c3d75940b8a11eb1c072c195862b1639c0e68a53bdeaa1d433e39ded",
-    "database/functions/security/definer_contracts.json": "3313a91911f91b0032e68bdb0f1c8ae0aee61799efac64066e9b1c583ecae392",
+    "database/functions/security/server_security_acl_manifest.json": "b64201bf25042721c7615d17144e581f823abb1d90e5ab2bb4e50510016b01b8",
+    "database/functions/security/definer_contracts.json": "b587484e8fadf8c87a323f07a6016e13ea083fb56c332a5fb39086deda13ad9e",
     "automation/hetzner-supabase/runtime/audit-data-security-state.sql": "e2aab8bf114419ae97d3b89521fb3a4e4398ca6a40e20450f77049ec715fa413",
     "automation/hetzner-supabase/runtime/data-security-preflight.sql": "e2850da5bf5a2b08c67663bf3cca0963c253a5808fd4228ec5829061d602d3c4"
   },
   "client_sources": {
-    "lib/components/news/db_news.dart": "d70208bd8a4f3051e36d7dac6f0067072ad3a80d4dc4c252be1633a14698b80f",
+    "lib/components/news/db_news.dart": "310be06b0f1b072e0e754ce44b3bedc8799c77045217202b34e2dddcf6b03220",
     "lib/components/occasion/db_occasions.dart": "27700652117d34cdb4659b1de378ff04c3e9a88a7a3493df601f911df6ddd57c",
-    "lib/components/users/db_users.dart": "8b6cb0699a068b4293a400a34ef0da3ee6769c85c14ee28d15c9660b226f5cdc",
+    "lib/components/users/db_users.dart": "ccd7862dc976d8af314fedaa944a1a03b4e022b80b5f68b29a80fc243f4f9497",
     "lib/components/users/user_info_model.dart": "4131cb8216a4c460715ebace94a036ddf742127bb241e1a50e9cf1ac81e1b047",
-    "lib/data_services/offline_data_service.dart": "70d44c9e7284c1d6ed2504408c66095a9d99f417ddbbfe141722e8269263c8c5",
+    "lib/data_services/offline_data_service.dart": "ae786aefc3e03c09a81cac08e112e240cf18454ad55f15c4d7c80f3c270d4917",
     "lib/components/map/map_page.dart": "58059715d79cadab30ea6df3434284d10a46ac4134462e05641b59d8fc5059e8",
     "lib/components/map/map_page_helper.dart": "8c6312f295bd7ddc37fe9529987e2fcbcb9d8ba5051c535499f313c58d56e7fd"
   }

@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Test: reminder grace period — stale queue entries are dropped on validation
 -- Goal: Verify get_due_queue_emails treats reminder entries older than 7 days as invalid
 -- and deletes them, while entries within the grace period are returned for sending.

@@ -280,6 +280,8 @@ if [ "$RUN_AUTOMATION" = true ]; then
         fi
     done
 
+    python3 automation/assemble-integration-contract-reconciliation.py --check
+    node automation/client-sync/generate_source_contract.mjs --check
     python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_client_contract_test.py'
     node "$SCRIPT_DIR/tests/font_config.test.mjs"
 
@@ -298,6 +300,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
       "$SCRIPT_DIR/tests/edge_function_test_coverage.test.mjs" \
       "$SCRIPT_DIR/tests/abuse_policy_coverage.test.mjs" \
       "$SCRIPT_DIR/tests/server_security_migrations.test.mjs" \
+      "$SCRIPT_DIR/tests/data_security_migrations.test.mjs" \
       "$SCRIPT_DIR/hetzner-supabase/monitoring/metrics.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_inventory.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_cutover_mode_gate.test.mjs" \

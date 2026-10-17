@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Test: deposit reminder queueing and validation
 -- Goal: Verify queue_payment_reminders (deposit branch), send-time validation, and email code determination
 

@@ -32,8 +32,10 @@ BEGIN
  PERFORM assert_false(public.get_is_manager_on_unit((SELECT unit FROM public.occasions WHERE id=oc)),'demo unit manager blocked');
  PERFORM assert_false(public.check_upload_permission(p_unit_id => (SELECT unit FROM public.occasions WHERE id=oc)),'demo unit media upload blocked');
  SET LOCAL ROLE authenticated;
- UPDATE eshop.bank_accounts SET title='Unauthorized change' WHERE id=bank;
- GET DIAGNOSTICS n=ROW_COUNT;
+ BEGIN
+  UPDATE eshop.bank_accounts SET title='Unauthorized change' WHERE id=bank;
+  GET DIAGNOSTICS n=ROW_COUNT;
+ EXCEPTION WHEN insufficient_privilege THEN n:=0; END;
  PERFORM assert_eq(n,0::bigint,'direct bank update denied even to bank admin');
  RESET ROLE;
  INSERT INTO public.organizations(title) VALUES('Foreign bank reader tenant') RETURNING id INTO foreign_org;

@@ -114,3 +114,12 @@ BEGIN
   SELECT f.link,f.id FROM public.forms f WHERE coalesce(f.link,'')<>''
    AND NOT EXISTS(SELECT 1 FROM public.form_link_reservations r WHERE r.slug=f.link);
 END $$;
+
+-- These helpers are injected and rolled back by the SQL runner. New function
+-- defaults intentionally grant no client execution; role-switching assertions
+-- need their own explicit test-only grants.
+GRANT EXECUTE ON FUNCTION public.assert_true(boolean,text),
+ public.assert_false(boolean,text), public.assert_eq(anyelement,anyelement,text),
+ public.assert_equals(anyelement,anyelement,text), public.assert_not_null(anyelement,text),
+ public.assert_jsonb_contains(jsonb,jsonb,text), public.assert_fail(text)
+ TO anon,authenticated,service_role;

@@ -44,7 +44,7 @@ BEGIN
     INSERT INTO units (organization, title) VALUES (last_org_id, 'Test Unit') RETURNING id INTO last_unit_id;
 
     -- Create Occasion
-    INSERT INTO occasions (unit, title, is_open, start_time, end_time, link) VALUES (last_unit_id, 'Test Occasion', true, now(), now() + interval '1 year', 'test-occasion-link') RETURNING id INTO last_occasion_id;
+    INSERT INTO occasions (organization, unit, title, is_open, start_time, end_time, link) VALUES ((SELECT organization FROM public.units WHERE id=last_unit_id), last_unit_id, 'Test Occasion', true, now(), now() + interval '1 year', 'test-occasion-link') RETURNING id INTO last_occasion_id;
 
     -- Create Form
     INSERT INTO forms (occasion, title, is_open, link)

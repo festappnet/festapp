@@ -1528,6 +1528,7 @@ CREATE TABLE IF NOT EXISTS eshop.payment_reference_form_watermarks (
 DO $$ DECLARE t text; BEGIN
  FOREACH t IN ARRAY ARRAY['payment_reference_scopes','payment_reference_namespaces','payment_reference_accounts',
   'payment_reference_reservations','payment_reference_sequences','payment_reference_form_watermarks'] LOOP
+  EXECUTE format('ALTER TABLE eshop.%I OWNER TO postgres',t);
   EXECUTE format('ALTER TABLE eshop.%I ENABLE ROW LEVEL SECURITY',t);
   EXECUTE format('REVOKE ALL ON eshop.%I FROM PUBLIC,anon,authenticated,service_role',t);
   EXECUTE format('GRANT SELECT ON eshop.%I TO service_role',t);

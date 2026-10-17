@@ -558,7 +558,7 @@
     },
     {
       "name": "delete_order_client_sync_v1",
-      "source": "database/functions/eshop_orders/delete_order.sql",
+      "source": "database/functions/eshop_orders/delete_order_client_sync_v1.sql",
       "signature": "delete_order_client_sync_v1(bigint,uuid)",
       "introducedMigration": "20261007170000_canonical_order_membership_teardown.sql",
       "contractTest": "database/tests/canonical_order_membership_teardown_test.sql"
@@ -662,7 +662,9 @@
     "20261007150000_canonical_mutation_observation.sql",
     "20261007160000_canonical_mutation_write_release.sql",
     "20261007170000_canonical_order_membership_teardown.sql",
-    "20261018101000_data_security_readers.sql"
+    "20261018101000_data_security_readers.sql",
+    "20261018200000_festapp_payment_reference_reservations.sql",
+    "20261018210000_integration_contract_reconciliation.sql"
   ],
   "registrySource": "database/operations/canonical_mutation_contraction.sql",
   "retirementState": "contraction prepared; exact signatures removed only under validated G3/G4"

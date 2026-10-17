@@ -75,6 +75,51 @@
       "anon": true,
       "authenticated": true,
       "service_role": true
+    },
+    "public.confirm_blueprint_order_change_client_sync_v1(bigint[],jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.replace_blueprint_order_client_sync_v1(bigint[],jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.reserve_draft_payment_reference(bigint,bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.import_payment_reference(bigint,text,bigint,text,bigint,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.activate_payment_reference_scope(bigint,text,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.enroll_payment_reference_account(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.create_ticket_order(jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.confirm_blueprint_order_change(bigint[],jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
     }
   },
   "extension_client_execute": {

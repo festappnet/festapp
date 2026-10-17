@@ -60,11 +60,12 @@ BEGIN
   format('SELECT public.update_order_and_tickets_to_sent(%s,ARRAY[%s]::bigint[])',oid,tid),
   format('SELECT public.update_order_and_tickets_to_storno_221(%s)',oid),
   format('SELECT public.set_payment_deadline(%s,now())',pi),
-  format('SELECT public.update_payment_info_variable_symbol(%s,123)',pi),
-  format('SELECT public.enqueue_order_email(''TICKET_ORDER_UPDATE'',jsonb_build_object(''order_id'',%s),780::bigint,780::bigint,780::bigint)',oid)
+    format('SELECT public.enqueue_order_email(''TICKET_ORDER_UPDATE'',jsonb_build_object(''order_id'',%s),780::bigint,780::bigint,780::bigint)',oid)
  ] LOOP
   PERFORM pg_temp.assert_cancelled_rejected(statement);
  END LOOP;
+ BEGIN PERFORM public.update_payment_info_variable_symbol(pi,123); RAISE EXCEPTION 'retired reference writer accepted';
+ EXCEPTION WHEN OTHERS THEN PERFORM assert_eq(SQLERRM,'PAYMENT_REFERENCE_COMMAND_REQUIRED','raw reference mutation is retired for every order state'); END;
  result:=public.update_order_and_tickets_to_paid_ws(oid);
  PERFORM assert_true(result->>'code'<>'200','payment cannot reactivate cancelled order');
  PERFORM assert_eq((SELECT to_jsonb(o) FROM eshop.orders o WHERE id=oid),before_order,'rejected commands preserve complete order');

@@ -52,7 +52,6 @@ class DbNews {
           submission.withNotification,
           submission.recipients);
 
-
   static Future<void> insertNewsMessage(
       BuildContext context,
       String? heading,

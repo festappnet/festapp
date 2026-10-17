@@ -6,19 +6,35 @@ import path from 'node:path';
 import pg from 'pg';
 import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-const source = process.env.DATABASE_URL;
+import {assertLocalDatabaseUrl,assertDisposableDatabase} from './disposable_database.js';
+const source = process.env.PAYMENT_REFERENCE_DATABASE_URL;
 const fixtureFile = new URL('../../../database/tests/eshop/payment_reference_reservations_test.sql', import.meta.url);
 async function connect(url) {const c=new pg.Client({connectionString:url});await c.connect();await c.query("SET statement_timeout='20s'; SET lock_timeout='15s'; SET request.jwt.claim.role='service_role'; SET festapp.email_wake='scheduled'");return c;}
+// Extension workers can attach to a disposable source after its first client.
+// Fence only verified fixture names and stop only background extension workers;
+// an unexpected client session remains a hard failure, never a forced logout.
+async function cloneDatabase(admin, from, to) {
+ assert.match(from, /^(festapp_[a-z0-9_]+_template|reference_concurrency_[a-f0-9]+)$/);
+ const quoted = value => '"' + value.replaceAll('"', '""') + '"';
+ await admin.query(`ALTER DATABASE ${quoted(from)} ALLOW_CONNECTIONS false`);
+ try {
+  await admin.query("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND (backend_type LIKE 'pg_net %' OR backend_type='pg_cron scheduler')", [from]);
+  await admin.query(`CREATE DATABASE ${quoted(to)} TEMPLATE ${quoted(from)}`);
+ } finally {
+  await admin.query(`ALTER DATABASE ${quoted(from)} ALLOW_CONNECTIONS true`);
+ }
+}
 test('real PostgreSQL connections serialize physical aliases and same-source replay', {skip:!source},async()=>{
  const base=new URL(source);
- assert.ok(['127.0.0.1','localhost'].includes(base.hostname)&&base.port==='55432'&&base.pathname==='/festapp_local_references_v2',
-  'Requires the explicitly isolated reference fixture database, never a live/default database');
+ assertLocalDatabaseUrl(source);
+ const identity=await connect(source);
+ try{await assertDisposableDatabase(identity);}finally{await identity.end();}
  const target='reference_concurrency_'+randomUUID().replaceAll('-','');
- const adminUrl=new URL(base);adminUrl.pathname='/postgres';const admin=await connect(adminUrl.toString());
+ const adminUrl=new URL(base);adminUrl.pathname='/template1';const admin=await connect(adminUrl.toString());
  const targetUrl=new URL(base);targetUrl.pathname='/'+target;
  let control;const writers=[];
  try {
-  await admin.query(`CREATE DATABASE ${target} TEMPLATE festapp_local_references_v2`);
+  await cloneDatabase(admin,base.pathname.slice(1),target);
   control=await connect(targetUrl.toString());
   const fixture=await fs.readFile(fixtureFile,'utf8');await control.query(fixture.slice(0,fixture.indexOf('DO $$\nDECLARE x')));
   const x=(await control.query('SELECT pg_temp.reference_fixture() AS x')).rows[0].x;
@@ -53,6 +69,8 @@ test('real PostgreSQL connections serialize physical aliases and same-source rep
   await writers[0].query('SELECT public.reserve_payment_reference_internal($1,$2,$3,$4,$5)',[payment,x.form,'rollback',{mode:'exact',value:'77'},'d'.repeat(64)]);
   await writers[0].query('ROLLBACK');
   assert.equal(Number((await control.query("SELECT count(*) n FROM eshop.payment_reference_reservations WHERE source_ref='rollback'")).rows[0].n),0);
+  // Several simulated delivery lifecycles share this disposable clone.
+  await control.query(await fs.readFile(new URL('../../../database/tests/helpers/high_volume_email_fixture.sql',import.meta.url),'utf8'));
   const waitlistSql=await fs.readFile(new URL('../../../database/tests/eshop_orders/waitlist_lifecycle_test.sql',import.meta.url),'utf8');
   await control.query(waitlistSql.slice(0,waitlistSql.indexOf('DO $$\nDECLARE x')));
   for(const count of [1,2]){
@@ -105,7 +123,7 @@ test('real PostgreSQL connections serialize physical aliases and same-source rep
   const dump=execFileSync('pg_dump',[targetUrl.toString(),'--data-only','--inserts','--table=eshop.payment_reference*'],{encoding:'utf8'});
   await Promise.all(writers.splice(0).map(c=>c.end()));await control.end();control=null;
   const restoredName=target+'_restore',restoredUrl=new URL(base);restoredUrl.pathname='/'+restoredName;
-  await admin.query(`CREATE DATABASE ${restoredName} TEMPLATE ${target}`);
+  await cloneDatabase(admin,target,restoredName);
   const restored=await connect(restoredUrl.toString());
   try{
    await restored.query('TRUNCATE eshop.payment_reference_reservations,eshop.payment_reference_accounts,eshop.payment_reference_sequences,eshop.payment_reference_form_watermarks,eshop.payment_reference_namespaces,eshop.payment_reference_scopes');
