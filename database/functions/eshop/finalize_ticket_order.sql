@@ -455,10 +455,17 @@ BEGIN
         END IF;
 
         -- Generate a variable symbol and create the payment info record
-        generated_variable_symbol := generate_payment_variable_symbol(bank_account_id, form_id);
+        IF calculated_price>0 AND NOT public.payment_reference_scope_enabled_internal(form_id) THEN
+          generated_variable_symbol := public.generate_payment_variable_symbol(bank_account_id, form_id);
+        END IF;
         INSERT INTO eshop.payment_info (bank_account, variable_symbol, amount, deposit_amount, currency_code, created_at)
         VALUES (bank_account_id, generated_variable_symbol, calculated_price, NULLIF(v_total_deposit, 0), first_currency_code, now)
         RETURNING id INTO payment_info_id;
+        IF calculated_price>0 AND public.payment_reference_scope_enabled_internal(form_id) THEN
+          UPDATE eshop.orders SET payment_info=payment_info_id WHERE id=order_id;
+          generated_variable_symbol:=public.reserve_order_payment_reference_internal(payment_info_id,form_id);
+          UPDATE eshop.payment_info SET variable_symbol=generated_variable_symbol WHERE id=payment_info_id;
+        END IF;
 
         IF upper(trim(first_currency_code)) = 'EUR' AND calculated_price > 0 THEN
           IF creditor_name IS NULL OR length(trim(creditor_name)) NOT BETWEEN 1 AND 70 THEN

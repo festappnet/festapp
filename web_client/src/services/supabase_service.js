@@ -23,6 +23,8 @@ export class SupabaseService {
         return data;
     }
 
+    static get endpoint() { return SupabaseService._backend?.supabaseUrl ?? null; }
+
     static getClient() {
         if (!SupabaseService._client) {
             if (!SupabaseService._backend) {
