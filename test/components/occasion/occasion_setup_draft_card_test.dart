@@ -41,7 +41,7 @@ void main() {
             home: Scaffold(
                 body: SizedBox(
                     width: 400,
-                    height: 184,
+                    height: 110,
                     child: OccasionSetupDraftCard(
                         draft: draft('Ples'),
                         onResume: () => resumed++,
@@ -104,14 +104,16 @@ void main() {
                       body: Padding(
                           padding: const EdgeInsets.all(16),
                           child: SizedBox(
-                              height: 368,
+                              height: 110,
                               child: OccasionSetupDraftCard(
                                   draft: draft(
                                       'Dlouhý název rozpracované události pro pořadatele'),
                                   onResume: () {},
                                   onDelete: () async {})))))));
       await tester.pumpAndSettle();
-      expect(find.text(OccasionSetupStrings.resume), findsOneWidget);
+      expect(find.text(OccasionSetupStrings.resume), findsNothing);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(tester.getSize(find.byType(OccasionSetupDraftCard)).height, 110);
       expect(tester.takeException(), isNull);
     });
   }

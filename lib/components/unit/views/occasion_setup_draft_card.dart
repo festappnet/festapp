@@ -49,18 +49,20 @@ class _OccasionSetupDraftCardState extends State<OccasionSetupDraftCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
+    final accent = dark ? Colors.orange.shade300 : Colors.orange.shade900;
+    final enlarged = MediaQuery.textScalerOf(context).scale(14) > 18;
     return Card(
       elevation: 0,
-      color: dark ? Colors.grey[850] : theme.cardColor,
+      color: Color.alphaBlend(accent.withValues(alpha: dark ? 0.08 : 0.04),
+          dark ? Colors.grey[850]! : theme.cardColor),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
-          side:
-              BorderSide(color: dark ? Colors.grey[700]! : theme.dividerColor)),
+          side: BorderSide(color: accent.withValues(alpha: 0.4))),
       child: InkWell(
         onTap: _deleting ? null : widget.onResume,
         child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(8, 4, 16, 4),
             child: Row(children: [
               PopupMenuButton<String>(
                   tooltip: '${CommonStrings.moreOptions}: $_title',
@@ -84,48 +86,48 @@ class _OccasionSetupDraftCardState extends State<OccasionSetupDraftCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                    Text(OccasionSetupStrings.draft,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 4),
+                    Text(
+                        _deleting
+                            ? OccasionSetupStrings.cancellingDraft
+                            : enlarged
+                                ? '${OccasionSetupStrings.draft} · ${widget.draft.progress} %'
+                                : OccasionSetupStrings.draft,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(color: accent)),
+                    const SizedBox(height: 2),
                     Text(_title,
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     ExcludeSemantics(
                       child: LinearProgressIndicator(
                           value: widget.draft.progress / 100,
-                          minHeight: 4,
+                          color: accent,
+                          backgroundColor: accent.withValues(alpha: 0.15),
+                          minHeight: 3,
                           borderRadius: BorderRadius.circular(4)),
                     ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 8,
-                        children: [
-                          Text(
-                              _deleting
-                                  ? OccasionSetupStrings.cancellingDraft
-                                  : OccasionSetupStrings.progress(
-                                      widget.draft.progress),
-                              style: theme.textTheme.bodySmall),
-                          if (_deleting)
-                            const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2)))
-                          else
-                            TextButton(
-                                onPressed: widget.onResume,
-                                child: Text(OccasionSetupStrings.resume)),
-                        ]),
+                    if (!enlarged) ...[
+                      const SizedBox(height: 4),
+                      Text(OccasionSetupStrings.progress(widget.draft.progress),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall),
+                    ],
                   ])),
+              const SizedBox(width: 12),
+              if (_deleting)
+                const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+              else
+                Icon(Icons.chevron_right,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
             ])),
       ),
     );
