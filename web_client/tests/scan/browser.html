@@ -1,0 +1,59 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Festapp - živé demo scanneru</title>
+<style>
+#scanner{--scan-bottom-reserve:100px}#scanner .scan-shell{min-height:100dvh;padding-bottom:120px}.scanner-demo{position:fixed;inset:auto 0 0;z-index:40;padding:12px 20px;background:var(--surface-color);border-top:1px solid color-mix(in srgb,var(--primary-color) 24%,transparent);font:16px/1.4 Futura,sans-serif;color:var(--text-color)}.scanner-demo-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;max-width:1184px;margin:auto}.scanner-demo-tag{font-size:11px;letter-spacing:.06em;font-weight:700;color:var(--primary-color)}.scanner-demo label{display:flex;align-items:center;gap:8px}.scanner-demo select,.scanner-demo button,.scanner-demo summary{font:inherit;min-height:44px}.scanner-demo select,.scanner-demo button{border:1px solid color-mix(in srgb,var(--primary-color) 35%,transparent);border-radius:8px;padding:8px 12px;background:var(--surface-color);color:var(--text-color)}.scanner-demo button,.scanner-demo summary{cursor:pointer}.scanner-demo summary{display:flex;align-items:center;color:var(--primary-color);text-decoration:underline}.scanner-demo [role=status]{font-size:13px;color:var(--primary-color)}.scanner-demo details{margin-inline-start:auto}.scanner-demo-qr{position:absolute;bottom:80px;inset-inline-end:20px;max-width:calc(100vw - 40px);width:800px;max-height:70dvh;overflow:auto;padding:20px;background:var(--surface-color);border:1px solid var(--primary-color);border-radius:16px;box-shadow:0 12px 40px #0003}.scanner-demo-codes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.scanner-demo-codes svg{display:block;width:100%;height:auto;background:white}.scanner-demo-codes code{font-size:12px;display:block;text-align:center}.scanner-demo-note{font-size:14px;color:var(--text-color)}@media(max-width:600px){.scanner-demo{padding:8px 16px}.scanner-demo-bar{gap:6px 12px}.scanner-demo label>span{display:none}.scanner-demo select{max-width:200px}.scanner-demo-codes{grid-template-columns:1fr}.scanner-demo-qr{width:280px}.scanner-demo details{margin-inline-start:0}.scanner-demo-note{display:none}}@media print{#scanner,.scanner-demo-bar>*:not(details),.scanner-demo summary,.scanner-demo-qr>button,.scanner-demo-qr>p{display:none!important}.scanner-demo,.scanner-demo-qr{position:static;border:0;box-shadow:none;padding:0;max-height:none;width:auto;max-width:none}.scanner-demo details:not([open])>*:not(summary){display:block}.scanner-demo-codes{grid-template-columns:repeat(3,1fr)}}
+</style></head><body><div id="scanner"></div><aside class="scanner-demo" aria-label="Demo scénáře"><div class="scanner-demo-bar"><span class="scanner-demo-tag">LOKÁLNÍ DEMO</span><label data-real-picker hidden><span>Událost</span><select data-real-event aria-label="Testovaná událost"></select></label><label><span>Scénář</span><select data-scene aria-label="Demo scénář"><option value="camera">Živá kamera</option><option value="lookup">Právě načtený lístek</option><option value="accepted">Potvrzený vstup</option><option value="group">3 platné vstupenky</option><option value="group_accepted">3 potvrzené vstupenky</option><option value="mixed">Skupina: platná / použitá / neplatná</option><option value="pending">Čeká na odeslání</option><option value="custom">Vlastní pole: vyplněná objednávka</option><option value="ball_order">Model plesu: objednatel a dvě menu</option><option value="ball_without_dinner">Model plesu: menu a bez večeře</option><option value="ball_orders">Model plesu: dvě objednávky</option><option value="ball">Ples: host, místo a večeře</option><option value="ball_group">Ples: dva hosté jedné objednávky</option><option value="empty">Vlastní pole: prázdné odpovědi</option><option value="long">Vlastní pole: dlouhá poznámka</option></select></label><button data-repeat>Znovu</button><span role="status" data-demo-status></span><details><summary>QR pro kameru</summary><div class="scanner-demo-qr"><p>Skutečné QR kódy nepoužitých vstupenek. Zobrazte je na druhém displeji nebo vytiskněte a načtěte kamerou.</p><div class="scanner-demo-codes" data-demo-qr></div><button data-print>Vytisknout QR kódy</button></div></details><span class="scanner-demo-note">Testovací data, skutečné ověření a ukládání.</span></div></aside><script type="module">
+import '/src/theme_config.css';
+import { ScanPage } from '/src/components/scan/scan_page.js';
+import { ThemeService } from '/src/services/theme_service.js';
+import { LocalizationService } from '/src/services/localization_service.js';
+import { resolveScannerRoute } from '/src/services/scanner_routes.js';
+import { escape as e } from '/src/components/scan/scan_strings.js';
+LocalizationService.translations=await(await fetch('/__scanner-translations')).json();LocalizationService.currentLocale='cs';ThemeService.init();
+const query=new URLSearchParams(location.search);
+let demoOffline=false;
+const nativeOnline=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(navigator),'onLine');
+Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>!demoOffline&&(nativeOnline?.get?nativeOnline.get.call(navigator):true)});
+const client={rpc:(name,params)=>fetch('/__scanner-rpc',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name,params})}).then(r=>r.json())};
+const realKey=query.get('real');const realSuffix=realKey?'?real='+encodeURIComponent(realKey):'';
+const realPayload=await(await fetch('/__scanner-real-cases'+realSuffix)).json();
+const realData=realPayload.selected;
+const fixture=await(await fetch('/__scanner-fixture'+realSuffix)).json();window.__fixture=fixture;window.__client=client;
+const page=window.__page=new ScanPage('scanner',{client,backend:{generation:1,origin:'http://127.0.0.1:5174',organization:fixture.organization}});
+if(realPayload.events?.length){const picker=document.querySelector('[data-real-picker]');picker.hidden=false;const select=document.querySelector('[data-real-event]');select.innerHTML='<option value="">Modelové příklady</option>'+realPayload.events.map(event=>`<option value="${e(event.key)}">${e(event.title)}</option>`).join('');select.value=realKey||'';select.onchange=()=>{location.href='/scan'+(select.value?'?real='+encodeURIComponent(select.value):'');};}
+if(realData){document.querySelector('.scanner-demo-tag').textContent='SOUKROMÁ SIMULACE';document.querySelector('.scanner-demo-note').textContent='Skutečné objednávky · lokální kopie';document.querySelector('[data-scene]').innerHTML='<option value="camera">Živá kamera</option>'+realData.orders.map(order=>`<option value="${e(order.key)}">${e(order.label)}</option>`).join('')+'<option value="real_all">Všechny vybrané objednávky</option>';}
+let customCases;try{const data=await(await fetch('/tests/scan/custom_cases.json')).json();if(String(data.occasion)===String(fixture.occasion))customCases=data.cases;}catch{}
+let scenes,busy=false;const status=document.querySelector('[data-demo-status]');
+const render=page.render.bind(page);page.render=()=>{render();const input=page.host.querySelector('[name=symbol]');if(input&&scenes&&page.controller?.state==='ready'&&!input.value&&document.activeElement!==input)input.value=scenes.unused[0]||'';};
+await page.init(resolveScannerRoute(location.pathname)||{page:'scan'});
+if(!page.row || page.row.locked || String(page.row.session.occasion_id)!==String(fixture.occasion)){page.authBlocked=false;await page.open({p_scan_code:fixture.scan_code,p_device_name:'Hlavní vstup'});}
+async function refreshScenes(){scenes=await(await fetch('/__scanner-demo-scenes'+realSuffix)).json();if(!scenes.unused?.length&&!realData?.orders.length)throw new Error('Testovací vstupenky byly vyčerpány.');const selected=document.querySelector('[data-scene]').value;const custom=customCases?.filter(c=>selected==='ball_group'?['ball','ball_partner'].includes(c.key):selected==='ball_orders'?['ball_order','ball_without_dinner'].includes(c.key):c.key===selected);const realCodes=realData?.orders.filter(order=>selected==='real_all'||order.key===selected).flatMap(order=>order.qr);const codes=realCodes?.length?realCodes:custom?.length?custom:scenes.unused.slice(0,3).map(symbol=>scenes.qr.find(q=>q.symbol===symbol));document.querySelector('[data-demo-qr]').innerHTML=codes.map(c=>`<div>${c.svg}<code>${e(c.symbol)}</code></div>`).join('');}
+async function showScene(scene){
+ if(busy || page.controllers().some(c=>['persisting','awaiting_server','looking_up'].includes(c.state)))return;
+ busy=true;status.textContent='Připravuji…';document.querySelector('[data-repeat]').disabled=true;
+ try{
+  demoOffline=false;await page.recover();await refreshScenes();page.disposeControllers();page.batch=null;page.groupDetailController=null;page.controller=page.createController();page.route={page:'scan'};page.mode='camera';page.error=null;page.transportOffline=false;page.input.pause({keepStream:true});page.render();
+  if(realData&&(scene==='real_all'||scene.startsWith('real_order_'))){const orders=realData.orders.filter(order=>scene==='real_all'||order.key===scene);await page.loadCodes(orders.flatMap(order=>order.symbols));}
+  else if(['custom','ball','ball_group','empty','long','ball_order','ball_without_dinner','ball_orders'].includes(scene)){const selected=customCases?.filter(c=>scene==='ball_group'?['ball','ball_partner'].includes(c.key):scene==='ball_orders'?['ball_order','ball_without_dinner'].includes(c.key):c.key===scene);if(!selected?.length)throw Error('Vlastní demo data nejsou připravená pro tuto událost.');await page.loadCodes(selected.map(c=>c.symbol));}
+  else if(scene==='camera')await page.startCamera();
+  else if(scene==='group'||scene==='group_accepted'){await page.loadCodes(scenes.unused.slice(0,3));if(scene==='group_accepted')await page.confirmBatch();}
+  else if(scene==='mixed')await page.loadCodes([scenes.unused[0],scenes.used||'DEMO-NOT-FOUND', 'DEMO-NOT-A-TICKET']);
+  else{
+   await page.controller.loadCode(scenes.unused[0]);
+   if(scene==='accepted')await page.controller.confirm();
+   if(scene==='pending'){demoOffline=true;await page.controller.confirm();}
+  }
+  if(scene!=='camera')await page.startCamera();
+  if(realData)window.history.replaceState(null,'','/scan?real='+encodeURIComponent(realKey)+'&scene='+encodeURIComponent(scene));
+  status.textContent=scene==='pending'?'Simulovaný výpadek · skutečný záznam v zařízení':'';
+ }catch(error){status.textContent=error.message;}finally{busy=false;document.querySelector('[data-repeat]').disabled=false;}
+}
+document.querySelector('.scanner-demo').addEventListener('pointerdown',page.onGesture,true);
+document.querySelector('.scanner-demo').addEventListener('keydown',page.onGesture,true);
+document.querySelector('[data-scene]').onchange=event=>showScene(event.target.value);
+document.querySelector('[data-repeat]').onclick=()=>showScene(document.querySelector('[data-scene]').value);
+document.querySelector('[data-print]').onclick=()=>window.print();
+document.querySelector('.scanner-demo details').ontoggle=event=>{if(event.target.open)refreshScenes().catch(error=>{status.textContent=error.message;});};
+window.__demoScene=showScene;
+const scene=query.get('scene')||(query.get('camera')==='1'?'camera':realData?.orders.find(order=>order.counts?.used&&(order.counts?.sent||order.counts?.paid))?.key||realData?.orders[0]?.key||null);
+let scenesAvailable=false;try{await refreshScenes();scenesAvailable=true;}catch{status.textContent='Demo scénáře vyžadují lokální server.';}if(scene&&scenesAvailable){document.querySelector('[data-scene]').value=scene;await showScene(scene);}window.__ready=true;
+</script></body></html>

@@ -410,7 +410,8 @@ async function routeRequest(request, env) {
     if (path === "/sitemap.xml") return handleSitemap(request, env);
 
     if (path === "/" && FORCED_OCCASION_PATH) {
-      return Response.redirect(new URL(FORCED_OCCASION_PATH, url).toString(), 302);
+      const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
+      return htmlResponse(res.body, res.headers);
     }
 
     if (INTERNAL_ASSET_PATHS.has(path)) {
@@ -436,6 +437,13 @@ async function routeRequest(request, env) {
         "content-type": "text/plain; charset=utf-8", "cache-control": "no-store",
         "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow",
       }});
+    }
+    if (resolveScannerRoute(path)) {
+      const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
+      const response = htmlResponse(res.body, res.headers);
+      response.headers.set("cache-control", "no-store");
+      response.headers.set("referrer-policy", "no-referrer");
+      return response;
     }
     if (path.startsWith("/form/")) return handleForm(request, env, path);
 
@@ -565,6 +573,8 @@ import sys
 
 worker_path, config_path = sys.argv[1:]
 source = pathlib.Path(worker_path).read_text(encoding="utf-8")
+scanner_routes = pathlib.Path("web_client/src/services/scanner_routes.js").read_text(encoding="utf-8").replace("export function", "function")
+source = scanner_routes + "\n" + source
 catalog = pathlib.Path("web_client/src/components/occasion/catalog.js").read_text(encoding="utf-8").replace("export function", "function")
 source = source.replace("// SHARED_CATALOG_CLASSIFICATION", catalog)
 config = pathlib.Path(config_path).read_text(encoding="utf-8")

@@ -2,17 +2,6 @@ import 'package:collection/collection.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 
-/// Mapping of specific field IDs to display labels.
-const Map<String, String> specificFieldMappings = {
-  "735": "Typ účastníka",
-  "725": "Člen Anima Iuventutis, z. s.",
-  "739": "Stravovací omezení",
-  "615": "Typ účastníka",
-  "616": "Přípravný tým",
-  "629": "Člen Anima Iuventutis, z. s.",
-  "620": "Stravovací omezení",
-};
-
 /// Extract a value from the dynamic fields stored in [order.data['fields']].
 String? getFieldValue(OrderModel order, String targetFieldId) {
   if (order.data == null || order.data!['fields'] == null) {

@@ -30,7 +30,7 @@ BEGIN
     SELECT occasion, state
     INTO occasion_id, current_state
     FROM eshop.tickets
-    WHERE id = ticket_id FOR UPDATE;
+    WHERE id = ticket_id;
 
     -- Check if occasion_id is present (Integrity check)
     IF occasion_id IS NULL THEN
@@ -70,6 +70,9 @@ BEGIN
         RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
     END IF;
 
+    PERFORM public.scanner_lock_ticket_internal(ticket_id);
+    SELECT state INTO current_state FROM eshop.tickets WHERE id=ticket_id;
+
     -- 2a. Validate Ticket State (New Check)
     IF current_state = 'used' THEN
         RETURN jsonb_build_object(
@@ -86,11 +89,7 @@ BEGIN
     PERFORM public.check_ticket_is_mutable(ticket_id);
 
     -- 5. Update Ticket State to 'used' AND update timestamp
-    UPDATE eshop.tickets
-    SET
-        state = 'used',
-        updated_at = now()
-    WHERE id = ticket_id;
+    PERFORM public.scanner_admit_ticket_internal(ticket_id);
 
     -- 6. Return Success Message
     RETURN jsonb_build_object(

@@ -21,6 +21,7 @@
     "dotenv": "^17.4.2",
     "flatpickr": "^4.6.13",
     "glob": "^13.0.6",
+    "jsqr": "^1.4.0",
     "node-localstorage": "^3.0.5",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4"

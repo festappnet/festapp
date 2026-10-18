@@ -4,6 +4,7 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { collectPwaShellManifest } from './lib/pwa_shell_manifest.mjs';
 import { isPublicOccasionAppPath, unsupportedOccasionAppRedirect } from '../web_client/src/services/public_occasion_routes.js';
+import { resolveScannerRoute } from '../web_client/src/services/scanner_routes.js';
 
 const buildDir = path.resolve(process.argv[2] || 'build/web');
 const version = process.argv[3];
@@ -46,6 +47,7 @@ const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
 const IS_APP_SUPPORTED = ${JSON.stringify(isAppSupported)};
 ${isPublicOccasionAppPath.toString()}
 ${unsupportedOccasionAppRedirect.toString()}
+${resolveScannerRoute.toString()}
 const FORCED_OCCASION_PATH = ${JSON.stringify(isAppSupported && forcedOccasionLink ? `/${forcedOccasionLink}/event` : null)};
 const STANDALONE_DOCUMENT_PATHS = new Set(${JSON.stringify(standaloneDocuments, null, 2)});
 const PRECACHE_PATHS = new Set(PRECACHE_URLS.map((url) =>
@@ -377,6 +379,17 @@ self.addEventListener('message', (event) => {
     event.ports?.[0]?.postMessage({ version: BUILD_VERSION });
     return;
   }
+  if (event.data?.type === 'FESTAPP_SCANNER_SHELL_STATUS') {
+    event.waitUntil((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const present = await Promise.all(CORE_URLS.map((url) => cache.match(url)));
+      event.ports?.[0]?.postMessage({
+        version: BUILD_VERSION,
+        ready: present.every(Boolean),
+      });
+    })());
+    return;
+  }
   if (event.data?.type === 'FESTAPP_INSPECT_SHELLS') {
     event.waitUntil(scheduleShellReconcile({ apply: false }).then((result) => {
       event.ports?.[0]?.postMessage(result);
@@ -454,6 +467,7 @@ self.addEventListener('activate', (event) => {
 });
 
 function cachedNavigationTarget(pathname) {
+  if (resolveScannerRoute(pathname)) return WEB_CLIENT_ENTRY;
   if ((pathname === '/pro-poradatele' || pathname === '/pro-poradatele/') &&
       STANDALONE_DOCUMENT_PATHS.has('/pro-poradatele')) {
     return '/pro-poradatele';
@@ -461,9 +475,6 @@ function cachedNavigationTarget(pathname) {
   const normalizedPath = pathname.endsWith('/') ? pathname : pathname + '/';
   if (STANDALONE_DOCUMENT_PATHS.has(normalizedPath)) {
     return normalizedPath;
-  }
-  if (pathname === '/' && FORCED_OCCASION_PATH) {
-    return FLUTTER_ENTRY;
   }
   const unitPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   const unitCatalogue = unitPath.startsWith('/unit/') && /^[1-9][0-9]*$/.test(unitPath.slice(6));
