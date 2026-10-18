@@ -32,3 +32,77 @@ test('opening instant respects authoritative closure; authorized offers stay ope
     assert.equal(Availability.getStatus({ registrationMode: 'offer', isOpen: false, startTime: future }).status, 'OPEN');
     assert.equal(Availability.getStatus({ registrationMode: 'regular', isOpen: true, startTime: past }).status, 'OPEN');
 });
+
+for (const enabled of [false, true]) {
+    test(`pre-start information is opt-in (${enabled}) and cannot render registration controls`, () => {
+        const dom = new JSDOM('<main></main>');
+        globalThis.document = dom.window.document;
+        const model = new FormModel({
+            is_open: true,
+            header_off: '<p>Closed message</p>',
+            data: { schedule: {
+                start_time: '2099-01-01T12:00:00Z', enable_countdown: true,
+                show_before_start_message: enabled,
+                before_start_message: '<h2>Hall plan</h2><img src="https://example.test/hall.png" onerror="alert(1)"><script>alert(1)</script><input name="email"><button>Register</button>',
+            } },
+        });
+        try {
+            const host = document.querySelector('main');
+            assert.equal(Availability.renderStatus(host, model, Availability.getStatus(model)), true);
+            assert.ok(host.querySelector('.countdown-widget'));
+            const info = host.querySelector('.form-before-start-message');
+            assert.equal(!!info, enabled);
+            if (enabled) {
+                assert.equal(info.querySelector('h2').textContent, 'Hall plan');
+                assert.equal(info.querySelector('img').src, 'https://example.test/hall.png');
+                assert.equal(info.querySelector('img').hasAttribute('onerror'), false);
+                assert.equal(info.querySelector('input, button, script'), null);
+            }
+            assert.doesNotMatch(host.textContent, /Closed message/);
+        } finally { CountdownWidget.stop(); dom.window.close(); }
+    });
+}
+
+test('pre-start information stays hidden outside public countdown mode', () => {
+    const dom = new JSDOM('<main></main>');
+    globalThis.document = dom.window.document;
+    const model = new FormModel({
+        is_open: true, header_off: 'Closed message',
+        data: { schedule: {
+            start_time: '2099-01-01T12:00:00Z', enable_countdown: true,
+            show_before_start_message: true, before_start_message: '<h2>Hall plan</h2>',
+        } },
+    });
+    try {
+        const host = document.querySelector('main');
+        assert.equal(Availability.renderStatus(host, model, Availability.getStatus(model), { showPreview: true }), false);
+        assert.equal(host.children.length, 0);
+        for (const schedule of [
+            { ...model.data.schedule, enable_countdown: false },
+            { ...model.data.schedule, start_time: '2000-01-01' },
+        ]) {
+            host.replaceChildren();
+            const other = new FormModel({ is_open: true, data: { schedule } });
+            Availability.renderStatus(host, other, Availability.getStatus(other));
+            assert.equal(host.querySelector('.form-before-start-message'), null);
+        }
+        model.isOpen = false;
+        Availability.renderStatus(host, model, Availability.getStatus(model));
+        assert.equal(host.querySelector('.form-before-start-message'), null);
+    } finally { CountdownWidget.stop(); dom.window.close(); }
+});
+
+test('expired countdown calls reload once and stops its timer', () => {
+    const dom = new JSDOM('<main></main>');
+    globalThis.document = dom.window.document;
+    let reloads = 0;
+    try {
+        CountdownWidget.render(document.querySelector('main'), {
+            startTime: new Date('2000-01-01'), countdownTitle: '<b>Start</b><script>alert(1)</script>',
+        }, () => reloads++);
+        assert.equal(reloads, 1);
+        assert.equal(CountdownWidget.timer, null);
+        assert.equal(document.querySelector('script'), null);
+        assert.equal(document.querySelector('.countdown-title b').textContent, 'Start');
+    } finally { CountdownWidget.stop(); dom.window.close(); }
+});

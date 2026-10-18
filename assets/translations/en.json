@@ -280,6 +280,9 @@
     "updatingUsers": "Updating users"
   },
   "FeatureFormSettings": {
+    "labelShowBeforeStartMessage": "Show information before registration opens",
+    "helperBeforeStartMessage": "Publish event information, images or a seating plan below the countdown. Registration will open at the scheduled time.",
+    "labelBeforeStartMessage": "Information before registration opens",
     "fontLoadFailed": "Could not load fonts. Please try again.",
     "title": "Form Settings",
     "formNotFound": "Form not found.",

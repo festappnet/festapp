@@ -136,6 +136,9 @@
     "orderLabel": "Bestellung"
   },
   "FeatureFormSettings": {
+    "labelShowBeforeStartMessage": "Informationen vor Anmeldestart anzeigen",
+    "helperBeforeStartMessage": "Unter dem Countdown können Sie Informationen zur Veranstaltung, Bilder oder einen Saalplan veröffentlichen. Die Anmeldung öffnet erst zum festgelegten Zeitpunkt.",
+    "labelBeforeStartMessage": "Informationen vor Anmeldestart",
     "labelShowPaymentQr": "Zahlungs-QR nach Bestellung anzeigen",
     "helperShowPaymentQr": "Zeigt nach der Bestellung den Zahlungs-QR-Code und die Daten direkt auf dem Bestätigungsbildschirm an."
   },

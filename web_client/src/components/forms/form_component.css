@@ -66,6 +66,21 @@
     margin-top: 0 !important;
 }
 
+.form-before-start-message {
+    width: 100%;
+    max-width: var(--form-max-width, 600px);
+    box-sizing: border-box;
+    margin: 24px auto 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    overflow-x: auto;
+}
+
+.form-before-start-message table {
+    display: block;
+    overflow-x: auto;
+}
+
 .form-description {
     margin-bottom: calc(24px * var(--font-scale));
     white-space: pre-wrap;

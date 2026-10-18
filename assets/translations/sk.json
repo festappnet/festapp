@@ -148,6 +148,9 @@
     "orderLabel": "Objednávka"
   },
   "FeatureFormSettings": {
+    "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",
+    "helperBeforeStartMessage": "Pod odpočtom môžete zverejniť informácie o podujatí, obrázky alebo plán sály. Prihlasovanie sa otvorí až v nastavenom čase.",
+    "labelBeforeStartMessage": "Informácie pred začiatkom",
     "fontLoadFailed": "Písma sa nepodarilo načítať. Skúste to prosím znova.",
     "helperReminderEnabled": "Predvolené odosielanie pripomienok platby. Každý formulár môže mať vlastné nastavenie.",
     "helperDeadlineDuration": "Predvolený počet dní na zaplatenie novej objednávky. Prázdne pole znamená 7 dní.",
