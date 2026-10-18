@@ -60,3 +60,24 @@ test('policy wrapping preserves redirect status, activation CORS and OAuth cache
   assert.equal(oauth.headers.get('cache-control'), 'no-store');
   assert.equal(oauth.headers.get('referrer-policy'), 'no-referrer');
 });
+
+test('organization administration deep links serve Flutter without an occasion lookup', async t => {
+  let lookups = 0;
+  t.mock.method(globalThis, 'fetch', async () => {
+    lookups++;
+    return new Response('null', {headers: {'content-type': 'application/json'}});
+  });
+  const production = {
+    SUPABASE_URL: 'https://api.example.invalid', SUPABASE_ANON_KEY: 'synthetic',
+    ASSETS: {fetch: async request => new URL(request.url).pathname === '/flutter'
+      ? new Response('Flutter shell', {headers: {'content-type': 'text/html'}})
+      : new Response('Missing', {status: 404})},
+  };
+  for (const path of ['/organizationEdit', '/organizationEdit/3', '/organizationEdit/3/?tab=verification']) {
+    const response = await worker.fetch(new Request(origin + path), production);
+    assert.equal(response.status, 200, path);
+    assert.equal(await response.text(), 'Flutter shell', path);
+    assertPolicy(response);
+  }
+  assert.equal(lookups, 0, 'platform administration is not an occasion slug');
+});
