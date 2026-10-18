@@ -693,6 +693,13 @@
       "sources": [
         "test/components/occasion/occasion_setup_draft_card_test.dart"
       ]
+    },
+    "test/components/forms/organization_identity_test.dart": {
+      "kind": "environment",
+      "reason": "Localized legal-profile and public identity widget interactions with the application dialog and isolated RPC transport.",
+      "sources": [
+        "test/components/forms/organization_identity_test.dart"
+      ]
     }
   }
 }

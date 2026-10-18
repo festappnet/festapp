@@ -1,0 +1,70 @@
+-- Synthetic, transaction-local tenant; runner rolls back every fixture and RPC write.
+CREATE FUNCTION pg_temp.legal_fixture() RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE org bigint; other_org bigint; un bigint; spare bigint; manager uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); editor uuid:=gen_random_uuid();
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Legal fixture') RETURNING id INTO org;
+ INSERT INTO public.organizations(title) VALUES('Other legal fixture') RETURNING id INTO other_org;
+ INSERT INTO public.units(title,organization) VALUES('Legal fixture',org) RETURNING id INTO un;
+ INSERT INTO public.units(title,organization) VALUES('Spare legal fixture',org) RETURNING id INTO spare;
+ INSERT INTO auth.users(id,email) VALUES(manager,manager||'@example.invalid'),(admin,admin||'@example.invalid'),(outsider,outsider||'@example.invalid'),(editor,editor||'@example.invalid');
+ INSERT INTO public.user_info(id,organization) VALUES(manager,org),(admin,org),(outsider,other_org),(editor,org);
+ INSERT INTO public.unit_users(unit,"user",is_manager,is_editor) VALUES(un,manager,true,true),(spare,manager,true,true),(un,editor,false,true);
+ INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,admin,true),(other_org,outsider,true);
+ PERFORM set_config('request.jwt.claim.sub',manager::text,true);
+ RETURN jsonb_build_object('organization',org,'otherOrganization',other_org,'unit',un,'spare',spare,'manager',manager,'admin',admin,'outsider',outsider,'editor',editor);
+END $$;
+CREATE FUNCTION pg_temp.legal_data() RETURNS jsonb LANGUAGE sql AS $$
+ SELECT '{"legalName":"  Kulturní spolek  ","countryCode":"cz","registrationNumber":"27074358","address":{"street":"Dlouhá 1","city":"Praha","postalCode":"11000"},"contactEmail":"PUBLIC@example.invalid","website":"https://example.invalid"}'::jsonb;
+$$;
+DO $$
+DECLARE x jsonb:=pg_temp.legal_fixture(); un bigint:=(x->>'unit')::bigint; r jsonb; n bigint; p jsonb:=pg_temp.legal_data();
+BEGIN
+ r:=public.get_unit_legal_profile(un);
+ PERFORM assert_eq(r#>>'{profile,revision}','0'::text,'no row means revision zero');
+ r:=public.save_unit_legal_profile(un,0,'{"legalName":"draft"}');
+ PERFORM assert_eq(r#>>'{profile,revision}','1'::text,'incomplete draft can be saved');
+ PERFORM assert_eq(public.submit_unit_verification(un,1)->>'code','422'::text,'draft cannot submit');
+ PERFORM assert_eq(public.save_unit_legal_profile(un,0,p)->>'code','409'::text,'concurrent first save conflicts');
+ PERFORM assert_eq(public.save_unit_legal_profile(un,1,p||'{"status":"verified"}')->>'code','422'::text,'forged state rejected');
+ PERFORM assert_eq(public.save_unit_legal_profile(un,1,p||'{"registrationNumber":"27074359"}')->>'code','422'::text,'CZ checksum checked');
+ PERFORM assert_eq(public.save_unit_legal_profile(un,1,p||'{"website":"javascript:alert(1)"}')->>'code','422'::text,'unsafe links rejected');
+ r:=public.save_unit_legal_profile(un,1,p);
+ PERFORM assert_eq(r#>>'{profile,revision}','2'::text,'complete save increments revision');
+ r:=public.save_unit_legal_profile(un,2,p);
+ PERFORM assert_eq(r->>'outcome','unchanged'::text,'normalization makes same save a no-op');
+ PERFORM assert_eq((SELECT count(*) FROM public.unit_legal_profile_audit WHERE unit_id=un),2::bigint,'no-op creates no audit');
+ r:=public.submit_unit_verification(un,2);
+ PERFORM assert_eq(r#>>'{profile,revision}','3'::text,'submission increments revision');
+ PERFORM assert_eq(public.submit_unit_verification(un,3)->>'code','422'::text,'pending cannot resubmit');
+ PERFORM set_config('request.jwt.claim.sub',x->>'admin',true);
+ PERFORM assert_eq(public.review_unit_verification(un,3,'approve',NULL,NULL,'')->>'code','422'::text,'approve needs evidence');
+ r:=public.review_unit_verification(un,3,'approve',NULL,'private note','Synthetic registry and representative check');
+ PERFORM assert_eq(r#>>'{profile,status}','verified'::text,'tenant admin without manager can approve');
+ PERFORM assert_eq(r#>>'{profile,revision}','4'::text,'approve increments revision');
+ PERFORM assert_eq(public.review_unit_verification(un,3,'approve',NULL,NULL,'source')->>'code','409'::text,'retry cannot reapply');
+ PERFORM assert_not_null(public.get_verified_unit_identity_internal(un),'verified identity projects');
+ r:=public.review_unit_verification(un,4,'revoke','Evidence withdrawn');
+ PERFORM assert_eq(r#>>'{profile,revision}','5'::text,'revoke increments revision');
+ PERFORM assert_eq(public.review_unit_verification(un,3,'approve',NULL,NULL,'source')->>'code','409'::text,'late approve cannot undo revoke');
+ PERFORM assert_true(public.get_verified_unit_identity_internal(un) IS NULL,'revoked identity hidden');
+ PERFORM set_config('request.jwt.claim.sub',x->>'manager',true);
+ r:=public.get_unit_legal_profile(un);
+ PERFORM assert_eq(r#>>'{profile,feedbackToApplicant}','Evidence withdrawn'::text,'applicant sees feedback');
+ PERFORM assert_false((r->'profile')?'reviewNote','manager cannot see internal note');
+ r:=public.submit_unit_verification(un,5);
+ PERFORM assert_eq(r#>>'{profile,revision}','6'::text,'resubmit revoked profile');
+ r:=public.save_unit_legal_profile(un,6,p||'{"legalName":"Changed legal name"}');
+ PERFORM assert_eq(r#>>'{profile,status}','unverified'::text,'editing pending invalidates request');
+ PERFORM set_config('request.jwt.claim.sub',x->>'admin',true);
+ PERFORM assert_eq(public.review_unit_verification(un,6,'approve',NULL,NULL,'source')->>'code','409'::text,'review races with edit safely');
+ PERFORM set_config('request.jwt.claim.sub',x->>'manager',true);
+ r:=public.submit_unit_verification(un,7);
+ PERFORM set_config('request.jwt.claim.sub',x->>'admin',true);
+ r:=public.review_unit_verification(un,8,'reject','Please supply representative authority','private','registry');
+ PERFORM assert_eq(r#>>'{profile,status}','rejected'::text,'reject supported');
+ PERFORM assert_eq((SELECT count(*) FROM public.unit_legal_profile_audit WHERE unit_id=un),9::bigint,'every transition audited exactly once');
+ PERFORM set_config('request.jwt.claim.sub',x->>'manager',true);
+ PERFORM public.delete_unit(un);
+ PERFORM assert_eq((SELECT count(*) FROM public.unit_legal_profiles WHERE unit_id=un),0::bigint,'delete cascades profile');
+ PERFORM assert_eq((SELECT count(*) FROM public.unit_legal_profile_audit WHERE unit_id=un),9::bigint,'delete preserves audit');
+END $$;

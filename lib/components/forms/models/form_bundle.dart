@@ -1,3 +1,4 @@
+import 'verified_organization_identity.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:festapp_core/eshop.dart';
@@ -7,12 +8,14 @@ class FormBundle {
       {required this.definition,
       this.occasion,
       this.bankAccount,
+      this.organizationIdentity,
       List<BankAccountModel>? availableBankAccounts})
       : availableBankAccounts = availableBankAccounts == null
             ? null
             : List.unmodifiable(availableBankAccounts);
   final FormDefinition definition;
   bool get demoSimulation => definition.demoSimulation;
+  final VerifiedOrganizationIdentity? organizationIdentity;
   final OccasionModel? occasion;
   final BankAccountModel? bankAccount;
   final List<BankAccountModel>? availableBankAccounts;
@@ -20,11 +23,14 @@ class FormBundle {
       definition.copyWith(bankAccountId: bankAccount?.id).toJson();
   FormBundle withDefinition(FormDefinition value) => FormBundle(
       definition: value,
+      organizationIdentity: organizationIdentity,
       occasion: occasion,
       bankAccount: bankAccount,
       availableBankAccounts: availableBankAccounts);
   factory FormBundle.fromJson(Map<String, dynamic> json) => FormBundle(
       definition: FormDefinition.fromJson(json),
+      organizationIdentity:
+          VerifiedOrganizationIdentity.tryParse(json['organizationIdentity']),
       occasion: json['occasion'] is Map<String, dynamic>
           ? OccasionModel.fromJson(json['occasion'])
           : null,

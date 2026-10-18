@@ -83,6 +83,7 @@ BEGIN
    'timeZone',public.get_waitlist_form_timezone_internal(fid),
    'communicationTone',public.get_effective_form_data(fid)->>'communication_tone',
    'form',NULL,'formLink',(SELECT link FROM public.forms WHERE id=fid),
+   'organizationIdentity',(SELECT CASE WHEN o.organization=u.organization THEN public.get_verified_unit_identity_internal(u.id) END FROM public.forms f JOIN public.occasions o ON o.id=f.occasion JOIN public.units u ON u.id=o.unit WHERE f.id=fid),
    'offerId',w.id,'pendingCount',0,'expiresAt',w.expires_at,'serverTime',clock_timestamp(),
    'offerStatus',CASE
     WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='declined') THEN 'declined'

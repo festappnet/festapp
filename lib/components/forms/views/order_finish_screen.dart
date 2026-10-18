@@ -1,3 +1,5 @@
+import '../models/verified_organization_identity.dart';
+import '../widgets_view/organization_identity_footer.dart';
 import 'package:fstapp/components/forms/order_overview_strings.dart';
 import '../waitlist_strings.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ class FinishOrderScreen extends StatefulWidget {
   final VoidCallback? onSuccess;
   final VoidCallback? onOrderConfirmed;
   final String? tone;
+  final VerifiedOrganizationIdentity? organizationIdentity;
   final bool hasTickets;
   final bool overviewAvailable;
   final String? occasionTitle;
@@ -24,6 +27,7 @@ class FinishOrderScreen extends StatefulWidget {
     this.onSuccess,
     this.onOrderConfirmed,
     this.tone,
+    this.organizationIdentity,
     this.hasTickets = true,
     this.overviewAvailable = false,
     this.occasionTitle,
@@ -282,6 +286,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
             Text(
                 '${WaitlistStrings.remaining}: ${_orderData?['waitlistSummary']?['pendingPlaces'] ?? 0}. ${WaitlistStrings.explanation}'),
           if (_isSuccess) _buildPaymentQr(),
+          OrganizationIdentityFooter(identity: widget.organizationIdentity),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () {
